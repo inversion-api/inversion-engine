@@ -35,7 +35,7 @@ public class Action extends Rule
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (handler == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Action is missing a handler");
+         return;
 
       //req.setEntityKey(action.getParam("entityKey", req.getEntityKey()));
       //req.setCollectionKey(action.getParam("collectionKey", req.getCollectionKey()));
