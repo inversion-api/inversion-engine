@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -105,11 +105,16 @@ public class Chain
    public Set<String> getConfigSet(String key)
    {
       LinkedHashSet values = new LinkedHashSet();
-      String value = actions.get(next - 1).getConfig(key);
-      if (value != null)
+
+      String value = null;
+      for (int i = next - 1; i >= 0; i--)
       {
-         for (String str : value.split(","))
-            values.add(str.trim());
+         value = actions.get(i).getConfig(key);
+         if (value != null)
+         {
+            for (String str : value.split(","))
+               values.add(str.trim());
+         }
       }
 
       value = endpoint.getConfig(key);
@@ -120,6 +125,23 @@ public class Chain
       }
 
       return values;
+   }
+
+   public String getConfig(String key, String defaultValue)
+   {
+      String value = actions.get(next - 1).getConfig(key);
+      if (!J.empty(value))
+      {
+         return value;
+      }
+
+      value = endpoint.getConfig(key);
+      if (!J.empty(value))
+      {
+         return value;
+      }
+
+      return defaultValue;
    }
 
    public void go() throws Exception

@@ -20,11 +20,13 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import io.forty11.j.J;
 import io.forty11.sql.Sql;
 import io.forty11.utils.ListMap;
 import io.forty11.web.Url;
+import io.forty11.web.js.JS;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.forty11.web.js.JSObject.Property;
@@ -38,14 +40,14 @@ import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
-import io.rcktapp.api.Handler;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 
-public class PostHandler implements Handler
+public class PostHandler extends RqlHandler
 {
+   boolean collapseAll    = false;
    boolean strictRest     = false;
    boolean expandResponse = true;
 
@@ -70,6 +72,19 @@ public class PostHandler implements Handler
       Entity entity = collection.getEntity();
 
       JSObject obj = req.getJson();
+
+      if (obj == null)
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
+
+      boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
+      Set<String> collapses = chain.getConfigSet("collapses");
+      collapses.addAll(splitParam(req, "collapses"));
+      
+      if (collapseAll || collapses.size() > 0)
+      {
+         obj = JS.toJSObject(obj.toString());
+         collapse(obj, collapseAll, collapses, "");
+      }
 
       try
       {
@@ -398,6 +413,99 @@ public class PostHandler implements Handler
          }
       }
 
+   }
+
+   /*
+    * Collapses nested objects so that relationships can be preserved but the fields
+    * of the nested child objects are not saved (except for FKs back to the parent 
+    * object in the case of a MANY_TO_ONE relationship).
+    * 
+    * This is intended to be used as a reciprocal to GetHandler "expands" when
+    * a client does not want to scrub their json model before posting changes to
+    * the parent document back to the parent collection.
+    */
+   public static void collapse(JSObject parent, boolean collapseAll, Set collapses, String path)
+   {
+      for (String key : (List<String>) new ArrayList(parent.keys()))
+      {
+         Object value = parent.get(key);
+
+         if (collapseAll || collapses.contains(nextPath(path, key)))
+         {
+            if (value instanceof JSArray)
+            {
+               JSArray children = (JSArray) value;
+               if (children.length() == 0)
+                  parent.remove(key);
+
+               for (int i = 0; i < children.length(); i++)
+               {
+                  if (children.get(i) == null)
+                  {
+                     children.remove(i);
+                     i--;
+                     continue;
+                  }
+
+                  if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSObject))
+                  {
+                     children.remove(i);
+                     i--;
+                     continue;
+                  }
+
+                  JSObject child = children.getObject(i);
+                  for (String key2 : (List<String>) new ArrayList(child.keys()))
+                  {
+                     if (!key2.equalsIgnoreCase("href"))
+                     {
+                        child.remove(key2);
+                     }
+                  }
+
+                  if (child.keys().size() == 0)
+                  {
+
+                     children.remove(i);
+                     i--;
+                     continue;
+                  }
+               }
+               if (children.length() == 0)
+                  parent.remove(key);
+
+            }
+            else if (value instanceof JSObject)
+            {
+               JSObject child = (JSObject) value;
+               for (String key2 : (List<String>) new ArrayList(child.keys()))
+               {
+                  if (!key2.equalsIgnoreCase("href"))
+                  {
+                     child.remove(key2);
+                  }
+               }
+               if (child.keys().size() == 0)
+                  parent.remove(key);
+            }
+         }
+         else if (value instanceof JSArray)
+         {
+            JSArray children = (JSArray) value;
+            for (int i = 0; i < children.length(); i++)
+            {
+               if (children.get(i) instanceof JSObject && !(children.get(i) instanceof JSArray))
+               {
+                  collapse(children.getObject(i), collapseAll, collapses, nextPath(path, key));
+               }
+            }
+         }
+         else if (value instanceof JSObject)
+         {
+            collapse((JSObject) value, collapseAll, collapses, nextPath(path, key));
+         }
+
+      }
    }
 
    Object cast(Column col, Object value)

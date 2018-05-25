@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.forty11.j.J;
 import io.forty11.sql.Sql;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.ApiException;
@@ -34,6 +35,30 @@ import io.rcktapp.rql.RQL;
 
 public abstract class RqlHandler implements Handler
 {
+
+   public LinkedHashSet<String> splitParam(Request req, String key)
+   {
+      LinkedHashSet map = new LinkedHashSet();
+      String param = req.getParam(key);
+      if (!J.empty(param))
+      {
+         String[] arr = param.split(",");
+         for (String e : arr)
+         {
+            e = e.trim().toLowerCase();
+            if (!J.empty(e))
+               map.add(e);
+         }
+      }
+
+      return map;
+   }
+
+   public static String nextPath(String path, String next)
+   {
+      return J.empty(path) ? next : path + "." + next;
+   }
+
    public RQL makeRql(Chain chain)
    {
       Db db = chain.getService().getDb(chain.getApi(), chain.getRequest().getCollectionKey());
@@ -46,8 +71,6 @@ public abstract class RqlHandler implements Handler
       RQL rql = new RQL(dbtype);
       return rql;
    }
-
-
 
    /**
     * Replaces variables of the form '${key}' with values associated with 
@@ -162,7 +185,7 @@ public abstract class RqlHandler implements Handler
       return set;
    }
 
-   Object convert(io.rcktapp.api.Collection coll, String col, Object val)
+   Object cast(io.rcktapp.api.Collection coll, String col, Object val)
    {
       String type = null;
 

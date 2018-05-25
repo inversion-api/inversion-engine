@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -275,7 +275,7 @@ public class GetHandler extends RqlHandler
          String col = replacer.cols.get(i);
          String val = replacer.vals.get(i);
 
-         params.add(convert(collection, col, val));
+         params.add(cast(collection, col, val));
       }
 
       //-- end SQL construction for the primary query
@@ -780,43 +780,55 @@ public class GetHandler extends RqlHandler
       return expand;
    }
 
-   static boolean include(String attr, Set includes, Set excludes)
+   static boolean include(String attr, Set<String> includes, Set<String> excludes)
    {
       return include(attr, includes, excludes, null);
    }
 
-   static boolean include(String attr, Set includes, Set excludes, String path)
+   static boolean include(String attr, Set<String> includes, Set<String> excludes, String path)
    {
       if (includes.size() == 0 && excludes.size() == 0)
          return true;
 
       String key = (path != null && path.length() > 0 ? (path + "." + attr) : attr).toLowerCase();
 
-      if (includes != null && includes.size() > 0 && !includes.contains(key))
-         return false;
-
-      if (excludes != null && excludes.contains(key))
-         return false;
-
-      return true;
-   }
-
-   public LinkedHashSet<String> splitParam(Request req, String key)
-   {
-      LinkedHashSet map = new LinkedHashSet();
-      String param = req.getParam(key);
-      if (!J.empty(param))
+      if (includes != null && includes.size() > 0)
       {
-         String[] arr = param.split(",");
-         for (String e : arr)
+         if (includes.contains(key))
          {
-            e = e.trim().toLowerCase();
-            if (!J.empty(e))
-               map.add(e);
+            return true;
+         }
+         else
+         {
+            for (String include : includes)
+            {
+               if (J.wildcardMatch(include.toLowerCase(), key))
+                  return true;
+            }
+         }
+
+         return false;
+      }
+
+      if (excludes != null)
+      {
+         if (excludes.contains(key))
+         {
+            return false;
+         }
+         else
+         {
+            for (String exclude : excludes)
+            {
+               if (J.wildcardMatch(exclude.toLowerCase(), key))
+               {
+                  return false;
+               }
+            }
          }
       }
 
-      return map;
+      return true;
    }
 
 }
