@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -46,16 +46,18 @@ import io.rcktapp.api.SC;
 
 public class PostHandler implements Handler
 {
+   boolean strictRest     = false;
    boolean expandResponse = true;
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      expandResponse = true;
-      if (req.isPost() && req.getEntityKey() != null)
+      if (strictRest)
       {
-         res.setStatus(SC.SC_404_NOT_FOUND);
-         return;
+         if (req.isPost() && req.getEntityKey() != null)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to POST to a specific entity url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
+         if (req.isPut() && req.getEntityKey() == null)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
       }
 
       List<Change> changes = new ArrayList();
@@ -215,7 +217,7 @@ public class PostHandler implements Handler
                   value = prop.getValue();
                else
                   continue;
-               
+
                if (value instanceof JSObject)
                {
                   JSObject child = (JSObject) value;
