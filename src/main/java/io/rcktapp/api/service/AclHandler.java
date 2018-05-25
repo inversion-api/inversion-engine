@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -113,13 +113,13 @@ public class AclHandler implements Handler
       for (String restricted : restricts)
       {
          restricted = restricted.toLowerCase();
-         
-         if(restricted.startsWith("query.") || restricted.startsWith("*."))
+
+         if (restricted.startsWith("query.") || restricted.startsWith("*."))
             restricted = restricted.substring(restricted.indexOf(".") + 1, restricted.length());
-         
-         if(restricted.indexOf(".") > 0)
+
+         if (restricted.indexOf(".") > 0)
             continue;
-         
+
          for (String key : req.getParams().keySet())
          {
             String value = req.getParam(key);
@@ -133,13 +133,13 @@ public class AclHandler implements Handler
       for (String required : requires)
       {
          required = required.toLowerCase();
-         
-         if(required.startsWith("query.") || required.startsWith("*."))
+
+         if (required.startsWith("query.") || required.startsWith("*."))
             required = required.substring(required.indexOf(".") + 1, required.length());
-         
-         if(required.indexOf(".") > 0)
+
+         if (required.indexOf(".") > 0)
             continue;
-         
+
          boolean found = false;
          for (String key : req.getParams().keySet())
          {
@@ -183,19 +183,19 @@ public class AclHandler implements Handler
       if (json != null)
       {
          List objs = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
-         
+
          for (String path : restricts)
          {
             List<JSObject> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
-            
-            if(parentPath.startsWith("query."))
+
+            if (parentPath.startsWith("query."))
                continue;
-            if(parentPath.startsWith("*."))
+            if (parentPath.startsWith("*."))
                parentPath = "*." + parentPath;
-            if(!parentPath.startsWith("body."))
+            if (!parentPath.startsWith("body."))
                parentPath = "body." + parentPath;
 
             for (Object parent : objs)
@@ -213,15 +213,15 @@ public class AclHandler implements Handler
          for (String path : requires)
          {
             List<JSObject> found = new ArrayList();
-            
+
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
-            
-            if(parentPath.startsWith("query."))
+
+            if (parentPath.startsWith("query."))
                continue;
-            if(parentPath.startsWith("*."))
+            if (parentPath.startsWith("*."))
                parentPath = "*." + parentPath;
-            if(!parentPath.startsWith("body."))
+            if (!parentPath.startsWith("body."))
                parentPath = "body." + parentPath;
 
             for (Object parent : objs)
@@ -231,6 +231,13 @@ public class AclHandler implements Handler
 
             for (JSObject target : found)
             {
+               if (target.keys().size() == 1 && target.containsKey("href"))
+               {
+                  //this is posting some type of reference not a json body, this 
+                  //should not result in the entity being written
+                  continue;
+               }
+
                Object value = target.get(targetProp);
                if (value == null)
                {
