@@ -719,7 +719,8 @@ public class Snooze extends Service
                Relationship r = new Relationship();
                pkEntity.addRelationship(r);
                r.setEntity(pkEntity);
-               r.setRelated(api.getEntity(fkCol2.getTable()));
+               Entity related = api.getEntity(fkCol2.getPk().getTable());
+               r.setRelated(related);
 
                String hint = "MANY_TO_MANY - ";
                hint += fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
@@ -741,7 +742,11 @@ public class Snooze extends Service
                Relationship r = new Relationship();
                pkEntity.addRelationship(r);
                r.setEntity(pkEntity);
-               r.setRelated(api.getEntity(fkCol1.getTable()));
+               
+               Entity related = api.getEntity(fkCol1.getPk().getTable());
+               r.setRelated(related);
+               
+               //r.setRelated(api.getEntity(fkCol1.getTable()));
 
                String hint = "MANY_TO_MANY - ";
                hint += fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
