@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql.elasticsearch;
 
@@ -39,8 +39,6 @@ public class BoolQuery extends ElasticQuery
    // is ignored and clauses are considered for caching.
    // Could be of any type: Range, Term, etc
    private List<ElasticQuery> filter;
-
-   // TODO implement the following query pieces...
 
    // The clause (query) must appear in matching documents and will contribute to the score
    private List<ElasticQuery> must;
@@ -70,8 +68,9 @@ public class BoolQuery extends ElasticQuery
          ElasticQuery elastic = filter.get(i);
          if (elastic instanceof Range)
             filterList.add(Collections.singletonMap("range", elastic));
-         else if (elastic instanceof Term) {
-            if (((Term)elastic).isTerm())
+         else if (elastic instanceof Term)
+         {
+            if (((Term) elastic).isTerm())
                filterList.add(Collections.singletonMap("term", elastic));
             else
                filterList.add(Collections.singletonMap("terms", elastic));
@@ -82,11 +81,13 @@ public class BoolQuery extends ElasticQuery
             filterList.add(Collections.singletonMap("bool", elastic));
          else if (elastic instanceof NestedQuery)
             filterList.add(Collections.singletonMap("nested", elastic));
+         else if (elastic instanceof FuzzyQuery) // are fuzzy queries allowed in a filter?
+            filterList.add(Collections.singletonMap("fuzzy", elastic));
       }
 
       return filterList;
    }
-   
+
    /**
     * This method is needed for Jackson to properly format the 'must' value.
     * @return
@@ -102,20 +103,21 @@ public class BoolQuery extends ElasticQuery
       for (int i = 0; i < must.size(); i++)
       {
          ElasticQuery elastic = must.get(i);
-         //         if (elastic instanceof Range)
-         //            mustNotList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term) {
-            if (((Term)elastic).isTerm())
+         if (elastic instanceof Range)
+            mustList.add(Collections.singletonMap("range", elastic));
+         if (elastic instanceof Term)
+         {
+            if (((Term) elastic).isTerm())
                mustList.add(Collections.singletonMap("term", elastic));
             else
                mustList.add(Collections.singletonMap("terms", elastic));
          }
-         //         else if (elastic instanceof Wildcard)
-         //            mustNotList.add(Collections.singletonMap("wildcard", elastic));
+         else if (elastic instanceof Wildcard)
+            mustList.add(Collections.singletonMap("wildcard", elastic));
          else if (elastic instanceof BoolQuery)
             mustList.add(Collections.singletonMap("bool", elastic));
-         //         else if (elastic instanceof NestedQuery)
-         //            mustNotList.add(Collections.singletonMap("nested", elastic));
+         else if (elastic instanceof NestedQuery)
+            mustList.add(Collections.singletonMap("nested", elastic));
          else if (elastic instanceof ExistsQuery)
             mustList.add(Collections.singletonMap("exists", elastic));
          else if (elastic instanceof FuzzyQuery)
@@ -141,20 +143,21 @@ public class BoolQuery extends ElasticQuery
       for (int i = 0; i < must_not.size(); i++)
       {
          ElasticQuery elastic = must_not.get(i);
-         //         if (elastic instanceof Range)
-         //            mustNotList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term) {
-            if (((Term)elastic).isTerm())
+         if (elastic instanceof Range)
+            mustNotList.add(Collections.singletonMap("range", elastic));
+         if (elastic instanceof Term)
+         {
+            if (((Term) elastic).isTerm())
                mustNotList.add(Collections.singletonMap("term", elastic));
             else
                mustNotList.add(Collections.singletonMap("terms", elastic));
          }
-         //         else if (elastic instanceof Wildcard)
-         //            mustNotList.add(Collections.singletonMap("wildcard", elastic));
+         else if (elastic instanceof Wildcard)
+            mustNotList.add(Collections.singletonMap("wildcard", elastic));
          else if (elastic instanceof BoolQuery)
             mustNotList.add(Collections.singletonMap("bool", elastic));
-         //         else if (elastic instanceof NestedQuery)
-         //            mustNotList.add(Collections.singletonMap("nested", elastic));
+         else if (elastic instanceof NestedQuery)
+            mustNotList.add(Collections.singletonMap("nested", elastic));
          else if (elastic instanceof ExistsQuery)
             mustNotList.add(Collections.singletonMap("exists", elastic));
          else if (elastic instanceof FuzzyQuery)
@@ -163,7 +166,7 @@ public class BoolQuery extends ElasticQuery
 
       return mustNotList;
    }
-   
+
    /**
     * This method is needed for Jackson to properly format the 'should' value.
     * @return
@@ -179,20 +182,21 @@ public class BoolQuery extends ElasticQuery
       for (int i = 0; i < should.size(); i++)
       {
          ElasticQuery elastic = should.get(i);
-         //         if (elastic instanceof Range)
-         //            shouldList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term) {
-            if (((Term)elastic).isTerm())
+         if (elastic instanceof Range)
+            shouldList.add(Collections.singletonMap("range", elastic));
+         if (elastic instanceof Term)
+         {
+            if (((Term) elastic).isTerm())
                shouldList.add(Collections.singletonMap("term", elastic));
             else
                shouldList.add(Collections.singletonMap("terms", elastic));
          }
-         //         else if (elastic instanceof Wildcard)
-         //            shouldList.add(Collections.singletonMap("wildcard", elastic));
+         else if (elastic instanceof Wildcard)
+            shouldList.add(Collections.singletonMap("wildcard", elastic));
          else if (elastic instanceof BoolQuery)
             shouldList.add(Collections.singletonMap("bool", elastic));
-         //         else if (elastic instanceof NestedQuery)
-         //            shouldList.add(Collections.singletonMap("nested", elastic));
+         else if (elastic instanceof NestedQuery)
+            shouldList.add(Collections.singletonMap("nested", elastic));
          else if (elastic instanceof ExistsQuery)
             shouldList.add(Collections.singletonMap("exists", elastic));
          else if (elastic instanceof FuzzyQuery)
@@ -233,7 +237,7 @@ public class BoolQuery extends ElasticQuery
 
       filter.add(elastic);
    }
-   
+
    public void addMust(ElasticQuery elastic)
    {
       if (must == null)
@@ -249,11 +253,12 @@ public class BoolQuery extends ElasticQuery
 
       must_not.add(elastic);
    }
-   
-   public void addShould(ElasticQuery elastic) {
+
+   public void addShould(ElasticQuery elastic)
+   {
       if (should == null)
          should = new ArrayList<ElasticQuery>();
-      
+
       should.add(elastic);
    }
 

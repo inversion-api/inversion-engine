@@ -90,7 +90,7 @@ public abstract class Rule extends Dto implements Comparable<Rule>
             {
                if (pathMatches(excludePath, path))
                {
-                  excluded = false;
+                  excluded = true;
                   break;
                }
             }
