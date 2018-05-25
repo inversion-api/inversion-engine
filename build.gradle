@@ -1,6 +1,7 @@
 apply plugin: 'eclipse'
 apply plugin: 'java'
 apply plugin: 'maven'
+//apply plugin: 'war'
 
 
 configurations.all {
