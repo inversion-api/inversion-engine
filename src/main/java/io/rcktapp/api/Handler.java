@@ -19,5 +19,5 @@ import io.rcktapp.api.service.Service;
 
 public interface Handler
 {
-   public void service(Service service, Chain chain, Rule rule, Request req, Response res) throws Exception;
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception;
 }

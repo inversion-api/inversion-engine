@@ -15,22 +15,21 @@
  */
 package io.rcktapp.api;
 
-import java.net.URLDecoder;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 
 import io.forty11.j.J;
-import io.forty11.js.JSObject;
 import io.rcktapp.api.service.Service;
 
 public class Chain
 {
    Service            service  = null;
    Api                api      = null;
-   List<Rule>         rules    = null;
+   Endpoint           endpoint = null;
+   List<Action>       actions  = null;
    Request            request  = null;
    Response           response = null;
 
@@ -39,18 +38,39 @@ public class Chain
 
    CaseInsensitiveMap vars     = new CaseInsensitiveMap();
 
-   public Chain(Service service, Api api, List<Rule> rules, Request req, Response res)
+   Chain              parent   = null;
+
+   public Chain(Service service, Api api, Endpoint endpoint, List<Action> actions, Request req, Response res)
    {
       this.service = service;
       this.api = api;
-      this.rules = rules;
+      this.endpoint = endpoint;
+      this.actions = actions;
       this.request = req;
       this.response = res;
+   }
+
+   public Chain getParent()
+   {
+      return parent;
+   }
+
+   public void setParent(Chain parent)
+   {
+      this.parent = parent;
    }
 
    public void put(String key, Object value)
    {
       vars.put(key, value);
+   }
+
+   public boolean isDebug()
+   {
+      if (parent != null)
+         return parent.isDebug();
+
+      return request.isDebug();
    }
 
    /**
@@ -66,16 +86,40 @@ public class Chain
 
       for (int i = next - 1; i >= 0; i--)
       {
-         JSObject config = rules.get(i).getConfig();
-         if (config != null && config.containsKey(key))
-            return config.get(key);
+         Object param = actions.get(i).getConfig(key);
+         if (!J.empty(param))
+            return param;
       }
+
+      if (parent != null)
+         return parent.get(key);
+
       return null;
    }
 
    public Object remove(Object key)
    {
       return vars.remove(key);
+   }
+
+   public Set<String> getConfigSet(String key)
+   {
+      LinkedHashSet values = new LinkedHashSet();
+      String value = actions.get(next - 1).getConfig(key);
+      if (value != null)
+      {
+         for (String str : value.split(","))
+            values.add(str.trim());
+      }
+
+      value = endpoint.getConfig(key);
+      if (value != null)
+      {
+         for (String str : value.split(","))
+            values.add(str.trim());
+      }
+
+      return values;
    }
 
    public void go() throws Exception
@@ -88,86 +132,14 @@ public class Chain
 
    public boolean next() throws Exception
    {
-      while (!canceled && next < rules.size())
+      if (!isCanceled() && next < actions.size())
       {
-         Rule rule = rules.get(next);
-
-         if (!rule.isAuthroized(request))
-            throw new ApiException(SC.SC_401_UNAUTHORIZED);
-
+         Action action = actions.get(next);
          next += 1;
-
-         if (!J.empty(rule.getStatus()))
-            response.setStatus(rule.getStatus());
-
-         if (rule.isTerminate())
-            canceled = true;
-
-         Handler handler = service.getHandler(api, rule.getHandler());
-         //rule.getHandler() being null is not an error
-         //but not being able to find a named handler is an error
-         if (rule.getHandler() != null && handler != null)
-         {
-            runHandler(rule, handler, request, response);
-         }
-         else
-         {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to find handler '" + rule.getHandler() + "'");
-         }
-
-         return !canceled;
+         action.run(service, api, endpoint, this, request, response);
+         return true;
       }
       return false;
-   }
-
-   void runHandler(Rule rule, Handler handler, Request req, Response response) throws Exception
-   {
-      JSObject config = rule.getConfig();
-
-      if (config != null)
-      {
-//         if (config.containsKey("queryDefaults"))
-//         {
-//            req.withQuery((String) config.get("queryDefaults"), false);
-//         }
-//
-//         if (config.containsKey("queryAbsolutes"))
-//         {
-//            req.withQuery((String) config.get("queryAbsolutes"), true);
-//         }
-//
-//         if (config.containsKey("query"))
-//         {
-//            req.setQuery((String) config.get("query"));
-//         }
-
-         if (config.containsKey("entityKey"))
-         {
-            req.setEntityKey((String) config.get("entityKey"));
-         }
-
-         if (config.containsKey("collectionKey"))
-         {
-            req.setCollectionKey((String) config.get("collectionKey"));
-         }
-
-         if (config.containsKey("subCollectionKey"))
-         {
-            req.setSubCollectionKey((String) config.get("subCollectionKey"));
-         }
-      }
-      handler.service(service, this, rule, request, response);
-   }
-
-
-   public int getNext()
-   {
-      return next;
-   }
-
-   public void setNext(int next)
-   {
-      this.next = next;
    }
 
    public boolean isCanceled()
@@ -178,6 +150,36 @@ public class Chain
    public void cancel()
    {
       this.canceled = true;
+   }
+
+   public Service getService()
+   {
+      return service;
+   }
+
+   public Api getApi()
+   {
+      return api;
+   }
+
+   public Endpoint getEndpoint()
+   {
+      return endpoint;
+   }
+
+   public List<Action> getActions()
+   {
+      return actions;
+   }
+
+   public Request getRequest()
+   {
+      return request;
+   }
+
+   public Response getResponse()
+   {
+      return response;
    }
 
 }

@@ -19,11 +19,13 @@ import java.sql.Timestamp;
 
 public class Dto
 {
-   protected long id           = 0;
+   protected long id         = 0;
 
-   Timestamp      modifiedDate = new Timestamp(0);
-   Timestamp      createdDate  = new Timestamp(0);
-   boolean        deleted      = false;
+   long           accountId  = 0;
+
+   Timestamp      modifiedAt = new Timestamp(0);
+   Timestamp      createdAt  = new Timestamp(0);
+   boolean        deleted    = false;
 
    @Override
    public boolean equals(Object o)
@@ -38,7 +40,7 @@ public class Dto
    }
 
    @Override
-   public final int hashCode()
+   public int hashCode()
    {
       return toString().hashCode();
    }
@@ -63,14 +65,34 @@ public class Dto
       this.id = id;
    }
 
-   public Timestamp getModifiedDate()
+   public Timestamp getModifiedAt()
    {
-      return modifiedDate;
+      return modifiedAt;
    }
 
-   public void setModifiedDate(Timestamp modifiedDate)
+   public void setModifiedAt(Timestamp modifiedDate)
    {
-      this.modifiedDate = modifiedDate;
+      this.modifiedAt = modifiedDate;
+   }
+
+   public long getAccountId()
+   {
+      return accountId;
+   }
+
+   public void setAccountId(long orgId)
+   {
+      this.accountId = orgId;
+   }
+
+   public Timestamp getCreatedAt()
+   {
+      return createdAt;
+   }
+
+   public void setCreatedAt(Timestamp createdAt)
+   {
+      this.createdAt = createdAt;
    }
 
    /**

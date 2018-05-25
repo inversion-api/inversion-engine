@@ -15,10 +15,53 @@
  */
 package io.rcktapp.api;
 
-public class Role
+public class Role extends Dto
 {
-   public static String GUEST  = "guest";
-   public static String MEMBER = "member";
-   public static String ADMIN  = "admin";
-   public static String OWNER  = "owner";
+   //   public static String GUEST  = "guest";
+   //   public static String MEMBER = "member";
+   //   public static String ADMIN  = "admin";
+   //   public static String OWNER  = "owner";
+
+   String name  = null;
+   int    level = -1;
+
+   public Role()
+   {
+
+   }
+
+   public Role(String role)
+   {
+      this.name = role;
+   }
+
+   public String getName()
+   {
+      return name;
+   }
+
+   public void setName(String role)
+   {
+      this.name = role.toLowerCase();
+   }
+
+   public int getLevel()
+   {
+      return level;
+   }
+
+   public void setLevel(int level)
+   {
+      this.level = level;
+   }
+
+   public int hashCode()
+   {
+      return name == null ? "null".hashCode() : name.hashCode();
+   }
+
+   public boolean equals(Object o)
+   {
+      return o == this || hashCode() == o.hashCode();
+   }
 }

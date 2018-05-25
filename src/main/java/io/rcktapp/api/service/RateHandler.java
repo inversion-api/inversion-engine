@@ -20,15 +20,16 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.rcktapp.api.Action;
+import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;
+import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
-import io.rcktapp.api.Rule;
 import io.rcktapp.api.SC;
-import io.forty11.js.JSObject;
 
-public class RateLimitHandler implements Handler
+public class RateHandler implements Handler
 {
    int              minutes = 1;
    int              hits    = 200;
@@ -53,21 +54,8 @@ public class RateLimitHandler implements Handler
    }
 
    @Override
-   public void service(Service service, Chain chain, Rule rule, Request req, Response res) throws Exception
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      if (resetAt == 0)
-      {
-         synchronized (this)
-         {
-            JSObject config = rule.getConfig();
-            if (config != null)
-            {
-               hits = config.get("hits") != null ? Integer.parseInt(config.getString("hits")) : hits;
-               minutes = config.get("minutes") != null ? Integer.parseInt(config.getString("minutes")) : minutes;
-            }
-         }
-      }
-
       if (resetAt < System.currentTimeMillis() - (minutes * 60000))
       {
          synchronized (this)

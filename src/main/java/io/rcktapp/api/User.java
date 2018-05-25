@@ -15,48 +15,48 @@
  */
 package io.rcktapp.api;
 
-import java.util.Set;
-
-import io.forty11.utils.CaseInsensitiveSet;
+import java.util.ArrayList;
+import java.util.List;
 
 public class User
 {
-   int                        id         = 0;
-   String                     username   = null;
-   String                     password   = null;
-   CaseInsensitiveSet<String> perms      = new CaseInsensitiveSet<String>();
-   CaseInsensitiveSet<String> roles      = new CaseInsensitiveSet<String>();
+   int              id          = 0;
+   String           username    = null;
+   String           password    = null;
 
-   String                     accessKey  = null;
-   String                     secretKey  = null;
+   List<Permission> permissions = new ArrayList();
+   List<Role>       roles       = new ArrayList();
+
+   String           accessKey   = null;
+   String           secretKey   = null;
+
+   int              tenantId    = 0;
+   String           tenantCode  = null;
 
    /**
     * the time of the last request
     */
-   long                       requestAt  = -1;
+   long             requestAt   = -1;
    /**
     * the remote host of the last request
     */
-   String                     remoteAddr = null;
+   String           remoteAddr  = null;
 
    /**
     * the number of consecutive failed logins
     */
-   int                        failedNum  = 0;
+   int              failedNum   = 0;
 
    public User()
    {
-      roles.add(Role.MEMBER);
+
    }
 
-   public User(String username, java.util.Collection<String> roles, java.util.Collection<String> perms)
+   public User(String username, java.util.Collection<Role> roles, java.util.Collection<Permission> perms)
    {
       this.username = username;
-      if (perms != null)
-         this.perms.addAll(perms);
-
-      if (roles != null)
-         this.roles.add(roles);
+      setRoles(roles);
+      setPermissions(permissions);
    }
 
    public String getUsername()
@@ -67,44 +67,6 @@ public class User
    public void setUsername(String username)
    {
       this.username = username;
-   }
-
-   public Set<String> getPerms()
-   {
-      return perms;
-   }
-
-   public void setPerms(java.util.Collection<String> perms)
-   {
-      this.perms.clear();
-      this.perms.addAll(perms);
-   }
-
-   public boolean hasPerm(String perm)
-   {
-      if (perm == null)
-         return false;
-
-      return perms.contains(perm);
-   }
-
-   public Set<String> getRoles()
-   {
-      return roles;
-   }
-
-   public void setRoles(java.util.Collection<String> roles)
-   {
-      this.roles.clear();
-      this.roles.addAll(roles);
-   }
-
-   public boolean hasRole(String role)
-   {
-      if (role == null)
-         return false;
-
-      return roles.contains(role);
    }
 
    public int getId()
@@ -175,6 +137,50 @@ public class User
    public void setPassword(String password)
    {
       this.password = password;
+   }
+
+   public int getTenantId()
+   {
+      return tenantId;
+   }
+
+   public void setTenantId(int tenantId)
+   {
+      this.tenantId = tenantId;
+   }
+
+   public List<Permission> getPermissions()
+   {
+      return permissions;
+   }
+
+   public void setPermissions(java.util.Collection<Permission> permissions)
+   {
+      this.permissions.clear();
+      if (permissions != null)
+         this.permissions.addAll(permissions);
+   }
+
+   public List<Role> getRoles()
+   {
+      return roles;
+   }
+
+   public void setRoles(java.util.Collection<Role> roles)
+   {
+      this.roles.clear();
+      if (roles != null)
+         this.roles.addAll(roles);
+   }
+
+   public String getTenantCode()
+   {
+      return tenantCode;
+   }
+
+   public void setTenantCode(String tenantCode)
+   {
+      this.tenantCode = tenantCode;
    }
 
 }

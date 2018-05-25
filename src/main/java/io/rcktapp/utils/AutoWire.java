@@ -15,6 +15,7 @@
  */
 package io.rcktapp.utils;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,43 +26,147 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import io.forty11.j.J;
+
 public class AutoWire
 {
-   Map<String, Object> modules = new HashMap();
+   Properties          props = new Properties();
+
+   Map<String, Object> beans = new HashMap();
+
+   //   public static void wire(Object obj, String props)
+   //   {
+   //      
+   //   }
+   //
+   //   public static void wire(Object obj, Properties properties)
+   //   {
+   //      AutoWire w = new AutoWire();
+   //      w.add
+   //   }
+
+   public void add(Properties props)
+   {
+      this.props.putAll(props);
+   }
+
+   public void add(String propsStr)
+   {
+      Properties props = new Properties();
+      try
+      {
+         props.load(new ByteArrayInputStream(propsStr.getBytes()));
+      }
+      catch (Exception ex)
+      {
+         J.rethrow(ex);
+      }
+      add(props);
+   }
+
+   public void add(String key, String value)
+   {
+      props.put(key, value);
+   }
 
    public void load(Properties props) throws Exception
+   {
+      add(props);
+      load();
+   }
+
+   String getProperty(String name)
+   {
+      String value = System.getProperty(name);
+      if (value != null)
+      {
+         System.out.println("using syso prop for key: " + name);
+      }
+      else
+      {
+         value = System.getenv(name);
+         if (value != null)
+         {
+            System.out.println("using env var for key: " + name);
+         }
+         else
+         {
+            value = props.getProperty(name);
+         }
+      }
+      return value;
+   }
+
+   List<String> getKeys(String beanName)
+   {
+      List keys = new ArrayList();
+      for (Object p : props.keySet())
+      {
+         String key = (String) p;
+
+         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         {
+            if (!keys.contains(beanName))
+               keys.add(key);
+         }
+      }
+
+      for (Object p : System.getProperties().keySet())
+      {
+         String key = (String) p;
+         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         {
+            if (!keys.contains(beanName))
+               keys.add(key);
+         }
+      }
+
+      for (Object p : System.getenv().keySet())
+      {
+         String key = (String) p;
+         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         {
+            if (!keys.contains(beanName))
+               keys.add(key);
+         }
+      }
+
+      return keys;
+   }
+
+   public void load() throws Exception
    {
       HashMap<String, Map> loaded = new LinkedHashMap();
 
       for (Object p : props.keySet())
       {
          String key = (String) p;
-         if (key.endsWith(".class"))
+         if (key.endsWith(".class") || key.endsWith(".className"))
          {
             String name = key.substring(0, key.indexOf("."));
             String cn = (String) props.get(key);
             Object obj = Class.forName(cn).newInstance();
 
             loaded.put(name, new HashMap());
-            modules.put(name, obj);
+            beans.put(name, obj);
          }
          if (key.indexOf(".") < 0)
          {
-            modules.put(key, convert(props.getProperty(key)));
+            beans.put(key, cast(props.getProperty(key)));
          }
       }
 
-      for (String moduleName : loaded.keySet())
+      for (String beanName : beans.keySet())
       {
-         Object obj = modules.get(moduleName);
-         for (Object p : props.keySet())
+         Object obj = beans.get(beanName);
+         for (Object p : getKeys(beanName))
          {
             String key = (String) p;
 
-            if (key.startsWith(moduleName + ".") && !key.endsWith(".class"))
+            if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
             {
                String prop = key.substring(key.indexOf(".") + 1, key.length());
-               String value = props.getProperty(key);
+               String value = getProperty(key);
 
                if (value != null)
                   value = value.trim();
@@ -77,50 +182,41 @@ public class AutoWire
                }
                else
                {
-                  Field field = getField(prop, obj.getClass());
-                  if (field != null)
+                  Method setter = getMethod(obj.getClass(), "set" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
+                  if (setter == null)
+                     setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
+
+                  if (setter != null && setter.getParameterTypes().length == 1)
                   {
-                     Class type = field.getType();
-
-                     if (modules.containsKey(value) && type.isAssignableFrom(modules.get(value).getClass()))
-                     {
-                        field.set(obj, modules.get(value));
-                     }
-                     else if (Collection.class.isAssignableFrom(type))
-                     {
-                        Collection list = (Collection) field.get(obj);
-
-                        String[] parts = value.split(",");
-                        for (String part : parts)
-                        {
-                           if (modules.containsKey(part))
-                           {
-                              list.add(modules.get(part));
-                           }
-                           else
-                           {
-                              list.add(part);
-                           }
-                        }
-                     }
-                     else if (Map.class.isAssignableFrom(type))
-                     {
-                        Map map = (Map) field.get(obj);
-                        String[] parts = value.split(",");
-                        for (String part : parts)
-                        {
-                           Object val = modules.get(part);
-                           map.put(part, val);
-                        }
-                     }
-                     else
-                     {
-                        field.set(obj, convert(value, type));
-                     }
+                     setter.invoke(obj, cast(value, setter.getParameterTypes()[0]));
                   }
                   else
                   {
-                     throw new RuntimeException("Unmappable property: " + key);
+                     Field field = getField(prop, obj.getClass());
+                     if (field != null)
+                     {
+                        Class type = field.getType();
+
+                        if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass()))
+                        {
+                           field.set(obj, beans.get(value));
+                        }
+                        else if (Collection.class.isAssignableFrom(type))
+                        {
+                           Collection list = (Collection) cast(value, type);
+                           ((Collection) field.get(obj)).addAll(list);
+                        }
+                        else if (Map.class.isAssignableFrom(type))
+                        {
+                           Map map = (Map) cast(value, type);
+                           ((Map) field.get(obj)).putAll(map);
+                        }
+                        else
+                        {
+                           field.set(obj, cast(value, type));
+                        }
+                     }
+
                   }
                }
             }
@@ -129,35 +225,50 @@ public class AutoWire
 
       for (String name : loaded.keySet())
       {
-         Object module = modules.get(name);
+         Object bean = beans.get(name);
          Map loadedPros = loaded.get(name);
-         onLoad(name, module, loadedPros);
+         onLoad(name, bean, loadedPros);
       }
 
    }
 
-   public void onLoad(String name, Object object, Map<String, Object> properties) throws Exception
+   public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception
    {
 
    }
 
-   public boolean handleProp(Object module, String prop, String value) throws Exception
+   public boolean handleProp(Object bean, String prop, String value) throws Exception
    {
       return false;
    }
 
-   public Object getModule(String key)
+   public void putBean(String key, Object bean)
    {
-      return modules.get(key);
+      beans.put(key, bean);
    }
 
-   public List getModules(Class type)
+   public Object getBean(String key)
+   {
+      return beans.get(key);
+   }
+
+   public <T> T getBean(Class<T> type)
+   {
+      for (Object bean : beans.values())
+      {
+         if (type.isAssignableFrom(bean.getClass()))
+            return (T) bean;
+      }
+      return null;
+   }
+
+   public List findBeans(Class type)
    {
       List matches = new ArrayList();
-      for (Object module : modules.values())
+      for (Object bean : beans.values())
       {
-         if (type.isAssignableFrom(module.getClass()))
-            matches.add(module);
+         if (type.isAssignableFrom(bean.getClass()))
+            matches.add(bean);
       }
       return matches;
    }
@@ -198,7 +309,7 @@ public class AutoWire
       return null;
    }
 
-   protected Object convert(String str)
+   protected Object cast(String str)
    {
       if ("true".equalsIgnoreCase(str))
          return true;
@@ -212,36 +323,65 @@ public class AutoWire
       return str;
    }
 
-   protected Object convert(String str, Class type)
+   protected <T> T cast(String str, Class<T> type)
    {
       if (String.class.isAssignableFrom(type))
       {
-         return str;
+         return (T) str;
       }
       else if (boolean.class.isAssignableFrom(type))
       {
          str = str.toLowerCase();
-         return str.equals("true") || str.equals("t") || str.equals("1");
+         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
       }
       else if (int.class.isAssignableFrom(type))
       {
-         return Integer.parseInt(str);
+         return (T) (Integer) Integer.parseInt(str);
       }
       else if (long.class.isAssignableFrom(type))
       {
-         return Long.parseLong(str);
+         return (T) (Long) Long.parseLong(str);
       }
       else if (float.class.isAssignableFrom(type))
       {
-         return Float.parseFloat(str);
+         return (T) (Float) Float.parseFloat(str);
+      }
+      else if (Collection.class.isAssignableFrom(type))
+      {
+         Collection list = new ArrayList();
+         String[] parts = str.split(",");
+         for (String part : parts)
+         {
+            part = part.trim();
+            if (beans.containsKey(part))
+            {
+               list.add(beans.get(part));
+            }
+            else
+            {
+               list.add(part);
+            }
+         }
+         return (T) list;
+      }
+      else if (Map.class.isAssignableFrom(type))
+      {
+         Map map = new HashMap();
+         String[] parts = str.split(",");
+         for (String part : parts)
+         {
+            Object val = beans.get(part);
+            map.put(part, val);
+         }
+         return (T) map;
       }
       else
       {
          System.out.println("NO Match " + str + " - class " + type.getName());
 
-         Object o = getModule(str);
+         Object o = getBean(str);
          if (o != null && type.isAssignableFrom(o.getClass()))
-            return o;
+            return (T) o;
       }
 
       return null;

@@ -15,42 +15,33 @@
  */
 package io.rcktapp.api;
 
-import io.forty11.js.JSObject;
-import io.forty11.utils.ListMap;
-
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
+
+import io.forty11.utils.ListMap;
+import io.forty11.web.js.JSObject;
 
 public class Response
 {
 
    HttpServletResponse     httpResp    = null;
    ListMap<String, String> headers     = new ListMap();
+
    int                     statusCode  = 200;
    String                  statusMesg  = "OK";
    String                  statusError = null;
    JSObject                json        = new JSObject();
    String                  text        = null;
 
+   List<Change>            changes     = new ArrayList();
+
    StringBuffer            debug       = null;
 
-   
-   public Response() throws Exception
-   {
-      
-   }
-   
    public Response(HttpServletResponse httpResp) throws Exception
    {
       this.httpResp = httpResp;
-   }
-   
-
-   public String getDebug()
-   {
-      return debug != null ? debug.toString() : null;
    }
 
    public void debug(Object... msgs)
@@ -68,6 +59,11 @@ public class Response
       }
    }
 
+   public String getDebug()
+   {
+      return debug == null ? "<EMPTY>" : debug.toString();
+   }
+
    /**
     * @param statusCode - one of the SC constants ex "200 OK"
     */
@@ -80,6 +76,11 @@ public class Response
       {
          statusMesg = status.substring(4, status.length());
       }
+   }
+
+   public String getStatus()
+   {
+      return statusCode + " " + statusMesg;
    }
 
    /**
@@ -138,14 +139,57 @@ public class Response
 
    public String getText()
    {
-      if(text == null && json != null)
-         return json.toString();
-      
       return text;
    }
 
    public void setText(String text)
    {
       this.text = text;
+   }
+
+   public String getEntityKey()
+   {
+      if (json != null)
+      {
+         String href = json.getString("href");
+         if (href != null)
+         {
+            String[] parts = href.split("/");
+            return parts[parts.length - 1];
+         }
+      }
+      return null;
+   }
+
+   public List<Change> getChanges()
+   {
+      return changes;
+   }
+
+   public void addChanges(java.util.Collection<Change> changes)
+   {
+      this.changes.addAll(changes);
+   }
+
+   public void addChange(String method, String collectionKey, Object entityKey)
+   {
+      if (entityKey instanceof List)
+      {
+         List<String> deletedIds = (List<String>) entityKey;
+         for (String id : deletedIds)
+         {
+            changes.add(new Change(method, collectionKey, id));
+         }
+      }
+      else
+      {
+         changes.add(new Change(method, collectionKey, entityKey));
+      }
+   }
+
+   public void addChanges(String method, String collectionKey, String... entityKeys)
+   {
+      for (int i = 0; entityKeys != null && i < entityKeys.length; i++)
+         addChange(method, collectionKey, entityKeys[i]);
    }
 }

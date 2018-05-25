@@ -16,27 +16,20 @@
 package io.rcktapp.api;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-
-import javax.sql.DataSource;
-
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 public class Db extends Dto
 {
-   long                         orgId       = 0;
-   String                       name        = null;
-   String                       driver      = null;
-   String                       url         = null;
-   String                       user        = null;
-   String                       pass        = null;
-   int                          poolMin     = 3;
-   int                          poolMax     = 10;
-   ArrayList<Tbl>               tbls        = new ArrayList();
-
-   static Map<Long, DataSource> dataSources = new Hashtable();
+   long             orgId   = 0;
+   String           name    = null;
+   String           type    = null;
+   String           driver  = null;
+   String           url     = null;
+   String           user    = null;
+   String           pass    = null;
+   int              poolMin = 3;
+   int              poolMax = 10;
+   ArrayList<Table> tables  = new ArrayList();
 
    public Db()
    {
@@ -47,9 +40,9 @@ public class Db extends Dto
       this.name = name;
    }
 
-   public Tbl getTbl(String tableName)
+   public Table getTable(String tableName)
    {
-      for (Tbl t : tbls)
+      for (Table t : tables)
       {
          if (t.getName().equalsIgnoreCase(tableName))
             return t;
@@ -57,13 +50,13 @@ public class Db extends Dto
       return null;
    }
 
-   public Col getCol(String table, String col)
+   public Column getColumn(String table, String col)
    {
-      for (Tbl t : tbls)
+      for (Table t : tables)
       {
          if (t.getName().equalsIgnoreCase(table))
          {
-            for (Col c : t.getCols())
+            for (Column c : t.getColumns())
             {
                if (c.getName().equalsIgnoreCase(col))
                {
@@ -77,27 +70,32 @@ public class Db extends Dto
       return null;
    }
 
+   public String getQuote()
+   {
+      return "'";
+   }
+
    /**
     * @return the tables
     */
-   public List<Tbl> getTbls()
+   public List<Table> getTables()
    {
-      return tbls;
+      return tables;
    }
 
    /**
     * @param tables the tables to set
     */
-   public void setTbls(List<Tbl> tbls)
+   public void setTables(List<Table> tbls)
    {
-      this.tbls = new ArrayList(tbls);
+      this.tables = new ArrayList(tbls);
    }
 
-   public void addTbl(Tbl tbl)
+   public void addTable(Table tbl)
    {
-      if (tbl != null && !tbls.contains(tbl))
+      if (tbl != null && !tables.contains(tbl))
       {
-         tbls.add(tbl);
+         tables.add(tbl);
       }
    }
 
@@ -181,12 +179,7 @@ public class Db extends Dto
       this.pass = password;
    }
 
-   public void setTbls(ArrayList<Tbl> tbls)
-   {
-      this.tbls = tbls;
-   }
-
-   public long getOrgId()
+   public long getAccountId()
    {
       return orgId;
    }
@@ -214,44 +207,6 @@ public class Db extends Dto
    public void setPoolMax(int poolMax)
    {
       this.poolMax = poolMax;
-   }
-
-   public DataSource getDs() throws Exception
-   {
-      DataSource ds = dataSources.get(getId());
-      if (ds == null && !dataSources.containsKey(getId()))
-      {
-         synchronized (this)
-         {
-            try
-            {
-               ds = dataSources.get(getId());
-
-               if (ds == null)
-               {
-                  ComboPooledDataSource cpds = new ComboPooledDataSource();
-
-                  cpds.setDriverClass(getDriver());
-                  cpds.setJdbcUrl(getUrl());
-                  cpds.setUser(getUser());
-                  cpds.setPassword(getPass());
-                  cpds.setMinPoolSize(getPoolMin());
-                  cpds.setMaxPoolSize(getPoolMax());
-
-                  ds = cpds;
-
-               }
-            }
-            finally
-            {
-               //do this even when ther is an error or the system will 
-               //forever try to recreate the datasource
-               dataSources.put(getId(), ds);
-            }
-         }
-      }
-      return ds;
-
    }
 
 }

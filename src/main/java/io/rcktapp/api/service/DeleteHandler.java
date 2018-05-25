@@ -16,81 +16,167 @@
 package io.rcktapp.api.service;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
+import io.forty11.j.J;
 import io.forty11.sql.Sql;
+import io.forty11.web.js.JSArray;
+import io.forty11.web.js.JSObject;
+import io.rcktapp.api.Action;
+import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Collection;
+import io.rcktapp.api.Db;
+import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
-import io.rcktapp.api.Rule;
+import io.rcktapp.api.SC;
+import io.rcktapp.rql.RQL;
+import io.rcktapp.rql.Replacer;
+import io.rcktapp.rql.Stmt;
 
-public class DeleteHandler extends SqlHandler
+public class DeleteHandler extends RqlHandler
 {
+   boolean      allowBatchDelete = true;
+
+   List<String> batchAllow       = new ArrayList();
+   List<String> batchDeny        = new ArrayList();
+
    @Override
-   public void service(Service service, Chain chain, Rule rule, Request req, Response res) throws Exception
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      Connection conn = null;
-      try
+      String entityKey = req.getEntityKey();
+
+      if (req.getJson() != null)
       {
-         conn = ((Snooze) service).getConnection(req.getApi(), req.getCollectionKey());
-         Collection collection = req.getApi().getCollection(req.getCollectionKey());
-         Entity entity = collection.getEntity();
-         Object entityKey = req.getEntityKey();
+         if (!J.empty(entityKey))
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to an entity key in the url and also include a JSON body.");
 
-         String table = entity.getTbl().getName();
-         entityKey = filterId(rule, req, conn, table, entityKey);
-
-         if (entityKey != null)
+         JSObject obj = req.getJson();
+         if (!(obj instanceof JSArray))
          {
-            String sql = "DELETE FROM " + entity.getTbl().getName() + " WHERE id = " + Sql.check(entityKey);
-            Sql.execute(conn, sql);
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
          }
 
-         //         for (Relationship rel : entity.getRelationships())
-         //         {
-         //            if ("MANY_TO_MANY".equalsIgnoreCase(rel.getType()) || "MANY_TO_ONE".equalsIgnoreCase(rel.getType()))
-         //            {
-         //               String fkCol = rel.getCol().getName();
-         //               String fkTbl = rel.getCol().getTbl().getName();
-         //               boolean deleted = rel.getCol().getTbl().getCol("deleted") != null;
-         //               if (deleted)
-         //               {
-         //                  String sql = "";
-         //                  sql += " UPDATE " + fkTbl + " SET deleted = true WHERE " + fkCol + " = ?";
-         //                  Dao.execute(conn, sql, entityKey);
-         //               }
-         //               else
-         //               {
-         //                  String sql = "";
-         //                  sql += " DELETE FROM " + fkTbl + " WHERE " + fkCol + " = ?";
-         //                  Dao.execute(conn, sql, entityKey);
-         //               }
-         //            }
-         //            else if ("ONE_TO_MANY".equalsIgnoreCase(rel.getType()))
-         //            {
-         //               //nothing todo.  these will be taken care of
-         //               //when the main entity is deleted
-         //            }
-         //         }
-         //
-         //         if (col.getTbl().getCol("deleted") != null)
-         //         {
-         //            String sql = "";
-         //            sql += " UPDATE " + col.getTbl().getName() + " SET deleted = true WHERE id = ?";
-         //            Dao.execute(conn, sql, entityKey);
-         //         }
-         //         else
-         //         {
-         //                     String sql = "";
-         //                     sql += " DELETE FROM " + entity.getTbl().getName() + " WHERE id = ?";
-         //                     Sql.execute(conn, sql, entityKey);
-         //         }
+         List<String> urls = new ArrayList();
+
+         for (Object o : ((JSArray) obj).asList())
+         {
+            if (!(o instanceof String))
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
+
+            String url = (String) o;
+
+            String path = req.getUrl().toString();
+            if (path.indexOf("?") > 0)
+               path = path.substring(0, path.indexOf("?") - 1);
+
+            if (!url.toLowerCase().startsWith(path.toLowerCase()))
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "All delete request must be for the collection in the original request: '" + path + "'");
+            }
+            urls.add((String) o);
+         }
+
+         List<String> deletedKeys = new ArrayList<>();
+
+         for (String url : urls)
+         {
+            Response r = chain.getService().include(chain, "DELETE", url, null);
+            if (r.getStatusCode() != 200)
+            {
+               throw new ApiException("Nested delete url: " + url + " failed!");
+            }
+            JSArray keys = r.getJson().getArray("data");
+            if (keys != null)
+               deletedKeys.addAll(keys.asList());
+         }
+         JSObject deletedKeyJs = new JSObject();
+         deletedKeyJs.put("deletedKeys", new JSArray(deletedKeys));
+
+         res.setJson(deletedKeyJs);
       }
-      finally
+      else
       {
-         if (conn != null)
-            conn.close();
+         String collection = req.getCollectionKey().toLowerCase();
+
+         if (!J.empty(entityKey) || //
+               (allowBatchDelete && //
+                     ((batchAllow.isEmpty() && batchDeny.isEmpty()) || //
+                           (!batchAllow.isEmpty() && batchAllow.contains(collection)) || (batchAllow.isEmpty() && !batchDeny.contains(collection)))))
+         {
+            delete(chain, req, res);
+         }
+         else
+         {
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Batch deletes are not allowed for this collection");
+         }
       }
+   }
+
+   void delete(Chain chain, Request req, Response res) throws Exception
+   {
+      try
+      {
+         Db db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
+         Connection conn = chain.getService().getConnection(db);
+
+         RQL rql = makeRql(chain);
+
+         Collection collection = req.getApi().getCollection(req.getCollectionKey());
+
+         Entity entity = collection.getEntity();
+         String entityKey = req.getEntityKey();
+
+         //String table = rql.asCol(entity.getTable().getName());
+
+         Map params = req.getParams();
+         String keyAttr = collection.getEntity().getKey().getName();
+         if (!J.empty(entityKey))
+         {
+            params.put("in(`" + keyAttr + "`," + entityKey + ")", null);
+         }
+
+         String sql = "SELECT " + rql.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + rql.asCol(entity.getTable().getName());
+
+         Replacer replacer = new Replacer();
+         Stmt stmt = rql.toSql(sql, entity.getTable(), params, replacer);
+         sql = stmt.toSql();
+
+         if (sql.toLowerCase().indexOf(" where ") < 0)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't delete from a table without a where clause or an individual ID.");
+
+         List args = new ArrayList();
+         for (int i = 0; i < replacer.cols.size(); i++)
+         {
+            String col = replacer.cols.get(i);
+            String val = replacer.vals.get(i);
+
+            args.add(convert(collection, col, val));
+         }
+
+         List<Long> idsToDelete = Sql.selectList(conn, sql, args);
+
+         if (!idsToDelete.isEmpty())
+            Sql.execute(conn, "DELETE FROM " + rql.asCol(entity.getTable().getName()) + " WHERE " + rql.asCol(collection.getEntity().getKey().getColumn().getName()) + " IN (" + Sql.getQuestionMarkStr(idsToDelete.size()) + ")", idsToDelete);
+
+         JSObject resJson = new JSObject();
+         resJson.put("data", new JSArray(idsToDelete));
+         res.setJson(resJson);
+
+         for (Long id : idsToDelete)
+         {
+            res.addChange("DELETE", collection.getName(), Long.toString(id));
+         }
+      }
+      catch (Exception e)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, e.getMessage(), e);
+      }
+
    }
 }

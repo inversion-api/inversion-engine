@@ -20,7 +20,7 @@ import java.util.List;
 
 public class Entity extends Dto
 {
-   Tbl                     tbl           = null;
+   Table                   table         = null;
    Collection              collection    = null;
    Attribute               key           = null;
    ArrayList<Attribute>    attributes    = new ArrayList();
@@ -51,9 +51,9 @@ public class Entity extends Dto
    /**
     * @return the tbl
     */
-   public Tbl getTbl()
+   public Table getTable()
    {
-      return tbl;
+      return table;
    }
 
    /**
@@ -75,9 +75,9 @@ public class Entity extends Dto
    /**
     * @param tbl the tbl to set
     */
-   public void setTbl(Tbl tbl)
+   public void setTbl(Table tbl)
    {
-      this.tbl = tbl;
+      this.table = tbl;
    }
 
    /**

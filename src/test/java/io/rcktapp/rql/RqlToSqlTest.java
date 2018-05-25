@@ -13,17 +13,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rcktapp.api.service;
+package io.rcktapp.rql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import io.rcktapp.api.service.RQL;
-import io.rcktapp.api.service.RQL.Replacer;
-
-public class TestRql
+public class RqlToSqlTest
 {
    public static void main(String[] args) throws Exception
    {
@@ -36,7 +33,7 @@ public class TestRql
       String[] params = null;
 
       //these tests are run in reverse order so that you can test your most recently added tests
-      //frist (by adding them to the bottom of the list) and keep the comment lines referencing
+      //first (by adding them to the bottom of the list) and keep the comment lines referencing
       //test numbers correct to easily find the test that failed.  If you add the tests
       //to the top of the list, the comment lines would not be helpful.
 
@@ -55,19 +52,20 @@ public class TestRql
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name", //
                             "SELECT `country`, COUNT(`country`) AS 'result' FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name WHERE `status` IN('killed') GROUP BY `country` LIMIT 1", //
                             "SELECT `country`, COUNT(`country`) AS 'result' FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name WHERE `status` IN(?) GROUP BY `country` LIMIT 1", //
-                            "`status`", "'killed'"));//));            
+                            "status", "'killed'"));//));            
 
       tests.add(new RqlTest("aggregate(count,country,result)&includes=country,result&in(status,killed)", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name", //
                             "SELECT `country`, COUNT(`country`) AS 'result' FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name WHERE `status` IN('killed') GROUP BY `country`", //
-                            "SELECT `country`, COUNT(`country`) AS 'result' FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name WHERE `status` IN(?) GROUP BY `country`", "`status`", "'killed'"));//));
+                            "SELECT `country`, COUNT(`country`) AS 'result' FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name WHERE `status` IN(?) GROUP BY `country`", //
+                            "status", "'killed'"));//));
 
       //Test 5
       tests.add(new RqlTest("aggregate(count,country,result)&includes=country,result&in(status,killed,other)", //
                             "select * from entries", //
                             "select `country`, COUNT(`country`) AS 'result' from entries WHERE `status` IN('killed', 'other') GROUP BY `country`", //
                             "select `country`, COUNT(`country`) AS 'result' from entries WHERE `status` IN(?, ?) GROUP BY `country`", //
-                            "`status`", "'killed'", "`status`", "'other'"));
+                            "status", "'killed'", "status", "'other'"));
 
       tests.add(new RqlTest("aggregate(count,country,result)&includes=result&in(status,killed)", //
                             "select * from entries", //
@@ -81,12 +79,12 @@ public class TestRql
 
       tests.add(new RqlTest("pagenum=10&pagesize=20)", //
                             "select * from table1", //
-                            "select * from table1 LIMIT 180, 20", //
+                            "select SQL_CALC_FOUND_ROWS * from table1 LIMIT 180, 20", //
                             null));
 
       tests.add(new RqlTest("page(10,20)", //
                             "select * from table1", //
-                            "select * from table1 LIMIT 180, 20", //
+                            "select SQL_CALC_FOUND_ROWS * from table1 LIMIT 180, 20", //
                             null));
 
       //Test 10
@@ -151,19 +149,19 @@ public class TestRql
                             "select * from table1", //
                             "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND `state` <> 'CA' AND `age` >= 38", //
                             "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND `state` <> ? AND `age` >= ?", //
-                            "`firstName`", "'wells'", "`lastName`", "'Burke'", "`state`", "'CA'", "`age`", "38"));
+                            "firstName", "'wells'", "lastName", "'Burke'", "state", "'CA'", "age", "38"));
 
       tests.add(new RqlTest("sum(if(eq(`col1`,'value'),1,'something blah'))", //
                             "SELECT * from table1", //
                             "SELECT *, SUM(IF(`col1` = 'value', 1, 'something blah')) from table1", //
                             "SELECT *, SUM(IF(`col1` = ?, 1, 'something blah')) from table1", //
-                            "`col1`", "'value'"));
+                            "col1", "'value'"));
 
       tests.add(new RqlTest("sum(if(eq(`col1`,if(ne(`col2`,'val1'),`col3`,'val2')),1,'something blah'))", //
                             "SELECT * from table1", //
                             "SELECT *, SUM(IF(`col1` = IF(`col2` <> 'val1', `col3`, 'val2'), 1, 'something blah')) from table1", //
                             "SELECT *, SUM(IF(`col1` = IF(`col2` <> ?, `col3`, ?), 1, 'something blah')) from table1", //
-                            "`col2`", "'val1'", "`col1`", "'val2'"));
+                            "col2", "'val1'", "col1", "'val2'"));
 
       tests.add(new RqlTest("includes=firstName,lastName", //
                             "select * from table1", //
@@ -180,7 +178,7 @@ public class TestRql
                             "select * from table1", //
                             "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND `state` <> 'CA' AND `age` >= 38", //
                             "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND `state` <> ? AND `age` >= ?", //
-                            "`firstName`", "'wells'", "`lastName`", "'Burke'", "`state`", "'CA'", "`age`", "38"));
+                            "firstName", "'wells'", "lastName", "'Burke'", "state", "'CA'", "age", "38"));
 
       tests.add(new RqlTest("group(startYear)&includes=startYear&startYear=ne=null&as(count(motiveConfirmed), 'Motive Spaces Confirmed')", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
@@ -189,7 +187,7 @@ public class TestRql
 
       tests.add(new RqlTest("group(startYear)&includes=startYear,'Motive Spaces Confirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,true),1,0)), 'Motive Spaces Confirmed')", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = TRUE, 1, 0)) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 1, 1, 0)) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
                             null));
 
       tests.add(new RqlTest("motiveConfirmed=someValue", //
@@ -213,39 +211,34 @@ public class TestRql
                             "SELECT MAX(`col2`) AS 'a', MAX(`col1`) AS 'b' FROM Person", //
                             null));
 
-      tests.add(
-            new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')", //
-                        "SELECT * FROM Entry", //
-                        "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
-                        "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
-                        "`motiveConfirmed`", "'Confirmed'", "`type`", "'Media Worker'", "`motiveConfirmed`", "'Unconfirmed'"));
+      tests.add(new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')", //
+                            "SELECT * FROM Entry", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear`", //
+                            "motiveConfirmed", "'Confirmed'", "type", "'Media Worker'", "motiveConfirmed", "'Unconfirmed'"));
 
-      tests.add(
-            new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')&or(eq(`type`,'Media Worker'),ne(`motiveConfirmed`,NULL))", //
-                        "SELECT * FROM Entry", //
-                        "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = 'Media Worker' OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear`", //
-                        "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = ? OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear`", //
-                        "`motiveConfirmed`", "'Confirmed'", "`type`", "'Media Worker'", "`motiveConfirmed`", "'Unconfirmed'", "`type`", "'Media Worker'"));
+      tests.add(new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')&or(eq(`type`,'Media Worker'),ne(`motiveConfirmed`,NULL))", //
+                            "SELECT * FROM Entry", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = 'Media Worker' OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear`", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = ? OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear`", //
+                            "motiveConfirmed", "'Confirmed'", "type", "'Media Worker'", "motiveConfirmed", "'Unconfirmed'", "type", "'Media Worker'"));
 
       //TEST 35
-      tests.add(
-            new RqlTest("countascol(impunity, 'Full Justice', 'Partial Impunity', 'Complete Impunity')", //
-                        "SELECT * FROM Person", //
-                        "SELECT *, SUM(IF(`impunity` = 'Full Justice', 1, 0)) AS 'Full Justice', SUM(IF(`impunity` = 'Partial Impunity', 1, 0)) AS 'Partial Impunity', SUM(IF(`impunity` = 'Complete Impunity', 1, 0)) AS 'Complete Impunity' FROM Person WHERE `impunity` IN('Full Justice', 'Partial Impunity', 'Complete Impunity')", //
-                        "SELECT *, SUM(IF(`impunity` = ?, 1, 0)) AS 'Full Justice', SUM(IF(`impunity` = ?, 1, 0)) AS 'Partial Impunity', SUM(IF(`impunity` = ?, 1, 0)) AS 'Complete Impunity' FROM Person WHERE `impunity` IN(?, ?, ?)", //
-                        "`impunity`", "'Full Justice'", "`impunity`", "'Partial Impunity'", "`impunity`", "'Complete Impunity'", "`impunity`", "'Full Justice'", "`impunity`", "'Partial Impunity'", "`impunity`", "'Complete Impunity'"));
+      tests.add(new RqlTest("countascol(impunity, 'Full Justice', 'Partial Impunity', 'Complete Impunity')", //
+                            "SELECT * FROM Person", //
+                            "SELECT *, SUM(IF(`impunity` = 'Full Justice', 1, 0)) AS 'Full Justice', SUM(IF(`impunity` = 'Partial Impunity', 1, 0)) AS 'Partial Impunity', SUM(IF(`impunity` = 'Complete Impunity', 1, 0)) AS 'Complete Impunity' FROM Person WHERE `impunity` IN('Full Justice', 'Partial Impunity', 'Complete Impunity')", //
+                            "SELECT *, SUM(IF(`impunity` = ?, 1, 0)) AS 'Full Justice', SUM(IF(`impunity` = ?, 1, 0)) AS 'Partial Impunity', SUM(IF(`impunity` = ?, 1, 0)) AS 'Complete Impunity' FROM Person WHERE `impunity` IN(?, ?, ?)", //
+                            "impunity", "'Full Justice'", "impunity", "'Partial Impunity'", "impunity", "'Complete Impunity'", "impunity", "'Full Justice'", "impunity", "'Partial Impunity'", "impunity", "'Complete Impunity'"));
 
-      tests.add(
-            new RqlTest("in(status, killed)&group(victim)&count(victim, number)", //
-                        "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
-                        "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t WHERE `status` IN('killed') GROUP BY `victim`", //
-                        null));
+      tests.add(new RqlTest("in(status, killed)&group(victim)&count(victim, number)", //
+                            "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
+                            "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t WHERE `status` IN('killed') GROUP BY `victim`", //
+                            null));
 
-      tests.add(
-            new RqlTest("group(victim)&count(victim, number)", //
-                        "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
-                        "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t GROUP BY `victim`", //
-                        "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t GROUP BY `victim`"));
+      tests.add(new RqlTest("group(victim)&count(victim, number)", //
+                            "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
+                            "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t GROUP BY `victim`", //
+                            "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t GROUP BY `victim`"));
 
       tests.add(new RqlTest("as(sum(if(and(eq(motiveConfirmed,Confirmed),eq(type,Journalist)),1,0)),'Motive Confirmed')", //
                             "SELECT * FROM Test", //
@@ -312,12 +305,12 @@ public class TestRql
       tests.add(new RqlTest("firstName=*w*", //
                             "select * from table1", //
                             "select * from table1 WHERE `firstName` LIKE '%w%'", //
-                            "select * from table1 WHERE `firstName` LIKE ?", "`firstName`", "'%w%'"));
+                            "select * from table1 WHERE `firstName` LIKE ?", "firstName", "'%w%'"));
 
       tests.add(new RqlTest("q=firstName=*w*", //
                             "select * from table1", //
-                            "select * from table1 WHERE `firstName` LIKE '%w%'", //
-                            "select * from table1 WHERE `firstName` LIKE ?", "`firstName`", "'%w%'"));
+                            "select SQL_CALC_FOUND_ROWS * from table1 WHERE `firstName` LIKE '%w%'", //
+                            "select SQL_CALC_FOUND_ROWS * from table1 WHERE `firstName` LIKE ?", "firstName", "'%w%'"));
 
       tests.add(new RqlTest("pagenum=1", //
                             "select * from table1", //
@@ -326,8 +319,29 @@ public class TestRql
 
       tests.add(new RqlTest("as(if(captive, 'Taken Captive', 'Not Taken Captive'), 'Captive')", //
                             "select * from table1", //
-                            "select *, IF(`captive`, 'Taken Captive', 'Not Taken Captive') AS 'Captive' from table1", //
+                            "select SQL_CALC_FOUND_ROWS *, IF(`captive`, 'Taken Captive', 'Not Taken Captive') AS 'Captive' from table1", //
                             null));
+
+      //45
+      tests.add(new RqlTest("name='John Doe'", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `name` = 'John Doe'", //
+                            "select * from table1 WHERE `name` = ?", "name", "'John Doe'"));
+
+      tests.add(new RqlTest("name=\"John Doe\"", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `name` = 'John Doe'", //
+                            "select * from table1 WHERE `name` = ?", "name", "'John Doe'"));
+
+      tests.add(new RqlTest("name=\"John' Doe\"", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `name` = 'John' Doe'", //
+                            "select * from table1 WHERE `name` = ?", "name", "'John' Doe'"));
+
+      tests.add(new RqlTest("name='John\" Doe'", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `name` = 'John\" Doe'", //
+                            "select * from table1 WHERE `name` = ?", "name", "'John\" Doe'"));
 
       boolean passed = true;
       int running = 0;
@@ -337,7 +351,7 @@ public class TestRql
          RqlTest test = tests.get(j);
          try
          {
-            String output = RQL.toSql(test.select, split(test.rql)).sql;
+            String output = new RQL("mysql").toSql(test.select, null, split(test.rql)).toSql();
             if (!compare(test.dynamicSql, output))
             {
                passed = false;
@@ -347,7 +361,7 @@ public class TestRql
             if (test.preparedSql != null)
             {
                Replacer r = new Replacer();
-               output = RQL.toSql(test.select, split(test.rql), r).sql;
+               output = new RQL("mysql").toSql(test.select, null, split(test.rql), r).toSql();
                if (!compare(test.preparedSql, output))
                {
                   passed = false;
@@ -406,29 +420,37 @@ public class TestRql
 
       if (!str1.equals(str2))
       {
-         System.out.println("\r\n");
-         System.out.println("\r\n");
-         System.out.println(str1);
-         System.out.println(str2);
+         str2 = str2.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+         str2 = str2.replaceAll(" LIMIT 0, 100", "");
 
-         for (int i = 0; i < str1.length() && i < str2.length(); i++)
+         str1 = str1.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+         str1 = str1.replaceAll(" LIMIT 0, 100", "");
+
+         if (!str1.equals(str2))
          {
-            if (str1.charAt(i) == str2.charAt(i))
+            System.out.println("\r\n");
+            System.out.println("\r\n");
+            System.out.println(str1);
+            System.out.println(str2);
+
+            for (int i = 0; i < str1.length() && i < str2.length(); i++)
             {
-               System.out.print(" ");
+               if (str1.charAt(i) == str2.charAt(i))
+               {
+                  System.out.print(" ");
+               }
+               else
+               {
+                  System.out.println("X");
+                  break;
+               }
             }
-            else
-            {
-               System.out.println("X");
-               break;
-            }
+            System.out.println(" ");
+
+            String err = "failed test: " + str1 + " != " + str2;
+            return false;
          }
-         System.out.println(" ");
-
-         String err = "failed test: " + str1 + " != " + str2;
-         return false;
       }
-
       return true;
    }
 

@@ -15,40 +15,43 @@
  */
 package io.rcktapp.api.service;
 
+import java.net.URLEncoder;
 import java.sql.Connection;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import io.forty11.j.J;
-import io.forty11.js.JSArray;
-import io.forty11.js.JSObject;
+import io.forty11.sql.Rows;
 import io.forty11.sql.Rows.Row;
 import io.forty11.sql.Sql;
 import io.forty11.utils.CaseInsensitiveSet;
-import io.forty11.utils.DoubleKeyListMap;
 import io.forty11.utils.DoubleKeyMap;
+import io.forty11.utils.ListMap;
+import io.forty11.web.js.JSArray;
+import io.forty11.web.js.JSObject;
+import io.rcktapp.api.Action;
+import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Chain;
-import io.rcktapp.api.Col;
 import io.rcktapp.api.Collection;
+import io.rcktapp.api.Db;
+import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
-import io.rcktapp.api.Handler;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
-import io.rcktapp.api.Rule;
 import io.rcktapp.api.SC;
-import io.rcktapp.api.Tbl;
-import io.rcktapp.api.service.RQL.Replacer;
-import io.rcktapp.api.service.RQL.Stmt;
+import io.rcktapp.api.Table;
+import io.rcktapp.rql.RQL;
+import io.rcktapp.rql.Replacer;
+import io.rcktapp.rql.Stmt;
 
 /**
  * <h2>Reserved URL Parameters</h2>
@@ -126,253 +129,224 @@ import io.rcktapp.api.service.RQL.Stmt;
  *   <li>http://dev.billysbilling.com/blog/How-to-make-your-API-better-than-the-REST
  * </ul>
  * 
+ * For examples... 
+ * @see io.rcktapp.api.service.TestRql
  * 
- *
  * @param request
  * @param response
  * @throws Exception
  */
-public class GetHandler implements Handler
+public class GetHandler extends RqlHandler
 {
-   int MAX_RESULTS = 1000;
+   int maxRows        = 100;
+
+   Set reservedParams = new HashSet(Arrays.asList("includes", "excludes", "expands"));
 
    @Override
-   public void service(Service service, Chain chain, Rule rule, Request req, Response res) throws Exception
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
       Connection conn = null;
-      try
+
+      Set<String> includes = chain.getConfigSet("includes");
+      includes.addAll(splitParam(req, "includes"));
+
+      Set<String> excludes = chain.getConfigSet("excludes");
+      excludes.addAll(splitParam(req, "excludes"));
+
+      Set<String> expands = chain.getConfigSet("expands");
+      expands.addAll(splitParam(req, "expands"));
+
+      Db db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
+      RQL rql = makeRql(chain);
+
+      conn = service.getConnection(chain);
+
+      Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey()) : null;
+      Entity entity = collection != null ? collection.getEntity() : null;
+
+      Table tbl = entity != null ? entity.getTable() : null;
+
+      String sql = "";
+      List params = new ArrayList();
+
+      if (!J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()) && !J.empty(req.getSubCollectionKey()))
       {
-         Set expands = splitParam(req, "expands");
-         Set includes = new LinkedHashSet();
-         for (String include : splitParam(req, "includes"))
+         //-- this is an entity sub collection listing request
+         //-- ${http://host/apipath}/collectionKey/entityKey/subCollectionKey
+
+         for (Relationship rel : entity.getRelationships())
          {
-            if (include.startsWith("'") && include.endsWith("'"))
-               include = include.substring(1, include.length() - 1);
-
-            if (include.startsWith("\"") && include.endsWith("\""))
-               include = include.substring(1, include.length() - 1);
-
-            includes.add(include);
-         }
-
-         Set excludes = splitParam(req, "excludes");
-
-         conn = ((Snooze) service).getConnection(req.getApi(), req.getCollectionKey());
-
-         Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey()) : null;
-         Entity entity = collection != null ? collection.getEntity() : null;
-
-         Tbl tbl = entity != null ? entity.getTbl() : null;
-
-         boolean listing = true;
-         String sql = "";
-         List params = new ArrayList();
-
-         if (!J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()) && !J.empty(req.getSubCollectionKey()))
-         {
-            //-- this is an entity sub collection listing request
-            //-- ${http://host/apipath}/collectionKey/entityKey/subCollectionKey
-
-            for (Relationship rel : entity.getRelationships())
+            if (req.getSubCollectionKey().equals(rel.getName()))
             {
-               if (req.getSubCollectionKey().equals(rel.getName()))
+               collection = req.getApi().getCollection(rel.getRelated());
+
+               if (rel.isManyToOne())
                {
-                  collection = req.getApi().getCollection(rel.getRelated());
+                  String relTbl = rql.asCol(rel.getFkCol1().getTable().getName());
+                  String relFk = rql.asCol(rel.getFkCol1().getName());
 
-                  if (rel.isManyToOne())
-                  {
-                     String relTbl = rel.getFkCol1().getTbl().getName();
-                     String relFk = rel.getFkCol1().getName();
-
-                     sql += " SELECT * FROM " + relTbl;
-                     sql += " WHERE " + relFk + " = ? ";
-
-                     params.add(req.getEntityKey());
-                  }
-                  else if (rel.isManyToMany())
-                  {
-                     collection = req.getApi().getCollection(rel.getFkCol2().getPk().getTbl());
-
-                     String targetTbl = rel.getFkCol2().getPk().getTbl().getName();
-                     String targetTblKey = rel.getFkCol2().getPk().getName();
-
-                     String linkTblFk = rel.getFkCol2().getName();
-                     String linkTblKey = rel.getFkCol1().getName();
-                     String linkTbl = rel.getFkCol1().getTbl().getName();
-
-                     sql += "\r\n SELECT " + targetTbl + ".* FROM " + targetTbl;
-                     sql += "\r\n  JOIN " + linkTbl + " ON " + linkTbl + "." + linkTblFk + " = " + targetTbl + "." + targetTblKey;
-                     sql += "\r\n WHERE " + linkTbl + "." + linkTblKey + " =  ? ";
-
-                     params.add(req.getEntityKey());
-                  }
-
-                  break;
+                  sql += " SELECT id FROM " + relTbl;
+                  sql += " WHERE " + relFk + " = ? ";
                }
-            }
-         }
-         else if (entity != null && !J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()))
-         {
-            String keyCol = entity.getKey().getName();
-
-            //-- this is a single entity request of the for
-            //-- ${http://host/apipath}/collectionKey/entityKey
-
-            sql += " SELECT * FROM " + Sql.check(tbl.getName());
-
-            if (req.getEntityKey().indexOf(',') > 0)
-            {
-               Sql.check(req.getEntityKey()); //SQL injection check
-               String[] ids = req.getEntityKey().split(",");
-               String inClause = Sql.getInClauseStr(Arrays.asList(ids));
-
-               sql += " WHERE " + Sql.check(keyCol) + " IN (" + inClause + ") ";
-            }
-            else
-            {
-               //this is the only time we are going after a single resource
-               listing = false;
-
-               sql += " WHERE " + Sql.check(keyCol) + " = ? ";
-               params.add(req.getEntityKey());
-            }
-         }
-         else if (tbl != null)
-         {
-            //-- this is a listing request
-            //-- ${http://host/apipath}/collectionKey
-
-            sql += " SELECT * FROM " + Sql.check(tbl.getName());
-
-         }
-
-         //         if ("true".equalsIgnoreCase(req.getParam("distinct")) && includes.size() > 0)
-         //         {
-         //            String sel = " SELECT DISTINCT ";
-         //            for (Object field : includes)
-         //            {
-         //               sel += " " + field + ",";
-         //            }
-         //            sel = sel.substring(0, sel.length() - 1) + " ";
-         //
-         //            sql = sql.replaceFirst("SELECT \\* ", sel);
-         //         }
-
-         Collection reqCol = collection;
-
-         //-- support for custom sql statements from a Rule
-         //--
-         JSObject config0 = rule.getConfig();
-
-         String passedInSelect = (String) chain.get("select");
-         if (!J.empty(passedInSelect))
-         {
-            sql = passedInSelect;
-         }
-
-         Replacer r = new Replacer();
-         Stmt stmt = RQL.toSql(sql, req.getParams(), r);
-         sql = stmt.sql;
-         if (includes.size() > 0)
-         {
-            includes = new CaseInsensitiveSet<String>(stmt.cols.keySet());
-         }
-
-         for (int i = 0; i < r.cols.size(); i++)
-         {
-            String col = r.cols.get(i);
-            String val = r.vals.get(i);
-
-            params.add(convert(collection, col, val));
-         }
-
-         //-- end SQL construction for the primary query
-         //--
-         //--
-
-         LinkedHashMap results = null;
-
-         if (collection != null)
-         {
-            results = getObjects(conn, req, res, new DoubleKeyMap(), new DoubleKeyListMap(), new DoubleKeyListMap(), includes, excludes, expands, "", collection, sql, null, params);
-         }
-         else
-         {
-            results = getRows(conn, req, res, includes, excludes, sql, params);
-         }
-
-         if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() == null)
-         {
-            res.setStatus(SC.SC_404_NOT_FOUND);
-            res.setJson(null);
-         }
-         else
-         {
-            if (listing)
-            {
-               JSArray arr = new JSArray();
-               for (Object key : results.keySet())
+               else if (rel.isManyToMany())
                {
-                  JSObject obj = (JSObject) results.get(key);
-                  arr.add(obj);
-               }
-               res.setJson(arr);
+                  collection = req.getApi().getCollection(rel.getFkCol2().getPk().getTable());
 
-               if (stmt.pagenum >= 0 || stmt.rowcount != null)
-               {
-                  //                  sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
-                  //                  if (sql.indexOf("LIMIT ") > 0)
-                  //                     sql = sql.substring(0, sql.indexOf("LIMIT "));
-                  //
-                  //                  if (sql.indexOf("ORDER BY ") > 0)
-                  //                     sql = sql.substring(0, sql.indexOf("ORDER BY "));
+                  String linkTblKey = rql.asCol(rel.getFkCol1().getName());
+                  String linkTblFk = rql.asCol(rel.getFkCol2().getName());
+                  String linkTbl = rql.asCol(rel.getFkCol1().getTable().getName());
 
-                  int count = Sql.selectInt(conn, "SELECT FOUND_ROWS()");
+                  String pkCol = linkTbl + "." + linkTblKey;
+                  String fkCol = linkTbl + "." + linkTblFk;
 
-                  JSObject wrapper = new JSObject();
-                  wrapper.put(stmt.rowcount != null ? stmt.rowcount : "rowCount", count);
-                  
-                  if(stmt.pagenum > 0)
-                  {
-                     wrapper.put("pageNum", stmt.pagenum);
-                     wrapper.put("pageSize", stmt.limit + "");
-                     int pages = (int) Math.ceil((double) count / (double) stmt.limit);
-                     wrapper.put("pageCount", pages);
-                     wrapper.put("data", arr);
-                  }
-                  res.setJson(wrapper);
+                  sql += "\r\n SELECT " + fkCol;
+                  sql += "\r\n FROM " + linkTbl;
+                  sql += "\r\n WHERE " + fkCol + " IS NOT NULL AND " + pkCol + " =  ? ";
                }
 
-            }
-            else if (results.size() == 1)
-            {
-               for (Object key : results.keySet())
+               List ids = Sql.selectList(conn, sql, req.getEntityKey());
+
+               String newUrl = Service.buildLink(req, collection.getName(), J.implode(",", ids.toArray()), null);
+
+               String query = req.getQuery();
+               if (!J.empty(query))
                {
-                  res.setJson((JSObject) results.get(key));
-                  break;
+                  newUrl += "?" + query;
                }
-            }
-            else
-            {
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "This request has multiple results but only a single object was expected");
+
+               Response included = service.include(chain, "GET", newUrl, null);
+
+               res.setStatus(included.getStatus());
+               res.setJson(included.getJson());
+
+               return;
             }
          }
       }
-      finally
+      else if (entity != null && !J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()))
       {
-         Sql.close(conn);
+         String keyCol = entity.getKey().getName();
+
+         //-- this is a request for one or more entities by ID
+         //-- ${http://host/apipath}/collectionKey/entityKey[,entityKey2,entityKey3....,entityKeyN]
+
+         String inClause = Sql.getInClauseStr(J.explode(",", Sql.check(req.getEntityKey())));
+
+         sql += " SELECT * FROM " + rql.asCol(tbl.getName());
+         sql += " WHERE " + Sql.check(keyCol) + " IN (" + inClause + ") ";
       }
+      else if (tbl != null)
+      {
+         //-- this is a listing request
+         //-- ${http://host/apipath}/collectionKey
+         sql += " SELECT * FROM " + rql.asCol(tbl.getName());
+      }
+
+      //-- support for custom sql statements from a Rule
+      //--
+
+      String passedInSelect = (String) chain.get("sql.select");
+      if (!J.empty(passedInSelect))
+      {
+         sql = passedInSelect;
+      }
+
+      if (J.empty(sql))
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
+      }
+
+      Replacer replacer = new Replacer();
+
+      Map rqlParams = req.getParams();
+
+      Stmt stmt = rql.toSql(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
+      stmt.setMaxRows(maxRows); //this is a default value
+
+      sql = stmt.toSql();
+
+      if (includes.size() > 0)
+      {
+         includes = new CaseInsensitiveSet<String>(stmt.cols.keySet());
+      }
+
+      for (int i = 0; i < replacer.cols.size(); i++)
+      {
+         String col = replacer.cols.get(i);
+         String val = replacer.vals.get(i);
+
+         params.add(convert(collection, col, val));
+      }
+
+      //-- end SQL construction for the primary query
+      //--
+      //--
+
+      List<JSObject> results = null;
+
+      if (collection != null && collection.getEntity().getKey() != null)
+      {
+         results = queryObjects(rql, service, chain, action, req, res, db, conn, includes, excludes, expands, "", collection, sql, params);
+      }
+      else
+      {
+         results = getRows(chain, action, req, db, conn, includes, excludes, sql, params);
+      }
+
+      if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() == null)
+      {
+         res.setStatus(SC.SC_404_NOT_FOUND);
+         res.setJson(null);
+      }
+      else
+      {
+         JSObject meta = new JSObject();
+         JSArray data = new JSArray();
+
+         JSObject wrapper = new JSObject("meta", meta, "data", data);
+         res.setJson(wrapper);
+
+         int rowCount = 1;
+         if (req.getEntityKey() == null)
+         {
+            Integer c = (Integer) chain.get("rowCount");
+            if (c != null)
+               rowCount = c;
+            else
+               rowCount = -1;
+         }
+         else
+         {
+            //this should be 1
+            rowCount = results.size();
+         }
+
+         meta.put("rowCount", rowCount);
+         meta.put("pageNum", stmt.pagenum);
+         meta.put("pageSize", stmt.limit + "");
+         int pages = (int) Math.ceil((double) rowCount / (double) stmt.limit);
+         meta.put("pageCount", pages);
+
+         for (JSObject js : results)
+         {
+            data.add(js);
+         }
+      }
+
    }
 
-   static LinkedHashMap getRows(Connection conn, Request req, Response res, Set includes, Set excludes, String sql, List params) throws Exception
+   List getRows(Chain chain, Action action, Request req, Db db, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
    {
-      LinkedHashMap map = new LinkedHashMap();
-      List<Row> rows = Sql.selectRows(conn, sql, params);
+      List list = new ArrayList();
+
+      sql = parseSql(sql, chain, action, req, db, null, null);
+
+      List<Row> rows = selectRows(chain, conn, sql, params);
 
       for (int i = 0; i < rows.size(); i++)
       {
          JSObject o = new JSObject();
-         map.put(i + 1, o);
+         list.add(o);
 
          Row row = rows.get(i);
          for (String col : (Set<String>) row.keySet())
@@ -383,316 +357,401 @@ public class GetHandler implements Handler
             }
          }
       }
-      return map;
+      return list;
    }
 
-   /**
-    * Going to have to keep a traversed map.  If expand is true but we have already
-    * traversed an item, then we won't re-expand, only print the href link
-    *
-    * TODO: this would be much more efficient if you took an a list and queried
-    * for the related children all at the same time.
-    */
-   static LinkedHashMap getObjects(Connection conn, Request req, Response res, DoubleKeyMap jsonPKIdnetityCache, DoubleKeyListMap jsonFKListCache, DoubleKeyListMap visitedKeysCache, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, String mtmCacheKey, List params) throws Exception
+   public Rows selectRows(Chain chain, Connection conn, String sql, Object... vals) throws Exception
    {
+      if (chain.isDebug())
+      {
+         chain.getResponse().debug("\r\n" + sql);
+         if (vals != null && vals.length > 0)
+         {
+            chain.getResponse().debug("SQL Params: " + new ArrayList(Arrays.asList(vals)));
+         }
+      }
 
-      LinkedHashMap results = new LinkedHashMap();
+      Rows rows = Sql.selectRows(conn, sql, vals);
+      if (chain.get("rowCount") == null)
+      {
+         sql = "SELECT FOUND_ROWS()";
+         //TODO "SELECT FOUND_ROWS() is MySQL specific
+         //         if(!mysql)
+         //         {
+         //            sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
+         //            if (sql.indexOf("LIMIT ") > 0)
+         //               sql = sql.substring(0, sql.indexOf("LIMIT "));
+         //
+         //            if (sql.indexOf("ORDER BY ") > 0)
+         //               sql = sql.substring(0, sql.indexOf("ORDER BY "));   
+         //         }
+
+         int found = Sql.selectInt(conn, sql);
+
+         if (chain.isDebug())
+         {
+            chain.getResponse().debug("", sql + " -> " + found);
+         }
+
+         chain.put("rowCount", found);
+
+      }
+      return rows;
+   }
+
+   List<JSObject> queryObjects(RQL rql, Service service, Chain chain, Action action, Request req, Response res, Db db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
+   {
+      List<JSObject> results = new ArrayList();
 
       if (collection.getEntity().getKey() == null)
       {
          return results;
       }
 
-      String keyCol = collection.getEntity().getKey().getCol().getName();
+      String keyCol = collection.getEntity().getKey().getColumn().getName();
 
-      if (params != null)
-      {
-         log(inSql + " - " + params);
-      }
-      else
-      {
-         log(inSql);
-      }
+      List<Row> rows = params != null && params.size() > 0 ? selectRows(chain, conn, inSql, params.toArray()) : selectRows(chain, conn, inSql);
 
-      List<Row> rows = params != null && params.size() > 0 ? Sql.selectRows(conn, inSql, params.toArray()) : Sql.selectRows(conn, inSql);
-      List<Row> newRows = new ArrayList();
+      Attribute keyAttr = collection.getEntity().getKey();
+      //Entity entity = collection.getEntity();
+
+      DoubleKeyMap pkCache = new DoubleKeyMap();
 
       for (Row row : rows)
       {
          Object key = row.get(keyCol);
-         if (jsonPKIdnetityCache.containsKey(collection, key))
+
+         JSObject js = new JSObject();
+         results.add(js);
+
+         pkCache.put(collection, key, js);
+
+         for (String colName : (Set<String>) row.keySet())
+         //for (Attribute attr : collection.getEntity().getAttributes())
          {
-            results.put(row, jsonPKIdnetityCache.get(collection, key));
-         }
-         else
-         {
-            results.put(row, new JSObject());
-            newRows.add(row);
-         }
-      }
+            //String attrName = attr.getName();
+            //String colName = attr.getColumn().getName();
+            //Object value = row.get(colName);
+            Object value = row.get(colName);
+            String attrName = colName;
 
-      Attribute keyAttr = collection.getEntity().getKey();
-      Entity entity = collection.getEntity();
-
-      for (Row row : newRows)
-      {
-         Object key = row.get(keyCol);
-
-         JSObject js = (JSObject) results.get(row);
-         jsonPKIdnetityCache.put(collection, key, js);
-
-         for (String attrName : (Set<String>) row.keySet())//Attribute attr : collection.getEntity().getAttributes())
-         {
-            Object value = row.get(attrName);
-
-            //TODO: update returned property names to match collection attribute names
-            //THESE WILL ALWAYS BE THE SAME UNTIL API PERSISTANCE & MODIFICATION IS IMPLEMENTED
-
-            //            String attrName = attr.getName();
-            //            String colName = attr.getCol().getName();
+            if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
+            {
+               String href = Service.buildLink(req, collection.getName(), value, null);
+               if (include("href", includes, excludes, path))
+               {
+                  js.put("href", href);
+               }
+            }
 
             if (include(attrName, includes, excludes, path))
             {
                js.put(attrName, value);
             }
-
-            if (attrName.equalsIgnoreCase(keyAttr.getCol().getName()))
-            {
-               if (include("href", includes, excludes, path))
-               {
-                  String href = Service.buildLink(req, collection.getName(), value, null);
-                  js.put("href", href);
-               }
-            }
          }
-
-         //-- Create a foreign key cache for MANY_TO_ONE lookups by 
-         //-- aggregating the reciprocal ONE_TO_MANTY relationships
-         //--
-         //-- The values added to this cache will be used by 
-         //-- PREVIOUS RECURSIVE GENERATIONS to build the list of 
-         //-- related entities
-         for (Relationship rel : collection.getEntity().getRelationships())
-         {
-            if (rel.isOneToMany())
-            {
-               //-- if this were a column such as "Category.parentId"
-               //-- this will collect the "child categories" list
-               //-- for each Category.id
-               Col fkCol = rel.getFkCol1();
-               Object fkVal = row.get(rel.getFkCol1().getName());
-               if (fkVal != null)
-               {
-                  jsonFKListCache.put(fkCol, fkVal, js);
-               }
-            }
-         }
-
-         //-- MANY_TO_MANY that use a relationship table don't 
-         //-- have the foreign key value in an entity recored
-         //-- to do the "reverse cache building" like is done
-         //-- above for MANY_TO_ONE.  Instead the SQL retrieves
-         //-- appends a single extra meta column to the results
-         //-- that is the FK of the previous recursive generation row.
-         if (mtmCacheKey != null)
-         {
-            //log("MTM Caching: " + mtmCacheKey + " - " + key + " - " + js);
-            Object key1Val = row.get(mtmCacheKey);
-            jsonFKListCache.put(mtmCacheKey, key1Val, js);
-         }
-
       }
+
+      expand(rql, chain, conn, req.getApi(), collection, path, results, includes, excludes, expands, pkCache);
+
+      return results;
+   }
+
+   protected List<JSObject> fetchObjects(Chain chain, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
+   {
+      if (ids.size() == 0)
+         return Collections.EMPTY_LIST;
+
+      String url = Service.buildLink(chain.getRequest(), collection.getName(), Sql.getInClauseStr(ids).replaceAll(" ", ""), null);
+
+      //--
+      //-- Nested param support
+      Map<String, String> params = chain.getRequest().getParams();
+      String lcPath = path.toLowerCase();
+      for (String key : params.keySet())
+      {
+         String lcKey = key.toLowerCase();
+
+         if (reservedParams.contains(lcKey))
+            continue;
+
+         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
+         {
+            String value = params.get(key);
+            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
+
+            if (url.indexOf("?") < 0)
+               url += "?";
+            url += URLEncoder.encode(lcKey, "UTF-8");
+            if (!J.empty(value))
+               url += "=" + URLEncoder.encode(value, "UTF-8");
+         }
+      }
+
+      Response res = chain.getService().include(chain, "GET", url, null);
+      int sc = res.getStatusCode();
+      if (sc == 401 || sc == 403)//unauthorized || forbidden
+         return null;
+
+      if (sc == 404)
+         return Collections.EMPTY_LIST;
+
+      if (sc == 500)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+      }
+
+      if (sc == 200)
+      {
+         Object arr = res.getJson().get("data");
+         if (arr instanceof JSArray)
+         {
+            List<JSObject> objs = ((JSArray) arr).asList();
+            for (JSObject obj : objs)
+            {
+               for (String key : (Set<String>) obj.asMap().keySet())
+               {
+                  if (!include(key, includes, excludes, path))
+                     obj.remove(key);
+               }
+            }
+
+            return objs;
+         }
+      }
+
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
+   }
+
+   protected void expand(RQL rql, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, DoubleKeyMap pkCache) throws Exception
+   {
+      if (parentObjs.size() == 0)
+         return;
 
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         Collection relatedCollection = req.getApi().getCollection(rel.getRelated().getTbl());
+         Collection childCollection = api.getCollection(rel.getRelated().getTable());
          if (rel.isManyToMany())
-            relatedCollection = req.getApi().getCollection(rel.getFkCol2().getPk().getTbl());
+            childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
 
          if (!include(rel.getName(), includes, excludes, path))
             continue;
 
          if (!expand(expands, path, rel))
          {
-            for (Map row : rows)
+            for (JSObject js : parentObjs)
             {
-               JSObject js = (JSObject) results.get(row);
                if (js.getProperty(rel.getName()) != null)
                   continue;
 
-               if (rel.isManyToOne())
+               String keyProp = collection.getEntity().getKey().getName();
+
+               if (rel.isOneToMany())
                {
-                  Object key = row.get(keyCol);
-                  String href = Service.buildLink(req, collection.getName(), key, rel.getName());
-                  //js.put(rel.getName(), new JSObject("@noexpand-many-to-one:" + path, href));
-                  js.put(rel.getName(), new JSObject("href" + path, href));
-               }
-               else if (rel.isManyToMany())
-               {
-                  Object key = row.get(keyCol);
-                  String href = Service.buildLink(req, collection.getName(), key, rel.getName());
-                  //js.put(rel.getName(), new JSObject("@noexpand-many-to-many:" + path, href));
-                  js.put(rel.getName(), new JSObject("href" + path, href));
-               }
-               else if (rel.isOneToMany())
-               {
-                  Object fk = row.get(rel.getFkCol1().getName());
+                  Object fk = js.get(rel.getFkCol1().getName());
 
                   if (fk != null)
                   {
-                     JSObject relatedJs = (JSObject) jsonPKIdnetityCache.get(relatedCollection, fk);
-                     if (relatedJs != null)
-                     {
-                        js.put(rel.getName(), relatedJs);
-                     }
-                     else
-                     {
-                        String href = Service.buildLink(req, relatedCollection.getName(), fk, null);
-                        //js.put(rel.getName(), new JSObject("@noexpand-one-to-many:" + path, href));
-                        js.put(rel.getName(), new JSObject("href" + path, href));
-                     }
+                     String href = Service.buildLink(chain.getRequest(), childCollection.getName(), fk, null);
+                     js.put(rel.getName(), new JSObject("href", href));
                   }
+                  else
+                  {
+                     js.put(rel.getName(), null);
+                  }
+               }
+               else
+               {
+                  Object key = js.get(keyProp);
+                  String href = Service.buildLink(chain.getRequest(), collection.getName(), key, rel.getName());
+                  js.put(rel.getName(), new JSObject("href", href));
                }
             }
          }
          else
          {
-            if (!rel.isManyToMany())
+            if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
             {
-               LinkedHashSet keys = new LinkedHashSet();
+               String parentFkCol = rel.getFkCol1().getName();
+               String childPkCol = rel.getFkCol1().getPk().getName();
 
-               String ownKeyCol = null;
-               String relKeyCol = null;
-               String relTbl = null;
-
-               if (rel.isManyToOne())
+               //find all the fks you need to query for
+               List childIds = new ArrayList();
+               for (JSObject parentObj : parentObjs)
                {
-                  ownKeyCol = rel.getFkCol1().getPk().getName();
-                  relKeyCol = rel.getFkCol1().getName();
-                  relTbl = rel.getFkCol1().getTbl().getName();
-               }
-               else
-               //ONE_TO_MANY
-               {
-                  ownKeyCol = rel.getFkCol1().getName();
-                  relKeyCol = rel.getFkCol1().getPk().getName();
-                  relTbl = rel.getFkCol1().getPk().getTbl().getName();
+                  //TODO
+                  Object childId = parentObj.get(parentFkCol);
+                  if (childId != null && !pkCache.containsKey(childCollection, childId))
+                     childIds.add(childId);
                }
 
-               for (Map row : rows)
+               //now get them
+               List<JSObject> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               if (childObjs != null)
                {
-                  Object pk = row.get(ownKeyCol);
-                  if (pk != null)
-                     keys.add(pk);
-               }
-
-               List visitedPks = visitedKeysCache.get(relTbl, relKeyCol);
-               List notVisited = new ArrayList(keys);
-               notVisited.removeAll(visitedPks);
-               Collections.sort(notVisited);
-               for (Object pk : notVisited)
-               {
-                  visitedKeysCache.put(relTbl, relKeyCol, pk);
-               }
-
-               if (notVisited.size() > 0)
-               {
-                  String sql = "";
-                  sql += " SELECT * FROM " + relTbl;
-                  sql += " WHERE " + relKeyCol + " IN (" + Sql.getQuestionMarkStr(notVisited.size()) + ")";
-
-                  //-- this call will load the caches, the
-                  //-- return values are not considered.
-                  String nextPath = expandPath(path, rel.getName());
-                  getObjects(conn, req, res, jsonPKIdnetityCache, jsonFKListCache, visitedKeysCache, includes, excludes, expands, nextPath, relatedCollection, sql, null, notVisited);
-               }
-
-               for (Map row : newRows)
-               {
-                  JSObject thisJs = (JSObject) results.get(row);
-
-                  if (thisJs.getProperty(rel.getName()) != null)
-                     continue;
-
-                  JSObject valueJs = null;
-
-                  if (rel.isManyToOne())
+                  for (JSObject childObj : childObjs)
                   {
-                     List<JSObject> relatedJs = jsonFKListCache.get(rel.getFkCol1(), row.get(ownKeyCol));
-                     JSArray jsArr = new JSArray();
-                     for (JSObject relObj : relatedJs)
+                     Object childId = childObj.get(childPkCol);
+                     if (!pkCache.containsKey(childCollection, childId))
+                        pkCache.put(childCollection, childId, childObj);
+                  }
+
+                  //now hook the new fk objects back in
+                  for (JSObject parentObj : parentObjs)
+                  {
+                     //TODO
+                     Object childId = parentObj.get(parentFkCol);
+                     if (childId != null)
                      {
-                        jsArr.add(relObj);
+                        JSObject childObj = (JSObject) pkCache.get(childCollection, childId);
+                        if (childObj != null)
+                        {
+                           parentObj.put(rel.getName(), childObj);
+                        }
                      }
-                     valueJs = jsArr;
-                  }
-                  else
-                  {
-                     valueJs = (JSObject) jsonPKIdnetityCache.get(relatedCollection, row.get(ownKeyCol));
                   }
 
-                  thisJs.put(rel.getName(), valueJs);
-
+                  expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
                }
             }
-            else
+            else if (rel.isManyToOne()) //MANY_TO_ONE - Location.id <- Player.locationId
             {
-               String ownPkCol = rel.getFkCol1().getPk().getName();
-               String linkTbl = rel.getFkCol1().getTbl().getName();
-               String linkTblRelFk = rel.getFkCol2().getName();
-               String relTbl = rel.getFkCol2().getPk().getTbl().getName();
-               String relPkCol = rel.getFkCol2().getPk().getName();
+               String relTbl = childCollection.getEntity().getTable().getName();
 
-               String cacheKey = "__MTM_" + linkTbl + "." + rel.getFkCol1().getName();
+               String parentPkCol = rel.getFkCol1().getPk().getName();
+               String childFkCol = rel.getFkCol1().getName();
+               String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
+
+               List parentIds = new ArrayList();
+               for (JSObject parentObj : parentObjs)
+               {
+                  parentIds.add(parentObj.get(parentPkCol));
+                  if (!(parentObj.get(rel.getName()) instanceof JSArray))
+                     parentObj.put(rel.getName(), new JSArray());
+               }
 
                String sql = "";
-               sql += " SELECT " + relTbl + ".*, " + linkTbl + "." + rel.getFkCol1().getName() + " AS '" + cacheKey + "' FROM " + relTbl;
-               sql += "\r\n  JOIN " + linkTbl + " ON " + linkTbl + "." + linkTblRelFk + " = " + relTbl + "." + relPkCol;
-               sql += "\r\n WHERE " + linkTbl + "." + rel.getFkCol1().getName() + " IN ";
+               sql += " SELECT " + rql.asCol(childPkCol) + " FROM " + rql.asCol(relTbl);
+               sql += " WHERE " + rql.asCol(childFkCol) + " IN (" + Sql.getQuestionMarkStr(parentIds.size()) + ")";
 
-               List keys = new ArrayList();
-
-               for (Map row : rows)
+               if (chain.getRequest().isDebug())
                {
-                  Object pk = row.get(ownPkCol);
-                  if (pk != null)
-                     keys.add(pk);
-               }
-               Collections.sort(keys);
-
-               sql += "(" + Sql.getInClauseStr(keys) + ")";
-
-               //-- this call will load the caches, the
-               //-- return values are not considered.
-               String nextPath = expandPath(path, rel.getName());
-               getObjects(conn, req, res, jsonPKIdnetityCache, jsonFKListCache, visitedKeysCache, includes, excludes, expands, nextPath, relatedCollection, sql, cacheKey, null);
-
-               for (Map row : newRows)
-               {
-                  JSObject thisJs = (JSObject) results.get(row);
-
-                  if (thisJs.getProperty(rel.getName()) != null)
-                     continue;
-
-                  List<JSObject> relatedJs = jsonFKListCache.get(cacheKey, row.get(ownPkCol));
-
-                  //log("MTM cache found:" + cacheKey + " - " + row.get(ownPkCol) + " - " + relatedJs);
-
-                  if (relatedJs != null)
+                  chain.getResponse().debug(sql);
+                  if (parentIds.size() > 0)
                   {
-                     JSArray jsArr = new JSArray();
-                     for (JSObject relObj : relatedJs)
-                     {
-                        jsArr.add(relObj);
-                     }
-                     thisJs.put(rel.getName(), jsArr);
+                     chain.getResponse().debug(parentIds);
                   }
                }
+
+               List thoseIds = Sql.selectList(conn, sql, parentIds);
+
+               List<JSObject> childObjs = fetchObjects(chain, childCollection, thoseIds, includes, excludes, expandPath(path, rel.getName()));
+
+               if (childObjs != null)
+               {
+                  for (JSObject childObj : childObjs)
+                  {
+                     Object childId = childObj.get(childPkCol);
+                     if (!pkCache.containsKey(childCollection, childId))
+                        pkCache.put(childCollection, childId, childObj);
+
+                     Object childFkVal = childObj.get(childFkCol);
+                     if (childFkVal != null)
+                     {
+                        JSObject parentObj = (JSObject) pkCache.get(collection, childFkVal);
+                        if (parentObj != null)
+                        {
+                           JSArray array = (JSArray) parentObj.get(rel.getName());
+                           array.add(childObj);
+                        }
+                     }
+                  }
+                  expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+               }
+            }
+            else //many-to-many
+            {
+               //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
+
+               String parentListProp = rel.getName();
+               String parentPkCol = rel.getFkCol1().getPk().getName();
+               String linkTbl = rel.getFkCol1().getTable().getName();
+               String linkTblParentFkCol = rel.getFkCol1().getName();
+               String linkTblChildFkCol = rel.getFkCol2().getName();
+               String childPkCol = rel.getFkCol2().getPk().getName();
+
+               List parentIds = new ArrayList();
+               for (JSObject parentObj : parentObjs)
+               {
+                  parentIds.add(parentObj.get(parentPkCol));
+
+                  if (!(parentObj.get(rel.getName()) instanceof JSArray))
+                     parentObj.put(rel.getName(), new JSArray());
+               }
+
+               String sql = " SELECT " + rql.asCol(linkTblParentFkCol) + ", " + rql.asCol(linkTblChildFkCol) + //
+                     " FROM " + rql.asCol(linkTbl) + //
+                     " WHERE " + rql.asCol(linkTblChildFkCol) + " IS NOT NULL " + //
+                     " AND " + rql.asCol(linkTblParentFkCol) + " IN(" + Sql.getQuestionMarkStr(parentIds.size()) + ") ";
+
+               if (chain.getRequest().isDebug())
+               {
+                  chain.getResponse().debug(sql);
+                  if (parentIds.size() > 0)
+                  {
+                     chain.getResponse().debug(parentIds);
+                  }
+               }
+
+               Rows childRows = Sql.selectRows(conn, sql, parentIds);
+
+               ListMap parentLists = new ListMap();
+               Set childIds = new HashSet();
+               for (Row row : childRows)
+               {
+                  Object parentPk = row.get(linkTblParentFkCol);
+                  Object childPk = row.get(linkTblChildFkCol);
+
+                  parentLists.put(parentPk, childPk);
+                  if (!pkCache.containsKey(childCollection, childPk))
+                     childIds.add(childPk);
+               }
+
+               List<JSObject> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               for (JSObject childObj : childObjs)
+               {
+                  Object childId = childObj.get(childPkCol);
+                  if (!pkCache.containsKey(childCollection, childId))
+                     pkCache.put(childCollection, childId, childObj);
+               }
+
+               for (Row childRow : childRows)
+               {
+                  JSObject parentObj = (JSObject) pkCache.get(collection, childRow.get(linkTblParentFkCol));
+                  JSObject childObj = (JSObject) pkCache.get(childCollection, childRow.get(linkTblChildFkCol));
+
+                  JSArray array = (JSArray) parentObj.get(parentListProp);
+                  array.add(childObj);
+               }
+
+               expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
             }
          }
       }
 
-      return results;
+      if (chain.getParent() == null)
+      {
+         for (Relationship rel : collection.getEntity().getRelationships())
+         {
+            if (rel.isOneToMany())
+            {
+               for (JSObject parentObj : parentObjs)
+               {
+                  String key = rel.getFkCol1().getName();
+                  parentObj.remove(key);
+               }
+            }
+         }
+      }
    }
 
    static String expandPath(String path, Object next)
@@ -711,7 +770,7 @@ public class GetHandler implements Handler
 
       for (String ep : expands)
       {
-         if (ep.startsWith(path))
+         if (ep.startsWith(path) && (ep.length() == path.length() || ep.charAt(path.length()) == '.'))
          {
             expand = true;
             break;
@@ -760,79 +819,4 @@ public class GetHandler implements Handler
       return map;
    }
 
-   Object convert(Collection coll, String col, Object val)
-   {
-      String type = null;
-
-      if (coll != null && coll.getEntity().getTbl().getCol(col) != null)
-      {
-         try
-         {
-            type = coll.getEntity().getTbl().getCol(col).getType();
-         }
-         catch (Exception ex)
-         {
-            ex.printStackTrace();
-         }
-      }
-
-      if (type == null && (col.endsWith("date") || col.endsWith("at")))
-      {
-         type = "date";
-      }
-
-      if (type == null && ("true".equalsIgnoreCase(val + "") || "false".equalsIgnoreCase(val + "")))
-      {
-         type = "boolean";
-      }
-
-      if (type != null)
-      {
-         type = type.toLowerCase();
-
-         if (type.indexOf("string") >= 0 || type.indexOf("char") >= 0)
-         {
-            //do nothing
-         }
-         else if (type.indexOf("date") >= 0)
-         {
-            val = J.date(val + "");
-         }
-         else if (type.indexOf("timestamp") >= 0)
-         {
-            val = new Timestamp(J.date(val + "").getTime());;
-         }
-         else if (type.indexOf("bool") > 0)
-         {
-            val = Boolean.parseBoolean(val + "");
-         }
-         else if (type.indexOf("integ") > 0)
-         {
-            val = Integer.parseInt(val + "");
-         }
-         else if (type.indexOf("float") > 0)
-         {
-            val = Float.parseFloat(val + "");
-         }
-      }
-
-      if (val instanceof String)
-      {
-         String str = (String) val;
-         if (str.startsWith("'") && str.endsWith("'") && str.length() > 1)
-            str = str.substring(1, str.length() - 1);
-         val = str;
-      }
-
-      return val;
-   }
-
-   static void log(Object... msg)
-   {
-      for (Object o : msg)
-      {
-         System.out.println(o);
-      }
-      System.out.println(" ");
-   }
 }

@@ -17,122 +17,122 @@ package io.rcktapp.api.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
+import io.forty11.j.J;
+import io.forty11.sql.Sql;
+import io.forty11.utils.ListMap;
+import io.forty11.web.Url;
+import io.forty11.web.js.JSArray;
+import io.forty11.web.js.JSObject;
+import io.forty11.web.js.JSObject.Property;
+import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Chain;
-import io.rcktapp.api.Col;
+import io.rcktapp.api.Change;
 import io.rcktapp.api.Collection;
+import io.rcktapp.api.Column;
+import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
-import io.rcktapp.api.Rule;
 import io.rcktapp.api.SC;
-import io.rcktapp.api.Tbl;
-import io.forty11.j.J;
-import io.forty11.js.JSArray;
-import io.forty11.js.JSObject;
-import io.forty11.js.JSObject.Property;
-import io.forty11.sql.Sql;
-import io.forty11.utils.DoubleKeyListMap;
-import io.forty11.utils.ListMap;
 
 public class PostHandler implements Handler
 {
+   boolean expandResponse = true;
 
    @Override
-   public void service(Service service, Chain chain, Rule rule, Request req, Response res) throws Exception
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
+      expandResponse = true;
       if (req.isPost() && req.getEntityKey() != null)
       {
          res.setStatus(SC.SC_404_NOT_FOUND);
          return;
       }
-      //      else if(req.isPut())
-      //      {
-      //         if (req.getEntityKey() == null)
-      //         {
-      //            res.setStatus(SC.SC_404_NOT_FOUND);
-      //         }
-      //         else if (subCollectionKey != null)
-      //         {
-      //            res.setStatus(SC.SC_404_NOT_FOUND);
-      //         }
-      //      }
 
-      Connection conn = null;
+      List<Change> changes = new ArrayList();
+
+      Connection conn = chain.getService().getConnection(req.getApi(), req.getCollectionKey());
+
+      List<String> hrefs = new ArrayList();
+
+      Collection collection = req.getApi().getCollection(req.getCollectionKey());
+      Entity entity = collection.getEntity();
+
+      JSObject obj = req.getJson();
+
       try
       {
-         conn = ((Snooze) service).getConnection(req.getApi(), req.getCollectionKey());
-
-         List<String> hrefs = new ArrayList();
-
-         Collection collection = req.getApi().getCollection(req.getCollectionKey());
-         Entity entity = collection.getEntity();
-
-         JSObject obj = req.getJson();
-
-         boolean wasAutoCommit = conn.getAutoCommit();
-         if (wasAutoCommit)
-            conn.setAutoCommit(false);
-
-         try
+         if (obj instanceof JSArray)
          {
-            if (obj instanceof JSArray)
+            if (!J.empty(req.getEntityKey()))
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
+
+            for (JSObject child : (List<JSObject>) ((JSArray) obj).getObjects())
             {
-
-               JSArray arrRes = new JSArray();
-               res.setJson(arrRes);
-               for (JSObject child : (List<JSObject>) ((JSArray) obj).getObjects())
-               {
-                  String href = store(conn, req, entity, child);
-                  hrefs.add(href);
-
-                  JSObject js = new JSObject();
-                  js.put("href", href);
-
-                  arrRes.add(js);
-               }
-            }
-            else
-            {
-               String href = store(conn, req, entity, obj);
-               res.getJson().put("href", href);
-
+               String href = store(conn, req, changes, entity, child);
                hrefs.add(href);
             }
+         }
+         else
+         {
+            String href = obj.getString("href");
+            if (href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
+            }
 
-            conn.commit();
+            href = store(conn, req, changes, entity, obj);
+            hrefs.add(href);
          }
-         catch (Exception ex)
-         {
-            conn.rollback();
-            J.rethrow(ex);
-         }
-         finally
-         {
-            if (wasAutoCommit)
-               conn.setAutoCommit(true);
-         }
+
+         res.addChanges(changes);
 
          //-- take all of the hrefs and combine into a 
          //-- single href for the "Location" header
+
+         JSArray array = new JSArray();
+         res.getJson().put("data", array);
+
          res.setStatus(SC.SC_201_CREATED);
          StringBuffer buff = new StringBuffer(hrefs.get(0));
-         for (int i = 1; i < hrefs.size(); i++)
+         for (int i = 0; i < hrefs.size(); i++)
          {
-            String nextId = hrefs.get(i);
-            nextId = nextId.substring(nextId.lastIndexOf("/") + 1, nextId.length());
+            String href = hrefs.get(i);
+
+            boolean added = false;
+            if (expandResponse)
+            {
+               Response resp = service.include(chain, "GET", href, null);
+               if (resp != null)
+               {
+                  JSObject js = resp.getJson();
+                  if (js != null)
+                  {
+                     js = js.getObject("data");
+                     if (js instanceof JSArray && ((JSArray) js).length() == 1)
+                     {
+                        array.add(((JSArray) js).get(0));
+                        added = true;
+                     }
+                  }
+               }
+            }
+
+            if (!added)
+            {
+               array.add(new JSObject("href", href));
+            }
+
+            String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
             buff.append(",").append(nextId);
          }
 
@@ -140,194 +140,28 @@ public class PostHandler implements Handler
       }
       finally
       {
-         Sql.close(conn);
+         // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
+         //Sql.close(conn);
       }
 
    }
 
-   String store(Connection conn, Request req, Entity entity, JSObject obj) throws Exception
+   String store(Connection conn, Request req, List<Change> changes, Entity entity, JSObject parent) throws Exception
    {
-      Collection collection = entity.getCollection();
-      Api api = collection.getApi();
+      String href = parent.getString("href");
+      if (href != null && parent.keys().size() == 1)
+         return href; //this object is empty except for the href...don't change anything
 
-      Object key = storeEntity(conn, req, entity, obj);
+      String parentId = storeEntity(conn, req, changes, entity, parent); //this also stores oneToMany relationships
 
-      storeManyToOne(conn, req, key, entity, obj);
+      storeManyTo(conn, req, changes, parentId, entity, parent);
 
-      makeManyToManyRows(conn, req, key, entity, obj);
-
-      String href = req.getApiUrl() + collection.getName() + "/" + key;
+      href = req.getApiUrl() + entity.getCollection().getName() + "/" + parentId;
 
       return href;
    }
 
-   void storeManyToOne(Connection conn, Request req, Object newPk, Entity entity, JSObject obj) throws Exception
-   {
-      DoubleKeyListMap relateds = new DoubleKeyListMap();
-      Map<String, String> cols = new HashMap();
-
-      List mtmRows = new ArrayList();
-      for (Relationship rel : entity.getRelationships())
-      {
-         if (rel.getType().equals("MANY_TO_ONE"))
-         {
-            Tbl tbl = rel.getFkCol1().getTbl();
-
-            Object temp = obj.get(rel.getName());
-            if (!(temp instanceof JSArray))
-               continue;
-
-            JSArray related = (JSArray) temp;
-            if (related == null)
-               continue;
-
-            for (JSObject o : ((List<JSObject>) related.getObjects()))
-            {
-               if (o.keys().size() == 0)
-                  continue;
-
-               if (!cols.containsKey(tbl.getName()))
-               {
-                  cols.put(tbl.getName(), rel.getFkCol1().getName());
-               }
-
-               String relName = rel.getName();
-               String fk = rel.getFkCol1().getName();
-               if (o.getProperty(fk) == null)
-                  ((JSObject) o).put(fk, newPk);
-
-               Entity e = entity.getCollection().getApi().getCollection(tbl).getEntity();
-               String id = store(conn, req, e, (JSObject) o);
-
-               id = id.substring(id.lastIndexOf("/") + 1, id.length());
-               relateds.put(tbl.getName(), newPk, id);
-            }
-         }
-      }
-
-      //Now previously related objects NOT in 
-      //the supplied list must be unlinked
-      for (Object table : relateds.keySet())
-      {
-         ListMap rels = relateds.get(table);
-
-         for (Object id : rels.keySet())
-         {
-            List relIds = rels.get(id);
-
-            //TODO: this should be a delete if the fk field is not nullable 
-            //or is a cascading delete
-            String sql = "";
-            sql += " UPDATE `" + table + "` ";
-            sql += " SET " + cols.get(table) + " = NULL ";
-            sql += " WHERE " + cols.get(table) + " = " + id;
-            sql += " AND id NOT IN (" + Sql.getInClauseStr(relIds) + ")";
-
-            Sql.execute(conn, sql);
-         }
-      }
-   }
-
-   void makeManyToManyRows(Connection conn, Request req, Object newPk, Entity entity, JSObject obj) throws Exception
-   {
-      String sql = null;
-      try
-      {
-         List<Object[]> mtmRows = new ArrayList();
-         for (Relationship rel : entity.getRelationships())
-         {
-            if (rel.getType().equals("MANY_TO_MANY"))
-            {
-               Object fk2PropVal = obj.get(rel.getName());
-
-               if (fk2PropVal == null)
-                  continue;
-
-               List fk2Vals = new ArrayList();
-
-               //TODO: PUT child objects that have more than an href property
-
-               //TODO: IMPORTANT - must delete M2M relationships that are not present here
-
-               if (fk2PropVal instanceof JSArray)
-               {
-                  JSArray arr = (JSArray) fk2PropVal;
-                  for (JSObject jso : (List<JSObject>) arr.getObjects())
-                  {
-                     if (jso instanceof JSArray)
-                        throw new ApiException(SC.SC_400_BAD_REQUEST, "Found a array but was expecting an object for property '" + rel.getName() + "'");
-
-                     if (jso.keys().size() == 0) //ignore an empty object
-                        continue;
-
-                     String id = (String) jso.get("href");
-                     if (id == null)
-                     {
-                        Tbl tbl = rel.getFkCol2().getPk().getTbl();
-                        Entity e = entity.getCollection().getApi().getCollection(tbl).getEntity();
-                        id = store(conn, req, e, (JSObject) jso);
-                     }
-
-                     id = id.substring(id.lastIndexOf("/") + 1, id.length());
-
-                     fk2Vals.add(id);
-                  }
-               }
-               //            else if (!J.empty(fk2PropVal))
-               //            {
-               //               String str = fk2PropVal.toString();
-               //               str = str.substring(str.lastIndexOf("/") + 1, str.length());
-               //               fk2Vals = Arrays.asList(str.split(","));
-               //            }
-
-               for (Object fk : fk2Vals)
-               {
-                  Map row = new HashMap();
-                  row.put(rel.getFkCol1().getName(), newPk);
-                  row.put(rel.getFkCol2().getName(), fk);
-
-                  mtmRows.add(new Object[]{rel.getFkCol1().getTbl().getName(), row});
-               }
-            }
-         }
-
-         ListMap<String, Map> mtms = new ListMap();
-         for (Object[] mtmRel : mtmRows)
-         {
-            mtms.put((String) mtmRel[0], (Map) mtmRel[1]);
-         }
-
-         for (String table : mtms.keySet())
-         {
-            List<Map> rows = mtms.get(table);
-            sql = "";
-            List keys = new ArrayList(rows.get(0).keySet());
-            sql += " INSERT IGNORE INTO " + table + " (" + Sql.getColumnStr(keys) + ") ";
-            sql += " VALUES (" + Sql.getQuestionMarkStr(keys.size()) + ")";
-
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            for (Map row : rows)
-            {
-               for (int i = 0; i < keys.size(); i++)
-               {
-                  stmt.setObject(i + 1, row.get(keys.get(i)));
-               }
-               stmt.addBatch();
-            }
-            int[] added = stmt.executeBatch();
-            stmt.close();
-         }
-      }
-      catch (Exception ex)
-      {
-         if (ex instanceof SQLException)
-            J.rethrow(ex.getMessage() + " - SQL = " + sql, ex);
-
-         J.rethrow(ex);
-      }
-   }
-
-   String storeEntity(Connection conn, Request req, Entity entity, JSObject obj) throws Exception
+   String storeEntity(Connection conn, Request req, List<Change> changes, Entity entity, JSObject parent) throws Exception
    {
       Api api = entity.getCollection().getApi();
 
@@ -340,9 +174,9 @@ public class PostHandler implements Handler
          if (key.equals("id"))
             key = "href";
 
-         String col = attr.getCol().getName();
+         String col = attr.getColumn().getName();
 
-         Property prop = obj.getProperty(key);
+         Property prop = parent.getProperty(key);
          if (prop != null)
          {
             Object value = prop.getValue();
@@ -357,7 +191,7 @@ public class PostHandler implements Handler
                id = id.substring(id.lastIndexOf("/") + 1, id.length());
                value = id;
             }
-            vals.put(col, convert(attr.getCol(), value));
+            vals.put(col, cast(attr.getColumn(), value));
          }
       }
 
@@ -367,7 +201,7 @@ public class PostHandler implements Handler
          {
             String colName = rel.getFkCol1().getName();
 
-            Property prop = obj.getProperty(colName);
+            Property prop = parent.getProperty(colName);
             Object value = null;
 
             if (prop != null)
@@ -376,31 +210,30 @@ public class PostHandler implements Handler
             }
             else
             {
-               prop = obj.getProperty(rel.getName());
+               prop = parent.getProperty(rel.getName());
                if (prop != null)
                   value = prop.getValue();
-
-               if (!J.empty(value))
+               else
+                  continue;
+               
+               if (value instanceof JSObject)
                {
-                  Collection fkCollection = api.getCollection(rel.getFkCol1().getTbl());
-                  String baseRef = req.getApiUrl() + fkCollection.getName();
+                  JSObject child = (JSObject) value;
+                  Collection fkCollection = api.getCollection(rel.getFkCol1().getPk().getTable());
+                  String href = child.getString("href");
 
-                  String href = value.toString();
-                  String key = href.substring(baseRef.length(), href.length());
-
-                  while (key.endsWith("/"))
-                     key = key.substring(0, key.length() - 1);
-
-                  while (key.startsWith("/"))
-                     key = key.substring(1, key.length());
-
-                  value = key;
-
-                  if (!href.startsWith(baseRef) || key.indexOf("/") > -1)
+                  if (href == null || child.keySet().size() > 1)
                   {
-                     String msg = "Invalid reference \"" + href + "\" for relationship " + rel.getHint();
-                     throw new ApiException(SC.SC_400_BAD_REQUEST, msg);
+                     try
+                     {
+                        href = store(conn, req, changes, fkCollection.getEntity(), child);
+                     }
+                     catch (Exception ex)
+                     {
+                        ex.printStackTrace();
+                     }
                   }
+                  value = new Url(href).getFile();
                }
             }
 
@@ -413,41 +246,181 @@ public class PostHandler implements Handler
          }
       }
 
+      String id = null;
       if (vals.containsKey("id"))
       {
-         Sql.updateRow(conn, entity.getTbl().getName(), "id", (String) vals.get("id"), vals);
-         return vals.get("id") + "";
+         Sql.updateRow(conn, entity.getTable().getName(), "id", vals.get("id") + "", vals);
+         changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
+         id = vals.get("id") + "";
       }
       else
       {
-         return Sql.insertMap(conn, entity.getTbl().getName(), vals) + "";
+         id = Sql.insertMap(conn, entity.getTable().getName(), vals) + "";
+         changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
+
+      String href = req.getApiUrl() + entity.getCollection().getName() + "/" + id;
+      parent.put("href", href);
+
+      return id;
    }
 
-   Object convert(Col col, Object value)
+   void storeManyTo(Connection conn, Request req, List<Change> changes, Object parentId, Entity entity, JSObject parent) throws Exception
    {
-      if (J.empty(value))
-         return null;
+      ListMap<Relationship, String> relateds = new ListMap();
 
-      String type = col.getType().toUpperCase();
-
-      if ((type.equals("BIT") || type.equals("BOOLEAN")) && !(value instanceof Boolean))
+      for (Relationship rel : entity.getRelationships())
       {
-         if (value instanceof String)
+         if (!rel.getType().equals("ONE_TO_MANY"))
          {
-            String str = ((String) value).toLowerCase();
-            value = str.startsWith("t") || str.startsWith("1");
+            Entity childEntity = rel.getRelated();
+
+            Object arrayObj = parent.get(rel.getName());
+
+            if (arrayObj == null)
+               continue;
+
+            if (!(arrayObj instanceof JSArray))
+            {
+               if (arrayObj instanceof JSObject)
+               {
+                  //this is the child collection "placeholder" that is used to bookmark
+                  //non expanded child collections by GetHandler...ex:
+                  //..., "children" : { "href" : "http://host.com/apicode/collection/entityKey/someChildCollection"}, ....
+                  //thils shoudlbe ignored
+
+                  JSObject js = (JSObject) arrayObj;
+                  if (js.keys().size() == 1 && js.containsKey("href"))
+                     return;
+               }
+
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Was expecting an array for relationship " + rel);
+            }
+
+            JSArray children = (JSArray) arrayObj;
+
+            for (Object childObj : children.getObjects())
+            {
+               if (childObj == null)
+                  continue;
+
+               if (!(childObj instanceof JSObject))
+                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Child objects for relationships " + rel + " must be objects not arrays or primitives");
+
+               JSObject child = (JSObject) childObj;
+
+               child.put(rel.getFkCol1().getName(), parentId);
+               String href = store(conn, req, changes, childEntity, child);
+
+               String childId = href.substring(href.lastIndexOf("/") + 1, href.length());
+               relateds.put(rel, childId);
+            }
          }
       }
-      if ((type.startsWith("DATE") || type.startsWith("TIME")) && !(value instanceof Date))
+
+      //Now previously related objects NOT in 
+      //the supplied list must be unlinked
+      for (Relationship rel : relateds.keySet())
       {
-         if("0".equals(value + ""))
-            return 0;
-         
-         value = J.date(value.toString());
+         boolean m2m = rel.getType().equals("MANY_TO_MANY");
+         boolean m2o = rel.getType().equals("MANY_TO_ONE");
+
+         String table = "`" + rel.getFkCol1().getTable().getName() + "`";
+         String parentKeyCol = rel.getFkCol1().getName();
+         String childKeyCol = m2m ? rel.getFkCol2().getName() : req.getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
+         String qmarks = Sql.getQuestionMarkStr(relateds.get(rel).size());
+
+         List args = new ArrayList(relateds.get(rel));
+         args.add(0, parentId);
+
+         if (m2o)
+         {
+            Column fk = rel.getFkCol1();
+
+            String childPkCol = "`" + req.getApi().getCollection(fk.getTable()).getEntity().getKey().getName() + "`";
+            String fkCol = fk.getName();
+
+            //this first statement assigns or reassigns any 
+            //of the fk related entities to the parent
+            String sql = "";
+            sql += " UPDATE " + table;
+            sql += " SET " + fkCol + " = ? ";
+            sql += " WHERE " + childPkCol + " IN (" + qmarks + ")";
+
+            Sql.execute(conn, sql, args);
+
+            //these next statemets delete now removed relationshiops
+            if (fk.isNullable())
+            {
+               //set the fk to null where the fk field is nullable
+               sql = "";
+               sql += " UPDATE " + table + " ";
+               sql += " SET " + fkCol + " = NULL ";
+               sql += " WHERE " + fkCol + " = ? ";
+               sql += " AND " + childPkCol + " NOT IN (" + qmarks + ")";
+            }
+            else
+            {
+               //delete the row if the fk is not nullable
+               //this would be a dependent child that the data model
+               //says should not exist outside of the relationship
+               //with the parent
+               sql = "";
+               sql += " DELETE FROM " + table + " ";
+               sql += " WHERE " + fkCol + " = ? ";
+               sql += " AND " + childPkCol + " NOT IN (" + qmarks + ")";
+            }
+
+            Sql.execute(conn, sql, args);
+         }
+         else
+         {
+            String sql = "";
+            sql += " INSERT IGNORE INTO " + table + " (" + parentKeyCol + ", " + childKeyCol + ") ";
+            sql += " VALUES ( ?, ?)";
+
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            for (String childId : relateds.get(rel))
+            {
+               stmt.setObject(1, parentId);
+               stmt.setObject(2, childId);
+               stmt.addBatch();
+            }
+            stmt.executeBatch();
+            stmt.close();
+
+            sql = "";
+            sql += "DELETE FROM " + table + " WHERE " + parentKeyCol + " = ? AND " + childKeyCol + " NOT IN (" + qmarks + ")";
+            Sql.execute(conn, sql, args);
+
+         }
       }
 
-      return value;
+   }
+
+   Object cast(Column col, Object value)
+   {
+      return Sql.cast(value, col.getType());
+      //      
+      //      if (J.empty(value))
+      //         return null;
+      //
+      //      String type = col.getType().toUpperCase();
+      //
+      //      if ((type.equals("BIT") || type.equals("BOOLEAN")) && !(value instanceof Boolean))
+      //      {
+      //         if (value instanceof String)
+      //         {
+      //            String str = ((String) value).toLowerCase();
+      //            value = str.startsWith("t") || str.startsWith("1");
+      //         }
+      //      }
+      //      if ((type.startsWith("DATE") || type.startsWith("TIME")) && !(value instanceof Date))
+      //      {
+      //         value = J.date(value.toString());
+      //      }
+      //
+      //      return value;
    }
 
 }

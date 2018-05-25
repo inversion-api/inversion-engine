@@ -18,7 +18,7 @@ package io.rcktapp.api;
 public class Attribute extends Dto
 {
    Entity entity = null;
-   Col    col    = null;
+   Column column = null;
 
    String name   = null;
    String type   = null;
@@ -28,7 +28,7 @@ public class Attribute extends Dto
    {
       return getHint();
    }
-   
+
    /**
     * @return the entity
     */
@@ -48,17 +48,17 @@ public class Attribute extends Dto
    /**
     * @return the col
     */
-   public Col getCol()
+   public Column getColumn()
    {
-      return col;
+      return column;
    }
 
    /**
     * @param col the col to set
     */
-   public void setCol(Col col)
+   public void setColumn(Column col)
    {
-      this.col = col;
+      this.column = col;
    }
 
    /**

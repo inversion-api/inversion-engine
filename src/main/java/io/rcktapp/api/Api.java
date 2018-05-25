@@ -16,27 +16,34 @@
 package io.rcktapp.api;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 import io.forty11.j.J;
-import io.forty11.utils.CaseInsensitiveSet;
 
 public class Api extends Dto
 {
-   long                              orgId       = 0;
    String                            name        = null;
-   Set                               perms       = new CaseInsensitiveSet<String>();
-
-   ArrayList<String>                 urls        = new ArrayList();
    LinkedHashMap<String, String>     handlers    = new LinkedHashMap();
    LinkedHashMap<String, Db>         dbs         = new LinkedHashMap();
-   LinkedHashMap<String, Rule>       rules       = new LinkedHashMap();
+   List<Endpoint>                    endpoints   = new ArrayList();
+   List<Action>                      actions     = new ArrayList();
    LinkedHashMap<String, Collection> collections = new LinkedHashMap();
+   List<Acl>                         acls        = new ArrayList();
+
+   String                            apiCode     = null;
+   String                            accountCode = null;
+
+   boolean                           multiTenant = false;
 
    transient long                    loadTime    = 0;
+
+   boolean                           reloadable  = false;
+   boolean                           debug       = false;
+
+   Hashtable                         cache       = new Hashtable();
 
    public Api()
    {
@@ -47,32 +54,43 @@ public class Api extends Dto
       this.name = name;
    }
 
+   public Table findTable(String name)
+   {
+      for (Db db : dbs.values())
+      {
+         Table t = db.getTable(name);
+         if (t != null)
+            return t;
+      }
+      return null;
+   }
+
    public Db findDb(String collection)
    {
       Collection c = getCollection(collection);
       if (c != null)
-         return c.getEntity().getTbl().getDb();
+         return c.getEntity().getTable().getDb();
 
       return null;
    }
 
-   public Entity getEntity(Tbl tbl)
+   public Entity getEntity(Table tbl)
    {
       for (Collection col : collections.values())
       {
-         if (col.getEntity().getTbl() == tbl)
+         if (col.getEntity().getTable() == tbl)
             return col.getEntity();
       }
       return null;
    }
 
-   public Attribute getAttribute(Col col)
+   public Attribute getAttribute(Column col)
    {
       for (Collection c : collections.values())
       {
          for (Attribute a : c.getEntity().getAttributes())
          {
-            if (a.getCol() == col)
+            if (a.getColumn() == col)
                return a;
          }
       }
@@ -101,11 +119,11 @@ public class Api extends Dto
       return null;
    }
 
-   public Collection getCollection(Tbl tbl)
+   public Collection getCollection(Table tbl)
    {
       for (Collection col : collections.values())
       {
-         if (col.getEntity().getTbl().getName().equals(tbl.getName()))
+         if (col.getEntity().getTable().getName().equals(tbl.getName()))
             return col;
       }
       return null;
@@ -183,7 +201,8 @@ public class Api extends Dto
 
    public void addDb(Db db)
    {
-      dbs.put(db.getName().toLowerCase(), db);
+      String name = db.getName() != null ? db.getName() : "db";
+      dbs.put(name, db);
    }
 
    public Db getDb(String name)
@@ -201,25 +220,59 @@ public class Api extends Dto
       this.loadTime = loadTime;
    }
 
-   public void addRule(Rule rule)
+   public List<Endpoint> getEndpoints()
    {
-      rules.put(rule.getName(), rule);
+      return Collections.unmodifiableList(endpoints);
    }
 
-   public Rule getRule(String name)
+   public void setEndpoints(List<Endpoint> endpoints)
    {
-      return rules.get(name.toLowerCase());
+      this.endpoints.clear();
+      for (Endpoint endpoint : endpoints)
+         addEndpoint(endpoint);
    }
 
-   public List<Rule> getRules()
+   public void addEndpoint(Endpoint endpoint)
    {
-      return new ArrayList(rules.values());
+      endpoints.add(endpoint);
    }
 
-   public void setRules(List<Rule> rules)
+   public List<Action> getActions()
    {
-      for (Rule rule : rules)
-         addRule(rule);
+      return Collections.unmodifiableList(actions);
+   }
+
+   public void setActions(List<Action> actions)
+   {
+      this.actions.clear();
+      for (Action action : actions)
+         addAction(action);
+   }
+
+   public void addAction(Action action)
+   {
+      actions.add(action);
+   }
+
+   public void addAcl(Acl acl)
+   {
+      if (!acls.contains(acl))
+      {
+         acls.add(acl);
+         Collections.sort(acls);
+      }
+   }
+
+   public void setAcls(List<Acl> acls)
+   {
+      this.acls.clear();
+      for (Acl acl : acls)
+         addAcl(acl);
+   }
+
+   public List<Acl> getAcls()
+   {
+      return new ArrayList(acls);
    }
 
    public String getName()
@@ -230,52 +283,6 @@ public class Api extends Dto
    public void setName(String name)
    {
       this.name = name;
-   }
-
-   public long getOrgId()
-   {
-      return orgId;
-   }
-
-   public void setOrgId(long orgId)
-   {
-      this.orgId = orgId;
-   }
-
-   public ArrayList<String> getUrls()
-   {
-      return urls;
-   }
-
-   public void setUrls(String urls)
-   {
-      if (urls == null)
-         return;
-
-      String[] parts = urls.split(",");
-      for (int i = 0; i < parts.length; i++)
-      {
-         addUrl(parts[i]);
-      }
-   }
-
-   public void setUrls(List<String> urls)
-   {
-      for (String url : urls)
-      {
-         addUrl(url);
-      }
-   }
-
-   public void addUrl(String url)
-   {
-      if (!url.endsWith("/") && url.indexOf("*") < 0 && url.indexOf("?") < 0)
-         url = url + "/";
-
-      if (!urls.contains(url))
-      {
-         urls.add(url);
-      }
    }
 
    public void addHandler(String name, String clazz)
@@ -307,22 +314,66 @@ public class Api extends Dto
       return handlers.get(name.toLowerCase());
    }
 
-   public boolean allowRole(User user, String perm)
+   public boolean isReloadable()
    {
-      if (user == null)
-         return allowRole(Role.GUEST, perm);
-
-      for (String role : user.getRoles())
-      {
-         if (allowRole(role, perm))
-            return true;
-      }
-      return false;
+      return reloadable;
    }
 
-   public boolean allowRole(String role, String perm)
+   public void setReloadable(boolean reloadable)
    {
-      return perms.contains(role + "." + perm);
+      this.reloadable = reloadable;
    }
+
+   public boolean isDebug()
+   {
+      return debug;
+   }
+
+   public void setDebug(boolean debug)
+   {
+      this.debug = debug;
+   }
+
+   public String getApiCode()
+   {
+      return apiCode;
+   }
+
+   public void setApiCode(String apiCode)
+   {
+      this.apiCode = apiCode;
+   }
+
+   public String getAccountCode()
+   {
+      return accountCode;
+   }
+
+   public void setAccountCode(String accountCode)
+   {
+      this.accountCode = accountCode;
+   }
+
+   public boolean isMultiTenant()
+   {
+      return multiTenant;
+   }
+
+   public void setMultiTenant(boolean multiTenant)
+   {
+      this.multiTenant = multiTenant;
+   }
+
+   public Object putCache(Object key, Object value)
+   {
+      return cache.put(key, value);
+   }
+
+   public Object getCache(Object key)
+   {
+      return cache.get(key);
+   }
+
+   
 
 }

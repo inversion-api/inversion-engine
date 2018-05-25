@@ -27,8 +27,8 @@ public class Relationship extends Dto
    String                     hint             = null;
    String                     type             = null;
 
-   Col                        fkCol1           = null;
-   Col                        fkCol2           = null;
+   Column                        fkCol1           = null;
+   Column                        fkCol2           = null;
 
    public boolean isManyToMany()
    {
@@ -101,7 +101,7 @@ public class Relationship extends Dto
    /**
     * @return the fkCol1
     */
-   public Col getFkCol1()
+   public Column getFkCol1()
    {
       return fkCol1;
    }
@@ -109,7 +109,7 @@ public class Relationship extends Dto
    /**
     * @param fkCol1 the fkCol1 to set
     */
-   public void setFkCol1(Col fkCol1)
+   public void setFkCol1(Column fkCol1)
    {
       this.fkCol1 = fkCol1;
    }
@@ -117,7 +117,7 @@ public class Relationship extends Dto
    /**
     * @return the fkCol2
     */
-   public Col getFkCol2()
+   public Column getFkCol2()
    {
       return fkCol2;
    }
@@ -125,7 +125,7 @@ public class Relationship extends Dto
    /**
     * @param fkCol2 the fkCol2 to set
     */
-   public void setFkCol2(Col fkCol2)
+   public void setFkCol2(Column fkCol2)
    {
       this.fkCol2 = fkCol2;
    }

@@ -15,7 +15,6 @@
  */
 package io.rcktapp.api.service;
 
-import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -25,36 +24,44 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Vector;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.sql.DataSource;
 
 import org.atteo.evo.inflector.English;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import io.forty11.j.J;
-import io.forty11.js.JS;
-import io.forty11.js.JSArray;
-import io.forty11.js.JSObject;
+import io.forty11.sql.Rows.Row;
 import io.forty11.sql.Sql;
+import io.forty11.web.Url;
+import io.rcktapp.api.Acl;
+import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
-import io.rcktapp.api.Col;
+import io.rcktapp.api.Chain;
 import io.rcktapp.api.Collection;
+import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
+import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Handler;
+import io.rcktapp.api.Permission;
 import io.rcktapp.api.Relationship;
-import io.rcktapp.api.Rule;
+import io.rcktapp.api.Request;
+import io.rcktapp.api.Response;
+import io.rcktapp.api.Role;
 import io.rcktapp.api.SC;
-import io.rcktapp.api.Tbl;
+import io.rcktapp.api.Table;
 import io.rcktapp.utils.AutoWire;
 
 /**
@@ -134,18 +141,21 @@ import io.rcktapp.utils.AutoWire;
  */
 public class Snooze extends Service
 {
-   public static Snooze           snooze        = null;
+   Set<Api>                       reloads       = new HashSet();
+   Thread                         reloadTimer   = null;
+   long                           reloadTimeout = 60 * 1000;
 
-   int                            MIN_POOL_SIZE = 3;
-   int                            MAX_POOL_SIZE = 10;
 
-   DataSource                     ds            = null;
-   Map<Db, ComboPooledDataSource> pools         = new HashMap();
+
+   //in progress loads used to prevent the same api
+   //from loading multiple times in concurrent threads
+   Vector                         loadingApis   = new Vector();
+
+   boolean                        inited        = false;
 
    public Snooze() throws Exception
    {
-      snooze = this;
-      //cache = new CacheApi(this);
+
    }
 
    @Override
@@ -156,19 +166,8 @@ public class Snooze extends Service
       try
       {
          ServletContext cx = getServletContext();
-
-         loadProperties(cx, "/WEB-INF/snooze.properties");
-         loadJson(new File(cx.getRealPath("WEB-INF/snooze")));
-
-         for (Api a : getApis())
-         {
-            for (Db d : a.getDbs())
-            {
-               Class.forName(d.getDriver()).newInstance();
-               bootstrapDb(d);
-               bootstrapApi(a, d);
-            }
-         }
+         InputStream is = cx.getResourceAsStream("/WEB-INF/snooze.properties");
+         init(is);
       }
       catch (Exception e)
       {
@@ -176,203 +175,85 @@ public class Snooze extends Service
       }
    }
 
-   public void loadJson(File file)
+   public void init(InputStream config) throws Exception
    {
-      if (!file.exists())
+      if (inited)
          return;
 
-      if (file.isDirectory() && !file.isHidden())
-      {
-         File[] files = file.listFiles();
-         for (int i = 0; files != null && i < files.length; i++)
+      inited = true;
+
+      initProperties(config);
+
+      reloadTimer = new Thread(new Runnable()
          {
-            loadJson(files[i]);
-         }
-      }
-      else if (file.getName().endsWith(".json"))
-      {
-         System.out.println("loading:" + file);
-         JSObject json = JS.toJSObject(J.read(file));
-         loadJson(json);
-      }
-   }
-
-   public void loadJson(JSObject json)
-   {
-      JSArray apis = json.getArray("apis");
-      for (int i = 0; apis != null && i < apis.length(); i++)
-      {
-         parseApis(apis);
-      }
-
-      JSArray rules = json.getArray("rules");
-      for (int i = 0; rules != null && i < rules.length(); i++)
-      {
-         parseRules(rules);
-      }
-
-      JSArray dbs = json.getArray("dbs");
-      for (int i = 0; dbs != null && i < dbs.length(); i++)
-      {
-         parseDbs(dbs);
-      }
-
-   }
-
-   protected List<Api> parseApis(JSArray arr)
-   {
-      List<Api> apis = new ArrayList();
-
-      for (JSObject api : (List<JSObject>) arr.asList())
-      {
-         String name = api.getString("name");
-         Api a = getApi(name);
-         if (a == null)
-         {
-            a = new Api(name);
-            addApi(a);
-         }
-
-         a.setHandlers(api.getString("handlers"));
-         a.setUrls(api.getString("urls"));
-
-         List<Db> dbs = parseDbs(api.getArray("dbs"));
-         for (Db db : dbs)
-         {
-            a.addDb(db);
-         }
-
-         List<Rule> rules = parseRules(api.getArray("rules"));
-         for (Rule rule : rules)
-         {
-            a.addRule(rule);
-         }
-      }
-
-      return apis;
-   }
-
-   protected List<Rule> parseRules(JSArray arr)
-   {
-      List<Rule> rules = new ArrayList();
-
-      for (int i = 0; rules != null && i < arr.length(); i++)
-      {
-         JSObject rule = arr.getObject(i);
-         String rn = rule.getString("name");
-
-         Rule r = new Rule(rn);
-         rules.add(r);
-
-         r.setMethods(rule.getString("methods"));
-         r.setPaths(rule.getString("paths"));
-         //r.setReferrers(rule.getString("referrers"));
-         r.setParams(rule.getString("params"));
-         r.setNegate("true".equalsIgnoreCase(rule.get("negate") + ""));
-
-         String order = rule.getString("order");
-         if (order != null)
-            r.setOrder(Float.parseFloat(order));
-
-         String priority = rule.getString("priority");
-         if (priority != null)
-            r.setPriority(Float.parseFloat(priority));
-
-         r.setHandler(rule.getString("handler"));
-         r.setStatus(rule.getString("status"));
-         r.setTerminate("true".equalsIgnoreCase(rule.getString("terminate") + ""));
-         r.setConfig(rule.getObject("config"));
-         r.setPerms(rule.getString("perms"));
-         r.setRoles(rule.getString("roles"));
-
-         String apiName = rule.getString("apis");
-         apiName = apiName != null ? apiName : rule.getString("api");
-
-         if (apiName != null)
-         {
-            for (String name : apiName.split(","))
+            @Override
+            public void run()
             {
-               name = name.trim();
-               if (!J.empty(name))
+               while (true)
                {
-                  Api api = getApi(name);
-                  if (api != null)
-                     api.addRule(r);
-                  else
-                     throw new RuntimeException("Invalid configuration, api does not exist: " + name + "\r\n" + arr);
+                  try
+                  {
+                     Set<Api> toReload = reloads;
+                     reloads = new HashSet();
+
+                     for (Api oldCopy : toReload)
+                     {
+                        try
+                        {
+                           Api newCopy = loadApi(oldCopy.getId());
+                           addApi(newCopy);
+                        }
+                        catch (Exception ex)
+                        {
+                           log.error("Error reloading apis", ex);
+
+                           //unpublishing the api here is a "fail fast" 
+                           //technique to prevent it from continually 
+                           //failing and crapping out the repubish queue
+                           //for all clients
+                           removeApi(oldCopy);
+
+                        }
+                     }
+
+                     J.sleep(reloadTimeout);
+                  }
+                  catch (Throwable t)
+                  {
+                     log.error("Error reloading apis", t);
+                  }
                }
             }
-         }
-      }
+         }, "api-reloader");
+      reloadTimer.setDaemon(true);
+      reloadTimer.start();
 
-      return rules;
    }
 
-   protected List<Db> parseDbs(JSArray arr)
+   public void initProperties(InputStream is) throws Exception
    {
-      List<Db> dbs = new ArrayList();
-
-      for (int i = 0; arr != null && i < arr.length(); i++)
-      {
-         JSObject db = arr.getObject(i);
-         String dbn = db.getString("name");
-
-         Api api = null;
-         String apiName = db.getString("api");
-         if (apiName != null)
-         {
-            api = getApi(apiName);
-         }
-
-         Db d = api != null ? api.getDb(dbn) : null;
-         if (d == null)
-         {
-            d = new Db(dbn);
-            if (api != null)
-               api.addDb(d);
-         }
-         dbs.add(d);
-
-         d.setDriver(db.getString("driver"));
-         d.setUrl(db.getString("url"));
-         d.setUser(db.getString("user"));
-         d.setPass(db.getString("pass"));
-         //d.setSchema(db.getString("schema"));
-
-         String minPool = db.getString("minPool");
-         if (minPool != null)
-            d.setPoolMin(Integer.parseInt(minPool));
-
-         String maxPool = db.getString("maxPool");
-         if (maxPool != null)
-            d.setPoolMax(Integer.parseInt(maxPool));
-      }
-
-      return dbs;
-   }
-
-   public void loadProperties(ServletContext cx, String file) throws Exception
-   {
-      InputStream is = cx.getResourceAsStream(file);
-
-      if (is != null)
-         System.out.println("loading: " + file);
+      //      InputStream is = cx.getResourceAsStream(file);
+      //
+      //      if (is != null)
+      //         System.out.println("loading: " + file);
 
       Properties props = new Properties();
       props.load(is);
 
-      setDebug(Boolean.parseBoolean(props.getProperty("debug", "false")));
+      //reflectively sets snooze.* props from the snooze config on this instance
+      AutoWire w = new AutoWire();
+      w.putBean("snooze", this);
+      w.load(props);
 
-      if (!J.empty(props.getProperty("driver")))
+      if (driver != null)
       {
          ComboPooledDataSource cpds = new ComboPooledDataSource();
-
-         cpds.setDriverClass(props.getProperty("driver"));
-         cpds.setJdbcUrl(props.getProperty("url"));
-         cpds.setUser(props.getProperty("user"));
-         cpds.setPassword(props.getProperty("pass"));
-         cpds.setMinPoolSize(Integer.parseInt(props.getProperty("poolMin", MIN_POOL_SIZE + "")));
-         cpds.setMaxPoolSize(Integer.parseInt(props.getProperty("poolMax", MAX_POOL_SIZE + "")));
+         cpds.setDriverClass(driver);
+         cpds.setJdbcUrl(url);
+         cpds.setUser(user);
+         cpds.setPassword(pass);
+         cpds.setMinPoolSize(poolMin);
+         cpds.setMaxPoolSize(poolMax);
 
          ds = cpds;
       }
@@ -383,111 +264,64 @@ public class Snooze extends Service
             public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
             {
                Field field = getField("name", module.getClass());
-               if (field != null)
+               if (field != null && field.get(module) == null)
                   field.set(module, name);
 
                if (module instanceof Handler)
                   addHandler(name, (Handler) module);
 
                if (module instanceof Api)
+               {
                   addApi((Api) module);
+
+                  for (Db db : ((Api) module).getDbs())
+                  {
+                     bootstrapDb(db);
+                     bootstrapApi((Api) module, db);
+                  }
+               }
             }
          };
       wire.load(props);
 
    }
 
-   public Connection getConnection(Api api) throws ApiException
-   {
-      return getConnection(api, null);
-   }
-
-   public Connection getConnection(String url, String collectionKey) throws ApiException
-   {
-      ApiMatch match = findApi(url);
-      if (match != null)
-         return getConnection(match.api, collectionKey);
-      return null;
-   }
-
-   public Connection getConnection(Api api, String collectionKey) throws ApiException
+   @Override
+   public void doService(Service service, Chain parent, ApiMatch match, Endpoint endpoint, Request req, Response res) throws Exception
    {
       try
       {
-         Db db = null;
-
-         if (collectionKey != null)
-         {
-            db = api.findDb(collectionKey);
-         }
-
-         if (db == null)
-            db = api.getDbs().get(0);
-
-         ComboPooledDataSource pool = pools.get(db);
-
-         if (pool == null)
-         {
-            synchronized (this)
-            {
-               pool = pools.get(db);
-
-               if (pool == null)
-               {
-                  String driver = db.getDriver();
-                  String url = db.getUrl();
-                  String user = db.getUser();
-                  String password = db.getPass();
-                  int minPoolSize = db.getPoolMin();
-                  int maxPoolSize = db.getPoolMax();
-
-                  minPoolSize = Math.max(MIN_POOL_SIZE, minPoolSize);
-                  maxPoolSize = Math.min(maxPoolSize, MAX_POOL_SIZE);
-
-                  pool = new ComboPooledDataSource();
-                  pool.setDriverClass(driver);
-                  pool.setJdbcUrl(url);
-                  pool.setUser(user);
-                  pool.setPassword(password);
-                  pool.setMinPoolSize(minPoolSize);
-                  pool.setMaxPoolSize(maxPoolSize);
-
-                  pools.put(db, pool);
-               }
-            }
-         }
-
-         return pool.getConnection();
+         super.doService(service, parent, match, endpoint, req, res);
+         Api api = match.api;
+         if (api != null && api.isReloadable() && api.isDebug())
+            reloads.add(api);
       }
       catch (Exception ex)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
+         throw ex;
       }
    }
 
-   public Connection getConnection() throws Exception
-   {
-      if (ds != null)
-      {
-         return ds.getConnection();
-      }
-      return null;
-   }
+
+
+
 
    /**
     * Overridden to lazy load APIs from the DB
     */
-   @Override
-   public synchronized ApiMatch findApi(String url) throws ApiException
+   public ApiMatch findApi(Url url) throws Exception
    {
-      ApiMatch api = super.findApi(url);
-      if (api == null)
+      ApiMatch match = super.findApi(url);
+      if (match == null)
       {
-         api = loadApi(url);
+         Api api = loadApi(url);
          if (api != null)
-            addApi(api.api);
+         {
+            addApi(api);
+            match = super.findApi(url);
+         }
       }
-      return api;
+      return match;
    }
 
    /**
@@ -495,11 +329,11 @@ public class Snooze extends Service
     * is no caching in this method.  This will cause the API to auto bootstrap 
     * if there are no collections and will store the api 
     */
-   ApiMatch loadApi(String url) throws ApiException
+   Api loadApi(Url url) throws Exception
    {
       Connection conn = null;
       Api api = null;
-      String apiUrl = null;
+      //String apiUrl = null;
 
       try
       {
@@ -507,99 +341,208 @@ public class Snooze extends Service
          if (conn != null)
          {
 
-            if (url.indexOf('?') > 0)
-               url = url.substring(0, url.indexOf('?'));
+            String accountCode = null;
+            String apiCode = null;
 
-            int afterHostSlash = url.indexOf('/', 8);
-            apiUrl = afterHostSlash > 0 ? url.substring(0, afterHostSlash + 1) : url;
-            String[] path = afterHostSlash > 0 ? url.substring(afterHostSlash + 1, url.length()).split("/") : new String[0];
-
-            String sql = "SELECT a.* FROM Api a JOIN Url u ON a.id = u.apiId WHERE u.url = ? LIMIT 1";
-
-            for (int i = 0; i <= path.length; i++)
+            String host = url.getHost();
+            int numPeriods = host.length() - host.replace(".", "").length();
+            if (numPeriods == 2)//if this is a three part host name hostKey.domain.com
             {
-               if (i > 0)
-                  apiUrl = apiUrl + path[i - 1] + "/";
-
-               api = (Api) Sql.selectObject(conn, sql, new Api(), apiUrl);
-
-               if (api.getId() <= 0)
-                  api = null;
-
-               if (api != null)
-                  break;
+               accountCode = host.substring(0, host.indexOf("."));
             }
 
-            if (api == null)
+            String path = url.getPath();
+
+            if (!J.empty(servletMapping))
+            {
+               String match = servletMapping.endsWith("/") ? servletMapping : (servletMapping + "/");
+
+               if (path.indexOf(match) < 0)
+               {
+                  //caused if your servlet container is setup to route to something like *
+                  //but you set a servletMapping on the Service/Snooze servlet probably something like "api/"
+                  throw new ApiException(SC.SC_404_NOT_FOUND, "Servlet path mapping and Service.servletMapping paramters do not match.");
+               }
+
+               path = path.substring(path.indexOf(match) + match.length(), path.length());
+            }
+            while (path.startsWith("/"))
+            {
+               path = path.substring(1, path.length());
+            }
+            while (path.endsWith("/"))
+            {
+               path = path.substring(0, path.length() - 1);
+            }
+
+            String[] parts = path.split("\\/");
+
+            for (int i = 0; i < parts.length; i++)
+            {
+               if (i == 0 && accountCode == null)
+               {
+                  accountCode = parts[i];
+                  continue;
+               }
+
+               if (!parts[i].equalsIgnoreCase(accountCode))
+               {
+                  apiCode = parts[i];
+                  break;
+               }
+            }
+
+            if (J.empty(accountCode) || J.empty(apiCode))
+            {
+               return null;
+            }
+
+            String sql = "SELECT a.*, a.apiCode, n.accountCode FROM Api a JOIN Account n ON a.accountId = n.id WHERE (n.accountCode = ? AND n.accountCode = a.apiCode) OR (n.accountCode = ? AND  a.apiCode = ?) LIMIT 1";
+
+            api = (Api) Sql.selectObject(conn, sql, new Api(), accountCode, accountCode, apiCode);
+
+            if (api == null || api.getId() <= 0)
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find an API for url: '" + url + "'");
             }
 
-            List<String> urls = Sql.selectList(conn, "SELECT url FROM Url WHERE apiId = ?", api.getId());
-            api.setUrls(urls);
-
-            sql = "";
-            sql += " SELECT d.* FROM Db d ";
-            sql += " JOIN ApiDbs ad ON ad.dbId = d.id ";
-            sql += " JOIN Api a ON ad.apiId = a.id ";
-            sql += " WHERE a.id = ? ";
-
-            List vars = new ArrayList();
-            vars.add(api.getId());
-
-            List<Db> dbs = Sql.selectObjects(conn, sql, Db.class, vars.toArray());
-            api.setDbs(dbs);
-
-            for (Db db : dbs)
+            synchronized (this)
             {
-               bootstrapDb(db);
-               bootstrapApi(api, db);
+               while (loadingApis.contains(api.getId()))
+               {
+                  try
+                  {
+                     this.wait();
+                  }
+                  catch (InterruptedException ex)
+                  {
+
+                  }
+                  Api alreadyLoaded = getApi(api.getId());
+                  if (alreadyLoaded != null)
+                     return alreadyLoaded;
+               }
+
+               loadingApis.add(api.getId());
             }
 
-            List<Rule> rules = Sql.selectObjects(conn, "SELECT * FROM Rule WHERE apiId = ?", Rule.class, api.getId());
+            api = loadApi(api.getId());
 
-            if (rules.size() > 0)
-            {
-               api.setRules(rules);
-            }
-            //            else
-            //            {
-            //               String paths = "";
-            //               for (Collection c : api.getCollections())
-            //               {
-            //                  paths += c.getName() + "/*, ";
-            //               }
-            //
-            //               api.addRule(new Rule("GET", paths, get.getName()));
-            //               api.addRule(new Rule("POST", paths, post.getName()));
-            //               api.addRule(new Rule("PUT", paths, post.getName()));
-            //               api.addRule(new Rule("DELETE", paths, delete.getName()));
-            //
-            //               Sql.execute(conn, "INSERT INTO Rule (tenantId, apiId, `order`, priority, methods, paths, handler) VALUES (?,?,?,?,?,?,?)", api.getTenantId(), api.getId(), Rule.DEFAULT_ORDER, Rule.DEFAULT_PRIORITY, "GET", paths, get.getName());
-            //               Sql.execute(conn, "INSERT INTO Rule (tenantId, apiId, `order`, priority, methods, paths, handler) VALUES (?,?,?,?,?,?,?)", api.getTenantId(), api.getId(), Rule.DEFAULT_ORDER, Rule.DEFAULT_PRIORITY, "POST", paths, post.getName());
-            //               Sql.execute(conn, "INSERT INTO Rule (tenantId, apiId, `order`, priority, methods, paths, handler) VALUES (?,?,?,?,?,?,?)", api.getTenantId(), api.getId(), Rule.DEFAULT_ORDER, Rule.DEFAULT_PRIORITY, "PUT", paths, post.getName());
-            //               Sql.execute(conn, "INSERT INTO Rule (tenantId, apiId, `order`, priority, methods, paths, handler) VALUES (?,?,?,?,?,?,?)", api.getTenantId(), api.getId(), Rule.DEFAULT_ORDER, Rule.DEFAULT_PRIORITY, "DELETE", paths, delete.getName());
-            //            }
          }
       }
-      catch (Exception ex)
+      finally
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage());
+         synchronized (this)
+         {
+            if (api != null)
+               loadingApis.remove(api.getId());
+
+            notifyAll();
+         }
+
+         Sql.close(conn);
+      }
+
+      return api;
+   }
+
+   protected Api loadApi(long apiId) throws Exception
+   {
+      Connection conn = null;
+      Api api = null;
+      try
+      {
+         conn = getConnection();
+
+         String sql = "SELECT a.*, a.apiCode, n.accountCode FROM Api a JOIN Account n ON a.accountId = n.id WHERE a.id = ? LIMIT 1";
+
+         api = (Api) Sql.selectObject(conn, sql, new Api(), apiId);
+
+         sql = "";
+         sql += " SELECT d.* FROM Db d ";
+         sql += " JOIN ApiDbs ad ON ad.dbId = d.id ";
+         sql += " JOIN Api a ON ad.apiId = a.id ";
+         sql += " WHERE a.id = ? ";
+
+         List vars = new ArrayList();
+         vars.add(api.getId());
+
+         List<Db> dbs = Sql.selectObjects(conn, sql, Db.class, vars.toArray());
+         api.setDbs(dbs);
+
+         for (Db db : dbs)
+         {
+            bootstrapDb(db);
+            bootstrapApi(api, db);
+         }
+
+         List<Acl> acls = Sql.selectObjects(conn, "SELECT * FROM Acl WHERE apiId = ?", Acl.class, api.getId());
+         api.setAcls(acls);
+         for (Acl acl : acls)
+         {
+            acl.setPermissions(Sql.selectObjects(conn, "SELECT p.* FROM Permission p JOIN AclPermission ap WHERE ap.aclId = ?", Permission.class, acl.getId()));
+            acl.setRoles(Sql.selectObjects(conn, "SELECT r.* FROM Role r JOIN AclRole ar WHERE ar.aclId = ?", Role.class, acl.getId()));
+         }
+
+         List<Endpoint> endpoints = Sql.selectObjects(conn, "SELECT * FROM Endpoint WHERE apiId = ?", Endpoint.class, api.getId());
+         api.setEndpoints(endpoints);
+
+         for (Endpoint endpoint : endpoints)
+         {
+            //endpoint.setPermissions(Sql.selectObjects(conn, "SELECT p.* FROM Permission p JOIN EndpointPermission ep WHERE ep.endpointId = ?", Permission.class, endpoint.getId()));
+            //endpoint.setRoles(Sql.selectObjects(conn, "SELECT r.* FROM Role r JOIN EndpointRole er WHERE er.endpointId = ?", Role.class, endpoint.getId()));
+
+            List<Action> actions = Sql.selectObjects(conn, "SELECT * FROM Action WHERE endpointId = ?", Action.class, endpoint.getId());
+            for (Action action : actions)
+            {
+               loadAction(conn, action);
+               endpoint.addAction(action);
+            }
+
+         }
+
+         List<Action> actions = Sql.selectObjects(conn, "SELECT * FROM Action where endpointId IS NULL", Action.class);
+         for (Action action : actions)
+         {
+            loadAction(conn, action);
+            api.addAction(action);
+         }
       }
       finally
       {
          Sql.close(conn);
       }
 
-      if (api != null)
-         return new ApiMatch(api, apiUrl);
+      return api;
+   }
 
-      return null;
+   void loadAction(Connection conn, Action action) throws Exception
+   {
+      Row handlerRow = Sql.selectRow(conn, "SELECT * FROM Handler WHERE id = ?", action.getHandlerId());
+
+      AutoWire aw = new AutoWire();
+
+      String cn = handlerRow.getString("className");
+      if (!J.empty(cn))
+      {
+         aw.add("handler.className", cn);
+      }
+
+      String params = handlerRow.getString("params");
+      if (!J.empty(params))
+      {
+         aw.add(params);
+      }
+
+      aw.load();
+      Handler handler = aw.getBean(Handler.class);
+      action.setHandler(handler);
    }
 
    public static void bootstrapDb(Db db) throws Exception
    {
-      Class.forName(db.getDriver());
+      String driver = db.getDriver();
+      Class.forName(driver);
       Connection apiConn = DriverManager.getConnection(db.getUrl(), db.getUser(), db.getPass());
 
       try
@@ -620,18 +563,18 @@ public class Snooze extends Service
          //-- that caputres all of the foreign key relationships.  You
          //-- have to do the fk loop second becuase the reference pk
          //-- object needs to exist so that it can be set on the fk Col
-         ResultSet rs = dbmd.getTables(null, null, null, new String[]{"TABLE"});
+         ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
          while (rs.next())
          {
             String tableCat = rs.getString("TABLE_CAT");
             String tableSchem = rs.getString("TABLE_SCHEM");
             String tableName = rs.getString("TABLE_NAME");
-            String tableType = rs.getString("TABLE_TYPE");
+            //String tableType = rs.getString("TABLE_TYPE");
 
-            Tbl table = new Tbl(db, tableName);
-            db.addTbl(table);
+            Table table = new Table(db, tableName);
+            db.addTable(table);
 
-            ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, null);
+            ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
             while (colsRs.next())
             {
@@ -639,8 +582,10 @@ public class Snooze extends Service
                Object type = colsRs.getString("DATA_TYPE");
                String colType = types.get(type);
 
-               Col column = new Col(table, colName, colType);
-               table.addCol(column);
+               boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+
+               Column column = new Column(table, colName, colType, nullable);
+               table.addColumn(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
                //               {
@@ -653,7 +598,7 @@ public class Snooze extends Service
             while (indexMd.next())
             {
                String colName = indexMd.getString("COLUMN_NAME");
-               Col col = db.getCol(tableName, colName);
+               Column col = db.getColumn(tableName, colName);
                col.setUnique(true);
             }
             indexMd.close();
@@ -666,7 +611,7 @@ public class Snooze extends Service
          //-- so that all of the tbls/cols are
          //-- created first and are there to
          //-- be connected
-         rs = dbmd.getTables(null, null, null, new String[]{"TABLE"});
+         rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE"});
          while (rs.next())
          {
             String tableName = rs.getString("TABLE_NAME");
@@ -679,8 +624,8 @@ public class Snooze extends Service
                String pkTableName = keyMd.getString("PKTABLE_NAME");
                String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
 
-               Col fk = db.getCol(fkTableName, fkColumnName);
-               Col pk = db.getCol(pkTableName, pkColumnName);
+               Column fk = db.getColumn(fkTableName, fkColumnName);
+               Column pk = db.getColumn(pkTableName, pkColumnName);
                fk.setPk(pk);
 
                System.out.println(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
@@ -691,9 +636,9 @@ public class Snooze extends Service
 
          //-- if a table has two columns and both are foreign keys
          //-- then it is a relationship table for MANY_TO_MANY relationships
-         for (Tbl table : db.getTbls())
+         for (Table table : db.getTables())
          {
-            List<Col> cols = table.getCols();
+            List<Column> cols = table.getColumns();
             if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
             {
                table.setLinkTbl(true);
@@ -708,9 +653,9 @@ public class Snooze extends Service
 
    public void bootstrapApi(Api api, Db db) throws Exception
    {
-      for (Tbl t : db.getTbls())
+      for (Table t : db.getTables())
       {
-         List<Col> cols = t.getCols();
+         List<Column> cols = t.getColumns();
 
          Collection collection = new Collection();
          String collectionName = t.getName();
@@ -729,15 +674,15 @@ public class Snooze extends Service
          entity.setCollection(collection);
          collection.setEntity(entity);
 
-         for (Col col : cols)
+         for (Column col : cols)
          {
             if (col.getPk() == null)
             {
                Attribute attr = new Attribute();
                attr.setEntity(entity);
                attr.setName(col.getName());
-               attr.setCol(col);
-               attr.setHint(col.getTbl().getName() + "." + col.getName());
+               attr.setColumn(col);
+               attr.setHint(col.getTable().getName() + "." + col.getName());
                attr.setType(col.getType());
 
                entity.addAttribute(attr);
@@ -761,28 +706,28 @@ public class Snooze extends Service
       //-- API designers may want to represent one or both directions of the
       //-- relationship in their API and/or the names of the JSON properties
       //-- for the relationships will probably be different
-      for (Tbl t : db.getTbls())
+      for (Table t : db.getTables())
       {
          if (t.isLinkTbl())
          {
-            Col fkCol1 = t.getCols().get(0);
-            Col fkCol2 = t.getCols().get(1);
+            Column fkCol1 = t.getColumns().get(0);
+            Column fkCol2 = t.getColumns().get(1);
 
             //MANY_TO_MANY one way
             {
-               Entity pkEntity = api.getEntity(fkCol1.getPk().getTbl());
+               Entity pkEntity = api.getEntity(fkCol1.getPk().getTable());
                Relationship r = new Relationship();
                pkEntity.addRelationship(r);
                r.setEntity(pkEntity);
-               r.setRelated(api.getEntity(fkCol2.getTbl()));
+               r.setRelated(api.getEntity(fkCol2.getTable()));
 
                String hint = "MANY_TO_MANY - ";
-               hint += fkCol1.getPk().getTbl().getName() + "." + fkCol1.getPk().getName();
-               hint += " <- " + fkCol1.getTbl().getName() + "." + fkCol1.getName() + ":" + fkCol2.getName();
-               hint += " -> " + fkCol2.getPk().getTbl().getName() + "." + fkCol2.getPk().getName();
+               hint += fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
+               hint += " <- " + fkCol1.getTable().getName() + "." + fkCol1.getName() + ":" + fkCol2.getName();
+               hint += " -> " + fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
 
                r.setHint(hint);
-               r.setType(r.REL_MANY_TO_MANY);
+               r.setType(Relationship.REL_MANY_TO_MANY);
                r.setFkCol1(fkCol1);
                r.setFkCol2(fkCol2);
 
@@ -792,19 +737,19 @@ public class Snooze extends Service
 
             //MANY_TO_MANY the other way
             {
-               Entity pkEntity = api.getEntity(fkCol2.getPk().getTbl());
+               Entity pkEntity = api.getEntity(fkCol2.getPk().getTable());
                Relationship r = new Relationship();
                pkEntity.addRelationship(r);
                r.setEntity(pkEntity);
-               r.setRelated(api.getEntity(fkCol1.getTbl()));
+               r.setRelated(api.getEntity(fkCol1.getTable()));
 
                String hint = "MANY_TO_MANY - ";
-               hint += fkCol2.getPk().getTbl().getName() + "." + fkCol2.getPk().getName();
-               hint += " <- " + fkCol2.getTbl().getName() + "." + fkCol2.getName() + ":" + fkCol1.getName();
-               hint += " -> " + fkCol1.getPk().getTbl().getName() + "." + fkCol1.getPk().getName();
+               hint += fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
+               hint += " <- " + fkCol2.getTable().getName() + "." + fkCol2.getName() + ":" + fkCol1.getName();
+               hint += " -> " + fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
 
                r.setHint(hint);
-               r.setType(r.REL_MANY_TO_MANY);
+               r.setType(Relationship.REL_MANY_TO_MANY);
                r.setFkCol1(fkCol2);
                r.setFkCol2(fkCol1);
 
@@ -813,17 +758,23 @@ public class Snooze extends Service
          }
          else
          {
-            for (Col col : t.getCols())
+            for (Column col : t.getColumns())
             {
                if (col.isFk())
                {
-                  Col fkCol = col;
-                  Tbl fkTbl = fkCol.getTbl();
+                  Column fkCol = col;
+                  Table fkTbl = fkCol.getTable();
                   Entity fkEntity = api.getEntity(fkTbl);
 
-                  Col pkCol = col.getPk();
-                  Tbl pkTbl = pkCol.getTbl();
+                  Column pkCol = col.getPk();
+                  Table pkTbl = pkCol.getTable();
                   Entity pkEntity = api.getEntity(pkTbl);
+
+                  if (pkEntity == null)
+                  {
+                     System.err.println("Unknown Entity for table: " + pkTbl);
+                     continue;
+                  }
 
                   //ONE_TO_MANY
                   {
@@ -833,7 +784,7 @@ public class Snooze extends Service
                      //of relationships. For example where an entity is related
                      //to another entity twice
                      r.setHint("MANY_TO_ONE - " + pkTbl.getName() + "." + pkCol.getName() + " <- " + fkTbl.getName() + "." + fkCol.getName());
-                     r.setType(r.REL_MANY_TO_ONE);
+                     r.setType(Relationship.REL_MANY_TO_ONE);
                      r.setFkCol1(fkCol);
                      r.setEntity(pkEntity);
                      r.setRelated(fkEntity);
@@ -845,7 +796,7 @@ public class Snooze extends Service
                   {
                      Relationship r = new Relationship();
                      r.setHint("ONE_TO_MANY - " + fkTbl.getName() + "." + fkCol.getName() + " -> " + pkTbl.getName() + "." + pkCol.getName());
-                     r.setType(r.REL_ONE_TO_MANY);
+                     r.setType(Relationship.REL_ONE_TO_MANY);
                      r.setFkCol1(fkCol);
                      r.setEntity(fkEntity);
                      r.setRelated(pkEntity);
@@ -862,7 +813,7 @@ public class Snooze extends Service
    {
       String name = null;
       String type = rel.getType();
-      if (type.equals(rel.REL_ONE_TO_MANY))
+      if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
          name = rel.getFkCol1().getName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
@@ -870,15 +821,15 @@ public class Snooze extends Service
             name = name.substring(0, name.length() - 2);
          }
       }
-      else if (type.equals(rel.REL_MANY_TO_ONE))
+      else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
          name = rel.getRelated().getCollection().getName();//.getTbl().getName();
          if (!name.endsWith("s"))
             name = English.plural(name);
       }
-      else if (type.equals(rel.REL_MANY_TO_MANY))
+      else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFkCol2().getPk().getTbl().getName();
+         name = rel.getFkCol2().getPk().getTable().getName();
          if (!name.endsWith("s"))
             name = English.plural(name);
       }

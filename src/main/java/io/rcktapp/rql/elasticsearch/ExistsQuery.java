@@ -13,31 +13,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rcktapp.api;
+package io.rcktapp.rql.elasticsearch;
 
-public class Org
+public class ExistsQuery extends ElasticQuery
 {
-   int    id   = 0;
-   String name = null;
 
-   public int getId()
+   private String field;
+
+   public ExistsQuery(String field)
    {
-      return id;
+      this.field = field;
    }
 
-   public void setId(int id)
+   /**
+    * @return the field
+    */
+   public String getField()
    {
-      this.id = id;
-   }
-
-   public String getName()
-   {
-      return name;
-   }
-
-   public void setName(String name)
-   {
-      this.name = name;
+      return field;
    }
 
 }

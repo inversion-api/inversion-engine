@@ -16,385 +16,141 @@
 package io.rcktapp.api;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 import io.forty11.j.J;
-import io.forty11.js.JS;
-import io.forty11.js.JSObject;
-import io.forty11.utils.CaseInsensitiveSet;
 
-public class Rule extends Dto implements Comparable<Rule>
+public abstract class Rule extends Dto implements Comparable<Rule>
 {
-   public static float        DEFAULT_ORDER    = 1000;
-   public static float        DEFAULT_PRIORITY = 0;
+   String       name         = null;
+   int          order        = 1000;
 
-   CaseInsensitiveSet<String> methodsSet       = null;
-   CaseInsensitiveSet<String> pathsSet         = null;
-   List<String>               permsList        = null;
-   CaseInsensitiveSet<String> rolesSet         = null;
+   Set<String>  methods      = new HashSet();
 
-   Org                        org              = null;
+   List<String> excludePaths = new ArrayList();
+   List<String> includePaths = new ArrayList();
 
-   //Api                        api              = null;
-
-   String                     name             = null;
-
-   String                     methods          = null;
-
-   String                     paths            = null;
-
-   boolean                    negate           = false;
-
-   boolean                    meta             = false;
-
-   boolean                    terminate        = false;
-
-   float                      order            = DEFAULT_ORDER;
-
-   float                      priority         = DEFAULT_PRIORITY;
-
-   String                     handler          = null;
-
-   //requires a User object to have these perms
-   String                     perms            = null;
-
-   String                     roles            = null;
-
-   String                     status           = SC.SC_200_OK;
-
-   boolean                    deny             = false;
-
-   String                     params           = null;
-
-   JSObject                   config           = null;
-
-   /**
-    * A query string of overrideable name/value pairs
-    */
-   String                     defaults         = null;
-
-   /**
-    * A query string of overrideable name/value pairs
-    */
-   String                     absolutes        = null;
-
-   /**
-    * A select statement that GetHandler will use as
-    * its seed select statement
-    */
-   String                     select           = null;
-
-   /**
-    * A sql statement used by GetHandler,DeleteHandler,
-    * PostPutHandler to filter the entity 
-    * ids that are about to be operated on.  Enables
-    * resource level security.  
-    * 
-    *  @see io.rcktapp.api.service.SqlHandler.filterIds()
-    */
-   String                     filter           = null;
-
-   //   /**
-   //    * Tells GetHandler that it should treat the 
-   //    * results of of its query as if were of 
-   //    * this type.  Useful when you have a rule
-   //    * that is not mapped to a specific collection
-   //    * path and uses a <code>select</code> property
-   //    * to get the rows but you still want to 
-   //    * preserve relationships in the output
-   //    */
-   //   String                collection       = null;
-   //
-   //   /**
-   //    * Specifically only include these properties
-   //    * in the output
-   //    */
-   //   String                includes         = null;
-   //
-   //   /**
-   //    * Include all properties but these in the output
-   //    */
-   //   String                excludes         = null;
-   //
-   //   /**
-   //    * Tells GetHandler to expand these relationships
-   //    * for example person.addresses would cause all
-   //    * related address entites to be included in the 
-   //    * output document
-   //    */
-   //   String                expands          = null;
-   //
-   //   /**
-   //    * 
-   //    */
-   //   String                format           = null;
-   //
-   //   /**
-   //    * Tells GetHandler that these query params
-   //    * should not be parsed as RQL
-   //    */
-   //   String                ignores          = null;
-
-   public Rule()
-   {
-
-   }
-
-   public Rule(String name)
-   {
-      setName(name);
-   }
-
-   public Rule(String name, String method, String path, String handler)
-   {
-      setName(name);
-      setMethods(method);
-      setPaths(paths);
-      setHandler(handler);
-   }
-
-   public boolean matches(Request req) throws ApiException
-   {
-      boolean matches = true;
-
-      if (!J.empty(methods) && !hasMethod(req.getMethod()))
-      {
-         matches = false;
-      }
-      else if (!J.empty(paths) && !hasPath(req.getPath()))
-      {
-         matches = false;
-      }
-
-      if (negate)
-         matches = !matches;
-
-      return matches;
-   }
-
-   public boolean isAuthroized(Request req)
-   {
-      if (deny)
-         return false;
-
-      if ((!J.empty(perms)) && req.getUser() == null)
-         return false;
-
-      Api api = req.getApi();
-      User user = req.getUser();
-
-      //ex guest.get, member.post
-      if (!allowRole(user) && !api.allowRole(user, req.getMethod()))
-         return false;
-
-      if (!J.empty(perms))
-      {
-         for (String perm : allPerms())
-         {
-            if (!user.hasPerm(perm))
-               return false;
-         }
-      }
-
-      return true;
-   }
-
-   public boolean allowRole(User user)
-   {
-      if (user == null)
-         return hasRole(Role.GUEST);
-
-      for (String role : user.getRoles())
-      {
-         if (hasRole(role))
-            return true;
-      }
-      return false;
-   }
-
-   public boolean hasMethod(String val)
-   {
-      if (methodsSet == null)
-      {
-         methodsSet = toSet(methods);
-      }
-      return methodsSet.contains(val.toLowerCase());
-   }
-
-   public boolean hasPath(String val)
-   {
-      if (pathsSet == null)
-      {
-         pathsSet = toSet(paths);
-      }
-
-      for (String wildcard : pathsSet)
-      {
-         if (J.wildcardMatch(wildcard, val))
-            return true;
-      }
-
-      return false;
-   }
-
-   CaseInsensitiveSet toSet(String string)
-   {
-      CaseInsensitiveSet set = new CaseInsensitiveSet();
-
-      if (string == null)
-         return set;
-
-      String[] parts = string.toLowerCase().split(",");
-      for (int i = 0; i < parts.length; i++)
-      {
-         String part = parts[i].trim();
-         if (!J.empty(part))
-            set.add(part);
-      }
-      return set;
-   }
+   Properties   config       = new Properties();
 
    @Override
-   public int compareTo(Rule o)
+   public int compareTo(Rule a)
    {
-      if (order == o.order)
-         return priority > o.priority ? 1 : -1;
-
-      return order > o.order ? 1 : -1;
+      return order <= a.order ? -1 : 1;
    }
 
-   public Org getOrg()
+   public static boolean pathMatches(String wildcardPath, String path)
    {
-      return org;
+      //      wildcardPath = J.path(wildcardPath.replace('\\', '/'));
+      //      path = J.path(path.replace('\\', '/'));
+      //
+      //      if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/"))
+      //         wildcardPath += "/";
+      //
+      //      if (!path.endsWith("*") && !path.endsWith("/"))
+      //         path += "/";
+      //
+      //      if (wildcardPath.startsWith("/"))
+      //         wildcardPath = wildcardPath.substring(1, wildcardPath.length());
+      //
+      //      if (path.startsWith("/"))
+      //         path = path.substring(1, path.length());
+
+      return J.wildcardMatch(wildcardPath, path);
    }
 
-   public void setOrg(Org org)
+   public boolean matches(String method, String path)
    {
-      this.org = org;
-   }
+      boolean included = false;
+      boolean excluded = false;
 
-   public boolean isNegate()
-   {
-      return negate;
-   }
-
-   public void setNegate(boolean negate)
-   {
-      this.negate = negate;
-   }
-
-   public float getOrder()
-   {
-      return order;
-   }
-
-   public void setOrder(float order)
-   {
-      this.order = order;
-   }
-
-   public float getPriority()
-   {
-      return priority;
-   }
-
-   public void setPriority(float priority)
-   {
-      this.priority = priority;
-   }
-
-   public String getStatus()
-   {
-      return status;
-   }
-
-   public void setStatus(String status)
-   {
-      this.status = status;
-   }
-
-   public String getMethods()
-   {
-      return methods;
-   }
-
-   public void setMethods(String methods)
-   {
-      this.methods = methods;
-   }
-
-   public String getPaths()
-   {
-      return paths;
-   }
-
-   public void setPaths(String paths)
-   {
-      this.paths = paths;
-   }
-
-   public String getHandler()
-   {
-      return handler;
-   }
-
-   public void setHandler(String handler)
-   {
-      this.handler = handler;
-   }
-
-   public List<String> allPerms()
-   {
-      if (permsList == null)
+      if (methods.size() == 0 || methods.contains(method))
       {
-         permsList = new ArrayList(toSet(perms));
+         if (includePaths.size() == 0)
+         {
+            included = true;
+         }
+         else
+         {
+            for (String includePath : includePaths)
+            {
+               if (pathMatches(includePath, path))
+               {
+                  included = true;
+                  break;
+               }
+            }
+         }
+
+         if (included)
+         {
+            for (String excludePath : excludePaths)
+            {
+               if (pathMatches(excludePath, path))
+               {
+                  excluded = false;
+                  break;
+               }
+            }
+         }
       }
-      return permsList;
+      return included && !excluded;
+
    }
 
-   public boolean hasRole(String role)
+   public List<String> getMethods()
    {
-      if (rolesSet == null)
-      {
-         rolesSet = toSet(roles);
-      }
-      return rolesSet.contains(role);
+      return new ArrayList(methods);
    }
 
-   public void setRoles(String roles)
+   public void setMethods(List<String> methods)
    {
-      this.roles = roles;
+      this.methods.clear();
+      this.methods.addAll(methods);
    }
 
-   public void setPerms(String perms)
+   public void addMethod(String method)
    {
-      permsList = null;
-      this.perms = perms;
+      if (!methods.contains(method))
+         methods.add(method);
    }
 
-   public boolean isTerminate()
+   public List<String> getIncludePaths()
    {
-      return terminate;
+      return new ArrayList(includePaths);
    }
 
-   public void setTerminate(boolean terminate)
+   public void setIncludePaths(List<String> includePaths)
    {
-      this.terminate = terminate;
+      this.includePaths.clear();
+      for (String includePath : includePaths)
+         addIncludePath(includePath);
    }
 
-   public JSObject getConfig()
+   public void addIncludePath(String includePath)
    {
-      if (params != null && config == null)
-      {
-         config = (JSObject) JS.toObject(params);
-      }
-
-      return config;
+      if (!includePaths.contains(includePath))
+         includePaths.add(includePath);
    }
 
-   public void setConfig(JSObject config)
+   public List<String> getExcludePaths()
    {
-      this.config = config;
+      return new ArrayList(excludePaths);
+   }
+
+   public void setExcludePaths(List<String> excludePaths)
+   {
+      this.excludePaths.clear();
+      for (String excludePath : excludePaths)
+         addExcludePath(excludePath);
+   }
+
+   public void addExcludePath(String excludePath)
+   {
+      if (!excludePaths.contains(excludePath))
+         excludePaths.add(excludePath);
    }
 
    public String getName()
@@ -407,64 +163,38 @@ public class Rule extends Dto implements Comparable<Rule>
       this.name = name;
    }
 
-   public String getDefaults()
+   public int getOrder()
    {
-      return defaults;
+      return order;
    }
 
-   public void setDefaults(String defaults)
+   public void setOrder(int order)
    {
-      this.defaults = defaults;
+      this.order = order;
    }
 
-   public String getAbsolutes()
+   public String getConfig(String key)
    {
-      return absolutes;
+      return (String) config.get(key);
    }
 
-   public void setAbsolutes(String absolutes)
+   public String getConfig(String key, String defaultValue)
    {
-      this.absolutes = absolutes;
+      return config.getProperty(key, defaultValue);
    }
 
-   public String getSelect()
+   public void setConfig(String queryString)
    {
-      return select;
-   }
-
-   public void setSelect(String select)
-   {
-      this.select = select;
-   }
-
-   public String getFilter()
-   {
-      return filter;
-   }
-
-   public void setFilter(String filter)
-   {
-      this.filter = filter;
-   }
-
-   public boolean isMeta()
-   {
-      return meta;
-   }
-
-   public void setMeta(boolean meta)
-   {
-      this.meta = meta;
-   }
-
-   public String getParams()
-   {
-      return params;
-   }
-
-   public void setParams(String params)
-   {
-      this.params = params;
+      try
+      {
+         config.clear();
+         config.putAll(Request.parse(queryString));
+         //config.load(new ByteArrayInputStream(propertiesString.getBytes()));
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
    }
 
 }

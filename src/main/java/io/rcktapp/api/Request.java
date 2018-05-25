@@ -22,65 +22,77 @@ import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.collections.map.CaseInsensitiveMap;
+
 import io.forty11.j.J;
-import io.forty11.js.JS;
-import io.forty11.js.JSObject;
+import io.forty11.web.Url;
+import io.forty11.web.js.JS;
+import io.forty11.web.js.JSArray;
+import io.forty11.web.js.JSObject;
 
 public class Request
 {
-   String              apiUrl           = null;
-   Api                 api              = null;
+   Url                url              = null;
+   HttpServletRequest request          = null;
 
-   User                user             = null;
+   String             apiUrl           = null;
+   Api                api              = null;
 
-   String              referrer         = null;
+   String             accountCode      = null;
+   String             apiCode          = null;
+   String             tenantCode       = null;
 
-   HttpServletRequest  request          = null;
+   User               user             = null;
 
-   String              method           = null;
+   String             referrer         = null;
 
-   String              url              = null;
-   String              path             = null;
-   String              query            = null;
+   String             method           = null;
 
-   String              collectionKey    = null;
-   String              entityKey        = null;
-   String              subCollectionKey = null;
+   String             path             = null;
 
-   String              body             = null;
-   JSObject            json             = null;
+   String             collectionKey    = null;
+   String             entityKey        = null;
+   String             subCollectionKey = null;
 
-   boolean             browse           = false;
+   String             body             = null;
+   JSObject           json             = null;
 
-   Map<String, String> params           = new HashMap();
+   boolean            browse           = false;
 
-   public Request(HttpServletRequest req, String method, String inUrl, Api api, String apiUrl)
+   boolean            explain          = false;
+
+   CaseInsensitiveMap params           = new CaseInsensitiveMap();
+
+   public Request(HttpServletRequest req, String method, Url url, Api api, String apiUrl)
    {
       this.request = req;
       this.api = api;
       this.apiUrl = apiUrl;
+      this.accountCode = api.getAccountCode();
+      this.apiCode = api.getApiCode();
 
-      this.method = method;//req.getMethod();
+      this.method = method;
 
-      url = inUrl;
-
-      if (url.indexOf('?') > 0)
-      {
-         query = url.substring(url.indexOf('?') + 1, url.length());
-         url = url.substring(0, url.indexOf('?'));
-      }
-      else if (req != null)
-      {
-         query = req.getQueryString();
-      }
+      this.url = url;
 
       if (apiUrl != null)
       {
-         path = url.substring(apiUrl.length(), url.length());
+         if (api.isMultiTenant())
+         {
+            List<String> p = J.explode("/", apiUrl);
+            tenantCode = p.get(p.size() - 1);
+         }
+
+         String urlStr = url.toString();
+         if (urlStr.indexOf("?") > 0)
+            urlStr = urlStr.substring(0, urlStr.indexOf("?"));
+
+         path = urlStr.substring(apiUrl.length(), urlStr.length());
          while (path.startsWith("/"))
             path = path.substring(1, path.length());
 
@@ -89,14 +101,18 @@ public class Request
          if (!path.endsWith("/"))
             path = path + "/";
 
-         if (parts.length > 0)
-            collectionKey = parts[0];
+         int idx = 0;
+         if (parts.length > idx)
+            collectionKey = parts[idx++];
 
-         if (parts.length > 1)
-            entityKey = parts[1];
+         if (collectionKey == null)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
 
-         if (parts.length > 2)
-            subCollectionKey = parts[2];
+         if (parts.length > idx)
+            entityKey = parts[idx++];
+
+         if (parts.length > idx)
+            subCollectionKey = parts[idx++];
       }
 
       //-- copy params
@@ -110,34 +126,42 @@ public class Request
             params.put(key, val);
          }
       }
-      else if (query != null)
+      else
       {
-         String q = query;
-         if (q.startsWith("?"))
-            q = q.substring(1, q.length());
-
-         String[] pairs = q.split("&");
-         for (String pair : pairs)
+         String query = url.getQuery();
+         if (!J.empty(query))
          {
-            int idx = pair.indexOf("=");
-            params.put(URLDecoder.decode(pair.substring(0, idx)), URLDecoder.decode(pair.substring(idx + 1)));
+            params.putAll(parse(query));
          }
       }
+
+      if (params.containsKey("explain"))
+      {
+         explain = !(params.get("explain") + "").trim().equalsIgnoreCase("false");
+         params.remove("explain");
+      }
+
+      //--
+
    }
 
-   //--
+   public boolean isDebug()
+   {
+      if (getUrl().toString().indexOf("://localhost") > 0)
+         return true;
 
-   //   public void replaceParams(String query)
-   //   {
-   //      params
-   //   }
-   //   
-   //   public void appendParams(String query)
-   //   {
-   //      
-   //   }
+      if (getApi() != null)
+         return getApi().isDebug();
 
-   Map parse(String query)
+      return false;
+   }
+
+   public boolean isExplain()
+   {
+      return explain;
+   }
+
+   public static Map<String, String> parse(String query)
    {
       try
       {
@@ -152,6 +176,10 @@ public class Request
                String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
                params.put(key, value);
             }
+            else
+            {
+               params.put(URLDecoder.decode(pair, "UTF-8"), "");
+            }
          }
 
          return params;
@@ -162,37 +190,12 @@ public class Request
       }
 
    }
-   //   public void withQuery(String query)
-   //   {
-   //      withQuery(query, true);
-   //   }
-   //
-   //   public void withQuery(String query, boolean overwrite)
-   //   {
-   //      try
-   //      {
-   //         if (this.query == null)
-   //            this.query = "";
-   //
-   //         if (overwrite)
-   //         {
-   //            query = this.query + "&" + query;
-   //         }
-   //         else
-   //         {
-   //            query = query + "&" + this.query;
-   //         }
-   //
-   //         setQuery(query);
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         J.rethrow(ex);
-   //      }
-   //   }
 
    public static String readBody(HttpServletRequest request) throws ApiException
    {
+      if (request == null)
+         return null;
+
       StringBuilder stringBuilder = new StringBuilder();
       BufferedReader bufferedReader = null;
 
@@ -245,6 +248,11 @@ public class Request
       return body;
    }
 
+   public void setBody(String body)
+   {
+      this.body = body;
+   }
+
    public JSObject getJson() throws ApiException
    {
       if (json != null)
@@ -255,8 +263,53 @@ public class Request
          return null;
 
       json = JS.toJSObject(body);
+      prune(json);
 
       return json;
+   }
+
+   /**
+    * Removes all empty objects from the tree
+    */
+   boolean prune(Object parent)
+   {
+      if (parent instanceof JSArray)
+      {
+         JSArray arr = ((JSArray) parent);
+         for (int i = 0; i < arr.length(); i++)
+         {
+            if (prune(arr.get(i)))
+            {
+               arr.remove(i);
+               i--;
+            }
+         }
+         return arr.length() == 0;
+      }
+      else if (parent instanceof JSObject)
+      {
+         boolean prune = true;
+         JSObject js = (JSObject) parent;
+         for (String key : js.keySet())
+         {
+            Object child = js.get(key);
+            prune &= prune(child);
+         }
+
+         if (prune)
+         {
+            for (String key : js.keySet())
+            {
+               js.remove(key);
+            }
+         }
+
+         return prune;
+      }
+      else
+      {
+         return parent == null;
+      }
    }
 
    public void putParam(String name, String value)
@@ -264,14 +317,14 @@ public class Request
       params.put(name, value);
    }
 
-   public Map getParams()
+   public Map<String, String> getParams()
    {
-      return new HashMap(params);
+      return new CaseInsensitiveMap(params);
    }
 
-   public void removeParam(String param)
+   public String removeParam(String param)
    {
-      params.remove(param);
+      return (String) params.remove(param);
    }
 
    public void clearParams()
@@ -322,23 +375,15 @@ public class Request
 
    public String getHeader(String header)
    {
-      if(request == null)
+      if (request == null)
          return null;
-      
+
       return request.getHeader(header);
    }
 
    public String getParam(String key)
    {
-      String val = params.get(key);
-      if (val == null)
-      {
-         for (String pk : params.keySet())
-         {
-            if (pk.equalsIgnoreCase(key))
-               return params.get(pk);
-         }
-      }
+      String val = (String) params.get(key);
       return val;
    }
 
@@ -347,7 +392,7 @@ public class Request
       return api;
    }
 
-   public String getUrl()
+   public Url getUrl()
    {
       return url;
    }
@@ -359,7 +404,7 @@ public class Request
 
    public String getQuery()
    {
-      return query;
+      return url.getQuery();
    }
 
    /**
@@ -378,14 +423,6 @@ public class Request
       return entityKey;
    }
 
-   /**
-    * @return the subCollectionKey
-    */
-   public String getSubCollectionKey()
-   {
-      return subCollectionKey;
-   }
-
    public void setCollectionKey(String collectionKey)
    {
       this.collectionKey = collectionKey;
@@ -394,11 +431,6 @@ public class Request
    public void setEntityKey(String entityKey)
    {
       this.entityKey = entityKey;
-   }
-
-   public void setSubCollectionKey(String subCollectionKey)
-   {
-      this.subCollectionKey = subCollectionKey;
    }
 
    public String getApiUrl()
@@ -421,37 +453,44 @@ public class Request
       this.user = user;
    }
 
-   public void setBody(String body)
+   public String getAccountCode()
    {
-      this.body = body;
+      return accountCode;
    }
 
-   public void requireAll(String... params) throws ApiException
+   public void setAccountCode(String accountCode)
    {
-      for (String param : params)
-      {
-         if (!this.params.containsKey(param))
-         {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing a required parameter '" + param + "'");
-         }
-      }
+      this.accountCode = accountCode;
    }
 
-   public void requireOne(String... params) throws ApiException
+   public String getApiCode()
    {
-      boolean found = false;
-      for (String param : params)
-      {
-         if (this.params.containsKey(param))
-         {
-            found = true;
-            break;
-         }
-      }
-      if (!found)
-      {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "One of " + params + " is required parameter.");
-      }
+      return apiCode;
+   }
+
+   public void setApiCode(String apiCode)
+   {
+      this.apiCode = apiCode;
+   }
+
+   public String getTenantCode()
+   {
+      return tenantCode;
+   }
+
+   public void setTenantCode(String tenantCode)
+   {
+      this.tenantCode = tenantCode;
+   }
+
+   public String getSubCollectionKey()
+   {
+      return subCollectionKey;
+   }
+
+   public void setSubCollectionKey(String subCollectionKey)
+   {
+      this.subCollectionKey = subCollectionKey;
    }
 
 }
