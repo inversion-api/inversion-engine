@@ -656,6 +656,89 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void complexSearch1()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(search(keywords,test),search(keywords,matt))"));
+
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"fuzzy\":{\"keywords\":\"test\"}},{\"fuzzy\":{\"keywords\":\"matt\"}}]}}", json);
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void complexSearch2()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("search(keywords,test)&search(keywords,matt)"));
+
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"fuzzy\":{\"keywords\":\"test\"}},{\"fuzzy\":{\"keywords\":\"matt\"}}]}}", json);
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void complexOr()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("or(eq(id,3),eq(name,*POST*))"));
+
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"should\":[{\"term\":{\"id\":\"3\"}},{\"wildcard\":{\"name\":\"*POST*\"}}]}}", json);
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   
 
    @Test
    public void testWildcard()
