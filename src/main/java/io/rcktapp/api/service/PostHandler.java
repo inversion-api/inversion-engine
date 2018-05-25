@@ -251,13 +251,13 @@ public class PostHandler implements Handler
       String id = null;
       if (vals.containsKey("id"))
       {
-         Sql.updateRow(conn, entity.getTable().getName(), "id", vals.get("id") + "", vals);
+         Sql.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
          changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
          id = vals.get("id") + "";
       }
       else
       {
-         id = Sql.insertMap(conn, entity.getTable().getName(), vals) + "";
+         id = Sql.insertMap(conn, "`" + entity.getTable().getName() + "`", vals) + "";
          changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
 
