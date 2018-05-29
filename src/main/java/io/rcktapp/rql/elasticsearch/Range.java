@@ -38,11 +38,11 @@ public class Range extends ElasticQuery
    private String name;
 
    @JsonIgnore
-   private Object ge;
+   private Object gte;
    @JsonIgnore
    private Object gt;
    @JsonIgnore
-   private Object le;
+   private Object lte;
    @JsonIgnore
    private Object lt;
    @JsonIgnore
@@ -79,14 +79,14 @@ public class Range extends ElasticQuery
       if (getGt() != null)
          properties.put("gt", getGt());
 
-      if (getGe() != null)
-         properties.put("ge", getGe());
+      if (getGte() != null)
+         properties.put("gte", getGte());
 
       if (getLt() != null)
          properties.put("lt", getLt());
 
-      if (getLe() != null)
-         properties.put("le", getLe());
+      if (getLte() != null)
+         properties.put("lte", getLte());
 
       if (getBoost() != null)
          properties.put("boost", getBoost());
@@ -103,19 +103,19 @@ public class Range extends ElasticQuery
    }
 
    /**
-    * @return the ge
+    * @return the gte
     */
-   public Object getGe()
+   public Object getGte()
    {
-      return ge;
+      return gte;
    }
 
    /**
-    * @param ge the ge to set
+    * @param gte the gte to set
     */
-   public void setGe(Object ge)
+   public void setGte(Object gte)
    {
-      this.ge = ge;
+      this.gte = gte;
    }
 
    /**
@@ -137,17 +137,17 @@ public class Range extends ElasticQuery
    /**
     * @return the le
     */
-   public Object getLe()
+   public Object getLte()
    {
-      return le;
+      return lte;
    }
 
    /**
-    * @param lte the le to set
+    * @param lte the lte to set
     */
-   public void setLe(Object le)
+   public void setLte(Object lte)
    {
-      this.le = le;
+      this.lte = lte;
    }
 
    /**

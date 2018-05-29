@@ -58,34 +58,7 @@ public class BoolQuery extends ElasticQuery
    @JsonGetter("filter")
    public List<Map<String, ElasticQuery>> getFilterForElasticJson()
    {
-      if (filter == null)
-         return null;
-
-      List<Map<String, ElasticQuery>> filterList = new ArrayList<Map<String, ElasticQuery>>();
-
-      for (int i = 0; i < filter.size(); i++)
-      {
-         ElasticQuery elastic = filter.get(i);
-         if (elastic instanceof Range)
-            filterList.add(Collections.singletonMap("range", elastic));
-         else if (elastic instanceof Term)
-         {
-            if (((Term) elastic).isTerm())
-               filterList.add(Collections.singletonMap("term", elastic));
-            else
-               filterList.add(Collections.singletonMap("terms", elastic));
-         }
-         else if (elastic instanceof Wildcard)
-            filterList.add(Collections.singletonMap("wildcard", elastic));
-         else if (elastic instanceof BoolQuery)
-            filterList.add(Collections.singletonMap("bool", elastic));
-         else if (elastic instanceof NestedQuery)
-            filterList.add(Collections.singletonMap("nested", elastic));
-         else if (elastic instanceof FuzzyQuery) // are fuzzy queries allowed in a filter?
-            filterList.add(Collections.singletonMap("fuzzy", elastic));
-      }
-
-      return filterList;
+      return getListForElasticJson(filter);
    }
 
    /**
@@ -95,36 +68,7 @@ public class BoolQuery extends ElasticQuery
    @JsonGetter("must")
    public List<Map<String, ElasticQuery>> getMustForElasticJson()
    {
-      if (must == null)
-         return null;
-
-      List<Map<String, ElasticQuery>> mustList = new ArrayList<Map<String, ElasticQuery>>();
-
-      for (int i = 0; i < must.size(); i++)
-      {
-         ElasticQuery elastic = must.get(i);
-         if (elastic instanceof Range)
-            mustList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term)
-         {
-            if (((Term) elastic).isTerm())
-               mustList.add(Collections.singletonMap("term", elastic));
-            else
-               mustList.add(Collections.singletonMap("terms", elastic));
-         }
-         else if (elastic instanceof Wildcard)
-            mustList.add(Collections.singletonMap("wildcard", elastic));
-         else if (elastic instanceof BoolQuery)
-            mustList.add(Collections.singletonMap("bool", elastic));
-         else if (elastic instanceof NestedQuery)
-            mustList.add(Collections.singletonMap("nested", elastic));
-         else if (elastic instanceof ExistsQuery)
-            mustList.add(Collections.singletonMap("exists", elastic));
-         else if (elastic instanceof FuzzyQuery)
-            mustList.add(Collections.singletonMap("fuzzy", elastic));
-      }
-
-      return mustList;
+      return getListForElasticJson(must);
    }
 
    /**
@@ -135,36 +79,7 @@ public class BoolQuery extends ElasticQuery
    @JsonGetter("must_not")
    public List<Map<String, ElasticQuery>> getMustNotForElasticJson()
    {
-      if (must_not == null)
-         return null;
-
-      List<Map<String, ElasticQuery>> mustNotList = new ArrayList<Map<String, ElasticQuery>>();
-
-      for (int i = 0; i < must_not.size(); i++)
-      {
-         ElasticQuery elastic = must_not.get(i);
-         if (elastic instanceof Range)
-            mustNotList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term)
-         {
-            if (((Term) elastic).isTerm())
-               mustNotList.add(Collections.singletonMap("term", elastic));
-            else
-               mustNotList.add(Collections.singletonMap("terms", elastic));
-         }
-         else if (elastic instanceof Wildcard)
-            mustNotList.add(Collections.singletonMap("wildcard", elastic));
-         else if (elastic instanceof BoolQuery)
-            mustNotList.add(Collections.singletonMap("bool", elastic));
-         else if (elastic instanceof NestedQuery)
-            mustNotList.add(Collections.singletonMap("nested", elastic));
-         else if (elastic instanceof ExistsQuery)
-            mustNotList.add(Collections.singletonMap("exists", elastic));
-         else if (elastic instanceof FuzzyQuery)
-            mustNotList.add(Collections.singletonMap("fuzzy", elastic));
-      }
-
-      return mustNotList;
+      return getListForElasticJson(must_not);
    }
 
    /**
@@ -174,36 +89,7 @@ public class BoolQuery extends ElasticQuery
    @JsonGetter("should")
    public List<Map<String, ElasticQuery>> getShouldForElasticJson()
    {
-      if (should == null)
-         return null;
-
-      List<Map<String, ElasticQuery>> shouldList = new ArrayList<Map<String, ElasticQuery>>();
-
-      for (int i = 0; i < should.size(); i++)
-      {
-         ElasticQuery elastic = should.get(i);
-         if (elastic instanceof Range)
-            shouldList.add(Collections.singletonMap("range", elastic));
-         if (elastic instanceof Term)
-         {
-            if (((Term) elastic).isTerm())
-               shouldList.add(Collections.singletonMap("term", elastic));
-            else
-               shouldList.add(Collections.singletonMap("terms", elastic));
-         }
-         else if (elastic instanceof Wildcard)
-            shouldList.add(Collections.singletonMap("wildcard", elastic));
-         else if (elastic instanceof BoolQuery)
-            shouldList.add(Collections.singletonMap("bool", elastic));
-         else if (elastic instanceof NestedQuery)
-            shouldList.add(Collections.singletonMap("nested", elastic));
-         else if (elastic instanceof ExistsQuery)
-            shouldList.add(Collections.singletonMap("exists", elastic));
-         else if (elastic instanceof FuzzyQuery)
-            shouldList.add(Collections.singletonMap("fuzzy", elastic));
-      }
-
-      return shouldList;
+      return getListForElasticJson(should);
    }
 
    public void divvyElasticList(List<ElasticQuery> elasticList)
@@ -228,6 +114,39 @@ public class BoolQuery extends ElasticQuery
             addFilter(elastic);
       }
 
+   }
+   
+   private List<Map<String, ElasticQuery>> getListForElasticJson(List<ElasticQuery> queryList) {
+      if (queryList == null)
+         return null;
+
+      List<Map<String, ElasticQuery>> jsonList = new ArrayList<Map<String, ElasticQuery>>();
+
+      for (int i = 0; i < queryList.size(); i++)
+      {
+         ElasticQuery elastic = queryList.get(i);
+         if (elastic instanceof Range)
+            jsonList.add(Collections.singletonMap("range", elastic));
+         if (elastic instanceof Term)
+         {
+            if (((Term) elastic).isTerm())
+               jsonList.add(Collections.singletonMap("term", elastic));
+            else
+               jsonList.add(Collections.singletonMap("terms", elastic));
+         }
+         else if (elastic instanceof Wildcard)
+            jsonList.add(Collections.singletonMap("wildcard", elastic));
+         else if (elastic instanceof BoolQuery)
+            jsonList.add(Collections.singletonMap("bool", elastic));
+         else if (elastic instanceof NestedQuery)
+            jsonList.add(Collections.singletonMap("nested", elastic));
+         else if (elastic instanceof ExistsQuery)
+            jsonList.add(Collections.singletonMap("exists", elastic));
+         else if (elastic instanceof FuzzyQuery)
+            jsonList.add(Collections.singletonMap("fuzzy", elastic));
+      }
+
+      return jsonList;
    }
 
    public void addFilter(ElasticQuery elastic)

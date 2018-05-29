@@ -243,7 +243,7 @@ public class RQL
             break;
          case "ge": // greater than or equal
             elastic = new Range(pred.terms.get(0).token);
-            ((Range) elastic).setGe(pred.terms.get(1).token);
+            ((Range) elastic).setGte(pred.terms.get(1).token);
             break;
          case "lt": // less than
             elastic = new Range(pred.terms.get(0).token);
@@ -251,7 +251,7 @@ public class RQL
             break;
          case "le": // less than or equal
             elastic = new Range(pred.terms.get(0).token);
-            ((Range) elastic).setLe(pred.terms.get(1).token);
+            ((Range) elastic).setLte(pred.terms.get(1).token);
             break;
          case "eq": // equal
             if (pred.terms.get(1).token.contains("*"))
