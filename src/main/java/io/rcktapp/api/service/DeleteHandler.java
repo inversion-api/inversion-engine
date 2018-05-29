@@ -156,7 +156,7 @@ public class DeleteHandler extends RqlHandler
             String col = replacer.cols.get(i);
             String val = replacer.vals.get(i);
 
-            args.add(convert(collection, col, val));
+            args.add(cast(collection, col, val));
          }
 
          List<Long> idsToDelete = Sql.selectList(conn, sql, args);
