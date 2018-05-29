@@ -213,6 +213,7 @@ public class AuthHandler implements Handler
 
             resp.getHttpResp().setHeader("x-auth-token", "Session " + sessionKey);
             JSObject obj = new JSObject();
+            obj.put("id", user.getId());
             obj.put("username", username);
 
             JSArray perms = new JSArray();

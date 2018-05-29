@@ -1,5 +1,7 @@
 # rckt_snooze
 
+## Logging
+ * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
 # Reserved Query Parameters
 
@@ -190,7 +192,7 @@ The first rule to "allow" access wins.  If no rule allows access, then a 403 is 
 
 
 
-## Multi-Tenant APIs & Rowl Level Security##
+## Multi-Tenant APIs & Row Level Security##
 
 Api's can be flagged as 'multiTennant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
@@ -204,8 +206,6 @@ The first line of defense
 
 Many Apis will expose multi-tenant databases and authorization to access and Endpoint should not necessarily 
 entitle a User to all the data found at that Endpoint.
-
-DO WE NEED TO PUT A TENANT ID ON THE USER TABLE?
 
 
 

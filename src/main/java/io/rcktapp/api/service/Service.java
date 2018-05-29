@@ -617,7 +617,6 @@ public class Service extends HttpServlet
 
          if (debug)
          {
-            System.out.println(res.getDebug());
             requestLog.info(res.getDebug());
          }
 

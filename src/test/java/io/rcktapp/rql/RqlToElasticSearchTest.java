@@ -872,7 +872,7 @@ public class RqlToElasticSearchTest
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"bool\":{\"filter\":[{\"range\":{\"hispanicRank\":{\"gt\":\"25\"}}},{\"range\":{\"hispanicRank\":{\"le\":\"40\"}}}]}}", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"range\":{\"hispanicRank\":{\"gt\":\"25\"}}},{\"range\":{\"hispanicRank\":{\"lte\":\"40\"}}}]}}", json);
          assertNull(dsl.getRange());
          assertNull(dsl.getTerm());
          assertNull(dsl.getWildcard());
