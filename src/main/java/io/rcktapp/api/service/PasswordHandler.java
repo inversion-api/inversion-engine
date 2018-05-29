@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -24,8 +24,6 @@ import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
-import io.rcktapp.api.service.AuthHandler;
-import io.rcktapp.api.service.Service;
 
 public class PasswordHandler implements Handler
 {
@@ -41,9 +39,15 @@ public class PasswordHandler implements Handler
          // is responsible for logging this change
          return;
       }
-      
+
+      if (req.getJson() instanceof JSArray)
+      {
+         return;
+      }
+
       String password = (String) req.getJson().remove(passwordField);
-      if (password == null) {
+      if (password == null)
+      {
          return;
       }
 
@@ -57,7 +61,8 @@ public class PasswordHandler implements Handler
          if (js instanceof JSArray && ((JSArray) js).length() == 1)
          {
             JSObject user = (JSObject) ((JSArray) js).get(0);
-            if (user.get("id") != null) {
+            if (user.get("id") != null)
+            {
                String encryptedPassword = AuthHandler.hashPassword(user.get("id"), password);
                JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Service.buildLink(req, collectionKey, null, null);
