@@ -49,6 +49,8 @@ public class AclHandler implements Handler
       List<Acl> matched = new ArrayList<>();
       boolean allowed = false;
 
+      log.debug("Request Path: " + req.getPath());
+      
       for (Acl acl : api.getAcls())
       {
          if (acl.ruleMatches(req))
