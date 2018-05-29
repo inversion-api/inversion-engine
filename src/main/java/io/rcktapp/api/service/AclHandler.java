@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
 import io.forty11.web.js.JSArray;
@@ -39,16 +41,19 @@ import io.rcktapp.api.SC;
 
 public class AclHandler implements Handler
 {
+   Logger log = LoggerFactory.getLogger(AclHandler.class);
+
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
    {
-      LinkedHashMap<String, Acl> matched = new LinkedHashMap();
+      List<Acl> matched = new ArrayList<>();
       boolean allowed = false;
 
       for (Acl acl : api.getAcls())
       {
          if (acl.ruleMatches(req))
          {
+            log.debug("Matched ACL: " + acl.getName());
             if (!acl.isAllow())
             {
                allowed = false;
@@ -59,14 +64,7 @@ public class AclHandler implements Handler
                allowed = true;
             }
 
-            //we only keep one acl for a given include path.  This is not a perfect
-            //scheme but in theory it would allow api designers to have different restricted/requireds 
-            //for different path/permission levels.
-            String key = acl.getIncludePaths().toString();
-            if (!matched.containsKey(key))
-            {
-               matched.put(key, acl);
-            }
+            matched.add(acl);
          }
       }
 
@@ -78,11 +76,14 @@ public class AclHandler implements Handler
       Set requires = new HashSet();
       Set restricts = new HashSet();
 
-      for (Acl acl : matched.values())
+      for (Acl acl : matched)
       {
          requires.addAll(acl.getRequires());
          restricts.addAll(acl.getRestricts());
       }
+      
+      log.debug("ACL requires: " + requires);
+      log.debug("ACL restricts: " + restricts);
 
       cleanParams(chain, req, restricts, requires);
       cleanJson(chain, req.getJson(), restricts, requires, false);

@@ -537,7 +537,7 @@ public class Snooze extends Service
       action.setHandler(handler);
    }
 
-   public static void bootstrapDb(Db db) throws Exception
+   public void bootstrapDb(Db db) throws Exception
    {
       String driver = db.getDriver();
       Class.forName(driver);
