@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -36,6 +36,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
 import org.atteo.evo.inflector.English;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
@@ -141,17 +143,17 @@ import io.rcktapp.utils.AutoWire;
  */
 public class Snooze extends Service
 {
-   Set<Api>                       reloads       = new HashSet();
-   Thread                         reloadTimer   = null;
-   long                           reloadTimeout = 60 * 1000;
-
-
+   static Logger   log           = LoggerFactory.getLogger(Snooze.class);
+   
+   Set<Api> reloads       = new HashSet();
+   Thread   reloadTimer   = null;
+   long     reloadTimeout = 60 * 1000;
 
    //in progress loads used to prevent the same api
    //from loading multiple times in concurrent threads
-   Vector                         loadingApis   = new Vector();
+   Vector   loadingApis   = new Vector();
 
-   boolean                        inited        = false;
+   boolean  inited        = false;
 
    public Snooze() throws Exception
    {
@@ -301,10 +303,6 @@ public class Snooze extends Service
          throw ex;
       }
    }
-
-
-
-
 
    /**
     * Overridden to lazy load APIs from the DB
@@ -628,7 +626,6 @@ public class Snooze extends Service
                Column pk = db.getColumn(pkTableName, pkColumnName);
                fk.setPk(pk);
 
-               //System.out.println(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
                log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
             keyMd.close();
@@ -743,10 +740,10 @@ public class Snooze extends Service
                Relationship r = new Relationship();
                pkEntity.addRelationship(r);
                r.setEntity(pkEntity);
-               
+
                Entity related = api.getEntity(fkCol1.getPk().getTable());
                r.setRelated(related);
-               
+
                //r.setRelated(api.getEntity(fkCol1.getTable()));
 
                String hint = "MANY_TO_MANY - ";

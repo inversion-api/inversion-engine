@@ -86,7 +86,7 @@ public class AclHandler implements Handler
       log.debug("ACL restricts: " + restricts);
 
       cleanParams(chain, req, restricts, requires);
-      cleanJson(chain, req.getJson(), restricts, requires);
+      cleanJson(chain, req.getJson(), restricts, requires, false);
 
       try
       {
@@ -102,7 +102,7 @@ public class AclHandler implements Handler
             {
                if (parent instanceof JSObject)
                {
-                  cleanJson(chain, (JSObject) parent, restricts, Collections.EMPTY_SET);
+                  cleanJson(chain, (JSObject) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
@@ -179,7 +179,7 @@ public class AclHandler implements Handler
       }
    }
 
-   void cleanJson(Chain chain, JSObject json, Set<String> restricts, Set<String> requires)
+   void cleanJson(Chain chain, JSObject json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
@@ -206,8 +206,12 @@ public class AclHandler implements Handler
 
             for (JSObject target : found)
             {
-               if (target.containsKey(targetProp))
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
+               target.remove(targetProp);
+               if (!silent)
+               {
+                  if (target.containsKey(targetProp))
+                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
+               }
             }
          }
 

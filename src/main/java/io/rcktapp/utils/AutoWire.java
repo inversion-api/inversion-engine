@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.utils;
 
@@ -26,10 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.forty11.j.J;
 
 public class AutoWire
 {
+   static Logger       log   = LoggerFactory.getLogger(AutoWire.class);
    Properties          props = new Properties();
 
    Map<String, Object> beans = new HashMap();
@@ -80,14 +84,14 @@ public class AutoWire
       String value = System.getProperty(name);
       if (value != null)
       {
-         System.out.println("using syso prop for key: " + name);
+         log.info("using syso prop for key: " + name);
       }
       else
       {
          value = System.getenv(name);
          if (value != null)
          {
-            System.out.println("using env var for key: " + name);
+            log.info("using env var for key: " + name);
          }
          else
          {
@@ -377,7 +381,7 @@ public class AutoWire
       }
       else
       {
-         System.out.println("NO Match " + str + " - class " + type.getName());
+         log.info("NO Match " + str + " - class " + type.getName());
 
          Object o = getBean(str);
          if (o != null && type.isAssignableFrom(o.getClass()))
