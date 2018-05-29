@@ -301,8 +301,38 @@ public class RqlToElasticSearchTest
          assertNotNull(dsl.getRange());
          assertEquals("hispanicRank", (dsl.getRange().getName()));
          assertEquals("25", (dsl.getRange().getGt()));
-         assertNull((dsl.getRange().getGe()));
-         assertNull((dsl.getRange().getLe()));
+         assertNull((dsl.getRange().getGte()));
+         assertNull((dsl.getRange().getLte()));
+         assertNull((dsl.getRange().getLt()));
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void testGte()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("ge(hispanicRank,25)"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"range\":{\"hispanicRank\":{\"gte\":\"25\"}}}", json);
+
+         assertNull(dsl.getBool());
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getTerm());
+         assertNotNull(dsl.getRange());
+         assertEquals("hispanicRank", (dsl.getRange().getName()));
+         assertEquals("25", (dsl.getRange().getGte()));
+         assertNull((dsl.getRange().getGt()));
+         assertNull((dsl.getRange().getLte()));
          assertNull((dsl.getRange().getLt()));
       }
       catch (Exception e)
@@ -850,8 +880,8 @@ public class RqlToElasticSearchTest
          assertTrue(dsl.getBool().getFilter().size() == 2);
          assertTrue(dsl.getBool().getFilter().get(0) instanceof Range);
          assertEquals("hispanicRank", ((Range) dsl.getBool().getFilter().get(0)).getName());
-         assertNull(((Range) dsl.getBool().getFilter().get(0)).getGe());
-         assertNull(((Range) dsl.getBool().getFilter().get(0)).getLe());
+         assertNull(((Range) dsl.getBool().getFilter().get(0)).getGte());
+         assertNull(((Range) dsl.getBool().getFilter().get(0)).getLte());
          assertNull(((Range) dsl.getBool().getFilter().get(0)).getLt());
          assertEquals("25", ((Range) dsl.getBool().getFilter().get(0)).getGt());
       }
