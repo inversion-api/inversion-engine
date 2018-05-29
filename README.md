@@ -1,7 +1,7 @@
 # rckt_snooze
 
 ## Logging
- * Logging is expecting the use of Logback - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+ * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
 # Reserved Query Parameters
 
