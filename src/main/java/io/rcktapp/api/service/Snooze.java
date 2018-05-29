@@ -539,7 +539,7 @@ public class Snooze extends Service
       action.setHandler(handler);
    }
 
-   public static void bootstrapDb(Db db) throws Exception
+   public void bootstrapDb(Db db) throws Exception
    {
       String driver = db.getDriver();
       Class.forName(driver);
@@ -628,7 +628,8 @@ public class Snooze extends Service
                Column pk = db.getColumn(pkTableName, pkColumnName);
                fk.setPk(pk);
 
-               System.out.println(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+               //System.out.println(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+               log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
             keyMd.close();
          }
