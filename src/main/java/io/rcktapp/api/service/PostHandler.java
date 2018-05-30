@@ -79,7 +79,7 @@ public class PostHandler extends RqlHandler
       boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
       Set<String> collapses = chain.getConfigSet("collapses");
       collapses.addAll(splitParam(req, "collapses"));
-      
+
       if (collapseAll || collapses.size() > 0)
       {
          obj = JS.toJSObject(obj.toString());
@@ -266,8 +266,11 @@ public class PostHandler extends RqlHandler
       String id = null;
       if (vals.containsKey("id"))
       {
-         Sql.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
-         changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
+         if (vals.size() > 1)
+         {
+            Sql.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
+            changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
+         }
          id = vals.get("id") + "";
       }
       else

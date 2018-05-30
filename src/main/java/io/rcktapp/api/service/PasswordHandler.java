@@ -40,15 +40,22 @@ public class PasswordHandler implements Handler
          return;
       }
 
-      if (req.getJson() instanceof JSArray)
-      {
-         return;
-      }
+      JSObject json = req.getJson();
 
-      String password = (String) req.getJson().remove(passwordField);
+      if(json == null)
+         return;
+
+      if(json instanceof JSArray)
+         return;
+      
+      String password = (String) json.remove(passwordField);
       if (password == null)
       {
          return;
+      }
+      else
+      {
+         json.put(passwordField, "ENCRYPTING...");
       }
 
       try
