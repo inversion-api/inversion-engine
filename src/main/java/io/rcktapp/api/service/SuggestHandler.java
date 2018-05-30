@@ -16,7 +16,6 @@
 package io.rcktapp.api.service;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,7 +26,6 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
-import io.rcktapp.api.Collection;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
@@ -36,6 +34,9 @@ import io.rcktapp.api.SC;
 
 public class SuggestHandler implements Handler
 {
+
+   List<String> whitelist = null;
+
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
       String properties = req.getParam("field"); //change this to be a comma separated list of collection.property,collection.property...
@@ -50,28 +51,8 @@ public class SuggestHandler implements Handler
       Connection conn = null;
       try
       {
-         Integer tenantId = req.getUser().getTenantId();
-
+         boolean isMultiTenant = api.isMultiTenant();
          List<String> propertyList = Arrays.asList(properties.split(","));
-         List<Collection> collections = new ArrayList<>();
-         List<String> columns = new ArrayList<>();
-
-         for (String raw : propertyList)
-         {
-            if (raw.indexOf(".") == -1)
-            {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Autosuggest requests must be formatted as 'collection.property,collection.property' - One of your requested collections did not include a property!");
-            }
-
-            Collection collection = api.getCollection(raw.substring(0, raw.indexOf(".")));
-            collections.add(collection);
-            columns.add(raw.substring(raw.indexOf(".") + 1, raw.length()));
-         }
-
-         if (collections.size() != columns.size())
-         {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Autosuggest requests must be formatted as 'collection.property,collection.property' - One of your requested collections did not include a property!");
-         }
 
          try
          {
@@ -82,28 +63,35 @@ public class SuggestHandler implements Handler
             value = "";
          }
 
-         String sql = "";
-         
-         String firstColumn = columns.get(0);
+         String sql = "SELECT DISTINCT value FROM (";
 
-         for (int i = 0; i < collections.size(); i++)
+         for (int i = 0; i < propertyList.size(); i++)
          {
-            String collection = collections.get(i).getEntity().getTable().getName();
-            String column = columns.get(i);
-            sql += "SELECT DISTINCT " + column + " FROM " + collection + " WHERE " + column + " LIKE '%" + value + "%' AND " + column + " != ''";
-            if (tenantId != null)
-               sql += " AND tenantId=" + tenantId;
+            String prop = propertyList.get(0);
+
+            if (whitelist != null)
+            {
+               if (!whitelist.contains(prop))
+                  throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested to autosuggest is not in the whitelist, please edit your request and try again");
+            }
+            if (prop.indexOf(".") < 0)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "All autosuggest requests must have both a collection and property name, error was thrown due to: " + prop);
             
-            if (i + 1 < collections.size())
+            String tableName = api.getCollection(prop.substring(0, prop.indexOf("."))).getEntity().getTable().getName();
+            String column = prop.substring(prop.indexOf(".") + 1, prop.length());
+
+            sql += "SELECT DISTINCT " + column + " AS value FROM " + tableName + " WHERE " + column + " LIKE '%" + value + "%' AND " + column + " != ''";
+            if (isMultiTenant)
+               sql += " AND tenantId=" + req.getUser().getTenantId();
+
+            if (i + 1 < propertyList.size())
                sql += " UNION ";
-            else if (i + 1 == collections.size())
-               sql += " ORDER BY " + firstColumn;
          }
+
+         sql += ") v ORDER BY value";
 
          conn = ((Snooze) service).getConnection(req.getApi(), null);
 
-         //make the sql do a distinct union of all the collection.property values passed in.
-         //if the api is multi tenant, and the collection has a tenant property that include tenant=? in the query
          List<String> list = Sql.selectList(conn, sql);
 
          if (list.size() > 1)
