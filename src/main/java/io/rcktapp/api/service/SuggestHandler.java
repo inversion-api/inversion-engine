@@ -81,7 +81,7 @@ public class SuggestHandler implements Handler
             String column = prop.substring(prop.indexOf(".") + 1, prop.length());
 
             sql += "SELECT DISTINCT " + column + " AS value FROM " + tableName + " WHERE " + column + " LIKE '%" + value + "%' AND " + column + " != ''";
-            if (isMultiTenant)
+            if (isMultiTenant && api.findTable(tableName).getCol("tenantId") != null)
                sql += " AND tenantId=" + req.getUser().getTenantId();
 
             if (i + 1 < propertyList.size())
