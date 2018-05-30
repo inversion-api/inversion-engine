@@ -71,7 +71,7 @@ public class SuggestHandler implements Handler
 
             if (whitelist != null)
             {
-               if (!whitelist.contains(prop))
+               if (!whitelist.contains(prop.toLowerCase()))
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested to autosuggest is not in the whitelist, please edit your request and try again");
             }
             if (prop.indexOf(".") < 0)
