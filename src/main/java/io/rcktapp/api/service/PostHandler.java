@@ -95,7 +95,7 @@ public class PostHandler extends RqlHandler
 
             for (JSObject child : (List<JSObject>) ((JSArray) obj).getObjects())
             {
-               String href = store(conn, req, changes, entity, child);
+               String href = store(chain, conn, changes, entity, child);
                hrefs.add(href);
             }
          }
@@ -107,7 +107,7 @@ public class PostHandler extends RqlHandler
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
             }
 
-            href = store(conn, req, changes, entity, obj);
+            href = store(chain, conn, changes, entity, obj);
             hrefs.add(href);
          }
 
@@ -141,6 +141,14 @@ public class PostHandler extends RqlHandler
                         added = true;
                      }
                   }
+                  else
+                  {
+                     System.out.println("what?");
+                  }
+               }
+               else
+               {
+                  System.out.println("what?");
                }
             }
 
@@ -163,22 +171,22 @@ public class PostHandler extends RqlHandler
 
    }
 
-   String store(Connection conn, Request req, List<Change> changes, Entity entity, JSObject parent) throws Exception
+   String store(Chain chain, Connection conn, List<Change> changes, Entity entity, JSObject parent) throws Exception
    {
       String href = parent.getString("href");
       if (href != null && parent.keys().size() == 1)
          return href; //this object is empty except for the href...don't change anything
 
-      String parentId = storeEntity(conn, req, changes, entity, parent); //this also stores oneToMany relationships
+      String parentId = storeEntity(chain, conn, changes, entity, parent); //this also stores oneToMany relationships
 
-      storeManyTo(conn, req, changes, parentId, entity, parent);
+      storeManyTo(chain, conn, changes, parentId, entity, parent);
 
-      href = req.getApiUrl() + entity.getCollection().getName() + "/" + parentId;
+      href = chain.getRequest().getApiUrl() + entity.getCollection().getName() + "/" + parentId;
 
       return href;
    }
 
-   String storeEntity(Connection conn, Request req, List<Change> changes, Entity entity, JSObject parent) throws Exception
+   String storeEntity(Chain chain, Connection conn, List<Change> changes, Entity entity, JSObject parent) throws Exception
    {
       Api api = entity.getCollection().getApi();
 
@@ -243,7 +251,7 @@ public class PostHandler extends RqlHandler
                   {
                      try
                      {
-                        href = store(conn, req, changes, fkCollection.getEntity(), child);
+                        href = store(chain, conn, changes, fkCollection.getEntity(), child);
                      }
                      catch (Exception ex)
                      {
@@ -268,6 +276,7 @@ public class PostHandler extends RqlHandler
       {
          if (vals.size() > 1)
          {
+            chain.debug("Sql.updateRow(`" + entity.getTable().getName() + "`", "id", vals.get("id"), vals);
             Sql.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
             changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
          }
@@ -275,17 +284,18 @@ public class PostHandler extends RqlHandler
       }
       else
       {
+         chain.debug("Sql.insertMap(`" + entity.getTable().getName() + "`", vals);
          id = Sql.insertMap(conn, "`" + entity.getTable().getName() + "`", vals) + "";
          changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
 
-      String href = req.getApiUrl() + entity.getCollection().getName() + "/" + id;
+      String href = chain.getRequest().getApiUrl() + entity.getCollection().getName() + "/" + id;
       parent.put("href", href);
 
       return id;
    }
 
-   void storeManyTo(Connection conn, Request req, List<Change> changes, Object parentId, Entity entity, JSObject parent) throws Exception
+   void storeManyTo(Chain chain, Connection conn, List<Change> changes, Object parentId, Entity entity, JSObject parent) throws Exception
    {
       ListMap<Relationship, String> relateds = new ListMap();
 
@@ -311,7 +321,7 @@ public class PostHandler extends RqlHandler
 
                   JSObject js = (JSObject) arrayObj;
                   if (js.keys().size() == 1 && js.containsKey("href"))
-                     return;
+                     continue;
                }
 
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Was expecting an array for relationship " + rel);
@@ -330,7 +340,7 @@ public class PostHandler extends RqlHandler
                JSObject child = (JSObject) childObj;
 
                child.put(rel.getFkCol1().getName(), parentId);
-               String href = store(conn, req, changes, childEntity, child);
+               String href = store(chain, conn, changes, childEntity, child);
 
                String childId = href.substring(href.lastIndexOf("/") + 1, href.length());
                relateds.put(rel, childId);
@@ -347,7 +357,7 @@ public class PostHandler extends RqlHandler
 
          String table = "`" + rel.getFkCol1().getTable().getName() + "`";
          String parentKeyCol = rel.getFkCol1().getName();
-         String childKeyCol = m2m ? rel.getFkCol2().getName() : req.getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
+         String childKeyCol = m2m ? rel.getFkCol2().getName() : chain.getRequest().getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
          String qmarks = Sql.getQuestionMarkStr(relateds.get(rel).size());
 
          List args = new ArrayList(relateds.get(rel));
@@ -357,7 +367,7 @@ public class PostHandler extends RqlHandler
          {
             Column fk = rel.getFkCol1();
 
-            String childPkCol = "`" + req.getApi().getCollection(fk.getTable()).getEntity().getKey().getName() + "`";
+            String childPkCol = "`" + chain.getRequest().getApi().getCollection(fk.getTable()).getEntity().getKey().getName() + "`";
             String fkCol = fk.getName();
 
             //this first statement assigns or reassigns any 
@@ -367,6 +377,7 @@ public class PostHandler extends RqlHandler
             sql += " SET " + fkCol + " = ? ";
             sql += " WHERE " + childPkCol + " IN (" + qmarks + ")";
 
+            chain.debug(sql, args);
             Sql.execute(conn, sql, args);
 
             //these next statemets delete now removed relationshiops
@@ -391,6 +402,7 @@ public class PostHandler extends RqlHandler
                sql += " AND " + childPkCol + " NOT IN (" + qmarks + ")";
             }
 
+            chain.debug(sql, args);
             Sql.execute(conn, sql, args);
          }
          else
@@ -398,6 +410,8 @@ public class PostHandler extends RqlHandler
             String sql = "";
             sql += " INSERT IGNORE INTO " + table + " (" + parentKeyCol + ", " + childKeyCol + ") ";
             sql += " VALUES ( ?, ?)";
+
+            chain.debug(sql, relateds);
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             for (String childId : relateds.get(rel))
@@ -411,11 +425,10 @@ public class PostHandler extends RqlHandler
 
             sql = "";
             sql += "DELETE FROM " + table + " WHERE " + parentKeyCol + " = ? AND " + childKeyCol + " NOT IN (" + qmarks + ")";
+            chain.debug(sql, args);
             Sql.execute(conn, sql, args);
-
          }
       }
-
    }
 
    /*

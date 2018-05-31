@@ -50,6 +50,11 @@ public class Chain
       this.response = res;
    }
 
+   public void debug(Object... msgs)
+   {
+      response.debug(msgs);
+   }
+
    public Chain getParent()
    {
       return parent;
