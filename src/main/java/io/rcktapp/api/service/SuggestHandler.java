@@ -15,15 +15,12 @@
  */
 package io.rcktapp.api.service;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.forty11.j.J;
 import io.forty11.sql.Sql;
 import io.forty11.utils.CaseInsensitiveSet;
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
@@ -37,19 +34,19 @@ import io.rcktapp.rql.RQL;
 public class SuggestHandler extends RqlHandler
 {
    CaseInsensitiveSet<String> whitelist    = new CaseInsensitiveSet<>();
-   int                        maxResults   = 100;
 
    String                     propertyProp = "property";
-   String                     searchProp   = "search";
+   String                     searchProp   = "value";
+   String                     tenantCol    = "tenantId";
 
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      String properties = req.getParam(propertyProp);
+      String properties = req.removeParam(propertyProp);
 
       if (J.empty(properties))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
 
-      String value = req.getParam(searchProp);
+      String value = req.removeParam(searchProp);
       if (J.empty(value))
       {
          value = "";
@@ -65,7 +62,8 @@ public class SuggestHandler extends RqlHandler
       RQL rql = makeRql(chain);
 
       String sql = "";
-      sql += " SELECT DISTINCT value FROM (";
+      sql += " SELECT DISTINCT " + searchProp;
+      sql += " \r\n FROM (";
 
       List<String> propertyList = J.explode(",", properties);
       for (int i = 0; i < propertyList.size(); i++)
@@ -73,53 +71,26 @@ public class SuggestHandler extends RqlHandler
          String prop = propertyList.get(i);
 
          if (!whitelist.contains(prop))
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query and try again");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
 
          if (prop.indexOf(".") < 0)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "All autosuggest requests must have both a collection and property name, error was thrown due to: " + prop);
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
 
          String tableName = Sql.check(api.getCollection(prop.substring(0, prop.indexOf("."))).getEntity().getTable().getName());
          String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
-         sql += " SELECT DISTINCT " + rql.asCol(column) + " AS value FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + column + " != ''";
+         sql += " \r\nSELECT DISTINCT " + rql.asCol(column) + " AS " + searchProp + " FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + rql.asCol(column) + " != ''";
 
-         //TODO: this would come for free and be more secure if we used RQL to construct the sql
-         if (api.isMultiTenant() && api.findTable(tableName).getCol("tenantId") != null)
-            sql += " AND tenantId=" + req.getUser().getTenantId();
+         if (api.isMultiTenant() && api.findTable(tableName).getCol(tenantCol) != null)
+            sql += " AND " + rql.asCol(tenantCol) + "=" + req.getUser().getTenantId();
 
          if (i + 1 < propertyList.size())
-            sql += " UNION ";
+            sql += " \r\nUNION ";
       }
-      sql += " ) v ";
-      sql += " ORDER BY value LIMIT " + maxResults;
+      sql += " \r\n ) as v ";
+      sql += " \r\n ORDER BY CASE WHEN " + searchProp + " LIKE '" + Sql.check(value) + "%' THEN 0 ELSE 1 END, " + searchProp;
 
-      Connection conn = ((Snooze) service).getConnection(req.getApi(), null);
-      List<String> list = Sql.selectList(conn, sql);
-
-      //puts results that start with 'value' at the begining of the
-      //results regardless of their canonical sort order
-      if (list.size() > 1)
-      {
-         int next = 0;
-         for (int i = 1; i < list.size(); i++)
-         {
-            if (list.get(i).toLowerCase().startsWith(value.toLowerCase()))
-            {
-               String val = list.remove(i);
-               list.add(next++, val);
-            }
-         }
-      }
-
-      //this should matche the get handler format
-      //TODO would be pageable if we use RQL to construct the query
-      JSObject meta = new JSObject();
-      meta.put("rowCount", list.size());
-      meta.put("pageNum", 1);
-      meta.put("pageSize", maxResults);
-      meta.put("pageCount", 1);
-
-      res.setJson(new JSObject("meta", meta, "data", new JSArray(list.toArray())));
+      chain.put("select", sql);
    }
 
    public List<String> getWhitelist()

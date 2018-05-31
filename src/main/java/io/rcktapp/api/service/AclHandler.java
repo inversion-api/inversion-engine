@@ -39,7 +39,7 @@ import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 
-public class AclHandler implements Handler
+public class AclHandler extends AbstractHandler
 {
    Logger log = LoggerFactory.getLogger(AclHandler.class);
 
@@ -261,76 +261,7 @@ public class AclHandler implements Handler
       }
    }
 
-   void find(Object parent, List<JSObject> found, String targetPath, String currentPath)
-   {
-      if (parent instanceof JSArray)
-      {
-         for (Object child : ((JSArray) parent).asList())
-         {
-            if (child instanceof JSObject)
-               find(child, found, targetPath, currentPath);
-         }
-      }
-      else if (parent instanceof JSObject)
-      {
-         if (J.wildcardMatch(targetPath, currentPath))
-         {
-            found.add((JSObject) parent);
-         }
 
-         for (String key : ((JSObject) parent).keySet())
-         {
-            Object child = ((JSObject) parent).get(key);
-            String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
-            find(child, found, targetPath, nextPath);
-         }
-      }
-   }
-
-   String getValue(Chain chain, String key)
-   {
-      if ("apiId".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getId() + "";
-      }
-      else if ("apiCode".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getApiCode();
-      }
-      else if ("accountId".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getAccountId() + "";
-      }
-      else if ("accountCode".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getAccountCode();
-      }
-      else if ("tenantId".equalsIgnoreCase(key))
-      {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getTenantId() + "";
-      }
-      else if ("tenantCode".equalsIgnoreCase(key))
-      {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getTenantCode();
-      }
-      else if ("userId".equalsIgnoreCase(key))
-      {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getId() + "";
-      }
-      else if ("username".equalsIgnoreCase(key))
-      {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getUsername();
-      }
-
-      Object val = chain.get(key);
-      if (val != null)
-         return val.toString();
-      return null;
-   }
 
    boolean matches(String restricted, String value)
    {

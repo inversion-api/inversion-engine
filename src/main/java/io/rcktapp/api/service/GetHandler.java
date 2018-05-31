@@ -245,7 +245,7 @@ public class GetHandler extends RqlHandler
       //-- support for custom sql statements from a Rule
       //--
 
-      String passedInSelect = (String) chain.get("sql.select");
+      String passedInSelect = (String) chain.get("select");
       if (!J.empty(passedInSelect))
       {
          sql = passedInSelect;
