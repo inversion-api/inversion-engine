@@ -206,7 +206,7 @@ public class GetHandler extends RqlHandler
 
                List ids = Sql.selectList(conn, sql, req.getEntityKey());
 
-               String newUrl = Service.buildLink(req, req.getCollectionKey(), J.implode(",", ids.toArray()), null);
+               String newUrl = Service.buildLink(req, collection.getName(), J.implode(",", ids.toArray()), null);
 
                String query = req.getQuery();
                if (!J.empty(query))
