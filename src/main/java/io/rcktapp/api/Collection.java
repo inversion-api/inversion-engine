@@ -8,18 +8,22 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Collection extends Dto
 {
-   Api    api    = null;
-   Entity entity = null;
-   String name   = null;
+   Api          api     = null;
+   Entity       entity  = null;
+   String       name    = null;
+   List<String> aliases = new ArrayList();
 
    public Attribute getAttribute(String name)
    {
@@ -82,6 +86,24 @@ public class Collection extends Dto
    public void setName(String name)
    {
       this.name = name;
+   }
+
+   public List<String> getAliases()
+   {
+      return new ArrayList(aliases);
+   }
+
+   public void setAliases(List<String> aliases)
+   {
+      this.aliases.clear();
+      for (String alias : aliases)
+         addAlias(alias);
+   }
+
+   public void addAlias(String alias)
+   {
+      if (!aliases.contains(alias))
+         aliases.add(alias);
    }
 
 }

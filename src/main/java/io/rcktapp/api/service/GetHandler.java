@@ -206,7 +206,7 @@ public class GetHandler extends RqlHandler
 
                List ids = Sql.selectList(conn, sql, req.getEntityKey());
 
-               String newUrl = Service.buildLink(req, collection.getName(), J.implode(",", ids.toArray()), null);
+               String newUrl = Service.buildLink(req, req.getCollectionKey(), J.implode(",", ids.toArray()), null);
 
                String query = req.getQuery();
                if (!J.empty(query))
@@ -437,7 +437,7 @@ public class GetHandler extends RqlHandler
 
             if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
             {
-               String href = Service.buildLink(req, collection.getName(), value, null);
+               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
                if (include("href", includes, excludes, path))
                {
                   js.put("href", href);
@@ -562,7 +562,7 @@ public class GetHandler extends RqlHandler
                else
                {
                   Object key = js.get(keyProp);
-                  String href = Service.buildLink(chain.getRequest(), collection.getName(), key, rel.getName());
+                  String href = Service.buildLink(chain.getRequest(), chain.getRequest().getCollectionKey(), key, rel.getName());
                   js.put(rel.getName(), new JSObject("href", href));
                }
             }

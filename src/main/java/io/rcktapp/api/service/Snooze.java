@@ -244,7 +244,6 @@ public class Snooze extends Service
             ds = cpds;
          }
 
-         List<Api> apis = new ArrayList();
          AutoWire wire = new AutoWire()
             {
                @Override
@@ -253,48 +252,29 @@ public class Snooze extends Service
                   Field field = getField("name", module.getClass());
                   if (field != null && field.get(module) == null)
                      field.set(module, name);
-
-                  if (module instanceof Handler)
-                     addHandler(name, (Handler) module);
-
-                  if (module instanceof Api)
-                  {
-                     addApi((Api) module);
-                     apis.add((Api) module);
-
-                     for (Db db : ((Api) module).getDbs())
-                     {
-                        bootstrapDb(db);
-                        bootstrapApi((Api) module, db);
-                     }
-                  }
                }
             };
          wire.load(props);
 
-//         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), apis.toArray());
-//
-//         autoProps.putAll(props);
-//
-//         wire = new AutoWire()
-//            {
-//               @Override
-//               public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
-//               {
-//                  Field field = getField("name", module.getClass());
-//                  if (field != null && field.get(module) == null)
-//                     field.set(module, name);
-//
-//                  if (module instanceof Handler)
-//                     addHandler(name, (Handler) module);
-//
-//                  if (module instanceof Api)
-//                  {
-//                     addApi((Api) module);
-//                  }
-//               }
-//            };
-//         wire.load(autoProps);
+         for (Api api : wire.getBeans(Api.class))
+         {
+            for (Db db : ((Api) api).getDbs())
+            {
+               bootstrapDb(db);
+               bootstrapApi((Api) api, db);
+            }
+         }
+
+         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
+         autoProps.putAll(props);
+
+         wire.clear();
+         wire.load(autoProps);
+
+         for (Api api : wire.getBeans(Api.class))
+         {
+            addApi(api);
+         }
 
       }
       catch (Exception e)

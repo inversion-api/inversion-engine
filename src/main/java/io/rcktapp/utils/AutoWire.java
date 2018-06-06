@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -54,6 +55,12 @@ public class AutoWire
    //      AutoWire w = new AutoWire();
    //      w.add
    //   }
+
+   public void clear()
+   {
+      props.clear();
+      beans.clear();
+   }
 
    public void add(Properties props)
    {
@@ -159,7 +166,7 @@ public class AutoWire
 
             loaded.put(name, new HashMap());
             beans.put(name, obj);
-            System.out.println(name + "->" + cn);
+            //System.out.println(name + "->" + cn);
          }
          if (key.lastIndexOf(".") < 0)
          {
@@ -167,17 +174,37 @@ public class AutoWire
          }
       }
 
-      for (String beanName : beans.keySet())
+      List<String> keys = new ArrayList(beans.keySet());
+      Collections.sort(keys, new Comparator<String>()
+         {
+            @Override
+            public int compare(String o1, String o2)
+            {
+               int count1 = o1.length() - o1.replace(".", "").length();
+               int count2 = o2.length() - o2.replace(".", "").length();
+               if (count1 != count2)
+                  return count1 > count2 ? 1 : -1;
+
+               return o1.compareTo(o2);
+            }
+
+         });
+
+      //      for (String key : keys)
+      //         System.out.println(key);
+
+      for (String beanName : keys)
       {
          Object obj = beans.get(beanName);
          for (Object p : getKeys(beanName))
          {
             String key = (String) p;
 
-            if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length()) && !(key.endsWith(".class") || key.endsWith(".className")))
+            if (key.endsWith(".class") || key.endsWith(".className"))
+               continue;
+
+            if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length()))
             {
-               System.out.println(key);
-               
                String prop = key.substring(key.lastIndexOf(".") + 1, key.length());
                String value = getProperty(key);
 
@@ -195,58 +222,65 @@ public class AutoWire
                }
                else
                {
-                  Method setter = getMethod(obj.getClass(), "set" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
-                  if (setter == null)
-                     setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
+                  set(key, obj, prop, value);
+               }
+            }
+         }
 
-                  if (setter != null && setter.getParameterTypes().length == 1)
+         int count = beanName.length() - beanName.replace(".", "").length();
+         if (count > 0)
+         {
+            String parentKey = beanName.substring(0, beanName.lastIndexOf("."));
+            String propKey = beanName.substring(beanName.lastIndexOf(".") + 1);
+            if (beans.containsKey(parentKey))
+            {
+               //               Object parent = beans.get(parentKey);
+               //               System.out.println(parent);
+            }
+            else if (count > 1)
+            {
+               String mapKey = propKey;
+               propKey = parentKey.substring(parentKey.lastIndexOf(".") + 1);
+               parentKey = parentKey.substring(0, parentKey.lastIndexOf("."));
+
+               Object parent = beans.get(parentKey);
+               if (parent != null)
+               {
+                  Field field = getField(propKey, parent.getClass());
+                  if (field != null)
                   {
-                     setter.invoke(obj, cast(value, setter.getParameterTypes()[0]));
+                     if (Map.class.isAssignableFrom(field.getType()))
+                     {
+                        Map map = (Map) field.get(parent);
+                        if (!map.containsKey(mapKey))
+                           map.put(mapKey, obj);
+                     }
+                     //                     else if (java.util.Collection.class.isAssignableFrom(field.getType()))
+                     //                     {
+                     //                        java.util.Collection list = (java.util.Collection) field.get(parent);
+                     //                        if (!list.contains(obj))
+                     //                        {
+                     //                           System.out.println("need to add it?");
+                     //                        }
+                     //                     }
+                     //                     else
+                     //                     {
+                     //                        System.out.println("asdf?");
+                     //                     }
                   }
                   else
                   {
-                     Field field = getField(prop, obj.getClass());
-                     if (field != null)
-                     {
-                        Class type = field.getType();
-
-                        if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass()))
-                        {
-                           field.set(obj, beans.get(value));
-                        }
-                        else if (Collection.class.isAssignableFrom(type))
-                        {
-                           Collection list = (Collection) cast(value, type);
-                           ((Collection) field.get(obj)).addAll(list);
-                        }
-                        else if (Map.class.isAssignableFrom(type))
-                        {
-                           Map map = (Map) cast(value, type);
-                           ((Map) field.get(obj)).putAll(map);
-                        }
-                        else
-                        {
-                           field.set(obj, cast(value, type));
-                        }
-                     }
-                     else
-                     {
-                        System.out.println("Can't map: " + key + " = " + value);
-                     }
-
+                     //System.err.println("Field is not a map: " + beanName + " - " + field);
                   }
+               }
+               else
+               {
+                  System.err.println("Missing parent for map compression: " + beanName);
                }
             }
          }
       }
 
-      for (String beanName : beans.keySet())
-      {
-         Object obj = beans.get(beanName);
-         if(beanName.indexOf(".") > -1)
-            System.out.println("need to collapse: " + beanName);
-      }
-      
       for (String name : loaded.keySet())
       {
          Object bean = beans.get(name);
@@ -255,6 +289,92 @@ public class AutoWire
       }
 
    }
+
+   public void set(String key, Object obj, String prop, String value) throws Exception
+   {
+      Method setter = getMethod(obj.getClass(), "set" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
+      if (setter == null)
+      {
+         setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
+         if (setter == null && prop.endsWith("s"))
+            setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length() - 1));
+      }
+
+      if (setter != null && setter.getParameterTypes().length == 1)
+      {
+         setter.invoke(obj, cast(value, setter.getParameterTypes()[0]));
+      }
+      else
+      {
+         Field field = getField(prop, obj.getClass());
+         if (field != null)
+         {
+            Class type = field.getType();
+
+            if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass()))
+            {
+               field.set(obj, beans.get(value));
+            }
+            else if (Collection.class.isAssignableFrom(type))
+            {
+               Collection list = (Collection) cast(value, type);
+               ((Collection) field.get(obj)).addAll(list);
+            }
+            else if (Map.class.isAssignableFrom(type))
+            {
+               Map map = (Map) cast(value, type);
+               ((Map) field.get(obj)).putAll(map);
+            }
+            else
+            {
+               field.set(obj, cast(value, type));
+            }
+         }
+         else
+         {
+            System.out.println("Can't map: " + key + " = " + value);
+         }
+
+      }
+   }
+
+   //   public void set(String key, Object obj, String prop, String mapKey, Object value) throws Exception
+   //   {
+   //
+   //      Field field = getField(prop, obj.getClass());
+   //      if (field != null)
+   //      {
+   //         Class type = field.getType();
+   //
+   //         if (type.isAssignableFrom(value.getClass()))
+   //         {
+   //            field.set(obj, value);
+   //         }
+   //         else if (Collection.class.isAssignableFrom(type))
+   //         {
+   //            Method adder = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, (prop.endsWith("s") ? prop.length() - 1 : prop.length())));
+   //            if (adder != null)
+   //            {
+   //               adder.invoke(obj, value);
+   //            }
+   //            else
+   //            {
+   //               ((Collection) field.get(obj)).add(value);
+   //            }
+   //         }
+   //         else if (Map.class.isAssignableFrom(type))
+   //         {
+   //            System.out.println("asdasdf");
+   //            //               Map map = (Map) cast(value, type);
+   //            //               ((Map) field.get(obj)).putAll(map);
+   //         }
+   //      }
+   //      else
+   //      {
+   //         System.out.println("Can't map: " + key + " = " + value);
+   //      }
+   //
+   //   }
 
    public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception
    {
@@ -274,6 +394,17 @@ public class AutoWire
    public Object getBean(String key)
    {
       return beans.get(key);
+   }
+
+   public <T> List<T> getBeans(Class<T> type)
+   {
+      List found = new ArrayList();
+      for (Object bean : beans.values())
+      {
+         if (type.isAssignableFrom(bean.getClass()))
+            found.add(bean);
+      }
+      return found;
    }
 
    public <T> T getBean(Class<T> type)
@@ -432,12 +563,12 @@ public class AutoWire
          encode(object, props, namer, includer, names, defaults);
       }
 
-      List keys = new ArrayList(props.keySet());
-      Collections.sort(keys);
-      for (Object key : keys)
-      {
-         System.out.println(key + "=" + props.get(key));
-      }
+//      List keys = new ArrayList(props.keySet());
+//      Collections.sort(keys);
+//      for (Object key : keys)
+//      {
+//         System.out.println(key + "=" + props.get(key));
+//      }
 
       return props;
    }

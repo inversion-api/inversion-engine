@@ -113,11 +113,15 @@ public class Api extends Dto
    {
       for (Collection col : collections.values())
       {
-         if (col.getName().equalsIgnoreCase(name))
+         if (name.equalsIgnoreCase(col.getName()))
             return col;
+
+         for (String alias : col.getAliases())
+            if (name.equalsIgnoreCase(alias))
+               return col;
+
       }
 
-      //throw new ApiException(SC.SC_404_NOT_FOUND, "Unknown collection \"" + name + "\"");
       return null;
    }
 
