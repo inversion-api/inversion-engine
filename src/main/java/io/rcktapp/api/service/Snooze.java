@@ -15,14 +15,18 @@
  */
 package io.rcktapp.api.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +35,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
@@ -65,6 +68,8 @@ import io.rcktapp.api.Role;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 import io.rcktapp.utils.AutoWire;
+import io.rcktapp.utils.AutoWire.Includer;
+import io.rcktapp.utils.AutoWire.Namer;
 
 /**
  * Servlet implementation class RestService
@@ -143,33 +148,154 @@ import io.rcktapp.utils.AutoWire;
  */
 public class Snooze extends Service
 {
-   static Logger   log           = LoggerFactory.getLogger(Snooze.class);
-   
-   Set<Api> reloads       = new HashSet();
-   Thread   reloadTimer   = null;
-   long     reloadTimeout = 60 * 1000;
+   static Logger  log           = LoggerFactory.getLogger(Snooze.class);
+
+   Set<Api>       reloads       = new HashSet();
+   Thread         reloadTimer   = null;
+   long           reloadTimeout = 60 * 1000;
 
    //in progress loads used to prevent the same api
    //from loading multiple times in concurrent threads
-   Vector   loadingApis   = new Vector();
+   Vector         loadingApis   = new Vector();
 
-   boolean  inited        = false;
+   boolean        inited        = false;
+
+   String         profile       = null;
+   //saved here so imperfect embeddings can pass in init(ServletContext)
+   //instead of having to have
+   ServletContext context       = null;
+
+   String         configPath    = "/WEB-INF/";
 
    public Snooze() throws Exception
    {
 
    }
 
-   @Override
-   public void init(ServletConfig config) throws ServletException
+   public void init() throws ServletException
    {
-      super.init(config);
-
       try
       {
-         ServletContext cx = getServletContext();
-         InputStream is = cx.getResourceAsStream("/WEB-INF/snooze.properties");
-         init(is);
+         if (inited)
+            return;
+
+         inited = true;
+
+         reloadTimer = new Thread(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  while (true)
+                  {
+                     try
+                     {
+                        Set<Api> toReload = reloads;
+                        reloads = new HashSet();
+
+                        for (Api oldCopy : toReload)
+                        {
+                           try
+                           {
+                              Api newCopy = loadApi(oldCopy.getId());
+                              addApi(newCopy);
+                           }
+                           catch (Exception ex)
+                           {
+                              log.error("Error reloading apis", ex);
+
+                              //unpublishing the api here is a "fail fast" 
+                              //technique to prevent it from continually 
+                              //failing and crapping out the repubish queue
+                              //for all clients
+                              removeApi(oldCopy);
+
+                           }
+                        }
+
+                        J.sleep(reloadTimeout);
+                     }
+                     catch (Throwable t)
+                     {
+                        log.error("Error reloading apis", t);
+                     }
+                  }
+               }
+            }, "api-reloader");
+         reloadTimer.setDaemon(true);
+         reloadTimer.start();
+
+         Properties props = findProps();
+
+         AutoWire w = new AutoWire();
+         w.putBean("snooze", this);
+         w.load(props);
+
+         if (driver != null)
+         {
+            ComboPooledDataSource cpds = new ComboPooledDataSource();
+            cpds.setDriverClass(driver);
+            cpds.setJdbcUrl(url);
+            cpds.setUser(user);
+            cpds.setPassword(pass);
+            cpds.setMinPoolSize(poolMin);
+            cpds.setMaxPoolSize(poolMax);
+
+            ds = cpds;
+         }
+
+         List<Api> apis = new ArrayList();
+         AutoWire wire = new AutoWire()
+            {
+               @Override
+               public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
+               {
+                  Field field = getField("name", module.getClass());
+                  if (field != null && field.get(module) == null)
+                     field.set(module, name);
+
+                  if (module instanceof Handler)
+                     addHandler(name, (Handler) module);
+
+                  if (module instanceof Api)
+                  {
+                     addApi((Api) module);
+                     apis.add((Api) module);
+
+                     for (Db db : ((Api) module).getDbs())
+                     {
+                        bootstrapDb(db);
+                        bootstrapApi((Api) module, db);
+                     }
+                  }
+               }
+            };
+         wire.load(props);
+
+//         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), apis.toArray());
+//
+//         autoProps.putAll(props);
+//
+//         wire = new AutoWire()
+//            {
+//               @Override
+//               public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
+//               {
+//                  Field field = getField("name", module.getClass());
+//                  if (field != null && field.get(module) == null)
+//                     field.set(module, name);
+//
+//                  if (module instanceof Handler)
+//                     addHandler(name, (Handler) module);
+//
+//                  if (module instanceof Api)
+//                  {
+//                     addApi((Api) module);
+//                  }
+//               }
+//            };
+//         wire.load(autoProps);
+
       }
       catch (Exception e)
       {
@@ -177,115 +303,133 @@ public class Snooze extends Service
       }
    }
 
-   public void init(InputStream config) throws Exception
+   static class ApiIncluder implements Includer
    {
-      if (inited)
-         return;
+      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class,   //
+            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class);
 
-      inited = true;
+      List<Field> excludes = Arrays.asList(J.getField("handlers", Api.class));
 
-      initProperties(config);
+      @Override
+      public boolean include(Field field)
+      {
+         if (excludes.contains(field))
+            return false;
 
-      reloadTimer = new Thread(new Runnable()
+         Class c = field.getType();
+         if (java.util.Collection.class.isAssignableFrom(c))
          {
-            @Override
-            public void run()
+            Type t = field.getGenericType();
+            if (t instanceof ParameterizedType)
             {
-               while (true)
-               {
-                  try
-                  {
-                     Set<Api> toReload = reloads;
-                     reloads = new HashSet();
-
-                     for (Api oldCopy : toReload)
-                     {
-                        try
-                        {
-                           Api newCopy = loadApi(oldCopy.getId());
-                           addApi(newCopy);
-                        }
-                        catch (Exception ex)
-                        {
-                           log.error("Error reloading apis", ex);
-
-                           //unpublishing the api here is a "fail fast" 
-                           //technique to prevent it from continually 
-                           //failing and crapping out the repubish queue
-                           //for all clients
-                           removeApi(oldCopy);
-
-                        }
-                     }
-
-                     J.sleep(reloadTimeout);
-                  }
-                  catch (Throwable t)
-                  {
-                     log.error("Error reloading apis", t);
-                  }
-               }
+               ParameterizedType pt = (ParameterizedType) t;
+               c = (Class) pt.getActualTypeArguments()[0];
             }
-         }, "api-reloader");
-      reloadTimer.setDaemon(true);
-      reloadTimer.start();
+
+            boolean inc = includes.contains(c);
+            return inc;
+         }
+         else if (Map.class.isAssignableFrom(c))
+         {
+            Type t = field.getGenericType();
+            if (t instanceof ParameterizedType)
+            {
+               ParameterizedType pt = (ParameterizedType) t;
+               Class keyType = (Class) pt.getActualTypeArguments()[0];
+               Class valueType = (Class) pt.getActualTypeArguments()[1];
+
+               return includes.contains(keyType) && includes.contains(valueType);
+            }
+            else
+            {
+               throw new RuntimeException("You need to parameterize this object: " + field);
+            }
+         }
+         else
+         {
+            boolean inc = includes.contains(c);
+            return inc;
+         }
+      }
 
    }
 
-   public void initProperties(InputStream is) throws Exception
+   static class ApiNamer implements Namer
    {
-      //      InputStream is = cx.getResourceAsStream(file);
-      //
-      //      if (is != null)
-      //         System.out.println("loading: " + file);
-
-      Properties props = new Properties();
-      props.load(is);
-
-      //reflectively sets snooze.* props from the snooze config on this instance
-      AutoWire w = new AutoWire();
-      w.putBean("snooze", this);
-      w.load(props);
-
-      if (driver != null)
+      @Override
+      public String getName(Object o) throws Exception
       {
-         ComboPooledDataSource cpds = new ComboPooledDataSource();
-         cpds.setDriverClass(driver);
-         cpds.setJdbcUrl(url);
-         cpds.setUser(user);
-         cpds.setPassword(pass);
-         cpds.setMinPoolSize(poolMin);
-         cpds.setMaxPoolSize(poolMax);
+         Object name = null;
+         Class clazz = o.getClass();
+         if (o instanceof Api || o instanceof Db)
+         {
+            name = J.getField("name", clazz).get(o);
+         }
+         else if (o instanceof Table)
+         {
+            Table t = (Table) o;
+            name = t.getDb().getName() + ".tables." + t.getName();
+         }
+         else if (o instanceof Column)
+         {
+            Column col = (Column) o;
+            name = col.getTable().getDb().getName() + ".tables." + col.getTable().getName() + ".columns." + col.getName();
+         }
+         else if (o instanceof Collection)
+         {
+            Collection col = (Collection) o;
+            name = col.getApi().getName() + ".collections." + col.getName();
+         }
+         else if (o instanceof Entity)
+         {
+            Entity e = (Entity) o;
+            name = getName(e.getCollection()) + ".entity";
+         }
+         else if (o instanceof Attribute)
+         {
+            Attribute a = (Attribute) o;
+            name = getName(a.getEntity()) + ".attributes." + a.getName();
+         }
+         else if (o instanceof Relationship)
+         {
+            Relationship a = (Relationship) o;
+            name = getName(a.getEntity()) + ".relationships." + a.getName();
+         }
 
-         ds = cpds;
+         if (name != null)
+            return name.toString();
+         return null;
+      }
+   }
+
+   Properties findProps() throws IOException
+   {
+      Properties props = new Properties();
+
+      for (int i = -1; i <= 100; i++)
+      {
+         String fileName = configPath + "snooze" + (i < 0 ? "" : i) + ".properties";
+         InputStream is = getServletContext().getResourceAsStream(fileName);
+         if (is != null)
+         {
+            props.load(is);
+         }
       }
 
-      AutoWire wire = new AutoWire()
+      if (profile != null)
+      {
+         for (int i = -1; i <= 100; i++)
          {
-            @Override
-            public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
+            String fileName = configPath + "snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
+            InputStream is = ((ServletContext) getServletConfig()).getResourceAsStream(fileName);
+            if (is != null)
             {
-               Field field = getField("name", module.getClass());
-               if (field != null && field.get(module) == null)
-                  field.set(module, name);
-
-               if (module instanceof Handler)
-                  addHandler(name, (Handler) module);
-
-               if (module instanceof Api)
-               {
-                  addApi((Api) module);
-
-                  for (Db db : ((Api) module).getDbs())
-                  {
-                     bootstrapDb(db);
-                     bootstrapApi((Api) module, db);
-                  }
-               }
+               props.load(is);
             }
-         };
-      wire.load(props);
+         }
+      }
 
+      return props;
    }
 
    @Override
@@ -840,6 +984,26 @@ public class Snooze extends Service
       name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
 
       return name;
+   }
+
+   public String getProfile()
+   {
+      return profile;
+   }
+
+   public void setProfile(String profile)
+   {
+      this.profile = profile;
+   }
+
+   public String getConfigPath()
+   {
+      return configPath;
+   }
+
+   public void setConfigPath(String configPath)
+   {
+      this.configPath = configPath;
    }
 
 }

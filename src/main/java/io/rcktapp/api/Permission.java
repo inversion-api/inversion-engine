@@ -24,6 +24,11 @@ public class Permission extends Dto
    {
       return name;
    }
+   
+   public String toString()
+   {
+      return "Permission " + getId() + " - " + getName();
+   }
 
    public void setName(String permission)
    {

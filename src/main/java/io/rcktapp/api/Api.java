@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -43,7 +43,9 @@ public class Api extends Dto
    boolean                           reloadable  = false;
    boolean                           debug       = false;
 
-   Hashtable                         cache       = new Hashtable();
+   String                            url         = null;
+
+   transient Hashtable               cache       = new Hashtable();
 
    public Api()
    {
@@ -374,6 +376,14 @@ public class Api extends Dto
       return cache.get(key);
    }
 
-   
+   public String getUrl()
+   {
+      return url;
+   }
+
+   public void setUrl(String url)
+   {
+      this.url = url;
+   }
 
 }

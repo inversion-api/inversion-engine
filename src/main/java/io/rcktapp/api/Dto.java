@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -19,13 +19,9 @@ import java.sql.Timestamp;
 
 public class Dto
 {
-   protected long id         = 0;
+   protected long id        = 0;
 
-   long           accountId  = 0;
-
-   Timestamp      modifiedAt = new Timestamp(0);
-   Timestamp      createdAt  = new Timestamp(0);
-   boolean        deleted    = false;
+   long           accountId = 0;
 
    @Override
    public boolean equals(Object o)
@@ -65,16 +61,6 @@ public class Dto
       this.id = id;
    }
 
-   public Timestamp getModifiedAt()
-   {
-      return modifiedAt;
-   }
-
-   public void setModifiedAt(Timestamp modifiedDate)
-   {
-      this.modifiedAt = modifiedDate;
-   }
-
    public long getAccountId()
    {
       return accountId;
@@ -83,32 +69,6 @@ public class Dto
    public void setAccountId(long orgId)
    {
       this.accountId = orgId;
-   }
-
-   public Timestamp getCreatedAt()
-   {
-      return createdAt;
-   }
-
-   public void setCreatedAt(Timestamp createdAt)
-   {
-      this.createdAt = createdAt;
-   }
-
-   /**
-    * @return the deleted
-    */
-   public boolean isDeleted()
-   {
-      return deleted;
-   }
-
-   /**
-    * @param deleted the deleted to set
-    */
-   public void setDeleted(boolean deleted)
-   {
-      this.deleted = deleted;
    }
 
 }

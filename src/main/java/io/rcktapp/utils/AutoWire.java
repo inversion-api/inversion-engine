@@ -18,18 +18,24 @@ package io.rcktapp.utils;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
+import io.forty11.utils.DoubleKeyMap;
 
 public class AutoWire
 {
@@ -147,14 +153,15 @@ public class AutoWire
          String key = (String) p;
          if (key.endsWith(".class") || key.endsWith(".className"))
          {
-            String name = key.substring(0, key.indexOf("."));
+            String name = key.substring(0, key.lastIndexOf("."));
             String cn = (String) props.get(key);
             Object obj = Class.forName(cn).newInstance();
 
             loaded.put(name, new HashMap());
             beans.put(name, obj);
+            System.out.println(name + "->" + cn);
          }
-         if (key.indexOf(".") < 0)
+         if (key.lastIndexOf(".") < 0)
          {
             beans.put(key, cast(props.getProperty(key)));
          }
@@ -167,9 +174,11 @@ public class AutoWire
          {
             String key = (String) p;
 
-            if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+            if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length()) && !(key.endsWith(".class") || key.endsWith(".className")))
             {
-               String prop = key.substring(key.indexOf(".") + 1, key.length());
+               System.out.println(key);
+               
+               String prop = key.substring(key.lastIndexOf(".") + 1, key.length());
                String value = getProperty(key);
 
                if (value != null)
@@ -220,6 +229,10 @@ public class AutoWire
                            field.set(obj, cast(value, type));
                         }
                      }
+                     else
+                     {
+                        System.out.println("Can't map: " + key + " = " + value);
+                     }
 
                   }
                }
@@ -227,6 +240,13 @@ public class AutoWire
          }
       }
 
+      for (String beanName : beans.keySet())
+      {
+         Object obj = beans.get(beanName);
+         if(beanName.indexOf(".") > -1)
+            System.out.println("need to collapse: " + beanName);
+      }
+      
       for (String name : loaded.keySet())
       {
          Object bean = beans.get(name);
@@ -381,14 +401,194 @@ public class AutoWire
       }
       else
       {
-         log.info("NO Match " + str + " - class " + type.getName());
-
          Object o = getBean(str);
          if (o != null && type.isAssignableFrom(o.getClass()))
             return (T) o;
+
+         log.info("NO Match " + str + " - class " + type.getName());
       }
 
       return null;
    }
 
+   public static interface Namer
+   {
+      public String getName(Object o) throws Exception;
+   }
+
+   public static interface Includer
+   {
+      public boolean include(Field field);
+   }
+
+   public static Properties encode(Namer namer, Includer includer, Object... objects) throws Exception
+   {
+      Properties props = new Properties();
+      Map names = new HashMap();
+      DoubleKeyMap defaults = new DoubleKeyMap();
+
+      for (Object object : objects)
+      {
+         encode(object, props, namer, includer, names, defaults);
+      }
+
+      List keys = new ArrayList(props.keySet());
+      Collections.sort(keys);
+      for (Object key : keys)
+      {
+         System.out.println(key + "=" + props.get(key));
+      }
+
+      return props;
+   }
+
+   static String encode(Object object, Properties props, Namer namer, Includer includer, Map<Object, String> names, DoubleKeyMap defaults) throws Exception
+   {
+      try
+      {
+         if (WRAPPER_TYPES.contains(object.getClass()))
+            return object + "";
+
+         String name = getName(object, namer, names);
+
+         if (props.containsKey(name + ".class"))
+            return name;
+
+         props.put(name + ".class", object.getClass().getName());
+
+         List<Field> fields = J.getFields(object.getClass());
+
+         if (!defaults.containsKey(object.getClass()))
+         {
+            for (Field field : fields)
+            {
+               if (Modifier.isTransient(field.getModifiers()))
+                  continue;
+
+               if (Modifier.isStatic(field.getModifiers()))
+                  continue;
+
+               Object clean = object.getClass().newInstance();
+
+               Object defaultValue = field.get(clean);
+               if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
+                  defaults.put(object.getClass(), field.getName(), defaultValue);
+            }
+         }
+
+         for (Field field : fields)
+         {
+            if (Modifier.isTransient(field.getModifiers()))
+               continue;
+
+            if (Modifier.isStatic(field.getModifiers()))
+               continue;
+
+            if (!includer.include(field))
+               continue;
+
+            Object value = field.get(object);
+
+            String fieldKey = name + "." + field.getName();
+            if (value != null)
+            {
+               if (value.getClass().isArray())
+                  value = Arrays.asList(value);
+
+               if (value instanceof Collection)
+               {
+                  if (((Collection) value).size() == 0)
+                     continue;
+
+                  List values = new ArrayList();
+                  for (Object child : ((Collection) value))
+                  {
+                     String childKey = encode(child, props, namer, includer, names, defaults);
+                     values.add(childKey);
+                  }
+                  props.put(fieldKey, J.implode(",", values));
+               }
+               else if (value instanceof Map)
+               {
+                  Map map = (Map) value;
+                  if (map.size() == 0)
+                     continue;
+
+                  for (Object mapKey : map.keySet())
+                  {
+                     String encodedKey = encode(mapKey, props, namer, includer, names, defaults);
+                     String encodedValue = encode(map.get(mapKey), props, namer, includer, names, defaults);
+                     props.put(fieldKey + "." + encodedKey, encodedValue);
+                  }
+               }
+               else
+               {
+                  if (WRAPPER_TYPES.contains(value.getClass()))
+                  {
+                     Object defaultVal = defaults.get(object.getClass(), field.getName());
+                     if (defaultVal != null && defaultVal.equals(value))
+                        continue;
+                  }
+                  else if (!includer.include(field))
+                     continue;
+
+                  props.put(fieldKey, encode(value, props, namer, includer, names, defaults));
+               }
+            }
+
+         }
+         return name;
+      }
+      catch (Exception ex)
+      {
+         System.err.println("Error encoding " + object.getClass().getName());
+         throw ex;
+      }
+   }
+
+   public static String getName(Object object, Namer namer, Map<Object, String> names) throws Exception
+   {
+      if (names.containsKey(object))
+         return names.get(object);
+
+      if (namer != null)
+      {
+         String name = namer.getName(object);
+         if (name != null)
+         {
+            names.put(object, name);
+            return name;
+         }
+      }
+
+      String name = "";
+
+      Field nameField = J.getField("name", object.getClass());
+      if (nameField != null)
+      {
+         name = nameField.get(object) + "";
+      }
+
+      name = "_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
+      names.put(object, name);
+      return name;
+   }
+
+   private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
+
+   private static Set<Class<?>> getWrapperTypes()
+   {
+      Set<Class<?>> ret = new HashSet<Class<?>>();
+      ret.add(Boolean.class);
+      ret.add(Character.class);
+      ret.add(Byte.class);
+      ret.add(Short.class);
+      ret.add(Integer.class);
+      ret.add(Long.class);
+      ret.add(Float.class);
+      ret.add(Double.class);
+      ret.add(Void.class);
+      ret.add(String.class);
+      return ret;
+   }
 }

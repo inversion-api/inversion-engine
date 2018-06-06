@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -252,7 +252,8 @@ public class Service extends HttpServlet
 
          if (ex instanceof ApiException)
          {
-            if (req != null && req.isDebug()) {
+            if (req != null && req.isDebug())
+            {
                log.error("Error in Service", ex);
             }
 
@@ -710,10 +711,21 @@ public class Service extends HttpServlet
       if (!J.empty(subCollectionKey))
          url += "/" + subCollectionKey;
 
-      String proto = req.getHeader("x-forwarded-proto");
-      if (!J.empty(proto))
+      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
       {
-         url = proto + url.substring(url.indexOf(':'), url.length());
+         String newUrl = req.getApi().getUrl();
+         while (newUrl.endsWith("/"))
+            newUrl = newUrl.substring(0, newUrl.length() - 1);
+
+         url = newUrl + url.substring(url.indexOf("/", 8));
+      }
+      else
+      {
+         String proto = req.getHeader("x-forwarded-proto");
+         if (!J.empty(proto))
+         {
+            url = proto + url.substring(url.indexOf(':'), url.length());
+         }
       }
 
       return url;
