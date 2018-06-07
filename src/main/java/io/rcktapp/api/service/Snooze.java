@@ -409,7 +409,7 @@ public class Snooze extends Service
          for (int i = -1; i <= 100; i++)
          {
             String fileName = configPath + "snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
-            InputStream is = ((ServletContext) getServletConfig()).getResourceAsStream(fileName);
+            InputStream is = getServletContext().getResourceAsStream(fileName);
             if (is != null)
             {
                props.load(is);
