@@ -267,6 +267,14 @@ public class Snooze extends Service
 
          Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
          autoProps.putAll(props);
+         
+         log.debug("loading configuration -------------------------");
+         for(String key : AutoWire.sort(autoProps.keySet()))
+         {
+            log.debug(key + "=" + autoProps.getProperty(key));
+         }
+         log.debug("- end -------");
+         
 
          wire.clear();
          wire.load(autoProps);
@@ -750,7 +758,7 @@ public class Snooze extends Service
                Column pk = db.getColumn(pkTableName, pkColumnName);
                fk.setPk(pk);
 
-               log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+               //log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
             keyMd.close();
          }

@@ -151,6 +151,26 @@ public class AutoWire
       return keys;
    }
 
+   public static List<String> sort(java.util.Collection keys)
+   {
+      List<String> sorted = new ArrayList(keys);
+      Collections.sort(sorted, new Comparator<String>()
+         {
+            @Override
+            public int compare(String o1, String o2)
+            {
+               int count1 = o1.length() - o1.replace(".", "").length();
+               int count2 = o2.length() - o2.replace(".", "").length();
+               if (count1 != count2)
+                  return count1 > count2 ? 1 : -1;
+
+               return o1.compareTo(o2);
+            }
+         });
+
+      return sorted;
+   }
+
    public void load() throws Exception
    {
       HashMap<String, Map> loaded = new LinkedHashMap();
@@ -175,20 +195,7 @@ public class AutoWire
       }
 
       List<String> keys = new ArrayList(beans.keySet());
-      Collections.sort(keys, new Comparator<String>()
-         {
-            @Override
-            public int compare(String o1, String o2)
-            {
-               int count1 = o1.length() - o1.replace(".", "").length();
-               int count2 = o2.length() - o2.replace(".", "").length();
-               if (count1 != count2)
-                  return count1 > count2 ? 1 : -1;
-
-               return o1.compareTo(o2);
-            }
-
-         });
+      keys = sort(keys);
 
       //      for (String key : keys)
       //         System.out.println(key);
@@ -562,14 +569,6 @@ public class AutoWire
       {
          encode(object, props, namer, includer, names, defaults);
       }
-
-//      List keys = new ArrayList(props.keySet());
-//      Collections.sort(keys);
-//      for (Object key : keys)
-//      {
-//         System.out.println(key + "=" + props.get(key));
-//      }
-
       return props;
    }
 
