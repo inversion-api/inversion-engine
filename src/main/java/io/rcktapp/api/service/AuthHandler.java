@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
@@ -47,17 +47,19 @@ import io.rcktapp.api.User;
 
 public class AuthHandler implements Handler
 {
-   long   sessionExp = 1000 * 60 * 30; //30 minute default timeput
-   int    sessionMax = 10000;
+   long    sessionExp              = 1000 * 60 * 30; //30 minute default timeput
+   int     sessionMax              = 10000;
 
-   int    failedMax  = 10;
-   int    failedExp  = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
+   int     failedMax               = 10;
+   int     failedExp               = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
 
-   String collection = null;
+   String  collection              = null;
 
-   LRUMap sessions   = null;
+   LRUMap  sessions                = null;
 
-   Db     db         = null;
+   Db      db                      = null;
+
+   boolean shouldTrackRequestTimes = true;
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
@@ -166,8 +168,11 @@ public class AuthHandler implements Handler
                String remoteAddr = req.getHttpServletRequest().getRemoteAddr();
                authorized = checkPassword(conn, tempUser, password);
 
-               String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
-               Sql.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
+               if (shouldTrackRequestTimes)
+               {
+                  String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
+                  Sql.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
+               }
 
                if (authorized)
                {
@@ -407,20 +412,20 @@ public class AuthHandler implements Handler
       }
    }
 
-//   void close(Connection conn)
-//   {
-//      if (conn != null)
-//      {
-//         try
-//         {
-//            conn.close();
-//         }
-//         catch (Exception ex)
-//         {
-//            ex.printStackTrace();
-//         }
-//      }
-//   }
+   //   void close(Connection conn)
+   //   {
+   //      if (conn != null)
+   //      {
+   //         try
+   //         {
+   //            conn.close();
+   //         }
+   //         catch (Exception ex)
+   //         {
+   //            ex.printStackTrace();
+   //         }
+   //      }
+   //   }
 
    protected String newSessionId()
    {
