@@ -18,6 +18,7 @@ package io.rcktapp.api.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -156,14 +157,19 @@ public class ElasticHandler implements Handler
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type)
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type) throws Exception
    {
 
       int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
-      String tenantId = req.removeParam("tenantId");
-      boolean isMultiTenant = (req.getApi().isMultiTenant() && tenantId != null);
+      String tenantId = null;
+      JSObject context = null;
+      if (req.getApi().isMultiTenant())
+      {
+         tenantId = req.removeParam("tenantId");
+         context = new JSObject("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+      }
 
       String field = null;
       String value = null;
@@ -193,9 +199,9 @@ public class ElasticHandler implements Handler
          payload = new JSObject("_source", new JSArray(field), "suggest", new JSObject("auto-suggest", autoSuggest));
       }
 
-      if (isMultiTenant)
+      if (context != null)
       {
-         completion.put("context", new JSObject("tenantid", tenantId));
+         completion.put("context", context);
       }
 
       List<String> headers = new ArrayList<String>();
@@ -203,7 +209,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers).get();
+      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(10, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -212,7 +218,7 @@ public class ElasticHandler implements Handler
          JSArray resultArray = new JSArray();
          for (JSObject obj : (List<JSObject>) auto.getArray("options").asList())
          {
-            if (isMultiTenant)
+            if (context != null)
             {
                resultArray.add(obj.getObject("_source").getObject(field).get("input"));
             }
@@ -225,7 +231,7 @@ public class ElasticHandler implements Handler
          // do a wildcard search of no type was defined.
          if (resultArray.length() == 0 && type == null)
          {
-            if (isMultiTenant)
+            if (req.getApi().isMultiTenant())
             {
                req.putParam("tenantId", tenantId);
             }
@@ -239,7 +245,17 @@ public class ElasticHandler implements Handler
          }
       }
       else
-         res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
+      {
+         if (res.getStatusCode() == 404)
+         {
+            res.setStatus(SC.SC_404_NOT_FOUND);
+         }
+         else
+         {
+            res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
+         }
+      }
+
    }
 
    private String buildSearchUrlAndHeaders(String[] paths, List<String> headers)
