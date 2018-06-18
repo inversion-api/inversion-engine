@@ -45,7 +45,9 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
-   String elasticURL = "";  // assigned via snooze.properties
+   String elasticURL = ""; // assigned via snooze.properties
+
+   int    maxRows    = 100;
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -84,6 +86,7 @@ public class ElasticHandler implements Handler
       // handle RQL request
 
       QueryDsl dsl = new RQL("elastic").toQueryDsl(req.getParams());
+      dsl.getStmt().setMaxRows(maxRows);
 
       ObjectMapper mapper = new ObjectMapper();
 
@@ -147,7 +150,7 @@ public class ElasticHandler implements Handler
     * suggested values.  The request path is expected to end with 'suggest'.  The 
     * path format should look like the following:
     * .../elastic/indexY/suggest/varX=value
-    * The default number of suggestions returned is 15.  That value can be adjusted
+    * The default number of suggestions returned is 'maxRows'.  That value can be adjusted
     * via the 'pageSize' parameter.
     * @param req
     * @param res
@@ -156,7 +159,7 @@ public class ElasticHandler implements Handler
    private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type)
    {
 
-      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 15;
+      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
 
       Map.Entry<String, String> prefixEntry = null;
 
@@ -250,7 +253,7 @@ public class ElasticHandler implements Handler
    {
       JSObject meta = new JSObject();
 
-      int pagesize = size < 0 ? 10 : size;
+      int pagesize = size < 0 ? maxRows : size;
 
       // Converting elastic paging 
       meta.put("rowCount", totalHits);
