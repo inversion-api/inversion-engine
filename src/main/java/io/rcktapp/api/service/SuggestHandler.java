@@ -90,6 +90,9 @@ public class SuggestHandler extends RqlHandler
       sql += " \r\n ) as v ";
       sql += " \r\n ORDER BY CASE WHEN " + searchProp + " LIKE '" + Sql.check(value) + "%' THEN 0 ELSE 1 END, " + searchProp;
 
+      
+      // removing the tenantId here so the Get Handler won't add an additional where clause to the sql we are sending it
+      req.removeParam("tenantId");
       chain.put("select", sql);
    }
 
