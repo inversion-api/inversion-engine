@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import io.forty11.j.J;
-import io.forty11.utils.DoubleKeyMap;
+import io.forty11.j.utils.DoubleKeyMap;
 import io.forty11.web.Url;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;

@@ -45,6 +45,9 @@ import org.slf4j.LoggerFactory;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import io.forty11.j.J;
+import io.forty11.j.utils.AutoWire;
+import io.forty11.j.utils.AutoWire.Includer;
+import io.forty11.j.utils.AutoWire.Namer;
 import io.forty11.sql.Rows.Row;
 import io.forty11.sql.Sql;
 import io.forty11.web.Url;
@@ -67,9 +70,6 @@ import io.rcktapp.api.Response;
 import io.rcktapp.api.Role;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
-import io.rcktapp.utils.AutoWire;
-import io.rcktapp.utils.AutoWire.Includer;
-import io.rcktapp.utils.AutoWire.Namer;
 
 /**
  * Servlet implementation class RestService
