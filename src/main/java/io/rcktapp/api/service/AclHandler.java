@@ -50,7 +50,7 @@ public class AclHandler extends AbstractHandler
       boolean allowed = false;
 
       log.debug("Request Path: " + req.getPath());
-      
+
       for (Acl acl : api.getAcls())
       {
          if (acl.ruleMatches(req))
@@ -83,7 +83,7 @@ public class AclHandler extends AbstractHandler
          requires.addAll(acl.getRequires());
          restricts.addAll(acl.getRestricts());
       }
-      
+
       log.debug("ACL requires: " + requires);
       log.debug("ACL restricts: " + restricts);
 
@@ -261,10 +261,11 @@ public class AclHandler extends AbstractHandler
       }
    }
 
-
-
    boolean matches(String restricted, String value)
    {
+      if (restricted == null || value == null)
+         return false;
+
       return value.toLowerCase().matches(".*\\b" + restricted.toLowerCase() + "\\b.*");
    }
 }
