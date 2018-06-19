@@ -16,6 +16,7 @@
 package io.rcktapp.api.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
@@ -46,9 +48,18 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
-   String elasticURL = ""; // assigned via snooze.properties
+   String                      elasticURL = "";             // assigned via snooze.properties
 
-   int    maxRows    = 100;
+   int                         maxRows    = 100;
+
+   static Map<Integer, String> SC_MAP     = new HashMap<>();
+   static
+   {
+      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
+      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
+      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
+      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
+   }
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -103,7 +114,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url, json, headers);
 
-      Web.Response r = Web.post(url, json, headers).get();
+      Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -142,7 +153,10 @@ public class ElasticHandler implements Handler
 
       }
       else
-         res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
+      {
+         String status = SC_MAP.get(r.getCode());
+         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+      }
 
    }
 
@@ -246,14 +260,8 @@ public class ElasticHandler implements Handler
       }
       else
       {
-         if (res.getStatusCode() == 404)
-         {
-            res.setStatus(SC.SC_404_NOT_FOUND);
-         }
-         else
-         {
-            res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
-         }
+         String status = SC_MAP.get(r.getCode());
+         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
