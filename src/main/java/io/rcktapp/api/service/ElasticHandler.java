@@ -8,16 +8,18 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -27,6 +29,7 @@ import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
@@ -45,7 +48,18 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
-   String elasticURL = "";  // assigned via snooze.properties
+   String                      elasticURL = "";             // assigned via snooze.properties
+
+   int                         maxRows    = 100;
+
+   static Map<Integer, String> SC_MAP     = new HashMap<>();
+   static
+   {
+      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
+      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
+      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
+      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
+   }
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -57,7 +71,7 @@ public class ElasticHandler implements Handler
       // examples...
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
-      
+
       // The path should include the Elastic index/type otherwise were gonna have a bad time.
       String[] paths = req.getPath().split("/");
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
@@ -84,6 +98,7 @@ public class ElasticHandler implements Handler
       // handle RQL request
 
       QueryDsl dsl = new RQL("elastic").toQueryDsl(req.getParams());
+      dsl.getStmt().setMaxRows(maxRows);
 
       ObjectMapper mapper = new ObjectMapper();
 
@@ -99,7 +114,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url, json, headers);
 
-      Web.Response r = Web.post(url, json, headers).get();
+      Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -114,31 +129,34 @@ public class ElasticHandler implements Handler
          Stmt stmt = dsl.getStmt();
          JSObject meta = buildMeta(stmt.pagesize, stmt.pagenum, totalHits);
          JSArray data = new JSArray();
-         
-         boolean isAll = paths[paths.length-1].toLowerCase().equals("no-type");
+
+         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
 
          for (JSObject obj : (List<JSObject>) hits.asList())
          {
             JSObject src = obj.getObject("_source");
 
             // for 'all' requests, add the _meta
-            if (isAll) {
+            if (isAll)
+            {
                JSObject src_meta = new JSObject();
                src_meta.put("index", obj.get("_index"));
                src_meta.put("type", obj.get("_type"));
                src.put("_meta", src_meta);
             }
-            
+
             data.add(src);
          }
-         
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
 
       }
       else
-         res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
+      {
+         String status = SC_MAP.get(r.getCode());
+         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+      }
 
    }
 
@@ -147,22 +165,33 @@ public class ElasticHandler implements Handler
     * suggested values.  The request path is expected to end with 'suggest'.  The 
     * path format should look like the following:
     * .../elastic/indexY/suggest/varX=value
-    * The default number of suggestions returned is 15.  That value can be adjusted
+    * The default number of suggestions returned is 'maxRows'.  That value can be adjusted
     * via the 'pageSize' parameter.
     * @param req
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type)
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type) throws Exception
    {
 
-      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 15;
+      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
 
-      Map.Entry<String, String> prefixEntry = null;
+      // remove tenantId before looping over the params to ensure tenantId is not used as the field
+      String tenantId = null;
+      JSObject context = null;
+      if (req.getApi().isMultiTenant())
+      {
+         tenantId = req.removeParam("tenantId");
+         context = new JSObject("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+      }
+
+      String field = null;
+      String value = null;
 
       for (Map.Entry<String, String> entry : req.getParams().entrySet())
       {
-         prefixEntry = entry;
+         field = entry.getKey();
+         value = entry.getValue();
       }
 
       JSObject completion = null;
@@ -171,18 +200,22 @@ public class ElasticHandler implements Handler
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         // use prefix completion
-         completion = new JSObject("field", prefixEntry.getKey(), "skip_duplicates", true, "size", size);
-         autoSuggest = new JSObject("prefix", prefixEntry.getValue(), "completion", completion);
-         payload = new JSObject("_source", new JSArray(prefixEntry.getKey()), "suggest", new JSObject("auto-suggest", autoSuggest));
+         completion = new JSObject("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSObject("prefix", value, "completion", completion);
+         payload = new JSObject("_source", new JSArray(field), "suggest", new JSObject("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new JSObject("field", prefixEntry.getKey(), "skip_duplicates", true, "size", size);
-         autoSuggest = new JSObject("regex", ".*" + prefixEntry.getValue().toLowerCase() + ".*", "completion", completion);
-         payload = new JSObject("_source", new JSArray(prefixEntry.getKey()), "suggest", new JSObject("auto-suggest", autoSuggest));
+         completion = new JSObject("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSObject("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new JSObject("_source", new JSArray(field), "suggest", new JSObject("auto-suggest", autoSuggest));
+      }
+
+      if (context != null)
+      {
+         completion.put("context", context);
       }
 
       List<String> headers = new ArrayList<String>();
@@ -190,7 +223,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers).get();
+      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(10, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -199,23 +232,38 @@ public class ElasticHandler implements Handler
          JSArray resultArray = new JSArray();
          for (JSObject obj : (List<JSObject>) auto.getArray("options").asList())
          {
-            resultArray.add(obj.getObject("_source").get(prefixEntry.getKey()));
+            if (context != null)
+            {
+               resultArray.add(obj.getObject("_source").getObject(field).get("input"));
+            }
+            else
+            {
+               resultArray.add(obj.getObject("_source").get(field));
+            }
          }
 
          // do a wildcard search of no type was defined.
          if (resultArray.length() == 0 && type == null)
          {
+            if (req.getApi().isMultiTenant())
+            {
+               req.putParam("tenantId", tenantId);
+            }
             handleAutoSuggestRequest(req, res, paths, "wildcard");
          }
          else
          {
-            JSObject data = new JSObject("field", prefixEntry.getKey(), "results", resultArray);
+            JSObject data = new JSObject("field", field, "results", resultArray);
             JSObject meta = buildMeta(resultArray.length(), 1, resultArray.length());
             res.setJson(new JSObject("meta", meta, "data", data));
          }
       }
       else
-         res.setStatus(SC.SC_500_INTERNAL_SERVER_ERROR);
+      {
+         String status = SC_MAP.get(r.getCode());
+         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+      }
+
    }
 
    private String buildSearchUrlAndHeaders(String[] paths, List<String> headers)
@@ -227,7 +275,8 @@ public class ElasticHandler implements Handler
          indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
       }
       // if the type is of 'no-type', dont' include it 
-      else if (paths[2].toLowerCase().equals("no-type")) {
+      else if (paths[2].toLowerCase().equals("no-type"))
+      {
          indexAndType = "/" + paths[1] + "/";
       }
       else
@@ -250,7 +299,7 @@ public class ElasticHandler implements Handler
    {
       JSObject meta = new JSObject();
 
-      int pagesize = size < 0 ? 10 : size;
+      int pagesize = size < 0 ? maxRows : size;
 
       // Converting elastic paging 
       meta.put("rowCount", totalHits);
