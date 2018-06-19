@@ -8,22 +8,26 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
+/**
+ * @see http://www.restapitutorial.com/httpstatuscodes.html
+ */
 public class SC
 {
-   public static final String SC_200_OK                       = "200 OK";
-   public static final String SC_201_CREATED                  = "201 Created";
-   public static final String SC_400_BAD_REQUEST              = "400 Bad Request";
-   public static final String SC_401_UNAUTHORIZED             = "401 Unauthorized";
-   public static final String SC_403_FORBIDDEN                = "403 Forbidden";
-   public static final String SC_403_USER_RATE_LIMIT_EXCEEDED = "403 User Rate Limit Exceeded";
-   public static final String SC_404_NOT_FOUND                = "404 Not Found";
-   public static final String SC_500_INTERNAL_SERVER_ERROR    = "500 Internal Server Error";
+
+   public static final String SC_200_OK                    = "200 OK";
+   public static final String SC_201_CREATED               = "201 Created";
+   public static final String SC_400_BAD_REQUEST           = "400 Bad Request";
+   public static final String SC_401_UNAUTHORIZED          = "401 Unauthorized";
+   public static final String SC_403_FORBIDDEN             = "403 Forbidden";
+   public static final String SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
+   public static final String SC_404_NOT_FOUND             = "404 Not Found";
+   public static final String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 
 }

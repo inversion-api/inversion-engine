@@ -22,6 +22,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import io.forty11.j.J;
+import io.forty11.web.Url;
 
 public abstract class Rule extends Dto implements Comparable<Rule>
 {
@@ -193,7 +194,7 @@ public abstract class Rule extends Dto implements Comparable<Rule>
       try
       {
          config.clear();
-         config.putAll(Request.parse(queryString));
+         config.putAll(Url.parseQuery(queryString));
          //config.load(new ByteArrayInputStream(propertiesString.getBytes()));
       }
       catch (Exception ex)

@@ -84,7 +84,7 @@ public class RateHandler implements Handler
          System.err.println("Rate Limiting Ip: " + token);
          chain.cancel();
          res.setJson(null);
-         res.setStatus(SC.SC_403_USER_RATE_LIMIT_EXCEEDED);
+         res.setStatus(SC.SC_429_TOO_MANY_REQUESTS);
       }
    }
 

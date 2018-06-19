@@ -293,7 +293,7 @@ public class GetHandler extends RqlHandler
          results = getRows(chain, action, req, db, conn, includes, excludes, sql, params);
       }
 
-      if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() == null)
+      if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
          res.setStatus(SC.SC_404_NOT_FOUND);
          res.setJson(null);
@@ -794,41 +794,37 @@ public class GetHandler extends RqlHandler
 
       if (includes != null && includes.size() > 0)
       {
-         if (includes.contains(key))
-         {
-            return true;
-         }
-         else
-         {
-            for (String include : includes)
-            {
-               if (J.wildcardMatch(include.toLowerCase(), key))
-                  return true;
-            }
-         }
+         return find(includes, key);
+      }
 
+      if (excludes != null && excludes.size() > 0 && find(excludes, key))
+      {
          return false;
       }
 
-      if (excludes != null)
-      {
-         if (excludes.contains(key))
-         {
-            return false;
-         }
-         else
-         {
-            for (String exclude : excludes)
-            {
-               if (J.wildcardMatch(exclude.toLowerCase(), key))
-               {
-                  return false;
-               }
-            }
-         }
-      }
-
       return true;
+   }
+
+   static boolean find(java.util.Collection<String> haystack, String needle)
+   {
+      if(needle.equalsIgnoreCase("adcompleters.ad"))
+         System.out.println("asdf");
+      String lc = needle.toLowerCase();
+      if (haystack.contains(needle) || haystack.contains(lc))
+         return true;
+
+      for (String pattern : haystack)
+      {
+         pattern = pattern.toLowerCase();
+         if (J.wildcardMatch(pattern, lc))
+            return true;
+
+         if (pattern.startsWith("*") || pattern.startsWith("."))
+            if (J.wildcardMatch(pattern, "." + lc))
+               return true;
+      }
+      return false;
+
    }
 
 }

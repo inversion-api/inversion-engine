@@ -134,6 +134,12 @@ public class AuthHandler implements Handler
 
       if (sessionKey == null && J.empty(username, password))
       {
+         username = req.getHeader("username");
+         password = req.getHeader("password");
+      }
+      
+      if (sessionKey == null && J.empty(username, password))
+      {
          username = req.removeParam("username");
          password = req.removeParam("password");
       }

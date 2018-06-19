@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -19,9 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URLDecoder;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -131,7 +129,7 @@ public class Request
          String query = url.getQuery();
          if (!J.empty(query))
          {
-            params.putAll(parse(query));
+            params.putAll(Url.parseQuery(query));
          }
       }
 
@@ -159,36 +157,6 @@ public class Request
    public boolean isExplain()
    {
       return explain;
-   }
-
-   public static Map<String, String> parse(String query)
-   {
-      try
-      {
-         Map params = new HashMap();
-         String[] pairs = query.split("&");
-         for (String pair : pairs)
-         {
-            int idx = pair.indexOf("=");
-            if (idx > 0)
-            {
-               String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-               String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-               params.put(key, value);
-            }
-            else
-            {
-               params.put(URLDecoder.decode(pair, "UTF-8"), "");
-            }
-         }
-
-         return params;
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to parse query string \"" + query + "\" - " + ex.getMessage());
-      }
-
    }
 
    public static String readBody(HttpServletRequest request) throws ApiException
