@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -417,6 +418,16 @@ public class Snooze extends Service
          }
       }
 
+      if(log.isInfoEnabled()) {
+         List<String> keys = new ArrayList(props.keySet());
+         Collections.sort(keys);
+         log.info("Merged properties");
+         for (String key : keys)
+         {
+            log.info(" > " + key + " : " + props.getProperty(key));
+         }
+      }
+      
       return props;
    }
 
