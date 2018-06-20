@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -400,6 +401,7 @@ public class Snooze extends Service
          InputStream is = getServletContext().getResourceAsStream(fileName);
          if (is != null)
          {
+            log.info("Loading properties file: " + fileName);
             props.load(is);
          }
       }
@@ -412,11 +414,22 @@ public class Snooze extends Service
             InputStream is = getServletContext().getResourceAsStream(fileName);
             if (is != null)
             {
+               log.info("Loading properties file: " + fileName);
                props.load(is);
             }
          }
       }
 
+      if(log.isInfoEnabled()) {
+         List<String> keys = new ArrayList(props.keySet());
+         Collections.sort(keys);
+         log.info("Merged properties");
+         for (String key : keys)
+         {
+            log.info(" > " + key + " : " + props.getProperty(key));
+         }
+      }
+      
       return props;
    }
 
