@@ -401,6 +401,7 @@ public class Snooze extends Service
          InputStream is = getServletContext().getResourceAsStream(fileName);
          if (is != null)
          {
+            log.info("Loading properties file: " + fileName);
             props.load(is);
          }
       }
@@ -413,6 +414,7 @@ public class Snooze extends Service
             InputStream is = getServletContext().getResourceAsStream(fileName);
             if (is != null)
             {
+               log.info("Loading properties file: " + fileName);
                props.load(is);
             }
          }
