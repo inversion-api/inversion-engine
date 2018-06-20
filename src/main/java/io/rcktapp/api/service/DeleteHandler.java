@@ -204,11 +204,10 @@ public class DeleteHandler extends RqlHandler
          String sql = "SELECT " + rql.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + rql.asCol(entity.getTable().getName());
 
          Replacer replacer = new Replacer();
-         
+
          Stmt stmt = rql.toSql(sql, entity.getTable(), params, replacer);
          stmt.setMaxRows(-1);
          sql = stmt.toSql();
-         
 
          sql = sql.replaceAll("SQL_CALC_FOUND_ROWS", "");
 
@@ -224,24 +223,6 @@ public class DeleteHandler extends RqlHandler
 
             args.add(cast(collection, col, val));
          }
-
-         //else
-         {
-            //         List<Long> idsToDelete = Sql.selectList(conn, sql, args);
-            //
-            //         if (!idsToDelete.isEmpty())
-            //            Sql.execute(conn, "DELETE FROM " + rql.asCol(entity.getTable().getName()) + " WHERE " + rql.asCol(collection.getEntity().getKey().getColumn().getName()) + " IN (" + Sql.getQuestionMarkStr(idsToDelete.size()) + ")", idsToDelete);
-            //
-            //         JSObject resJson = new JSObject();
-            //         resJson.put("data", new JSArray(idsToDelete));
-            //         res.setJson(resJson);
-            //
-            //         for (Long id : idsToDelete)
-            //         {
-            //            res.addChange("DELETE", collection.getName(), Long.toString(id));
-            //         }
-         }
-
       }
       catch (Exception e)
       {

@@ -211,18 +211,18 @@ public abstract class RqlHandler implements Handler
          type = "boolean";
       }
 
-      if (type != null)
-      {
-         type = type.toLowerCase();
-         val = Sql.cast(val, type);
-      }
-
       if (val instanceof String)
       {
          String str = (String) val;
          if (str.startsWith("'") && str.endsWith("'") && str.length() > 1)
             str = str.substring(1, str.length() - 1);
          val = str;
+      }
+
+      if (type != null)
+      {
+         type = type.toLowerCase();
+         val = Sql.cast(val, type);
       }
 
       return val;

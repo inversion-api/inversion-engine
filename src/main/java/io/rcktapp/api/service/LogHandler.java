@@ -8,14 +8,15 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,7 @@ public class LogHandler implements Handler
                   }
                   Long logId = (Long) Sql.insertMap(conn, logTable, logParams);
 
+                  List<Map> changeMap = new ArrayList();
                   for (Change c : changes)
                   {
                      Map<String, Object> changeParams = new HashMap<>();
@@ -101,8 +103,9 @@ public class LogHandler implements Handler
                      {
                         changeParams.put("tenantId", tenantId);
                      }
-                     Sql.insertMap(conn, logChangeTable, changeParams);
+                     changeMap.add(changeParams);
                   }
+                  Sql.insertMaps(conn, logChangeTable, changeMap);
                }
             }
          }
