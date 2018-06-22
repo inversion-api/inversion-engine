@@ -110,6 +110,41 @@ public class BoolQuery extends ElasticQuery
             else
                addFilter(elastic);
          }
+         else if (elastic instanceof NestedQuery) {
+            // combine any nested queries for the list that share the same path as this nested query.
+            
+            List<ElasticQuery> nestedList = new ArrayList<ElasticQuery>();
+            for (int n = i + 1; n < elasticList.size(); n++) {
+               if (elasticList.get(n) instanceof NestedQuery && elasticList.get(n).getNestedPath() == elastic.getNestedPath()) {
+                  nestedList.add(elasticList.remove(n));
+                  n--;
+               }
+            }
+            
+            // TODO handle Term, Range, Wildcard...
+            if (nestedList.size() > 0) {
+               BoolQuery bool = new BoolQuery();
+               if (((NestedQuery) elastic).getQuery().getTerm() != null)
+                  bool.addFilter(((NestedQuery) elastic).getQuery().getTerm());
+               // move the term from each nest to this nested query
+               for (ElasticQuery nest : nestedList) {
+                  if (((NestedQuery)nest).getQuery() != null) {
+                     ElasticQuery query = ((NestedQuery)nest).getQuery().getTerm();
+                     if (query instanceof Term) {
+                        bool.addFilter(query);
+                     }
+                  }
+               }
+               QueryDsl dsl = new QueryDsl();
+               dsl.setBool(bool);
+               
+               ((NestedQuery) elastic).setQuery(dsl);
+            }
+            
+            // add this new object to a filter.
+            addFilter(elastic);
+            
+         }
          else
             addFilter(elastic);
       }
