@@ -110,13 +110,61 @@ public class BoolQuery extends ElasticQuery
             else
                addFilter(elastic);
          }
+         else if (elastic instanceof NestedQuery)
+         {
+            // combine any nested queries for the list that share the same path as this nested query.
+
+            List<ElasticQuery> nestedList = new ArrayList<ElasticQuery>();
+            for (int n = i + 1; n < elasticList.size(); n++)
+            {
+               if (elasticList.get(n) instanceof NestedQuery && elasticList.get(n).getNestedPath() == elastic.getNestedPath())
+               {
+                  nestedList.add(elasticList.remove(n));
+                  n--;
+               }
+            }
+
+            if (nestedList.size() > 0)
+            {
+               BoolQuery bool = new BoolQuery();
+               if (((NestedQuery) elastic).getQuery().getTerm() != null)
+                  bool.addFilter(((NestedQuery) elastic).getQuery().getTerm());
+               // move the term from each nest to this nested query
+               for (ElasticQuery nest : nestedList)
+               {
+                  if (((NestedQuery) nest).getQuery() != null)
+                  {
+                     QueryDsl query = ((NestedQuery) nest).getQuery();
+                     if (query.getTerm() != null)
+                        bool.addFilter(query.getTerm());
+                     else if (query.getTerms() != null)
+                        bool.addFilter(query.getTerms());
+                     else if (query.getRange() != null)
+                        bool.addFilter(query.getRange());
+                     else if (query.getNested() != null)
+                        bool.addFilter(query.getNested());
+                     else if (query.getBool() != null)
+                        bool.addFilter(query.getBool());
+                  }
+               }
+               QueryDsl dsl = new QueryDsl();
+               dsl.setBool(bool);
+
+               ((NestedQuery) elastic).setQuery(dsl);
+            }
+
+            // add this new object to a filter.
+            addFilter(elastic);
+
+         }
          else
             addFilter(elastic);
       }
 
    }
-   
-   private List<Map<String, ElasticQuery>> getListForElasticJson(List<ElasticQuery> queryList) {
+
+   private List<Map<String, ElasticQuery>> getListForElasticJson(List<ElasticQuery> queryList)
+   {
       if (queryList == null)
          return null;
 
