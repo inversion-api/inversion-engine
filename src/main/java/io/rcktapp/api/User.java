@@ -23,6 +23,8 @@ public class User
    int              id          = 0;
    String           username    = null;
    String           password    = null;
+   
+   String           displayName    = null;
 
    List<Permission> permissions = new ArrayList();
    List<Role>       roles       = new ArrayList();
@@ -182,5 +184,17 @@ public class User
    {
       this.tenantCode = tenantCode;
    }
+
+   public String getDisplayName()
+   {
+      return displayName;
+   }
+
+   public void setDisplayName(String displayName)
+   {
+      this.displayName = displayName;
+   }
+   
+   
 
 }
