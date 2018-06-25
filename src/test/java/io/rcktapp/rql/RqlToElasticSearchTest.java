@@ -982,6 +982,44 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void complexNestedQuery2()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,age),gt(keywords.value,30))"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"age\"}},{\"range\":{\"keywords.value\":{\"gt\":\"30\"}}}]}}}}]}}", json);
+
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+         
+         BoolQuery bool = dsl.getBool();
+         assertNull(bool.getShould());
+         assertNull(bool.getMustNot());
+         assertNull(bool.getMust());
+         assertNotNull(bool.getFilter());
+         
+         List<ElasticQuery> boolFilterList = bool.getFilter();
+         assertTrue(boolFilterList.size() == 1);
+         assertTrue(boolFilterList.get(0) instanceof NestedQuery);
+         
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
 
    @Test
    public void compoundNestedQuery1()
