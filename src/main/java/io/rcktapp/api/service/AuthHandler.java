@@ -226,6 +226,7 @@ public class AuthHandler implements Handler
             JSObject obj = new JSObject();
             obj.put("id", user.getId());
             obj.put("username", username);
+            obj.put("displayname", user.getDisplayName());
 
             JSArray perms = new JSArray();
             for (Permission perm : user.getPermissions())

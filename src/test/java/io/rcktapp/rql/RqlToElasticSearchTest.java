@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.rcktapp.rql.elasticsearch.BoolQuery;
+import io.rcktapp.rql.elasticsearch.ElasticQuery;
 import io.rcktapp.rql.elasticsearch.NestedQuery;
 import io.rcktapp.rql.elasticsearch.QueryDsl;
 import io.rcktapp.rql.elasticsearch.Range;
@@ -935,6 +937,82 @@ public class RqlToElasticSearchTest
          assertNotNull("json should not be empty.", json);
          assertEquals("{\"nested\":{\"path\":\"players\",\"query\":{\"range\":{\"players.registerNum\":{\"gt\":\"5\"}}}}}", json);
 
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void complexNestedQuery1()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,color),eq(keywords.value,33))"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"color\"}},{\"term\":{\"keywords.value\":\"33\"}}]}}}}]}}", json);
+
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+         
+         BoolQuery bool = dsl.getBool();
+         assertNull(bool.getShould());
+         assertNull(bool.getMustNot());
+         assertNull(bool.getMust());
+         assertNotNull(bool.getFilter());
+         
+         List<ElasticQuery> boolFilterList = bool.getFilter();
+         assertTrue(boolFilterList.size() == 1);
+         assertTrue(boolFilterList.get(0) instanceof NestedQuery);
+         
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void complexNestedQuery2()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,age),gt(keywords.value,30))"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"age\"}},{\"range\":{\"keywords.value\":{\"gt\":\"30\"}}}]}}}}]}}", json);
+
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getWildcard());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getNested());
+         assertNotNull(dsl.getBool());
+         
+         BoolQuery bool = dsl.getBool();
+         assertNull(bool.getShould());
+         assertNull(bool.getMustNot());
+         assertNull(bool.getMust());
+         assertNotNull(bool.getFilter());
+         
+         List<ElasticQuery> boolFilterList = bool.getFilter();
+         assertTrue(boolFilterList.size() == 1);
+         assertTrue(boolFilterList.get(0) instanceof NestedQuery);
+         
       }
       catch (Exception e)
       {

@@ -73,7 +73,7 @@ public class QueryDsl extends ElasticQuery
       }
 
       // Pagination
-      int pagesize = stmt.pagesize == -1 ? 10 : stmt.pagesize;
+      int pagesize = stmt.pagesize == -1 ? stmt.maxRows : stmt.pagesize;
       int from = stmt.pagenum == -1 ? 0 : (stmt.pagenum * pagesize) - pagesize;
       dslMap.put("from", from);
       dslMap.put("size", pagesize);
