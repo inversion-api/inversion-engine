@@ -124,7 +124,6 @@ public class BoolQuery extends ElasticQuery
                }
             }
 
-            // TODO handle Term, Range, Wildcard...
             if (nestedList.size() > 0)
             {
                BoolQuery bool = new BoolQuery();
