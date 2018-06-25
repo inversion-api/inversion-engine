@@ -34,7 +34,6 @@ import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Endpoint;
-import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
@@ -116,6 +115,25 @@ public class AclHandler extends AbstractHandler
       for (String restricted : restricts)
       {
          restricted = restricted.toLowerCase();
+
+         if (restricted.indexOf("=") > 0)
+         {
+            String key1 = restricted.split("=")[0];
+            String value = restricted.split("=")[1].trim();
+
+            if (value.startsWith("${"))
+               value = getValue(chain, value.substring(2, value.length() - 1));
+
+            if ("entitykey".equals(key1))
+            {
+               req.setEntityKey(value);
+            }
+            else
+            {
+               req.putParam(key1, value);
+            }
+            continue;
+         }
 
          if (restricted.startsWith("query.") || restricted.startsWith("*."))
             restricted = restricted.substring(restricted.indexOf(".") + 1, restricted.length());
