@@ -123,6 +123,15 @@ public class QueryDsl extends ElasticQuery
    }
 
    /**
+    * @return the sources
+    */
+   @JsonIgnore
+   public List<String> getSources()
+   {
+      return source;
+   }
+
+   /**
     * @return the range
     */
    public Range getRange()

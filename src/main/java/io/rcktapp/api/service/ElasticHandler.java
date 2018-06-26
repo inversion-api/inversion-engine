@@ -48,11 +48,13 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
-   String                      elasticURL = "";             // assigned via snooze.properties
+   // The following properties can be assigned via snooze.properties
+   String                      elasticURL    = "";
+   int                         maxRows       = 100;
+   String                      defaultSource = null;
+   boolean                     isOneSrcArray = true;
 
-   int                         maxRows    = 100;
-
-   static Map<Integer, String> SC_MAP     = new HashMap<>();
+   static Map<Integer, String> SC_MAP        = new HashMap<>();
    static
    {
       SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
@@ -95,7 +97,10 @@ public class ElasticHandler implements Handler
     */
    private void handleRqlRequest(Request req, Response res, String[] paths) throws Exception
    {
-      // handle RQL request
+      if (req.getParam("source") == null && defaultSource != null)
+      {
+         req.putParam("source", defaultSource);
+      }
 
       QueryDsl dsl = new RQL("elastic").toQueryDsl(req.getParams());
       dsl.getStmt().setMaxRows(maxRows);
@@ -132,6 +137,9 @@ public class ElasticHandler implements Handler
 
          boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
 
+         JSArray oneSrcArray = new JSArray();
+         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
+
          for (JSObject obj : (List<JSObject>) hits.asList())
          {
             JSObject src = obj.getObject("_source");
@@ -145,7 +153,20 @@ public class ElasticHandler implements Handler
                src.put("_meta", src_meta);
             }
 
-            data.add(src);
+            // if there is only one source, convert the return data into an array of values for that source.
+            if (isOneSrcArr)
+            {
+               oneSrcArray.add(src.get(dsl.getSources().get(0)));
+            }
+            else
+               data.add(src);
+         }
+
+         if (isOneSrcArr)
+         {
+            // if 'oneSrcArray' has values, 'data' will be empty.
+            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
+            data.add(oneSrcObj);
          }
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
