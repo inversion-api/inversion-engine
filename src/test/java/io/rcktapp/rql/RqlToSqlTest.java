@@ -107,6 +107,21 @@ public class RqlToSqlTest
                             "select * from table1", //
                             "select `firstName`, `lastName`, SUM(`age`), MAX(`height`) AS 'tallest', MIN(`height`) AS 'shortest' from table1 WHERE `firstName` = 'Wells' AND `lastName` = 'Burke' GROUP BY `firstName`, `lastName`", //
                             null));
+      
+      tests.add(new RqlTest("w(city,andl)", //
+            "select * from table1", //
+            "select * from table1 WHERE `city` LIKE '%andl%'", //
+            null));
+      
+      tests.add(new RqlTest("sw(city,andl)", //
+            "select * from table1", //
+            "select * from table1 WHERE `city` LIKE 'andl%'", //
+            null));
+      
+      tests.add(new RqlTest("ew(city,andl)", //
+            "select * from table1", //
+            "select * from table1 WHERE `city` LIKE '%andl'", //
+            null));
 
       tests.add(new RqlTest("in(firstName,wells,joe,karl)", //
                             "select * from table1", //

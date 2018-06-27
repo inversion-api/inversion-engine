@@ -351,6 +351,37 @@ public class Stmt
             sql.append(term1).append(" = ").append(term2);
          }
       }
+      else if ("w".equalsIgnoreCase(token)) 
+      {
+         String term1 = terms.get(0);
+         String term2 = terms.get(1);
+         
+         int firstQuoteIndex = term2.indexOf("'") + 1;
+         int lastQuoteIndex = term2.lastIndexOf("'");
+         term2 = term2.substring(0, firstQuoteIndex) + '%' + term2.substring(firstQuoteIndex, lastQuoteIndex) + '%' + term2.substring(lastQuoteIndex) ;
+         
+         sql.append(term1).append(" LIKE ").append(term2);
+      }
+      else if ("sw".equalsIgnoreCase(token)) 
+      {
+         String term1 = terms.get(0);
+         String term2 = terms.get(1);
+         
+         int lastQuoteIndex = term2.lastIndexOf("'");
+         term2 = term2.substring(0, lastQuoteIndex) + '%' + term2.substring(lastQuoteIndex) ;
+
+         sql.append(term1).append(" LIKE ").append(term2);
+      }
+      else if ("ew".equalsIgnoreCase(token)) 
+      {
+         String term1 = terms.get(0);
+         String term2 = terms.get(1);
+         
+         int firstQuoteIndex = term2.indexOf("'") + 1;
+         term2 = term2.substring(0, firstQuoteIndex) + '%' + term2.substring(firstQuoteIndex) ;
+
+         sql.append(term1).append(" LIKE ").append(term2);
+      }
       else if ("ne".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
