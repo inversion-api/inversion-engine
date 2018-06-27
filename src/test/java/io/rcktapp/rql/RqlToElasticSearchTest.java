@@ -94,6 +94,38 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void with()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("w(city,andl)"));
+
+         assertNull(dsl.getBool());
+         assertNull(dsl.getNested());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNotNull(dsl.getWildcard());
+
+         assertEquals("city", dsl.getWildcard().getName());
+         assertEquals("*andl*", dsl.getWildcard().getValue());
+         assertNull(dsl.getWildcard().getNestedPath());
+
+         ObjectMapper mapper = new ObjectMapper();
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"wildcard\":{\"city\":\"*andl*\"}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
 
    @Test
    public void endsWith()
