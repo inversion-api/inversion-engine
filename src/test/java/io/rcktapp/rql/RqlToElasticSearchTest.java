@@ -1052,6 +1052,48 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void complexNestedQuery3()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,items.name),w(keywords.value,Powerade))"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"items.name\"}},{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}}]}}}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void complexNestedQuery4()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(w(keywords.value,Powerade),eq(keywords.name,items.name))"));
+         ObjectMapper mapper = new ObjectMapper();
+
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}},{\"term\":{\"keywords.name\":\"items.name\"}}]}}}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
 
    @Test
    public void compoundNestedQuery1()
