@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,7 +41,6 @@ import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 import io.rcktapp.rql.RQL;
-import io.rcktapp.rql.Stmt;
 import io.rcktapp.rql.elasticsearch.QueryDsl;
 
 /**
@@ -48,6 +51,8 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
+   Logger log = LoggerFactory.getLogger(ElasticHandler.class);
+   
    // The following properties can be assigned via snooze.properties
    String                      elasticURL    = "";
    int                         maxRows       = 100;
@@ -82,7 +87,7 @@ public class ElasticHandler implements Handler
       }
       else
       {
-         handleRqlRequest(req, res, paths);
+         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath());
       }
 
    }
@@ -95,7 +100,7 @@ public class ElasticHandler implements Handler
     * @param paths
     * @throws Exception
     */
-   private void handleRqlRequest(Request req, Response res, String[] paths) throws Exception
+   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl) throws Exception
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
@@ -131,8 +136,9 @@ public class ElasticHandler implements Handler
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
 
-         Stmt stmt = dsl.getStmt();
-         JSObject meta = buildMeta(stmt.pagesize, stmt.pagenum, totalHits);
+         JSObject lastHit = hits.getObject(hits.length() - 1);
+
+         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, lastHit, url, headers);
          JSArray data = new JSArray();
 
          boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
@@ -275,7 +281,7 @@ public class ElasticHandler implements Handler
          else
          {
             JSObject data = new JSObject("field", field, "results", resultArray);
-            JSObject meta = buildMeta(resultArray.length(), 1, resultArray.length());
+            JSObject meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
             res.setJson(new JSObject("meta", meta, "data", data));
          }
       }
@@ -316,26 +322,104 @@ public class ElasticHandler implements Handler
     * @param totalHits
     * @return
     */
-   private JSObject buildMeta(int size, int pageNum, int totalHits)
+   private JSObject buildMeta(int size, int pageNum, int totalHits, String apiUrl, QueryDsl dsl, JSObject lastHit, String elasticUrl, List<String> headers)
    {
       JSObject meta = new JSObject();
 
-      int pagesize = size < 0 ? maxRows : size;
+      pageNum = (pageNum == -1) ? 1 : pageNum;
+      size = size < 0 ? maxRows : size;
 
       // Converting elastic paging 
       meta.put("rowCount", totalHits);
 
-      if (pageNum == -1)
-         meta.put("pageNum", 1);
-      else
-         meta.put("pageNum", pageNum);
+      meta.put("pageNum", pageNum);
 
-      meta.put("pageSize", pagesize);
+      meta.put("pageSize", size);
 
-      int pages = (int) Math.ceil((double) totalHits / (double) pagesize);
+      int pages = (int) Math.ceil((double) totalHits / (double) size);
       meta.put("pageCount", pages);
 
+      // Create urls to obtain the next and previous searches. 
+      // Urls need to include as much detail as possible such as
+      // pagenum, size, count, sorting
+      if (apiUrl != null)
+      {
+         // remove the trailing '/'
+         if (apiUrl.endsWith("/")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
+         }
+         
+         List<String> sortList = dsl.getOrder().getOrderAsStringList();
+         
+         // add the original query back onto the url
+         List<String> rqlQuery = new ArrayList<String>();
+         for (int i = 0; i < dsl.getStmt().where.size(); i++) {
+            if (!dsl.getStmt().where.get(i).getSrc().contains("tenantid")) {
+               rqlQuery.add(dsl.getStmt().where.get(i).getSrc());
+            }
+         }
+         
+         String url = apiUrl //
+               + "?" + String.join("&", rqlQuery) // 
+               + "&sort=" + String.join(",", sortList) //
+//               + "&rowCount=" + totalHits //
+//               + "&pageCount=" + pages //
+               + "&pageSize=" + size;
+         
+         // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
+         String startString = srcObjectFieldsToStringBySortList(lastHit.getObject("_source"), sortList);
+         String prevStartString = null;
+         
+         // the start values for the 'previous' search need to be pulled from a separate query.
+         if (!dsl.isSearchAfterNull()) {
+            try {
+               dsl.getOrder().reverseOrdering();
+               ObjectMapper mapper = new ObjectMapper();
+               String json = mapper.writeValueAsString(dsl.toDslMap());
+               Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
+               
+               if (r.isSuccess()) {
+                  JSObject jsObj = JS.toJSObject(r.getContent());
+                  JSArray hits = jsObj.getObject("hits").getArray("hits");
+                  JSObject prevLastHit = hits.getObject(hits.length() - 1);
+                  
+                  prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source"), sortList);
+                  
+                  meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1) + "&start=" + prevStartString);
+               }
+            } catch(Exception e) {
+               log.error("error! ", e);
+               // TODO something
+               meta.put("prev", null);
+            }
+         }
+         else {
+            // TODO ... prev probably shouldn't always be null in this scenario.
+            meta.put("prev", null);
+         }
+         
+         if (pages == pageNum)
+            meta.put("next", null);
+         else
+            meta.put("next", url + "&pageNum=" + (pageNum + 1) + "&start=" + startString + "&prevStart=" + prevStartString);
+         
+      }
+
       return meta;
+   }
+   
+   private String srcObjectFieldsToStringBySortList(JSObject sourceObj, List<String> sortList) {
+      
+      List<String> list = new ArrayList<String>();
+      
+      for(String field : sortList) {
+         if (sourceObj.get(field) != null)
+            list.add(sourceObj.get(field).toString().toLowerCase());
+         else
+            list.add("[NULL]");
+      }
+      
+      return String.join(",", list);
    }
 
 }

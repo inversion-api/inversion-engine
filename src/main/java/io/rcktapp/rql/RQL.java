@@ -131,6 +131,21 @@ public class RQL
       {
          query.addSources(params.remove("source").split(","));
       }
+      
+      // A 'start' param indicates a 'search after' query should be created.
+      if (params.containsKey("start"))
+      {
+         List<String> searchAfterList = Arrays.asList(params.remove("start").split(","));
+         for(int i = 0; i < searchAfterList.size(); i++) {
+            if (searchAfterList.get(i).equals("[NULL]")) // [NULL] is used to indicate an actual null value, not a null string.
+               searchAfterList.set(i, null);
+         }
+         query.setSearchAfter(searchAfterList);
+         // remove the prevStart param if it exists...it wont be used.
+         params.remove("prevstart");
+//         params.remove("rowcount");
+//         params.remove("pagecount");
+      }
 
       // create the QDSL from the statement
       Stmt stmt = new Stmt(parser, null, null, null);
@@ -148,9 +163,15 @@ public class RQL
          elasticList.add(convertPredicate(pred));
       }
       
-      // use 'stmt.order' to create the sorting json.
+      
+      // Use 'stmt.order' to create the sorting json.
+      // A sort order MUST be set no matter the query.  If no sort was requested
+      // by the client, default the sort to 'id' ascending.
       io.rcktapp.rql.elasticsearch.Order elasticOrder = null;
       List<Order> orderList = stmt.order;
+      if (orderList.size() == 0) {
+         orderList.add(new Order("id", "asc"));
+      }
       for (int i = 0; i < orderList.size(); i++) {
          Order order = orderList.get(i);
          if (elasticOrder == null)
@@ -158,6 +179,7 @@ public class RQL
          else
             elasticOrder.addOrder(Parser.dequote(order.col), order.dir);
       }
+      
       query.setOrder(elasticOrder);
       
       elasticListToDsl(query, elasticList);

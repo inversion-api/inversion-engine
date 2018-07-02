@@ -49,6 +49,9 @@ public class QueryDsl extends ElasticQuery
    private Wildcard     wildcard;
    private BoolQuery    bool;
    private NestedQuery  nested;
+   
+   @JsonIgnore
+   private List<String> searchAfter;
 
    @JsonIgnore
    private List<String> source;
@@ -71,12 +74,19 @@ public class QueryDsl extends ElasticQuery
          // @JsonIgnore properties will be ... ignored
          dslMap.put("query", this);
       }
-
+      
       // Pagination
       int pagesize = stmt.pagesize == -1 ? stmt.maxRows : stmt.pagesize;
       int from = stmt.pagenum == -1 ? 0 : (stmt.pagenum * pagesize) - pagesize;
       dslMap.put("from", from);
       dslMap.put("size", pagesize);
+      
+      if (searchAfter != null) {
+         dslMap.put("search_after", searchAfter);
+         // search_after does not need 'from' to be set.
+         dslMap.remove("from");
+      }
+
 
       // Sorting - very basic 
       if (order != null)
@@ -129,6 +139,19 @@ public class QueryDsl extends ElasticQuery
    public List<String> getSources()
    {
       return source;
+   }
+
+   /**
+    * @param searchAfter the searchAfter to set
+    */
+   public void setSearchAfter(List<String> searchAfter)
+   {
+      this.searchAfter = searchAfter;
+   }
+   
+   @JsonIgnore
+   public boolean isSearchAfterNull() {
+      return searchAfter == null;
    }
 
    /**
