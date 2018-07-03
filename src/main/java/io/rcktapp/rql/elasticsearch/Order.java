@@ -16,7 +16,7 @@
 package io.rcktapp.rql.elasticsearch;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +39,24 @@ public class Order
    }
    
    public void addOrder(String name, String order) {
-      orderList.add(Collections.singletonMap(name, order));
+      Map<String, String> map = new HashMap<String, String>();
+      map.put(name, order);
+      orderList.add(map);
+   }
+   
+   public void reverseOrdering() {
+      for (int i = 0; i < orderList.size(); i++) {
+         Map<String, String> orderMap = orderList.get(i);
+         for(Map.Entry<String, String> entry : orderMap.entrySet()) {
+            if (entry.getValue() == "ASC") {
+               entry.setValue("DESC");
+            }
+            else {
+               entry.setValue("ASC");
+            }
+               
+         }
+      }
    }
    
    /**
@@ -49,5 +66,28 @@ public class Order
    {
       return orderList;
    }
-   
+
+   /**
+    * Converts a list of order object [{id1, desc}, {id2, asc}] to 
+    * the following format [-id1,id2]
+    * @return
+    */
+   public List<String> getOrderAsStringList()
+   {
+      List<String> list = new ArrayList<String>();
+
+      for (Map<String, String> map : orderList)
+      {
+         for (Map.Entry<String, String> entry : map.entrySet())
+         {
+            if (entry.getValue() == "desc")
+               list.add("-" + entry.getKey());
+            else
+               list.add(entry.getKey());
+         }
+      }
+
+      return list;
+   }
+
 }

@@ -807,8 +807,8 @@ public class GetHandler extends RqlHandler
 
    static boolean find(java.util.Collection<String> haystack, String needle)
    {
-      if(needle.equalsIgnoreCase("adcompleters.ad"))
-         System.out.println("asdf");
+//      if(needle.equalsIgnoreCase("adcompleters.ad"))
+//         System.out.println("asdf");
       String lc = needle.toLowerCase();
       if (haystack.contains(needle) || haystack.contains(lc))
          return true;
