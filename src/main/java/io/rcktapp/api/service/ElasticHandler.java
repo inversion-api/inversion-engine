@@ -410,7 +410,7 @@ public class ElasticHandler implements Handler
             }
          }
 
-         if (pages != pageNum)
+         if (pages > pageNum)
             meta.put("next", url + "&pageNum=" + (pageNum + 1) + "&start=" + startString + "&prevStart=" + prevStartString);
 
       }
