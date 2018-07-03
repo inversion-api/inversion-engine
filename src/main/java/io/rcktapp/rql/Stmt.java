@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -327,6 +327,19 @@ public class Stmt
          String val = terms.get(i);
          if (parser.isLiteral(val) && r != null)
          {
+            if ("w".equalsIgnoreCase(token))
+            {
+               val = "'*" + val.replace("'", "") + "*'";
+            }
+            else if ("sw".equalsIgnoreCase(token))
+            {
+               val = "'" + val.replace("'", "") + "*'";
+            }
+            else if ("ew".equalsIgnoreCase(token))
+            {
+               val = "'*" + val.replace("'", "") + "'";
+            }
+
             terms.set(i, r.replace(p, col, val));
          }
       }
@@ -351,35 +364,10 @@ public class Stmt
             sql.append(term1).append(" = ").append(term2);
          }
       }
-      else if ("w".equalsIgnoreCase(token)) 
+      else if ("w".equalsIgnoreCase(token) || "sw".equalsIgnoreCase(token) || "ew".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
          String term2 = terms.get(1);
-         
-         int firstQuoteIndex = term2.indexOf("'") + 1;
-         int lastQuoteIndex = term2.lastIndexOf("'");
-         term2 = term2.substring(0, firstQuoteIndex) + '%' + term2.substring(firstQuoteIndex, lastQuoteIndex) + '%' + term2.substring(lastQuoteIndex) ;
-         
-         sql.append(term1).append(" LIKE ").append(term2);
-      }
-      else if ("sw".equalsIgnoreCase(token)) 
-      {
-         String term1 = terms.get(0);
-         String term2 = terms.get(1);
-         
-         int lastQuoteIndex = term2.lastIndexOf("'");
-         term2 = term2.substring(0, lastQuoteIndex) + '%' + term2.substring(lastQuoteIndex) ;
-
-         sql.append(term1).append(" LIKE ").append(term2);
-      }
-      else if ("ew".equalsIgnoreCase(token)) 
-      {
-         String term1 = terms.get(0);
-         String term2 = terms.get(1);
-         
-         int firstQuoteIndex = term2.indexOf("'") + 1;
-         term2 = term2.substring(0, firstQuoteIndex) + '%' + term2.substring(firstQuoteIndex) ;
-
          sql.append(term1).append(" LIKE ").append(term2);
       }
       else if ("ne".equalsIgnoreCase(token))
