@@ -163,18 +163,19 @@ public class ElasticHandler implements Handler
             // if there is only one source, convert the return data into an array of values for that source.
             if (isOneSrcArr)
             {
-               oneSrcArray.add(src.get(dsl.getSources().get(0)));
+//               oneSrcArray.add(src.get(dsl.getSources().get(0)));
+               data.add(src.get(dsl.getSources().get(0)));
             }
             else
                data.add(src);
          }
 
-         if (isOneSrcArr)
-         {
-            // if 'oneSrcArray' has values, 'data' will be empty.
-            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
-            data.add(oneSrcObj);
-         }
+//         if (isOneSrcArr)
+//         {
+//            // if 'oneSrcArray' has values, 'data' will be empty.
+//            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
+//            data.add(oneSrcObj);
+//         }
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
