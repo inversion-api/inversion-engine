@@ -135,11 +135,6 @@ public class ElasticHandler implements Handler
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
 
-         JSObject lastSource = null;
-         if (hits.length() > 0)
-            lastSource = hits.getObject(hits.length() - 1).getObject("_source");
-
-         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, lastSource, url, headers);
          JSArray data = new JSArray();
 
          boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
@@ -177,6 +172,9 @@ public class ElasticHandler implements Handler
 //            data.add(oneSrcObj);
 //         }
 
+         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, data.getObject(data.length() - 1), url, headers);
+
+         
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
 
@@ -301,7 +299,8 @@ public class ElasticHandler implements Handler
       // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
       if (paths.length < 3)
       {
-         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+//         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+         indexAndType = "/" + paths[1] + "/_doc/";
       }
       // if the type is of 'no-type', dont' include it 
       else if (paths[2].toLowerCase().equals("no-type"))
@@ -394,7 +393,7 @@ public class ElasticHandler implements Handler
                   JSArray hits = jsObj.getObject("hits").getArray("hits");
                   JSObject prevLastHit = hits.getObject(hits.length() - 1);
 
-                  prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source"), sortList);
+                  prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source").getObject(dsl.getSources().get(0)), sortList);
 
                   if (pageNum - 1 == 1)
                      // the first page only requires the original rql query because there is no 'search after' that 
