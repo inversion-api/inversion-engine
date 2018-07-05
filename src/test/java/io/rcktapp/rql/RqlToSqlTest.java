@@ -110,18 +110,18 @@ public class RqlToSqlTest
       
       tests.add(new RqlTest("w(city,andl)", //
             "select * from table1", //
-            "select * from table1 WHERE `city` LIKE '%andl%'", //
-            null));
+            null, //
+            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl%'"));
       
       tests.add(new RqlTest("sw(city,andl)", //
             "select * from table1", //
-            "select * from table1 WHERE `city` LIKE 'andl%'", //
-            null));
+            null, //
+            "select * from table1 WHERE `city` LIKE ?", "city", "'andl%'"));
       
       tests.add(new RqlTest("ew(city,andl)", //
             "select * from table1", //
-            "select * from table1 WHERE `city` LIKE '%andl'", //
-            null));
+            null, //
+            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl'"));
 
       tests.add(new RqlTest("in(firstName,wells,joe,karl)", //
                             "select * from table1", //
@@ -358,6 +358,8 @@ public class RqlToSqlTest
                             "select * from table1 WHERE `name` = 'John\" Doe'", //
                             "select * from table1 WHERE `name` = ?", "name", "'John\" Doe'"));
 
+      
+      
       boolean passed = true;
       int running = 0;
       for (int j = tests.size() - 1; j >= 0; j--)
@@ -367,7 +369,7 @@ public class RqlToSqlTest
          try
          {
             String output = new RQL("mysql").toSql(test.select, null, split(test.rql)).toSql();
-            if (!compare(test.dynamicSql, output))
+            if (test.dynamicSql != null && !compare(test.dynamicSql, output))
             {
                passed = false;
                break;
