@@ -271,11 +271,11 @@ public class RqlToElasticSearchTest
          String json = mapper.writeValueAsString(dsl.toDslMap());
 
          assertNotNull("json should not be empty.", json);
-         assertTrue(json.contains("\"sort\":[{\"test\":\"ASC\"}]"));
+         assertEquals("{\"size\":100,\"query\":{\"bool\":{}},\"from\":0,\"sort\":[{\"test\":\"ASC\"},{\"id\":\"asc\"}]}", json);
 
          io.rcktapp.rql.elasticsearch.Order order = dsl.getOrder();
          assertNotNull(order);
-         assertEquals(1, order.getOrderList().size());
+         assertEquals(2, order.getOrderList().size());
          Map<String, String> orderMap = order.getOrderList().get(0);
          assertEquals("ASC", orderMap.get("test"));
       }
@@ -297,11 +297,11 @@ public class RqlToElasticSearchTest
          String json = mapper.writeValueAsString(dsl.toDslMap());
 
          assertNotNull("json should not be empty.", json);
-         assertTrue(json.contains("\"sort\":[{\"test\":\"ASC\"},{\"test2\":\"DESC\"},{\"test3\":\"ASC\"}]"));
+         assertEquals("{\"size\":100,\"query\":{\"bool\":{}},\"from\":0,\"sort\":[{\"test\":\"ASC\"},{\"test2\":\"DESC\"},{\"test3\":\"ASC\"},{\"id\":\"asc\"}]}", json);
 
          io.rcktapp.rql.elasticsearch.Order order = dsl.getOrder();
          assertNotNull(order);
-         assertEquals(3, order.getOrderList().size());
+         assertEquals(4, order.getOrderList().size());
          Map<String, String> orderMap = order.getOrderList().get(0);
          assertEquals("ASC", orderMap.get("test"));
          orderMap = order.getOrderList().get(1);
