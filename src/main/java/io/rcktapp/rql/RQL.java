@@ -44,16 +44,18 @@ import io.rcktapp.rql.elasticsearch.Wildcard;
 public class RQL
 {
 
-   public static final HashSet         SQL_RESERVED_KEYWORDS   = new HashSet(Arrays.asList(new String[]{"as", "includes", "sort", "order", "offset", "limit", "distinct", "aggregate", "function", "sum", "count", "min", "max"}));
+   public static final HashSet         SQL_RESERVED_KEYWORDS         = new HashSet(Arrays.asList(new String[]{"as", "includes", "sort", "order", "offset", "limit", "distinct", "aggregate", "function", "sum", "count", "min", "max"}));
 
-   public static final HashSet<String> URL_RESERVED_PARAMETERS = new HashSet<String>(                                                                                                                                              //
-                                                                                      Arrays.asList(                                                                                                                               //
-                                                                                            new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                     //
-                                                                                      ));
+   public static final HashSet<String> URL_RESERVED_PARAMETERS       = new HashSet<String>(                                                                                                                                                    //
+                                                                                            Arrays.asList(                                                                                                                                     //
+                                                                                                  new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                           //
+                                                                                            ));
 
-   public static final HashSet<String> OPS_RESERVED_KEYWORDS   = new HashSet<String>(Arrays.asList(new String[]{"nemp", "emp", "w", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
+   public static final HashSet<String> OPS_RESERVED_KEYWORDS         = new HashSet<String>(Arrays.asList(new String[]{"nemp", "emp", "w", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
 
-   Parser                              parser                  = null;
+   Parser                              parser                        = null;
+
+   public static final int             MAX_NORMAL_ELASTIC_QUERY_SIZE = 10000;
 
    public RQL(String db)
    {
@@ -131,25 +133,50 @@ public class RQL
       {
          query.addSources(params.remove("source").split(","));
       }
-      
-      // A 'start' param indicates a 'search after' query should be created.
+
+      Stmt stmt = new Stmt(parser, null, null, null);
+
+      // pageNum and pagesize can be used to determine if an 'search_after' query should occur 
+      String sizeStr = params.get("pagesize"); // if no pagesize is specified, assume max_limit
+      int size = stmt.getMaxRows();
+      if (sizeStr != null)
+         size = toInt("pagesize", sizeStr);
+      String pageStr = params.get("pagenum");
+      int pageNum = 1;
+      if (pageStr != null)
+         pageNum = toInt("pageNum", pageStr);
+
+      // A 'start' param indicates an elastic 'search after' query should be used.
+      // 'search after' queries should ONLY be used if it is believe the result 
+      // will come from a row index > 10k.  
       if (params.containsKey("start"))
       {
          List<String> searchAfterList = Arrays.asList(params.remove("start").split(","));
-         for(int i = 0; i < searchAfterList.size(); i++) {
-            if (searchAfterList.get(i).equals("[NULL]")) // [NULL] is used to indicate an actual null value, not a null string.
-               searchAfterList.set(i, null);
+         if (pageNum * size > MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)
+         {
+            for (int i = 0; i < searchAfterList.size(); i++)
+            {
+               if (searchAfterList.get(i).equals("[NULL]")) // [NULL] is used to indicate an actual null value, not a null string.
+                  searchAfterList.set(i, null);
+            }
+            query.setSearchAfter(searchAfterList);
          }
-         query.setSearchAfter(searchAfterList);
+
          // remove the prevStart param if it exists...it wont be used.
          params.remove("prevstart");
-//         params.remove("rowcount");
-//         params.remove("pagecount");
       }
 
-      // create the QDSL from the statement
-      Stmt stmt = new Stmt(parser, null, null, null);
-      buildStmt(stmt, null, params, null, OPS_RESERVED_KEYWORDS);
+      // TODO
+      // If a 'start' param is not supplied, but the pageNum * pageSize > 10k, 
+      // we can do a normal search starting at pageNum-1 * pageSize, retrieve 
+      // it's final value, then do a 'search after' from there.
+      if (query.isSearchAfterNull() && pageNum * size > MAX_NORMAL_ELASTIC_QUERY_SIZE - 1 && pageNum - 1 > 0) {
+         // loop from pageNum to wantedNum, each loop 
+         // use the query, and only adjust the 'from' for each request.
+      }
+
+         // create the QDSL from the statement
+         buildStmt(stmt, null, params, null, OPS_RESERVED_KEYWORDS);
       query.setStmt(stmt);
 
       // use 'stmt.where' to create the elastic search json. 
@@ -162,26 +189,41 @@ public class RQL
          // recursion ... be afraid!
          elasticList.add(convertPredicate(pred));
       }
-      
-      
+
       // Use 'stmt.order' to create the sorting json.
       // A sort order MUST be set no matter the query.  If no sort was requested
-      // by the client, default the sort to 'id' ascending.
+      // by the client, default the sort to 'id' ascending.  If a sort order was
+      // requested and that order is NOT 'id', add 'id' as the last sorting option.
+      // This is necessary due to 'search after' queries that may need to continue
+      // within the 'middle' of a value.  EX: A list of 100 rows sorted by 'state',
+      // 50 of which have AL as a value.  If the pageSize is 30, 30 results will be
+      // returned to the client, when the next page is requested (assuming a 'search
+      // after' is required, the remaining 20 results will automatically be skipped
+      // because we are starting the search after 'AL'
       io.rcktapp.rql.elasticsearch.Order elasticOrder = null;
       List<Order> orderList = stmt.order;
-      if (orderList.size() == 0) {
-         orderList.add(new Order("id", "asc"));
+      if (orderList.size() > 0)
+      {
+         boolean idSortExists = false;
+         for (Order order : orderList)
+         {
+            if (Parser.dequote(order.col).equalsIgnoreCase("id"))
+               idSortExists = true;
+         }
+         if (!idSortExists)
+            orderList.add(new Order("id", "asc"));
       }
-      for (int i = 0; i < orderList.size(); i++) {
+      for (int i = 0; i < orderList.size(); i++)
+      {
          Order order = orderList.get(i);
          if (elasticOrder == null)
             elasticOrder = new io.rcktapp.rql.elasticsearch.Order(Parser.dequote(order.col), order.dir);
          else
             elasticOrder.addOrder(Parser.dequote(order.col), order.dir);
       }
-      
+
       query.setOrder(elasticOrder);
-      
+
       elasticListToDsl(query, elasticList);
 
       return query;
@@ -333,7 +375,7 @@ public class RQL
             elastic = new BoolQuery();
             termsList = new ArrayList<Predicate>(pred.terms);
             Term term = new Term(termsList.remove(0).token, pred.token);
-            for(Predicate pTerm : termsList)
+            for (Predicate pTerm : termsList)
                term.addValue(pTerm.token);
             ((BoolQuery) elastic).addMustNot(term);
             break;
@@ -546,7 +588,7 @@ public class RQL
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to parse q/filter terms. Reason: " + error);
    }
 
-   int toInt(String field, String inStr)
+   public int toInt(String field, String inStr)
    {
       String str = inStr;
       try

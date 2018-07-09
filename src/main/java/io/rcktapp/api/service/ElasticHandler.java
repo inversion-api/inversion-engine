@@ -105,8 +105,15 @@ public class ElasticHandler implements Handler
       {
          req.putParam("source", defaultSource);
       }
+      
+      RQL elasticRQL = new RQL("elastic");
+      
+      Integer wantedPage = null;
+      if (req.getParam("wantedpage") != null) {
+         wantedPage = elasticRQL.toInt("wantedpage", req.removeParam("wantedpage")); 
+      }
 
-      QueryDsl dsl = new RQL("elastic").toQueryDsl(req.getParams());
+      QueryDsl dsl = elasticRQL.toQueryDsl(req.getParams());
       dsl.getStmt().setMaxRows(maxRows);
 
       ObjectMapper mapper = new ObjectMapper();
@@ -131,15 +138,29 @@ public class ElasticHandler implements Handler
          // TODO how do we want to handle a failed elastic result?
 
          JSObject jsObj = JS.toJSObject(r.getContent());
-
+         
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
+         
+         // TODO if the query contains a wantedPage and it differs from dsl.getStmt().pagenum 
+         // loop until pagenum==wantedPage.  Use the 'next' meta to obtain this.
+         // use the query, and only adjust the 'from' for each request.
+//         int pageNum = dsl.getStmt().pagenum;
+//         while (wantedPage != null && wantedPage != pageNum) {
+//            // TODO need 'next' to continue.
+//            // TODO get last object
+//            // TODO get it's 'sort' values
+//            // TODO update 'from' on the dsl
+//            // TODO Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+//            pageNum++;
+//         }
+
 
          JSArray data = new JSArray();
 
          boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
 
-         JSArray oneSrcArray = new JSArray();
+         //         JSArray oneSrcArray = new JSArray();
          boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
 
          for (JSObject obj : (List<JSObject>) hits.asList())
@@ -158,23 +179,22 @@ public class ElasticHandler implements Handler
             // if there is only one source, convert the return data into an array of values for that source.
             if (isOneSrcArr)
             {
-//               oneSrcArray.add(src.get(dsl.getSources().get(0)));
+               //               oneSrcArray.add(src.get(dsl.getSources().get(0)));
                data.add(src.get(dsl.getSources().get(0)));
             }
             else
                data.add(src);
          }
 
-//         if (isOneSrcArr)
-//         {
-//            // if 'oneSrcArray' has values, 'data' will be empty.
-//            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
-//            data.add(oneSrcObj);
-//         }
+         //         if (isOneSrcArr)
+         //         {
+         //            // if 'oneSrcArray' has values, 'data' will be empty.
+         //            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
+         //            data.add(oneSrcObj);
+         //         }
 
-         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, data.getObject(data.length() - 1), url, headers);
+         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.getObject(data.length() - 1) : null), url, headers);
 
-         
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
 
@@ -299,7 +319,7 @@ public class ElasticHandler implements Handler
       // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
       if (paths.length < 3)
       {
-//         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+         //         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
          indexAndType = "/" + paths[1] + "/_doc/";
       }
       // if the type is of 'no-type', dont' include it 
@@ -354,7 +374,7 @@ public class ElasticHandler implements Handler
             apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
          }
 
-         List<String> sortList = dsl.getOrder().getOrderAsStringList();
+         List<String> sortList = dsl.getOrder() != null ? dsl.getOrder().getOrderAsStringList() : new ArrayList<String>();
 
          // add the original query back onto the url
          List<String> rqlQuery = new ArrayList<String>();
@@ -368,50 +388,67 @@ public class ElasticHandler implements Handler
 
          String url = apiUrl //
                + "?" + String.join("&", rqlQuery) // 
-               + "&sort=" + String.join(",", sortList) //
                + "&pageSize=" + size;
 
-         // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
-         String startString = null;
-         if (jsonSource != null)
-            startString = srcObjectFieldsToStringBySortList(jsonSource, sortList);
-         String prevStartString = null;
+         if (sortList.size() > 0)
+            url = url + "&sort=" + String.join(",", sortList);
 
-         // the start values for the 'previous' search need to be pulled from a separate query.
-         if (!dsl.isSearchAfterNull())
+         if (dsl.getSources() != null)
+            url = url + "&source=" + String.join(",", dsl.getSources());
+
+         // 'prev' & 'next' can easily be determined if pageSize*pageNum < 10k
+         if ((size * (pageNum - 1) < RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pageNum - 1 > 0))
+            meta.put("prev", url + "&pageNum=" + (pageNum - 1));
+
+         if ((size * (pageNum + 1) < RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pages > pageNum))
+            meta.put("next", url + "&pageNum=" + (pageNum + 1));
+
+         // if next is still null & the size > 10k
+         if (meta.get("next") == null && ((size * (pageNum + 1)) > (RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)))
          {
-            try
+
+            // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
+            String startString = null;
+            if (jsonSource != null)
+               startString = srcObjectFieldsToStringBySortList(jsonSource, sortList);
+            String prevStartString = null;
+
+            // the start values for the 'previous' search need to be pulled from a separate query.
+            if ((size * (pageNum - 1) > (RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)))
             {
-               dsl.getOrder().reverseOrdering();
-               ObjectMapper mapper = new ObjectMapper();
-               String json = mapper.writeValueAsString(dsl.toDslMap());
-               Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
-
-               if (r.isSuccess())
+               try
                {
-                  JSObject jsObj = JS.toJSObject(r.getContent());
-                  JSArray hits = jsObj.getObject("hits").getArray("hits");
-                  JSObject prevLastHit = hits.getObject(hits.length() - 1);
+                  dsl.getOrder().reverseOrdering();
+                  ObjectMapper mapper = new ObjectMapper();
+                  String json = mapper.writeValueAsString(dsl.toDslMap());
+                  Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
 
-                  prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source").getObject(dsl.getSources().get(0)), sortList);
+                  if (r.isSuccess())
+                  {
+                     JSObject jsObj = JS.toJSObject(r.getContent());
+                     JSArray hits = jsObj.getObject("hits").getArray("hits");
+                     JSObject prevLastHit = hits.getObject(hits.length() - 1);
 
-                  if (pageNum - 1 == 1)
-                     // the first page only requires the original rql query because there is no 'search after' that 
-                     // would retrieve the proper values.
-                     meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1));
-                  else
-                     meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1) + "&start=" + prevStartString);
+                     prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source").getObject(dsl.getSources().get(0)), sortList);
+
+                     if (pageNum - 1 == 1)
+                        // the first page only requires the original rql query because there is no 'search after' that 
+                        // would retrieve the proper values.
+                        meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1));
+                     else
+                        meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1) + "&start=" + prevStartString);
+                  }
+               }
+               catch (Exception e)
+               {
+                  // TODO something
+                  log.error("error! ", e);
                }
             }
-            catch (Exception e)
-            {
-               // TODO something
-               log.error("error! ", e);
-            }
-         }
 
-         if (pages > pageNum)
-            meta.put("next", url + "&pageNum=" + (pageNum + 1) + "&start=" + startString + "&prevStart=" + prevStartString);
+            if (pages > pageNum)
+               meta.put("next", url + "&pageNum=" + (pageNum + 1) + "&start=" + startString + "&prevStart=" + prevStartString);
+         }
 
       }
 
