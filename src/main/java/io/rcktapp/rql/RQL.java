@@ -166,17 +166,8 @@ public class RQL
          params.remove("prevstart");
       }
 
-      // TODO
-      // If a 'start' param is not supplied, but the pageNum * pageSize > 10k, 
-      // we can do a normal search starting at pageNum-1 * pageSize, retrieve 
-      // it's final value, then do a 'search after' from there.
-      if (query.isSearchAfterNull() && pageNum * size > MAX_NORMAL_ELASTIC_QUERY_SIZE - 1 && pageNum - 1 > 0) {
-         // loop from pageNum to wantedNum, each loop 
-         // use the query, and only adjust the 'from' for each request.
-      }
-
-         // create the QDSL from the statement
-         buildStmt(stmt, null, params, null, OPS_RESERVED_KEYWORDS);
+      // create the QDSL from the statement
+      buildStmt(stmt, null, params, null, OPS_RESERVED_KEYWORDS);
       query.setStmt(stmt);
 
       // use 'stmt.where' to create the elastic search json. 
@@ -202,17 +193,17 @@ public class RQL
       // because we are starting the search after 'AL'
       io.rcktapp.rql.elasticsearch.Order elasticOrder = null;
       List<Order> orderList = stmt.order;
-      if (orderList.size() > 0)
+      //      if (orderList.size() > 0)
+      //      {
+      boolean idSortExists = false;
+      for (Order order : orderList)
       {
-         boolean idSortExists = false;
-         for (Order order : orderList)
-         {
-            if (Parser.dequote(order.col).equalsIgnoreCase("id"))
-               idSortExists = true;
-         }
-         if (!idSortExists)
-            orderList.add(new Order("id", "asc"));
+         if (Parser.dequote(order.col).equalsIgnoreCase("id"))
+            idSortExists = true;
       }
+      if (!idSortExists)
+         orderList.add(new Order("id", "asc"));
+      //      }
       for (int i = 0; i < orderList.size(); i++)
       {
          Order order = orderList.get(i);

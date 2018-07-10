@@ -16,6 +16,7 @@
 package io.rcktapp.api.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,59 +142,40 @@ public class ElasticHandler implements Handler
          
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
-         
-         // TODO if the query contains a wantedPage and it differs from dsl.getStmt().pagenum 
-         // loop until pagenum==wantedPage.  Use the 'next' meta to obtain this.
-         // use the query, and only adjust the 'from' for each request.
-//         int pageNum = dsl.getStmt().pagenum;
-//         while (wantedPage != null && wantedPage != pageNum) {
-//            // TODO need 'next' to continue.
-//            // TODO get last object
-//            // TODO get it's 'sort' values
-//            // TODO update 'from' on the dsl
-//            // TODO Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
-//            pageNum++;
-//         }
-
-
-         JSArray data = new JSArray();
 
          boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
-
-         //         JSArray oneSrcArray = new JSArray();
          boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
 
-         for (JSObject obj : (List<JSObject>) hits.asList())
-         {
-            JSObject src = obj.getObject("_source");
+         JSArray data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
 
-            // for 'all' requests, add the _meta
-            if (isAll)
-            {
-               JSObject src_meta = new JSObject();
-               src_meta.put("index", obj.get("_index"));
-               src_meta.put("type", obj.get("_type"));
-               src.put("_meta", src_meta);
-            }
+         // if the query contains a wantedPage and it differs from the pagenum 
+         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
+         // 'from' for each request.  While this method maybe more verbose, it 
+         // will do half the work than re-invoking the this handler as it will 
+         // not have to query the 'prev' value multiple times.
+         int pageNum = dsl.getStmt().pagenum;
+         List<String> sortList = dsl.getOrder() != null ? dsl.getOrder().getOrderAsStringList() : new ArrayList<String>();
+         while (wantedPage != null && wantedPage != pageNum) {
+            // get the last object
+            JSObject lastHit = data.getObject(data.length() - 1);
+            
+            // get that object's 'sort' values
+            String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
+            
+            // update 'search after' starting position on the dsl
+            dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
+            json = mapper.writeValueAsString(dsl.toDslMap());
 
-            // if there is only one source, convert the return data into an array of values for that source.
-            if (isOneSrcArr)
-            {
-               //               oneSrcArray.add(src.get(dsl.getSources().get(0)));
-               data.add(src.get(dsl.getSources().get(0)));
-            }
-            else
-               data.add(src);
+            r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+            jsObj = JS.toJSObject(r.getContent());
+            hits = jsObj.getObject("hits").getArray("hits");
+            
+            data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
+            
+            pageNum++;
          }
 
-         //         if (isOneSrcArr)
-         //         {
-         //            // if 'oneSrcArray' has values, 'data' will be empty.
-         //            JSObject oneSrcObj = new JSObject(dsl.getSources().get(0), oneSrcArray);
-         //            data.add(oneSrcObj);
-         //         }
-
-         JSObject meta = buildMeta(dsl.getStmt().pagesize, dsl.getStmt().pagenum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.getObject(data.length() - 1) : null), url, headers);
+         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.getObject(data.length() - 1) : null), url, headers);
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
@@ -397,14 +379,14 @@ public class ElasticHandler implements Handler
             url = url + "&source=" + String.join(",", dsl.getSources());
 
          // 'prev' & 'next' can easily be determined if pageSize*pageNum < 10k
-         if ((size * (pageNum - 1) < RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pageNum - 1 > 0))
+         if ((size * (pageNum - 1) <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pageNum - 1 > 0))
             meta.put("prev", url + "&pageNum=" + (pageNum - 1));
 
-         if ((size * (pageNum + 1) < RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pages > pageNum))
+         if ((size * (pageNum + 1) <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pages > pageNum))
             meta.put("next", url + "&pageNum=" + (pageNum + 1));
 
          // if next is still null & the size > 10k
-         if (meta.get("next") == null && ((size * (pageNum + 1)) > (RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)))
+         if (meta.get("next") == null && ((size * (pageNum + 1)) > RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE))
          {
 
             // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
@@ -441,8 +423,7 @@ public class ElasticHandler implements Handler
                }
                catch (Exception e)
                {
-                  // TODO something
-                  log.error("error! ", e);
+                  log.error("error determining the meta 'prev' url ", e);
                }
             }
 
@@ -469,6 +450,34 @@ public class ElasticHandler implements Handler
       }
 
       return String.join(",", list);
+   }
+   
+   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, QueryDsl dsl) {
+      JSArray data = new JSArray();
+      
+      for (JSObject obj : (List<JSObject>) hits.asList())
+      {
+         JSObject src = obj.getObject("_source");
+
+         // for 'all' requests, add the _meta
+         if (isAll)
+         {
+            JSObject src_meta = new JSObject();
+            src_meta.put("index", obj.get("_index"));
+            src_meta.put("type", obj.get("_type"));
+            src.put("_meta", src_meta);
+         }
+
+         // if there is only one source, convert the return data into an array of values for that source.
+         if (isOneSrcArr)
+         {
+            data.add(src.get(dsl.getSources().get(0)));
+         }
+         else
+            data.add(src);
+      }
+      
+      return data;
    }
 
 }
