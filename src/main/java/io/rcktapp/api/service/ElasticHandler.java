@@ -106,16 +106,44 @@ public class ElasticHandler implements Handler
       {
          req.putParam("source", defaultSource);
       }
-      
+
       RQL elasticRQL = new RQL("elastic");
-      
+
       Integer wantedPage = null;
-      if (req.getParam("wantedpage") != null) {
-         wantedPage = elasticRQL.toInt("wantedpage", req.removeParam("wantedpage")); 
+      if (req.getParam("wantedpage") != null)
+      {
+         wantedPage = elasticRQL.toInt("wantedpage", req.removeParam("wantedpage"));
+         if (wantedPage < elasticRQL.toInt("pagenum", req.getParam("pagenum")))
+         {
+            // remove the start param as it wont be used.
+            req.removeParam("start");
+            req.removeParam("prevstart");
+         }
       }
 
       QueryDsl dsl = elasticRQL.toQueryDsl(req.getParams());
       dsl.getStmt().setMaxRows(maxRows);
+
+      if (wantedPage != null)
+      {
+         // wantedPage < MAX query size, get that page.
+         if (wantedPage * dsl.getStmt().pagesize <= elasticRQL.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+         {
+            // to directly load the page, set pagenum = wantedPage
+            dsl.getStmt().pagenum = wantedPage;
+         }
+         else
+         {
+            // wantedPage > 10k, start traversal at the last page BEFORE the MAX query index
+            int newPageNum = 1;
+            while (newPageNum * dsl.getStmt().pagesize <= elasticRQL.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+            {
+               newPageNum++;
+            }
+
+            dsl.getStmt().pagenum = newPageNum - 1;
+         }
+      }
 
       ObjectMapper mapper = new ObjectMapper();
 
@@ -139,7 +167,7 @@ public class ElasticHandler implements Handler
          // TODO how do we want to handle a failed elastic result?
 
          JSObject jsObj = JS.toJSObject(r.getContent());
-         
+
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
 
@@ -155,13 +183,14 @@ public class ElasticHandler implements Handler
          // not have to query the 'prev' value multiple times.
          int pageNum = dsl.getStmt().pagenum;
          List<String> sortList = dsl.getOrder() != null ? dsl.getOrder().getOrderAsStringList() : new ArrayList<String>();
-         while (wantedPage != null && wantedPage != pageNum) {
+         while (wantedPage != null && wantedPage != pageNum)
+         {
             // get the last object
             JSObject lastHit = data.getObject(data.length() - 1);
-            
+
             // get that object's 'sort' values
             String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
-            
+
             // update 'search after' starting position on the dsl
             dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
             json = mapper.writeValueAsString(dsl.toDslMap());
@@ -169,9 +198,9 @@ public class ElasticHandler implements Handler
             r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
             jsObj = JS.toJSObject(r.getContent());
             hits = jsObj.getObject("hits").getArray("hits");
-            
+
             data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-            
+
             pageNum++;
          }
 
@@ -451,10 +480,11 @@ public class ElasticHandler implements Handler
 
       return String.join(",", list);
    }
-   
-   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, QueryDsl dsl) {
+
+   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, QueryDsl dsl)
+   {
       JSArray data = new JSArray();
-      
+
       for (JSObject obj : (List<JSObject>) hits.asList())
       {
          JSObject src = obj.getObject("_source");
@@ -476,7 +506,7 @@ public class ElasticHandler implements Handler
          else
             data.add(src);
       }
-      
+
       return data;
    }
 
