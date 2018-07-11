@@ -311,15 +311,15 @@ public class RQL
          case "eq": // equal
             if (pred.terms.get(1).token.contains("*"))
             {
-               elastic = new Wildcard(pred.terms.get(0).token, pred.terms.get(1).token);
+               elastic = new Wildcard(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token));
             }
             else
             {
-               elastic = new Term(pred.terms.get(0).token, pred.terms.get(1).token, pred.token);
+               elastic = new Term(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token), pred.token);
             }
             break;
          case "ne": // not equal
-            elastic = new Term(pred.terms.get(0).token, pred.terms.get(1).token, pred.token);
+            elastic = new Term(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token), pred.token);
             break;
          case "and":
             elastic = new BoolQuery();
@@ -332,13 +332,13 @@ public class RQL
                ((BoolQuery) elastic).addShould(eq);
             break;
          case "sw":
-            elastic = new Wildcard(pred.terms.get(0).token, pred.terms.get(1).token + "*");
+            elastic = new Wildcard(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token) + "*");
             break;
          case "ew":
-            elastic = new Wildcard(pred.terms.get(0).token, "*" + pred.terms.get(1).token);
+            elastic = new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token));
             break;
          case "w":
-            elastic = new Wildcard(pred.terms.get(0).token, "*" + pred.terms.get(1).token + "*");
+            elastic = new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token) + "*");
             break;
          case "emp":
             elastic = new BoolQuery();
@@ -371,7 +371,7 @@ public class RQL
             ((BoolQuery) elastic).addMustNot(term);
             break;
          case "search":
-            elastic = new FuzzyQuery(pred.terms.get(0).token, pred.terms.get(1).token);
+            elastic = new FuzzyQuery(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token));
             break;
          default :
             throw new Exception("unexpected rql token: " + pred.token);
