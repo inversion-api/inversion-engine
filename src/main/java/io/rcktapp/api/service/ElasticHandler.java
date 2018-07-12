@@ -135,13 +135,16 @@ public class ElasticHandler implements Handler
          else
          {
             // wantedPage > 10k, start traversal at the last page BEFORE the MAX query index
-            int newPageNum = 1;
-            while (newPageNum * dsl.getStmt().pagesize <= elasticRQL.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+            if (wantedPage < dsl.getStmt().pagenum)
             {
-               newPageNum++;
-            }
+               int newPageNum = 1;
+               while (newPageNum * dsl.getStmt().pagesize <= elasticRQL.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+               {
+                  newPageNum++;
+               }
 
-            dsl.getStmt().pagenum = newPageNum - 1;
+               dsl.getStmt().pagenum = newPageNum - 1;
+            }
          }
       }
 
