@@ -360,14 +360,14 @@ public class RQL
             termsList = new ArrayList<Predicate>(pred.terms);
             elastic = new Term(termsList.remove(0).token, pred.token);
             for (Predicate pTerm : termsList)
-               ((Term) elastic).addValue(pTerm.token);
+               ((Term) elastic).addValue(Parser.dequote(pTerm.token));
             break;
          case "out":
             elastic = new BoolQuery();
             termsList = new ArrayList<Predicate>(pred.terms);
             Term term = new Term(termsList.remove(0).token, pred.token);
             for (Predicate pTerm : termsList)
-               term.addValue(pTerm.token);
+               term.addValue(Parser.dequote(pTerm.token));
             ((BoolQuery) elastic).addMustNot(term);
             break;
          case "search":
