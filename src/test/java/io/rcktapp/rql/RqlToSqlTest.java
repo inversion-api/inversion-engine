@@ -357,6 +357,16 @@ public class RqlToSqlTest
                             "select * from table1", //
                             "select * from table1 WHERE `name` = 'John\" Doe'", //
                             "select * from table1 WHERE `name` = ?", "name", "'John\" Doe'"));
+      
+      tests.add(new RqlTest("nn(startYear)", //
+            "SELECT * FROM Person", //
+            "SELECT * FROM Person WHERE `startYear` IS NOT NULL", //
+            "SELECT * FROM Person WHERE `startYear` IS NOT NULL"));
+      
+      tests.add(new RqlTest("n(startYear)", //
+            "SELECT * FROM Person", //
+            "SELECT * FROM Person WHERE `startYear` IS NULL", //
+            "SELECT * FROM Person WHERE `startYear` IS NULL"));
 
       
       

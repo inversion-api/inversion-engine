@@ -23,6 +23,11 @@ public class ExistsQuery extends ElasticQuery
    public ExistsQuery(String field)
    {
       this.field = field;
+      
+      if (field.contains("."))
+      {
+         this.nestedPath = field.substring(0, field.lastIndexOf("."));
+      }
    }
 
    /**

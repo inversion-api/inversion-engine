@@ -259,6 +259,52 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void notNull()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("nn(state)"));
+
+         // TODO update this test
+
+         ObjectMapper mapper = new ObjectMapper();
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"must\":[{\"exists\":{\"field\":\"state\"}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+   
+   @Test
+   public void isNull()
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("n(state)"));
+
+         // TODO update this test
+
+         ObjectMapper mapper = new ObjectMapper();
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"must_not\":[{\"exists\":{\"field\":\"state\"}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
 
    @Test
    public void simpleSort()

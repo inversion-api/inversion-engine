@@ -51,7 +51,7 @@ public class RQL
                                                                                                   new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                           //
                                                                                             ));
 
-   public static final HashSet<String> OPS_RESERVED_KEYWORDS         = new HashSet<String>(Arrays.asList(new String[]{"nemp", "emp", "w", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
+   public static final HashSet<String> OPS_RESERVED_KEYWORDS         = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
 
    Parser                              parser                        = null;
 
@@ -340,14 +340,14 @@ public class RQL
          case "w":
             elastic = new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token) + "*");
             break;
-         case "emp":
+         case "emp": // checks for empty strings AND null values
             elastic = new BoolQuery();
             ((BoolQuery) elastic).addShould(new Term(pred.terms.get(0).token, "", "emp"));
             mustNotBool = new BoolQuery();
             mustNotBool.addMustNot(new ExistsQuery(pred.terms.get(0).token));
             ((BoolQuery) elastic).addShould(mustNotBool);
             break;
-         case "nemp":
+         case "nemp": // checks for empty strings AND null values
             elastic = new BoolQuery();
             mustNotBool = new BoolQuery();
             mustNotBool.addMustNot(new Term(pred.terms.get(0).token, "", "nemp"));
@@ -356,6 +356,14 @@ public class RQL
             mustBool.addMust(new ExistsQuery(pred.terms.get(0).token));
             ((BoolQuery) elastic).addMust(mustBool);
             break;
+         case "nn": // NOT NULL
+            elastic = new BoolQuery();
+            ((BoolQuery) elastic).addMust(new ExistsQuery(pred.terms.get(0).token));
+            break;
+         case "n": // NULL
+            elastic = new BoolQuery();
+            ((BoolQuery) elastic).addMustNot(new ExistsQuery(pred.terms.get(0).token));
+            break;   
          case "in":
             termsList = new ArrayList<Predicate>(pred.terms);
             elastic = new Term(termsList.remove(0).token, pred.token);

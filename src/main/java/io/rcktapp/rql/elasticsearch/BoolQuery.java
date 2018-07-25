@@ -205,6 +205,10 @@ public class BoolQuery extends ElasticQuery
          filter = new ArrayList<ElasticQuery>();
 
       filter.add(elastic);
+      
+      if (elastic.getNestedPath() != null) {
+         this.nestedPath = elastic.getNestedPath();
+      }
    }
 
    public void addMust(ElasticQuery elastic)
@@ -213,6 +217,10 @@ public class BoolQuery extends ElasticQuery
          must = new ArrayList<ElasticQuery>();
 
       must.add(elastic);
+      
+      if (elastic.getNestedPath() != null) {
+         this.nestedPath = elastic.getNestedPath();
+      }
    }
 
    public void addMustNot(ElasticQuery elastic)
@@ -221,6 +229,10 @@ public class BoolQuery extends ElasticQuery
          must_not = new ArrayList<ElasticQuery>();
 
       must_not.add(elastic);
+      
+      if (elastic.getNestedPath() != null) {
+         this.nestedPath = elastic.getNestedPath();
+      }
    }
 
    public void addShould(ElasticQuery elastic)
@@ -229,6 +241,10 @@ public class BoolQuery extends ElasticQuery
          should = new ArrayList<ElasticQuery>();
 
       should.add(elastic);
+      
+      if (elastic.getNestedPath() != null) {
+         this.nestedPath = elastic.getNestedPath();
+      }
    }
 
    /**

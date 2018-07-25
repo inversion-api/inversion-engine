@@ -34,7 +34,7 @@ public class Parser
                                                                              "includes", "sort", "order", "offset", "limit",                                             //
                                                                              "page", "pagenum", "pagesize", "distinct",                                                  // 
                                                                              "sw", "ew", "w",                                                                            //
-                                                                             "emp", "nemp",
+                                                                             "emp", "nemp", "nn", "n", // nn == not null, n == null
                                                                              "search"}                                                                              //
                                                                  ));
 

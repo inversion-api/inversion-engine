@@ -390,6 +390,18 @@ public class Stmt
             sql.append(term1).append(" <> ").append(term2);
          }
       }
+      else if ("nn".equalsIgnoreCase(token))
+      {
+         String term1 = terms.get(0);
+         
+         sql.append(term1).append(" IS NOT NULL ");
+      }
+      else if ("n".equalsIgnoreCase(token))
+      {
+         String term1 = terms.get(0);
+         
+         sql.append(term1).append(" IS NULL ");
+      }
       else if ("lt".equalsIgnoreCase(token))
       {
          sql.append(terms.get(0)).append(" < ").append(terms.get(1));
