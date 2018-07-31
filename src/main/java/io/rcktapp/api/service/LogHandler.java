@@ -25,6 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.forty11.sql.Sql;
+import io.forty11.utils.CaseInsensitiveSet;
+import io.forty11.web.js.JSArray;
+import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;
@@ -36,10 +39,12 @@ import io.rcktapp.api.Response;
 
 public class LogHandler implements Handler
 {
-   private Logger log = LoggerFactory.getLogger(LogHandler.class);
+   private Logger             log             = LoggerFactory.getLogger(LogHandler.class);
 
-   String         logTable;
-   String         logChangeTable;
+   String                     logTable;
+   String                     logChangeTable;
+
+   CaseInsensitiveSet<String> sensitiveFields = new CaseInsensitiveSet<>();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -82,7 +87,17 @@ public class LogHandler implements Handler
                   logParams.put("method", req.getMethod());
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
                   logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
-                  logParams.put("body", req.getBody());
+
+                  JSObject bodyJson = obfuscateSensitiveFields(req.getJson());
+                  if (bodyJson != null)
+                  {
+                     logParams.put("body", bodyJson.toString());
+                  }
+                  else
+                  {
+                     logParams.put("body", "");
+                  }
+
                   logParams.put("url", req.getUrl().toString());
                   logParams.put("collectionKey", req.getCollectionKey());
                   if (api.isMultiTenant())
@@ -115,4 +130,45 @@ public class LogHandler implements Handler
          }
       }
    }
+
+   JSObject obfuscateSensitiveFields(JSObject json)
+   {
+      if (json != null)
+      {
+         if (json instanceof JSArray)
+         {
+            for (Object o : ((JSArray) json).getObjects())
+            {
+               if (o instanceof JSObject)
+               {
+                  obfuscateSensitiveFields((JSObject) o);
+               }
+            }
+         }
+         else
+         {
+            for (String key : json.keys())
+            {
+               if (sensitiveFields.contains(key))
+               {
+                  json.put(key, "* * * * * * * * * *");
+               }
+            }
+         }
+      }
+
+      return json;
+   }
+
+   public List<String> getSensitiveFields()
+   {
+      return new ArrayList(sensitiveFields);
+   }
+
+   public void setSensitiveFields(java.util.Collection<String> whitelist)
+   {
+      this.sensitiveFields.clear();
+      this.sensitiveFields.addAll(whitelist);
+   }
+
 }

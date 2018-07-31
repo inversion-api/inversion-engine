@@ -22,9 +22,26 @@ sourceCompatibility = 1.8
 
 dependencies {
 
-    	compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
-    compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
-    compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
+	if (gradle.ext.rckt_snooze['addFortJProjectToClasspath']) {
+    		compile findProject(":fort_j")
+    }
+    else {
+   		compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
+    }
+    
+    	if (gradle.ext.rckt_snooze['addFortSProjectToClasspath']) {
+    		compile findProject(":fort_s")
+    }
+    else {
+   		compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
+    }
+    
+    	if (gradle.ext.rckt_snooze['addFortWProjectToClasspath']) {
+    		compile findProject(":fort_w")
+    }
+    else {
+   		compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
+    }
 
 	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.55'
 	
