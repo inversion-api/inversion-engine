@@ -102,7 +102,7 @@ public class PostHandler extends RqlHandler
          else
          {
             String href = obj.getString("href");
-            if (href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
+            if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
             }
@@ -181,7 +181,8 @@ public class PostHandler extends RqlHandler
 
       storeManyTo(chain, conn, changes, parentId, entity, parent);
 
-      href = chain.getRequest().getApiUrl() + entity.getCollection().getName() + "/" + parentId;
+      // use the collection key from the request instead of the entity to support collection aliasing
+      href = chain.getRequest().getApiUrl() + chain.getRequest().getCollectionKey() + "/" + parentId;
 
       return href;
    }
