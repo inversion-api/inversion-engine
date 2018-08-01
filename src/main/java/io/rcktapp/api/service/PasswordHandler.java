@@ -28,7 +28,6 @@ import io.rcktapp.api.Response;
 public class PasswordHandler implements Handler
 {
    String passwordField = "password";
-   String collectionKey = "users";
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -42,12 +41,12 @@ public class PasswordHandler implements Handler
 
       JSObject json = req.getJson();
 
-      if(json == null)
+      if (json == null)
          return;
 
-      if(json instanceof JSArray)
+      if (json instanceof JSArray)
          return;
-      
+
       String password = (String) json.remove(passwordField);
       if (password == null)
       {
@@ -72,7 +71,7 @@ public class PasswordHandler implements Handler
             {
                String encryptedPassword = AuthHandler.hashPassword(user.get("id"), password);
                JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
-               String url = Service.buildLink(req, collectionKey, null, null);
+               String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
                service.include(chain, "PUT", url, body.toString());
             }
          }
