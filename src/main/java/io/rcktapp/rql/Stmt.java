@@ -387,19 +387,21 @@ public class Stmt
          }
          else
          {
-            sql.append(term1).append(" <> ").append(term2);
+            // using a null safe equals with a NOT to include results where the db has a null value for this column
+            // the <> operator will only include non-null values that are not equal to the passed in term
+            sql.append(" NOT ").append(term1).append(" <=> ").append(term2);
          }
       }
       else if ("nn".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
-         
+
          sql.append(term1).append(" IS NOT NULL ");
       }
       else if ("n".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
-         
+
          sql.append(term1).append(" IS NULL ");
       }
       else if ("lt".equalsIgnoreCase(token))
