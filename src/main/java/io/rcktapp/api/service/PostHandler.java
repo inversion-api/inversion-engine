@@ -22,8 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import com.mchange.v2.sql.filter.SynchronizedFilterCallableStatement;
-
 import io.forty11.j.J;
 import io.forty11.j.utils.ListMap;
 import io.forty11.sql.Sql;
