@@ -300,6 +300,9 @@ public class PostHandler extends RqlHandler
    {
       ListMap<Relationship, String> relateds = new ListMap();
 
+      // holds Relationships when an empty array was posted
+      List<Relationship> emptyRelateds = new ArrayList<>();
+
       for (Relationship rel : entity.getRelationships())
       {
          if (!rel.getType().equals("ONE_TO_MANY"))
@@ -330,21 +333,28 @@ public class PostHandler extends RqlHandler
 
             JSArray children = (JSArray) arrayObj;
 
-            for (Object childObj : children.getObjects())
+            if (children.length() > 0)
             {
-               if (childObj == null)
-                  continue;
+               for (Object childObj : children.getObjects())
+               {
+                  if (childObj == null)
+                     continue;
 
-               if (!(childObj instanceof JSObject))
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Child objects for relationships " + rel + " must be objects not arrays or primitives");
+                  if (!(childObj instanceof JSObject))
+                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Child objects for relationships " + rel + " must be objects not arrays or primitives");
 
-               JSObject child = (JSObject) childObj;
+                  JSObject child = (JSObject) childObj;
 
-               child.put(rel.getFkCol1().getName(), parentId);
-               String href = store(chain, conn, changes, childEntity, child);
+                  child.put(rel.getFkCol1().getName(), parentId);
+                  String href = store(chain, conn, changes, childEntity, child);
 
-               String childId = href.substring(href.lastIndexOf("/") + 1, href.length());
-               relateds.put(rel, childId);
+                  String childId = href.substring(href.lastIndexOf("/") + 1, href.length());
+                  relateds.put(rel, childId);
+               }
+            }
+            else
+            {
+               emptyRelateds.add(rel);
             }
          }
       }
@@ -429,6 +439,31 @@ public class PostHandler extends RqlHandler
             chain.debug(sql, args);
             Sql.execute(conn, sql, args);
          }
+      }
+
+      // now handle the empty arrays, we just need to delete all the related 
+      for (Relationship rel : emptyRelateds)
+      {
+         boolean m2o = rel.getType().equals("MANY_TO_ONE");
+         boolean nullable = (m2o && rel.getFkCol1().isNullable());
+         String table = "`" + rel.getFkCol1().getTable().getName() + "`";
+         String parentKeyCol = rel.getFkCol1().getName();
+         String sql;
+
+         if (nullable)
+         {
+            sql = "UPDATE " + table + " SET " + parentKeyCol + " = NULL WHERE " + parentKeyCol + " = ? ";
+         }
+         else
+         {
+            sql = "DELETE FROM " + table + " WHERE " + parentKeyCol + " = ? ";
+         }
+
+         List args = new ArrayList();
+         args.add(parentId);
+
+         chain.debug(sql, args);
+         Sql.execute(conn, sql, args);
       }
    }
 
