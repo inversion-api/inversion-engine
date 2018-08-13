@@ -284,7 +284,7 @@ public class AuthHandler implements Handler
 
    }
 
-   User getUser(Connection conn, Api api, String tenantCode, String username, String accessKey) throws Exception
+   protected User getUser(Connection conn, Api api, String tenantCode, String username, String accessKey) throws Exception
    {
       if (J.empty(username, accessKey))
          throw new ApiException(SC.SC_401_UNAUTHORIZED);
@@ -345,7 +345,7 @@ public class AuthHandler implements Handler
       return matched;
    }
 
-   List<Role> getRoles(Connection conn, Api api, User user) throws Exception
+   protected List<Role> getRoles(Connection conn, Api api, User user) throws Exception
    {
       String sql = "";
       sql += " SELECT DISTINCT r.* ";
@@ -353,7 +353,7 @@ public class AuthHandler implements Handler
       return Sql.selectObjects(conn, sql, Role.class, user.getId(), api.getAccountId());
    }
 
-   List<Permission> getPermissions(Connection conn, Api api, User user) throws Exception
+   protected List<Permission> getPermissions(Connection conn, Api api, User user) throws Exception
    {
       String sql = "";
       sql += "\r\n SELECT DISTINCT * ";
