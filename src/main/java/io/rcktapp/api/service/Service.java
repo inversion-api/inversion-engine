@@ -950,6 +950,7 @@ public class Service extends HttpServlet
       }
       catch (Exception ex)
       {
+         log.error("Unable to get DB connection", ex);
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
       }
    }
