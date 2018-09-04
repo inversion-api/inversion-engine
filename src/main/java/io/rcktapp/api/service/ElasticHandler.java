@@ -215,6 +215,8 @@ public class ElasticHandler implements Handler
       }
       else
       {
+         res.debug("", "Elastic Error Response", r.getErrorContent());
+         
          String status = SC_MAP.get(r.getCode());
          throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
