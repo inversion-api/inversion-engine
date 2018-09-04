@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql.elasticsearch;
 
@@ -49,12 +49,15 @@ public class QueryDsl extends ElasticQuery
    private Wildcard     wildcard;
    private BoolQuery    bool;
    private NestedQuery  nested;
-   
+
    @JsonIgnore
    private List<String> searchAfter;
 
    @JsonIgnore
    private List<String> source;
+
+   @JsonIgnore
+   private List<String> excludes;
 
    // the statement used to create this query
    @JsonIgnore
@@ -66,33 +69,58 @@ public class QueryDsl extends ElasticQuery
    public Map<String, Object> toDslMap()
    {
       Map<String, Object> dslMap = new HashMap<String, Object>();
-      if (source != null)
-         dslMap.put("_source", source);
+
+      Object _source = buildSource();
+      if (_source != null)
+      {
+         dslMap.put("_source", _source);
+      }
 
       if (range != null || term != null || terms != null || bool != null || wildcard != null || nested != null || fuzzy != null)
       {
          // @JsonIgnore properties will be ... ignored
          dslMap.put("query", this);
       }
-      
+
       // Pagination
       int pagesize = stmt.pagesize == -1 ? stmt.maxRows : stmt.pagesize;
       int from = stmt.pagenum == -1 ? 0 : (stmt.pagenum * pagesize) - pagesize;
       dslMap.put("from", from);
       dslMap.put("size", pagesize);
-      
-      if (searchAfter != null) {
+
+      if (searchAfter != null)
+      {
          dslMap.put("search_after", searchAfter);
          // search_after does not need 'from' to be set.
          dslMap.remove("from");
       }
-
 
       // Sorting - very basic 
       if (order != null)
          dslMap.put("sort", order.getOrderList());
 
       return dslMap;
+   }
+
+   Object buildSource()
+   {
+      if (excludes != null)
+      {
+         Map<String, Object> m = new HashMap<String, Object>();
+         m.put("excludes", excludes);
+         if (source != null)
+         {
+            m.put("includes", source);
+         }
+
+         return m;
+      }
+      else if (source != null)
+      {
+         return source;
+      }
+
+      return null;
    }
 
    /**
@@ -141,6 +169,20 @@ public class QueryDsl extends ElasticQuery
       return source;
    }
 
+   public void addExcludes(String[] excludes)
+   {
+      this.excludes = Arrays.asList(excludes);
+   }
+
+   /**
+    * @return the sources
+    */
+   @JsonIgnore
+   public List<String> getExcludes()
+   {
+      return excludes;
+   }
+
    /**
     * @param searchAfter the searchAfter to set
     */
@@ -148,9 +190,10 @@ public class QueryDsl extends ElasticQuery
    {
       this.searchAfter = searchAfter;
    }
-   
+
    @JsonIgnore
-   public boolean isSearchAfterNull() {
+   public boolean isSearchAfterNull()
+   {
       return searchAfter == null;
    }
 
