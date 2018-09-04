@@ -133,6 +133,11 @@ public class RQL
       {
          query.addSources(params.remove("source").split(","));
       }
+      
+      if (params.containsKey("excludes"))
+      {
+         query.addExcludes(params.remove("excludes").split(","));
+      }
 
       Stmt stmt = new Stmt(parser, null, null, null);
 
