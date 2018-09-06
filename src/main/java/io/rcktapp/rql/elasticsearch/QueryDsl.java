@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -52,6 +53,9 @@ public class QueryDsl extends ElasticQuery
 
    @JsonIgnore
    private List<String> searchAfter;
+
+   @JsonIgnore
+   private String       prevStart;
 
    @JsonIgnore
    private List<String> source;
@@ -186,15 +190,32 @@ public class QueryDsl extends ElasticQuery
    /**
     * @param searchAfter the searchAfter to set
     */
-   public void setSearchAfter(List<String> searchAfter)
+   public void setPreviousStart(String prev)
    {
-      this.searchAfter = searchAfter;
+      this.prevStart = prev;
+   }
+
+   @JsonIgnore
+   public String getPreviousStart()
+   {
+      return this.prevStart;
    }
 
    @JsonIgnore
    public boolean isSearchAfterNull()
    {
       return searchAfter == null;
+   }
+   
+   public void setSearchAfter(List<String> searchAfter)
+   {
+      this.searchAfter = searchAfter;
+   }
+
+   @JsonIgnore
+   public String getSearchAfterAsString()
+   {
+      return this.searchAfter.stream().map(String::valueOf).collect(Collectors.joining(","));
    }
 
    /**

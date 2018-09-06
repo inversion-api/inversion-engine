@@ -216,7 +216,7 @@ public class ElasticHandler implements Handler
       else
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
-         
+
          String status = SC_MAP.get(r.getCode());
          throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
@@ -364,6 +364,8 @@ public class ElasticHandler implements Handler
       JSObject meta = new JSObject();
 
       pageNum = (pageNum == -1) ? 1 : pageNum;
+      int prevPageNum = pageNum - 1;
+      int nextPageNum = pageNum + 1;
       size = size < 0 ? maxRows : size;
 
       // Converting elastic paging 
@@ -413,56 +415,67 @@ public class ElasticHandler implements Handler
             url = url + "&source=" + String.join(",", dsl.getSources());
 
          // 'prev' & 'next' can easily be determined if pageSize*pageNum < 10k
-         if ((size * (pageNum - 1) <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pageNum - 1 > 0))
-            meta.put("prev", url + "&pageNum=" + (pageNum - 1));
+         if ((size * prevPageNum <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (prevPageNum > 0))
+            meta.put("prev", url + "&pageNum=" + prevPageNum);
 
-         if ((size * (pageNum + 1) <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pages > pageNum))
-            meta.put("next", url + "&pageNum=" + (pageNum + 1));
+         if ((size * nextPageNum <= RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE) && (pages > pageNum))
+            meta.put("next", url + "&pageNum=" + nextPageNum);
 
          // if next is still null & the size > 10k
-         if (meta.get("next") == null && ((size * (pageNum + 1)) > RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE))
+         if (meta.get("next") == null && ((size * nextPageNum) > RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE))
          {
-
             // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
             String startString = null;
             if (jsonSource != null)
                startString = srcObjectFieldsToStringBySortList(jsonSource, sortList);
-            String prevStartString = null;
 
-            // the start values for the 'previous' search need to be pulled from a separate query.
-            if ((size * (pageNum - 1) > (RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)))
+            if (prevPageNum == 1)
+               // the first page only requires the original rql query because there is no 'search after' that 
+               // would retrieve the proper values.
+               meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + prevPageNum);
+
+            // prevStart was set as a req param, use that value instead of running another query
+            else if (dsl.getPreviousStart() != null)
             {
-               try
-               {
-                  dsl.getOrder().reverseOrdering();
-                  ObjectMapper mapper = new ObjectMapper();
-                  String json = mapper.writeValueAsString(dsl.toDslMap());
-                  Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
+               meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + prevPageNum + "&start=" + dsl.getPreviousStart());
+            }
 
-                  if (r.isSuccess())
+            else
+            {
+               String prevStartString = null;
+
+               // the start values for the 'previous' search need to be pulled from a separate query.
+               if ((size * prevPageNum > (RQL.MAX_NORMAL_ELASTIC_QUERY_SIZE - 1)))
+               {
+                  try
                   {
-                     JSObject jsObj = JS.toJSObject(r.getContent());
-                     JSArray hits = jsObj.getObject("hits").getArray("hits");
-                     JSObject prevLastHit = hits.getObject(hits.length() - 1);
+                     dsl.getOrder().reverseOrdering();
+                     ObjectMapper mapper = new ObjectMapper();
+                     String json = mapper.writeValueAsString(dsl.toDslMap());
+                     Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
 
-                     prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source").getObject(dsl.getSources().get(0)), sortList);
+                     if (r.isSuccess())
+                     {
+                        JSObject jsObj = JS.toJSObject(r.getContent());
+                        JSArray hits = jsObj.getObject("hits").getArray("hits");
+                        JSObject prevLastHit = hits.getObject(hits.length() - 1);
 
-                     if (pageNum - 1 == 1)
-                        // the first page only requires the original rql query because there is no 'search after' that 
-                        // would retrieve the proper values.
-                        meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1));
-                     else
-                        meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + (pageNum - 1) + "&start=" + prevStartString);
+                        prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source"), sortList);
+
+                        meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + prevPageNum + "&start=" + prevStartString);
+                     }
                   }
-               }
-               catch (Exception e)
-               {
-                  log.error("error determining the meta 'prev' url ", e);
+                  catch (Exception e)
+                  {
+                     log.error("error determining the meta 'prev' url ", e);
+                  }
                }
             }
 
             if (pages > pageNum)
-               meta.put("next", url + "&pageNum=" + (pageNum + 1) + "&start=" + startString + "&prevStart=" + prevStartString);
+            {
+               meta.put("next", url + "&pageNum=" + nextPageNum + "&start=" + startString + "&prevStart=" + dsl.getSearchAfterAsString());
+            }
          }
 
       }
@@ -504,12 +517,12 @@ public class ElasticHandler implements Handler
          }
 
          // if there is only one source, convert the return data into an array of values for that source.
-         if (isOneSrcArr)
-         {
-            data.add(src.get(dsl.getSources().get(0)));
-         }
-         else
-            data.add(src);
+         //         if (isOneSrcArr)
+         //         {
+         //            data.add(src.get(dsl.getSources().get(0)));
+         //         }
+         //         else
+         data.add(src);
       }
 
       return data;
