@@ -167,7 +167,7 @@ public class RQL
             query.setSearchAfter(searchAfterList);
          }
 
-         // remove the prevStart param if it exists...it wont be used.
+         // use this value if wantedpage was not set; prevents having to lookup the prev value...of course.
          params.remove("prevstart");
       }
 
