@@ -207,7 +207,7 @@ public class ElasticHandler implements Handler
             pageNum++;
          }
 
-         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.getObject(data.length() - 1) : null), url, headers);
+         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
          res.setJson(wrapper);
@@ -359,7 +359,7 @@ public class ElasticHandler implements Handler
     * @param totalHits
     * @return
     */
-   private JSObject buildMeta(int size, int pageNum, int totalHits, String apiUrl, QueryDsl dsl, JSObject jsonSource, String elasticUrl, List<String> headers)
+   private JSObject buildMeta(int size, int pageNum, int totalHits, String apiUrl, QueryDsl dsl, Object sources, String elasticUrl, List<String> headers)
    {
       JSObject meta = new JSObject();
 
@@ -426,8 +426,8 @@ public class ElasticHandler implements Handler
          {
             // the start values for the 'next' search should be pulled from the lastHit object using the sort order to obtain the correct fields
             String startString = null;
-            if (jsonSource != null)
-               startString = srcObjectFieldsToStringBySortList(jsonSource, sortList);
+            if (sources != null)
+               startString = srcObjectFieldsToStringBySortList(sources, sortList);
 
             if (prevPageNum == 1)
                // the first page only requires the original rql query because there is no 'search after' that 
@@ -483,15 +483,21 @@ public class ElasticHandler implements Handler
       return meta;
    }
 
-   private String srcObjectFieldsToStringBySortList(JSObject sourceObj, List<String> sortList)
+   private String srcObjectFieldsToStringBySortList(Object sourceObj, List<String> sortList)
    {
 
       List<String> list = new ArrayList<String>();
 
       for (String field : sortList)
       {
-         if (sourceObj.get(field) != null)
-            list.add(sourceObj.get(field).toString().toLowerCase());
+         if (sourceObj instanceof JSObject && ((JSObject) sourceObj).get(field) != null)
+         {
+            list.add(((JSObject) sourceObj).get(field).toString().toLowerCase());
+         }
+         else if (sourceObj instanceof String)
+         {
+            list.add((String) sourceObj);
+         }
          else
             list.add("[NULL]");
       }
@@ -517,12 +523,12 @@ public class ElasticHandler implements Handler
          }
 
          // if there is only one source, convert the return data into an array of values for that source.
-         //         if (isOneSrcArr)
-         //         {
-         //            data.add(src.get(dsl.getSources().get(0)));
-         //         }
-         //         else
-         data.add(src);
+         if (isOneSrcArr)
+         {
+            data.add(src.get(dsl.getSources().get(0)));
+         }
+         else
+            data.add(src);
       }
 
       return data;
