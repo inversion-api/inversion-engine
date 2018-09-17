@@ -257,6 +257,7 @@ public class PostHandler extends RqlHandler
                      catch (Exception ex)
                      {
                         ex.printStackTrace();
+                        throw ex;
                      }
                   }
                   value = new Url(href).getFile();
