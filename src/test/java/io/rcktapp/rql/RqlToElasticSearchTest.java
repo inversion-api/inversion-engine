@@ -126,6 +126,46 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
+   
+   @Test
+   public void without() 
+   {
+      try
+      {
+         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("wo(city,h)"));
+
+         assertNull(dsl.getNested());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool());
+
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getShould());
+         assertNull(dsl.getBool().getMust());
+         assertNotNull(dsl.getBool().getMustNot());
+         
+         
+         assertEquals(1, dsl.getBool().getMustNot().size());
+         assertEquals(Wildcard.class, dsl.getBool().getMustNot().get(0).getClass());
+         assertEquals("city", ((Wildcard)dsl.getBool().getMustNot().get(0)).getName());
+         assertEquals("*h*", ((Wildcard)dsl.getBool().getMustNot().get(0)).getValue());
+         assertNull(((Wildcard)dsl.getBool().getMustNot().get(0)).getNestedPath());
+
+         ObjectMapper mapper = new ObjectMapper();
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"must_not\":[{\"wildcard\":{\"city\":\"*h*\"}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
 
    @Test
    public void endsWith()
