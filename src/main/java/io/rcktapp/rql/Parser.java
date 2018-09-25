@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -33,9 +33,9 @@ public class Parser
                                                                              "miles", "if", "as",                                                                        //
                                                                              "includes", "sort", "order", "offset", "limit",                                             //
                                                                              "page", "pagenum", "pagesize", "distinct",                                                  // 
-                                                                             "sw", "ew", "w",                                                                            //
+                                                                             "sw", "ew", "w", "wo",                                                                      //
                                                                              "emp", "nemp", "nn", "n", // nn == not null, n == null
-                                                                             "search"}                                                                              //
+                                                                             "search"}                                                                                   //
                                                                  ));
 
    static HashSet<String> OPERATORS       = new HashSet<String>(                                                                                                         //
