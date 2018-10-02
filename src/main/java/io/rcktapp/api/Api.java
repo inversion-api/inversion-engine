@@ -199,15 +199,16 @@ public class Api extends Dto
        */
    public void setDbs(List<Db> dbs)
    {
+      int cnt = 0;
       for (Db db : dbs)
       {
-         addDb(db);
+         addDb(db, cnt++);
       }
    }
 
-   public void addDb(Db db)
+   public void addDb(Db db, int cnt)
    {
-      String name = db.getName() != null ? db.getName() : "db";
+      String name = db.getName() != null ? db.getName() : "db" + cnt;
       dbs.put(name, db);
    }
 
