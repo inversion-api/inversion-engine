@@ -156,10 +156,19 @@ public class GetHandler extends RqlHandler
       Set<String> expands = chain.getConfigSet("expands");
       expands.addAll(splitParam(req, "expands"));
 
-      Db db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
-      RQL rql = makeRql(chain);
+      String dbName = (String) chain.get("db");
+      Db db = null;
+      if (!J.empty(dbName))
+      {
+         db = api.getDb(dbName);
+      }
+      else
+      {
+         db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
+      }
+      RQL rql = makeRql(db);
 
-      conn = service.getConnection(chain);
+      conn = service.getConnection(db);
 
       Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey()) : null;
       Entity entity = collection != null ? collection.getEntity() : null;
@@ -168,6 +177,11 @@ public class GetHandler extends RqlHandler
 
       String sql = "";
       List params = new ArrayList();
+      List sqlParams = (List) chain.get("sqlParams");
+      if (sqlParams != null && !sqlParams.isEmpty())
+      {
+         params.addAll(sqlParams);
+      }
 
       if (!J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()) && !J.empty(req.getSubCollectionKey()))
       {
@@ -341,7 +355,7 @@ public class GetHandler extends RqlHandler
 
       sql = parseSql(sql, chain, action, req, db, null, null);
 
-      List<Row> rows = selectRows(chain, conn, sql, params);
+      List<Row> rows = selectRows(chain, db, conn, sql, params);
 
       for (int i = 0; i < rows.size(); i++)
       {
@@ -360,7 +374,7 @@ public class GetHandler extends RqlHandler
       return list;
    }
 
-   public Rows selectRows(Chain chain, Connection conn, String sql, Object... vals) throws Exception
+   public Rows selectRows(Chain chain, Db db, Connection conn, String sql, Object... vals) throws Exception
    {
       if (chain.isDebug())
       {
@@ -372,7 +386,7 @@ public class GetHandler extends RqlHandler
       }
 
       Rows rows = Sql.selectRows(conn, sql, vals);
-      if (chain.get("rowCount") == null)
+      if (db.isCalcRowsFound() && chain.get("rowCount") == null)
       {
          sql = "SELECT FOUND_ROWS()";
          //TODO "SELECT FOUND_ROWS() is MySQL specific
@@ -410,7 +424,7 @@ public class GetHandler extends RqlHandler
 
       String keyCol = collection.getEntity().getKey().getColumn().getName();
 
-      List<Row> rows = params != null && params.size() > 0 ? selectRows(chain, conn, inSql, params.toArray()) : selectRows(chain, conn, inSql);
+      List<Row> rows = params != null && params.size() > 0 ? selectRows(chain, db, conn, inSql, params.toArray()) : selectRows(chain, db, conn, inSql);
 
       Attribute keyAttr = collection.getEntity().getKey();
       //Entity entity = collection.getEntity();
@@ -807,8 +821,8 @@ public class GetHandler extends RqlHandler
 
    static boolean find(java.util.Collection<String> haystack, String needle)
    {
-//      if(needle.equalsIgnoreCase("adcompleters.ad"))
-//         System.out.println("asdf");
+      //      if(needle.equalsIgnoreCase("adcompleters.ad"))
+      //         System.out.println("asdf");
       String lc = needle.toLowerCase();
       if (haystack.contains(needle) || haystack.contains(lc))
          return true;

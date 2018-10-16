@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -20,16 +20,22 @@ import java.util.List;
 
 public class Db extends Dto
 {
-   long             orgId   = 0;
-   String           name    = null;
-   String           type    = null;
-   String           driver  = null;
-   String           url     = null;
-   String           user    = null;
-   String           pass    = null;
-   int              poolMin = 3;
-   int              poolMax = 10;
-   ArrayList<Table> tables  = new ArrayList();
+   long             orgId         = 0;
+   String           name          = null;
+   String           type          = null;
+   String           driver        = null;
+   String           url           = null;
+   String           user          = null;
+   String           pass          = null;
+   int              poolMin       = 3;
+   int              poolMax       = 10;
+   ArrayList<Table> tables        = new ArrayList();
+
+   // set this to false, if you don't want to Snooze.bootstrapDb to do anything
+   boolean          bootstrap     = true;
+
+   // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
+   boolean          calcRowsFound = true;
 
    public Db()
    {
@@ -207,6 +213,26 @@ public class Db extends Dto
    public void setPoolMax(int poolMax)
    {
       this.poolMax = poolMax;
+   }
+
+   public boolean isBootstrap()
+   {
+      return bootstrap;
+   }
+
+   public void setBootstrap(boolean bootstrap)
+   {
+      this.bootstrap = bootstrap;
+   }
+
+   public boolean isCalcRowsFound()
+   {
+      return calcRowsFound;
+   }
+
+   public void setCalcRowsFound(boolean calcRowsFound)
+   {
+      this.calcRowsFound = calcRowsFound;
    }
 
 }

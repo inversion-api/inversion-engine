@@ -3,6 +3,9 @@
  */
 package io.rcktapp.api.service.ext;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -91,6 +94,7 @@ public class ScriptRunnerHandler implements Handler
       bindings.putMember("req", req);
       bindings.putMember("res", res);
       bindings.putMember("scriptJson", scriptJson);
+      bindings.putMember("util", new Util());
 
       context.eval(language, script);
 
@@ -143,6 +147,51 @@ public class ScriptRunnerHandler implements Handler
    public void setCacheExpireSeconds(long cacheExpireSeconds)
    {
       this.cacheExpireSeconds = cacheExpireSeconds;
+   }
+
+   public static class Util
+   {
+
+      public void throwApiException(String status, String message)
+      {
+         throw new ApiException(status, message);
+      }
+
+      public void throwBadRequest(String message)
+      {
+         throw new ApiException(SC.SC_400_BAD_REQUEST, message);
+      }
+
+      public void throwNotFound(String message)
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, message);
+      }
+
+      public void throwServerError(String message)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+      }
+
+      public List<Object> list(Object obj)
+      {
+         List<Object> l = new ArrayList<Object>();
+
+         if (obj instanceof Map)
+         {
+            l.addAll(((Map) obj).values());
+         }
+         else if (obj instanceof Collection)
+         {
+            l.addAll((Collection) obj);
+         }
+         else if (obj != null)
+         {
+            l.add(obj);
+         }
+
+         return l;
+      }
+
    }
 
 }

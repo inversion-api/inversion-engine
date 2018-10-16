@@ -209,12 +209,20 @@ public class Api extends Dto
    public void addDb(Db db, int cnt)
    {
       String name = db.getName() != null ? db.getName() : "db" + cnt;
-      dbs.put(name, db);
+      dbs.put(name.toLowerCase(), db);
    }
 
    public Db getDb(String name)
    {
       return dbs.get(name.toLowerCase());
+   }
+   
+   public void updateDbMap() {
+      // This is needed because the Db objects coming into addDb don't have a name prop yet
+      // during auto-wiring.. this is called just after auto-wiring to update the keys in the map
+      List<Db> dbList = new ArrayList<>(dbs.values());
+      this.dbs.clear();
+      this.setDbs(dbList);
    }
 
    public long getLoadTime()

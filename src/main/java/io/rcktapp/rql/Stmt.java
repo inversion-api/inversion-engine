@@ -170,7 +170,7 @@ public class Stmt
          parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
       }
 
-      if (this.pagenum > 0 && parts.select.toLowerCase().trim().startsWith("select"))
+      if (this.parser.isCalcRowsFound() && this.pagenum > 0 && parts.select.toLowerCase().trim().startsWith("select"))
       {
          int idx = parts.select.toLowerCase().indexOf("select") + 6;
          parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
@@ -251,20 +251,25 @@ public class Stmt
       //if (this.limit < 0 && maxResults > 0)
       //   this.limit = maxResults;
 
-      if (this.limit >= 0 || this.offset >= 0)
-      {
-         parts.limit = "LIMIT ";
-         if (this.offset >= 0)
-            parts.limit += this.offset;
+      // OFFSET 2 LIMIT 20
+      // this.parser.isCalcRowsFound()
 
-         if (this.limit >= 0)
-         {
-            if (!parts.limit.endsWith("LIMIT "))
-               parts.limit += ", ";
+      parts.limit = this.buildLimitClause();
 
-            parts.limit += this.limit;
-         }
-      }
+      //      if (this.limit >= 0 || this.offset >= 0)
+      //      {
+      //         parts.limit = "LIMIT ";
+      //         if (this.offset >= 0)
+      //            parts.limit += this.offset;
+      //
+      //         if (this.limit >= 0)
+      //         {
+      //            if (!parts.limit.endsWith("LIMIT "))
+      //               parts.limit += ", ";
+      //
+      //            parts.limit += this.limit;
+      //         }
+      //      }
 
       //--compose the final statement
       String buff = parts.select;
@@ -472,6 +477,40 @@ public class Stmt
       }
 
       return sql.toString();
+   }
+
+   String buildLimitClause()
+   {
+      String s = null;
+      if (this.limit >= 0 || this.offset >= 0)
+      {
+         if ("postgres".equalsIgnoreCase(this.parser.getDbtype()) || "redshift".equalsIgnoreCase(this.parser.getDbtype()))
+         {
+            s = "";
+            if (this.offset >= 0)
+               s += "OFFSET " + this.offset;
+
+            if (this.limit >= 0)
+            {
+               s += " LIMIT " + this.limit;
+            }
+         }
+         else
+         {
+            s = "LIMIT ";
+            if (this.offset >= 0)
+               s += this.offset;
+
+            if (this.limit >= 0)
+            {
+               if (!s.endsWith("LIMIT "))
+                  s += ", ";
+
+               s += this.limit;
+            }
+         }
+      }
+      return s;
    }
 
    public int getMaxRows()

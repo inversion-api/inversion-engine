@@ -282,6 +282,7 @@ public class Snooze extends Service
 
          for (Api api : wire.getBeans(Api.class))
          {
+            api.updateDbMap();
             addApi(api);
          }
 
@@ -684,6 +685,10 @@ public class Snooze extends Service
 
    public void bootstrapDb(Db db) throws Exception
    {
+      if(!db.isBootstrap()) {
+         return;
+      }
+      
       String driver = db.getDriver();
       Class.forName(driver);
       Connection apiConn = DriverManager.getConnection(db.getUrl(), db.getUser(), db.getPass());

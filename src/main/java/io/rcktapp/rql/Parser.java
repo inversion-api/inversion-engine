@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import io.forty11.j.J;
+
 public class Parser
 {
    static HashSet<String> FUNCTIONS       = new HashSet<String>(                                                                                                         //
@@ -34,21 +36,26 @@ public class Parser
                                                                              "includes", "sort", "order", "offset", "limit",                                             //
                                                                              "page", "pagenum", "pagesize", "distinct",                                                  // 
                                                                              "sw", "ew", "w", "wo",                                                                      //
-                                                                             "emp", "nemp", "nn", "n", // nn == not null, n == null
+                                                                             "emp", "nemp", "nn", "n",                                                                   // nn == not null, n == null
                                                                              "search"}                                                                                   //
                                                                  ));
 
    static HashSet<String> OPERATORS       = new HashSet<String>(                                                                                                         //
                                                                  Arrays.asList(                                                                                          //
                                                                        new String[]{"=", "eq", "ne", "lt", "le", "gt", "ge", "in", "out"}));
+   String                 dbtype;
 
    char                   stringQuote     = '\'';
    char                   identifierQuote = '"';
 
    private boolean        isQuoting       = true;
 
+   private boolean        calcRowsFound   = true;
+
    public Parser(String dbtype)
    {
+      this.dbtype = dbtype;
+
       if (dbtype != null && dbtype.toLowerCase().indexOf("mysql") > -1)
       {
          identifierQuote = '`';
@@ -220,7 +227,9 @@ public class Parser
             }
             else if (!t.startsWith(identifierQuote + ""))
             {
-               p.term(i).token = identifierQuote + p.term(i).token + identifierQuote;
+               //p.term(i).token = identifierQuote + p.term(i).token + identifierQuote;
+
+               p.term(i).token = asCol(p.term(i).token);
             }
          }
          else
@@ -348,6 +357,17 @@ public class Parser
     */
    public String asCol(String str)
    {
+      int firstDot = str.indexOf(".");
+      if (firstDot > 0)
+      {
+         // if col has a dot, return alias.`colname`
+         str = dequote(str);
+         String a = str.substring(0, firstDot + 1);
+         String b = str.substring(firstDot + 1);
+         if(!J.empty(a) && !J.empty(b)) {
+            return a + quote(b, identifierQuote);
+         }
+      }
       return (quote(dequote(str), identifierQuote));
    }
 
@@ -416,6 +436,21 @@ public class Parser
          return true;
 
       return false;
+   }
+
+   public String getDbtype()
+   {
+      return dbtype;
+   }
+
+   public boolean isCalcRowsFound()
+   {
+      return calcRowsFound;
+   }
+
+   public void setCalcRowsFound(boolean calcRowsFound)
+   {
+      this.calcRowsFound = calcRowsFound;
    }
 
 }

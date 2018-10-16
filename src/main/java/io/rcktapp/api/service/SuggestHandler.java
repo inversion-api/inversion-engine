@@ -25,6 +25,7 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
+import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
@@ -59,7 +60,8 @@ public class SuggestHandler extends RqlHandler
          value = value.replace("\"", "");
       }
 
-      RQL rql = makeRql(chain);
+      Db db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
+      RQL rql = makeRql(db);
 
       String sql = "";
       sql += " SELECT DISTINCT " + searchProp;
