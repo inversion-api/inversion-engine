@@ -86,9 +86,11 @@ public class RedisHandler implements Handler
             // expx EX|PX, expire time units: EX = seconds; PX = milliseconds
             // 106,751,991,167,301 days MAX
             // 15,552,000s == 180 days
-            // jedis.set(key, chain.getResponse().getJson().toString(), "NX", "EX", 15552000L);
             // Note: Since the SET command options can replace SETNX, SETEX, PSETEX, it is possible that in future 
             // versions of Redis these three commands will be deprecated and finally removed.
+            // A future version of jedis alter's .set() to allow for a SetParams object to be used to set 'ex'
+            // without being required to set 'nx'
+            // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(15552000));
             jedis.setex(key, 15552000, chain.getResponse().getJson().toString());
 
             if (jedis != null)
