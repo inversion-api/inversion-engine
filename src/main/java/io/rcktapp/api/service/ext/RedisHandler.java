@@ -58,8 +58,11 @@ public class RedisHandler implements Handler
 
       try
       {
+         String value = null;
+         
          // attempt to get the value from Redis
-         String value = jedis.get(key);
+         if (!req.getParams().containsKey("skipRedis"))
+            value = jedis.get(key);
 
          if (value != null)
             resJson = JS.toJSObject(value);
