@@ -50,7 +50,7 @@ public class RedisHandler implements Handler
       
       // the key is derived from the URL
       String url = removeUrlProtocol(req.getApiUrl()) + req.getPath() + sortRequestParameters(req.getParams());
-      String key = J.md5(url.getBytes());
+      String key = url.getBytes();
       log.info("url: " + url + " -> key: " + key);
 
       // request should include a json object
