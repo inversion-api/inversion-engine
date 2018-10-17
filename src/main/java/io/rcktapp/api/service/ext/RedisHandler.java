@@ -39,7 +39,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * expx EX|PX, expire time units: EX = seconds; PX = milliseconds
  
  * A future version of jedis alter's .set() to allow for a SetParams object to be used to set 'ex'
- * without requiring the setting of 'nx'
+ * without requiring the setting of 'nx' 
  * 
  * @author kfrankic
  *
