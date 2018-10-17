@@ -7,7 +7,6 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.j.J;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
@@ -24,6 +23,24 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 /**
+ * The service builds a key from the request url & parameters.  If the key does not exist within Redis,
+ * the request is passed along to the GetHandler.  The response from the GetHandler will be inserted
+ * into Redis with an expiration.
+ * 
+ * The initial Redis check can be bypassed by including the skipCache (verify value below) request parameter. 
+ * 
+ * The current implementation of Jedis.set() does not allow clobbering a key/value & expiration but will in 
+ * a future build. Because of that, Jedis.setex() is used.  Since the SET command options can replace SETNX, 
+ * SETEX, PSETEX, it is possible that in future versions of Redis these three commands will be deprecated 
+ * and finally removed.
+ * 
+ * Jedis.set() parameter explanation...
+ * nxxx NX|XX, NX -- Only set the key if it does not already exist. XX -- Only set the key if it already exist.
+ * expx EX|PX, expire time units: EX = seconds; PX = milliseconds
+ 
+ * A future version of jedis alter's .set() to allow for a SetParams object to be used to set 'ex'
+ * without requiring the setting of 'nx'
+ * 
  * @author kfrankic
  *
  */
@@ -31,11 +48,12 @@ public class RedisHandler implements Handler
 {
    Logger                log               = LoggerFactory.getLogger(RedisHandler.class);
 
+   // configurable snooze.props 
    private String        host              = "";
-   private int           port              = 0;
-
-   // times in milliseconds
-   private int           readSocketTimeout = 0;
+   private int           port              = 6379;
+   private String        skipCache         = "nocache";
+   private int           readSocketTimeout = 2500;                                       // time in milliseconds
+   private int           ttl               = 15552000;                                   // time to live 15,552,000s == 180 days
 
    final JedisPoolConfig poolConfig        = buildPoolConfig();
    JedisPool             jedisPool         = null;
@@ -47,11 +65,10 @@ public class RedisHandler implements Handler
          jedisPool = new JedisPool(poolConfig, host, port, readSocketTimeout);
 
       Jedis jedis = jedisPool.getResource();
-      
+
       // the key is derived from the URL
-      String url = removeUrlProtocol(req.getApiUrl()) + req.getPath() + sortRequestParameters(req.getParams());
-      String key = url.getBytes();
-      log.info("url: " + url + " -> key: " + key);
+      String key = removeUrlProtocol(req.getApiUrl()) + req.getPath() + sortRequestParameters(req.getParams());
+      log.info("key: " + key);
 
       // request should include a json object
       JSObject resJson = null;
@@ -59,9 +76,9 @@ public class RedisHandler implements Handler
       try
       {
          String value = null;
-         
+
          // attempt to get the value from Redis
-         if (!req.getParams().containsKey("skipRedis"))
+         if (!req.getParams().containsKey(skipCache))
             value = jedis.get(key);
 
          if (value != null)
@@ -71,30 +88,19 @@ public class RedisHandler implements Handler
       catch (Exception e)
       {
          // most likely a read socket timeout exception... log it and move on.
-         log.warn("Failed to retrieve from Redis the key: " + key + " url: " + url, e);
+         log.warn("Failed to retrieve from Redis the key: " + key, e);
       }
       finally
       {
          if (resJson == null)
          {
-            // No value found, pass the chain on to the GetHandler
-
-            // Currently, no reason to catch an exception because there will be no data to store in Redis
             chain.go();
 
             // TODO should the naming convention include the TTL in the name?
 
-            // hash fields can't have an associated time to live (expire) like a real key, and can only contain a string.
-            // nxxx NX|XX, NX -- Only set the key if it does not already exist. XX -- Only set the keyif it already exist.
-            // expx EX|PX, expire time units: EX = seconds; PX = milliseconds
-            // 106,751,991,167,301 days MAX
-            // 15,552,000s == 180 days
-            // Note: Since the SET command options can replace SETNX, SETEX, PSETEX, it is possible that in future 
-            // versions of Redis these three commands will be deprecated and finally removed.
-            // A future version of jedis alter's .set() to allow for a SetParams object to be used to set 'ex'
-            // without being required to set 'nx'
-            // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(15552000));
-            jedis.setex(key, 15552000, chain.getResponse().getJson().toString());
+            // see class header for explanation on setex()  
+            // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
+            jedis.setex(key, ttl, chain.getResponse().getJson().toString());
 
             if (jedis != null)
                jedis.close();
