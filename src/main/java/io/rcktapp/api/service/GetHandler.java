@@ -262,7 +262,7 @@ public class GetHandler extends RqlHandler
       String passedInSelect = (String) chain.remove("select");
       if (!J.empty(passedInSelect))
       {
-         sql = passedInSelect;
+         sql = passedInSelect.trim();
       }
 
       if (J.empty(sql))
