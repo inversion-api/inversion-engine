@@ -20,14 +20,15 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import io.forty11.j.J;
 import io.forty11.j.utils.DoubleKeyMap;
+import io.forty11.j.utils.ISO8601Util;
 import io.forty11.j.utils.ListMap;
 import io.forty11.sql.Rows;
 import io.forty11.sql.Rows.Row;
@@ -336,10 +337,16 @@ public class GetHandler extends RqlHandler
          }
 
          meta.put("rowCount", rowCount);
-         meta.put("pageNum", stmt.pagenum);
          meta.put("pageSize", stmt.limit + "");
-         int pages = (int) Math.ceil((double) rowCount / (double) stmt.limit);
-         meta.put("pageCount", pages);
+
+         if (db.isCalcRowsFound())
+         {
+            meta.put("pageNum", stmt.pagenum);
+            int pages = (int) Math.ceil((double) rowCount / (double) stmt.limit);
+            meta.put("pageCount", pages);
+         }
+         
+         meta.put("created", ISO8601Util.format(new Date()));
 
          for (JSObject js : results)
          {

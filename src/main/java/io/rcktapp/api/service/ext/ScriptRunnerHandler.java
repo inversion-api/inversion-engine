@@ -103,8 +103,15 @@ public class ScriptRunnerHandler implements Handler
 
    JSObject findScriptJson(String scriptName, Chain chain, Request req) throws Exception
    {
+      String noScriptCache = req.removeParam("noScriptCache");
+      String clearScriptCache = req.removeParam("clearScriptCache");
+      if (clearScriptCache != null && CACHE != null)
+      {
+         CACHE.clear();
+      }
+
       JSObject scriptJson = null;
-      if (CACHE != null)
+      if (CACHE != null && noScriptCache == null)
       {
          scriptJson = (JSObject) CACHE.get(scriptName);
       }
