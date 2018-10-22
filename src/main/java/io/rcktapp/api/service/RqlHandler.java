@@ -59,16 +59,20 @@ public abstract class RqlHandler implements Handler
       return J.empty(path) ? next : path + "." + next;
    }
 
-   public RQL makeRql(Chain chain)
+   public RQL makeRql(Db db)
    {
-      Db db = chain.getService().getDb(chain.getApi(), chain.getRequest().getCollectionKey());
+      //Db db = chain.getService().getDb(chain.getApi(), chain.getRequest().getCollectionKey());
       String driver = db.getDriver().toLowerCase();
 
       String dbtype = "mysql";
       if (driver.indexOf("postgres") > -1)
          dbtype = "postgres";
 
+      if (driver.indexOf("redshift") > -1)
+         dbtype = "redshift";
+
       RQL rql = new RQL(dbtype);
+      rql.getParser().setCalcRowsFound(db.isCalcRowsFound());
       return rql;
    }
 

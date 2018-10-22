@@ -66,6 +66,9 @@ public class RedisHandler implements Handler
 
       Jedis jedis = jedisPool.getResource();
 
+      // remove this param before creating the key, so this param is not included in the key
+      String skipCacheLookup = req.removeParam(skipCache);
+
       // the key is derived from the URL
       String key = removeUrlProtocol(req.getApiUrl()) + req.getPath() + sortRequestParameters(req.getParams());
       log.info("key: " + key);
@@ -78,7 +81,7 @@ public class RedisHandler implements Handler
          String value = null;
 
          // attempt to get the value from Redis
-         if (!req.getParams().containsKey(skipCache))
+         if (skipCacheLookup == null)
             value = jedis.get(key);
 
          if (value != null)
@@ -107,6 +110,8 @@ public class RedisHandler implements Handler
          }
          else
          {
+            chain.cancel();
+
             res.setStatus(SC.SC_200_OK);
             res.setJson(resJson);
          }
