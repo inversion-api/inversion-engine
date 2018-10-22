@@ -162,7 +162,7 @@ public class DeleteHandler extends RqlHandler
       Collection collection = req.getApi().getCollection(req.getCollectionKey());
       Entity entity = collection.getEntity();
 
-      RQL rql = makeRql(chain);
+      RQL rql = makeRql(db);
 
       String table = rql.asCol(entity.getTable().getName());
       String idCol = rql.asCol(entity.getKey().getColumn().getName());
@@ -185,7 +185,8 @@ public class DeleteHandler extends RqlHandler
    {
       try
       {
-         RQL rql = makeRql(chain);
+         Db db = chain.getService().getDb(req.getApi(), req.getCollectionKey());
+         RQL rql = makeRql(db);
 
          Collection collection = req.getApi().getCollection(req.getCollectionKey());
 

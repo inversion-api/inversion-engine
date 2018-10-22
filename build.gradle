@@ -70,6 +70,12 @@ dependencies {
 	
 	compile "javax.servlet:javax.servlet-api:3.1.0"
 	
+	compile 'net.jodah:expiringmap:0.5.8'
+	compile group: 'org.graalvm', name: 'graal-sdk', version: '1.0.0-rc7'
+	compile group: 'com.oracle.truffle', name: 'truffle-api', version: '1.0.0-rc7'
+	compile files('libs/graaljs.jar')
+    compile files('libs/tregex.jar')
+	
 	testCompile 'junit:junit:4.12'
 	
 }
