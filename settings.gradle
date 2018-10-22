@@ -13,7 +13,7 @@ gradle.ext {
 	rckt_snooze = [
 		'addFortJProjectToClasspath':false,
 		'addFortSProjectToClasspath':false,
-		'addFortWProjectToClasspath':true
+		'addFortWProjectToClasspath':false
 	]
 	
 	// ###################################################
