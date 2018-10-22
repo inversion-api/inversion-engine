@@ -29,6 +29,7 @@ public class Db extends Dto
    String           pass    = null;
    int              poolMin = 3;
    int              poolMax = 10;
+   int              idleConnectionTestPeriod = 3600; // in seconds
    ArrayList<Table> tables  = new ArrayList();
 
    public Db()
@@ -207,6 +208,16 @@ public class Db extends Dto
    public void setPoolMax(int poolMax)
    {
       this.poolMax = poolMax;
+   }
+   
+   public int getIdleConnectionTestPeriod()
+   {
+      return idleConnectionTestPeriod;
+   }
+
+   public void setIdleConnectionTestPeriod(int idleConnectionTestPeriod)
+   {
+      this.idleConnectionTestPeriod = idleConnectionTestPeriod;
    }
 
 }
