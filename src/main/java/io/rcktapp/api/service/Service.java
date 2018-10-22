@@ -923,6 +923,7 @@ public class Service extends HttpServlet
                      String password = db.getPass();
                      int minPoolSize = db.getPoolMin();
                      int maxPoolSize = db.getPoolMax();
+                     int idleTestPeriod = db.getIdleConnectionTestPeriod();
 
                      minPoolSize = Math.max(MIN_POOL_SIZE, minPoolSize);
                      maxPoolSize = Math.min(maxPoolSize, MAX_POOL_SIZE);
@@ -934,6 +935,10 @@ public class Service extends HttpServlet
                      pool.setPassword(password);
                      pool.setMinPoolSize(minPoolSize);
                      pool.setMaxPoolSize(maxPoolSize);
+                     
+                     pool.setIdleConnectionTestPeriod(idleTestPeriod);
+                     //                     if (idleTestPeriod > 0)
+                     //                        pool.setTestConnectionOnCheckin(true);
 
                      pools.put(db, pool);
                   }
