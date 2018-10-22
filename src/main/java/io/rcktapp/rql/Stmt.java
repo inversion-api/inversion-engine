@@ -251,25 +251,7 @@ public class Stmt
       //if (this.limit < 0 && maxResults > 0)
       //   this.limit = maxResults;
 
-      // OFFSET 2 LIMIT 20
-      // this.parser.isCalcRowsFound()
-
       parts.limit = this.buildLimitClause();
-
-      //      if (this.limit >= 0 || this.offset >= 0)
-      //      {
-      //         parts.limit = "LIMIT ";
-      //         if (this.offset >= 0)
-      //            parts.limit += this.offset;
-      //
-      //         if (this.limit >= 0)
-      //         {
-      //            if (!parts.limit.endsWith("LIMIT "))
-      //               parts.limit += ", ";
-      //
-      //            parts.limit += this.limit;
-      //         }
-      //      }
 
       //--compose the final statement
       String buff = parts.select;
