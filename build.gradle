@@ -15,7 +15,6 @@ repositories {
    mavenLocal()
    mavenCentral() 
    maven { url 'https://jitpack.io' }
-   maven { url "http://files.liftck.com/maven-repo"}
 }
 
 
@@ -74,14 +73,8 @@ dependencies {
 	compile 'net.jodah:expiringmap:0.5.8'
 	compile group: 'org.graalvm', name: 'graal-sdk', version: '1.0.0-rc7'
 	compile group: 'com.oracle.truffle', name: 'truffle-api', version: '1.0.0-rc7'
-	
-	// NOTE: these are stored in S3 as this repo.. http://files.liftck.com/maven-repo
-	// Used these maven commands to generate the needed files..
-	// mvn install:install-file -DgroupId=rckt -DartifactId=graaljs -Dversion=0.0.1 -Dfile=graaljs.jar -Dpackaging=jar -DgeneratePom=true -DlocalRepositoryPath=. -DcreateChecksum=true
-	// mvn install:install-file -DgroupId=rckt -DartifactId=tregex -Dversion=0.0.1 -Dfile=tregex.jar -Dpackaging=jar -DgeneratePom=true -DlocalRepositoryPath=. -DcreateChecksum=true
-	
-	compile "rckt:graaljs:0.0.1"
-	compile "rckt:tregex:0.0.1"
+	compile files('libs/graaljs.jar')
+    compile files('libs/tregex.jar')
 	
 	testCompile 'junit:junit:4.12'
 	
