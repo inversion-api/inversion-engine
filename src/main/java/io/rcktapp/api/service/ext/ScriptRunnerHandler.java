@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
@@ -42,6 +44,9 @@ import net.jodah.expiringmap.ExpiringMap;
  */
 public class ScriptRunnerHandler implements Handler
 {
+
+   Logger              log                = LoggerFactory.getLogger(ScriptRunnerHandler.class);
+
    String              scriptsCollection  = "scripts";
 
    long                cacheExpireSeconds = 60 * 30;
@@ -80,7 +85,7 @@ public class ScriptRunnerHandler implements Handler
                }
                catch (FileSystemNotFoundException fsnfe)
                {
-                  System.out.println("ScriptRunnerHandler Init : Attempting to create file system for " + uri);
+                  log.info("Init : Attempting to create file system for " + uri);
                   Map<String, String> env = new HashMap<>();
                   env.put("create", "true");
                   FileSystem fs = FileSystems.newFileSystem(uri, env);
@@ -89,7 +94,7 @@ public class ScriptRunnerHandler implements Handler
          }
          catch (Exception e)
          {
-            e.printStackTrace();
+            log.error("Error initializing the javascript language file system", e);
          }
       }
    }
