@@ -3,8 +3,18 @@
  */
 package io.rcktapp.api.service.ext;
 
+import java.net.JarURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +57,39 @@ public class ScriptRunnerHandler implements Handler
          if (cacheExpireSeconds > 0)
          {
             CACHE = ExpiringMap.builder().maxSize(500).expiration(cacheExpireSeconds, TimeUnit.SECONDS).build();
+         }
+
+         /*
+          * Initialize the Zip File System if needed.  This is needed to be able to run in a Fat Jar.
+          * Without this code the javascript library we are using threw an error in..
+          * com.oracle.truffle.polyglot.LanguageCache.collectLanguages(LanguageCache.java:282)
+          * The reason is that you can't use the Paths.get method if the File system hasn't been created yet.
+          * See.. https://stackoverflow.com/questions/25032716/getting-filesystemnotfoundexception-from-zipfilesystemprovider-when-creating-a-p
+          */
+         try
+         {
+            Enumeration<URL> en = ScriptRunnerHandler.class.getClassLoader().getResources("META-INF/truffle/language");
+            while (en.hasMoreElements())
+            {
+               URL u = en.nextElement();
+               URLConnection connection = u.openConnection();
+               URI uri = ((JarURLConnection) connection).getJarFileURL().toURI();
+               try
+               {
+                  Paths.get(uri);
+               }
+               catch (FileSystemNotFoundException fsnfe)
+               {
+                  System.out.println("ScriptRunnerHandler Init : Attempting to create file system for " + uri);
+                  Map<String, String> env = new HashMap<>();
+                  env.put("create", "true");
+                  FileSystem fs = FileSystems.newFileSystem(uri, env);
+               }
+            }
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
          }
       }
    }
