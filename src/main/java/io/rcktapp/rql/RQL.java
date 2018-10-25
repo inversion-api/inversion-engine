@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -46,10 +46,10 @@ public class RQL
 
    public static final HashSet         SQL_RESERVED_KEYWORDS         = new HashSet(Arrays.asList(new String[]{"as", "includes", "sort", "order", "offset", "limit", "distinct", "aggregate", "function", "sum", "count", "min", "max"}));
 
-   public static final HashSet<String> URL_RESERVED_PARAMETERS       = new HashSet<String>(                                                                                                                                                    //
-                                                                                            Arrays.asList(                                                                                                                                     //
-                                                                                                  new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                           //
-                                                                                            ));
+   public static final HashSet<String> URL_RESERVED_PARAMETERS       = new HashSet<String>(                                                                                                                                                                     //
+                                                                                           Arrays.asList(                                                                                                                                                       //
+                                                                                                 new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                                             //
+                                                                                           ));
 
    public static final HashSet<String> OPS_RESERVED_KEYWORDS         = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "wo", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
 
@@ -133,7 +133,7 @@ public class RQL
       {
          query.addSources(params.remove("source").split(","));
       }
-      
+
       if (params.containsKey("excludes"))
       {
          query.addExcludes(params.remove("excludes").split(","));
@@ -293,6 +293,7 @@ public class RQL
 
       BoolQuery mustNotBool = null;
       List<Predicate> termsList = null;
+      String termToken = null;
 
       switch (pred.token)
       {
@@ -337,17 +338,18 @@ public class RQL
                ((BoolQuery) elastic).addShould(eq);
             break;
          case "sw":
-            elastic = new Wildcard(pred.terms.get(0).token, Parser.dequote(pred.terms.get(1).token) + "*");
+            elastic = withWildCardPopulater(pred, WithType.STARTS_WITH);
             break;
          case "ew":
-            elastic = new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token));
+            elastic = withWildCardPopulater(pred, WithType.ENDS_WITH);
             break;
          case "w":
-            elastic = new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token) + "*");
+            elastic = withWildCardPopulater(pred, WithType.WITH);
             break;
          case "wo":
             elastic = new BoolQuery();
-            ((BoolQuery) elastic).addMustNot(new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token) + "*"));            break;
+            ((BoolQuery) elastic).addMustNot(new Wildcard(pred.terms.get(0).token, "*" + Parser.dequote(pred.terms.get(1).token) + "*"));
+            break;
          case "emp": // checks for empty strings AND null values
             elastic = new BoolQuery();
             ((BoolQuery) elastic).addShould(new Term(pred.terms.get(0).token, "", "emp"));
@@ -371,7 +373,7 @@ public class RQL
          case "n": // NULL
             elastic = new BoolQuery();
             ((BoolQuery) elastic).addMustNot(new ExistsQuery(pred.terms.get(0).token));
-            break;   
+            break;
          case "in":
             termsList = new ArrayList<Predicate>(pred.terms);
             elastic = new Term(termsList.remove(0).token, pred.token);
@@ -635,5 +637,36 @@ public class RQL
    public String asStr(String string)
    {
       return getParser().asStr(Sql.check(string));
+   }
+
+   private enum WithType {
+      WITH, STARTS_WITH, ENDS_WITH
+   };
+
+   /**
+    * 
+    * @param pred
+    * @param withType WITH, STARTS_WITH, ENDS_WITH
+    */
+   private BoolQuery withWildCardPopulater(Predicate pred, WithType withType)
+   {
+      BoolQuery bq = new BoolQuery();
+      String termToken = pred.terms.get(0).token;
+      for (int i = 1; i < pred.terms.size(); i++)
+      {
+         switch (withType)
+         {
+            case WITH:
+               bq.addShould(new Wildcard(termToken, "*" + Parser.dequote(pred.terms.get(i).token) + "*"));
+               break;
+            case STARTS_WITH:
+               bq.addShould(new Wildcard(termToken, Parser.dequote(pred.terms.get(i).token) + "*"));
+               break;
+            case ENDS_WITH:
+               bq.addShould(new Wildcard(termToken, "*" + Parser.dequote(pred.terms.get(i).token)));
+               break;
+         }
+      }
+      return bq;
    }
 }
