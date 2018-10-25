@@ -354,8 +354,12 @@ public class Stmt
       else if ("w".equalsIgnoreCase(token) || "sw".equalsIgnoreCase(token) || "ew".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
-         String term2 = terms.get(1);
-         sql.append(term1).append(" LIKE ").append(term2);
+         for (int i = 1; i < terms.size(); i++) {
+            if (i == 1)
+               sql.append(term1).append(" LIKE ").append(terms.get(i));
+            else
+               sql.append(" OR ").append(term1).append(" LIKE ").append(terms.get(i));
+         }
       }
       else if ("ne".equalsIgnoreCase(token))
       {
