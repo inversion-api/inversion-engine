@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
@@ -54,6 +56,23 @@ import io.rcktapp.rql.elasticsearch.QueryDsl;
 /**
  * @author tc-rocket
  *
+ * Example Config:
+ * 
+ * dynamoEp.class=io.rcktapp.api.Endpoint
+ * dynamoEp.includePaths=dynamo*
+ * dynamoEp.methods=GET,POST
+ * dynamoEp.handler=dynamoH
+ * dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&blueprintRow=loyalty-punchcard|4045551111|aabbccddeeffgg
+ * 
+ *  - Valid config props
+ *      - tableMap :                Maps a collection name to a dynamo table
+ *                                  FORMAT: collection name | dynamodb name  (comma seperated)  - EXAMPLE: promo|promo-dev
+ *      - conditionalWriteConf :    Allows a conditional write expression to be configured for a dynamo table
+ *                                  FORMAT: collection name | withConditionExpression | payload fields  (comma seperated)  - EXAMPLE: promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate        
+ *      - blueprintRow :            Config which row should be used for building the collection typeMap (otherwise first row of scan will be used) - NOTE: you will probably not need to use this unless new columns are introduced to a table in the future.
+ *                                  FORMAT: collection name | primaryKey | sortKey (optional)
+ *      - appendTenantIdToPk :      Enables appending the tenant id to the primary key
+ *                                  FORMAT: collection name (comma seperated)                            
  */
 public class DynamoDbHandler implements Handler
 {
@@ -62,28 +81,9 @@ public class DynamoDbHandler implements Handler
 
    static ObjectMapper    mapper                    = new ObjectMapper();
 
-   /**
-    * a csv string of collection name | dynamo table name of allowed dynamo tables
-    * EXAMPLE:
-    * promo|promo-dev,token|token-tracker
-    */
-   String                 tablemap;
-
-   /**
-    * A csv of pipe delimited info to configure a conditional write
-    * The format is collection name | withConditionExpression | payload fields  (comma seperated)
-    * NOTE: to specify multiple payload fields you additional pipes.
-    * EXAMPLE:
-    * promo|attribute_not_exists(primarykey) OR enddate <= :enddate OR startdate < :startdate|enddate|startdate
-    * 
-    */
-   String                 conditionalWriteConf;
    String                 awsRegion                 = "us-east-1";
+   String                 tenantIdDelimiter         = "::";
 
-   //   Map<String, String>     collectionTableMap;
-   //
-   //   Map<String, String>     conditionalExpressionMap;
-   //   ListMap<String, String> conditionalExpressionFieldsMap;
    Map<String, TableInfo> collectionKeyTableInfoMap = new HashMap<>();
 
    private AmazonDynamoDB dynamoClient              = null;
@@ -93,117 +93,6 @@ public class DynamoDbHandler implements Handler
       if (dynamoClient == null)
          this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
 
-      //      if (collectionTableMap == null)
-      //      {
-      //         collectionTableMap = new HashMap<>();
-      //         if (tablemap != null)
-      //         {
-      //            String[] parts = tablemap.split(",");
-      //            for (String part : parts)
-      //            {
-      //               String[] arr = part.split("\\|");
-      //               collectionTableMap.put(arr[0], arr[1]);
-      //            }
-      //         }
-      //      }
-      //
-      //      if (conditionalExpressionMap == null)
-      //      {
-      //         conditionalExpressionMap = new HashMap<>();
-      //         conditionalExpressionFieldsMap = new ListMap<>();
-      //
-      //         if (conditionalWriteConf != null)
-      //         {
-      //            String[] parts = conditionalWriteConf.split(",");
-      //            for (String part : parts)
-      //            {
-      //               String[] arr = part.split("\\|");
-      //               String collection = arr[0];
-      //               String condition = arr[1];
-      //               conditionalExpressionMap.put(collection, condition);
-      //
-      //               if (arr.length > 2)
-      //               {
-      //                  for (int i = 2; i < arr.length; i++)
-      //                  {
-      //                     conditionalExpressionFieldsMap.put(collection, arr[i]);
-      //                  }
-      //               }
-      //            }
-      //         }
-      //
-      //      }
-
-   }
-
-   private TableInfo findOrCreateTableInfo(String collectionKey, Endpoint endpoint)
-   {
-      TableInfo tableInfo = collectionKeyTableInfoMap.get(collectionKey);
-
-      if (tableInfo == null)
-      {
-         String conditionalWriteConf = endpoint.getConfig("conditionalWriteConf");
-         Map<String, String> conditionalExpressionMap = new HashMap<>();
-         ListMap<String, String> conditionalExpressionFieldsMap = new ListMap<>();
-         if (conditionalWriteConf != null)
-         {
-            String[] parts = conditionalWriteConf.split(",");
-            for (String part : parts)
-            {
-               String[] arr = part.split("\\|");
-               String collection = arr[0];
-               String condition = arr[1];
-               conditionalExpressionMap.put(collection, condition);
-
-               if (arr.length > 2)
-               {
-                  for (int i = 2; i < arr.length; i++)
-                  {
-                     conditionalExpressionFieldsMap.put(collection, arr[i]);
-                  }
-               }
-            }
-         }
-
-         String tableMap = endpoint.getConfig("tableMap");
-
-         if (tableMap != null)
-         {
-            String[] parts = tableMap.split(",");
-            for (String part : parts)
-            {
-               String[] arr = part.split("\\|");
-
-               TableInfo ti = new TableInfo();
-               ti.collectionKey = arr[0];
-               ti.table = arr[1];
-               ti.conditionalWriteExpression = conditionalExpressionMap.get(ti.collectionKey);
-               ti.conditionalWriteExpressionFields = conditionalExpressionFieldsMap.get(ti.collectionKey);
-
-               // lookup key info
-               DynamoDB dynamoDB = new DynamoDB(dynamoClient);
-               TableDescription tableDescription = dynamoDB.getTable(ti.table).describe();
-               List<KeySchemaElement> keySchema = tableDescription.getKeySchema();
-               for (KeySchemaElement keyInfo : keySchema)
-               {
-                  if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
-                  {
-                     ti.primaryKey = keyInfo.getAttributeName();
-                  }
-                  else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
-                  {
-                     ti.sortKey = keyInfo.getAttributeName();
-                  }
-               }
-
-               collectionKeyTableInfoMap.put(ti.collectionKey, ti);
-            }
-         }
-
-         tableInfo = collectionKeyTableInfoMap.get(collectionKey);
-      }
-
-      return tableInfo;
    }
 
    @Override
@@ -219,23 +108,237 @@ public class DynamoDbHandler implements Handler
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo table is not configured for this collection key, please edit your query or your config and try again");
       }
 
-      if (chain.getRequest().isDebug())
+      if (tableInfo.typeMap.isEmpty())
       {
-         resp.debug("Dynamo Table: " + tableInfo.table + ", PK: " + tableInfo.primaryKey + ", SK: " + tableInfo.sortKey);
+         // Type map is empty, attempt to reload it (this can happen with a new empty table and a get call is made against it)
+         tableInfo.typeMap = buildTableTypeMap(tableInfo);
       }
 
+      if (chain.getRequest().isDebug())
+      {
+         resp.debug("Dynamo Table: " + tableInfo.table + ", PK: " + tableInfo.primaryKey + ", SK: " + tableInfo.sortKey + ", Type Map: " + tableInfo.typeMap);
+      }
+
+      if (req.isGet())
+      {
+         handleGet(service, api, endpoint, action, chain, req, resp, tableInfo);
+      }
       if (req.isPost())
       {
          handlePost(service, api, endpoint, action, chain, req, resp, tableInfo);
       }
-      else if (req.isGet())
+      else if (req.isDelete())
       {
-         handleGet(service, api, endpoint, action, chain, req, resp, tableInfo);
+         handleDelete(service, api, endpoint, action, chain, req, resp, tableInfo);
       }
       else
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET and POST requests");
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET, POST and DELETE requests");
       }
+   }
+
+   void handleGet(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp, TableInfo tableInfo) throws Exception
+   {
+      String nextKeyDelimeter = "~";
+      String tableName = tableInfo.table;
+      String primaryKey = tableInfo.primaryKey;
+      String sortKey = tableInfo.sortKey;
+
+      DynamoDB dynamoDB = new DynamoDB(dynamoClient);
+      Table table = dynamoDB.getTable(tableName);
+
+      int tenantId = 0;
+      if (req.getApi().isMultiTenant())
+      {
+         tenantId = Integer.parseInt(req.removeParam("tenantId"));
+      }
+
+      String pkValFromUrl = req.getSubCollectionKey();
+      if (pkValFromUrl != null)
+      {
+         req.putParam(primaryKey, pkValFromUrl);
+      }
+
+      int pageSize = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 100;
+      String next = req.removeParam("next");
+      KeyAttribute[] nextKeys = null;
+
+      if (next != null)
+      {
+         String[] sArr = next.split(nextKeyDelimeter);
+         String pk = sArr[0];
+         if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
+         {
+            pk = addTenantIdToKey(tenantId, pk);
+         }
+         KeyAttribute pkAttr = new KeyAttribute(tableInfo.primaryKey, pk);
+         nextKeys = new KeyAttribute[]{pkAttr};
+         if (sArr.length > 1)
+         {
+            KeyAttribute skAttr = new KeyAttribute(tableInfo.sortKey, sArr[1]);
+            nextKeys = new KeyAttribute[]{pkAttr, skAttr};
+         }
+      }
+
+      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), primaryKey, sortKey, tableInfo.typeMap);
+      String filterExpression = filterExpress.buildExpression();
+
+      String primaryKeyValue = null;
+      Predicate pkPred = filterExpress.getExcludedPredicate(primaryKey);
+      if (pkPred != null)
+      {
+         primaryKeyValue = pkPred.getTerms().get(1).getToken();
+         if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
+         {
+            primaryKeyValue = addTenantIdToKey(tenantId, primaryKeyValue);
+         }
+      }
+
+      List<Map> itemList = new ArrayList<>();
+
+      Map<String, AttributeValue> lastKey = null;
+
+      if (primaryKeyValue != null)
+      {
+         if (chain.getRequest().isDebug())
+         {
+            resp.debug("Query Type:   Query");
+            resp.debug("Primary Key:  " + primaryKey + " = " + primaryKeyValue);
+         }
+
+         QuerySpec querySpec = new QuerySpec()//
+                                              .withHashKey(primaryKey, primaryKeyValue)//
+                                              .withMaxPageSize(pageSize)//
+                                              .withMaxResultSize(pageSize);
+
+         Predicate skPred = filterExpress.getExcludedPredicate(sortKey);
+         if (skPred != null)
+         {
+            RangeKeyCondition rkc = predicateToRangeKeyCondition(skPred);
+            querySpec = querySpec.withRangeKeyCondition(rkc);
+
+            if (chain.getRequest().isDebug())
+            {
+               resp.debug("Sort Key:     " + rkc.getAttrName() + " " + rkc.getKeyCondition() + " " + rkc.getValues()[0]);
+            }
+         }
+
+         if (nextKeys != null)
+         {
+            querySpec = querySpec.withExclusiveStartKey(nextKeys);
+         }
+
+         if (!filterExpress.getFields().isEmpty())
+         {
+            querySpec = querySpec.withFilterExpression(filterExpression)//
+                                 .withNameMap(filterExpress.getFields())//
+                                 .withValueMap(filterExpress.getArgs());
+
+            if (chain.getRequest().isDebug())
+            {
+               resp.debug("Filter:");
+               resp.debug(filterExpression);
+               resp.debug(filterExpress.getFields());
+               resp.debug(filterArgsToString(filterExpress.getArgs()));
+            }
+         }
+
+         ItemCollection<QueryOutcome> queryResults = table.query(querySpec);
+
+         for (Item item : queryResults)
+         {
+            itemList.add(item.asMap());
+         }
+
+         if (queryResults.getLastLowLevelResult() != null)
+         {
+            lastKey = queryResults.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
+         }
+
+      }
+      else
+      {
+         if (chain.getRequest().isDebug())
+         {
+            resp.debug("Query Type:   Scan");
+         }
+
+         ScanSpec scanSpec = new ScanSpec()//
+                                           .withMaxPageSize(pageSize)//
+                                           .withMaxResultSize(pageSize);
+
+         if (!filterExpress.getFields().isEmpty())
+         {
+            scanSpec = scanSpec.withFilterExpression(filterExpression)//
+                               .withNameMap(filterExpress.getFields())//
+                               .withValueMap(filterExpress.getArgs());
+
+            if (chain.getRequest().isDebug())
+            {
+               resp.debug("Filter:");
+               resp.debug(filterExpression);
+               resp.debug(filterExpress.getFields());
+               resp.debug(filterArgsToString(filterExpress.getArgs()));
+            }
+         }
+
+         if (nextKeys != null)
+         {
+            scanSpec = scanSpec.withExclusiveStartKey(nextKeys);
+         }
+
+         ItemCollection<ScanOutcome> scanResults = table.scan(scanSpec);
+
+         for (Item item : scanResults)
+         {
+            itemList.add(item.asMap());
+         }
+
+         if (scanResults.getLastLowLevelResult() != null)
+         {
+            lastKey = scanResults.getLastLowLevelResult().getScanResult().getLastEvaluatedKey();
+         }
+
+      }
+
+      String returnNext = null;
+      if (lastKey != null && !lastKey.isEmpty())
+      {
+         returnNext = lastKey.get(tableInfo.primaryKey).getS();
+         if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
+         {
+            returnNext = removeTenantIdFromKey(tenantId, returnNext);
+         }
+
+         if (lastKey.get(tableInfo.sortKey) != null)
+         {
+            returnNext = returnNext + nextKeyDelimeter + lastKey.get(tableInfo.sortKey).getS();
+         }
+      }
+
+      JSArray returnData = new JSArray();
+      if (!itemList.isEmpty())
+      {
+         for (Map map : itemList)
+         {
+            if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
+            {
+               String pkValue = (String) map.get(primaryKey);
+               map.put(primaryKey, removeTenantIdFromKey(tenantId, pkValue));
+            }
+
+            returnData.add(new JSObject(map));
+         }
+      }
+
+      JSObject meta = new JSObject("pageSize", pageSize, "results", returnData.asList().size());
+      if (returnNext != null)
+      {
+         meta.put("next", returnNext);
+      }
+      JSObject wrapper = new JSObject("meta", meta, "data", returnData);
+      resp.setJson(wrapper);
+
    }
 
    void handlePost(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp, TableInfo tableInfo) throws Exception
@@ -272,210 +375,230 @@ public class DynamoDbHandler implements Handler
 
    }
 
-   void handleGet(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp, TableInfo tableInfo) throws Exception
+   void handleDelete(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp, TableInfo tableInfo) throws Exception
    {
-      String nextKeyDelimeter = "~";
+      String collectionKey = req.getEntityKey();
       String tableName = tableInfo.table;
-      String primaryKey = tableInfo.primaryKey;
-      String sortKey = tableInfo.sortKey;
+
+      int tenantId = 0;
+      if (req.getApi().isMultiTenant())
+      {
+         tenantId = Integer.parseInt(req.removeParam("tenantId"));
+      }
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       Table table = dynamoDB.getTable(tableName);
 
-      String pkValFromUrl = req.getSubCollectionKey();
-      if (pkValFromUrl != null)
+      //
+      //      // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
+      //      Object payloadObj = jsonStringToObject(req.getBody());
+      //
+      //      if (payloadObj instanceof List)
+      //      {
+      //         List l = (List) payloadObj;
+      //         for (Object obj : l)
+      //         {
+      //            putMapToDynamo((Map) obj, table, collectionKey, req.getApi().isMultiTenant(), tenantId, tableInfo);
+      //         }
+      //      }
+      //      else if (payloadObj instanceof Map)
+      //      {
+      //         putMapToDynamo((Map) payloadObj, table, collectionKey, req.getApi().isMultiTenant(), tenantId, tableInfo);
+      //      }
+
+      resp.setStatus(SC.SC_200_OK);
+
+   }
+
+   private TableInfo findOrCreateTableInfo(String collectionKey, Endpoint endpoint)
+   {
+      TableInfo tableInfo = collectionKeyTableInfoMap.get(collectionKey);
+
+      if (tableInfo == null)
       {
-         req.putParam(primaryKey, pkValFromUrl);
-      }
-
-      int pageSize = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 100;
-      String next = req.removeParam("next");
-      String nextPkName = null;
-      Object nextPkVal = null;
-
-      if (next != null)
-      {
-         String[] sArr = next.split(nextKeyDelimeter);
-         nextPkName = sArr[0];
-         nextPkVal = sArr[1];
-
-         if (sArr[1].startsWith("n:"))
+         String conditionalWriteConf = endpoint.getConfig("conditionalWriteConf");
+         Map<String, String> conditionalExpressionMap = new HashMap<>();
+         ListMap<String, String> conditionalExpressionFieldsMap = new ListMap<>();
+         if (conditionalWriteConf != null)
          {
-            nextPkVal = Integer.parseInt(sArr[1].substring(2));
-         }
-      }
-
-      //////
-      ScanSpec scanSpec2 = new ScanSpec()//
-                                         .withMaxPageSize(1)//
-                                         .withMaxResultSize(1);
-
-      ItemCollection<ScanOutcome> scanResults2 = table.scan(scanSpec2);
-      Map<String, Class> typeMap = new HashMap<>();
-      for (Item item : scanResults2)
-      {
-         Map<String, Object> m = item.asMap();
-         for (String k : m.keySet())
-         {
-            Object obj = m.get(k);
-            if (obj instanceof Number)
+            String[] parts = conditionalWriteConf.split(",");
+            for (String part : parts)
             {
-               typeMap.put(k, Number.class);
+               String[] arr = part.split("\\|");
+               String collection = arr[0];
+               String condition = arr[1];
+               conditionalExpressionMap.put(collection, condition);
+
+               if (arr.length > 2)
+               {
+                  for (int i = 2; i < arr.length; i++)
+                  {
+                     conditionalExpressionFieldsMap.put(collection, arr[i]);
+                  }
+               }
             }
-            else if (obj instanceof Boolean)
-            {
-               typeMap.put(k, Boolean.class);
-            }
-            else
-            {
-               typeMap.put(k, String.class);
-            }
-         }
-      }
-      ///////
-
-     // req.removeParam("tenantId");
-
-      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), primaryKey, sortKey);
-      String filterExpression = filterExpress.buildExpression();
-
-      String primaryKeyValue = null;
-      Predicate pkPred = filterExpress.getExcludedPredicate(primaryKey);
-      if (pkPred != null)
-      {
-         primaryKeyValue = pkPred.getTerms().get(1).getToken();
-      }
-
-      JSArray returnData = new JSArray();
-      Map<String, AttributeValue> lastKey = null;
-
-      if (primaryKeyValue != null)
-      {
-         if (chain.getRequest().isDebug())
-         {
-            resp.debug("Query Type:   Query");
-            resp.debug("Primary Key:  " + primaryKey + " = " + primaryKeyValue);
          }
 
+         String blueprintRow = endpoint.getConfig("blueprintRow");
+         Map<String, String[]> blueprintRowMap = new HashMap<>();
+         if (blueprintRow != null)
+         {
+            String[] parts = blueprintRow.split(",");
+            for (String part : parts)
+            {
+               String[] arr = part.split("\\|");
+               String collection = arr[0];
+               blueprintRowMap.put(collection, arr);
+            }
+         }
+
+         String appendTenantIdToPk = endpoint.getConfig("appendTenantIdToPk");
+         List<String> appendTenantIdToPkList = new ArrayList<>();
+         if (appendTenantIdToPk != null)
+         {
+            String[] parts = appendTenantIdToPk.split(",");
+            appendTenantIdToPkList.addAll(Arrays.asList(parts));
+         }
+
+         String tableMap = endpoint.getConfig("tableMap");
+
+         if (tableMap != null)
+         {
+            String[] parts = tableMap.split(",");
+            for (String part : parts)
+            {
+               String[] arr = part.split("\\|");
+
+               TableInfo ti = new TableInfo();
+               ti.collectionKey = arr[0];
+               ti.table = arr[1];
+               ti.conditionalWriteExpression = conditionalExpressionMap.get(ti.collectionKey);
+               ti.conditionalWriteExpressionFields = conditionalExpressionFieldsMap.get(ti.collectionKey);
+               ti.appendTenantIdToPk = appendTenantIdToPkList.contains(ti.collectionKey);
+
+               String[] bpArr = blueprintRowMap.get(ti.collectionKey);
+               if (bpArr != null && bpArr.length >= 2)
+               {
+                  ti.bluePrintPK = bpArr[1];
+                  if (bpArr.length == 3)
+                     ti.bluePrintSK = bpArr[2];
+               }
+
+               // lookup key info
+               DynamoDB dynamoDB = new DynamoDB(dynamoClient);
+               TableDescription tableDescription = dynamoDB.getTable(ti.table).describe();
+               List<KeySchemaElement> keySchema = tableDescription.getKeySchema();
+               for (KeySchemaElement keyInfo : keySchema)
+               {
+                  if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
+                  {
+                     ti.primaryKey = keyInfo.getAttributeName();
+                  }
+                  else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+                  {
+                     ti.sortKey = keyInfo.getAttributeName();
+                  }
+               }
+
+               ti.typeMap = buildTableTypeMap(ti);
+
+               collectionKeyTableInfoMap.put(ti.collectionKey, ti);
+            }
+         }
+
+         tableInfo = collectionKeyTableInfoMap.get(collectionKey);
+      }
+
+      return tableInfo;
+   }
+
+   /**
+    * This is needed since DynamoDB is schema-less and has no meta data methods that will
+    * return all the known columns and data types for the columns.
+    * 
+    * As a work-around, this method will either grab a row in the table and use the fields and types
+    * from that record to produce a typeMap for the TableInfo object.
+    * 
+    * The default behavior is to just grab the first row in the table to use as the "blue print" row.
+    * 
+    * If new columns are added to the table in the future and you need to use a different row for the "blue print"
+    * you can configure a primary key and sort key (if needed) to specify what row should be used.
+    * 
+    * @param tableInfo
+    * @param bluePrintConfig
+    * @return Map<String, String>
+    */
+   Map<String, String> buildTableTypeMap(TableInfo tableInfo)
+   {
+      Map<String, String> typeMap = new HashMap<>();
+      DynamoDB dynamoDB = new DynamoDB(dynamoClient);
+      Table table = dynamoDB.getTable(tableInfo.table);
+
+      Map<String, Object> bluePrintMap = null;
+
+      if (tableInfo.bluePrintPK != null)
+      {
          QuerySpec querySpec = new QuerySpec()//
-                                              .withHashKey(primaryKey, primaryKeyValue)//
-                                              .withMaxPageSize(pageSize)//
-                                              .withMaxResultSize(pageSize);
-
-         Predicate skPred = filterExpress.getExcludedPredicate(sortKey);
-         if (skPred != null)
+                                              .withHashKey(tableInfo.primaryKey, tableInfo.bluePrintPK)//
+                                              .withMaxPageSize(1)//
+                                              .withMaxResultSize(1);
+         if (tableInfo.bluePrintSK != null)
          {
-            RangeKeyCondition rkc = predicateToRangeKeyCondition(skPred);
-            querySpec = querySpec.withRangeKeyCondition(rkc);
-
-            if (chain.getRequest().isDebug())
-            {
-               resp.debug("Sort Key:     " + rkc.getAttrName() + " " + rkc.getKeyCondition() + " " + rkc.getValues()[0]);
-            }
-         }
-
-         if (nextPkName != null && nextPkVal != null)
-         {
-            querySpec = querySpec.withExclusiveStartKey(nextPkName, nextPkVal);
-         }
-
-         if (!filterExpress.getFields().isEmpty())
-         {
-            querySpec = querySpec.withFilterExpression(filterExpression)//
-                                 .withNameMap(filterExpress.getFields())//
-                                 .withValueMap(filterExpress.getArgs());
-
-            if (chain.getRequest().isDebug())
-            {
-               resp.debug("Filter:");
-               resp.debug(filterExpression);
-               resp.debug(filterExpress.getFields());
-               resp.debug(filterExpress.getArgs());
-            }
+            querySpec = querySpec.withRangeKeyCondition(new RangeKeyCondition(tableInfo.sortKey).eq(tableInfo.bluePrintSK));
          }
 
          ItemCollection<QueryOutcome> queryResults = table.query(querySpec);
 
          for (Item item : queryResults)
          {
-            returnData.add(new JSObject(item.asMap()));
-         }
-
-         if (queryResults.getLastLowLevelResult() != null)
-         {
-            lastKey = queryResults.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
+            bluePrintMap = item.asMap();
          }
 
       }
       else
       {
-         if (chain.getRequest().isDebug())
-         {
-            resp.debug("Query Type:   Scan");
-         }
-
          ScanSpec scanSpec = new ScanSpec()//
-                                           .withMaxPageSize(pageSize)//
-                                           .withMaxResultSize(pageSize);
-
-         if (!filterExpress.getFields().isEmpty())
-         {
-            scanSpec = scanSpec.withFilterExpression(filterExpression)//
-                               .withNameMap(filterExpress.getFields())//
-                               .withValueMap(filterExpress.getArgs());
-
-            if (chain.getRequest().isDebug())
-            {
-               resp.debug("Filter:");
-               resp.debug(filterExpression);
-               resp.debug(filterExpress.getFields());
-               resp.debug(filterExpress.getArgs());
-            }
-         }
-
-         if (nextPkName != null && nextPkVal != null)
-         {
-            scanSpec = scanSpec.withExclusiveStartKey(nextPkName, nextPkVal);
-         }
+                                           .withMaxPageSize(1)//
+                                           .withMaxResultSize(1);
 
          ItemCollection<ScanOutcome> scanResults = table.scan(scanSpec);
-
          for (Item item : scanResults)
          {
-            returnData.add(new JSObject(item.asMap()));
+            bluePrintMap = item.asMap();
          }
-
-         if (scanResults.getLastLowLevelResult() != null)
-         {
-            lastKey = scanResults.getLastLowLevelResult().getScanResult().getLastEvaluatedKey();
-         }
-
       }
 
-      String returnNext = null;
-      if (lastKey != null && !lastKey.isEmpty())
+      if (bluePrintMap != null)
       {
-         for (String k : lastKey.keySet())
+         for (String k : bluePrintMap.keySet())
          {
-            if (lastKey.get(k).getS() != null)
-            {
-               returnNext = k + nextKeyDelimeter + lastKey.get(k).getS();
-            }
-            else if (lastKey.get(k).getN() != null)
-            {
-               returnNext = k + nextKeyDelimeter + lastKey.get(k).getN();
-            }
+            Object obj = bluePrintMap.get(k);
+            typeMap.put(k, getTypeStringFromObject(obj));
          }
       }
 
-      JSObject meta = new JSObject("pageSize", pageSize, "results", returnData.asList().size());
-      if (returnNext != null)
-      {
-         meta.put("next", returnNext);
-      }
-      JSObject wrapper = new JSObject("meta", meta, "data", returnData);
-      resp.setJson(wrapper);
+      return typeMap;
 
+   }
+
+   /*
+    * These match the string that dynamo uses for these types.
+    * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
+    */
+   String getTypeStringFromObject(Object obj)
+   {
+      if (obj instanceof Number)
+      {
+         return "N";
+      }
+      else if (obj instanceof Boolean)
+      {
+         return "BOOL";
+      }
+      else
+      {
+         return "S";
+      }
    }
 
    void putMapToDynamo(Map json, Table table, String collectionKey, boolean isMultiTenant, int tenantId, TableInfo tableInfo)
@@ -490,6 +613,13 @@ public class DynamoDbHandler implements Handler
          if (isMultiTenant)
          {
             m.put("tenantid", tenantId);
+
+            if (tableInfo.appendTenantIdToPk)
+            {
+               // add the tenantCode to the primary key
+               String pk = (String) m.get(tableInfo.primaryKey);
+               m.put(tableInfo.primaryKey, addTenantIdToKey(tenantId, pk));
+            }
          }
          Item item = Item.fromMap(m);
 
@@ -520,6 +650,21 @@ public class DynamoDbHandler implements Handler
       }
    }
 
+   String addTenantIdToKey(int tenantId, String key)
+   {
+      return tenantId + tenantIdDelimiter + key;
+   }
+
+   String removeTenantIdFromKey(int tenantId, String key)
+   {
+      if (key != null)
+      {
+         int preLength = (tenantId + tenantIdDelimiter).length();
+         return key.substring(preLength);
+      }
+      return key;
+   }
+
    boolean predicatesContainField(List<Predicate> predicates, String field)
    {
       if (predicates != null)
@@ -543,7 +688,7 @@ public class DynamoDbHandler implements Handler
       return false;
    }
 
-   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, String primaryKeyField, String sortKeyField) throws Exception
+   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, String primaryKeyField, String sortKeyField, Map<String, String> typeMap) throws Exception
    {
       RQL rql = new RQL("elastic");
       QueryDsl queryDsl = rql.toQueryDsl(requestParams);
@@ -556,7 +701,7 @@ public class DynamoDbHandler implements Handler
          excludeList.add(sortKeyField);
       }
 
-      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(), "and", excludeList, 0);
+      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(typeMap), "and", excludeList, 0);
    }
 
    FilterExpressionAndArgs buildFilterExpressionFromPredicates(List<Predicate> predicates, FilterExpressionAndArgs express, String andOr, List<String> excludes, int depth) throws Exception
@@ -580,7 +725,7 @@ public class DynamoDbHandler implements Handler
             }
             else
             {
-               if (cnt - excludeCnt > 0 && cnt < predicates.size() - excludeCnt)
+               if (cnt - excludeCnt > 0 && cnt < predicates.size())
                {
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -589,7 +734,7 @@ public class DynamoDbHandler implements Handler
 
                if (FilterExpressionAndArgs.isKnownOperator(pred.getToken()))
                {
-                  Object val = convertValueTypeIfNeeded(pred.getTerms().get(1).getToken(), name, pred.getToken());
+                  Object val = express.cast(pred.getTerms().get(1).getToken(), name, pred.getToken());
 
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -597,7 +742,7 @@ public class DynamoDbHandler implements Handler
                }
                else if (FilterExpressionAndArgs.isKnownFunction(pred.getToken()))
                {
-                  Object val = convertValueTypeIfNeeded(pred.getTerms().get(1).getToken(), name, pred.getToken());
+                  Object val = express.cast(pred.getTerms().get(1).getToken(), name, pred.getToken());
 
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -625,36 +770,26 @@ public class DynamoDbHandler implements Handler
       return express;
    }
 
-   Object convertValueTypeIfNeeded(String value, String name, String operator)
+   String filterArgsToString(Map<String, Object> args)
    {
-      List<String> numberOperators = new ArrayList<>(Arrays.asList("gt", "ge", "lt", "le"));
+      if (args != null)
+      {
+         String s = "{";
+         int cnt = 0;
+         for (String k : args.keySet())
+         {
+            s = s + k + "=" + args.get(k) + " (" + getTypeStringFromObject(args.get(k)) + ")";
+            if (cnt < args.keySet().size() - 1)
+            {
+               s = s + ", ";
+            }
 
-      if (name.equalsIgnoreCase("tenantid"))
-      {
-         return Integer.parseInt(value);
+            cnt++;
+         }
+         s = s + "}";
+         return s;
       }
-      else if (numberOperators.contains(operator))
-      {
-         try
-         {
-            return Long.parseLong(value);
-         }
-         catch (NumberFormatException nfe)
-         {
-         }
-      }
-      else if (value.startsWith("n:"))
-      {
-         try
-         {
-            return Long.parseLong(value.substring(2));
-         }
-         catch (NumberFormatException nfe)
-         {
-         }
-      }
-
-      return Parser.dequote(value);
+      return "null";
    }
 
    RangeKeyCondition predicateToRangeKeyCondition(Predicate pred)
@@ -711,14 +846,28 @@ public class DynamoDbHandler implements Handler
       return m;
    }
 
+   public void setAwsRegion(String awsRegion)
+   {
+      this.awsRegion = awsRegion;
+   }
+
+   public void setTenantIdDelimiter(String tenantIdDelimiter)
+   {
+      this.tenantIdDelimiter = tenantIdDelimiter;
+   }
+
    static class TableInfo
    {
-      String       collectionKey;
-      String       table;
-      String       primaryKey;
-      String       sortKey;
-      String       conditionalWriteExpression;
-      List<String> conditionalWriteExpressionFields;
+      String              collectionKey;
+      String              table;
+      String              primaryKey;
+      String              sortKey;
+      String              conditionalWriteExpression;
+      List<String>        conditionalWriteExpressionFields;
+      Map<String, String> typeMap;
+      String              bluePrintPK;
+      String              bluePrintSK;
+      boolean             appendTenantIdToPk = false;
    }
 
    static class FilterExpressionAndArgs
@@ -738,13 +887,21 @@ public class DynamoDbHandler implements Handler
          FUNCTION_MAP.put("sw", "begins_with");
       }
 
+      Map<String, String>    typeMap;
+
       int                    fieldCnt           = 0;
       int                    argCnt             = 0;
       StringBuilder          buffer             = new StringBuilder();
-      Map<String, String>    fields             = new HashMap<>();
-      Map<String, Object>    args               = new HashMap<>();
+      Map<String, String>    fields             = new LinkedHashMap<>();
+      Map<String, Object>    args               = new LinkedHashMap<>();
 
       Map<String, Predicate> excludedPredicates = new HashMap<>();
+
+      public FilterExpressionAndArgs(Map<String, String> typeMap)
+      {
+         super();
+         this.typeMap = typeMap;
+      }
 
       String nextFieldName()
       {
@@ -809,6 +966,26 @@ public class DynamoDbHandler implements Handler
             s = s + "  ";
          }
          return s;
+      }
+
+      Object cast(String value, String name, String operator)
+      {
+         String type = this.typeMap.get(name);
+
+         if (type != null)
+         {
+            switch (type)
+            {
+               case "N":
+                  return Long.parseLong(value);
+
+               case "BOOL":
+                  return Boolean.parseBoolean(value);
+
+            }
+         }
+
+         return Parser.dequote(value);
       }
 
       public Map<String, Object> getArgs()
