@@ -24,9 +24,11 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
@@ -108,7 +110,7 @@ public class DynamoDbHandler implements Handler
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo table is not configured for this collection key, please edit your query or your config and try again");
       }
 
-      if (tableInfo.typeMap.isEmpty())
+      if (tableInfo.typeMap.isEmpty() || req.removeParam("refresh-types") != null)
       {
          // Type map is empty, attempt to reload it (this can happen with a new empty table and a get call is made against it)
          tableInfo.typeMap = buildTableTypeMap(tableInfo);
@@ -123,7 +125,7 @@ public class DynamoDbHandler implements Handler
       {
          handleGet(service, api, endpoint, action, chain, req, resp, tableInfo);
       }
-      if (req.isPost())
+      else if (req.isPost())
       {
          handlePost(service, api, endpoint, action, chain, req, resp, tableInfo);
       }
@@ -175,12 +177,12 @@ public class DynamoDbHandler implements Handler
          nextKeys = new KeyAttribute[]{pkAttr};
          if (sArr.length > 1)
          {
-            KeyAttribute skAttr = new KeyAttribute(tableInfo.sortKey, sArr[1]);
+            KeyAttribute skAttr = new KeyAttribute(tableInfo.sortKey, tableInfo.cast(sArr[1], tableInfo.sortKey));
             nextKeys = new KeyAttribute[]{pkAttr, skAttr};
          }
       }
 
-      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), primaryKey, sortKey, tableInfo.typeMap);
+      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), primaryKey, sortKey, tableInfo);
       String filterExpression = filterExpress.buildExpression();
 
       String primaryKeyValue = null;
@@ -214,7 +216,7 @@ public class DynamoDbHandler implements Handler
          Predicate skPred = filterExpress.getExcludedPredicate(sortKey);
          if (skPred != null)
          {
-            RangeKeyCondition rkc = predicateToRangeKeyCondition(skPred);
+            RangeKeyCondition rkc = predicateToRangeKeyCondition(skPred, tableInfo);
             querySpec = querySpec.withRangeKeyCondition(rkc);
 
             if (chain.getRequest().isDebug())
@@ -312,7 +314,8 @@ public class DynamoDbHandler implements Handler
 
          if (lastKey.get(tableInfo.sortKey) != null)
          {
-            returnNext = returnNext + nextKeyDelimeter + lastKey.get(tableInfo.sortKey).getS();
+            String sortKeyVal = attributeValueAsString(lastKey.get(tableInfo.sortKey), tableInfo.sortKey, tableInfo.typeMap);
+            returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
       }
 
@@ -377,34 +380,30 @@ public class DynamoDbHandler implements Handler
 
    void handleDelete(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp, TableInfo tableInfo) throws Exception
    {
-      String collectionKey = req.getEntityKey();
-      String tableName = tableInfo.table;
-
       int tenantId = 0;
       if (req.getApi().isMultiTenant())
       {
          tenantId = Integer.parseInt(req.removeParam("tenantId"));
       }
 
-      DynamoDB dynamoDB = new DynamoDB(dynamoClient);
-      Table table = dynamoDB.getTable(tableName);
+      // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
+      Object payloadObj = jsonStringToObject(req.getBody());
 
-      //
-      //      // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
-      //      Object payloadObj = jsonStringToObject(req.getBody());
-      //
-      //      if (payloadObj instanceof List)
-      //      {
-      //         List l = (List) payloadObj;
-      //         for (Object obj : l)
-      //         {
-      //            putMapToDynamo((Map) obj, table, collectionKey, req.getApi().isMultiTenant(), tenantId, tableInfo);
-      //         }
-      //      }
-      //      else if (payloadObj instanceof Map)
-      //      {
-      //         putMapToDynamo((Map) payloadObj, table, collectionKey, req.getApi().isMultiTenant(), tenantId, tableInfo);
-      //      }
+      DynamoDB dynamoDB = new DynamoDB(dynamoClient);
+      Table table = dynamoDB.getTable(tableInfo.table);
+
+      if (payloadObj instanceof List)
+      {
+         List l = (List) payloadObj;
+         for (Object obj : l)
+         {
+            deleteMapFromDynamo((Map) obj, table, api.isMultiTenant(), tenantId, tableInfo);
+         }
+      }
+      else if (payloadObj instanceof Map)
+      {
+         deleteMapFromDynamo((Map) payloadObj, table, api.isMultiTenant(), tenantId, tableInfo);
+      }
 
       resp.setStatus(SC.SC_200_OK);
 
@@ -585,7 +584,7 @@ public class DynamoDbHandler implements Handler
     * These match the string that dynamo uses for these types.
     * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
     */
-   String getTypeStringFromObject(Object obj)
+   static String getTypeStringFromObject(Object obj)
    {
       if (obj instanceof Number)
       {
@@ -599,6 +598,26 @@ public class DynamoDbHandler implements Handler
       {
          return "S";
       }
+   }
+
+   static String attributeValueAsString(AttributeValue attr, String name, Map<String, String> typeMap)
+   {
+      String type = typeMap.get(name);
+
+      if (type != null)
+      {
+         switch (type)
+         {
+            case "N":
+               return attr.getN();
+
+            case "BOOL":
+               return attr.getBOOL().toString();
+
+         }
+      }
+
+      return attr.getS();
    }
 
    void putMapToDynamo(Map json, Table table, String collectionKey, boolean isMultiTenant, int tenantId, TableInfo tableInfo)
@@ -650,6 +669,59 @@ public class DynamoDbHandler implements Handler
       }
    }
 
+   void deleteMapFromDynamo(Map json, Table table, boolean isMultiTenant, int tenantId, TableInfo tableInfo)
+   {
+      try
+      {
+         Map m = new HashMap<>(json);
+
+         KeyAttribute[] keys = null;
+
+         if (!m.containsKey(tableInfo.primaryKey) || (tableInfo.sortKey != null && !m.containsKey(tableInfo.sortKey)))
+         {
+            String msg = "The JSON body must contain a '" + tableInfo.primaryKey + "' field";
+            if (tableInfo.sortKey != null)
+            {
+               msg = msg + " and a '" + tableInfo.sortKey + "' field.";
+            }
+
+            throw new ApiException(SC.SC_400_BAD_REQUEST, msg);
+         }
+
+         String pk = (String) m.get(tableInfo.primaryKey);
+         if (isMultiTenant && tableInfo.appendTenantIdToPk)
+         {
+            pk = addTenantIdToKey(tenantId, pk);
+         }
+         KeyAttribute pkAttr = new KeyAttribute(tableInfo.primaryKey, pk);
+         keys = new KeyAttribute[]{pkAttr};
+         if (tableInfo.sortKey != null)
+         {
+            KeyAttribute skAttr = new KeyAttribute(tableInfo.sortKey, m.get(tableInfo.sortKey));
+            keys = new KeyAttribute[]{pkAttr, skAttr};
+         }
+
+         DeleteItemSpec spec = new DeleteItemSpec()//
+                                                   .withPrimaryKey(keys);
+
+         if (isMultiTenant)
+         {
+            spec = spec.withConditionExpression("tenantid = :val")//
+                       .withValueMap(new ValueMap().withNumber(":val", tenantId));
+         }
+
+         table.deleteItem(spec);
+      }
+      catch (ConditionalCheckFailedException ccfe)
+      {
+         // catch this and do nothing.
+         // this just means the that conditional check wasn't satisfied
+         // so the record was not deleted
+         // This is probably because the the record doesn't exist
+      }
+
+   }
+
    String addTenantIdToKey(int tenantId, String key)
    {
       return tenantId + tenantIdDelimiter + key;
@@ -688,7 +760,7 @@ public class DynamoDbHandler implements Handler
       return false;
    }
 
-   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, String primaryKeyField, String sortKeyField, Map<String, String> typeMap) throws Exception
+   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, String primaryKeyField, String sortKeyField, TableInfo tableInfo) throws Exception
    {
       RQL rql = new RQL("elastic");
       QueryDsl queryDsl = rql.toQueryDsl(requestParams);
@@ -701,7 +773,7 @@ public class DynamoDbHandler implements Handler
          excludeList.add(sortKeyField);
       }
 
-      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(typeMap), "and", excludeList, 0);
+      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(tableInfo), "and", excludeList, 0);
    }
 
    FilterExpressionAndArgs buildFilterExpressionFromPredicates(List<Predicate> predicates, FilterExpressionAndArgs express, String andOr, List<String> excludes, int depth) throws Exception
@@ -734,7 +806,7 @@ public class DynamoDbHandler implements Handler
 
                if (FilterExpressionAndArgs.isKnownOperator(pred.getToken()))
                {
-                  Object val = express.cast(pred.getTerms().get(1).getToken(), name, pred.getToken());
+                  String val = pred.getTerms().get(1).getToken();
 
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -742,7 +814,7 @@ public class DynamoDbHandler implements Handler
                }
                else if (FilterExpressionAndArgs.isKnownFunction(pred.getToken()))
                {
-                  Object val = express.cast(pred.getTerms().get(1).getToken(), name, pred.getToken());
+                  String val = pred.getTerms().get(1).getToken();
 
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -792,10 +864,10 @@ public class DynamoDbHandler implements Handler
       return "null";
    }
 
-   RangeKeyCondition predicateToRangeKeyCondition(Predicate pred)
+   RangeKeyCondition predicateToRangeKeyCondition(Predicate pred, TableInfo tableInfo)
    {
       String name = pred.getTerms().get(0).getToken();
-      Object val = pred.getTerms().get(1).getToken();
+      Object val = tableInfo.cast((String) pred.getTerms().get(1).getToken(), name);
 
       RangeKeyCondition rkc = new RangeKeyCondition(name);
       switch (pred.getToken())
@@ -868,6 +940,27 @@ public class DynamoDbHandler implements Handler
       String              bluePrintPK;
       String              bluePrintSK;
       boolean             appendTenantIdToPk = false;
+
+      Object cast(String value, String name)
+      {
+         String type = typeMap.get(name);
+
+         if (type != null)
+         {
+            switch (type)
+            {
+               case "N":
+                  return Long.parseLong(value);
+
+               case "BOOL":
+                  return Boolean.parseBoolean(value);
+
+            }
+         }
+
+         return Parser.dequote(value);
+      }
+
    }
 
    static class FilterExpressionAndArgs
@@ -887,7 +980,7 @@ public class DynamoDbHandler implements Handler
          FUNCTION_MAP.put("sw", "begins_with");
       }
 
-      Map<String, String>    typeMap;
+      TableInfo              tableInfo;
 
       int                    fieldCnt           = 0;
       int                    argCnt             = 0;
@@ -897,10 +990,10 @@ public class DynamoDbHandler implements Handler
 
       Map<String, Predicate> excludedPredicates = new HashMap<>();
 
-      public FilterExpressionAndArgs(Map<String, String> typeMap)
+      public FilterExpressionAndArgs(TableInfo tableInfo)
       {
          super();
-         this.typeMap = typeMap;
+         this.tableInfo = tableInfo;
       }
 
       String nextFieldName()
@@ -925,22 +1018,22 @@ public class DynamoDbHandler implements Handler
          return FUNCTION_MAP.containsKey(func);
       }
 
-      public void appendOperatorExpression(String token, String field, Object val)
+      public void appendOperatorExpression(String token, String field, String val)
       {
          String fieldName = nextFieldName();
          String argName = nextArgName();
          buffer.append(fieldName + " " + OPERATOR_MAP.get(token) + " " + argName);
          fields.put(fieldName, field);
-         args.put(argName, val);
+         args.put(argName, tableInfo.cast(val, field));
       }
 
-      public void appendFunctionExpression(String token, String field, Object val)
+      public void appendFunctionExpression(String token, String field, String val)
       {
          String fieldName = nextFieldName();
          String argName = nextArgName();
          buffer.append(FUNCTION_MAP.get(token) + "(" + fieldName + ", " + argName + ")");
          fields.put(fieldName, field);
-         args.put(argName, val);
+         args.put(argName, tableInfo.cast(val, field));
       }
 
       public void appendSpaces(int depth)
@@ -966,26 +1059,6 @@ public class DynamoDbHandler implements Handler
             s = s + "  ";
          }
          return s;
-      }
-
-      Object cast(String value, String name, String operator)
-      {
-         String type = this.typeMap.get(name);
-
-         if (type != null)
-         {
-            switch (type)
-            {
-               case "N":
-                  return Long.parseLong(value);
-
-               case "BOOL":
-                  return Boolean.parseBoolean(value);
-
-            }
-         }
-
-         return Parser.dequote(value);
       }
 
       public Map<String, Object> getArgs()
