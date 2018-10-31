@@ -773,7 +773,18 @@ public class DynamoDbHandler implements Handler
          excludeList.add(sortKeyField);
       }
 
-      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(tableInfo), "and", excludeList, 0);
+      String andOr = "and";
+      if (predicates.size() == 1)
+      {
+         if (predicates.get(0).getToken().equalsIgnoreCase("and") || predicates.get(0).getToken().equalsIgnoreCase("or"))
+         {
+            andOr = predicates.get(0).getToken();
+            Predicate pred = predicates.get(0);
+            predicates = pred.getTerms();
+         }
+      }
+
+      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(tableInfo), andOr, excludeList, 0);
    }
 
    FilterExpressionAndArgs buildFilterExpressionFromPredicates(List<Predicate> predicates, FilterExpressionAndArgs express, String andOr, List<String> excludes, int depth) throws Exception
