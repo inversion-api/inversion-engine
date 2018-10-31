@@ -25,46 +25,46 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.collections.map.CaseInsensitiveMap;
-
 import io.forty11.j.J;
 import io.forty11.web.Url;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
+import io.rcktapp.utils.CaseInsensitiveLookupMap;
 
 public class Request
 {
-   Url                url              = null;
-   HttpServletRequest request          = null;
+   Url                      url              = null;
+   HttpServletRequest       request          = null;
 
-   String             apiUrl           = null;
-   Api                api              = null;
+   String                   apiUrl           = null;
+   Api                      api              = null;
 
-   String             accountCode      = null;
-   String             apiCode          = null;
-   String             tenantCode       = null;
+   String                   accountCode      = null;
+   String                   apiCode          = null;
+   String                   tenantCode       = null;
 
-   User               user             = null;
+   User                     user             = null;
 
-   String             referrer         = null;
+   String                   referrer         = null;
 
-   String             method           = null;
+   String                   method           = null;
 
-   String             path             = null;
+   String                   path             = null;
 
-   String             collectionKey    = null;
-   String             entityKey        = null;
-   String             subCollectionKey = null;
+   String                   collectionKey    = null;
+   String                   entityKey        = null;
+   String                   subCollectionKey = null;
 
-   String             body             = null;
-   JSObject           json             = null;
+   String                   body             = null;
+   JSObject                 json             = null;
 
-   boolean            browse           = false;
+   boolean                  browse           = false;
 
-   boolean            explain          = false;
+   boolean                  explain          = false;
 
-   CaseInsensitiveMap params           = new CaseInsensitiveMap();
+   //CaseInsensitiveMap params           = new CaseInsensitiveMap();
+   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
 
    public Request(HttpServletRequest req, String method, Url url, Api api, String apiUrl)
    {
@@ -287,7 +287,7 @@ public class Request
 
    public Map<String, String> getParams()
    {
-      return new CaseInsensitiveMap(params);
+      return new CaseInsensitiveLookupMap(params);
    }
 
    public String removeParam(String param)

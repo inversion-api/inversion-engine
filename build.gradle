@@ -59,6 +59,7 @@ dependencies {
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
 	
 	compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
+	compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
 	
 	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
 	compile 'org.postgresql:postgresql:42.1.4'
