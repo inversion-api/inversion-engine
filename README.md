@@ -46,6 +46,34 @@
 * and(clause1,clause2,[...clauseN) - "where (clause1 AND clause2 AND clauseN)"
 * or(clause1,clause2,[...clauseN) - "where (clause1 OR clause2 OR clauseN)"
 
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ column=value                     | :heavy_check_mark:  | :grey_question:     | :grey_question:    | translates as expected into a sql column equality check "column = value" 
+ column='singleTicks'             | :heavy_check_mark:  | :grey_question:     | :grey_question:    | 'values can have spaces with encapsulated in quotes'
+ column="doubleQuotes"            | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "double or single quotes work"
+ column=" ' "                     | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "the first quote type wins so a single quote like ' inside of double quotes is considered a literal"
+ column=" \" "                    | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "you can also \" escape quotes with a backslash"
+ column=wild*card                 | :heavy_check_mark:  | :grey_question:     | :grey_question:    | something*blah - translates into "column LIKE 'something%blah'"
+ eq(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | alternate form of column=value
+ gt(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | greater than query filter eg: "column < value"
+ ge(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | greater than or equal to
+ lt(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | less than filter
+ le(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | less than or equal to
+ ne(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | not equal
+ in(column,val1,[val2...valN])    | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column in (val1,....valN)"
+ out(column,val1,[val2...valN])   | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column NOT in (val1,....valN)"
+ and(clause1,clause2,[...clauseN) | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | "where (clause1 AND clause2 AND clauseN)"
+ or(clause1,clause2,[...clauseN)  | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | "where (clause1 OR clause2 OR clauseN)"
+ emp(column)                      | :grey_question:     | :heavy_check_mark:  |                    | retrieves empty rows for a column value. null or empty string values will be retrieved
+ nemp(column)                     | :grey_question:     | :heavy_check_mark:  |                    | retrieves all rows that do not contain an empty string or null value for a specified column
+ n(column)                        | :grey_question:     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that contain a null value for a specified column
+ nn(column)                       | :grey_question:     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that do not contain a null value for a specified column
+ w(column,[value])                |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows 'with' that wildcarded value in the specified column
+ ew(column,[value])               |                     | :heavy_check_mark:  |                    | retrieves all rows that 'end with' that wildcarded value in the specified column
+ sw(column,[value])               |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column
+
+ 
+
 ### Sorting / Ordering
 
 * sort=col1,+col2,-col3,colN OR sort(col1,[...colN]).  Use of the + operator is the implied default.
