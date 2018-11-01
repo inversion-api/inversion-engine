@@ -147,10 +147,10 @@ Currently, the following functions are available for use:
 * `ge(column,value)` - greater than or equal to
 * `lt(column,value)` - less than filter
 * `le(column,value)` - less than or equal to
-* `w(column,[value])` - retrieves all rows 'with' that wildcarded value in the specified column *(dynamo: contains)*
-* `sw(column,[value])` - retrieves all rows that 'start with' that wildcarded value in the specified column *(dynamo: begins_with)*
-* `n(column)` - retrieves all rows that **do not** have a specific column *(dynamo: attribute_not_exists)*
-* `nn(column)` - retrieves all rows that **do** have a specific column *(dynamo: attribute_exists)*
+* `w(column,value)` - retrieves all rows 'with' that wildcarded value in the specified column *contains*
+* `sw(column,value)` - retrieves all rows that 'start with' that wildcarded value in the specified column *begins_with*
+* `n(column)` - retrieves all rows that **do not** have a specific column *attribute_not_exists*
+* `nn(column)` - retrieves all rows that **do** have a specific column *attribute_exists*
 * `and(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
 * `or(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))
 
