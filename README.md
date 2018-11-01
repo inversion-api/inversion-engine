@@ -94,6 +94,11 @@ Currently, the following functions are available for use:
 * `ne(column,value)` - not equal
 * `emp(column)` - retrieves empty rows for a column value. null or empty string values will be retrieved
 * `nemp(column)` - retrieves all rows that do not contain an empty string or null value for a specified column
+* `n(column)` - retrieves all rows that contain a null value for a specified column
+* `nn(column)` - retrieves all rows that do not contain a null value for a specified column
+* `w(column,[value])` - retrieves all rows 'with' that wildcarded value in the specified column
+* `ew(column,[value])` - retrieves all rows that 'end with' that wildcarded value in the specified column
+* `sw(column,[value])` - retrieves all rows that 'start with' that wildcarded value in the specified column
 * `and(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
 * `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
 * auto-suggest paths should be in the following format: `.../elastic/indexType/suggest?suggestField=value&type=prefix`
