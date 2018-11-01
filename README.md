@@ -135,7 +135,64 @@ Retrieve locations with an empty state value
 `http://localhost:8080/api/apiCode/elastic/location?emp(state)`
 
 
-## Security Model ##
+
+
+
+# RQL Query String Params to Dynamo
+
+Currently, the following functions are available for use:
+* `eq(column,value)` - alternate form of column=value
+* `ne(column,value)` - not equal
+* `gt(column,value)` - greater than query filter eg: "column < value"
+* `ge(column,value)` - greater than or equal to
+* `lt(column,value)` - less than filter
+* `le(column,value)` - less than or equal to
+* `w(column,[value])` - retrieves all rows 'with' that wildcarded value in the specified column *(dynamo: contains)*
+* `sw(column,[value])` - retrieves all rows that 'start with' that wildcarded value in the specified column *(dynamo: begins_with)*
+* `n(column)` - retrieves all rows that **do not** have a specific column *(dynamo: attribute_not_exists)*
+* `nn(column)` - retrieves all rows that **do** have a specific column *(dynamo: attribute_exists)*
+* `and(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
+* `or(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))
+
+#### Configuration
+Configuration is done on the Endpoint's config property. 
+
+Valid config properties
+
+* tableMap
+	* Maps a collection name to a dynamo table
+	* FORMAT: collection name | dynamodb name  (comma separated)
+	* EXAMPLE: promo|promo-dev
+* conditionalWriteConf
+	* Allows a conditional write expression to be configured for a dynamo table
+	* FORMAT: collection name | withConditionExpression | payload fields  (comma separated)
+	* EXAMPLE: promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate
+* blueprintRow
+	* Config which row should be used for building the collection typeMap (otherwise first row of scan will be used) - *(Note: you will probably not need to use this unless new columns are introduced to a table in the future.)*
+	* FORMAT: collection name | primaryKey | sortKey (optional)
+	* EXAMPLE: loyalty-punchcard | 111 | abc
+* appendTenantIdToPk
+	* Enables appending the tenant id to the primary key. 
+	* *(Note: must be multi-tenant api also for this to have any effect)*
+	* FORMAT: collection name (comma separated)  
+	* EXAMPLE: promo,loyalty-punchcard
+	* On POST, this will append the tenant id to the primary key, for example, if the pk is a mobile number and was sent up as 4045551212 and the tenantId was 1, this record will be stored with a primary key of 1::4045551212.  On GET and DELETE, this will automatically append the tenantId prior to looking up the record and will strip it out of the results. So, this is completely invisible to the api user, they will only ever see the mobilenumber as 4045551212.  If you login to the AWS console and view the table, there you will see the actually mobilenumber as 1::4045551212.
+
+Example Config
+```
+dynamoH.class=io.rcktapp.api.service.ext.DynamoDbHandler
+
+dynamoEp.class=io.rcktapp.api.Endpoint
+dynamoEp.includePaths=dynamo*
+dynamoEp.methods=GET,POST,DELETE
+dynamoEp.handler=dynamoH
+dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&appendTenantIdToPk=loyalty-punchcard
+```	
+       
+
+
+
+# Security Model
 
 An Api is associated with a single Account
 

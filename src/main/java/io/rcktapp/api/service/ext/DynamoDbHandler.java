@@ -233,8 +233,12 @@ public class DynamoDbHandler implements Handler
          if (!filterExpress.getFields().isEmpty())
          {
             querySpec = querySpec.withFilterExpression(filterExpression)//
-                                 .withNameMap(filterExpress.getFields())//
-                                 .withValueMap(filterExpress.getArgs());
+                                 .withNameMap(filterExpress.getFields());
+
+            if (!filterExpress.getArgs().isEmpty())
+            {
+               querySpec = querySpec.withValueMap(filterExpress.getArgs());
+            }
 
             if (chain.getRequest().isDebug())
             {
@@ -272,8 +276,12 @@ public class DynamoDbHandler implements Handler
          if (!filterExpress.getFields().isEmpty())
          {
             scanSpec = scanSpec.withFilterExpression(filterExpression)//
-                               .withNameMap(filterExpress.getFields())//
-                               .withValueMap(filterExpress.getArgs());
+                               .withNameMap(filterExpress.getFields());
+
+            if (!filterExpress.getArgs().isEmpty())
+            {
+               scanSpec = scanSpec.withValueMap(filterExpress.getArgs());
+            }
 
             if (chain.getRequest().isDebug())
             {
@@ -825,7 +833,11 @@ public class DynamoDbHandler implements Handler
                }
                else if (FilterExpressionAndArgs.isKnownFunction(pred.getToken()))
                {
-                  String val = pred.getTerms().get(1).getToken();
+                  String val = null;
+                  if (pred.getTerms().size() >= 2)
+                  {
+                     val = pred.getTerms().get(1).getToken();
+                  }
 
                   express.append("\n");
                   express.appendSpaces(depth);
@@ -989,6 +1001,8 @@ public class DynamoDbHandler implements Handler
 
          FUNCTION_MAP.put("w", "contains");
          FUNCTION_MAP.put("sw", "begins_with");
+         FUNCTION_MAP.put("nn", "attribute_exists");
+         FUNCTION_MAP.put("n", "attribute_not_exists");
       }
 
       TableInfo              tableInfo;
@@ -1040,11 +1054,20 @@ public class DynamoDbHandler implements Handler
 
       public void appendFunctionExpression(String token, String field, String val)
       {
-         String fieldName = nextFieldName();
-         String argName = nextArgName();
-         buffer.append(FUNCTION_MAP.get(token) + "(" + fieldName + ", " + argName + ")");
-         fields.put(fieldName, field);
-         args.put(argName, tableInfo.cast(val, field));
+         if (val != null)
+         {
+            String fieldName = nextFieldName();
+            String argName = nextArgName();
+            buffer.append(FUNCTION_MAP.get(token) + "(" + fieldName + ", " + argName + ")");
+            fields.put(fieldName, field);
+            args.put(argName, tableInfo.cast(val, field));
+         }
+         else
+         {
+            String fieldName = nextFieldName();
+            buffer.append(FUNCTION_MAP.get(token) + "(" + fieldName + ")");
+            fields.put(fieldName, field);
+         }
       }
 
       public void appendSpaces(int depth)
