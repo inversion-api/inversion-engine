@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.api.QueryApi;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
@@ -32,11 +35,13 @@ import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.forty11.j.J;
 import io.forty11.j.utils.ListMap;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
@@ -102,6 +107,11 @@ public class DynamoDbHandler implements Handler
    {
       initDynamoClient();
 
+      if (req.removeParam("refresh-table-info") != null)
+      {
+         collectionKeyTableInfoMap.clear();
+      }
+
       String collectionKey = req.getEntityKey();
       TableInfo tableInfo = findOrCreateTableInfo(collectionKey, endpoint);
 
@@ -118,7 +128,9 @@ public class DynamoDbHandler implements Handler
 
       if (chain.getRequest().isDebug())
       {
-         resp.debug("Dynamo Table: " + tableInfo.table + ", PK: " + tableInfo.primaryKey + ", SK: " + tableInfo.sortKey + ", Type Map: " + tableInfo.typeMap);
+         resp.debug("Dynamo Table: " + tableInfo.table + ", PK: " + tableInfo.primaryKey + ", SK: " + tableInfo.sortKey);
+         resp.debug("Type Map:     " + tableInfo.typeMap);
+         resp.debug("Index Map:    " + tableInfo.indexMap);
       }
 
       if (req.isGet())
@@ -144,7 +156,6 @@ public class DynamoDbHandler implements Handler
       String nextKeyDelimeter = "~";
       String tableName = tableInfo.table;
       String primaryKey = tableInfo.primaryKey;
-      String sortKey = tableInfo.sortKey;
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       Table table = dynamoDB.getTable(tableName);
@@ -163,27 +174,38 @@ public class DynamoDbHandler implements Handler
 
       int pageSize = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 100;
       String next = req.removeParam("next");
+
+      Set<String> includes = new HashSet<>(splitToList(req.removeParam("includes")));
+      Set<String> excludes = new HashSet<>(splitToList(req.removeParam("excludes")));
+
+      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), tableInfo);
+      String filterExpression = filterExpress.buildExpression();
+
       KeyAttribute[] nextKeys = null;
 
       if (next != null)
       {
+         List<KeyAttribute> keyAttrList = new ArrayList<>();
          String[] sArr = next.split(nextKeyDelimeter);
          String pk = sArr[0];
          if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
          {
             pk = addTenantIdToKey(tenantId, pk);
          }
-         KeyAttribute pkAttr = new KeyAttribute(tableInfo.primaryKey, pk);
-         nextKeys = new KeyAttribute[]{pkAttr};
+         keyAttrList.add(new KeyAttribute(tableInfo.primaryKey, pk));
+
          if (sArr.length > 1)
          {
-            KeyAttribute skAttr = new KeyAttribute(tableInfo.sortKey, tableInfo.cast(sArr[1], tableInfo.sortKey));
-            nextKeys = new KeyAttribute[]{pkAttr, skAttr};
+            keyAttrList.add(new KeyAttribute(tableInfo.sortKey, tableInfo.cast(sArr[1], tableInfo.sortKey)));
          }
-      }
 
-      FilterExpressionAndArgs filterExpress = buildFilterExpressionFromRequestParams(req.getParams(), primaryKey, sortKey, tableInfo);
-      String filterExpression = filterExpress.buildExpression();
+         if (sArr.length > 2 && !tableInfo.sortKey.equals(filterExpress.getSortField()))
+         {
+            keyAttrList.add(new KeyAttribute(filterExpress.getSortField(), tableInfo.cast(sArr[2], filterExpress.getSortField())));
+         }
+
+         nextKeys = keyAttrList.toArray(new KeyAttribute[keyAttrList.size()]);
+      }
 
       String primaryKeyValue = null;
       Predicate pkPred = filterExpress.getExcludedPredicate(primaryKey);
@@ -208,12 +230,22 @@ public class DynamoDbHandler implements Handler
             resp.debug("Primary Key:  " + primaryKey + " = " + primaryKeyValue);
          }
 
+         QueryApi queryApi = table;
+         if (filterExpress.getIndexName() != null)
+         {
+            queryApi = table.getIndex(filterExpress.getIndexName());
+            if (chain.getRequest().isDebug())
+            {
+               resp.debug("Index:        " + filterExpress.getIndexName());
+            }
+         }
+
          QuerySpec querySpec = new QuerySpec()//
                                               .withHashKey(primaryKey, primaryKeyValue)//
                                               .withMaxPageSize(pageSize)//
                                               .withMaxResultSize(pageSize);
 
-         Predicate skPred = filterExpress.getExcludedPredicate(sortKey);
+         Predicate skPred = filterExpress.getExcludedPredicate(filterExpress.sortField);
          if (skPred != null)
          {
             RangeKeyCondition rkc = predicateToRangeKeyCondition(skPred, tableInfo);
@@ -222,6 +254,16 @@ public class DynamoDbHandler implements Handler
             if (chain.getRequest().isDebug())
             {
                resp.debug("Sort Key:     " + rkc.getAttrName() + " " + rkc.getKeyCondition() + " " + rkc.getValues()[0]);
+            }
+         }
+
+         if (filterExpress.getSortDirection() != null)
+         {
+            boolean scanForward = !filterExpress.getSortDirection().equalsIgnoreCase("DESC");
+            querySpec.withScanIndexForward(scanForward);
+            if (chain.getRequest().isDebug())
+            {
+               resp.debug("Sorting By:   " + filterExpress.sortField + " " + filterExpress.getSortDirection());
             }
          }
 
@@ -249,11 +291,14 @@ public class DynamoDbHandler implements Handler
             }
          }
 
-         ItemCollection<QueryOutcome> queryResults = table.query(querySpec);
+         ItemCollection<QueryOutcome> queryResults = queryApi.query(querySpec);
 
-         for (Item item : queryResults)
+         if (queryResults != null)
          {
-            itemList.add(item.asMap());
+            for (Item item : queryResults)
+            {
+               itemList.add(item.asMap());
+            }
          }
 
          if (queryResults.getLastLowLevelResult() != null)
@@ -325,6 +370,13 @@ public class DynamoDbHandler implements Handler
             String sortKeyVal = attributeValueAsString(lastKey.get(tableInfo.sortKey), tableInfo.sortKey, tableInfo.typeMap);
             returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
+
+         String sortField = filterExpress.getSortField();
+         if (!sortField.equals(tableInfo.sortKey) && lastKey.get(sortField) != null)
+         {
+            String sortKeyVal = attributeValueAsString(lastKey.get(sortField), sortField, tableInfo.typeMap);
+            returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
+         }
       }
 
       JSArray returnData = new JSArray();
@@ -338,7 +390,7 @@ public class DynamoDbHandler implements Handler
                map.put(primaryKey, removeTenantIdFromKey(tenantId, pkValue));
             }
 
-            returnData.add(new JSObject(map));
+            returnData.add(new JSObject(includeExclude(map, includes, excludes)));
          }
       }
 
@@ -508,6 +560,22 @@ public class DynamoDbHandler implements Handler
                }
 
                ti.typeMap = buildTableTypeMap(ti);
+               ti.indexMap = new HashMap<>();
+
+               if (tableDescription.getLocalSecondaryIndexes() != null)
+               {
+                  for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
+                  {
+                     for (KeySchemaElement keyInfo : indexDesc.getKeySchema())
+                     {
+                        if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+                        {
+                           ti.indexMap.put(keyInfo.getAttributeName(), indexDesc.getIndexName());
+                           break;
+                        }
+                     }
+                  }
+               }
 
                collectionKeyTableInfoMap.put(ti.collectionKey, ti);
             }
@@ -768,17 +836,41 @@ public class DynamoDbHandler implements Handler
       return false;
    }
 
-   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, String primaryKeyField, String sortKeyField, TableInfo tableInfo) throws Exception
+   FilterExpressionAndArgs buildFilterExpressionFromRequestParams(Map<String, String> requestParams, TableInfo tableInfo) throws Exception
    {
+      FilterExpressionAndArgs filterExpressionAndArgs = new FilterExpressionAndArgs(tableInfo);
+
       RQL rql = new RQL("elastic");
       QueryDsl queryDsl = rql.toQueryDsl(requestParams);
       List<Predicate> predicates = queryDsl.getStmt().where;
-      boolean hasPrimaryKey = predicatesContainField(predicates, primaryKeyField);
+      boolean hasPrimaryKey = predicatesContainField(predicates, tableInfo.primaryKey);
       List<String> excludeList = new ArrayList<>();
       if (hasPrimaryKey)
       {
-         excludeList.add(primaryKeyField);
-         excludeList.add(sortKeyField);
+         // sorting only works for querying which means we must have a primary key to sort
+         if (queryDsl.getOrder() != null && !queryDsl.getOrder().getOrderList().isEmpty())
+         {
+            Map<String, String> order = queryDsl.getOrder().getOrderList().get(0);
+            String sortField = order.keySet().iterator().next();
+            String sortDirection = order.get(sortField);
+            String indexName = tableInfo.indexMap.get(sortField);
+            if (indexName != null)
+            {
+               // we must have an index for this field to be able to sort
+               filterExpressionAndArgs.setSortIndexInformation(sortField, sortDirection, indexName);
+            }
+            else if (tableInfo.sortKey.equals(sortField))
+            {
+               // trying to sort by the table's sort key, no index is needed for this
+               filterExpressionAndArgs.setSortIndexInformation(sortField, sortDirection, null);
+            }
+         }
+
+         excludeList.add(tableInfo.primaryKey);
+         if (filterExpressionAndArgs.getSortField() != null)
+         {
+            excludeList.add(filterExpressionAndArgs.getSortField());
+         }
       }
 
       String andOr = "and";
@@ -792,7 +884,7 @@ public class DynamoDbHandler implements Handler
          }
       }
 
-      return buildFilterExpressionFromPredicates(predicates, new FilterExpressionAndArgs(tableInfo), andOr, excludeList, 0);
+      return buildFilterExpressionFromPredicates(predicates, filterExpressionAndArgs, andOr, excludeList, 0);
    }
 
    FilterExpressionAndArgs buildFilterExpressionFromPredicates(List<Predicate> predicates, FilterExpressionAndArgs express, String andOr, List<String> excludes, int depth) throws Exception
@@ -926,6 +1018,33 @@ public class DynamoDbHandler implements Handler
       return rkc;
    }
 
+   Map includeExclude(Map m, Set<String> includes, Set<String> excludes)
+   {
+      if (m != null)
+      {
+         if (!includes.isEmpty())
+         {
+            Map newMap = new HashMap<>();
+            for (String include : includes)
+            {
+               if (m.containsKey(include))
+               {
+                  newMap.put(include, m.get(include));
+               }
+            }
+            m = newMap;
+         }
+         else if (!excludes.isEmpty())
+         {
+            for (String exclude : excludes)
+            {
+               m.remove(exclude);
+            }
+         }
+      }
+      return m;
+   }
+
    static Object jsonStringToObject(String jsonStr) throws JsonParseException, JsonMappingException, IOException
    {
       return mapper.readValue(jsonStr, Object.class);
@@ -939,6 +1058,22 @@ public class DynamoDbHandler implements Handler
          m.put(objects[i], objects[i + 1]);
       }
       return m;
+   }
+
+   List splitToList(String csv)
+   {
+      List<String> l = new ArrayList<>();
+      if (csv != null)
+      {
+         String[] arr = csv.split(",");
+         for (String e : arr)
+         {
+            e = e.trim();
+            if (!J.empty(e))
+               l.add(e);
+         }
+      }
+      return l;
    }
 
    public void setAwsRegion(String awsRegion)
@@ -960,6 +1095,7 @@ public class DynamoDbHandler implements Handler
       String              conditionalWriteExpression;
       List<String>        conditionalWriteExpressionFields;
       Map<String, String> typeMap;
+      Map<String, String> indexMap;                        // colName / indexName
       String              bluePrintPK;
       String              bluePrintSK;
       boolean             appendTenantIdToPk = false;
@@ -1015,10 +1151,15 @@ public class DynamoDbHandler implements Handler
 
       Map<String, Predicate> excludedPredicates = new HashMap<>();
 
+      String                 sortField;
+      String                 sortDirection;
+      String                 indexName;
+
       public FilterExpressionAndArgs(TableInfo tableInfo)
       {
          super();
          this.tableInfo = tableInfo;
+         this.sortField = tableInfo.sortKey; // default to the table's sort key
       }
 
       String nextFieldName()
@@ -1113,6 +1254,31 @@ public class DynamoDbHandler implements Handler
       public Predicate getExcludedPredicate(String name)
       {
          return this.excludedPredicates.get(name);
+      }
+
+      /**
+       * This is used when the user is trying to sort using a Local Secondary Index
+       */
+      public void setSortIndexInformation(String sortField, String sortDirection, String indexName)
+      {
+         this.sortField = sortField;
+         this.sortDirection = sortDirection;
+         this.indexName = indexName;
+      }
+
+      public String getSortField()
+      {
+         return sortField;
+      }
+
+      public String getSortDirection()
+      {
+         return sortDirection;
+      }
+
+      public String getIndexName()
+      {
+         return indexName;
       }
 
    }
