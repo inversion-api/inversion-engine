@@ -33,29 +33,40 @@ With Snooze, you can connect your web application front end directly to your dat
  * Mutli tenant design
 
 ## Contents
- * [
  * [Quick Start](#quickstart)
  * [Config File](#config-file)
- * [Reserved Parameters]
- * [Resource Query Language (RQL)](#resource-query-language-(rql))
-  * [Sorting / Ordering]
-  * [Pagination]
-  * [Query Filters]
-  * Aggregations
- * Nested Document Expansion
- * Property Inclusion / Exclusion
- * [Security Model](security-model)
-  * [Access / Login / Sessions](access-/-login-/-sessions)
-  * [Roll & Permission Based Authorization]
-  * [Multi-Tenant APIs]
-  * [Row Level Security]
+ * [Reserved Parameters](#reserved-parameters)
+ * [Resource Query Language (RQL)](#resource-query-language-rql)
+  * [Sorting / Ordering](#sorting-ordering)
+  * [Pagination](#pagination)
+  * [Query Filters](#query-filters)
+  * [Aggregations](#aggregations)
+ * [Nested Document Expansion](#nested-document-expansion)
+ * [Property Inclusion / Exclusion](#propert-inclusion-exclusion)
+ * [Security Model](#security-model)
+  * [Access / Login / Sessions](#access-login-sessions)
+  * [Roll & Permission Based Authorization](#role-permission-based-authorization)
+  * [Multi-Tenant APIs](#multi-tenant-apis)
+  * [Row Level Security](#row-level-security)
+ * [Object Model](#object-model)
+  * Api
+  * Endpoitns
+  * Actions
+  * Handler
+  * Database
   
+  
+  
+## Quickstart
+
+TBD 
 
 ## Building, Gradle, Maven, etc.
 
+If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch dirctly from GitHub into your project.   
+
+```gradle
 repositories { 
-   mavenLocal()
-   mavenCentral() 
    maven { url 'https://jitpack.io' }
 }
 
@@ -63,19 +74,21 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-sourceCompatibility = 1.8
-
 dependencies {
-
     compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
-    
-}    
+} 
+```   
 
 
 ## Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
-# Reserved Query Parameters
+
+## RQL Query String Params to SQL
+
+[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
+
+### Reserved Query Parameters
 
  * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
    debug information including the SQL run.  The response body will not be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this
@@ -84,10 +97,6 @@ dependencies {
  * excludes - 
  * expands - 
 
-
-# RQL Query String Params to SQL
-
-[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
 
 
 ### General
