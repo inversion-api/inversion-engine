@@ -10,12 +10,35 @@ With Snooze, you can connect your web application front end directly to your dat
 
 "So why is it called Snooze" you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemd nerd "punny" to us.
 
-### Benefits
+
+
+## Contents
+1. [Features & Benefits](#features-benefits)
+1. [Quick Start](#quickstart)
+1. [Config File](#config-file)
+1. [Reserved Parameters](#reserved-parameters)
+1. [Resource Query Language (RQL)](#resource-query-language-rql)
+   1. [Sorting / Ordering](#sorting--ordering)
+   1. [Pagination](#pagination)
+   1. [Query Filters](#query-filters)
+   1. [Aggregations](#aggregations)
+   1. [Nested Document Expansion](#nested-document-expansion)
+   1. [Property Inclusion / Exclusion](#propert-inclusion--exclusion)
+1. [Security Model](#security-model)
+   1. [Access / Login / Sessions](#access--login--sessions)
+   1.[Roll & Permission Based Authorization](#role--permission-based-authorization)
+   1.[Multi-Tenant APIs](#multi--tenant-apis)
+   1.[Row Level Security](#row-level-security)
+1. [Object Model](#object-model)
+   1. Api
+   1. Endpoitns
+   1. Actions
+   1. Handler
+   1. Database
+  
+## Features & Benefits
  
  * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
-
-### Features
-
  * Tables exposed as REST collections
  * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
  * RQL
@@ -30,32 +53,7 @@ With Snooze, you can connect your web application front end directly to your dat
  * Multiple RDBMS back ends in a single API
  * "Smart PUT/POST" - no id/href field no problem. Nested/mixed put/post 
  * "Explain" mode shows you the exact statements to be run
- * Mutli tenant design
-
-## Contents
- * [Quick Start](#quickstart)
- * [Config File](#config-file)
- * [Reserved Parameters](#reserved-parameters)
- * [Resource Query Language (RQL)](#resource-query-language-rql)
-  * [Sorting / Ordering](#sorting-ordering)
-  * [Pagination](#pagination)
-  * [Query Filters](#query-filters)
-  * [Aggregations](#aggregations)
- * [Nested Document Expansion](#nested-document-expansion)
- * [Property Inclusion / Exclusion](#propert-inclusion-exclusion)
- * [Security Model](#security-model)
-  * [Access / Login / Sessions](#access-login-sessions)
-  * [Roll & Permission Based Authorization](#role-permission-based-authorization)
-  * [Multi-Tenant APIs](#multi-tenant-apis)
-  * [Row Level Security](#row-level-security)
- * [Object Model](#object-model)
-  * Api
-  * Endpoitns
-  * Actions
-  * Handler
-  * Database
-  
-  
+ * Mutli tenant design  
   
 ## Quickstart
 
