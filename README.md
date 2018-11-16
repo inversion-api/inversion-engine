@@ -1,5 +1,77 @@
 # rckt_snooze
 
+"Snooze" is a REST API automation framework.  Snooze is not a code generator it is a runtime service.  
+
+Snooze reflectively creates a JSON REST API for CRUD operations against Relational Database Systems (RDBMS) such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
+
+The rise of client side JS MVC frameworks means that front end programmers
+
+With Snooze, you can connect your web application front end directly to your data source without any server side programming required.  
+
+"So why is it called Snooze" you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemd nerd "punny" to us.
+
+### Benefits
+ 
+ * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
+
+### Features
+
+ * Tables exposed as REST collections
+ * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
+ * RQL
+ * Nested document expansion for foreign keys
+ * Nested document put/post
+ * Pagination / ordering
+ * Batch/bulk put/post/delete
+ * Declarative security
+ * Sql Injection proof
+ * Consistent response envelope
+ * Always COORS cross site capable
+ * Multiple RDBMS back ends in a single API
+ * "Smart PUT/POST" - no id/href field no problem. Nested/mixed put/post 
+ * "Explain" mode shows you the exact statements to be run
+ * Mutli tenant design
+
+## Contents
+ * [
+ * [Quick Start](#quickstart)
+ * [Config File](#config-file)
+ * [Reserved Parameters]
+ * [Resource Query Language (RQL)](#resource-query-language-(rql))
+  * [Sorting / Ordering]
+  * [Pagination]
+  * [Query Filters]
+  * Aggregations
+ * Nested Document Expansion
+ * Property Inclusion / Exclusion
+ * [Security Model](security-model)
+  * [Access / Login / Sessions](access-/-login-/-sessions)
+  * [Roll & Permission Based Authorization]
+  * [Multi-Tenant APIs]
+  * [Row Level Security]
+  
+
+## Building, Gradle, Maven, etc.
+
+repositories { 
+   mavenLocal()
+   mavenCentral() 
+   maven { url 'https://jitpack.io' }
+}
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+sourceCompatibility = 1.8
+
+dependencies {
+
+    compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
+    
+}    
+
+
 ## Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
