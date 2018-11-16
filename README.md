@@ -1,40 +1,39 @@
 # rckt_snooze
 
-"Snooze" is a REST API automation framework.  Snooze is not a code generator it is a runtime service.  
-
-Snooze reflectively creates a JSON REST API for CRUD operations against Relational Database Systems (RDBMS) such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
-
-The rise of client side JS MVC frameworks means that front end programmers
+"Snooze" is a REST API automation platform.  Snooze is not a code generator it is a runtime service that exposes a 
+reflectively created secure best practice JSON REST API for CRUD operations against Relational Database Systems (RDBMS) 
+such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
 
 With Snooze, you can connect your web application front end directly to your data source without any server side programming required.  
 
 "So why is it called Snooze" you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemd nerd "punny" to us.
 
 
-
 ## Contents
 1. [Features & Benefits](#features-benefits)
 1. [Quick Start](#quickstart)
 1. [Config File](#config-file)
-1. [Reserved Parameters](#reserved-parameters)
-1. [Resource Query Language (RQL)](#resource-query-language-rql)
-   1. [Sorting / Ordering](#sorting--ordering)
-   1. [Pagination](#pagination)
-   1. [Query Filters](#query-filters)
-   1. [Aggregations](#aggregations)
-   1. [Nested Document Expansion](#nested-document-expansion)
-   1. [Property Inclusion / Exclusion](#propert-inclusion--exclusion)
+1. [Resource Query Language (RQL)](#resource-query-language--rql)
+   * [Reserved Query String Parameters](#reserved-query-string-parameters)
+   * [Restricted & Required Parameters](#restricted--required-parameters)
+   * [Sorting / Ordering](#sorting--ordering)
+   * [Pagination](#pagination)
+   * [Query Filters](#query-filters)
+   * [Aggregations](#aggregations)
+   * [Nested Document Expansion](#nested-document-expansion)
+   * [Property Inclusion / Exclusion](#propert-inclusion--exclusion)
+   * [Miscellaneous](#miscellaneous)
 1. [Security Model](#security-model)
-   1. [Access / Login / Sessions](#access--login--sessions)
-   1.[Roll & Permission Based Authorization](#role--permission-based-authorization)
-   1.[Multi-Tenant APIs](#multi--tenant-apis)
-   1.[Row Level Security](#row-level-security)
+   * [Access / Login / Sessions](#access--login--sessions)
+   * [Roll & Permission Based Authorization](#role--permission-based-authorization)
+   * [Multi-Tenant APIs](#multi--tenant-apis)
+   * [Row Level Security](#row-level-security)
 1. [Object Model](#object-model)
-   1. Api
-   1. Endpoitns
-   1. Actions
-   1. Handler
-   1. Database
+   * Api
+   * Endpoitns
+   * Actions
+   * Handler
+   * Database
   
 ## Features & Benefits
  
@@ -82,20 +81,7 @@ dependencies {
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
 
-## RQL Query String Params to SQL
-
-[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
-
-### Reserved Query Parameters
-
- * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
-   debug information including the SQL run.  The response body will not be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this
-   to work. 
- * includes - 
- * excludes - 
- * expands - 
-
-
+## Resource Query Language (RQL)
 
 ### General
  
@@ -104,26 +90,31 @@ dependencies {
  * function(column, value OR expression) - eq(col,value), lt(column,value), and(eq(col,value), lt(column,value)), in(col, val1, val2, val3, val4)
  * name=eq=value, column=lt=value, col=in=val1,val2,val3
 * Quotes & Escaping Quotes - ' or " can be used to quote values.  Use a \ to escape any inner occurances of the outter quote.  If you quote with single quotes you don't have to escape inner double quotes and vice versa  
-* Wildcards - the * character translates into "%" for string wildcard LIKE comparisons.  You use the normal = or eq operator but the system uses LIKE and % under the covers.
+* Wildcards - the '*' character is treated as a univeral wildcard for all supported backents.  
+  For example, for RDBMS '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  
+  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-### Boolean Operators
-* column=value - translates as expected into a sql column equality check "column = value"
-* column='values can have spaces with encapsulated in quotes'
-* column="double or single quotes work"
-* column="the first quote type wins so a single quote like ' inside of double quotes is considered a literal"
-* column="you can also \" escape quotes with a backslash
-* column=something*blah - translates into "column LIKE 'something%blah'"
-* eq(column,value) - alternate form of column=value
-* gt(column,value) - greater than query filter eg: "column < value"
-* ge(column,value) - greater than or equal to
-* lt(column,value) - less than filter
-* le(column,value) - less than or equal to
-* ne(column,value) - not equal
-* in(column,val1,[val2...valN]) - translates into "where column in (val1,....valN)"
-* out(column,val1,[val2...valN]) - translates into "where column NOT in (val1,....valN)"
-* and(clause1,clause2,[...clauseN) - "where (clause1 AND clause2 AND clauseN)"
-* or(clause1,clause2,[...clauseN) - "where (clause1 OR clause2 OR clauseN)"
+[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
+
+### Reserved Query String Parameters
+
+ * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
+   debug information including the SQL run.  The response body will not be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this
+   to work. 
+ * includes - 
+ * excludes - 
+ * expands - 
+
+### Restricted & Required Query Parameters
+
+If a table has a column named "userId" or "accountId" these are special case known columns who's
+values may not be supplied by an api user request.  The value of these fields always comes from
+the User object which is configured during authentication (see above).  This is true for 
+RQL query params as well as for JSON properties.
+
+
+### Where Clause Functions
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -141,8 +132,8 @@ dependencies {
  ne(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | not equal
  in(column,val1,[val2...valN])    | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column in (val1,....valN)"
  out(column,val1,[val2...valN])   | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column NOT in (val1,....valN)"
- and(clause1,clause2,[...clauseN) | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | "where (clause1 AND clause2 AND clauseN)"
- or(clause1,clause2,[...clauseN)  | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | "where (clause1 OR clause2 OR clauseN)"
+ and(clause1,clause2,[...clauseN) | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | ANDs multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
+ or(clause1,clause2,[...clauseN)  | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | ORs multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))
  emp(column)                      | :grey_question:     | :heavy_check_mark:  |                    | retrieves empty rows for a column value. null or empty string values will be retrieved
  nemp(column)                     | :grey_question:     | :heavy_check_mark:  |                    | retrieves all rows that do not contain an empty string or null value for a specified column
  n(column)                        | :grey_question:     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that contain a null value for a specified column
@@ -152,61 +143,82 @@ dependencies {
  sw(column,[value])               |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column
 
  
+ ### Sorting / Ordering
 
-### Sorting / Ordering
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     |                    | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
+ sort(col1,[...colN])             | :heavy_check_mark:  |                     |                    | same as sort= but with "function format"
+ order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
-* sort=col1,+col2,-col3,colN OR sort(col1,[...colN]).  Use of the + operator is the implied default.
-* order - same is sort
 
 ### Pagination / Offset Limit
 
-* page=N - translates into an offset clause using pagesize (or the default page size) as the multiplier 
-* pagenum - same thing as page
-* pagesize - the number of results to return
-* offset - directly translates into a sql offset clause.  Overrides any page/pagenum params supplied
-* limit - directly translates into a SQL limit clause.  Overrides any pagesize params supplied
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ page=N                           | :heavy_check_mark:  |                     |                    | translates into an offset clause using pagesize (or the default page size) as the multiplier 
+ pagenum=N                        | :heavy_check_mark:  |                     |                    | an overloaded synonym for "page", the two are equivelant.
+ pagesize=N                       | :heavy_check_mark:  |                     |                    | the number of results to return
+ offset=N                         | :heavy_check_mark:  |                     |                    | directly translates into a sql offset clause, overrides any page/pagenum params supplied
+ limit=N                          | :heavy_check_mark:  |                     |                    | directly translates into a SQL limit clause, overrides any pagesize params supplied
+  
 
 ### Property Inclusion / Exclusion
 
-* includes=col1,col2,colN OR includes(col1...colN) - restricts the properties returned in the document to the ones specified.  All others will be excluded.
-* excludes=col1,col2,colN OR excludes(col1...colN) - specifically excludes the supplied props.  All others will be included.  
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ includes=col1,col2,colN          | :heavy_check_mark:  |                     |                    | restricts the properties returned in the document to the ones specified.  All others will be excluded. 
+ includes(col1...colN)            | :heavy_check_mark:  |                     |                    | same as above
+ excludes=col1,col2,colN          | :heavy_check_mark:  |                     |                    | specifically excludes the supplied props.  All others will be included.   
+ excludes(col1...colN)            | :heavy_check_mark:  |                     |                    | same as above
 
-### Nested Document Expansion
 
-* `expands=collection.property[...property][,table2.property2...]` - if "property" is a foreign key referenced entity will be included in the returned document
-  instead of a reference to it being returned.
-  
-  
+
+
 ### Aggregations  
 
-* group(col1, [...colN]) - adds cols to a GROUP BY clause 
-* sum,count,min,max(col, [renamedAs]) - perform basic aggregate functions
-* function(sqlfunction, col, value, [...valueN]) - tries to apply the requested aggregate function
-* rowcount
-* countascol(col, value, [...valueN]) - Roughly translates to "select sum(if(eq(col, value), 1, 0)) as value". 
-* distinct, distinct(column) - filters out duplicates
-* if(column OR expression, valwhentrue, valwhenfalse)
+ RQL Function                       | Database            | Elastic             | Dynamo             | Description  
+ ---                                | :---:               | :---:               | :---:              | ---
+ group(col1, [...colN])             | :heavy_check_mark:  |                     |                    | adds cols to a GROUP BY clause
+ sum(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
+ count(col, [renamedAs])            | :heavy_check_mark:  |                     |                    | counts the given column and optionally names the resulting JSON property
+ min(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
+ max(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
+ sum(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
+countascol(col, value, [...valueN]) | :heavy_check_mark:  |                     |                    | Roughly translates to "select sum(if(eq(col, value), 1, 0)) as value
+distinct                            | :heavy_check_mark:  |                     |                    | filters out duplicate rows
+distinct(column)                    | :heavy_check_mark:  |                     |                    | filters out duplicates based on the given column
+if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |                     |                    |
 
-### Misc
+
+  
+* To Document
+  * function(sqlfunction, col, value, [...valueN]) - tries to apply the requested aggregate function
+  * rowcount
+
+
+
+### Miscellaneous
 
 * as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
+
+
+  
+### Nested Document Expansion
+
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ expands=collection.property[...property][,table2.property2...]         | :heavy_check_mark:  |                     |                    | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value
+  
+    
+  
   
 # RQL Query String Params to Elastic
 Currently, the following functions are available for use:
-* `eq(column,value)` - alternate form of column=value
-* `gt(column,value)` - greater than query filter eg: "column < value"
-* `ge(column,value)` - greater than or equal to
-* `lt(column,value)` - less than filter
-* `le(column,value)` - less than or equal to
-* `ne(column,value)` - not equal
-* `emp(column)` - retrieves empty rows for a column value. null or empty string values will be retrieved
-* `nemp(column)` - retrieves all rows that do not contain an empty string or null value for a specified column
-* `n(column)` - retrieves all rows that contain a null value for a specified column
-* `nn(column)` - retrieves all rows that do not contain a null value for a specified column
-* `w(column,[value])` - retrieves all rows 'with' that wildcarded value in the specified column
-* `ew(column,[value])` - retrieves all rows that 'end with' that wildcarded value in the specified column
-* `sw(column,[value])` - retrieves all rows that 'start with' that wildcarded value in the specified column
-* `and(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
+
 * `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
 * auto-suggest paths should be in the following format: `.../elastic/indexType/suggest?suggestField=value&type=prefix`
 > a `type` auto-suggest parameter can be set to define the type of search.  By default, auto-suggest will do a 'prefix' search.  If no results are found, auto-suggest will then try a wildcard search and return those results.  If you want to limit auto-suggest to one type of search, set `type=prefix` or `type=wildcard`.  While both types are fast, prefix searches are the fastest (~2ms vs ~20ms) 
@@ -245,26 +257,11 @@ Retrieve locations with an empty state value
 
 
 
-# RQL Query String Params to Dynamo
+## Dynamo Specifics
 
-Currently, the following functions are available for use:
-* `eq(column,value)` - alternate form of column=value
-* `ne(column,value)` - not equal
-* `gt(column,value)` - greater than query filter eg: "column < value"
-* `ge(column,value)` - greater than or equal to
-* `lt(column,value)` - less than filter
-* `le(column,value)` - less than or equal to
-* `w(column,value)` - retrieves all rows 'with' that wildcarded value in the specified column *(contains)*
-* `sw(column,value)` - retrieves all rows that 'start with' that wildcarded value in the specified column *(begins_with)*
-* `n(column)` - retrieves all rows that **do not** have a specific column *(attribute_not_exists)*
-* `nn(column)` - retrieves all rows that **do** have a specific column *(attribute_exists)*
-* `and(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
-* `or(clause1,clause2,[...clauseN)` - Join multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))
+ ### Dynamo Specific Configuration
 
-#### Configuration
-Configuration is done on the Endpoint's config property. 
-
-Valid config properties
+Configuration is done on the Endpoint's config property.
 
 * tableMap
 	* Maps a collection name to a dynamo table
@@ -298,8 +295,7 @@ dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
        
 
 
-
-# Security Model
+## Security Model
 
 An Api is associated with a single Account
 
@@ -328,7 +324,7 @@ that the Users inherit.  In this way, you could create a functional "Admin" Grou
 and give that Group all of the Permissions required and then assign Users to that Admin Group. 
 
 
-## Access / Login / Sessions ##
+### Access / Login / Sessions
 
 Each Api defines one or more Endpoints.  If authentication is going to be used, at least one of the Endpoints
 must be configured with an Action that handles authentication. See AuthHandler.
@@ -345,7 +341,7 @@ User for that request and any roles and permissions defined in the DB will not b
 Failing Authentication should return a 501 Unauthorized HTTP response code.
 
 
-### Roll & Permission Based  Authorization ###
+### Roll & Permission Based  Authorization 
 
 After a users has been successfully logged in, the Request User object will be populated with the Role and 
 Permission obejects assigned to the user.
@@ -361,7 +357,7 @@ The first rule to "allow" access wins.  If no rule allows access, then a 403 is 
 
 
 
-## Multi-Tenant APIs & Row Level Security##
+### Multi-Tenant APIs & Row Level Security
 
 Api's can be flagged as 'multiTennant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
@@ -379,17 +375,12 @@ entitle a User to all the data found at that Endpoint.
 
 
 
-## Row Level Security ## 
+### Row Level Security 
 
 If row level security is required, a filter SQL statements can be provided as a JSON Action params.
  
 
-# Restricted and Required Query Params #
 
-If a table has a column named "userId" or "accountId" these are special case known columns who's
-values may not be supplied by an api user request.  The value of these fields always comes from
-the User object which is configured during authentication (see above).  This is true for 
-RQL query params as well as for JSON properties.
 
 TODO: Update the RQL Replacer to enforce this policy.
 TODO: Update PostHandler to replace restricted fields with values from User
