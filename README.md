@@ -1,23 +1,26 @@
 # rckt_snooze
 
+API as a service platform
+The fastest way to deliver a REST API.
+
 "Snooze" is a REST API automation platform.  Snooze is not a code generator it is a runtime service that exposes a 
 reflectively created secure best practice JSON REST API for CRUD operations against Relational Database Systems (RDBMS) 
 such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
 
 With Snooze, you can connect your web application front end directly to your data source without any server side programming required.  
 
-"So why is it called Snooze" you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemd nerd "punny" to us.
+So why is it called Snooze, you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemed nerd punny to us.
 
 
 ## Contents
-1. [Features & Benefits](#features-benefits)
+1. [Features & Benefits](#features--benefits)
 1. [Quick Start](#quickstart)
 1. [Config File](#config-file)
-1. [Resource Query Language (RQL)](#resource-query-language--rql)
+1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
-   * [Restricted & Required Parameters](#restricted--required-parameters)
+   * [Restricted & Required Parameters](#restricted--required-query-parameters)
    * [Sorting / Ordering](#sorting--ordering)
-   * [Pagination](#pagination)
+   * [Pagination / Offset & Limit](#pagination--offset--limit)
    * [Query Filters](#query-filters)
    * [Aggregations](#aggregations)
    * [Nested Document Expansion](#nested-document-expansion)
@@ -25,8 +28,8 @@ With Snooze, you can connect your web application front end directly to your dat
    * [Miscellaneous](#miscellaneous)
 1. [Security Model](#security-model)
    * [Access / Login / Sessions](#access--login--sessions)
-   * [Roll & Permission Based Authorization](#role--permission-based-authorization)
-   * [Multi-Tenant APIs](#multi--tenant-apis)
+   * [Roll & Permission Based Authorization](#roll--permission-based--authorization)
+   * [Multi-Tenant APIs](#multi-tenant-apis)
    * [Row Level Security](#row-level-security)
 1. [Object Model](#object-model)
    * Api
@@ -34,6 +37,21 @@ With Snooze, you can connect your web application front end directly to your dat
    * Actions
    * Handler
    * Database
+1. [Handlers](#handlers)
+   * SQL CentricRest   
+     * Get
+     * Put/Post
+     * Post
+     * Delete
+    
+   
+1. [Developer Notes](#developer-notes)
+   * [Logging](#logging)
+   * Gradle, Maven, etc.    
+1. [Changes](#changes)   
+  
+ 
+  
   
 ## Features & Benefits
  
@@ -53,35 +71,100 @@ With Snooze, you can connect your web application front end directly to your dat
  * "Smart PUT/POST" - no id/href field no problem. Nested/mixed put/post 
  * "Explain" mode shows you the exact statements to be run
  * Mutli tenant design  
+ * Elegant pluralization of db tables w/ intelligant redirect
+ * 
+
+
   
 ## Quickstart
 
-TBD 
-
-## Building, Gradle, Maven, etc.
-
-If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch dirctly from GitHub into your project.   
-
-```gradle
-repositories { 
-   maven { url 'https://jitpack.io' }
-}
-
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
-
-dependencies {
-    compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
-} 
-```   
 
 
-## Logging
- * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+
+
+## Configuring your API
+
+
+
+
+### URL Structure
+
+Snooze is designed to host multiple APIs potentially owned by controlled by different organizations.  All functional URLs for an API are prefixed 
+with an Account Code and API Code path components.  The Account Code uniquely identifies the organization that owns the API and is unique to the 
+platform. The ApiCode uniquely identifies the Api within the namespace created by the AccountCode. 
+
+Valid URL formats are:
+
+ * https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+ * https://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
+
+
+### Account
+
+Snooze itself is multi-tenant, designed to host multiple APIs that may be owned by different organizations.  An Account represents an organization that
+ownes an Api...which may be different from the organization that is running the Snooze instance hosting the Api.  
+
+
+### Api
+
+An API exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
+   
+
+### Collections, Entities, and Attributes
+
+Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
+to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
+in a URL or as a JSON property name.
+
+
+### Endpoints, Actions and Handlers
+
+Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose metaphore of a an Endpoint 
+being a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Snooze is in the implementation 
+of various Handlers.
+
+An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
+to run when an Endpoint is called by a client.  
+
+Actions link Endpoints to Handlers.  Behind each Endpoint can be an orderd list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
+based on the configuration information on the Action.  Actions are mapped to URL paths / http methods and as such may be selected to run as part of one or more Endpoints.     
+
+Work is done in the Handlers.  If an application must have custom business logic or otherwise can't managed to achieve a desired result via configuration, 99% of the time, the answer
+is a custom Handler. Handlers do not have to be singletons but the design pattern is that anything that would be "use case specific" should be abstracted into Action config which
+ties things back to the url/http method being invoked.
+
+
+Example Handlers:
+ * SqlGetHandler
+ * S3UploadHandler
+ * AuthHandler
+ * AclHandler
+ * LogHandler
+
+
+
+
+### AclRule
+### Permissions
+### Change
+### Db - change to data source to accomodate dynamo and elastic
+### Table
+### Column
+### Relationship
+
+### Tenant - relationship between app and multiple users of the app - goes with use of the api
+
+
+
 
 
 ## Resource Query Language (RQL)
+
+RQL is the set of query string parameters that you use to query a REST collection for entities that match specific criteria or otherise alter 
+the operation to be performe and the response values. 
+
 
 ### General
  
@@ -99,6 +182,7 @@ dependencies {
 
 ### Reserved Query String Parameters
 
+ * q - 
  * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
    debug information including the SQL run.  The response body will not be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this
    to work. 
@@ -114,7 +198,7 @@ the User object which is configured during authentication (see above).  This is 
 RQL query params as well as for JSON properties.
 
 
-### Where Clause Functions
+### Query Filters
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -152,7 +236,7 @@ RQL query params as well as for JSON properties.
  order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
 
-### Pagination / Offset Limit
+### Pagination / Offset & Limit
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -292,7 +376,14 @@ dynamoEp.methods=GET,POST,DELETE
 dynamoEp.handler=dynamoH
 dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&appendTenantIdToPk=loyalty-punchcard
 ```	
-       
+
+## REST to CRUD - GET,POST,PUT,DELETE       
+
+QueryStrings params (and required status) can be used with POST/PUT/DELETE re not just GET method
+requests.  The values will be appended to the 
+
+
+
 
 
 ## Security Model
@@ -341,7 +432,7 @@ User for that request and any roles and permissions defined in the DB will not b
 Failing Authentication should return a 501 Unauthorized HTTP response code.
 
 
-### Roll & Permission Based  Authorization 
+### Roll & Permission Based Authorization 
 
 After a users has been successfully logged in, the Request User object will be populated with the Role and 
 Permission obejects assigned to the user.
@@ -357,7 +448,7 @@ The first rule to "allow" access wins.  If no rule allows access, then a 403 is 
 
 
 
-### Multi-Tenant APIs & Row Level Security
+### Multi-Tenant APIs
 
 Api's can be flagged as 'multiTennant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
@@ -377,45 +468,14 @@ entitle a User to all the data found at that Endpoint.
 
 ### Row Level Security 
 
+
+SUSPECT NEED TO UPDATE
+
+The simplest way to restrict a users interaction with a row is to provide a "userId" column on the 
+table in question.  The param "userId" is a known special case 
+
 If row level security is required, a filter SQL statements can be provided as a JSON Action params.
  
-
-
-
-TODO: Update the RQL Replacer to enforce this policy.
-TODO: Update PostHandler to replace restricted fields with values from User
-TODO: Update PostHandler to append RQL query string WHERE clause to Update statements...which means
-      allowing users to NOT pass in an HREF to update.  You can essentially patch a whole table with
-      this power OR restrict an update based on required userId value. 
-
-TODO: change Get handler to traverse foreign keys obeying top level security
-TOOD: make service recursively callable like in CPJ DraftHandler
-
-      
-TODO: add "restricted" and "required" as JSON params
-TODO: make param required/restrictions based on method and role
-
-TODO: make delete handler use comma sepatated lists      
-
-TODO: Document paramerter heirarchy Chain.getParam
-
-TODO: add JSON support to autowire so endpoints/actions etc can use JSON 
-
-
-
-DONE TODO: remove use of securityFilterRows and focuson on seed sql for securtiy because securityFilterRows  will throw off the record/page count to much
-DONE TODO: make auto wire look for keys in sysprops FIRST to support passwords as env vars instead of hard coded
-
-DONE TOOD: fix record count
-DONE TODO: have the endpoint check the action includes/excludes paths before calling the action
-DONE TODO: remove Permission.accountId and add Permission.apiId
-
-DONE TODO: put action sorting inside of the endpoint and put action/endpoint matching inside of Api
-DONE TODO: I think User.accountId is not needed because relationship is via RoleDONE TODO: ad match and no match paths to Endpoint and Action
-
------------------
-LATER
-TODO: allow logging into an API without a tenantId if you are an owner/administrator of that API
 
 An Action can be configured with "required" params which means that the api caller must supply
 these as query string name=value pairs.  
@@ -427,19 +487,39 @@ these as query string name=value pairs.
 ```
 
 
-QueryStrings params (and required status) can be used with POST/PUT/DELETE re not just GET method
-requests.  The values will be appended to the 
-
-POST Method Requests
 
 
-The simplest way to restrict a users interaction with a row is to provide a "userId" column on the 
-table in question.  The param "userId" is a known special case 
 
+
+
+
+## Developer Notes
+
+## Logging
+ * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+
+
+### Gradle, Maven, etc.
+
+If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch dirctly from GitHub into your project.   
+
+```gradle
+repositories { 
+   maven { url 'https://jitpack.io' }
+}
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
+} 
+```   
 
 
   
-## ChangeLog
+## Changes
 
 2018-05-09 --------------------------------
 
@@ -525,7 +605,6 @@ table in question.  The param "userId" is a known special case
   1. http(s)://whateverhost/[${servletPrefix}/]${account.code}${api.code}/${collection}
   2. http(s)://${account.code}.domain.com/[${servletPrefix}/]${account.code}${api.code}/${collection}
   3. http(s)://${account.code}.domain.com/[${servletPrefix}/]${api.code}/${collection}
-  
   
   
   
