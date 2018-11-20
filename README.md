@@ -1,15 +1,11 @@
 # rckt_snooze
 
-API as a service platform
-The fastest way to deliver a REST API.
+Snooze is an "API as a Service" platform and the fastest way to deliver a REST API.
 
-"Snooze" is a REST API automation platform.  Snooze is not a code generator it is a runtime service that exposes a 
-reflectively created secure best practice JSON REST API for CRUD operations against Relational Database Systems (RDBMS) 
-such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
+With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
 
-With Snooze, you can connect your web application front end directly to your data source without any server side programming required.  
-
-So why is it called Snooze, you might ask?  Well we are a bunch of code nerds not marketers.  This is a REST automation framework so, calling it "Snooze" seemed nerd punny to us.
+Snooze is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
 
 
 ## Contents
@@ -78,27 +74,105 @@ So why is it called Snooze, you might ask?  Well we are a bunch of code nerds no
   
 ## Quickstart
 
+When deploying Snooze as a stand alone Java Servlet, all you need to do is supply a WEB-INF/soooze.properties configuration file.
+Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
+all of the db tables to:  https://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}
+
+Try out some [RQL](#resource-query-language-rql) queries like:
+* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
+* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
+* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
+* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
+* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
+
+Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
+ 
+
+```properties
+    
+snooze.debug=true
+snooze.servletMapping=api
+
+########################################################################
+## APIs 
+########################################################################
+api.class=io.rcktapp.api.Api
+api.accountCode=demo
+api.apiCode=helloworld
+api.dbs=db
+api.actions=restA
+api.endpoints=restEp
 
 
+########################################################################
+## DATABASES 
+########################################################################
+db.class=io.rcktapp.api.Db
+db.name=db
+db.driver=com.mysql.jdbc.Driver
+db.url=YOUR_JDBC_URL_HERE
+db.user=YOUR_JDBC_USER_HERE
+db.pass=YOUR_JDBC_PASSWORD_HERE
+db.poolMin=3
+db.poolMax=5
+
+
+########################################################################
+## HANDLERS 
+########################################################################
+restH.class=io.rcktapp.api.service.RestHandler
+
+
+########################################################################
+## ACTIONS 
+########################################################################
+restA.class=io.rcktapp.api.Action
+restA.handler=restH
+restA.includePaths=*
+restA.methods=GET,PUT,POST,DELETE
+restA.order=10
+
+
+########################################################################
+## ENDPOINTS 
+########################################################################
+restEp.class=io.rcktapp.api.Endpoint
+restEp.includePaths=*
+restEp.excludePaths=somethingExcluded*
+restEp.methods=GET
+#restEp.methods=GET,PUT,POST,DELETE
+restEp.handler=restH
+
+
+```
 
 
 ## Configuring your API
 
 
-
-
 ### URL Structure
 
-Snooze is designed to host multiple APIs potentially owned by controlled by different organizations.  All functional URLs for an API are prefixed 
-with an Account Code and API Code path components.  The Account Code uniquely identifies the organization that owns the API and is unique to the 
-platform. The ApiCode uniquely identifies the Api within the namespace created by the AccountCode. 
+Snooze is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
+with an AccountCode and ApiCode path components.  The AccountCode uniquely identifies the organization that owns the API and is unique to the 
+host server. The ApiCode uniquely identifies the Api within the namespace created by the AccountCode. 
 
-Valid URL formats are:
+Valid based URL formats are:
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
 
- * https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
- * https://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
+A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
+plural versions will be redirected to the plural url.
+ * ${API_URL}/${COLLECTION}/
+ * ${API_URL}/${COLLECTION}/${ENTITY_ID}
+ * ${API_URL}/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
+
+Examples example:  
+ * 'http://localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
+ * 'http://localhost/johns_books/orders/1234' would return the details of order 1234
+ * 'http://localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
+ * 'http://localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 
 ### Account
@@ -109,7 +183,7 @@ ownes an Api...which may be different from the organization that is running the 
 
 ### Api
 
-An API exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
+An Api exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
    
 
 ### Collections, Entities, and Attributes
@@ -121,8 +195,8 @@ in a URL or as a JSON property name.
 
 ### Endpoints, Actions and Handlers
 
-Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose metaphore of a an Endpoint 
-being a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Snooze is in the implementation 
+Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose analogy of a an Endpoint 
+acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Snooze is in the implementation 
 of various Handlers.
 
 An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
@@ -137,18 +211,34 @@ ties things back to the url/http method being invoked.
 
 
 Example Handlers:
- * SqlGetHandler
- * S3UploadHandler
- * AuthHandler
- * AclHandler
- * LogHandler
+ * io.rcktapp.api.handler.sql.GetHandler
+ * io.rcktapp.api.handler.sql.PostHandler
+ * io.rcktapp.api.handler.sql.DeleteHandler
+ * io.rcktapp.api.handler.auth.AuthHandler
+ * io.rcktapp.api.handler.auth.AclHandler
+ * io.rcktapp.api.handler.util.LogHandler
+ * io.rcktapp.api.handler.util.S3UploadHandler
+ * io.rcktapp.api.handler.util.RateHandler
 
 
 
 
 ### AclRule
-### Permissions
+
+AclRules allow you to decleare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
+be setup (in that order) to protect resources according to configed AclRules.
+    
+### Permissions 
+
+The AuthHandler will set Permission objects on the per request User object that may be check against AclRule declarations by the AclHandler.
+
 ### Change
+
+Supplied default Handler implementations accumulate Changes that occure as part of any request.  LogHandler can configured to save the list of Changes to a Db to implement 
+effective per request user level change logging.  Custom Handler implementor should call Response.addChange if a call modifies persistent data.
+
+
+
 ### Db - change to data source to accomodate dynamo and elastic
 ### Table
 ### Column
@@ -156,13 +246,38 @@ Example Handlers:
 
 ### Tenant - relationship between app and multiple users of the app - goes with use of the api
 
+### Configuration Files
+
+Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
+order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
+that do not have to duplicate config between them.
+  
+The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comman separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Initial loading - this stage loads all of the user supplied values according to the above algorithm
+1. Db reflection - the system looks for all Db config objects and inspects the table/column structure (this goes for Dynamo and ElasticSearch too) and generates
+   bean.property=value markup for everything it finds.
+1. Api creation - Column,Table,Entity,Collection configuration is created to match the underlying Dbs.
+1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generarted configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
 
 
-
+    
 
 ## Resource Query Language (RQL)
 
-RQL is the set of query string parameters that you use to query a REST collection for entities that match specific criteria or otherise alter 
+RQL is the set of query string parameters that allows developers to "slice and dice" the data returned from the Api to meet their specific needs.
+
+you use to query a REST collection for entities that match specific criteria or otherise alter 
 the operation to be performe and the response values. 
 
 
