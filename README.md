@@ -5,13 +5,25 @@ Snooze is an "API as a Service" platform and the fastest way to deliver a REST A
 With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
 
 Snooze is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
-multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, ElasticSearch, and Amazon's Dynamo DB.  
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
 
 
 ## Contents
 1. [Features & Benefits](#features--benefits)
 1. [Quick Start](#quickstart)
-1. [Config File](#config-file)
+1. [Configuring Your Api](#configuring-your-api)
+   * [Configuration Files Loading](#configuration-file-loading)
+   * [URL Structure](#url-structure)
+   * [Account](#account)
+   * [Api](#api)
+   * [Collections, Entities and Attributes](#collections-entities-and-attributes)
+   * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
+   * [AclRule](#aclrule)
+   * [Permission](#permission)
+   * [Change](#change)
+   * [Db](#db)
+   * [Tables, Columns and Relationships](#tables-columns-and-relationships)
+   * [Tenant](#tenant)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted & Required Parameters](#restricted--required-query-parameters)
@@ -20,30 +32,20 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Query Filters](#query-filters)
    * [Aggregations](#aggregations)
    * [Nested Document Expansion](#nested-document-expansion)
-   * [Property Inclusion / Exclusion](#propert-inclusion--exclusion)
+   * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
    * [Miscellaneous](#miscellaneous)
 1. [Security Model](#security-model)
-   * [Access / Login / Sessions](#access--login--sessions)
-   * [Roll & Permission Based Authorization](#roll--permission-based--authorization)
+   * [Account Roles](#account-roles)
+   * [Api Permissions](#api-permissions)
+   * [Authentication](#authentication)
+   * [Authorization](#authorization)
    * [Multi-Tenant APIs](#multi-tenant-apis)
-   * [Row Level Security](#row-level-security)
-1. [Object Model](#object-model)
-   * Api
-   * Endpoitns
-   * Actions
-   * Handler
-   * Database
-1. [Handlers](#handlers)
-   * SQL CentricRest   
-     * Get
-     * Put/Post
-     * Post
-     * Delete
-    
-   
+   * [Row Level Security](#row-level-security)   
+1. [Elasticsearch Specifics](#elasticsearch-specifics)
+1. [DynamoDB Specifics](#dynamodb-specifics)  
 1. [Developer Notes](#developer-notes)
    * [Logging](#logging)
-   * Gradle, Maven, etc.    
+   * [Gradle, Maven, etc.](#gradle-maven-etc)    
 1. [Changes](#changes)   
   
  
@@ -79,11 +81,11 @@ Simply swap out the JDBC params in the example below and you will have a read on
 all of the db tables to:  https://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}
 
 Try out some [RQL](#resource-query-language-rql) queries like:
-* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
-* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
-* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
-* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
-* http://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
+* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
+* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
+* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
+* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
+* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
 
 Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
  
@@ -147,7 +149,34 @@ restEp.handler=restH
 ```
 
 
-## Configuring your API
+## Configuring Your API
+
+
+### Configuration File Loading
+
+Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
+order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
+that do not have to duplicate config between them.
+  
+The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comman separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Initial loading - this stage loads all of the user supplied values according to the above algorithm
+1. Db reflection - the system looks for all Db config objects and inspects the table/column structure (this goes for Dynamo and ElasticSearch too) and generates
+   bean.property=value markup for everything it finds.
+1. Api creation - Column,Table,Entity,Collection configuration is created to match the underlying Dbs.
+1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generarted configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
+
+
 
 
 ### URL Structure
@@ -169,10 +198,10 @@ plural versions will be redirected to the plural url.
  * ${API_URL}/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
 
 Examples example:  
- * 'http://localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
- * 'http://localhost/johns_books/orders/1234' would return the details of order 1234
- * 'http://localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
- * 'http://localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
+ * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
+ * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
+ * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
+ * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 
 ### Account
@@ -246,39 +275,13 @@ effective per request user level change logging.  Custom Handler implementor sho
 
 ### Tenant - relationship between app and multiple users of the app - goes with use of the api
 
-### Configuration Files
-
-Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
-order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
-key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
-that do not have to duplicate config between them.
-  
-The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comman separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
-
-Configuration and API bootstrapping takes place in the following stages:
-
-1. Initial loading - this stage loads all of the user supplied values according to the above algorithm
-1. Db reflection - the system looks for all Db config objects and inspects the table/column structure (this goes for Dynamo and ElasticSearch too) and generates
-   bean.property=value markup for everything it finds.
-1. Api creation - Column,Table,Entity,Collection configuration is created to match the underlying Dbs.
-1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
-
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generarted configuration to be overridden.  Instead
-of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
-
-
     
 
 ## Resource Query Language (RQL)
 
-RQL is the set of query string parameters that allows developers to "slice and dice" the data returned from the Api to meet their specific needs.
+RQL is the set of HTTP query string parameters that allows developers to "slice and dice" the data returned from the API to meet their specific needs.
 
-you use to query a REST collection for entities that match specific criteria or otherise alter 
-the operation to be performe and the response values. 
+you use to query a REST collection for entities that match specific criteria or otherise alter the operation to be performed and the response values. 
 
 
 ### General
@@ -415,7 +418,7 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
     
   
   
-# RQL Query String Params to Elastic
+## Elasticsearch Specifics
 Currently, the following functions are available for use:
 
 * `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
@@ -429,7 +432,7 @@ The index/type will be automatically generated so that only one value needs to b
 The index/type used above `.../elastic/location/location?and(...` is the same as `/elastic/location?and(...`.
 In the second example, it is assumed that the index/type `location` are the same value.
 
-#### RQL Examples
+#### Elasticsearch RQL Examples
 Retrieve all location data for the locations in the city of Chandler
 `http://localhost:8080/api/apiCode/elastic/location?eq(city,Chandler)`
 
@@ -456,9 +459,7 @@ Retrieve locations with an empty state value
 
 
 
-## Dynamo Specifics
-
- ### Dynamo Specific Configuration
+## DynamoDB Specifics
 
 Configuration is done on the Endpoint's config property.
 
@@ -495,20 +496,23 @@ dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
 ## REST to CRUD - GET,POST,PUT,DELETE       
 
 QueryStrings params (and required status) can be used with POST/PUT/DELETE re not just GET method
-requests.  The values will be appended to the 
-
+requests.   
 
 
 
 
 ## Security Model
 
+ 
+### Account Roles
+
 An Api is associated with a single Account
 
-Users have system level Role relationship with one or more Accounts.  
+Users have a system level Role relationship with one or more Accounts.  
 
-Roles really are not supposed to have a functional relationship to Api/application being served.  Roles do not provide
-application level entitlements, they provide Snooze level entitlements.
+Roles are not designed to have a functional relationship to an Api being served.  Genarally, Roles should not
+be used by Api designers to provide application level entitlements, they are designed to provide Snooze system level entitlements.
+ 
 
 Roles:
  * Owner - The person who can delete a Snooze account.  
@@ -519,7 +523,9 @@ Roles:
    Snooze Member role.
  * Guest - Represents an unauthenticated caller.
 
-Roles are hierarchical by privilege.  Ex. having the Owner role gives you Member and Guest authority.     
+Roles are hierarchical by privilege.  Ex. having the Owner role gives you Administrator, Member and Guest authority.     
+
+### Api Permissions
 
 For each Api a Users can be assigned Api defined named Permissions.  Permissions are simple string tokens.  They do
 not confer hierarchical privilege like roles.  An Api designer might define Permission string such as "ADMINISTRATOR"
@@ -527,39 +533,38 @@ or "SOMECOLLECTION_SOMEHTTPMETHOD".  This is a total designers choice free for a
 
 Groups of Users can be created at the Account level and each Group can be given Roles and Permissions 
 that the Users inherit.  In this way, you could create a functional "Admin" Group (different from Administrtor Role) 
-and give that Group all of the Permissions required and then assign Users to that Admin Group. 
+and give that Group all of the Permissions desired and then assign Users to that Admin Group. 
 
 
-### Access / Login / Sessions
-
-Each Api defines one or more Endpoints.  If authentication is going to be used, at least one of the Endpoints
-must be configured with an Action that handles authentication. See AuthHandler.
+### Authentication
 
 As far as the framework is concerned, authentication involves populating a User object with their entitled
-Roles and Permissions placing the User object on the Request.  Session management, barer tokens etc. are left up 
-to the handler implementation.  
+Roles and Permissions and placing the User object on the Request.  Session management, barer tokens etc. are left up 
+to the handler implementation.  Authentication does not consider Rolls and Permissions it just validates the username/password. 
 
 AuthHandler is the default authentication provider.  It currently supports HTTP basic auth along with, username/password 
 query string params and session tokens.  Additionally if an application chooses to provide a JWT signed with a User's
 secretKey, the roles and permissions defined in the JWT will become the roles and permissions assigned to the 
 User for that request and any roles and permissions defined in the DB will not be used.  
  
-Failing Authentication should return a 501 Unauthorized HTTP response code.
+If you want to secure your Api, you have to configure an instance of the AuthHandler (or create your own custom authentication handler)
+and map it to the desired Endpoints through an Action. 
+ 
+Failing Authentication should return a 501 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
+codes that 501 should be called something other than 'Unauthorized' because generally elswehere in software development
+authorization (see below) is the process of determining if a users can access requrested resources, NOT validating a users credentials.)
+ 
 
+### Authorization
 
-### Roll & Permission Based Authorization 
+Authorization is managed by the AclHandler.  If you want to use Role and Permission based authorization 
+you must configure an instance of the AclHandler (or create your own implementation) and associate it to
+the desired Endpoints through an Action.
 
-After a users has been successfully logged in, the Request User object will be populated with the Role and 
-Permission obejects assigned to the user.
+The AclHandler matches configured AclRules objects against the Url path and HTTP method of the request.
 
-Acl objects can be set on the Api to declare different combinations of roles and privildges that Users must
-have to access different method/path combinations.
-
-The AclHandler (or a developer provided customization/substitute) can be configured on an Action perform
-the actual work of comparing the current request to the users roles and permissions.
-
-Acl objects can be ordered through their "order" field.  They are processed by AclHandler in sort order. 
-The first rule to "allow" access wins.  If no rule allows access, then a 403 is thrown.
+AclHandler processes AclRules in sorted order and the first rule to allow access "wins".  If no rule allows access, 
+then a 403 Forbidden HTTP status code is returned.
 
 
 
@@ -570,15 +575,29 @@ preceded by a tenantCode.
 
 Ex: http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey] 
 
+If the AuthHandler is being used, it will enforce that the Url tenantCode matches the logged in users
+tenantCode (if there is a logged in user).
 
+IMPORTANT: this Url match restriction alone will not prevent access to cross tenant data. To fully
+restrict and require the tenantId and tenantCode query string parameters and JSON body properties
+with the following configuration.
 
+```properties
 
-The first line of defense 
+tenantAcl.class=io.rcktapp.api.AclRule
+tenantAcl.info=true
+tenantAcl.includePaths=*
+#tenantAcl.excludePaths=
+tenantAcl.restricts=*.tenantId,*.tenantCode
+tenantAcl.requires=*.tenantId
+tenantAcl.methods=GET,PUT,POST,DELETE
 
-Many Apis will expose multi-tenant databases and authorization to access and Endpoint should not necessarily 
-entitle a User to all the data found at that Endpoint.
+```
 
-
+Including this configuration will ensure that tenantId is always considered in queries (if it exists
+on the target Table) and can not be supplied by the caller, it will be pulled from the logged in 
+user.
+  
 
 
 ### Row Level Security 
@@ -587,24 +606,27 @@ entitle a User to all the data found at that Endpoint.
 SUSPECT NEED TO UPDATE
 
 The simplest way to restrict a users interaction with a row is to provide a "userId" column on the 
-table in question.  The param "userId" is a known special case 
+table in question.  Then use an AclRule to "require/restrict" userId.  This way a user can only 
+read and write the rows they 'own'.  You could user a different combination of AclRules to achieve
+permission based read and owner based write/delete.
 
-If row level security is required, a filter SQL statements can be provided as a JSON Action params.
- 
+```properties
 
-An Action can be configured with "required" params which means that the api caller must supply
-these as query string name=value pairs.  
+userAcl.class=io.rcktapp.api.AclRule
+userAcl.info=true
+userAcl.includePaths=*
+#userAcl.excludePaths=
+userAcl.restricts=*.userId
+userAcl.requires=*.userId
+userAcl.methods=GET,PUT,POST,DELETE
 
-```javascript
-{
-	required: ['userId', 'col1', 'col2']
-}
 ```
+ 
+If you need to implement a row level security feature that can not be mapped to a userId column, 
+you can configure JOIN filters that will limit a users access to the desired rows.
 
-
-
-
-
+TODO: add more specific doco here.
+ 
 
 
 
