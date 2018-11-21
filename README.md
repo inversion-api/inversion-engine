@@ -432,6 +432,8 @@ The index/type will be automatically generated so that only one value needs to b
 The index/type used above `.../elastic/location/location?and(...` is the same as `/elastic/location?and(...`.
 In the second example, it is assumed that the index/type `location` are the same value.
 
+Elastic pagination: paging beyond the 10,000th item is significantly slower than paging within the range of 0-10,000. Once the 10k index has been reached, elastic must manually cycle through the data in order to obtain the desired page.  10,000 is the default max_result value within ElasticSearch.
+
 #### Elasticsearch RQL Examples
 Retrieve all location data for the locations in the city of Chandler
 `http://localhost:8080/api/apiCode/elastic/location?eq(city,Chandler)`
@@ -550,8 +552,8 @@ User for that request and any roles and permissions defined in the DB will not b
 If you want to secure your Api, you have to configure an instance of the AuthHandler (or create your own custom authentication handler)
 and map it to the desired Endpoints through an Action. 
  
-Failing Authentication should return a 401 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
-codes that 401 should be called something other than 'Unauthorized' because generally elswehere in software development
+Failing Authentication should return a 501 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
+codes that 501 should be called something other than 'Unauthorized' because generally elswehere in software development
 authorization (see below) is the process of determining if a users can access requrested resources, NOT validating a users credentials.)
  
 
@@ -570,7 +572,7 @@ then a 403 Forbidden HTTP status code is returned.
 
 ### Multi-Tenant APIs
 
-Api's can be flagged as 'multiTenant'.  If so, the collection key in the url prefix must be immediately 
+Api's can be flagged as 'multiTennant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
 
 Ex: http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey] 
@@ -635,7 +637,7 @@ TODO: add more specific doco here.
 
 ### Gradle, Maven, etc.
 
-If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch directly from GitHub into your project.   
+If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch dirctly from GitHub into your project.   
 
 ```gradle
 repositories { 
