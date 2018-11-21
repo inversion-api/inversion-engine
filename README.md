@@ -64,7 +64,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Declarative security
  * Sql Injection proof
  * Consistent response envelope
- * Always COORS cross site capable
+ * Always CORS cross site capable
  * Multiple RDBMS back ends in a single API
  * "Smart PUT/POST" - no id/href field no problem. Nested/mixed put/post 
  * "Explain" mode shows you the exact statements to be run
