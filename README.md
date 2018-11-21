@@ -160,7 +160,7 @@ key wins" in terms of overwriting settings.  This design is intended to make it 
 that do not have to duplicate config between them.
   
 The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comman separated list ex: 
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
 bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
 
 Configuration and API bootstrapping takes place in the following stages:
