@@ -585,7 +585,7 @@ then a 403 Forbidden HTTP status code is returned.
 Api's can be flagged as 'multiTenant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
 
-Ex: http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey] 
+Ex: ```http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey]```
 
 If the AuthHandler is being used, it will enforce that the Url tenantCode matches the logged in users
 tenantCode (if there is a logged in user).
