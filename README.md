@@ -635,7 +635,7 @@ TODO: add more specific doco here.
 
 ### Gradle, Maven, etc.
 
-If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch dirctly from GitHub into your project.   
+If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch directly from GitHub into your project.   
 
 ```gradle
 repositories { 
