@@ -234,7 +234,7 @@ to run when an Endpoint is called by a client.
 Actions link Endpoints to Handlers.  Behind each Endpoint can be an orderd list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
 based on the configuration information on the Action.  Actions are mapped to URL paths / http methods and as such may be selected to run as part of one or more Endpoints.     
 
-Work is done in the Handlers.  If an application must have custom business logic or otherwise can't managed to achieve a desired result via configuration, 99% of the time, the answer
+Work is done in the Handlers.  If an application must have custom business logic or otherwise can't manage to achieve a desired result via configuration, 99% of the time, the answer
 is a custom Handler. Handlers do not have to be singletons but the design pattern is that anything that would be "use case specific" should be abstracted into Action config which
 ties things back to the url/http method being invoked.
 
