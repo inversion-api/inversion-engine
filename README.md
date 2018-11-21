@@ -469,7 +469,7 @@ elasticEp.methods=GET
 elasticEp.handler=elasticH
 ```
 
-
+[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
 
 ## DynamoDB Specifics
 
