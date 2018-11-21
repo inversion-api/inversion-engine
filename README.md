@@ -457,7 +457,16 @@ Retrieve auto-suggested cities that start with 'chan'
 Retrieve locations with an empty state value
 `http://localhost:8080/api/apiCode/elastic/location?emp(state)`
 
+Example Config
+```
+elasticH.class=io.rcktapp.api.service.ElasticHandler
+elasticH.elasticURL=https://vpc-liftck-gen2-dev-f44d6n5phip7ffw3js6lqa4hda.us-east-1.es.amazonaws.com
 
+elasticEp.class=io.rcktapp.api.Endpoint
+elasticEp.includePaths=elastic*
+elasticEp.methods=GET
+elasticEp.handler=elasticH
+```
 
 
 
