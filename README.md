@@ -254,7 +254,7 @@ Example Handlers:
 
 ### AclRule
 
-AclRules allow you to decleare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
+AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
 be setup (in that order) to protect resources according to configed AclRules.
     
 ### Permissions 
