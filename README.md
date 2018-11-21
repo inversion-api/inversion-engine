@@ -41,7 +41,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Authorization](#authorization)
    * [Multi-Tenant APIs](#multi-tenant-apis)
    * [Row Level Security](#row-level-security)   
-1. [ElasticSearch Specifics](#elasticsearch-specifics)
+1. [Elasticsearch Specifics](#elasticsearch-specifics)
 1. [DynamoDB Specifics](#dynamodb-specifics)  
 1. [Developer Notes](#developer-notes)
    * [Logging](#logging)
@@ -419,7 +419,7 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
     
   
   
-## ElasticSearch Specifics
+## Elasticsearch Specifics
 Currently, the following functions are available for use:
 
 * `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
