@@ -259,12 +259,12 @@ be setup (in that order) to protect resources according to configed AclRules.
     
 ### Permissions 
 
-The AuthHandler will set Permission objects on the per request User object that may be check against AclRule declarations by the AclHandler.
+The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
 
 ### Change
 
-Supplied default Handler implementations accumulate Changes that occure as part of any request.  LogHandler can configured to save the list of Changes to a Db to implement 
-effective per request user level change logging.  Custom Handler implementor should call Response.addChange if a call modifies persistent data.
+Supplied default Handler implementations accumulate Changes that occur as part of any request.  LogHandler can be configured to save the list of Changes to a Db to implement 
+effective per request user level change logging.  Custom Handler implementors should call Response.addChange if a call modifies persistent data.
 
 
 
