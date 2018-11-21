@@ -172,7 +172,7 @@ Configuration and API bootstrapping takes place in the following stages:
 1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
 1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
 
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generarted configuration to be overridden.  Instead
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
 of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
 happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
 
