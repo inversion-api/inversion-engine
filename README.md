@@ -550,8 +550,8 @@ User for that request and any roles and permissions defined in the DB will not b
 If you want to secure your Api, you have to configure an instance of the AuthHandler (or create your own custom authentication handler)
 and map it to the desired Endpoints through an Action. 
  
-Failing Authentication should return a 501 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
-codes that 501 should be called something other than 'Unauthorized' because generally elswehere in software development
+Failing Authentication should return a 401 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
+codes that 401 should be called something other than 'Unauthorized' because generally elswehere in software development
 authorization (see below) is the process of determining if a users can access requrested resources, NOT validating a users credentials.)
  
 
