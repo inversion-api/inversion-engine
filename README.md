@@ -602,9 +602,6 @@ user.
 
 ### Row Level Security 
 
-
-SUSPECT NEED TO UPDATE
-
 The simplest way to restrict a users interaction with a row is to provide a "userId" column on the 
 table in question.  Then use an AclRule to "require/restrict" userId.  This way a user can only 
 read and write the rows they 'own'.  You could user a different combination of AclRules to achieve
@@ -632,7 +629,7 @@ TODO: add more specific doco here.
 
 ## Developer Notes
 
-## Logging
+### Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 
 
