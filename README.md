@@ -403,6 +403,7 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
 ### Miscellaneous
 
 * as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
+ 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
  as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
