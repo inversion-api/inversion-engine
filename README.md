@@ -70,7 +70,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * "Explain" mode shows you the exact statements to be run
  * Mutli tenant design  
  * Elegant pluralization of db tables w/ intelligant redirect
- * 
+
 
 
   
