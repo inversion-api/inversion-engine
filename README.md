@@ -538,8 +538,8 @@ Roles are hierarchical by privilege.  Ex. having the Owner role gives you Admini
 
 ### Api Permissions
 
-For each Api a Users can be assigned Api defined named Permissions.  Permissions are simple string tokens.  They do
-not confer hierarchical privilege like roles.  An Api designer might define Permission string such as "ADMINISTRATOR"
+For each Api a User can be assigned Api defined named Permissions.  Permissions are simple string tokens.  They do
+not confer hierarchical privilege like roles.  An Api designer might define a Permission string such as "ADMINISTRATOR"
 or "SOMECOLLECTION_SOMEHTTPMETHOD".  This is a total designers choice free for all.  
 
 Groups of Users can be created at the Account level and each Group can be given Roles and Permissions 
