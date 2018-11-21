@@ -645,8 +645,8 @@ TODO: add more specific doco here.
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 ```
 dependencies {
-...
-compile 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.6.0'
+    ...
+    compile 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.6.0'
 }
 ```
 
@@ -669,9 +669,9 @@ dependencies {
 ```   
 Include the spring-boot dependencies to your custom project to quickly get it running with ```gradle bootRun```
 ```
-compile 'org.springframework.boot:spring-boot-starter-web'
-compile 'org.springframework.boot:spring-boot-starter-actuator'
-compile 'org.springframework.boot:spring-boot-starter-jdbc'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-jdbc'
 ```
 
   
