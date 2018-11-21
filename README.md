@@ -530,7 +530,7 @@ Roles:
  * Administrator - Someone who can configure an account including changing changing security and managing Users.
    (Owner and Administrator are not designed to be functionally useful for Api clients but there is nothing stopping you from
    requiring Owner or Administrator Roles to access various Api Endpoints, see below)
- * Member - Generally, someone who will be calling the Api.  An admin user of an end application, my only have the 
+ * Member - Generally, someone who will be calling the Api.  An admin user of an end application, may only have the 
    Snooze Member role.
  * Guest - Represents an unauthenticated caller.
 
