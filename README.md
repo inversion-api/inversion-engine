@@ -570,7 +570,7 @@ then a 403 Forbidden HTTP status code is returned.
 
 ### Multi-Tenant APIs
 
-Api's can be flagged as 'multiTennant'.  If so, the collection key in the url prefix must be immediately 
+Api's can be flagged as 'multiTenant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
 
 Ex: http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey] 
