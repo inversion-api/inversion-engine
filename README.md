@@ -662,6 +662,59 @@ dependencies {
 } 
 ```   
 
+## Rest API Design Resources
+
+### HTTP Error Codes
+ * http://msdn.microsoft.com/en-us/library/azure/dd179357.aspx
+ * http://www.restapitutorial.com/httpstatuscodes.html
+ * http://www.restapitutorial.com/lessons/httpmethods.html 
+
+
+### Standards-ish
+
+ * http://stackoverflow.com/questions/12806386/standard-json-api-response-format
+ * https://jsonapi.org/
+ * https://labs.omniti.com/labs/jsend
+ * http://stateless.co/hal_specification.html
+ * http://www.odata.org/
+ * https://en.wikipedia.org/wiki/HATEOAS
+ * https://github.com/swagger-api/swagger-core/wiki
+ * http://json-schema.org/
+ * https://google.github.io/styleguide/jsoncstyleguide.xml
+ * https://developers.facebook.com/docs/graph-api/
+ 
+ 
+### URL Query Languages
+ 
+ * http://dundalek.com/rql/
+ * https://doc.apsstandard.org/2.1/spec/rql/
+ * https://www.sitepen.com/blog/2010/11/02/resource-query-language-a-query-language-for-the-web-nosql/
+ * http://msdn.microsoft.com/en-us/library/gg309461.aspx - odata endpoint filters
+ * http://tools.ietf.org/html/draft-nottingham-atompub-fiql-00
+ * http://stackoverflow.com/questions/16371610/rest-rql-java-implementation
+ * https://graphql.org/
+  
+ 
+### Best Practices and Design Resources
+
+ * https://stormpath.com/blog/linking-and-resource-expansion-rest-api-tips/
+ * http://docs.stormpath.com/rest/product-guide/#link-expansion
+ * http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
+ * http://blog.mwaysolutions.com/2014/06/05/10-best-practices-for-better-restful-api/
+ * http://samplacette.com/five-json-rest-api-link-formats-compared/
+ * https://www.mnot.net/blog/2011/11/25/linking_in_json
+ * https://blog.safaribooksonline.com/2013/05/23/instrumenting-apis-with-links-in-rest/
+ * http://stackoverflow.com/questions/297005/what-is-the-gold-standard-for-website-apis-twitter-flickr-facebook-etc
+ 
+### REST APIs in the Wild
+
+* Stripe - https://stripe.com/docs/api
+* Wordpress - https://developer.wordpress.org/rest-api/
+* Google - https://developers.google.com/
+* Facebook - https://developers.facebook.com/docs
+* LinkedIn - https://developer.linkedin.com/docs
+* Amazon S3 - https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html
+* Twitter - https://developer.twitter.com/
 
   
 ## Changes
