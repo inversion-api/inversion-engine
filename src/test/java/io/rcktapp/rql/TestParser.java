@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -19,11 +19,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import io.rcktapp.api.handler.sql.SqlRestHandler;
+import io.rcktapp.rql.sql.SqlRql;
+
 public class TestParser
 {
    public static void main(String[] args) throws Exception
    {
-      Rql rql = new Rql("postgres");
+      Class.forName(SqlRql.class.getName());
+      
+      Rql rql = Rql.getRql("postgres");
       Parser parser = new Parser(rql);
       LinkedHashMap<String, String> preds = new LinkedHashMap();
 
@@ -36,10 +41,9 @@ public class TestParser
       //preds.put("func(col,val1,1234,false)", "func(\"col\",'val1',1234,0)");
       preds.put("in(firstname,fred,george,john)", "in(\"firstname\",'fred','george','john')");
       preds.put("firstname=in=fred,george,john", "in(\"firstname\",'fred','george','john')");
-      preds.put("eq('string','string')","eq('string','string')"); 
-      
-      preds.put("eq('string','string')","eq('string','string')");
-      
+      preds.put("eq('string','string')", "eq('string','string')");
+
+      preds.put("eq('string','string')", "eq('string','string')");
 
       //
 

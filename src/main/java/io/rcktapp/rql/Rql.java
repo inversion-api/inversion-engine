@@ -35,36 +35,49 @@ import io.rcktapp.api.Table;
 public class Rql
 {
 
-   //   public static final HashSet         SQL_RESERVED_KEYWORDS   = new HashSet(Arrays.asList(new String[]{"as", "includes", "sort", "order", "offset", "limit", "distinct", "aggregate", "function", "sum", "count", "min", "max"}));
-   //
-   public static final HashSet<String> RESERVED  = new HashSet<String>(                                                                                                        //
-                                                                       Arrays.asList(                                                                                          //
-                                                                             new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                //
-                                                                       ));
-   //
-   public static final HashSet<String> OPERATORS = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "wo", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
-   //
-   static HashSet<String>              FUNCTIONS = new HashSet<String>(                                                                                                        //
-                                                                       Arrays.asList(                                                                                          //
-                                                                             new String[]{                                                                                     //
-                                                                                   "(",                                                                                        //
-                                                                                   "eq", "ne", "lt", "le", "gt", "ge",                                                         //
-                                                                                   "and", "or",                                                                                //
-                                                                                   "in", "out",                                                                                //
-                                                                                   "group", "count", "sum", "min", "max", "aggregate", "function", "countascol", "rowcount",   //
-                                                                                   "miles", "if", "as",                                                                        //
-                                                                                   "includes", "sort", "order", "offset", "limit",                                             //
-                                                                                   "page", "pagenum", "pagesize", "distinct",                                                  // 
-                                                                                   "sw", "ew", "w", "wo",                                                                      //
-                                                                                   "emp", "nemp", "nn", "n",                                                                   // nn == not null, n == null
-                                                                                   "search"}                                                                                   //
-                                                                       ));
-   //
-   static HashSet<String>              OPERATORS = new HashSet<String>(                                                                                                        //
-                                                                       Arrays.asList(                                                                                          //
-                                                                             new String[]{"=", "eq", "ne", "lt", "le", "gt", "ge", "in", "out"}));
+   //public static final HashSet<String> RESERVED  = new HashSet(Arrays.asList(new String[]{"as", "includes", "sort", "order", "offset", "limit", "distinct", "aggregate", "function", "sum", "count", "min", "max"}));
 
-   static HashMap<String, Rql>         RQLS      = new HashMap();
+   /**
+    * Words that are reserved as part of the target query dialect
+    */
+   public static final HashSet<String> RESERVED     = new HashSet();
+
+   /**
+    * Words that have other meaning elsewhere and should not be considered
+    */
+   public static final HashSet<String> EXCLUDED     = new HashSet<String>(                                                                                                                                                                     //
+                                                                          Arrays.asList(                                                                                                                                                       //
+                                                                                new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                                             //
+                                                                          ));
+   /**
+    * Words that translate into a filter/where condition
+    */
+   public static final HashSet<String> CONDITIONALS = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "wo", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
+
+   static HashSet<String>              FUNCTIONS    = new HashSet<String>(                                                                                                                                                                     //
+                                                                          Arrays.asList(                                                                                                                                                       //
+                                                                                new String[]{                                                                                                                                                  //
+                                                                                      "(",                                                                                                                                                     //
+                                                                                      "eq", "ne", "lt", "le", "gt", "ge",                                                                                                                      //
+                                                                                      "and", "or",                                                                                                                                             //
+                                                                                      "in", "out",                                                                                                                                             //
+                                                                                      "group", "count", "sum", "min", "max", "aggregate", "function", "countascol", "rowcount",                                                                //
+                                                                                      "miles", "if", "as",                                                                                                                                     //
+                                                                                      "includes", "sort", "order", "offset", "limit",                                                                                                          //
+                                                                                      "page", "pagenum", "pagesize", "distinct",                                                                                                               // 
+                                                                                      "sw", "ew", "w", "wo",                                                                                                                                   //
+                                                                                      "emp", "nemp", "nn", "n",                                                                                                                                // nn == not null, n == null
+                                                                                      "search"}                                                                                                                                                //
+                                                                          ));
+
+   /**
+    * Tokens that can be used in the for col=value or col=ge=value.  
+    */
+   static HashSet<String>              OPERATORS    = new HashSet<String>(                                                                                                                                                                     //
+                                                                          Arrays.asList(                                                                                                                                                       //
+                                                                                new String[]{"=", "eq", "ne", "lt", "le", "gt", "ge", "in", "out"}));
+
+   static HashMap<String, Rql>         RQLS         = new HashMap();
 
    public static void addRql(Rql rql)
    {
@@ -83,6 +96,8 @@ public class Rql
    Set<String>     operators       = new HashSet();
    Set<String>     functions       = new HashSet();
    Set<String>     reserved        = new HashSet();
+   Set<String>     excluded        = new HashSet();
+   Set<String>     conditionals    = new HashSet();
 
    public Parser   parser          = null;
 
@@ -101,6 +116,8 @@ public class Rql
       setReserved(RESERVED);
       setOperators(OPERATORS);
       setFunctions(FUNCTIONS);
+      setExcluded(EXCLUDED);
+      setConditionals(CONDITIONALS);
 
    }
 
@@ -123,6 +140,20 @@ public class Rql
       if (str == null)
          return false;
       return reserved.contains(str.toLowerCase());
+   }
+
+   public boolean isExcluded(String str)
+   {
+      if (str == null)
+         return false;
+      return excluded.contains(str.toLowerCase());
+   }
+
+   public boolean isConditional(String str)
+   {
+      if (str == null)
+         return false;
+      return conditionals.contains(str.toLowerCase());
    }
 
    public Parser getParser()
@@ -195,6 +226,16 @@ public class Rql
       this.functions.add(function.toLowerCase());
    }
 
+   public void addExcluded(String excluded)
+   {
+      this.excluded.add(excluded.toLowerCase());
+   }
+
+   public void addConditional(String conditional)
+   {
+      this.conditionals.add(conditional.toLowerCase());
+   }
+
    public void setOperators(Collection<String> operators)
    {
       this.operators.clear();
@@ -214,6 +255,20 @@ public class Rql
       this.functions.clear();
       for (String word : functions)
          addFunction(word);
+   }
+
+   public void setExcluded(Collection<String> excluded)
+   {
+      this.excluded.clear();
+      for (String word : excluded)
+         addExcluded(word);
+   }
+
+   public void setConditionals(Collection<String> conditionals)
+   {
+      this.conditionals.clear();
+      for (String word : conditionals)
+         addConditional(word);
    }
 
    //##############################################################################################################################################################
@@ -287,7 +342,7 @@ public class Rql
          //skip if this is a reserved keyword
          if (!key.equalsIgnoreCase("q") && //
                !key.equalsIgnoreCase("filter") && //
-               isReserved(key.toLowerCase()))
+               isExcluded(key.toLowerCase()))
             continue;
 
          String clauseStr = null;
@@ -324,7 +379,7 @@ public class Rql
       if (token.endsWith("("))
          token = token.substring(0, token.length() - 1);
 
-      if (isOperator(token.toLowerCase()))
+      if (isConditional(token.toLowerCase()))
       {
          stmt.where.add(p);
       }
@@ -444,7 +499,7 @@ public class Rql
             stmt.order.add(new Order(sort, desc));
          }
       }
-      else if (isOperator(token.toLowerCase()))
+      else if (isConditional(token.toLowerCase()))
       {
          stmt.where.add(p);
       }

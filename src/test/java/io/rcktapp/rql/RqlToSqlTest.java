@@ -24,7 +24,7 @@ import io.rcktapp.rql.sql.SqlRql;
 
 public class RqlToSqlTest
 {
-   
+
    static
    {
       try
@@ -36,7 +36,7 @@ public class RqlToSqlTest
          ex.printStackTrace();
       }
    }
-   
+
    public static void main(String[] args) throws Exception
    {
       List<RqlTest> tests = new ArrayList();
@@ -128,6 +128,7 @@ public class RqlToSqlTest
                             null, //
                             "select * from table1 WHERE `city` LIKE ?", "city", "'%andl%'"));
 
+      //Test 15
       tests.add(new RqlTest("sw(city,andl)", //
                             "select * from table1", //
                             null, //
@@ -143,7 +144,6 @@ public class RqlToSqlTest
                             "select * from table1 WHERE `firstName` IN('wells', 'joe', 'karl')", //
                             null));
 
-      //Test 15
       tests.add(new RqlTest("out(firstName,wells,joe,karl)", //
                             "select * from table1", //
                             "select * from table1 WHERE `firstName` NOT IN('wells', 'joe', 'karl')", //
@@ -154,6 +154,7 @@ public class RqlToSqlTest
                             "select * from table1 WHERE `firstName` IN('wells', 'joe', 'karl')", //
                             null));
 
+      //Test 20
       tests.add(new RqlTest("firstName=Wells&eq(lastName,Burke)&includes=firstName,lastName", //
                             "select * from table1", //
                             "select `firstName`, `lastName` from table1 WHERE `firstName` = 'Wells' AND `lastName` = 'Burke'", //
@@ -169,7 +170,6 @@ public class RqlToSqlTest
                             "select DISTINCT `firstName`, `lastName` from table1 WHERE `firstName` = 'Wells' AND `lastName` = 'Burke'", //
                             null));
 
-      //Test 20
       tests.add(new RqlTest("firstName=Wells&distinct&eq(lastName,Burke)", //
                             "select * from table1", //
                             "select DISTINCT * from table1 WHERE `firstName` = 'Wells' AND `lastName` = 'Burke'", //
@@ -177,10 +177,11 @@ public class RqlToSqlTest
 
       tests.add(new RqlTest("includes=lastName&firstName=wells&lastName=Burke&state=ne=CA&age=ge=38", //
                             "select * from table1", //
-                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND `state` <> 'CA' AND `age` >= 38", //
-                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND `state` <> ? AND `age` >= ?", //
+                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND NOT `state` <=> 'CA' AND `age` >= 38", //
+                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND NOT `state` <=> ? AND `age` >= ?", //
                             "firstName", "'wells'", "lastName", "'Burke'", "state", "'CA'", "age", "38"));
 
+      //Test 25
       tests.add(new RqlTest("sum(if(eq(`col1`,'value'),1,'something blah'))", //
                             "SELECT * from table1", //
                             "SELECT *, SUM(IF(`col1` = 'value', 1, 'something blah')) from table1", //
@@ -189,8 +190,8 @@ public class RqlToSqlTest
 
       tests.add(new RqlTest("sum(if(eq(`col1`,if(ne(`col2`,'val1'),`col3`,'val2')),1,'something blah'))", //
                             "SELECT * from table1", //
-                            "SELECT *, SUM(IF(`col1` = IF(`col2` <> 'val1', `col3`, 'val2'), 1, 'something blah')) from table1", //
-                            "SELECT *, SUM(IF(`col1` = IF(`col2` <> ?, `col3`, ?), 1, 'something blah')) from table1", //
+                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> 'val1', `col3`, 'val2'), 1, 'something blah')) from table1", //
+                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> ?, `col3`, ?), 1, 'something blah')) from table1", //
                             "col2", "'val1'", "col1", "'val2'"));
 
       tests.add(new RqlTest("includes=firstName,lastName", //
@@ -198,7 +199,6 @@ public class RqlToSqlTest
                             "select `firstName`, `lastName` from table1", //
                             "select `firstName`, `lastName` from table1"));
 
-      //Test 25
       tests.add(new RqlTest("as(firstName, name)", //
                             "select * from table1", //
                             "select *, `firstName` AS 'name' from table1", // 
@@ -206,10 +206,11 @@ public class RqlToSqlTest
 
       tests.add(new RqlTest("firstName=wells&lastName=Burke&state=ne=CA&age=ge=38&includes=lastName", //
                             "select * from table1", //
-                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND `state` <> 'CA' AND `age` >= 38", //
-                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND `state` <> ? AND `age` >= ?", //
+                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND NOT `state` <=> 'CA' AND `age` >= 38", //
+                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND NOT `state` <=> ? AND `age` >= ?", //
                             "firstName", "'wells'", "lastName", "'Burke'", "state", "'CA'", "age", "38"));
 
+      //TEST 30
       tests.add(new RqlTest("group(startYear)&includes=startYear&startYear=ne=null&as(count(motiveConfirmed), 'Motive Spaces Confirmed')", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
                             "SELECT `startYear`, COUNT(`motiveConfirmed`) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL  GROUP BY `startYear`", //
@@ -225,7 +226,6 @@ public class RqlToSqlTest
                             "SELECT * FROM Person WHERE `motiveConfirmed` = 'someValue'", //
                             null));
 
-      //TEST 30
       tests.add(new RqlTest("includes='A Col With Caps and Spaces'&as(max(someCol), 'A Col With Caps and Spaces')", //
                             "SELECT * FROM Person", //
                             "SELECT MAX(`someCol`) AS 'A Col With Caps and Spaces' FROM Person", //
@@ -236,6 +236,7 @@ public class RqlToSqlTest
                             "SELECT `y`, MAX(`col2`) AS 'a', MAX(`col1`) AS 'b', `z` FROM Person", //
                             null));
 
+      //TEST 35
       tests.add(new RqlTest("includes=a,b&as(max(col1),b)&as(max(col2),a)", //
                             "SELECT * FROM Person", //
                             "SELECT MAX(`col2`) AS 'a', MAX(`col1`) AS 'b' FROM Person", //
@@ -253,7 +254,6 @@ public class RqlToSqlTest
                             "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = ? OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear`", //
                             "motiveConfirmed", "'Confirmed'", "type", "'Media Worker'", "motiveConfirmed", "'Unconfirmed'", "type", "'Media Worker'"));
 
-      //TEST 35
       tests.add(new RqlTest("countascol(impunity, 'Full Justice', 'Partial Impunity', 'Complete Impunity')", //
                             "SELECT * FROM Person", //
                             "SELECT *, SUM(IF(`impunity` = 'Full Justice', 1, 0)) AS 'Full Justice', SUM(IF(`impunity` = 'Partial Impunity', 1, 0)) AS 'Partial Impunity', SUM(IF(`impunity` = 'Complete Impunity', 1, 0)) AS 'Complete Impunity' FROM Person WHERE `impunity` IN('Full Justice', 'Partial Impunity', 'Complete Impunity')", //
@@ -265,6 +265,7 @@ public class RqlToSqlTest
                             "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t WHERE `status` IN('killed') GROUP BY `victim`", //
                             null));
 
+      //40
       tests.add(new RqlTest("group(victim)&count(victim, number)", //
                             "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
                             "SELECT *, COUNT(`victim`) AS 'number' FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t GROUP BY `victim`", //
@@ -319,24 +320,17 @@ public class RqlToSqlTest
       dynamicSql += " AND `status` = 'Killed' ";
       dynamicSql += " ORDER BY `Year` DESC";
 
-      //40
       tests.add(new RqlTest(rql, //
                             select, //
                             dynamicSql, //
                             null));
-
-      //      rql = "group(year)&includes=Year&as(year,Year)&countascol(impunity,'Full Justice','Partial Impunity','Complete Impunity')&status='Killed'&typeOfDeath=Murder&order=-year";
-      //
-      //      tests.add(new RqlTest(rql, //
-      //                            select, //
-      //                            dynamicSql, //
-      //                            null));
 
       tests.add(new RqlTest("firstName=*w*", //
                             "select * from table1", //
                             "select * from table1 WHERE `firstName` LIKE '%w%'", //
                             "select * from table1 WHERE `firstName` LIKE ?", "firstName", "'%w%'"));
 
+      //45
       tests.add(new RqlTest("q=firstName=*w*", //
                             "select * from table1", //
                             "select SQL_CALC_FOUND_ROWS * from table1 WHERE `firstName` LIKE '%w%'", //
@@ -352,7 +346,6 @@ public class RqlToSqlTest
                             "select SQL_CALC_FOUND_ROWS *, IF(`captive`, 'Taken Captive', 'Not Taken Captive') AS 'Captive' from table1", //
                             null));
 
-      //45
       tests.add(new RqlTest("name='John Doe'", //
                             "select * from table1", //
                             "select * from table1 WHERE `name` = 'John Doe'", //
@@ -363,6 +356,7 @@ public class RqlToSqlTest
                             "select * from table1 WHERE `name` = 'John Doe'", //
                             "select * from table1 WHERE `name` = ?", "name", "'John Doe'"));
 
+      //50
       tests.add(new RqlTest("name=\"John' Doe\"", //
                             "select * from table1", //
                             "select * from table1 WHERE `name` = 'John' Doe'", //
@@ -402,7 +396,7 @@ public class RqlToSqlTest
             if (test.preparedSql != null)
             {
                Replacer r = new Replacer(sqlRql);
-               output = new Rql("mysql").toSql(test.select, null, split(test.rql), r).toSql();
+               output = ((SqlRql) Rql.getRql("mysql")).toSql(test.select, null, split(test.rql), r).toSql();
                if (!compare(test.preparedSql, output))
                {
                   passed = false;

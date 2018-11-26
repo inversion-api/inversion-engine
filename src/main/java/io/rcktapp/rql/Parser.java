@@ -23,7 +23,7 @@ import io.forty11.j.J;
 public class Parser
 {
 
-   Rql                    rql;
+   Rql rql;
 
    //   char                   stringQuote     = '\'';
    //   char                   identifierQuote = '"';
