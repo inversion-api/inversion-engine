@@ -82,19 +82,19 @@ public class S3UploadHandler implements Handler
    // If snooze is running in the AWS account that owns the bucket being accessed, use IAM roles to authenticate!
    // Even if you're doing cross-account access, you can still use IAM authentication! 
    // see: https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html
-   String accessKey       = null;
-   String secretKey       = null;
+   String s3AccessKey       = null;
+   String s3SecretKey       = null;
 
    // region should remain null except when necessary for local testing
-   String awsRegion       = null;
+   String s3AwsRegion       = null;
 
    // path will be built as such: staticBasePath/dynamicBasePath/requestPath/fileName
    // static and dynamic base paths set here are overridden by the .properties file
    // any basePath variables that are null will simply be skipped
    // dynamic base path MUST BE a date format - default is yyyy/MM/dd
-   String bucket          = null;
-   String staticBasePath  = null;
-   String dynamicBasePath = "yyyy/MM/dd";
+   String s3Bucket          = null;
+   String s3StaticBasePath  = null;
+   String s3DynamicBasePath = "yyyy/MM/dd";
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -168,7 +168,7 @@ public class S3UploadHandler implements Handler
    private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception
    {
       AmazonS3 s3 = buildS3Client(chain);
-      String bucket = chain.getConfig("bucket", this.bucket);
+      String bucket = chain.getConfig("s3Bucket", this.s3Bucket);
       String pathAndFileName = buildFullPath(chain, requestPath, fileName);
 
       s3.putObject(new PutObjectRequest(bucket, pathAndFileName, inputStream, new ObjectMetadata()));
@@ -185,8 +185,8 @@ public class S3UploadHandler implements Handler
    {
       StringBuilder sb = new StringBuilder();
 
-      String staticBasePath = chain.getConfig("staticBasePath", this.staticBasePath);
-      String dynamicBasePath = chain.getConfig("dynamicBasePath", this.dynamicBasePath);
+      String staticBasePath = chain.getConfig("s3StaticBasePath", this.s3StaticBasePath);
+      String dynamicBasePath = chain.getConfig("s3DynamicBasePath", this.s3DynamicBasePath);
 
       if (staticBasePath != null)
       {
@@ -218,9 +218,9 @@ public class S3UploadHandler implements Handler
 
    private AmazonS3 buildS3Client(Chain chain)
    {
-      String accessKey = chain.getConfig("accessKey", this.accessKey);
-      String secretKey = chain.getConfig("secretKey", this.secretKey);
-      String awsRegion = chain.getConfig("awsRegion", this.awsRegion);
+      String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
+      String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
+      String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);
 
       AmazonS3ClientBuilder builder = null;
       if (accessKey != null)
