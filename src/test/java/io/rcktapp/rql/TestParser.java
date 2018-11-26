@@ -19,15 +19,33 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import io.rcktapp.api.handler.sql.SqlRestHandler;
+import org.junit.Test;
+
 import io.rcktapp.rql.sql.SqlRql;
 
 public class TestParser
 {
+   static
+   {
+      try
+      {
+         Class.forName(SqlRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
+
    public static void main(String[] args) throws Exception
    {
-      Class.forName(SqlRql.class.getName());
-      
+      new TestParser().test1();
+   }
+
+   @Test
+   public void test1() throws Exception
+   {
+
       Rql rql = Rql.getRql("postgres");
       Parser parser = new Parser(rql);
       LinkedHashMap<String, String> preds = new LinkedHashMap();

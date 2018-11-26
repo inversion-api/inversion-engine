@@ -20,9 +20,11 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.junit.Test;
+
 import io.rcktapp.rql.sql.SqlRql;
 
-public class RqlToSqlTest
+public class TestSqlRql
 {
 
    static
@@ -38,6 +40,12 @@ public class RqlToSqlTest
    }
 
    public static void main(String[] args) throws Exception
+   {
+      new TestSqlRql().test1();
+   }
+
+   @Test
+   public void test1() throws Exception
    {
       List<RqlTest> tests = new ArrayList();
 

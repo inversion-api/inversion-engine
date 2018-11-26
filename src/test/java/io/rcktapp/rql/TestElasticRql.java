@@ -44,9 +44,9 @@ import io.rcktapp.rql.elastic.Wildcard;
  * @author kfrankic
  *
  */
-public class RqlToElasticSearchTest
+public class TestElasticRql
 {
-   private static Logger log = LoggerFactory.getLogger(RqlToElasticSearchTest.class);
+   private static Logger log = LoggerFactory.getLogger(TestElasticRql.class);
 
    static
    {

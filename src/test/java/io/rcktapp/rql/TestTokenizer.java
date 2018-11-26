@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -20,9 +20,18 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.junit.Test;
+
 public class TestTokenizer
 {
    public static void main(String[] args) throws Exception
+   {
+      new TestTokenizer().test1();
+   }
+
+   @Test
+   public void test1() throws Exception
+
    {
       LinkedHashMap<String, List<String>> tokensTests = new LinkedHashMap();
 
@@ -32,13 +41,13 @@ public class TestTokenizer
       tokensTests.put("'str\\'ing'", lst("'str'ing'"));
       tokensTests.put("\"str\\\"ing\"", lst("\"str\"ing\""));
       tokensTests.put("\"str\"ing", lst("\"str\"", "ing"));
-      
+
       tokensTests.put("abc,def,'gh i'", lst("abc", "def", "'gh i'"));
 
       tokensTests.put("eq(col,val)", lst("eq(", "col", "val", ")"));
       tokensTests.put("eq(col,'string with spaces')", lst("eq(", "col", "'string with spaces'", ")"));
       tokensTests.put("eq(col,\"string with spaces\")", lst("eq(", "col", "\"string with spaces\"", ")"));
-      
+
       tokensTests.put("firstname=in=fred,george,john", lst("firstname", "=", "in", "=", "fred", "george", "john"));
 
       List<String> keys = new ArrayList(tokensTests.keySet());
