@@ -25,6 +25,18 @@ public class Collection extends Dto
    String       name    = null;
    List<String> aliases = new ArrayList();
 
+   boolean      exclude = false;
+
+   public boolean isExclude()
+   {
+      return exclude || entity.isExclude();
+   }
+
+   public void setExclude(boolean exclude)
+   {
+      this.exclude = exclude;
+   }
+
    public Attribute getAttribute(String name)
    {
       return entity.getAttribute(name);

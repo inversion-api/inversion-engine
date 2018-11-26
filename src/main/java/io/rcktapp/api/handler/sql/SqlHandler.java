@@ -177,11 +177,11 @@ public abstract class SqlHandler implements Handler
    {
       String type = null;
 
-      if (coll != null && coll.getEntity().getTable().getCol(col) != null)
+      if (coll != null && coll.getEntity().getTable().getColumn(col) != null)
       {
          try
          {
-            type = coll.getEntity().getTable().getCol(col).getType();
+            type = coll.getEntity().getTable().getColumn(col).getType();
          }
          catch (Exception ex)
          {

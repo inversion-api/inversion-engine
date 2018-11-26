@@ -8,21 +8,33 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
 public class Attribute extends Dto
 {
-   Entity entity = null;
-   Column column = null;
+   Entity  entity  = null;
+   Column  column  = null;
 
-   String name   = null;
-   String type   = null;
-   String hint   = null;
+   String  name    = null;
+   String  type    = null;
+   String  hint    = null;
+
+   boolean exclude = false;
+
+   public boolean isExclude()
+   {
+      return exclude || column.isExclude();
+   }
+
+   public void setExclude(boolean exclude)
+   {
+      this.exclude = exclude;
+   }
 
    public String toString()
    {

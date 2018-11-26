@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -27,8 +27,40 @@ public class Relationship extends Dto
    String                     hint             = null;
    String                     type             = null;
 
-   Column                        fkCol1           = null;
-   Column                        fkCol2           = null;
+   Column                     fkCol1           = null;
+   Column                     fkCol2           = null;
+
+   boolean                    exclude          = false;
+
+   public boolean isExcluded()
+   {
+      if (exclude)
+         return true;
+
+      if (entity != null && entity.isExclude())
+         return true;
+
+      if (related != null && related.isExclude())
+         return true;
+
+      if (fkCol1 != null && fkCol1.isExclude())
+         return true;
+
+      if (fkCol2 != null && fkCol2.isExclude())
+         return true;
+
+      return exclude;
+   }
+
+   public boolean isExclude()
+   {
+      return exclude;
+   }
+
+   public void setExclude(boolean exclude)
+   {
+      this.exclude = exclude;
+   }
 
    public boolean isManyToMany()
    {

@@ -223,7 +223,7 @@ public class SqlRql extends Rql
 
       if (col != null && table != null)
       {
-         if (table.getCol(parser.dequote(col)) == null)
+         if (table.getColumn(parser.dequote(col)) == null)
             return null;
       }
 
