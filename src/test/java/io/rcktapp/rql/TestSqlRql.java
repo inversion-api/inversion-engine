@@ -394,7 +394,8 @@ public class TestSqlRql
          try
          {
             SqlRql sqlRql = (SqlRql) Rql.getRql("mysql");
-            String output = sqlRql.toSql(test.select, null, split(test.rql)).toSql();
+
+            String output = sqlRql.toSql(sqlRql.createStmt(test.select, null, split(test.rql)));
             if (test.dynamicSql != null && !compare(test.dynamicSql, output))
             {
                passed = false;
@@ -404,7 +405,8 @@ public class TestSqlRql
             if (test.preparedSql != null)
             {
                Replacer r = new Replacer(sqlRql);
-               output = ((SqlRql) Rql.getRql("mysql")).toSql(test.select, null, split(test.rql), r).toSql();
+               output = sqlRql.toSql(sqlRql.createStmt(test.select, null, split(test.rql), r));
+
                if (!compare(test.preparedSql, output))
                {
                   passed = false;
