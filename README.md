@@ -403,6 +403,7 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
 ### Miscellaneous
 
 * as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
+ 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
  as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
@@ -468,6 +469,7 @@ elasticEp.methods=GET
 elasticEp.handler=elasticH
 ```
 
+[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_snooze/blob/wb/readme_updates/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
 
 
 ## DynamoDB Specifics
@@ -584,7 +586,7 @@ then a 403 Forbidden HTTP status code is returned.
 Api's can be flagged as 'multiTenant'.  If so, the collection key in the url prefix must be immediately 
 preceded by a tenantCode.
 
-Ex: http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey] 
+Ex: ```http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey]```
 
 If the AuthHandler is being used, it will enforce that the Url tenantCode matches the logged in users
 tenantCode (if there is a logged in user).
@@ -642,6 +644,12 @@ TODO: add more specific doco here.
 
 ### Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+```
+dependencies {
+    ...
+    compile 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.6.0'
+}
+```
 
 
 ### Gradle, Maven, etc.
@@ -661,6 +669,13 @@ dependencies {
     compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
 } 
 ```   
+
+Include the spring-boot dependencies to your custom project to quickly get it running with ```gradle bootRun```
+```
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-jdbc'
+```
 
 ## Rest API Design Resources
 
