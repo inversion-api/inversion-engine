@@ -187,12 +187,23 @@ public class Snooze extends Service
          Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
          autoProps.putAll(props);
 
-         log.debug("loading configuration -------------------------");
-         for (String key : AutoWire.sort(autoProps.keySet()))
+         if (log.isDebugEnabled())
          {
-            log.debug(key + "=" + autoProps.getProperty(key));
+            log.debug("loading configuration -------------------------");
+            for (String key : AutoWire.sort(autoProps.keySet()))
+            {
+               String value = autoProps.getProperty(key);
+               if (key.indexOf("pass") > -1 || key.indexOf("secret") > -1)
+                  value = "###############";
+
+               log.debug(key + "=" + value);
+            }
+            log.debug("- end -------");
          }
-         log.debug("- end -------");
+         else
+         {
+            log.info("set log " + log.getName() + " to DEBUG for extended config logging");
+         }
 
          wire.clear();
          wire.load(autoProps);
@@ -392,7 +403,12 @@ public class Snooze extends Service
          log.info("Merged properties");
          for (String key : keys)
          {
-            log.info(" > " + key + " : " + props.getProperty(key));
+            String value = props.getProperty(key);
+
+            if (key.indexOf("pass") > -1 || key.indexOf("secret") > -1)
+               value = "###############";
+
+            log.info(" > " + key + " : " + value);
          }
       }
 

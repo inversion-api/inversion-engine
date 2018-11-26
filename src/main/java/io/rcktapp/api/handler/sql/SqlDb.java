@@ -26,9 +26,23 @@ import io.rcktapp.api.Entity;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
+import io.rcktapp.rql.sql.SqlRql;
 
 public class SqlDb extends Db
 {
+   static
+   {
+      try
+      {
+         //bootstraps the SqlRql type
+         Class.forName(SqlRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
+
    public static final int               MIN_POOL_SIZE            = 3;
    public static final int               MAX_POOL_SIZE            = 10;
 
@@ -44,6 +58,27 @@ public class SqlDb extends Db
    boolean                               calcRowsFound            = true;
 
    static Map<Db, ComboPooledDataSource> pools                    = new HashMap();
+
+   @Override
+   public String getType()
+   {
+      if (type != null)
+         return type;
+
+      if (driver != null)
+      {
+         if (driver.indexOf("mysql") >= 0)
+            return "mysql";
+
+         if (driver.indexOf("postgres") >= 0)
+            return "postgres";
+
+         if (driver.indexOf("redshift") >= 0)
+            return "redshift";
+      }
+
+      return null;
+   }
 
    public Connection getConnection() throws ApiException
    {

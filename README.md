@@ -115,7 +115,7 @@ api.endpoints=restEp
 ########################################################################
 ## DATABASES 
 ########################################################################
-db.class=io.rcktapp.api.Db
+db.class=io.rcktapp.api.handler.sql.SqlDb
 db.name=db
 db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
