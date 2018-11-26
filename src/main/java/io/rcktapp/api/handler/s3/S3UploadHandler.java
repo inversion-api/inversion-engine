@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.handler.s3;
 
@@ -35,6 +35,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.util.IOUtils;
 
+import io.forty11.j.J;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -47,6 +48,32 @@ import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.service.Service;
 
+/**
+ * Sends browser multi-part file uploads to a defined S3 location
+ * 
+ * Bean property config can be set directly on the handler in your
+ * snooze.properties files but you should really consider this to be
+ * a service singleton where the properties can be passed in via 
+ * Action config allowing a single handler instance to upload files
+ * to multiple buckets based on request path.
+ * 
+ * So instead of config-ing something like
+ * 
+ *   handler.dynamicBasePath=yyyy/MM/dd
+ *   or
+ *   handler.bucket=somebucket
+ *   
+ * do this
+ * 
+ *   action.config=dynamicBasePath=yyyy/MM/dd&bucket=somebucket
+ * 
+ * While accessKey/secreKey/awsRegion CAN be set either on the Handler
+ * or on the Action in this way, if you control the host environment
+ * and are uploading everyting to your own AWS account, you should 
+ * consider using IAM roles to authenticate.  Than way you don't need
+ * to config the credentials at all.
+ *
+ */
 public class S3UploadHandler implements Handler
 {
 
@@ -55,28 +82,25 @@ public class S3UploadHandler implements Handler
    // If snooze is running in the AWS account that owns the bucket being accessed, use IAM roles to authenticate!
    // Even if you're doing cross-account access, you can still use IAM authentication! 
    // see: https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html
-   String           accessKey       = null;
-   String           secretKey       = null;
+   String accessKey       = null;
+   String secretKey       = null;
 
    // region should remain null except when necessary for local testing
-   String           awsRegion       = null;
+   String awsRegion       = null;
 
    // path will be built as such: staticBasePath/dynamicBasePath/requestPath/fileName
    // static and dynamic base paths set here are overridden by the .properties file
    // any basePath variables that are null will simply be skipped
    // dynamic base path MUST BE a date format - default is yyyy/MM/dd
-   String           bucket          = null;
-   String           staticBasePath  = null;
-   String           dynamicBasePath = "yyyy/MM/dd";
-   SimpleDateFormat pathFormatter   = buildPathFormatter();
-
-   private AmazonS3 s3              = buildS3Client();
+   String bucket          = null;
+   String staticBasePath  = null;
+   String dynamicBasePath = "yyyy/MM/dd";
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
 
-      MessageDigest md = buildMessageDigest();
+      MessageDigest md = MessageDigest.getInstance("MD5");
       String requestPath = null;
       String fileName = null;
       Long fileSize = null;
@@ -105,19 +129,21 @@ public class S3UploadHandler implements Handler
 
       if (imageInputStream == null)
       {
-         buildBadRequestException(res, "No file was uploaded in the multipart request");
+         error(res, null, "No file was uploaded in the multipart request");
          return;
       }
 
-      String pathAndFileName = buildFullPath(fileName, requestPath);
+      //String pathAndFileName = buildFullPath(fileName, requestPath);
       Map<String, Object> responseContent = new HashMap<>();
+
       try
       {
-         responseContent = saveFile(imageInputStream, fileName, pathAndFileName);
+         responseContent = saveFile(chain, imageInputStream, fileName, requestPath);
       }
       catch (Exception e)
       {
-         buildBadRequestException(res, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
+         error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
+
          return;
       }
 
@@ -126,47 +152,42 @@ public class S3UploadHandler implements Handler
       res.setJson(new JSObject(responseContent));
    }
 
-   private MessageDigest buildMessageDigest() throws Exception
+   void error(Response res, Exception exception, String message)
    {
-      return MessageDigest.getInstance("MD5");
-   }
+      if (exception != null)
+         message += "\r\n\r\n" + J.getShortCause(exception);
 
-   private void buildBadRequestException(Response res, String message)
-   {
       res.setStatus(SC.SC_400_BAD_REQUEST);
       Map<String, String> content = new HashMap<>();
       content.put("message", message);
       content.put("error", "Bad Request Exception");
       res.setJson(new JSObject(content));
+
    }
 
-   private SimpleDateFormat buildPathFormatter()
+   private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception
    {
-      try
-      {
-         return new SimpleDateFormat(dynamicBasePath);
-      }
-      catch (Exception e)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The server's dynamic base path is improperly configured!!! Fix this ASAP");
-      }
-   }
+      AmazonS3 s3 = buildS3Client(chain);
+      String bucket = chain.getConfig("bucket", this.bucket);
+      String pathAndFileName = buildFullPath(chain, requestPath, fileName);
 
-   private Map<String, Object> saveFile(InputStream inputStream, String name, String pathAndFileName) throws Exception
-   {
       s3.putObject(new PutObjectRequest(bucket, pathAndFileName, inputStream, new ObjectMetadata()));
 
       Map<String, Object> resp = new HashMap<>();
       resp.put("url", "http://" + bucket + ".s3.amazonaws.com/" + pathAndFileName);
-      resp.put("fileName", name);
+      resp.put("fileName", fileName);
       resp.put("path", pathAndFileName);
-      
+
       return resp;
    }
 
-   private String buildFullPath(String name, String requestPath)
+   private String buildFullPath(Chain chain, String requestPath, String name)
    {
       StringBuilder sb = new StringBuilder();
+
+      String staticBasePath = chain.getConfig("staticBasePath", this.staticBasePath);
+      String dynamicBasePath = chain.getConfig("dynamicBasePath", this.dynamicBasePath);
+
       if (staticBasePath != null)
       {
          sb.append(staticBasePath);
@@ -176,9 +197,9 @@ public class S3UploadHandler implements Handler
          }
       }
 
-      if (pathFormatter != null)
+      if (dynamicBasePath != null)
       {
-         String datePath = pathFormatter.format(new Date());
+         String datePath = new SimpleDateFormat(dynamicBasePath).format(new Date());
          sb.append(datePath + "/");
       }
 
@@ -195,8 +216,12 @@ public class S3UploadHandler implements Handler
       return sb.toString();
    }
 
-   private AmazonS3 buildS3Client()
+   private AmazonS3 buildS3Client(Chain chain)
    {
+      String accessKey = chain.getConfig("accessKey", this.accessKey);
+      String secretKey = chain.getConfig("secretKey", this.secretKey);
+      String awsRegion = chain.getConfig("awsRegion", this.awsRegion);
+
       AmazonS3ClientBuilder builder = null;
       if (accessKey != null)
       {
