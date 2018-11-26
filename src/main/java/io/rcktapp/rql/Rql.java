@@ -42,7 +42,7 @@ public class Rql
                                                                              new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                //
                                                                        ));
    //
-   //public static final HashSet<String> OPERATORS = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "wo", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
+   public static final HashSet<String> OPERATORS = new HashSet<String>(Arrays.asList(new String[]{"n", "nn", "nemp", "emp", "w", "wo", "ew", "sw", "eq", "ne", "lt", "le", "gt", "ge", "in", "out", "if", "or", "and", "miles", "search"}));
    //
    static HashSet<String>              FUNCTIONS = new HashSet<String>(                                                                                                        //
                                                                        Arrays.asList(                                                                                          //
