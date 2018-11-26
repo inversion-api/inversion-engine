@@ -27,7 +27,8 @@ import io.rcktapp.api.Table;
 public class Stmt
 {
 
-   Parser                            parser       = null;
+   Rql                               rql          = null;
+
    public Parts                      parts        = null;
    Replacer                          replacer     = null;
    Table                             table        = null;
@@ -53,9 +54,10 @@ public class Stmt
 
    public String                     rowcount     = null;
 
-   public Stmt(Parser parser, Parts parts, Replacer replacer, Table table)
+   public Stmt(Rql rql, Parts parts, Replacer replacer, Table table)
    {
-      this.parser = parser;
+      this.rql = rql;
+
       this.parts = parts;
       this.replacer = replacer;
       this.table = table;
@@ -134,7 +136,7 @@ public class Stmt
             Predicate p = this.cols.get(col);
             if (p == null)
             {
-               cols += " " + parser.asCol(col) + ",";
+               cols += " " + rql.parser.asCol(col) + ",";
             }
             else
             {
@@ -144,7 +146,7 @@ public class Stmt
                }
                else
                {
-                  cols += " " + print(table, p, replacer, null) + " AS " + parser.asStr(col) + ",";
+                  cols += " " + print(table, p, replacer, null) + " AS " + rql.parser.asStr(col) + ",";
                }
             }
          }
@@ -170,7 +172,7 @@ public class Stmt
          parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
       }
 
-      if (this.parser.isCalcRowsFound() && this.pagenum > 0 && parts.select.toLowerCase().trim().startsWith("select"))
+      if (rql.isCalcRowsFound() && this.pagenum > 0 && parts.select.toLowerCase().trim().startsWith("select"))
       {
          int idx = parts.select.toLowerCase().indexOf("select") + 6;
          parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
@@ -210,7 +212,7 @@ public class Stmt
          {
             if (!parts.group.endsWith("GROUP BY "))
                parts.group += ", ";
-            parts.group += parser.asCol(group);
+            parts.group += rql.parser.asCol(group);
          }
       }
 
@@ -295,7 +297,7 @@ public class Stmt
 
       if (col != null && table != null)
       {
-         if (table.getCol(parser.dequote(col)) == null)
+         if (table.getCol(rql.parser.dequote(col)) == null)
             return null;
       }
 
@@ -312,7 +314,7 @@ public class Stmt
       for (int i = 0; col != null && i < p.terms.size(); i++)
       {
          String val = terms.get(i);
-         if (parser.isLiteral(val) && r != null)
+         if (rql.parser.isLiteral(val) && r != null)
          {
             if ("w".equalsIgnoreCase(token))
             {
@@ -354,7 +356,8 @@ public class Stmt
       else if ("w".equalsIgnoreCase(token) || "sw".equalsIgnoreCase(token) || "ew".equalsIgnoreCase(token))
       {
          String term1 = terms.get(0);
-         for (int i = 1; i < terms.size(); i++) {
+         for (int i = 1; i < terms.size(); i++)
+         {
             if (i == 1)
                sql.append(term1).append(" LIKE ").append(terms.get(i));
             else
@@ -445,7 +448,7 @@ public class Stmt
       else if ("sum".equalsIgnoreCase(token) || "count".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token) || "distinct".equalsIgnoreCase(token))
       {
          String acol = terms.get(0);
-         String s = token.toUpperCase() + "(" + parser.swapIf(acol, '\'', '`') + ")";
+         String s = token.toUpperCase() + "(" + rql.parser.swapIf(acol, '\'', '`') + ")";
          sql.append(s);
 
       }
@@ -470,7 +473,7 @@ public class Stmt
       String s = null;
       if (this.limit >= 0 || this.offset >= 0)
       {
-         if ("postgres".equalsIgnoreCase(this.parser.getDbtype()) || "redshift".equalsIgnoreCase(this.parser.getDbtype()))
+         if ("postgres".equalsIgnoreCase(rql.getType()) || "redshift".equalsIgnoreCase(rql.getType()))
          {
             s = "";
             if (this.offset >= 0)

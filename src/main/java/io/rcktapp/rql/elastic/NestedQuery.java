@@ -13,16 +13,49 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rcktapp.rql;
+package io.rcktapp.rql.elastic;
 
-public class Order
+/**
+ * @author kfrankic
+ *
+ */
+public class NestedQuery extends ElasticQuery
 {
-   public String col = null;
-   public String dir = null;
 
-   public Order(String col, String dir)
+   private String path;
+   private QueryDsl query;
+   
+   /**
+    * @return the path
+    */
+   public String getPath()
    {
-      this.col = col;
-      this.dir = dir;
+      return path;
    }
+   
+   /**
+    * @param path the path to set
+    */
+   public void setPath(String path)
+   {
+      this.path = path;
+   }
+   
+   /**
+    * @return the query
+    */
+   public QueryDsl getQuery()
+   {
+      return query;
+   }
+   
+   /**
+    * @param query the query to set
+    */
+   public void setQuery(QueryDsl query)
+   {
+      this.query = query;
+   }
+   
+   
 }

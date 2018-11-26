@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -20,8 +20,23 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import io.rcktapp.rql.sql.SqlRql;
+
 public class RqlToSqlTest
 {
+   
+   static
+   {
+      try
+      {
+         Class.forName(SqlRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
+   
    public static void main(String[] args) throws Exception
    {
       List<RqlTest> tests = new ArrayList();
@@ -107,21 +122,21 @@ public class RqlToSqlTest
                             "select * from table1", //
                             "select `firstName`, `lastName`, SUM(`age`), MAX(`height`) AS 'tallest', MIN(`height`) AS 'shortest' from table1 WHERE `firstName` = 'Wells' AND `lastName` = 'Burke' GROUP BY `firstName`, `lastName`", //
                             null));
-      
+
       tests.add(new RqlTest("w(city,andl)", //
-            "select * from table1", //
-            null, //
-            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl%'"));
-      
+                            "select * from table1", //
+                            null, //
+                            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl%'"));
+
       tests.add(new RqlTest("sw(city,andl)", //
-            "select * from table1", //
-            null, //
-            "select * from table1 WHERE `city` LIKE ?", "city", "'andl%'"));
-      
+                            "select * from table1", //
+                            null, //
+                            "select * from table1 WHERE `city` LIKE ?", "city", "'andl%'"));
+
       tests.add(new RqlTest("ew(city,andl)", //
-            "select * from table1", //
-            null, //
-            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl'"));
+                            "select * from table1", //
+                            null, //
+                            "select * from table1 WHERE `city` LIKE ?", "city", "'%andl'"));
 
       tests.add(new RqlTest("in(firstName,wells,joe,karl)", //
                             "select * from table1", //
@@ -357,19 +372,17 @@ public class RqlToSqlTest
                             "select * from table1", //
                             "select * from table1 WHERE `name` = 'John\" Doe'", //
                             "select * from table1 WHERE `name` = ?", "name", "'John\" Doe'"));
-      
-      tests.add(new RqlTest("nn(startYear)", //
-            "SELECT * FROM Person", //
-            "SELECT * FROM Person WHERE `startYear` IS NOT NULL", //
-            "SELECT * FROM Person WHERE `startYear` IS NOT NULL"));
-      
-      tests.add(new RqlTest("n(startYear)", //
-            "SELECT * FROM Person", //
-            "SELECT * FROM Person WHERE `startYear` IS NULL", //
-            "SELECT * FROM Person WHERE `startYear` IS NULL"));
 
-      
-      
+      tests.add(new RqlTest("nn(startYear)", //
+                            "SELECT * FROM Person", //
+                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL", //
+                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL"));
+
+      tests.add(new RqlTest("n(startYear)", //
+                            "SELECT * FROM Person", //
+                            "SELECT * FROM Person WHERE `startYear` IS NULL", //
+                            "SELECT * FROM Person WHERE `startYear` IS NULL"));
+
       boolean passed = true;
       int running = 0;
       for (int j = tests.size() - 1; j >= 0; j--)
@@ -378,7 +391,8 @@ public class RqlToSqlTest
          RqlTest test = tests.get(j);
          try
          {
-            String output = new RQL("mysql").toSql(test.select, null, split(test.rql)).toSql();
+            SqlRql sqlRql = (SqlRql) Rql.getRql("mysql");
+            String output = sqlRql.toSql(test.select, null, split(test.rql)).toSql();
             if (test.dynamicSql != null && !compare(test.dynamicSql, output))
             {
                passed = false;
@@ -387,8 +401,8 @@ public class RqlToSqlTest
 
             if (test.preparedSql != null)
             {
-               Replacer r = new Replacer();
-               output = new RQL("mysql").toSql(test.select, null, split(test.rql), r).toSql();
+               Replacer r = new Replacer(sqlRql);
+               output = new Rql("mysql").toSql(test.select, null, split(test.rql), r).toSql();
                if (!compare(test.preparedSql, output))
                {
                   passed = false;

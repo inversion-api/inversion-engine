@@ -18,25 +18,21 @@ package io.rcktapp.api;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Db extends Dto
+import org.atteo.evo.inflector.English;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public abstract class Db extends Dto
 {
-   long             orgId         = 0;
-   String           name          = null;
-   String           type          = null;
-   String           driver        = null;
-   String           url           = null;
-   String           user          = null;
-   String           pass          = null;
-   int              poolMin       = 3;
-   int              poolMax       = 10;
-   int              idleConnectionTestPeriod = 3600; // in seconds
-   ArrayList<Table> tables        = new ArrayList();
+   protected Logger log       = LoggerFactory.getLogger(getClass());
+
+   protected String name      = null;
+   protected String type      = null;
+
+   ArrayList<Table> tables    = new ArrayList();
 
    // set this to false, if you don't want to Snooze.bootstrapDb to do anything
-   boolean          bootstrap     = true;
-
-   // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-   boolean          calcRowsFound = true;
+   boolean          bootstrap = true;
 
    public Db()
    {
@@ -45,6 +41,38 @@ public class Db extends Dto
    public Db(String name)
    {
       this.name = name;
+   }
+
+   public abstract void bootstrapApi(Api api) throws Exception;
+
+   protected String makeRelationshipName(Relationship rel)
+   {
+      String name = null;
+      String type = rel.getType();
+      if (type.equals(Relationship.REL_ONE_TO_MANY))
+      {
+         name = rel.getFkCol1().getName();
+         if (name.toLowerCase().endsWith("id") && name.length() > 2)
+         {
+            name = name.substring(0, name.length() - 2);
+         }
+      }
+      else if (type.equals(Relationship.REL_MANY_TO_ONE))
+      {
+         name = rel.getRelated().getCollection().getName();//.getTbl().getName();
+         if (!name.endsWith("s"))
+            name = English.plural(name);
+      }
+      else if (type.equals(Relationship.REL_MANY_TO_MANY))
+      {
+         name = rel.getFkCol2().getPk().getTable().getName();
+         if (!name.endsWith("s"))
+            name = English.plural(name);
+      }
+
+      name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
+
+      return name;
    }
 
    public Table getTable(String tableName)
@@ -122,110 +150,6 @@ public class Db extends Dto
       this.name = name;
    }
 
-   /**
-    * @return the driver
-    */
-   public String getDriver()
-   {
-      return driver;
-   }
-
-   /**
-    * @param driver the driver to set
-    */
-   public void setDriver(String driver)
-   {
-      this.driver = driver;
-   }
-
-   /**
-    * @return the url
-    */
-   public String getUrl()
-   {
-      return url;
-   }
-
-   /**
-    * @param url the url to set
-    */
-   public void setUrl(String url)
-   {
-      this.url = url;
-   }
-
-   /**
-    * @return the username
-    */
-   public String getUser()
-   {
-      return user;
-   }
-
-   /**
-    * @param username the username to set
-    */
-   public void setUser(String user)
-   {
-      this.user = user;
-   }
-
-   /**
-    * @return the password
-    */
-   public String getPass()
-   {
-      return pass;
-   }
-
-   /**
-    * @param password the password to set
-    */
-   public void setPass(String password)
-   {
-      this.pass = password;
-   }
-
-   public long getAccountId()
-   {
-      return orgId;
-   }
-
-   public void setOrgId(long orgId)
-   {
-      this.orgId = orgId;
-   }
-
-   public int getPoolMin()
-   {
-      return poolMin;
-   }
-
-   public void setPoolMin(int poolMin)
-   {
-      this.poolMin = poolMin;
-   }
-
-   public int getPoolMax()
-   {
-      return poolMax;
-   }
-
-   public void setPoolMax(int poolMax)
-   {
-      this.poolMax = poolMax;
-   }
-   
-   public int getIdleConnectionTestPeriod()
-   {
-      return idleConnectionTestPeriod;
-   }
-
-   public void setIdleConnectionTestPeriod(int idleConnectionTestPeriod)
-   {
-      this.idleConnectionTestPeriod = idleConnectionTestPeriod;
-   }
-
    public boolean isBootstrap()
    {
       return bootstrap;
@@ -236,14 +160,14 @@ public class Db extends Dto
       this.bootstrap = bootstrap;
    }
 
-   public boolean isCalcRowsFound()
+   public String getType()
    {
-      return calcRowsFound;
+      return type;
    }
 
-   public void setCalcRowsFound(boolean calcRowsFound)
+   public void setType(String type)
    {
-      this.calcRowsFound = calcRowsFound;
+      this.type = type;
    }
 
 }

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
@@ -43,8 +42,6 @@ import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
-
 import io.forty11.j.J;
 import io.forty11.j.utils.DoubleKeyMap;
 import io.forty11.web.Url;
@@ -60,6 +57,8 @@ import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
+import io.rcktapp.api.handler.sql.SqlDb;
+import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service extends HttpServlet
 {
@@ -77,18 +76,15 @@ public class Service extends HttpServlet
 
    String                         servletMapping = null;
 
-   int                            MIN_POOL_SIZE  = 3;
-   int                            MAX_POOL_SIZE  = 10;
-
    DataSource                     ds             = null;
-   Map<Db, ComboPooledDataSource> pools          = new HashMap();
+
 
    String                         driver         = null;
    String                         url            = null;
    String                         user           = null;
    String                         pass           = null;
-   int                            poolMin        = MIN_POOL_SIZE;
-   int                            poolMax        = MAX_POOL_SIZE;
+   int                            poolMin        = SqlDb.MIN_POOL_SIZE;
+   int                            poolMax        = SqlDb.MAX_POOL_SIZE;
 
    static
    {
@@ -884,82 +880,6 @@ public class Service extends HttpServlet
       return null;
    }
 
-   public Connection getConnection(Chain chain) throws Exception
-   {
-      Db db = chain.getService().getDb(chain.getApi(), chain.getRequest().getCollectionKey());
-      return chain.getService().getConnection(db);
-   }
-
-   public Connection getConnection(Api api) throws ApiException
-   {
-      return getConnection(api, null);
-   }
-
-   public Connection getConnection(Api api, String collectionKey) throws ApiException
-   {
-      return getConnection(getDb(api, collectionKey));
-   }
-
-   public Connection getConnection(Db db) throws ApiException
-   {
-      try
-      {
-         Connection conn = ConnectionLocal.getConnection(db);
-         if (conn == null)
-         {
-            ComboPooledDataSource pool = pools.get(db);
-
-            if (pool == null)
-            {
-               synchronized (this)
-               {
-                  pool = pools.get(db);
-
-                  if (pool == null)
-                  {
-                     String driver = db.getDriver();
-                     String url = db.getUrl();
-                     String user = db.getUser();
-                     String password = db.getPass();
-                     int minPoolSize = db.getPoolMin();
-                     int maxPoolSize = db.getPoolMax();
-                     int idleTestPeriod = db.getIdleConnectionTestPeriod();
-
-                     minPoolSize = Math.max(MIN_POOL_SIZE, minPoolSize);
-                     maxPoolSize = Math.min(maxPoolSize, MAX_POOL_SIZE);
-
-                     pool = new ComboPooledDataSource();
-                     pool.setDriverClass(driver);
-                     pool.setJdbcUrl(url);
-                     pool.setUser(user);
-                     pool.setPassword(password);
-                     pool.setMinPoolSize(minPoolSize);
-                     pool.setMaxPoolSize(maxPoolSize);
-                     
-                     pool.setIdleConnectionTestPeriod(idleTestPeriod);
-                     //                     if (idleTestPeriod > 0)
-                     //                        pool.setTestConnectionOnCheckin(true);
-
-                     pools.put(db, pool);
-                  }
-               }
-            }
-
-            conn = pool.getConnection();
-            conn.setAutoCommit(false);
-
-            ConnectionLocal.putConnection(db, conn);
-         }
-
-         return conn;
-      }
-      catch (Exception ex)
-      {
-         log.error("Unable to get DB connection", ex);
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
-      }
-   }
-
    public Db getDb(Api api, String collectionKey) throws ApiException
    {
       Db db = null;
@@ -977,116 +897,6 @@ public class Service extends HttpServlet
       }
 
       return db;
-   }
-
-   static class ConnectionLocal
-   {
-      static ThreadLocal<Map<Db, Connection>> connections = new ThreadLocal();
-
-      public static Map<Db, Connection> getConnections()
-      {
-         return connections.get();
-      }
-
-      public static Connection getConnection(Db db)
-      {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
-         {
-            conns = new HashMap();
-            connections.set(conns);
-         }
-
-         return conns.get(db);
-      }
-
-      public static void putConnection(Db db, Connection connection)
-      {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
-         {
-            conns = new HashMap();
-            connections.set(conns);
-         }
-         conns.put(db, connection);
-      }
-
-      public static void commit() throws Exception
-      {
-         Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
-         {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
-            {
-               Connection conn = conns.get(db);
-               try
-               {
-                  conn.commit();
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow != null)
-                     toThrow = ex;
-               }
-            }
-         }
-
-         if (toThrow != null)
-            throw toThrow;
-      }
-
-      public static void rollback() throws Exception
-      {
-         Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
-         {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
-            {
-               Connection conn = conns.get(db);
-               try
-               {
-                  conn.rollback();
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow != null)
-                     toThrow = ex;
-               }
-            }
-         }
-
-         if (toThrow != null)
-            throw toThrow;
-      }
-
-      public static void close() throws Exception
-      {
-         Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
-         {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
-            {
-               Connection conn = conns.get(db);
-               try
-               {
-                  conn.close();
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow != null)
-                     toThrow = ex;
-               }
-            }
-         }
-
-         connections.remove();
-
-         if (toThrow != null)
-            throw toThrow;
-      }
    }
 
 }

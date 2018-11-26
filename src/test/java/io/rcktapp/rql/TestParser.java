@@ -23,7 +23,8 @@ public class TestParser
 {
    public static void main(String[] args) throws Exception
    {
-      Parser parser = new Parser("postgres");
+      Rql rql = new Rql("postgres");
+      Parser parser = new Parser(rql);
       LinkedHashMap<String, String> preds = new LinkedHashMap();
 
       preds.put("col=val", "eq(\"col\",'val')");

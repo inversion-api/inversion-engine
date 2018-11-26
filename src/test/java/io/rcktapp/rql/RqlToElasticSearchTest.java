@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
 
@@ -31,13 +31,14 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.rcktapp.rql.elasticsearch.BoolQuery;
-import io.rcktapp.rql.elasticsearch.ElasticQuery;
-import io.rcktapp.rql.elasticsearch.NestedQuery;
-import io.rcktapp.rql.elasticsearch.QueryDsl;
-import io.rcktapp.rql.elasticsearch.Range;
-import io.rcktapp.rql.elasticsearch.Term;
-import io.rcktapp.rql.elasticsearch.Wildcard;
+import io.rcktapp.rql.elastic.BoolQuery;
+import io.rcktapp.rql.elastic.ElasticQuery;
+import io.rcktapp.rql.elastic.ElasticRql;
+import io.rcktapp.rql.elastic.NestedQuery;
+import io.rcktapp.rql.elastic.QueryDsl;
+import io.rcktapp.rql.elastic.Range;
+import io.rcktapp.rql.elastic.Term;
+import io.rcktapp.rql.elastic.Wildcard;
 
 /**
  * @author kfrankic
@@ -46,6 +47,18 @@ import io.rcktapp.rql.elasticsearch.Wildcard;
 public class RqlToElasticSearchTest
 {
    private static Logger log = LoggerFactory.getLogger(RqlToElasticSearchTest.class);
+
+   static
+   {
+      try
+      {
+         Class.forName(ElasticRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
 
    @Test
    public void testMapper() throws Exception
@@ -68,7 +81,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("sw(city,Chand)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("sw(city,Chand)"));
 
          assertNull(dsl.getBool());
          assertNull(dsl.getNested());
@@ -94,13 +107,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void with()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("w(city,andl)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("w(city,andl)"));
 
          assertNull(dsl.getBool());
          assertNull(dsl.getNested());
@@ -126,13 +139,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
-   public void without() 
+   public void without()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("wo(city,h)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("wo(city,h)"));
 
          assertNull(dsl.getNested());
          assertNull(dsl.getNestedPath());
@@ -145,13 +158,12 @@ public class RqlToElasticSearchTest
          assertNull(dsl.getBool().getShould());
          assertNull(dsl.getBool().getMust());
          assertNotNull(dsl.getBool().getMustNot());
-         
-         
+
          assertEquals(1, dsl.getBool().getMustNot().size());
          assertEquals(Wildcard.class, dsl.getBool().getMustNot().get(0).getClass());
-         assertEquals("city", ((Wildcard)dsl.getBool().getMustNot().get(0)).getName());
-         assertEquals("*h*", ((Wildcard)dsl.getBool().getMustNot().get(0)).getValue());
-         assertNull(((Wildcard)dsl.getBool().getMustNot().get(0)).getNestedPath());
+         assertEquals("city", ((Wildcard) dsl.getBool().getMustNot().get(0)).getName());
+         assertEquals("*h*", ((Wildcard) dsl.getBool().getMustNot().get(0)).getValue());
+         assertNull(((Wildcard) dsl.getBool().getMustNot().get(0)).getNestedPath());
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl);
@@ -172,7 +184,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("ew(city,andler)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("ew(city,andler)"));
 
          assertNull(dsl.getBool());
          assertNull(dsl.getNested());
@@ -204,7 +216,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("w(city,andl)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("w(city,andl)"));
 
          assertNull(dsl.getBool());
          assertNull(dsl.getNested());
@@ -236,7 +248,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("emp(state)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("emp(state)"));
 
          // TODO update this test
 
@@ -259,7 +271,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("search(keywords,Tim)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("search(keywords,Tim)"));
 
          // TODO update this test
 
@@ -282,7 +294,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("nemp(state)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("nemp(state)"));
 
          // TODO update this test
 
@@ -299,13 +311,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void notNull()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("nn(state)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("nn(state)"));
 
          // TODO update this test
 
@@ -322,13 +334,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void isNull()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("n(state)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("n(state)"));
 
          // TODO update this test
 
@@ -351,7 +363,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("order=test"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("order=test"));
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl.toDslMap());
@@ -359,7 +371,7 @@ public class RqlToElasticSearchTest
          assertNotNull("json should not be empty.", json);
          assertEquals("{\"size\":100,\"query\":{\"bool\":{}},\"from\":0,\"sort\":[{\"test\":\"ASC\"},{\"id\":\"asc\"}]}", json);
 
-         io.rcktapp.rql.elasticsearch.Order order = dsl.getOrder();
+         io.rcktapp.rql.elastic.Order order = dsl.getOrder();
          assertNotNull(order);
          assertEquals(2, order.getOrderList().size());
          Map<String, String> orderMap = order.getOrderList().get(0);
@@ -377,7 +389,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("sort=test,-test2,+test3"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("sort=test,-test2,+test3"));
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl.toDslMap());
@@ -385,7 +397,7 @@ public class RqlToElasticSearchTest
          assertNotNull("json should not be empty.", json);
          assertEquals("{\"size\":100,\"query\":{\"bool\":{}},\"from\":0,\"sort\":[{\"test\":\"ASC\"},{\"test2\":\"DESC\"},{\"test3\":\"ASC\"},{\"id\":\"asc\"}]}", json);
 
-         io.rcktapp.rql.elasticsearch.Order order = dsl.getOrder();
+         io.rcktapp.rql.elastic.Order order = dsl.getOrder();
          assertNotNull(order);
          assertEquals(4, order.getOrderList().size());
          Map<String, String> orderMap = order.getOrderList().get(0);
@@ -407,7 +419,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("gt(hispanicRank,25)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("gt(hispanicRank,25)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -431,13 +443,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void testGte()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("ge(hispanicRank,25)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("ge(hispanicRank,25)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -467,7 +479,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("gt(players.registerNum,3)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("gt(players.registerNum,3)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -493,7 +505,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("eq(city,CHANDLER)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("eq(city,CHANDLER)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -520,7 +532,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("eq(uninstalled,true)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("eq(uninstalled,true)"));
          ObjectMapper mapper = new ObjectMapper();
 
          assertNull(dsl.getRange());
@@ -548,7 +560,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("ne(hispanicRank,25)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("ne(hispanicRank,25)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -584,7 +596,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(ne(hispanicRank,95),gt(hispanicRank,93))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(ne(hispanicRank,95),gt(hispanicRank,93))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -625,7 +637,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("ne(hispanicRank,95)&gt(hispanicRank,93)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("ne(hispanicRank,95)&gt(hispanicRank,93)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -667,7 +679,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("or(eq(name,fwqa),eq(name,cheetos)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("or(eq(name,fwqa),eq(name,cheetos)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -708,7 +720,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("in(city,Chicago,Tempe,Chandler)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("in(city,Chicago,Tempe,Chandler)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -742,7 +754,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("out(city,Chicago,Tempe,Chandler)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("out(city,Chicago,Tempe,Chandler)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -783,7 +795,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("eq(locationCode,270*)&eq(city,Chandler)&eq(address1,*McQueen*)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("eq(locationCode,270*)&eq(city,Chandler)&eq(address1,*McQueen*)"));
 
          assertNull(dsl.getWildcard());
          assertNull(dsl.getTerm());
@@ -806,13 +818,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexSearch1()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(search(keywords,test),search(keywords,matt))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(search(keywords,test),search(keywords,matt))"));
 
          assertNull(dsl.getWildcard());
          assertNull(dsl.getTerm());
@@ -833,13 +845,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexSearch2()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("search(keywords,test)&search(keywords,matt)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("search(keywords,test)&search(keywords,matt)"));
 
          assertNull(dsl.getWildcard());
          assertNull(dsl.getTerm());
@@ -860,13 +872,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexOr()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("or(eq(id,3),eq(name,*POST*))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("or(eq(id,3),eq(name,*POST*))"));
 
          assertNull(dsl.getWildcard());
          assertNull(dsl.getTerm());
@@ -887,15 +899,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
-   
 
    @Test
    public void testWildcard()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("eq(address1,*GILBERT*)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("eq(address1,*GILBERT*)"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -923,7 +933,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(locationCode,9187),eq(city,CHANDLER))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(eq(locationCode,9187),eq(city,CHANDLER))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -955,7 +965,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(address1,*GILBERT*),eq(city,CHANDLER))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(eq(address1,*GILBERT*),eq(city,CHANDLER))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -986,7 +996,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(gt(hispanicRank,25),le(hispanicRank,40))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(gt(hispanicRank,25),le(hispanicRank,40))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1017,7 +1027,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1037,7 +1047,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("gt(players.registerNum,5)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("gt(players.registerNum,5)"));
          ObjectMapper mapper = new ObjectMapper();
 
          assertNull(dsl.getRange());
@@ -1062,13 +1072,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexNestedQuery1()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,color),eq(keywords.value,33))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(eq(keywords.name,color),eq(keywords.value,33))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1082,17 +1092,17 @@ public class RqlToElasticSearchTest
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getNested());
          assertNotNull(dsl.getBool());
-         
+
          BoolQuery bool = dsl.getBool();
          assertNull(bool.getShould());
          assertNull(bool.getMustNot());
          assertNull(bool.getMust());
          assertNotNull(bool.getFilter());
-         
+
          List<ElasticQuery> boolFilterList = bool.getFilter();
          assertTrue(boolFilterList.size() == 1);
          assertTrue(boolFilterList.get(0) instanceof NestedQuery);
-         
+
       }
       catch (Exception e)
       {
@@ -1100,13 +1110,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexNestedQuery2()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,age),gt(keywords.value,30))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(eq(keywords.name,age),gt(keywords.value,30))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1120,17 +1130,17 @@ public class RqlToElasticSearchTest
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getNested());
          assertNotNull(dsl.getBool());
-         
+
          BoolQuery bool = dsl.getBool();
          assertNull(bool.getShould());
          assertNull(bool.getMustNot());
          assertNull(bool.getMust());
          assertNotNull(bool.getFilter());
-         
+
          List<ElasticQuery> boolFilterList = bool.getFilter();
          assertTrue(boolFilterList.size() == 1);
          assertTrue(boolFilterList.get(0) instanceof NestedQuery);
-         
+
       }
       catch (Exception e)
       {
@@ -1138,13 +1148,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexNestedQuery3()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(eq(keywords.name,items.name),w(keywords.value,Powerade))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(eq(keywords.name,items.name),w(keywords.value,Powerade))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1159,13 +1169,13 @@ public class RqlToElasticSearchTest
          fail();
       }
    }
-   
+
    @Test
    public void complexNestedQuery4()
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(w(keywords.value,Powerade),eq(keywords.name,items.name))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(w(keywords.value,Powerade),eq(keywords.name,items.name))"));
          ObjectMapper mapper = new ObjectMapper();
 
          String json = mapper.writeValueAsString(dsl);
@@ -1186,7 +1196,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(gt(players.registerNum,5),eq(city,Chandler))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(gt(players.registerNum,5),eq(city,Chandler))"));
          ObjectMapper mapper = new ObjectMapper();
 
          assertNull(dsl.getRange());
@@ -1224,7 +1234,7 @@ public class RqlToElasticSearchTest
    {
       try
       {
-         QueryDsl dsl = new RQL("elastic").toQueryDsl(split("and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))"));
          ObjectMapper mapper = new ObjectMapper();
 
          assertNull(dsl.getRange());

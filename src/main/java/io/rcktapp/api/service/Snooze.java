@@ -52,7 +52,7 @@ import io.forty11.j.utils.AutoWire.Namer;
 import io.forty11.sql.Rows.Row;
 import io.forty11.sql.Sql;
 import io.forty11.web.Url;
-import io.rcktapp.api.Acl;
+import io.rcktapp.api.AclRule;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
@@ -72,81 +72,6 @@ import io.rcktapp.api.Role;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 
-/**
- * Servlet implementation class RestService
- *
- * Notes on REST verbs and status code responses:
- * ------------------------------------------
- * -- TODO
- * ------------------------------------------
- *  
- *  - GET allow filter params to involve joined tables
- *      - may need to left join all FKs to the root query to make it work
-
- *  - GET lastmodified & eTag caching
- *  - GET/PUT/POST eTag header
- *  - DELETE
- *  - PUT
- *  - Nested PUT/POST
- *  
- *  - Security
- *  - Rate limiting
- *  - Connection pool, hold / reuse connections.
- *  - lastModified column Support
- *  - support for "deleted" column
- *  - object version support
- *  - full logging w/ rollback
- *  -
- *  - DONE - GET expansion control
- *  - DONE - GET 404 in resource not found
- *  - DONE - GET with comma seperated list of ids
- *  - DONE - Make everything case insensative
- *  - DONE - GET paging/sorting
- *  - DONE - GET query term parser
- *  - DONE - Many 2 Many POST
- *  - DONE - 201 w/ Location header response
- *  - DONE - Auto bootstrap DB/API w/ API cache, only store exceptions in DB
- *  - DONE - batch post
- *  - DONE - GZIP support
- * 
- * 
- * ------------------------------------------
- * @see http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
- * @see http://www.restapitutorial.com/lessons/httpmethods.html
- *
- * @see http://blog.mwaysolutions.com/2014/06/05/10-best-practices-for-better-restful-api/
- * @see http://stackoverflow.com/questions/12806386/standard-json-api-response-format
- * @see https://stormpath.com/blog/linking-and-resource-expansion-rest-api-tips/
- *
- * http://restful-api-design.readthedocs.org/en/latest/intro.html
- *
- * http://stackoverflow.com/questions/297005/what-is-the-gold-standard-for-website-apis-twitter-flickr-facebook-etc
- *
- * https://stripe.com/docs/api/curl#intro
- * http://samplacette.com/five-json-rest-api-link-formats-compared/
- * https://www.mnot.net/blog/2011/11/25/linking_in_json
- * http://stateless.co/hal_specification.html
- * http://tools.ietf.org/html/draft-kelly-json-hal-03
- * https://blog.safaribooksonline.com/2013/05/23/instrumenting-apis-with-links-in-rest/
- *
- * Error Codes:
- *      http://msdn.microsoft.com/en-us/library/azure/dd179357.aspx
- *      http://www.restapitutorial.com/httpstatuscodes.html
- *
- * http://www.restapitutorial.com/media/RESTful_Best_Practices-v1_1.pdf
- *
- * odata endpoint filters: http://msdn.microsoft.com/en-us/library/gg309461.aspx
- *
- * http://bitoftech.net/2014/01/13/tutorial-for-building-spa-using-angularjs-example/
- * http://bitoftech.net/2014/01/13/building-spa-using-angularjs-part-1/
- *
- * https://spring.io/guides/gs/consuming-rest-angularjs/
- * http://patrickgrimard.com/2014/05/16/pagination-with-spring-data-and-hateoas-in-an-angularjs-app/
- * https://florian.voutzinos.com/blog/data-tables-with-symfony-angular/
- * http://patrickgrimard.com/2014/05/16/pagination-with-spring-data-and-hateoas-in-an-angularjs-app/
- * http://ianbattersby.github.io/blog/2013/09/05/5-days-of-simple-web-hateoas/
- *
- */
 public class Snooze extends Service
 {
    static Logger  log           = LoggerFactory.getLogger(Snooze.class);
@@ -261,21 +186,19 @@ public class Snooze extends Service
          {
             for (Db db : ((Api) api).getDbs())
             {
-               bootstrapDb(db);
-               bootstrapApi((Api) api, db);
+               db.bootstrapApi((Api) api);
             }
          }
 
          Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
          autoProps.putAll(props);
-         
+
          log.debug("loading configuration -------------------------");
-         for(String key : AutoWire.sort(autoProps.keySet()))
+         for (String key : AutoWire.sort(autoProps.keySet()))
          {
             log.debug(key + "=" + autoProps.getProperty(key));
          }
          log.debug("- end -------");
-         
 
          wire.clear();
          wire.load(autoProps);
@@ -421,7 +344,8 @@ public class Snooze extends Service
          }
       }
 
-      if(log.isInfoEnabled()) {
+      if (log.isInfoEnabled())
+      {
          List<String> keys = new ArrayList(props.keySet());
          Collections.sort(keys);
          log.info("Merged properties");
@@ -430,7 +354,7 @@ public class Snooze extends Service
             log.info(" > " + key + " : " + props.getProperty(key));
          }
       }
-      
+
       return props;
    }
 
@@ -616,13 +540,12 @@ public class Snooze extends Service
 
          for (Db db : dbs)
          {
-            bootstrapDb(db);
-            bootstrapApi(api, db);
+            db.bootstrapApi(api);
          }
 
-         List<Acl> acls = Sql.selectObjects(conn, "SELECT * FROM Acl WHERE apiId = ?", Acl.class, api.getId());
+         List<AclRule> acls = Sql.selectObjects(conn, "SELECT * FROM Acl WHERE apiId = ?", AclRule.class, api.getId());
          api.setAcls(acls);
-         for (Acl acl : acls)
+         for (AclRule acl : acls)
          {
             acl.setPermissions(Sql.selectObjects(conn, "SELECT p.* FROM Permission p JOIN AclPermission ap WHERE ap.aclId = ?", Permission.class, acl.getId()));
             acl.setRoles(Sql.selectObjects(conn, "SELECT r.* FROM Role r JOIN AclRole ar WHERE ar.aclId = ?", Role.class, acl.getId()));
@@ -681,315 +604,6 @@ public class Snooze extends Service
       aw.load();
       Handler handler = aw.getBean(Handler.class);
       action.setHandler(handler);
-   }
-
-   public void bootstrapDb(Db db) throws Exception
-   {
-      if(!db.isBootstrap()) {
-         return;
-      }
-      
-      String driver = db.getDriver();
-      Class.forName(driver);
-      Connection apiConn = DriverManager.getConnection(db.getUrl(), db.getUser(), db.getPass());
-
-      try
-      {
-
-         DatabaseMetaData dbmd = apiConn.getMetaData();
-
-         //-- only here to map jdbc type integer codes to strings ex "4" to "BIGINT" or whatever it is
-         Map<String, String> types = new HashMap<String, String>();
-         for (Field field : Types.class.getFields())
-         {
-            types.put(field.get(null) + "", field.getName());
-         }
-         //--
-
-         //-- the first loop through is going to construct all of the
-         //-- Tbl and Col objects.  There will be a second loop through
-         //-- that caputres all of the foreign key relationships.  You
-         //-- have to do the fk loop second becuase the reference pk
-         //-- object needs to exist so that it can be set on the fk Col
-         ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
-         while (rs.next())
-         {
-            String tableCat = rs.getString("TABLE_CAT");
-            String tableSchem = rs.getString("TABLE_SCHEM");
-            String tableName = rs.getString("TABLE_NAME");
-            //String tableType = rs.getString("TABLE_TYPE");
-
-            Table table = new Table(db, tableName);
-            db.addTable(table);
-
-            ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
-
-            while (colsRs.next())
-            {
-               String colName = colsRs.getString("COLUMN_NAME");
-               Object type = colsRs.getString("DATA_TYPE");
-               String colType = types.get(type);
-
-               boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
-
-               Column column = new Column(table, colName, colType, nullable);
-               table.addColumn(column);
-
-               //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
-               //               {
-               //                  table.setDeletedFlag(column);
-               //               }
-            }
-            colsRs.close();
-
-            ResultSet indexMd = dbmd.getIndexInfo(apiConn.getCatalog(), null, tableName, true, false);
-            while (indexMd.next())
-            {
-               String colName = indexMd.getString("COLUMN_NAME");
-               Column col = db.getColumn(tableName, colName);
-               col.setUnique(true);
-            }
-            indexMd.close();
-
-         }
-         rs.close();
-
-         //-- now link all of the fks to pks
-         //-- this is done after the first loop
-         //-- so that all of the tbls/cols are
-         //-- created first and are there to
-         //-- be connected
-         rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE"});
-         while (rs.next())
-         {
-            String tableName = rs.getString("TABLE_NAME");
-
-            ResultSet keyMd = dbmd.getImportedKeys(apiConn.getCatalog(), null, tableName);
-            while (keyMd.next())
-            {
-               String fkTableName = keyMd.getString("FKTABLE_NAME");
-               String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-               String pkTableName = keyMd.getString("PKTABLE_NAME");
-               String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-               Column fk = db.getColumn(fkTableName, fkColumnName);
-               Column pk = db.getColumn(pkTableName, pkColumnName);
-               fk.setPk(pk);
-
-               //log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-            }
-            keyMd.close();
-         }
-         rs.close();
-
-         //-- if a table has two columns and both are foreign keys
-         //-- then it is a relationship table for MANY_TO_MANY relationships
-         for (Table table : db.getTables())
-         {
-            List<Column> cols = table.getColumns();
-            if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
-            {
-               table.setLinkTbl(true);
-            }
-         }
-      }
-      finally
-      {
-         Sql.close(apiConn);
-      }
-   }
-
-   public void bootstrapApi(Api api, Db db) throws Exception
-   {
-      for (Table t : db.getTables())
-      {
-         List<Column> cols = t.getColumns();
-
-         Collection collection = new Collection();
-         String collectionName = t.getName();
-
-         collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-
-         if (!collectionName.endsWith("s"))
-            collectionName = English.plural(collectionName);
-
-         collection.setName(collectionName);
-
-         Entity entity = new Entity();
-         entity.setTbl(t);
-         entity.setHint(t.getName());
-
-         entity.setCollection(collection);
-         collection.setEntity(entity);
-
-         for (Column col : cols)
-         {
-            if (col.getPk() == null)
-            {
-               Attribute attr = new Attribute();
-               attr.setEntity(entity);
-               attr.setName(col.getName());
-               attr.setColumn(col);
-               attr.setHint(col.getTable().getName() + "." + col.getName());
-               attr.setType(col.getType());
-
-               entity.addAttribute(attr);
-
-               if (col.isUnique() && entity.getKey() == null)
-               {
-                  entity.setKey(attr);
-               }
-            }
-         }
-
-         api.addCollection(collection);
-         collection.setApi(api);
-
-      }
-
-      //-- Now go back through and create relationships for all foreign keys
-      //-- two relationships objects are created for every relationship type
-      //-- representing both sides of the relationship...ONE_TO_MANY also
-      //-- creates a MANY_TO_ONE and there are always two for a MANY_TO_MANY.
-      //-- API designers may want to represent one or both directions of the
-      //-- relationship in their API and/or the names of the JSON properties
-      //-- for the relationships will probably be different
-      for (Table t : db.getTables())
-      {
-         if (t.isLinkTbl())
-         {
-            Column fkCol1 = t.getColumns().get(0);
-            Column fkCol2 = t.getColumns().get(1);
-
-            //MANY_TO_MANY one way
-            {
-               Entity pkEntity = api.getEntity(fkCol1.getPk().getTable());
-               Relationship r = new Relationship();
-               pkEntity.addRelationship(r);
-               r.setEntity(pkEntity);
-               Entity related = api.getEntity(fkCol2.getPk().getTable());
-               r.setRelated(related);
-
-               String hint = "MANY_TO_MANY - ";
-               hint += fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
-               hint += " <- " + fkCol1.getTable().getName() + "." + fkCol1.getName() + ":" + fkCol2.getName();
-               hint += " -> " + fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
-
-               r.setHint(hint);
-               r.setType(Relationship.REL_MANY_TO_MANY);
-               r.setFkCol1(fkCol1);
-               r.setFkCol2(fkCol2);
-
-               //Collection related = api.getCollection(fkCol2.getTbl());
-               r.setName(makeRelationshipName(r));
-            }
-
-            //MANY_TO_MANY the other way
-            {
-               Entity pkEntity = api.getEntity(fkCol2.getPk().getTable());
-               Relationship r = new Relationship();
-               pkEntity.addRelationship(r);
-               r.setEntity(pkEntity);
-
-               Entity related = api.getEntity(fkCol1.getPk().getTable());
-               r.setRelated(related);
-
-               //r.setRelated(api.getEntity(fkCol1.getTable()));
-
-               String hint = "MANY_TO_MANY - ";
-               hint += fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
-               hint += " <- " + fkCol2.getTable().getName() + "." + fkCol2.getName() + ":" + fkCol1.getName();
-               hint += " -> " + fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
-
-               r.setHint(hint);
-               r.setType(Relationship.REL_MANY_TO_MANY);
-               r.setFkCol1(fkCol2);
-               r.setFkCol2(fkCol1);
-
-               r.setName(makeRelationshipName(r));
-            }
-         }
-         else
-         {
-            for (Column col : t.getColumns())
-            {
-               if (col.isFk())
-               {
-                  Column fkCol = col;
-                  Table fkTbl = fkCol.getTable();
-                  Entity fkEntity = api.getEntity(fkTbl);
-
-                  Column pkCol = col.getPk();
-                  Table pkTbl = pkCol.getTable();
-                  Entity pkEntity = api.getEntity(pkTbl);
-
-                  if (pkEntity == null)
-                  {
-                     System.err.println("Unknown Entity for table: " + pkTbl);
-                     continue;
-                  }
-
-                  //ONE_TO_MANY
-                  {
-                     Relationship r = new Relationship();
-
-                     //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an entity is related
-                     //to another entity twice
-                     r.setHint("MANY_TO_ONE - " + pkTbl.getName() + "." + pkCol.getName() + " <- " + fkTbl.getName() + "." + fkCol.getName());
-                     r.setType(Relationship.REL_MANY_TO_ONE);
-                     r.setFkCol1(fkCol);
-                     r.setEntity(pkEntity);
-                     r.setRelated(fkEntity);
-                     r.setName(makeRelationshipName(r));
-                     pkEntity.addRelationship(r);
-                  }
-
-                  //MANY_TO_ONE
-                  {
-                     Relationship r = new Relationship();
-                     r.setHint("ONE_TO_MANY - " + fkTbl.getName() + "." + fkCol.getName() + " -> " + pkTbl.getName() + "." + pkCol.getName());
-                     r.setType(Relationship.REL_ONE_TO_MANY);
-                     r.setFkCol1(fkCol);
-                     r.setEntity(fkEntity);
-                     r.setRelated(pkEntity);
-                     r.setName(makeRelationshipName(r));
-                     fkEntity.addRelationship(r);
-                  }
-               }
-            }
-         }
-      }
-   }
-
-   static String makeRelationshipName(Relationship rel)
-   {
-      String name = null;
-      String type = rel.getType();
-      if (type.equals(Relationship.REL_ONE_TO_MANY))
-      {
-         name = rel.getFkCol1().getName();
-         if (name.toLowerCase().endsWith("id") && name.length() > 2)
-         {
-            name = name.substring(0, name.length() - 2);
-         }
-      }
-      else if (type.equals(Relationship.REL_MANY_TO_ONE))
-      {
-         name = rel.getRelated().getCollection().getName();//.getTbl().getName();
-         if (!name.endsWith("s"))
-            name = English.plural(name);
-      }
-      else if (type.equals(Relationship.REL_MANY_TO_MANY))
-      {
-         name = rel.getFkCol2().getPk().getTable().getName();
-         if (!name.endsWith("s"))
-            name = English.plural(name);
-      }
-
-      name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
-
-      return name;
    }
 
    public String getProfile()

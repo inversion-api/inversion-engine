@@ -8,7 +8,7 @@ import org.junit.Test;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
-import io.rcktapp.api.service.PostHandler;
+import io.rcktapp.api.handler.sql.SqlPostHandler;
 import junit.framework.TestCase;
 
 public class TestCollapse extends TestCase
@@ -40,7 +40,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      PostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
+      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());
@@ -72,7 +72,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      PostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
+      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());
@@ -111,7 +111,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      PostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
+      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());

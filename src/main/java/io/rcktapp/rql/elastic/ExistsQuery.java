@@ -13,16 +13,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rcktapp.rql;
+package io.rcktapp.rql.elastic;
 
-public class Order
+public class ExistsQuery extends ElasticQuery
 {
-   public String col = null;
-   public String dir = null;
 
-   public Order(String col, String dir)
+   private String field;
+
+   public ExistsQuery(String field)
    {
-      this.col = col;
-      this.dir = dir;
+      this.field = field;
+      
+      if (field.contains("."))
+      {
+         this.nestedPath = field.substring(0, field.lastIndexOf("."));
+      }
    }
+
+   /**
+    * @return the field
+    */
+   public String getField()
+   {
+      return field;
+   }
+
 }

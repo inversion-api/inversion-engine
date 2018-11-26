@@ -16,54 +16,26 @@
 package io.rcktapp.rql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import io.forty11.j.J;
 
 public class Parser
 {
-   static HashSet<String> FUNCTIONS       = new HashSet<String>(                                                                                                         //
-                                                                 Arrays.asList(                                                                                          //
-                                                                       new String[]{                                                                                     //
-                                                                             "(",                                                                                        //
-                                                                             "eq", "ne", "lt", "le", "gt", "ge",                                                         //
-                                                                             "and", "or",                                                                                //
-                                                                             "in", "out",                                                                                //
-                                                                             "group", "count", "sum", "min", "max", "aggregate", "function", "countascol", "rowcount",   //
-                                                                             "miles", "if", "as",                                                                        //
-                                                                             "includes", "sort", "order", "offset", "limit",                                             //
-                                                                             "page", "pagenum", "pagesize", "distinct",                                                  // 
-                                                                             "sw", "ew", "w", "wo",                                                                      //
-                                                                             "emp", "nemp", "nn", "n",                                                                   // nn == not null, n == null
-                                                                             "search"}                                                                                   //
-                                                                 ));
 
-   static HashSet<String> OPERATORS       = new HashSet<String>(                                                                                                         //
-                                                                 Arrays.asList(                                                                                          //
-                                                                       new String[]{"=", "eq", "ne", "lt", "le", "gt", "ge", "in", "out"}));
-   String                 dbtype;
+   Rql                    rql;
 
-   char                   stringQuote     = '\'';
-   char                   identifierQuote = '"';
+   //   char                   stringQuote     = '\'';
+   //   char                   identifierQuote = '"';
+   //
+   //   private boolean        doQuote         = true;
 
-   private boolean        isQuoting       = true;
+   //   private boolean        calcRowsFound   = true;
 
-   private boolean        calcRowsFound   = true;
-
-   public Parser(String dbtype)
+   public Parser(Rql rql)
    {
-      this.dbtype = dbtype;
+      this.rql = rql;
 
-      if (dbtype != null && dbtype.toLowerCase().indexOf("mysql") > -1)
-      {
-         identifierQuote = '`';
-      }
-
-      if (dbtype != null && dbtype.toLowerCase().indexOf("elastic") > -1)
-         // dont quote or alter values such as 'true' to '1' or 'false' to '0'
-         isQuoting = false;
    }
 
    /**
@@ -106,13 +78,13 @@ public class Parser
          String lc = token.toLowerCase();
          String func = lc.endsWith("(") ? lc.substring(0, lc.length() - 1) : null;
 
-         if (FUNCTIONS.contains(lc) && predicates.size() == 1 && "eq".equals(root.token))
+         if (rql.isFunction(lc) && predicates.size() == 1 && "eq".equals(root.token))
          {
             //parses things like "firstname=in=fred,george,john"
             root.token = lc;
          }
-         else if (FUNCTIONS.contains(func) || //this line matches tokens like "function(value)"
-               (predicates.size() == 0 && FUNCTIONS.contains(lc))) //this line matches tokens like "function=value" which is a shortcut for "function(value)"
+         else if (rql.isFunction(func) || //this line matches tokens like "function(value)"
+               (predicates.size() == 0 && rql.isFunction(lc))) //this line matches tokens like "function=value" which is a shortcut for "function(value)"
          {
             func = func != null ? func : lc;
 
@@ -154,7 +126,7 @@ public class Parser
                top = p;
             }
 
-            if (OPERATORS.contains(lc))
+            if (rql.isOperator(lc))
             {
                if ("=".equals(lc))
                {
@@ -202,7 +174,7 @@ public class Parser
          }
       }
 
-      if (isQuoting)
+      if (rql.isDoQuote())
          quote(root);
 
       root.setSrc(clause);
@@ -225,7 +197,7 @@ public class Parser
             {
                continue;
             }
-            else if (!t.startsWith(identifierQuote + ""))
+            else if (!t.startsWith(rql.getIdentifierQuote() + ""))
             {
                //p.term(i).token = identifierQuote + p.term(i).token + identifierQuote;
 
@@ -347,7 +319,7 @@ public class Parser
     */
    String asStr(String str)
    {
-      return quote(str, stringQuote);
+      return quote(str, rql.getStringQuote());
    }
 
    /**
@@ -364,11 +336,12 @@ public class Parser
          str = dequote(str);
          String a = str.substring(0, firstDot + 1);
          String b = str.substring(firstDot + 1);
-         if(!J.empty(a) && !J.empty(b)) {
-            return a + quote(b, identifierQuote);
+         if (!J.empty(a) && !J.empty(b))
+         {
+            return a + quote(b, rql.getIdentifierQuote());
          }
       }
-      return (quote(dequote(str), identifierQuote));
+      return (quote(dequote(str), rql.getIdentifierQuote()));
    }
 
    static String asLiteral(String val)
@@ -438,19 +411,14 @@ public class Parser
       return false;
    }
 
-   public String getDbtype()
-   {
-      return dbtype;
-   }
-
-   public boolean isCalcRowsFound()
-   {
-      return calcRowsFound;
-   }
-
-   public void setCalcRowsFound(boolean calcRowsFound)
-   {
-      this.calcRowsFound = calcRowsFound;
-   }
+   //   public boolean isCalcRowsFound()
+   //   {
+   //      return calcRowsFound;
+   //   }
+   //
+   //   public void setCalcRowsFound(boolean calcRowsFound)
+   //   {
+   //      this.calcRowsFound = calcRowsFound;
+   //   }
 
 }

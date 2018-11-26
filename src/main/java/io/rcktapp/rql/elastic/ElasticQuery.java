@@ -13,16 +13,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rcktapp.rql;
+package io.rcktapp.rql.elastic;
 
-public class Order
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+/**
+ * Does nothing special other than a base class to extend from
+ * @author kfrankic
+ *
+ */
+public abstract class ElasticQuery
 {
-   public String col = null;
-   public String dir = null;
-
-   public Order(String col, String dir)
-   {
-      this.col = col;
-      this.dir = dir;
+   // identifies a nested path
+   @JsonIgnore
+   protected String nestedPath;
+   
+   public String getNestedPath() {
+      return nestedPath;
    }
 }

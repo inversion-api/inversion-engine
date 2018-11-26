@@ -31,7 +31,7 @@ public class Api extends Dto
    List<Endpoint>                    endpoints   = new ArrayList();
    List<Action>                      actions     = new ArrayList();
    LinkedHashMap<String, Collection> collections = new LinkedHashMap();
-   List<Acl>                         acls        = new ArrayList();
+   List<AclRule>                         acls        = new ArrayList();
 
    String                            apiCode     = null;
    String                            accountCode = null;
@@ -269,7 +269,7 @@ public class Api extends Dto
       actions.add(action);
    }
 
-   public void addAcl(Acl acl)
+   public void addAcl(AclRule acl)
    {
       if (!acls.contains(acl))
       {
@@ -278,14 +278,14 @@ public class Api extends Dto
       }
    }
 
-   public void setAcls(List<Acl> acls)
+   public void setAcls(List<AclRule> acls)
    {
       this.acls.clear();
-      for (Acl acl : acls)
+      for (AclRule acl : acls)
          addAcl(acl);
    }
 
-   public List<Acl> getAcls()
+   public List<AclRule> getAcls()
    {
       return new ArrayList(acls);
    }
