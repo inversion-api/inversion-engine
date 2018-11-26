@@ -55,58 +55,6 @@ import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.Stmt;
 import io.rcktapp.rql.sql.SqlRql;
 
-/**
- * <h2>Reserved URL Parameters</h2>
- * <p>
- * If any of the following terms conflict with resource property names that
- * the application developer wants to query/filter on, the q/filter parameter
- * should be used to disambiguate filter terms from these reserved terms
- * <ul>
- *   <li>expand        - the "expands" parameter can be used to expand a 
- *                       relationship in a GET request. It can be a comma 
- *                       separated lists of dot separated relationship 
- *                       paths ex: "businessHours,prop1.prop2,dog.owner"
- *   
- *   <li>sort          - comma separated list of fields to sort on, each 
- *                       optionally prefixed with a "-" to indicate descending order
- *                       
- *   <li>q || filter   - optional parameter to add filter conditions.  Handy 
- *                       when resources names conflict with reserved words 
- *                      
- *   <li>offset
- *   
- *   <li>
- *    
- *   <li>page
- *   
- *   <li>limit    || 
- *       pageSize || 
- *       page_size ||
- *       perPage
- *       
- * </li>
- * 
- * <p><h2>Supported Filter Query Language</h2>
- * <ul>
- *   <li> = equality
- *   <li> * - Wildcard equivelant to sql "%"
- *   <li> =,eq,ne,lt,le,gt,ge,in,out,and,or,(,)
- * </ul>
- * 
- * 
- * <hr>------------------------------------------------------------------</hr>
- * 
- * <h2>Resources From Web</h2>
- * 
-
- * 
- * For examples... 
- * @see io.rcktapp.api.service.TestRql
- * 
- * @param request
- * @param response
- * @throws Exception
- */
 public class SqlGetHandler extends SqlHandler
 {
    int maxRows        = 100;
