@@ -111,7 +111,7 @@ api.endpoints=restEp
 ########################################################################
 db.class=io.rcktapp.api.Db
 db.name=db
-db.driver=com.mysql.jdbc.Driver
+db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
 db.user=YOUR_JDBC_USER_HERE
 db.pass=YOUR_JDBC_PASSWORD_HERE
