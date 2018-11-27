@@ -16,7 +16,7 @@ repositories {
    mavenLocal()
    mavenCentral() 
    maven { url 'https://jitpack.io' }
-   //maven { url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release" }
+   maven { url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release" }
 }
 
 
@@ -66,12 +66,11 @@ dependencies {
     //drivers for supportd DBs	
 	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
 	compile 'org.postgresql:postgresql:42.1.4'
-    //compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
+    compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
 	
 	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
 	
 	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.11'
-	// compile group: 'log4j', name: 'log4j', version: '1.2.17'
 	
 	compile "javax.servlet:javax.servlet-api:3.1.0"
 	
@@ -85,6 +84,13 @@ dependencies {
 	
 }
 
+task devJar(type: Jar) {
+    from sourceSets.main.output
+}
+
+build {
+	dependsOn ("devJar")
+}
 
 
 /************************************************************
