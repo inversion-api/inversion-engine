@@ -81,24 +81,34 @@ public class TestElasticRql
    {
       try
       {
-         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("sw(city,Chand)"));
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("sw(city,Chand,Atl)"));
 
-         assertNull(dsl.getBool());
          assertNull(dsl.getNested());
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getRange());
          assertNull(dsl.getTerm());
-         assertNotNull(dsl.getWildcard());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool());  // A bool is used because comma separated values are valid for all 'with' functions
+         
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getMust());
+         assertNull(dsl.getBool().getMustNot());
+         assertNotNull(dsl.getBool().getShould());
+         
+         assertEquals(2, dsl.getBool().getShould().size());
+         assertTrue(dsl.getBool().getShould().get(0) instanceof Wildcard);
+         
+         Wildcard wildcard = (Wildcard)dsl.getBool().getShould().get(0);
 
-         assertEquals("city", dsl.getWildcard().getName());
-         assertEquals("Chand*", dsl.getWildcard().getValue());
-         assertNull(dsl.getWildcard().getNestedPath());
+         assertEquals("city", wildcard.getName());
+         assertEquals("Chand*", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"wildcard\":{\"city\":\"Chand*\"}}", json);
+         assertEquals("{\"bool\":{\"should\":[{\"wildcard\":{\"city\":\"Chand*\"}},{\"wildcard\":{\"city\":\"Atl*\"}}]}}", json);
 
       }
       catch (Exception e)
@@ -115,22 +125,32 @@ public class TestElasticRql
       {
          QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("w(city,andl)"));
 
-         assertNull(dsl.getBool());
          assertNull(dsl.getNested());
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getRange());
          assertNull(dsl.getTerm());
-         assertNotNull(dsl.getWildcard());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool());  // A bool is used because comma separated values are valid for all 'with' functions
+         
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getMust());
+         assertNull(dsl.getBool().getMustNot());
+         assertNotNull(dsl.getBool().getShould());
+         
+         assertEquals(1, dsl.getBool().getShould().size());
+         assertTrue(dsl.getBool().getShould().get(0) instanceof Wildcard);
+         
+         Wildcard wildcard = (Wildcard)dsl.getBool().getShould().get(0);
 
-         assertEquals("city", dsl.getWildcard().getName());
-         assertEquals("*andl*", dsl.getWildcard().getValue());
-         assertNull(dsl.getWildcard().getNestedPath());
+         assertEquals("city", wildcard.getName());
+         assertEquals("*andl*", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"wildcard\":{\"city\":\"*andl*\"}}", json);
+         assertEquals("{\"bool\":{\"should\":[{\"wildcard\":{\"city\":\"*andl*\"}}]}}", json);
 
       }
       catch (Exception e)
@@ -186,22 +206,32 @@ public class TestElasticRql
       {
          QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("ew(city,andler)"));
 
-         assertNull(dsl.getBool());
          assertNull(dsl.getNested());
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getRange());
          assertNull(dsl.getTerm());
-         assertNotNull(dsl.getWildcard());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool()); // A bool is used because comma separated values are valid for all 'with' functions
+         
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getMust());
+         assertNull(dsl.getBool().getMustNot());
+         assertNotNull(dsl.getBool().getShould());
+         
+         assertEquals(1, dsl.getBool().getShould().size());
+         assertTrue(dsl.getBool().getShould().get(0) instanceof Wildcard);
+         
+         Wildcard wildcard = (Wildcard)dsl.getBool().getShould().get(0);
 
-         assertEquals("city", dsl.getWildcard().getName());
-         assertEquals("*andler", dsl.getWildcard().getValue());
-         assertNull(dsl.getWildcard().getNestedPath());
+         assertEquals("city", wildcard.getName());
+         assertEquals("*andler", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"wildcard\":{\"city\":\"*andler\"}}", json);
+         assertEquals("{\"bool\":{\"should\":[{\"wildcard\":{\"city\":\"*andler\"}}]}}", json);
 
       }
       catch (Exception e)
@@ -218,22 +248,32 @@ public class TestElasticRql
       {
          QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("w(city,andl)"));
 
-         assertNull(dsl.getBool());
          assertNull(dsl.getNested());
          assertNull(dsl.getNestedPath());
          assertNull(dsl.getRange());
          assertNull(dsl.getTerm());
-         assertNotNull(dsl.getWildcard());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool()); // A bool is used because comma separated values are valid for all 'with' functions
+         
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getMust());
+         assertNull(dsl.getBool().getMustNot());
+         assertNotNull(dsl.getBool().getShould());
+         
+         assertEquals(1, dsl.getBool().getShould().size());
+         assertTrue(dsl.getBool().getShould().get(0) instanceof Wildcard);
+         
+         Wildcard wildcard = (Wildcard)dsl.getBool().getShould().get(0);
 
-         assertEquals("city", dsl.getWildcard().getName());
-         assertEquals("*andl*", dsl.getWildcard().getValue());
-         assertNull(dsl.getWildcard().getNestedPath());
+         assertEquals("city", wildcard.getName());
+         assertEquals("*andl*", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
 
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"wildcard\":{\"city\":\"*andl*\"}}", json);
+         assertEquals("{\"bool\":{\"should\":[{\"wildcard\":{\"city\":\"*andl*\"}}]}}", json);
 
       }
       catch (Exception e)
@@ -1160,7 +1200,7 @@ public class TestElasticRql
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"items.name\"}},{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}}]}}}}]}}", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"term\":{\"keywords.name\":\"items.name\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}}]}}]}}}}]}}", json);
 
       }
       catch (Exception e)
@@ -1181,7 +1221,7 @@ public class TestElasticRql
          String json = mapper.writeValueAsString(dsl);
 
          assertNotNull("json should not be empty.", json);
-         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}},{\"term\":{\"keywords.name\":\"items.name\"}}]}}}}]}}", json);
+         assertEquals("{\"bool\":{\"filter\":[{\"nested\":{\"path\":\"keywords\",\"query\":{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"wildcard\":{\"keywords.value\":\"*Powerade*\"}}]}},{\"term\":{\"keywords.name\":\"items.name\"}}]}}}}]}}", json);
 
       }
       catch (Exception e)
