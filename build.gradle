@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'war'
 
-project.docsDirName='../docs'
+project.docsDirName='../docs/0.3.x/'
 
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
