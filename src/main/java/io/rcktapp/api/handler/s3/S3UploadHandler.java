@@ -77,79 +77,76 @@ import io.rcktapp.api.service.Service;
 public class S3UploadHandler implements Handler
 {
 
-   // mhuhman 4/3/2018
-   // DO NOT USE the access key and secret key explicitly unless you are accessing another account's S3 bucket.
-   // If snooze is running in the AWS account that owns the bucket being accessed, use IAM roles to authenticate!
-   // Even if you're doing cross-account access, you can still use IAM authentication! 
-   // see: https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html
-   String s3AccessKey       = null;
-   String s3SecretKey       = null;
+   protected String s3AccessKey = null;
+   protected String s3SecretKey = null;
+   protected String s3AwsRegion = null;
 
-   // region should remain null except when necessary for local testing
-   String s3AwsRegion       = null;
-
-   // path will be built as such: staticBasePath/dynamicBasePath/requestPath/fileName
-   // static and dynamic base paths set here are overridden by the .properties file
-   // any basePath variables that are null will simply be skipped
-   // dynamic base path MUST BE a date format - default is yyyy/MM/dd
-   String s3Bucket          = null;
-   String s3StaticBasePath  = null;
-   String s3DynamicBasePath = "yyyy/MM/dd";
+   protected String s3Bucket    = null;
+   protected String s3BasePath  = "uploads";
+   protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-
-      MessageDigest md = MessageDigest.getInstance("MD5");
       String requestPath = null;
       String fileName = null;
       Long fileSize = null;
-      DigestInputStream imageInputStream = null;
-
-      for (Part part : req.getHttpServletRequest().getParts())
-      {
-         if (part.getName() == null)
-         {
-            continue;
-         }
-         if (part.getName().equals("file"))
-         {
-            imageInputStream = new DigestInputStream(part.getInputStream(), md);
-            String[] fileNameParts = part.getSubmittedFileName().split("[.]");
-            fileName = "" + fileNameParts[0] + "-" + System.currentTimeMillis() + "." + fileNameParts[1];
-            fileSize = part.getSize();
-         }
-         else if (part.getName().equals("requestPath"))
-         {
-            requestPath = IOUtils.toString(part.getInputStream());
-            if (requestPath.indexOf("/") == 0)
-               requestPath = requestPath.substring(1);
-         }
-      }
-
-      if (imageInputStream == null)
-      {
-         error(res, null, "No file was uploaded in the multipart request");
-         return;
-      }
-
-      //String pathAndFileName = buildFullPath(fileName, requestPath);
-      Map<String, Object> responseContent = new HashMap<>();
+      DigestInputStream uploadStream = null;
 
       try
       {
-         responseContent = saveFile(chain, imageInputStream, fileName, requestPath);
+         for (Part part : req.getHttpServletRequest().getParts())
+         {
+            if (part.getName() == null)
+            {
+               continue;
+            }
+            if (part.getName().equals("file"))
+            {
+               uploadStream = new DigestInputStream(part.getInputStream(), MessageDigest.getInstance("MD5"));
+               String[] fileNameParts = part.getSubmittedFileName().split("[.]");
+               fileName = "" + fileNameParts[0] + "-" + System.currentTimeMillis() + "." + fileNameParts[1];
+               fileSize = part.getSize();
+            }
+            else if (part.getName().equals("requestPath"))
+            {
+               requestPath = IOUtils.toString(part.getInputStream());
+               if (requestPath.indexOf("/") == 0)
+                  requestPath = requestPath.substring(1);
+            }
+         }
+
+         if (uploadStream == null)
+         {
+            error(res, null, "No file was uploaded in the multipart request");
+            return;
+         }
+
+         //String pathAndFileName = buildFullPath(fileName, requestPath);
+         Map<String, Object> responseContent = new HashMap<>();
+
+         try
+         {
+            responseContent = saveFile(chain, uploadStream, fileName, requestPath);
+         }
+         catch (Exception e)
+         {
+            error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
+
+            return;
+         }
+
+         responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
+         responseContent.put("fileSizeBytes", fileSize);
+         res.setJson(new JSObject(responseContent));
       }
-      catch (Exception e)
+      finally
       {
-         error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
-
-         return;
+         if (uploadStream != null)
+         {
+            uploadStream.close();
+         }
       }
-
-      responseContent.put("fileMd5", computeMd5Hash(imageInputStream, md));
-      responseContent.put("fileSizeBytes", fileSize);
-      res.setJson(new JSObject(responseContent));
    }
 
    void error(Response res, Exception exception, String message)
@@ -185,21 +182,21 @@ public class S3UploadHandler implements Handler
    {
       StringBuilder sb = new StringBuilder();
 
-      String staticBasePath = chain.getConfig("s3StaticBasePath", this.s3StaticBasePath);
-      String dynamicBasePath = chain.getConfig("s3DynamicBasePath", this.s3DynamicBasePath);
+      String basePath = chain.getConfig("s3BasePath", this.s3BasePath);
+      String datePath = chain.getConfig("s3DatePath", this.s3DatePath);
 
-      if (staticBasePath != null)
+      if (basePath != null)
       {
-         sb.append(staticBasePath);
-         if (!staticBasePath.endsWith("/"))
+         sb.append(basePath);
+         if (!basePath.endsWith("/"))
          {
             sb.append("/");
          }
       }
 
-      if (dynamicBasePath != null)
+      if (datePath != null)
       {
-         String datePath = new SimpleDateFormat(dynamicBasePath).format(new Date());
+         datePath = new SimpleDateFormat(datePath).format(new Date());
          sb.append(datePath + "/");
       }
 
@@ -240,24 +237,17 @@ public class S3UploadHandler implements Handler
       return builder.build();
    }
 
-   private static String computeMd5Hash(DigestInputStream dis, MessageDigest digest) throws IOException
+   private static String getHash(MessageDigest digest) throws IOException
    {
-      try
-      {
-         byte[] md5sum = digest.digest();
-         BigInteger bigInt = new BigInteger(1, md5sum);
-         String output = bigInt.toString(16);
+      byte[] md5sum = digest.digest();
+      BigInteger bigInt = new BigInteger(1, md5sum);
+      String output = bigInt.toString(16);
 
-         while (output.length() < 32)
-         {
-            output = "0" + output;
-         }
-
-         return output;
-      }
-      finally
+      while (output.length() < 32)
       {
-         dis.close();
+         output = "0" + output;
       }
+
+      return output;
    }
 }
