@@ -1,47 +1,37 @@
 apply plugin: 'eclipse'
-apply plugin: 'java'
 apply plugin: 'maven'
-apply plugin: 'war'
+apply plugin: 'java'
 
+//README uncomment the line below to use 'gradle build' to package a war.
+//This file is shipped as a java plugin project not a war plugin project because
+//other projects use jitpack to include the snooze api as a dependency.  If
+//it were a war project by default jipack would serve the war not the jar which
+//would be useless. 
+//apply plugin: 'war'
+
+project.docsDirName='../docs/0.3.x/'
 
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-version = '0.2.3'
+
+version = '0.3.x'
 group = 'com.github.RocketPartners'
+sourceCompatibility = 1.8
 
 repositories { 
    mavenLocal()
    mavenCentral() 
    maven { url 'https://jitpack.io' }
+   maven { url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release" }
 }
-
-
-sourceCompatibility = 1.8
 
 dependencies {
 
-	if (gradle.ext.rckt_snooze['addFortJProjectToClasspath']) {
-    		compile findProject(":fort_j")
-    }
-    else {
-   		compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
-    }
-    
-    	if (gradle.ext.rckt_snooze['addFortSProjectToClasspath']) {
-    		compile findProject(":fort_s")
-    }
-    else {
-   		compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
-    }
-    
-    	if (gradle.ext.rckt_snooze['addFortWProjectToClasspath']) {
-    		compile findProject(":fort_w")
-    }
-    else {
-   		compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
-    }
+   	compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
+   	compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
+   	compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
 
 	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.55'
 	
@@ -53,22 +43,22 @@ dependencies {
 	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
 	compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
-	// compile group: 'commons-logging', name: 'commons-logging', version: '1.2'
+
 	
 	// required for the Redis client
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
 	
 	compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
 	compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
-	
+
+    //drivers for supportd DBs	
 	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
 	compile 'org.postgresql:postgresql:42.1.4'
-	//compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
+    compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
 	
 	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
 	
 	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.11'
-	// compile group: 'log4j', name: 'log4j', version: '1.2.17'
 	
 	compile "javax.servlet:javax.servlet-api:3.1.0"
 	
@@ -83,11 +73,9 @@ dependencies {
 }
 
 
-
 /************************************************************
  * Ensuring source directories are created if they do not 
  * already exist when running 'gradle eclipse'
- * Also sets Java 6 as the default target within Eclipse
  */
 eclipse {
     classpath {

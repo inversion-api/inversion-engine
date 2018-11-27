@@ -132,6 +132,16 @@ public class Chain
       return values;
    }
 
+   public int getConfig(String key, int defaultValue)
+   {
+      return Integer.parseInt(getConfig(key, defaultValue + ""));
+   }
+   
+   public boolean getConfig(String key, boolean defaultValue)
+   {
+      return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
+   }
+   
    public String getConfig(String key, String defaultValue)
    {
       String value = actions.get(next - 1).getConfig(key);

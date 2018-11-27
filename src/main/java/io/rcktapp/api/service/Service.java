@@ -62,6 +62,9 @@ import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service extends HttpServlet
 {
+   Logger               log            = LoggerFactory.getLogger(getClass());
+   Logger               requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+
    Hashtable<Long, Api> apis           = new Hashtable();
 
    Map<String, Handler> globalHandlers = new Hashtable();
@@ -69,27 +72,18 @@ public class Service extends HttpServlet
 
    List<String>         corsHeaders    = new ArrayList();
 
-   boolean              debug          = true;
+   /**
+    * Causes extended request/response info to be logged to the requestLog
+    */
+   protected boolean    debug          = true;
 
-   Logger               log            = LoggerFactory.getLogger(getClass());
-   Logger               requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   /**
+    * Must be set to match your servlet path if your servlet is not 
+    * mapped to /*
+    */
+   protected String     servletMapping = null;
 
-   String               servletMapping = null;
 
-   DataSource           ds             = null;
-
-   String               driver         = null;
-   String               url            = null;
-   String               user           = null;
-   String               pass           = null;
-   int                  poolMin        = SqlDb.MIN_POOL_SIZE;
-   int                  poolMax        = SqlDb.MAX_POOL_SIZE;
-
-   static
-   {
-      //initializes Log4J
-      //new Logs();
-   }
 
    public Service()
    {
@@ -173,7 +167,7 @@ public class Service extends HttpServlet
                url.setHost(xfh);
          }
 
-         //if (isDebug(req))
+         if (isDebug(req))
          {
             res.debug("");
             res.debug("");
@@ -434,7 +428,7 @@ public class Service extends HttpServlet
       return false;
    }
 
-   public static class ApiMatch
+   static class ApiMatch
    {
       public Api    api = null;
       public String url = null;
@@ -447,7 +441,7 @@ public class Service extends HttpServlet
 
    }
 
-   public ApiMatch findApi(Url url) throws Exception
+   ApiMatch findApi(Url url) throws Exception
    {
       String accountCode = null;
 
@@ -514,6 +508,11 @@ public class Service extends HttpServlet
 
    }
 
+   boolean isDebug(Request req)
+   {
+      return this.debug || (req != null && req.isDebug());
+   }
+
    Endpoint findEndpoint(Api api, String method, String path)
    {
       for (Endpoint endpoint : api.getEndpoints())
@@ -526,11 +525,10 @@ public class Service extends HttpServlet
 
    void writeResponse(Request req, Response res) throws Exception
    {
-      boolean debug = req != null && req.isDebug();
+      boolean debug = isDebug(req);
       boolean explain = req != null && req.isExplain();
 
       String method = req != null ? req.getMethod() : null;
-      String format = req != null ? req.getParam("format") : null;
 
       HttpServletResponse http = res.getHttpResp();
 
@@ -576,37 +574,15 @@ public class Service extends HttpServlet
          }
          else if (res.getJson() != null)
          {
-            if ("csv".equalsIgnoreCase(format))
-            {
-               JSObject arr = res.getJson();
-               if (!(arr instanceof JSArray))
-               {
-                  arr = new JSArray(arr);
-               }
+            byte[] bytes = res.getJson().toString().getBytes();
 
-               byte[] bytes = toCsv((JSArray) arr).getBytes();
+            res.addHeader("Content-Length", bytes.length + "");
+            res.debug("Content-Length " + bytes.length + "");
+            //http.setContentType("application/json; charset=utf-8");
+            //http.setCharacterEncoding("UTF-8");
+            http.setContentType("application/json");
 
-               res.addHeader("Content-Length", bytes.length + "");
-               res.debug("Content-Length " + bytes.length + "");
-               //http.setContentType("application/json; charset=utf-8");
-               //http.setCharacterEncoding("UTF-8");
-               http.setContentType("text/csv");
-
-               out(req, res, out, bytes);
-
-            }
-            else
-            {
-               byte[] bytes = res.getJson().toString().getBytes();
-
-               res.addHeader("Content-Length", bytes.length + "");
-               res.debug("Content-Length " + bytes.length + "");
-               //http.setContentType("application/json; charset=utf-8");
-               //http.setCharacterEncoding("UTF-8");
-               http.setContentType("application/json");
-
-               out(req, res, out, bytes);
-            }
+            out(req, res, out, bytes);
          }
 
          res.debug("\r\n-- done -----------------\r\n");
@@ -635,57 +611,6 @@ public class Service extends HttpServlet
 
       if (req == null || !req.isExplain())
          out.write(bytes);
-   }
-
-   public String toCsv(JSArray arr) throws Exception
-   {
-      StringBuffer buff = new StringBuffer();
-
-      LinkedHashSet<String> keys = new LinkedHashSet();
-
-      for (int i = 0; i < arr.length(); i++)
-      {
-         JSObject obj = (JSObject) arr.get(i);
-         if (obj != null)
-         {
-            for (String key : obj.keys())
-            {
-               Object val = obj.get(key);
-               if (!(val instanceof JSArray) && !(val instanceof JSObject))
-                  keys.add(key);
-            }
-         }
-      }
-
-      CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
-
-      List<String> keysList = new ArrayList(keys);
-      for (String key : keysList)
-      {
-         printer.print(key);
-      }
-      printer.println();
-
-      for (int i = 0; i < arr.length(); i++)
-      {
-         for (String key : keysList)
-         {
-            Object val = ((JSObject) arr.get(i)).get(key);
-            if (val != null)
-            {
-               printer.print(val);
-            }
-            else
-            {
-               printer.print("");
-            }
-         }
-         printer.println();
-      }
-      printer.flush();
-      printer.close();
-
-      return buff.toString();
    }
 
    public static String buildLink(Request req, String collectionKey, Object entityKey, String subCollectionKey)
@@ -727,40 +652,40 @@ public class Service extends HttpServlet
 
    }
 
-   public Handler getHandler(Api api, String name)
-   {
-      try
-      {
-         String clazz = null;
-
-         //first see if it is cached
-         Handler h = (Handler) apiHandlers.get(api.getName(), name);
-         if (h == null && api.getHandler(name) != null)
-         {
-            //ok, it is not cached but it is a registred short name to class name
-            clazz = api.getHandler(name);
-            h = (Handler) Class.forName(clazz).newInstance();
-            apiHandlers.put(api.getName(), name, h);
-            return h;
-         }
-
-         //so it is not a registered api handler, maybe it is a global handler
-         h = globalHandlers.get(name);
-
-         if (h == null && name.indexOf(".") > 0)
-         {
-            //nope, so maybe it is just a class name
-            h = (Handler) Class.forName(name).newInstance();
-            apiHandlers.put(api.getName(), name, h);
-         }
-
-         return h;
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
-      }
-   }
+   //   public Handler getHandler(Api api, String name)
+   //   {
+   //      try
+   //      {
+   //         String clazz = null;
+   //
+   //         //first see if it is cached
+   //         Handler h = (Handler) apiHandlers.get(api.getName(), name);
+   //         if (h == null && api.getHandler(name) != null)
+   //         {
+   //            //ok, it is not cached but it is a registred short name to class name
+   //            clazz = api.getHandler(name);
+   //            h = (Handler) Class.forName(clazz).newInstance();
+   //            apiHandlers.put(api.getName(), name, h);
+   //            return h;
+   //         }
+   //
+   //         //so it is not a registered api handler, maybe it is a global handler
+   //         h = globalHandlers.get(name);
+   //
+   //         if (h == null && name.indexOf(".") > 0)
+   //         {
+   //            //nope, so maybe it is just a class name
+   //            h = (Handler) Class.forName(name).newInstance();
+   //            apiHandlers.put(api.getName(), name, h);
+   //         }
+   //
+   //         return h;
+   //      }
+   //      catch (Exception ex)
+   //      {
+   //         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
+   //      }
+   //   }
 
    /**
     * Adds a global handler useable by all APIs
@@ -868,15 +793,6 @@ public class Service extends HttpServlet
    public void setServletMapping(String servletMapping)
    {
       this.servletMapping = servletMapping;
-   }
-
-   public Connection getConnection() throws Exception
-   {
-      if (ds != null)
-      {
-         return ds.getConnection();
-      }
-      return null;
    }
 
    public Db getDb(Api api, String collectionKey) throws ApiException
