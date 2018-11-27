@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.handler.security;
 
@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;
@@ -30,13 +31,13 @@ import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.service.Service;
 
-public class RateHandler implements Handler
+public class RateLimitHandler implements Handler
 {
-   int              minutes = 1;
-   int              hits    = 200;
-   long             resetAt = 0;
+   protected int    limitMinutes  = 1;
+   protected int    limitRequests = 200;
 
-   Map<String, Num> counts  = new Hashtable();
+   long             resetAt       = 0;
+   Map<String, Num> counts        = new Hashtable();
 
    class Num
    {
@@ -57,6 +58,9 @@ public class RateHandler implements Handler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
+      int minutes = chain.getConfig("limitMinutes", this.limitMinutes);
+      int hits = chain.getConfig("limitRequests", this.limitRequests);
+
       if (resetAt < System.currentTimeMillis() - (minutes * 60000))
       {
          synchronized (this)
@@ -82,19 +86,16 @@ public class RateHandler implements Handler
 
       if (num.val() >= hits)
       {
-         System.err.println("Rate Limiting Ip: " + token);
-         chain.cancel();
-         res.setJson(null);
+         JSObject error = new JSObject("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
+         res.setJson(error);
          res.setStatus(SC.SC_429_TOO_MANY_REQUESTS);
+
+         chain.cancel();
       }
    }
 
    public static String getIp(HttpServletRequest request)
    {
-      //      HttpSession session = request.getSession(false);
-      //      if(session != null)
-      //         return session.getId();
-
       String ip = request.getHeader("X-Forwarded-For");
       if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
       {
