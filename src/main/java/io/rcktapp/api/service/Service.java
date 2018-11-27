@@ -434,7 +434,7 @@ public class Service extends HttpServlet
       return false;
    }
 
-   public static class ApiMatch
+   static class ApiMatch
    {
       public Api    api = null;
       public String url = null;
@@ -447,7 +447,7 @@ public class Service extends HttpServlet
 
    }
 
-   public ApiMatch findApi(Url url) throws Exception
+   ApiMatch findApi(Url url) throws Exception
    {
       String accountCode = null;
 
