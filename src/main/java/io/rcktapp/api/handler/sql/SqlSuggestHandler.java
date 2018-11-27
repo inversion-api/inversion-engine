@@ -16,6 +16,7 @@
 package io.rcktapp.api.handler.sql;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.forty11.j.J;
@@ -25,7 +26,6 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
-import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
@@ -36,14 +36,25 @@ import io.rcktapp.rql.sql.SqlRql;
 
 public class SqlSuggestHandler extends SqlHandler
 {
-   CaseInsensitiveSet<String> whitelist    = new CaseInsensitiveSet<>();
+   protected CaseInsensitiveSet<String> whitelist    = new CaseInsensitiveSet<>();
 
-   String                     propertyProp = "property";
-   String                     searchProp   = "value";
-   String                     tenantCol    = "tenantId";
+   protected String                     propertyProp = "property";
+   protected String                     searchProp   = "value";
+   protected String                     tenantCol    = "tenantId";
 
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
+      String propertyProp = chain.getConfig("propertyProp", this.propertyProp);
+      String searchProp = chain.getConfig("searchProp", this.searchProp);
+      String tenantCol = chain.getConfig("tenantCol", this.tenantCol);
+
+      String whitelistStr = chain.getConfig("whitelist", null);
+      CaseInsensitiveSet<String> whitelist = this.whitelist;
+      if (whitelistStr != null)
+      {
+         whitelist = new CaseInsensitiveSet(J.explode(",", whitelistStr));
+      }
+
       String properties = req.removeParam(propertyProp);
 
       if (J.empty(properties))
