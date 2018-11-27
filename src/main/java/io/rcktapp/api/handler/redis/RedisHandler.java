@@ -50,22 +50,22 @@ public class RedisHandler implements Handler
    Logger                       log                                = LoggerFactory.getLogger(getClass());
 
    // configurable snooze.props 
-   private String               redisHost                          = null;
-   private int                  redisPort                          = 6379;
+   protected String             redisHost                          = null;
+   protected int                redisPort                          = 6379;
 
-   int                          redisPoolMin                       = 16;
-   int                          redisPoolMax                       = 128;
-   boolean                      redisTestOnBorrow                  = true;
-   boolean                      redisTestOnReturn                  = true;
-   boolean                      redisTestWhileIdle                 = true;
-   int                          redisMinEvictableIdleTimeMillis    = 60000;
-   int                          redisTimeBetweenEvictionRunsMillis = 30000;
-   int                          redisNumTestsPerEvictionRun        = 3;
-   boolean                      redisBlockWhenExhausted            = true;
+   protected int                redisPoolMin                       = 16;
+   protected int                redisPoolMax                       = 128;
+   protected boolean            redisTestOnBorrow                  = true;
+   protected boolean            redisTestOnReturn                  = true;
+   protected boolean            redisTestWhileIdle                 = true;
+   protected int                redisMinEvictableIdleTimeMillis    = 60000;
+   protected int                redisTimeBetweenEvictionRunsMillis = 30000;
+   protected int                redisNumTestsPerEvictionRun        = 3;
+   protected boolean            redisBlockWhenExhausted            = true;
 
-   String                       redisNocacheParam                  = "nocache";
-   int                          redisReadSocketTimeout             = 2500;                                       // time in milliseconds
-   int                          redisTtl                           = 15552000;                                   // time to live 15,552,000s == 180 days
+   protected String             redisNocacheParam                  = "nocache";
+   protected int                redisReadSocketTimeout             = 2500;                               // time in milliseconds
+   protected int                redisTtl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
    Hashtable<String, JedisPool> pools                              = new Hashtable();
 
@@ -135,7 +135,7 @@ public class RedisHandler implements Handler
                {
                   try
                   {
-                     int ttl = Integer.parseInt(chain.getConfig("redisTtl", this.redisTtl + ""));
+                     int ttl = chain.getConfig("redisTtl", this.redisTtl);
                      jedis.setex(key, ttl, chain.getResponse().getJson().toString());
                   }
                   catch (Exception ex)
@@ -205,7 +205,7 @@ public class RedisHandler implements Handler
    JedisPool getPool(Chain chain)
    {
       String host = chain.getConfig("redisHost", this.redisHost);
-      Integer port = Integer.parseInt(chain.getConfig("redisPort", this.redisPort + ""));
+      int port = chain.getConfig("redisPort", this.redisPort);
 
       String poolKey = chain.getConfig("redisPoolKey", host + ":" + port);
 
@@ -218,18 +218,18 @@ public class RedisHandler implements Handler
             if (jedis == null)
             {
                JedisPoolConfig poolConfig = new JedisPoolConfig();
-               poolConfig.setMaxTotal(Integer.parseInt(chain.getConfig("redisPoolMax", this.redisPoolMax + "")));
-               poolConfig.setMaxIdle(Integer.parseInt(chain.getConfig("redisPoolMax", this.redisPoolMax + "")));
-               poolConfig.setMinIdle(Integer.parseInt(chain.getConfig("redisPoolMin", this.redisPoolMin + "")));
-               poolConfig.setTestOnBorrow(Boolean.parseBoolean(chain.getConfig("redisTestOnBorrow", this.redisTestOnBorrow + "")));
-               poolConfig.setTestOnReturn(Boolean.parseBoolean(chain.getConfig("redisTestOnReturn", this.redisTestOnReturn + "")));
-               poolConfig.setTestWhileIdle(Boolean.parseBoolean(chain.getConfig("redisTestWhileIdle", this.redisTestWhileIdle + "")));
-               poolConfig.setMinEvictableIdleTimeMillis(Integer.parseInt(chain.getConfig("redisMinEvictableIdleTimeMillis", this.redisMinEvictableIdleTimeMillis + "")));
-               poolConfig.setTimeBetweenEvictionRunsMillis(Integer.parseInt(chain.getConfig("redisTimeBetweenEvictionRunsMillis", this.redisTimeBetweenEvictionRunsMillis + "")));
-               poolConfig.setNumTestsPerEvictionRun(Integer.parseInt(chain.getConfig("redisNumTestsPerEvictionRun", this.redisNumTestsPerEvictionRun + "")));
-               poolConfig.setBlockWhenExhausted(Boolean.parseBoolean(chain.getConfig("redisBlockWhenExhausted", this.redisBlockWhenExhausted + "")));
+               poolConfig.setMaxTotal(chain.getConfig("redisPoolMax", this.redisPoolMax));
+               poolConfig.setMaxIdle(chain.getConfig("redisPoolMax", this.redisPoolMax));
+               poolConfig.setMinIdle(chain.getConfig("redisPoolMin", this.redisPoolMin));
+               poolConfig.setTestOnBorrow(chain.getConfig("redisTestOnBorrow", this.redisTestOnBorrow));
+               poolConfig.setTestOnReturn(chain.getConfig("redisTestOnReturn", this.redisTestOnReturn));
+               poolConfig.setTestWhileIdle(chain.getConfig("redisTestWhileIdle", this.redisTestWhileIdle));
+               poolConfig.setMinEvictableIdleTimeMillis(chain.getConfig("redisMinEvictableIdleTimeMillis", this.redisMinEvictableIdleTimeMillis));
+               poolConfig.setTimeBetweenEvictionRunsMillis(chain.getConfig("redisTimeBetweenEvictionRunsMillis", this.redisTimeBetweenEvictionRunsMillis));
+               poolConfig.setNumTestsPerEvictionRun(chain.getConfig("redisNumTestsPerEvictionRun", this.redisNumTestsPerEvictionRun));
+               poolConfig.setBlockWhenExhausted(chain.getConfig("redisBlockWhenExhausted", this.redisBlockWhenExhausted));
 
-               jedis = new JedisPool(poolConfig, host, port, Integer.parseInt(chain.getConfig("redisReadSocketTimeout", this.redisReadSocketTimeout + "")));
+               jedis = new JedisPool(poolConfig, host, port, chain.getConfig("redisReadSocketTimeout", this.redisReadSocketTimeout));
                pools.put(poolKey, jedis);
             }
          }
