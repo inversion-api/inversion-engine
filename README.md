@@ -11,19 +11,15 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 ## Contents
 1. [Features & Benefits](#features--benefits)
 1. [Quick Start](#quickstart)
+1. [URL Structure](#url-structure)
 1. [Configuring Your Api](#configuring-your-api)
    * [Configuration Files Loading](#configuration-file-loading)
-   * [URL Structure](#url-structure)
-   * [Account](#account)
-   * [Api](#api)
-   * [Collections, Entities and Attributes](#collections-entities-and-attributes)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
+   * [Apis](#apis)
+   * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
    * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
-   * [AclRule](#aclrule)
-   * [Permission](#permission)
-   * [Change](#change)
-   * [Db](#db)
-   * [Tables, Columns and Relationships](#tables-columns-and-relationships)
-   * [Tenant](#tenant)
+   * [AclRules](#aclrules)
+   * [Permissions](#permissions)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted & Required Parameters](#restricted--required-query-parameters)
@@ -154,43 +150,7 @@ restEp.handler=restH
 
 ```
 
-
-## Configuring Your API
-
-
-### Configuration File Loading
-
-Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
-order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
-key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
-that do not have to duplicate config between them.
-  
-The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
-
-Configuration and API bootstrapping takes place in the following stages:
-
-1. Initial loading - this stage loads all of the user supplied values according to the above algorithm
-1. Db reflection - the system looks for all Db config objects and inspects the table/column structure (this goes for Dynamo and ElasticSearch too) and generates
-   bean.property=value markup for everything it finds.
-1. Api creation - Column,Table,Entity,Collection configuration is created to match the underlying Dbs.
-1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
-
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
-of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
-
-
-## Keeping Passwords out of Config Files
-
-If you want to keep your database passwords (or any other sensative info) out of your snoooze.properties config files, you can simply set an environment variable OR
-VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
-to the top of the batch file you use to launch our app or application server.  
-
-
-### URL Structure
+## URL Structure
 
 Snooze is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
 with an AccountCode and ApiCode path components.  The AccountCode uniquely identifies the organization that owns the API and is unique to the 
@@ -215,22 +175,65 @@ Examples example:
  * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 
-### Account
 
-Snooze itself is multi-tenant, designed to host multiple APIs that may be owned by different organizations.  An Account represents an organization that
-ownes an Api...which may be different from the organization that is running the Snooze instance hosting the Api.  
+## Configuring Your API
 
 
-### Api
+### Configuration File Loading
+
+Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
+order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
+that do not have to duplicate config between them.
+  
+The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Snooze servlet wiring - All 'snooze.' bean propertie are set on the Snooze servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
+1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
+1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
+1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that mapp back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialzied back out to name=value property format as if it were user supplied config.    
+1. The user supplied config from step 1 are then merged down on onto the dynamically config map.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  Snooze logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
+you might want to customize.
+
+
+## Keeping Passwords out of Config Files
+
+If you want to keep your database passwords (or any other sensative info) out of your snoooze.properties config files, you can simply set an environment variable OR
+VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
+to the top of the batch file you use to launch our app or application server.  
+
+### Snooze Servlet Config
+
+As you may have seen in the [Quickstart](#quickstart) example above 'snooze' is a reserved known bean name in the configuration files. 'snooze' referers to the 
+Snooze servlet itself and you can set any bean properties you want.
+
+### Dbs, Tables, Columns and Indexs
+
+TODO
+
+
+### Apis
 
 An Api exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
    
 
-### Collections, Entities, and Attributes
+### Collections, Entities, Attributes and Relationships
 
 Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
 to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
 in a URL or as a JSON property name.
+
 
 
 ### Endpoints, Actions and Handlers
@@ -251,40 +254,24 @@ ties things back to the url/http method being invoked.
 
 
 Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io/rcktapp/api/Handler.html):
- * io.rcktapp.api.handler.sql.SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
- * io.rcktapp.api.handler.sql.SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
- * io.rcktapp.api.handler.sql.SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
- * io.rcktapp.api.handler.auth.AuthHandler - Logs a user in and puts a User object in the session.  
- * io.rcktapp.api.handler.auth.AclHandler - Processes AclRules to secure your Endpoints.
- * io.rcktapp.api.handler.util.LogHandler - Logs requests and the JSON payloads.
- * io.rcktapp.api.handler.s3.S3UploadHandler - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
- * io.rcktapp.api.handler.security.RateLimitHandler - Protecs Endpoints from accidental or intentional DoS type traffic
+ * SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
+ * SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
+ * SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
+ * AuthHandler - Logs a user in and puts a User object in the session  
+ * AclHandler - Processes AclRules to secure your Endpoints
+ * LogHandler - Logs requests and the JSON payloads
+ * S3UploadHandler - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
+ * RateLimitHandler - Protecs Endpoints from accidental or intentional DoS type traffic
 
 
-
-
-### AclRule
+### AclRules
 
 AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
 be setup (in that order) to protect resources according to configed AclRules.
     
-### Permissions 
+### Permissions
 
 The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
-
-### Change
-
-Supplied default Handler implementations accumulate Changes that occur as part of any request.  LogHandler can be configured to save the list of Changes to a Db to implement 
-effective per request user level change logging.  Custom Handler implementors should call Response.addChange if a call modifies persistent data.
-
-
-
-### Db - change to data source to accomodate dynamo and elastic
-### Table
-### Column
-### Relationship
-
-### Tenant - relationship between app and multiple users of the app - goes with use of the api
 
     
 
