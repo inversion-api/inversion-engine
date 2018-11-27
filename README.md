@@ -250,15 +250,15 @@ is a custom Handler. Handlers do not have to be singletons but the design patter
 ties things back to the url/http method being invoked.
 
 
-Example Handlers:
- * io.rcktapp.api.handler.sql.GetHandler
- * io.rcktapp.api.handler.sql.PostHandler
- * io.rcktapp.api.handler.sql.DeleteHandler
- * io.rcktapp.api.handler.auth.AuthHandler
- * io.rcktapp.api.handler.auth.AclHandler
- * io.rcktapp.api.handler.util.LogHandler
- * io.rcktapp.api.handler.util.S3UploadHandler
- * io.rcktapp.api.handler.util.RateHandler
+Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io/rcktapp/api/Handler.html):
+ * io.rcktapp.api.handler.sql.SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
+ * io.rcktapp.api.handler.sql.SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
+ * io.rcktapp.api.handler.sql.SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
+ * io.rcktapp.api.handler.auth.AuthHandler - Logs a user in and puts a User object in the session.  
+ * io.rcktapp.api.handler.auth.AclHandler - Processes AclRules to secure your Endpoints.
+ * io.rcktapp.api.handler.util.LogHandler - Logs requests and the JSON payloads.
+ * io.rcktapp.api.handler.s3.S3UploadHandler - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
+ * io.rcktapp.api.handler.security.RateLimitHandler - Protecs Endpoints from accidental or intentional DoS type traffic
 
 
 
@@ -307,9 +307,11 @@ you use to query a REST collection for entities that match specific criteria or 
   You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
+[See io.rcktapp.rql.TestSqlRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/TestSqlRql.java)
 
 ### Reserved Query String Parameters
+
+TODO: this section needs work
 
  * q - 
  * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
@@ -317,7 +319,10 @@ you use to query a REST collection for entities that match specific criteria or 
    to work. 
  * includes - 
  * excludes - 
- * expands - 
+ * expands -
+ * colapse 
+
+
 
 ### Restricted & Required Query Parameters
 
@@ -664,7 +669,7 @@ check out the Javadocs.
 ### Runtime Profiles
 
 As discussed in [Configuration File Loading](#configuration-file-loading) Snooze was designed to support different runtime profiles.  
-You can set a VM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
+You can set a JVM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
 Suppose you had the following config files in WEB-INF directory:
 
 * snooze.properties
@@ -719,6 +724,7 @@ dependencies {
 
 If you don't want to monkey with an application server deployment, a this [Snooze Spring Boot starter project](https://github.com/RocketPartners/rckt_snooze_spring) 
 will get you up and running in less than 5 minutes.
+
 
 
 ## Rest API Design Resources
