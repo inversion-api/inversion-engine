@@ -1,7 +1,7 @@
 apply plugin: 'eclipse'
-apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'war'
+apply plugin: 'java'
 
 project.docsDirName='../docs/0.3.x/'
 
@@ -86,13 +86,24 @@ dependencies {
 	
 }
 
+
 task devJar(type: Jar) {
     from sourceSets.main.output
 }
 
-build {
-	dependsOn ("devJar")
+artifacts {
+    archives devJar
 }
+
+
+//build {
+	//dependsOn ("devJar")
+
+
+//artifacts
+//{
+//  jarConfig jar
+//}
 
 
 /************************************************************
