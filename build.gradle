@@ -9,6 +9,8 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
+//trying to get this file to change so jitpack will reprocess
+
 version = '0.3.x'
 group = 'com.github.RocketPartners'
 
