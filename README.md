@@ -1,6 +1,6 @@
-# rckt_snooze
+# Snooze API as a Service Platform
 
-Snooze is an "API as a Service" platform and the fastest way to deliver a REST API.
+Snooze is the fastest way to deliver a REST API.
 
 With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
 
@@ -183,6 +183,11 @@ of configing up the entire db-to-api mapping, all you have to supply are the cha
 happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
 
 
+## Keeping Passwords out of Config Files
+
+If you want to keep your database passwords (or any other sensative info) out of your snoooze.properties config files, you can simply set an environment variable OR
+VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
+to the top of the batch file you use to launch our app or application server.  
 
 
 ### URL Structure
@@ -648,6 +653,40 @@ TODO: add more specific doco here.
 
 ## Developer Notes
 
+### Javadocs
+
+For all Handler configuration options or to understand how to use Snooze as a framework for a custom application
+check out the Javadocs.
+
+ * 0.3.x - https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/
+
+
+### Runtime Profiles
+
+As discussed in [Configuration File Loading](#configuration-file-loading) Snooze was designed to support different runtime profiles.  
+You can set a VM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
+Suppose you had the following config files in WEB-INF directory:
+
+* snooze.properties
+* snooze3.properties
+* snooze-dev.properties
+* snooze99-dev.properties
+* snooze-stage.propeties
+* snooze-prod.properties
+* snooze1-prod.properties
+* snooze2-prod.properties
+
+If you were to add '-Dsnooze.profile=prod' to your JVM launch command then snooze.properties, snooze3.properties, snooze-prod.properties
+snooze1-prod.properties, and snooze2-prod.properties would be loaded in that order.  snooze-dev.properties and snooze-stage.propeties
+would be completely ignored.  
+
+This technique makes it simple to use the same build WAR asset to be deployed to multiple different runtime targets. 
+
+Another helpful trick here would be to launch in development with '-Dsnooze.profile=dev' add something like "snooze99-dev.properties" 
+to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
+and you custom settings will load last trumping any other keys shared with other files. 
+
+
 ### Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 ```
@@ -672,16 +711,15 @@ configurations.all {
 }
 
 dependencies {
-    compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
+    compile 'com.github.RocketPartners:rckt_snooze:release-0.3.x-SNAPSHOT'
 } 
 ```   
 
-Include the spring-boot dependencies to your custom project to quickly get it running with ```gradle bootRun```
-```
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-actuator'
-    compile 'org.springframework.boot:spring-boot-starter-jdbc'
-```
+### Spring Boot
+
+If you don't want to monkey with an application server deployment, a this [Snooze Spring Boot starter project](https://github.com/RocketPartners/rckt_snooze_spring) 
+will get you up and running in less than 5 minutes.
+
 
 ## Rest API Design Resources
 
