@@ -85,6 +85,11 @@ public abstract class Db extends Dto
       return null;
    }
 
+   public void removeTable(Table table)
+   {
+      tables.remove(table);
+   }
+
    public Column getColumn(String table, String col)
    {
       for (Table t : tables)

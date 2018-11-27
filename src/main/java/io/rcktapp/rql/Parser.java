@@ -297,7 +297,7 @@ public class Parser
     * @param replacement
     * @return
     */
-   String swapIf(String str, char target, char replacement)
+   public String swapIf(String str, char target, char replacement)
    {
       if (str == null || str.length() < 2)
          return str;
@@ -317,7 +317,7 @@ public class Parser
     * @param str
     * @return
     */
-   String asStr(String str)
+   public String asStr(String str)
    {
       return quote(str, rql.getStringQuote());
    }
@@ -344,7 +344,7 @@ public class Parser
       return (quote(dequote(str), rql.getIdentifierQuote()));
    }
 
-   static String asLiteral(String val)
+   public static String asLiteral(String val)
    {
       if (val.startsWith("`"))
          return val;
@@ -377,7 +377,7 @@ public class Parser
 
    }
 
-   boolean isLiteral(String str)
+   public boolean isLiteral(String str)
    {
       if (str.startsWith("'"))
          return true;

@@ -273,12 +273,13 @@ public class Rql
 
    //##############################################################################################################################################################
    //   private boolean        calcRowsFound   = true;
-   public Stmt toSql(String sqlStr, Table table, Map<String, String> params) throws Exception
+   
+   public Stmt createStmt(String sqlStr, Table table, Map<String, String> params) throws Exception
    {
-      return toSql(sqlStr, table, params, null);
+      return createStmt(sqlStr, table, params, null);
    }
 
-   public Stmt toSql(String sqlStr, Table table, Map<String, String> params, Replacer r) throws Exception
+   public Stmt createStmt(String sqlStr, Table table, Map<String, String> params, Replacer r) throws Exception
    {
       String ignoresStr = params.get("ignores");
 

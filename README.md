@@ -76,16 +76,22 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
   
 ## Quickstart
 
-When deploying Snooze as a stand alone Java Servlet, all you need to do is supply a WEB-INF/soooze.properties configuration file.
+The fasted way to get going is to checkout/fork the [Snooze Spring Boot Starter Project](https://github.com/RocketPartners/rckt_snooze_spring)
+and follow the readme instructions to get going in less than 5 minutes.  
+
+If you are comfortable with Gradle, Eclipse, and Tomact then you can start with this project and configure your Tomcat servlet with the web.xml 
+included in this project.
+
+In either case, all you need to do is supply edit your JDBC connection information the soooze.properties configuration file.
 Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
-all of the db tables to:  https://localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}
+all of the db tables to:  https://localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}
 
 Try out some [RQL](#resource-query-language-rql) queries like:
-* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
-* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
-* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
-* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
-* http&#58;//localhost/api/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
 
 Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
  
@@ -111,7 +117,7 @@ api.endpoints=restEp
 ########################################################################
 db.class=io.rcktapp.api.Db
 db.name=db
-db.driver=com.mysql.jdbc.Driver
+db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
 db.user=YOUR_JDBC_USER_HERE
 db.pass=YOUR_JDBC_PASSWORD_HERE
@@ -437,26 +443,26 @@ Elastic pagination: paging beyond the 10,000th item is significantly slower than
 
 #### Elasticsearch RQL Examples
 Retrieve all location data for the locations in the city of Chandler
-`http://localhost:8080/api/apiCode/elastic/location?eq(city,Chandler)`
+`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)`
 
 Retrieve only the address properties for the locations in the city of Chandler
-`http://localhost:8080/api/apiCode/elastic/location?eq(city,Chandler)?source=address1,address2,address3`
+`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)?source=address1,address2,address3`
 
 Retrieve the locations in the city of Chandler AND have a locationCode of 270*** **AND** have an address including *McQueen*
-`http://localhost:8080/api/apiCode/elastic/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
+`http://localhost:8080/apiCode/elastic/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
 
 Retrieve all locations with players.registerNum > 5 
-`http://localhost:8080/api/apiCode/elastic/location?gt(players.registerNum,5)`
+`http://localhost:8080/apiCode/elastic/location?gt(players.registerNum,5)`
 
 
 Retrieve the locations with an address1 that includes 'VALLEY' AND PHOENIX locations that have deleted players 
-`http://localhost:8080/api/apiCode/elastic/location?and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))`
+`http://localhost:8080/apiCode/elastic/location?and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))`
 
 Retrieve auto-suggested cities that start with 'chan' 
-`http://localhost:8080/api/apiCode/elastic/location/suggest?suggestCity=chan`
+`http://localhost:8080/apiCode/elastic/location/suggest?suggestCity=chan`
 
 Retrieve locations with an empty state value
-`http://localhost:8080/api/apiCode/elastic/location?emp(state)`
+`http://localhost:8080/apiCode/elastic/location?emp(state)`
 
 Example Config
 ```

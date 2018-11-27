@@ -21,14 +21,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +34,6 @@ import java.util.Vector;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
-import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -206,6 +200,53 @@ public class Snooze extends Service
          for (Api api : wire.getBeans(Api.class))
          {
             api.updateDbMap();
+
+            //process excluded
+            for (io.rcktapp.api.Collection col : api.getCollections())
+            {
+               if (col.isExclude() || col.getEntity().isExclude())
+               {
+                  api.removeCollection(col);
+               }
+               else
+               {
+                  for (Attribute attr : col.getEntity().getAttributes())
+                  {
+                     if (attr.isExclude())
+                     {
+                        col.getEntity().removeAttribute(attr);
+                     }
+                  }
+
+                  for (Relationship rel : col.getEntity().getRelationships())
+                  {
+                     if (rel.isExclude())
+                     {
+                        col.getEntity().removeRelationship(rel);
+                     }
+                  }
+               }
+            }
+
+            for (Db db : api.getDbs())
+            {
+               for (Table table : db.getTables())
+               {
+                  if (table.isExclude())
+                  {
+                     db.removeTable(table);
+                  }
+                  else
+                  {
+                     for (Column col : table.getColumns())
+                     {
+                        if (col.isExclude())
+                           table.removeColumn(col);
+                     }
+                  }
+               }
+            }
+
             addApi(api);
          }
 

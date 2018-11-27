@@ -62,29 +62,28 @@ import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service extends HttpServlet
 {
-   Hashtable<Long, Api>           apis           = new Hashtable();
+   Hashtable<Long, Api> apis           = new Hashtable();
 
-   Map<String, Handler>           globalHandlers = new Hashtable();
-   DoubleKeyMap                   apiHandlers    = new DoubleKeyMap();
+   Map<String, Handler> globalHandlers = new Hashtable();
+   DoubleKeyMap         apiHandlers    = new DoubleKeyMap();
 
-   List<String>                   corsHeaders    = new ArrayList();
+   List<String>         corsHeaders    = new ArrayList();
 
-   boolean                        debug          = true;
+   boolean              debug          = true;
 
-   Logger                         log            = LoggerFactory.getLogger(getClass());
-   Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   Logger               log            = LoggerFactory.getLogger(getClass());
+   Logger               requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   String                         servletMapping = null;
+   String               servletMapping = null;
 
-   DataSource                     ds             = null;
+   DataSource           ds             = null;
 
-
-   String                         driver         = null;
-   String                         url            = null;
-   String                         user           = null;
-   String                         pass           = null;
-   int                            poolMin        = SqlDb.MIN_POOL_SIZE;
-   int                            poolMax        = SqlDb.MAX_POOL_SIZE;
+   String               driver         = null;
+   String               url            = null;
+   String               user           = null;
+   String               pass           = null;
+   int                  poolMin        = SqlDb.MIN_POOL_SIZE;
+   int                  poolMax        = SqlDb.MAX_POOL_SIZE;
 
    static
    {

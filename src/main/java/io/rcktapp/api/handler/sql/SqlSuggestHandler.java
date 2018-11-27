@@ -85,7 +85,7 @@ public class SqlSuggestHandler extends SqlHandler
 
          sql += " \r\nSELECT DISTINCT " + rql.asCol(column) + " AS " + searchProp + " FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + rql.asCol(column) + " != ''";
 
-         if (api.isMultiTenant() && api.findTable(tableName).getCol(tenantCol) != null)
+         if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
             sql += " AND " + rql.asCol(tenantCol) + "=" + req.getUser().getTenantId();
 
          if (i + 1 < propertyList.size())

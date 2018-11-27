@@ -31,7 +31,7 @@ public class Api extends Dto
    List<Endpoint>                    endpoints   = new ArrayList();
    List<Action>                      actions     = new ArrayList();
    LinkedHashMap<String, Collection> collections = new LinkedHashMap();
-   List<AclRule>                         acls        = new ArrayList();
+   List<AclRule>                     acls        = new ArrayList();
 
    String                            apiCode     = null;
    String                            accountCode = null;
@@ -135,6 +135,11 @@ public class Api extends Dto
       return null;
    }
 
+   public List<Collection> getCollections()
+   {
+      return new ArrayList(collections.values());
+   }
+
    public List<Entity> getEntities()
    {
       List<Entity> entities = new ArrayList();
@@ -186,6 +191,11 @@ public class Api extends Dto
       collections.put(collection.getName().toLowerCase(), collection);
    }
 
+   public void removeCollection(Collection collection)
+   {
+      collections.remove(collection.getName().toLowerCase());
+   }
+
    /**
     * @return the dbs
     */
@@ -216,8 +226,9 @@ public class Api extends Dto
    {
       return dbs.get(name.toLowerCase());
    }
-   
-   public void updateDbMap() {
+
+   public void updateDbMap()
+   {
       // This is needed because the Db objects coming into addDb don't have a name prop yet
       // during auto-wiring.. this is called just after auto-wiring to update the keys in the map
       List<Db> dbList = new ArrayList<>(dbs.values());

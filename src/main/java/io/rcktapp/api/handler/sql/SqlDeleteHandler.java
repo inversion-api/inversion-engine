@@ -208,9 +208,9 @@ public class SqlDeleteHandler extends SqlHandler
 
          Replacer replacer = new Replacer(rql);
 
-         Stmt stmt = rql.toSql(sql, entity.getTable(), params, replacer);
+         Stmt stmt = rql.createStmt(sql, entity.getTable(), params, replacer);
          stmt.setMaxRows(-1);
-         sql = stmt.toSql();
+         sql = rql.toSql(stmt);
 
          sql = sql.replaceAll("SQL_CALC_FOUND_ROWS", "");
 

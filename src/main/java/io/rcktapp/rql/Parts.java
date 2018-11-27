@@ -19,12 +19,12 @@ import io.forty11.j.J;
 
 public class Parts
 {
-   String select = "";
-   String from   = "";
-   String where  = "";
-   String group  = "";
-   String order  = "";
-   String limit  = "";
+   public String select = "";
+   public String from   = "";
+   public String where  = "";
+   public String group  = "";
+   public String order  = "";
+   public String limit  = "";
 
    public Parts(String sql)
    {

@@ -48,7 +48,7 @@ public class Table extends Dto
    /**
     * Set to true to completely exclude from API.
     */
-   boolean           exclude    = false;
+   boolean           exclude     = false;
 
    public Table()
    {
@@ -78,7 +78,7 @@ public class Table extends Dto
       this.linkTbl = linkTbl;
    }
 
-   public Column getCol(String name)
+   public Column getColumn(String name)
    {
       for (Column col : columns)
       {
@@ -87,6 +87,7 @@ public class Table extends Dto
       }
       return null;
    }
+
 
    public String toString()
    {
@@ -148,6 +149,11 @@ public class Table extends Dto
 
    }
 
+   public void removeColumn(Column column)
+   {
+      columns.remove(column);
+   }
+
    /**
     * @return the deletedFlag
     */
@@ -162,6 +168,16 @@ public class Table extends Dto
    public void setDeletedFlag(Column deletedFlag)
    {
       this.deletedFlag = deletedFlag;
+   }
+
+   public boolean isExclude()
+   {
+      return exclude;
+   }
+
+   public void setExclude(boolean exclude)
+   {
+      this.exclude = exclude;
    }
 
 }

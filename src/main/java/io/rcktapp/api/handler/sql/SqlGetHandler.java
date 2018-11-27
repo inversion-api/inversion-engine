@@ -245,10 +245,10 @@ public class SqlGetHandler extends SqlHandler
 
       Map rqlParams = req.getParams();
 
-      Stmt stmt = rql.toSql(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
+      Stmt stmt = rql.createStmt(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
       stmt.setMaxRows(maxRows); //this is a default value
 
-      sql = stmt.toSql();
+      sql = rql.toSql(stmt);
 
       if (includes.size() > 0)
       {
