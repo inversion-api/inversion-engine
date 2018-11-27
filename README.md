@@ -75,8 +75,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 The fasted way to get going is to checkout/fork the [Snooze Spring Boot Starter Project](https://github.com/RocketPartners/rckt_snooze_spring)
 and follow the readme instructions to get going in less than 5 minutes.  
 
-If you are comfortable with Gradle, Eclipse, and Tomact then you can start with this project and configure your Tomcat servlet with the web.xml 
-included in this project.
+If you are comfortable with Gradle, Eclipse, Tomact etc. then you can start with this project and configure your application 
+server of choice with the web.xml included in this project.   
 
 In either case, all you need to do is supply edit your JDBC connection information the soooze.properties configuration file.
 Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
