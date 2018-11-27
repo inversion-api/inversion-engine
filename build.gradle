@@ -3,12 +3,13 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'war'
 
+project.docsDirName='../docs'
 
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-version = '0.2.3'
+version = '0.3.x'
 group = 'com.github.RocketPartners'
 
 repositories { 
