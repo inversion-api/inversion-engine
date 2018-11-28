@@ -91,7 +91,7 @@ public class DynamoDb extends Db
 
          }
 
-         api.addDb(this, 0);
+         api.addDb(this);
       }
       else
       {
@@ -205,20 +205,12 @@ public class DynamoDb extends Db
                {
                   Index index = new Index(table, indexDesc.getIndexName(), LOCAL_SECONDARY_TYPE);
 
-                  System.out.println("START - " + index.getName());
-                  for (Column column : table.getColumns())
-                  {
-                     System.out.println(column.getName() + " - " + keyInfo.getAttributeName());
-                     if (column.getName().equals(keyInfo.getAttributeName()))
-                     {
-                        System.out.println("found it! - " + column);
-                        index.addColumn(column);
-                        break;
-                     }
-                  }
+                  Column column = table.getColumns().stream()//
+                                       .filter(c -> c.getName().equals(keyInfo.getAttributeName()))//
+                                       .findFirst().orElse(null);
 
+                  index.addColumn(column);
                   table.addIndex(index);
-                  //ti.indexMap.put(keyInfo.getAttributeName(), indexDesc.getIndexName());
                   break;
                }
             }
@@ -348,7 +340,8 @@ public class DynamoDb extends Db
          dynamoDb.setTableMappings("promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev");
 
          Api api = new Api();
-         dynamoDb.bootstrapApi(api);
+         dynamoDb.setApi(api);
+         dynamoDb.bootstrapApi();
       }
       catch (Exception e)
       {
