@@ -3,6 +3,9 @@
  */
 package io.rcktapp.api.handler.dynamo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.forty11.j.J;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
@@ -56,7 +59,7 @@ public abstract class DynamoDbHandler implements Handler
 
       if (collection == null)
       {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a dynamodb table. Please check your endpoint.");
+         throw new ApiException(SC.SC_404_NOT_FOUND, "A dynamo table is not configured for this collection key, please edit your query or your config and try again.");
       }
 
       if (!(collection.getEntity().getTable().getDb() instanceof DynamoDb))
@@ -66,6 +69,22 @@ public abstract class DynamoDbHandler implements Handler
 
       return collection;
 
+   }
+   
+   protected List splitToList(String csv)
+   {
+      List<String> l = new ArrayList<>();
+      if (csv != null)
+      {
+         String[] arr = csv.split(",");
+         for (String e : arr)
+         {
+            e = e.trim();
+            if (!J.empty(e))
+               l.add(e);
+         }
+      }
+      return l;
    }
 
 }

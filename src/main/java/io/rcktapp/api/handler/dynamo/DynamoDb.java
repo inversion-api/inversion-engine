@@ -28,6 +28,8 @@ import io.rcktapp.api.Db;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
+import io.rcktapp.rql.Parser;
+import io.rcktapp.rql.dynamo.DynamoRql;
 
 public class DynamoDb extends Db
 {
@@ -38,26 +40,41 @@ public class DynamoDb extends Db
    public static final String SORT_TYPE            = "sort";
    public static final String LOCAL_SECONDARY_TYPE = "localsecondary";
 
-   protected String           awsRegion            = "us-east-1";
+   static
+   {
+      try
+      {
+         //bootstraps the DynamoRql type
+         Class.forName(DynamoRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
+
+   protected String       awsRegion    = "us-east-1";
 
    /**
     * A CSV of pipe delimited collection name to table name pairs.
     * 
     * Example: dynamodb.tables=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
     */
-   protected String           tableMappings;
+   protected String       tableMappings;
 
    /**
     * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
     * 
     * FORMAT: collection name | primaryKey | sortKey (optional)
     */
-   protected String           blueprintRow;
+   protected String       blueprintRow;
+
+   private AmazonDynamoDB dynamoClient = null;
 
    @Override
    public void bootstrapApi() throws Exception
    {
-      AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+      this.dynamoClient = getDynamoClient();
 
       this.setType("dynamo");
 
@@ -92,6 +109,7 @@ public class DynamoDb extends Db
          }
 
          api.addDb(this);
+
       }
       else
       {
@@ -262,6 +280,16 @@ public class DynamoDb extends Db
       return entity;
    }
 
+   public AmazonDynamoDB getDynamoClient()
+   {
+      if (this.dynamoClient == null)
+      {
+         this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+      }
+
+      return dynamoClient;
+   }
+
    public static String findPartitionKeyName(Table table)
    {
       Index index = findIndexByName(table, PARTITION_KEY_INDEX);
@@ -297,6 +325,27 @@ public class DynamoDb extends Db
       return null;
    }
 
+   public static Index findIndexByColumnName(Table table, String colName)
+   {
+      if (table != null && table.getIndexes() != null)
+      {
+         for (Index index : table.getIndexes())
+         {
+            if (!index.getColumns().isEmpty())
+            {
+               for (Column column : index.getColumns())
+               {
+                  if (column.getName().equalsIgnoreCase(colName))
+                  {
+                     return index;
+                  }
+               }
+            }
+         }
+      }
+      return null;
+   }
+
    /*
     * These match the string that dynamo uses for these types.
     * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
@@ -317,6 +366,26 @@ public class DynamoDb extends Db
       }
    }
 
+   public static Object cast(String value, String colName, Table table)
+   {
+      Column col = table.getColumn(colName);
+
+      if (col != null)
+      {
+         switch (col.getType())
+         {
+            case "N":
+               return Long.parseLong(value);
+
+            case "BOOL":
+               return Boolean.parseBoolean(value);
+
+         }
+      }
+
+      return Parser.dequote(value);
+   }
+
    public void setTableMappings(String tableMappings)
    {
       this.tableMappings = tableMappings;
@@ -332,6 +401,33 @@ public class DynamoDb extends Db
       this.blueprintRow = blueprintRow;
    }
 
+   @Override
+   public String toString()
+   {
+      return this.getClass().getSimpleName() + " - " + this.getName() + " - " + this.getTables();
+   }
+
+   public String verboseToString()
+   {
+      String s = "";
+      s = s + this.getName() + "\n";
+      s = s + this.getApi().getAccountCode() + "/" + this.getApi().getApiCode() + "\n";
+      for (Table table : this.getTables())
+      {
+         s = s + "TABLE:     " + table.getName() + "\n";
+         for (Column column : table.getColumns())
+         {
+            s = s + " > COLUMN: " + column.getName() + " (" + column.getType() + ")\n";
+         }
+         for (Index index : table.getIndexes())
+         {
+            s = s + " > INDEX:  " + index.getName() + " (" + index.getType() + " / " + index.getColumns() + ")\n";
+         }
+      }
+
+      return s;
+   }
+
    public static void main(String[] args)
    {
       try
@@ -342,6 +438,8 @@ public class DynamoDb extends Db
          Api api = new Api();
          dynamoDb.setApi(api);
          dynamoDb.bootstrapApi();
+
+         System.out.println(dynamoDb.verboseToString());
       }
       catch (Exception e)
       {

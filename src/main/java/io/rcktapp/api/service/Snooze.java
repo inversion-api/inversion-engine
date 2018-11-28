@@ -59,6 +59,7 @@ import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Handler;
+import io.rcktapp.api.Index;
 import io.rcktapp.api.Permission;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.Request;
@@ -207,7 +208,7 @@ public class Snooze extends Service
 
    static class ApiIncluder implements Includer
    {
-      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class,   //
+      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
             Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class);
 
       List<Field> excludes = Arrays.asList(J.getField("handlers", Api.class));

@@ -12,10 +12,10 @@ import java.util.List;
  */
 public class Index extends Dto
 {
-   Table        table   = null;
-   String       name    = null;
-   String       type    = null;             // primary, partition, sort, localsecondary, etc
-   List<Column> columns = new ArrayList<>();
+   protected Table        table   = null;
+   protected String       name    = null;
+   protected String       type    = null;             // primary, partition, sort, localsecondary, etc
+   protected List<Column> columns = new ArrayList<>();
 
    public Index()
    {
@@ -62,12 +62,16 @@ public class Index extends Dto
 
    public List<Column> getColumns()
    {
-      return columns;
+      return new ArrayList<>(columns);
    }
 
    public void setColumns(List<Column> columns)
    {
-      this.columns = columns;
+      this.columns.clear();
+      for (Column column : columns)
+      {
+         addColumn(column);
+      }
    }
 
    public void addColumn(Column column)
@@ -81,8 +85,7 @@ public class Index extends Dto
    {
       columns.remove(column);
    }
-   
-   
+
    public String toString()
    {
       return name == null ? super.toString() : name + " " + columns;
