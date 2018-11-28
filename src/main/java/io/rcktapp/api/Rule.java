@@ -26,6 +26,8 @@ import io.forty11.web.Url;
 
 public abstract class Rule extends Dto implements Comparable<Rule>
 {
+   Api          api          = null;
+
    String       name         = null;
    int          order        = 1000;
 
@@ -45,6 +47,17 @@ public abstract class Rule extends Dto implements Comparable<Rule>
    public String toString()
    {
       return System.identityHashCode(this) + " - " + name;
+   }
+   
+   public abstract void setApi(Api api);
+   //   {
+   //      this.api = api;
+   //      api.addEndpoint(this);
+   //   }
+
+   public Api getApi()
+   {
+      return api;
    }
 
    public static boolean pathMatches(String wildcardPath, String path)

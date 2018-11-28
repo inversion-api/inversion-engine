@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
@@ -21,7 +21,8 @@ import java.util.List;
 
 public class Endpoint extends Rule
 {
-   List<Action> actions = new ArrayList();
+   protected String       path    = null;
+   protected List<Action> actions = new ArrayList();
 
    public boolean matches(String method, String path)
    {
@@ -46,6 +47,22 @@ public class Endpoint extends Rule
       return false;
    }
 
+   public void setApi(Api api)
+   {
+      this.api = api;
+      api.addEndpoint(this);
+   }
+
+   public String getPath()
+   {
+      return path;
+   }
+
+   public void setPath(String path)
+   {
+      this.path = path;
+   }
+
    public void addHandler(Handler handler)
    {
       Action a = new Action();
@@ -63,7 +80,6 @@ public class Endpoint extends Rule
       }
 
       Collections.sort(filtered);
-      //Collections.reverse(filtered);
       return filtered;
    }
 

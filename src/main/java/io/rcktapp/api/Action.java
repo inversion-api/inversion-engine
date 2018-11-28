@@ -43,6 +43,17 @@ public class Action extends Rule
       handler.service(service, api, endpoint, this, chain, req, res);
    }
 
+   
+   
+   @Override
+   public void setApi(Api api)
+   {
+      this.api = api;
+      api.addAction(this);
+   }
+
+
+
    public Handler getHandler()
    {
       return handler;
