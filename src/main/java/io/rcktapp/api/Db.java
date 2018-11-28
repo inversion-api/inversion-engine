@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 public abstract class Db extends Dto
 {
+   protected Api    api       = null;
+
    protected Logger log       = LoggerFactory.getLogger(getClass());
 
    protected String name      = null;
@@ -73,6 +75,17 @@ public abstract class Db extends Dto
       name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
 
       return name;
+   }
+
+   public void setApi(Api api)
+   {
+      this.api = api;
+      api.addDb(this);
+   }
+
+   public Api getApi()
+   {
+      return api;
    }
 
    public Table getTable(String tableName)
