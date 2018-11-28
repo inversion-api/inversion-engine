@@ -108,6 +108,11 @@ public class ScriptRunnerHandler implements Handler
       String scriptName = req.getEntityKey();
       JSObject scriptJson = findScriptJson(scriptName, chain, req);
 
+      if (chain.getRequest().isDebug())
+      {
+         res.debug("ScriptRunner:  script: " + scriptName);
+      }
+
       // execute script
       if (scriptJson != null)
       {
