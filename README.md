@@ -149,7 +149,6 @@ restEp.includePaths=*
 restEp.excludePaths=somethingExcluded*
 restEp.methods=GET
 #restEp.methods=GET,PUT,POST,DELETE
-restEp.handler=restH
 
 
 ```
