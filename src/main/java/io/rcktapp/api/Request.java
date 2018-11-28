@@ -156,7 +156,7 @@ public class Request
 
    public boolean isExplain()
    {
-      return explain;
+      return isDebug() && explain;
    }
 
    public static String readBody(HttpServletRequest request) throws ApiException

@@ -73,17 +73,10 @@ public class Service extends HttpServlet
    List<String>         corsHeaders    = new ArrayList();
 
    /**
-    * Causes extended request/response info to be logged to the requestLog
-    */
-   protected boolean    debug          = true;
-
-   /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
    protected String     servletMapping = null;
-
-
 
    public Service()
    {
@@ -167,7 +160,15 @@ public class Service extends HttpServlet
                url.setHost(xfh);
          }
 
-         if (isDebug(req))
+         String apiUrl = null;
+         ApiMatch match = findApi(url);
+         if (match != null)
+         {
+            api = match.api;
+            apiUrl = match.url;
+         }
+
+         if (api == null || api.isDebug() || urlstr.indexOf("://localhost") > 0)
          {
             res.debug("");
             res.debug("");
@@ -180,16 +181,6 @@ public class Service extends HttpServlet
                String value = httpReq.getHeader(name);
                res.debug(name + " - " + value);
             }
-
-            //res.debug(req.getJson());
-         }
-
-         String apiUrl = null;
-         ApiMatch match = findApi(url);
-         if (match != null)
-         {
-            api = match.api;
-            apiUrl = match.url;
          }
 
          if (match == null)
@@ -508,11 +499,6 @@ public class Service extends HttpServlet
 
    }
 
-   boolean isDebug(Request req)
-   {
-      return this.debug || (req != null && req.isDebug());
-   }
-
    Endpoint findEndpoint(Api api, String method, String path)
    {
       for (Endpoint endpoint : api.getEndpoints())
@@ -525,7 +511,7 @@ public class Service extends HttpServlet
 
    void writeResponse(Request req, Response res) throws Exception
    {
-      boolean debug = isDebug(req);
+      boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();
 
       String method = req != null ? req.getMethod() : null;
@@ -552,7 +538,7 @@ public class Service extends HttpServlet
             }
             http.setHeader(key, buff.toString());
             res.debug(key + " " + buff);
-         }
+         } ;
          if ("OPTIONS".equals(method))
          {
             //
@@ -607,6 +593,7 @@ public class Service extends HttpServlet
 
    void out(Request req, Response res, OutputStream out, byte[] bytes) throws Exception
    {
+      res.debug("\r\n");
       res.debug(bytes);
 
       if (req == null || !req.isExplain())
@@ -747,11 +734,6 @@ public class Service extends HttpServlet
       }
 
       return null;
-   }
-
-   public void setDebug(boolean debug)
-   {
-      this.debug = debug;
    }
 
    int first(String str, char... chars)

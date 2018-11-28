@@ -250,10 +250,10 @@ public class SqlDb extends Db
       }
    }
 
-   public void bootstrapApi(Api api) throws Exception
+   public void bootstrapApi() throws Exception
    {
       reflectDb();
-      configApi(api);
+      configApi();
    }
 
    public void reflectDb() throws Exception
@@ -373,7 +373,7 @@ public class SqlDb extends Db
       }
    }
 
-   public void configApi(Api api) throws Exception
+   public void configApi() throws Exception
    {
       for (Table t : getTables())
       {

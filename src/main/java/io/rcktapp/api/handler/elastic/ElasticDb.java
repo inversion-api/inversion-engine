@@ -7,7 +7,7 @@ public class ElasticDb extends Db
 {
 
    @Override
-   public void bootstrapApi(Api api) throws Exception
+   public void bootstrapApi() throws Exception
    {
       // TODO Auto-generated method stub
 

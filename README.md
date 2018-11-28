@@ -40,6 +40,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 1. [Elasticsearch Specifics](#elasticsearch-specifics)
 1. [DynamoDB Specifics](#dynamodb-specifics)  
 1. [Developer Notes](#developer-notes)
+   * [Javadocs](#Javadocs)
    * [Logging](#logging)
    * [Gradle, Maven, etc.](#gradle-maven-etc)    
 1. [Changes](#changes)   
@@ -52,11 +53,10 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
  * Tables exposed as REST collections
  * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
- * RQL
  * Nested document expansion for foreign keys
  * Nested document put/post
- * Pagination / ordering
  * Batch/bulk put/post/delete
+ * Pagination / ordering
  * Declarative security
  * Sql Injection proof
  * Consistent response envelope
@@ -89,18 +89,22 @@ Try out some [RQL](#resource-query-language-rql) queries like:
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
 
-Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
+Add '&explain' to your query string to see debug output of what exactly the server is doing.
+
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY&explain
+
+No swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' in your config, restart and your API will be fully CRUD ready!
  
 
 ```properties
     
-snooze.debug=true
-snooze.servletMapping=api
+#snooze.servletMapping=api
 
 ########################################################################
 ## APIs 
 ########################################################################
 api.class=io.rcktapp.api.Api
+api.debug
 api.accountCode=demo
 api.apiCode=helloworld
 api.dbs=db
@@ -145,7 +149,6 @@ restEp.includePaths=*
 restEp.excludePaths=somethingExcluded*
 restEp.methods=GET
 #restEp.methods=GET,PUT,POST,DELETE
-restEp.handler=restH
 
 
 ```

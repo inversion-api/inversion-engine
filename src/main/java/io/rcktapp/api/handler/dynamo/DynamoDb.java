@@ -55,7 +55,7 @@ public class DynamoDb extends Db
    protected String           blueprintRow;
 
    @Override
-   public void bootstrapApi(Api api) throws Exception
+   public void bootstrapApi() throws Exception
    {
       AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
 
