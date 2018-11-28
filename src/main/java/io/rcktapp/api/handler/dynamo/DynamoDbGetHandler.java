@@ -21,7 +21,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-
+      System.out.println("in DynamoDbGetHandler");
    }
 
 }
