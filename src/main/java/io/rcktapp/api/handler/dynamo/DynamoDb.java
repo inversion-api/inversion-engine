@@ -6,7 +6,7 @@ import io.rcktapp.api.Db;
 public class DynamoDb extends Db
 {
    @Override
-   public void bootstrapApi(Api api) throws Exception
+   public void bootstrapApi() throws Exception
    {
       // TODO Auto-generated method stub
 

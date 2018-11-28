@@ -124,7 +124,7 @@ public class Snooze extends Service
          {
             for (Db db : ((Api) api).getDbs())
             {
-               db.bootstrapApi((Api) api);
+               db.bootstrapApi();
             }
          }
 

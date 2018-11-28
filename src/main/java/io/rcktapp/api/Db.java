@@ -45,7 +45,7 @@ public abstract class Db extends Dto
       this.name = name;
    }
 
-   public abstract void bootstrapApi(Api api) throws Exception;
+   public abstract void bootstrapApi() throws Exception;
 
    protected String makeRelationshipName(Relationship rel)
    {
