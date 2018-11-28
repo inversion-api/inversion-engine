@@ -188,7 +188,11 @@ public class Entity extends Dto
     */
    public Attribute getKey()
    {
-      return this.keys.get(0);
+      if (!this.keys.isEmpty())
+      {
+         return this.keys.get(0);
+      }
+      return null;
    }
 
    /**

@@ -17,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rcktapp.api.Api;
@@ -30,27 +31,28 @@ import io.rcktapp.api.Table;
 
 public class DynamoDb extends Db
 {
-   public static final String PARTITION_KEY_INDEX = "Partition Key Index";
-   public static final String SORT_KEY_INDEX      = "Sort Key Index";
+   public static final String PARTITION_KEY_INDEX  = "Partition Key Index";
+   public static final String SORT_KEY_INDEX       = "Sort Key Index";
 
-   public static final String PARTITION_TYPE      = "partition";
-   public static final String SORT_TYPE           = "sort";
+   public static final String PARTITION_TYPE       = "partition";
+   public static final String SORT_TYPE            = "sort";
+   public static final String LOCAL_SECONDARY_TYPE = "localsecondary";
 
-   String                     awsRegion           = "us-east-1";
+   protected String           awsRegion            = "us-east-1";
 
    /**
     * A CSV of pipe delimited collection name to table name pairs.
     * 
     * Example: dynamodb.tables=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
     */
-   String                     tableMappings;
+   protected String           tableMappings;
 
    /**
     * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
     * 
     * FORMAT: collection name | primaryKey | sortKey (optional)
     */
-   String                     blueprintRow;
+   protected String           blueprintRow;
 
    @Override
    public void bootstrapApi(Api api) throws Exception
@@ -190,6 +192,36 @@ public class DynamoDb extends Db
             }
 
             table.addColumn(column);
+         }
+      }
+
+      if (tableDescription.getLocalSecondaryIndexes() != null)
+      {
+         for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
+         {
+            for (KeySchemaElement keyInfo : indexDesc.getKeySchema())
+            {
+               if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+               {
+                  Index index = new Index(table, indexDesc.getIndexName(), LOCAL_SECONDARY_TYPE);
+
+                  System.out.println("START - " + index.getName());
+                  for (Column column : table.getColumns())
+                  {
+                     System.out.println(column.getName() + " - " + keyInfo.getAttributeName());
+                     if (column.getName().equals(keyInfo.getAttributeName()))
+                     {
+                        System.out.println("found it! - " + column);
+                        index.addColumn(column);
+                        break;
+                     }
+                  }
+
+                  table.addIndex(index);
+                  //ti.indexMap.put(keyInfo.getAttributeName(), indexDesc.getIndexName());
+                  break;
+               }
+            }
          }
       }
 
