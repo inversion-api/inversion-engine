@@ -511,7 +511,7 @@ public class Service extends HttpServlet
 
    void writeResponse(Request req, Response res) throws Exception
    {
-      boolean debug = req.isDebug();
+      boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();
 
       String method = req != null ? req.getMethod() : null;
