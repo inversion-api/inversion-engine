@@ -374,6 +374,29 @@ public class DynamoDb extends Db
       return null;
    }
 
+   public static Index findIndexByTypeAndColumnName(Table table, String typeName, String colName)
+   {
+      if (table != null)
+      {
+         List<Index> list = findIndexesByType(table, typeName);
+         for (Index index : list)
+         {
+            if (!index.getColumns().isEmpty())
+            {
+               for (Column column : index.getColumns())
+               {
+                  if (column.getName().equalsIgnoreCase(colName))
+                  {
+                     return index;
+                  }
+               }
+            }
+         }
+      }
+
+      return null;
+   }
+
    /*
     * These match the string that dynamo uses for these types.
     * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html

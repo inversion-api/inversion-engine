@@ -53,16 +53,16 @@ public abstract class DynamoDbHandler implements Handler
       return chain.getConfigSet("appendTenantIdToPk").contains(collectionName);
    }
 
-   String addTenantIdToKey(int tenantId, String key)
+   String addTenantIdToKey(Object tenantIdOrCode, String key)
    {
-      return tenantId + tenantIdDelimiter + key;
+      return tenantIdOrCode + tenantIdDelimiter + key;
    }
 
-   String removeTenantIdFromKey(int tenantId, String key)
+   String removeTenantIdFromKey(Object tenantIdOrCode, String key)
    {
       if (key != null)
       {
-         int preLength = (tenantId + tenantIdDelimiter).length();
+         int preLength = (tenantIdOrCode + tenantIdDelimiter).length();
          return key.substring(preLength);
       }
       return key;

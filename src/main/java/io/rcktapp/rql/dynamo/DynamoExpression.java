@@ -10,6 +10,7 @@ import java.util.Map;
 import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
+import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Predicate;
 
 /**
@@ -46,8 +47,7 @@ public class DynamoExpression
 
    Map<String, Predicate> excludedPredicates = new HashMap<>();
 
-   String                 sortField;
-   String                 sortDirection;
+   Order                  order;
    Index                  index;
 
    public DynamoExpression(Table table)
@@ -158,21 +158,15 @@ public class DynamoExpression
    /**
     * This is used when the user is trying to sort using a Local Secondary Index
     */
-   public void setSortIndexInformation(String sortField, String sortDirection, Index index)
+   public void setOrderIndexInformation(Order order, Index index)
    {
-      this.sortField = sortField;
-      this.sortDirection = sortDirection;
+      this.order = order;
       this.index = index;
    }
 
-   public String getSortField()
+   public Order getOrder()
    {
-      return sortField;
-   }
-
-   public String getSortDirection()
-   {
-      return sortDirection;
+      return order;
    }
 
    public Index getIndex()

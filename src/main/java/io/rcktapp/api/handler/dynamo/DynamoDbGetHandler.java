@@ -36,6 +36,7 @@ import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.service.Service;
+import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Predicate;
 import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.dynamo.DynamoExpression;
@@ -72,10 +73,14 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          }
       }
 
-      int tenantId = 0;
+      String tenantIdOrCode = null;
       if (req.getApi().isMultiTenant())
       {
-         tenantId = Integer.parseInt(req.removeParam("tenantId"));
+         tenantIdOrCode = req.removeParam("tenantId");
+         if (tenantIdOrCode == null)
+         {
+            tenantIdOrCode = req.getTenantCode();
+         }
       }
 
       int pageSize = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 100;
@@ -86,6 +91,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
 
       DynamoRql rql = (DynamoRql) Rql.getRql(db.getType());
       DynamoExpression dynamoExpression = rql.buildDynamoExpression(req.getParams(), table);
+      Order order = dynamoExpression.getOrder();
 
       KeyAttribute[] nextKeys = null;
 
@@ -96,7 +102,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          String nextPkVal = sArr[0];
          if (api.isMultiTenant() && appendTenantIdToPk)
          {
-            nextPkVal = addTenantIdToKey(tenantId, nextPkVal);
+            nextPkVal = addTenantIdToKey(tenantIdOrCode, nextPkVal);
          }
          keyAttrList.add(new KeyAttribute(pk, nextPkVal));
 
@@ -105,9 +111,9 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             keyAttrList.add(new KeyAttribute(sk, DynamoDb.cast(sArr[1], sk, table)));
          }
 
-         if (sArr.length > 2 && !sk.equals(dynamoExpression.getSortField()))
+         if (sArr.length > 2 && order != null && !sk.equals(order.col))
          {
-            keyAttrList.add(new KeyAttribute(dynamoExpression.getSortField(), DynamoDb.cast(sArr[2], dynamoExpression.getSortField(), table)));
+            keyAttrList.add(new KeyAttribute(order.col, DynamoDb.cast(sArr[2], order.col, table)));
          }
 
          nextKeys = keyAttrList.toArray(new KeyAttribute[keyAttrList.size()]);
@@ -120,7 +126,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          primaryKeyValue = pkPred.getTerms().get(1).getToken();
          if (api.isMultiTenant() && appendTenantIdToPk)
          {
-            primaryKeyValue = addTenantIdToKey(tenantId, primaryKeyValue);
+            primaryKeyValue = addTenantIdToKey(tenantIdOrCode, primaryKeyValue);
          }
       }
 
@@ -145,7 +151,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          returnNext = dynamoResult.lastKey.get(pk).getS();
          if (api.isMultiTenant() && appendTenantIdToPk)
          {
-            returnNext = removeTenantIdFromKey(tenantId, returnNext);
+            returnNext = removeTenantIdFromKey(tenantIdOrCode, returnNext);
          }
 
          if (dynamoResult.lastKey.get(sk) != null)
@@ -154,12 +160,12 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
 
-         String sortField = dynamoExpression.getSortField();
-         if (!sortField.equals(sk) && dynamoResult.lastKey.get(sortField) != null)
+         if (order != null && !order.col.equals(sk) && dynamoResult.lastKey.get(order.col) != null)
          {
-            String sortKeyVal = DynamoDb.attributeValueAsString(dynamoResult.lastKey.get(sortField), sortField, table);
+            String sortKeyVal = DynamoDb.attributeValueAsString(dynamoResult.lastKey.get(order.col), order.col, table);
             returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
+
       }
 
       JSArray returnData = new JSArray();
@@ -170,7 +176,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             if (api.isMultiTenant() && appendTenantIdToPk)
             {
                String pkValue = (String) map.get(pk);
-               map.put(pk, removeTenantIdFromKey(tenantId, pkValue));
+               map.put(pk, removeTenantIdFromKey(tenantIdOrCode, pkValue));
             }
 
             returnData.add(new JSObject(includeExclude(map, includes, excludes)));
@@ -189,8 +195,10 @@ public class DynamoDbGetHandler extends DynamoDbHandler
 
    DynamoResult doQuery(DynamoExpression dynamoExpression, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, Chain chain, Response res, int pageSize, KeyAttribute[] nextKeys, String pk, Object primaryKeyValue)
    {
-
       String expressionStr = dynamoExpression.buildExpression();
+      Order order = dynamoExpression.getOrder();
+      String orderCol = order != null ? order.col : "";
+      String orderDir = order != null ? order.dir : null;
 
       if (chain.getRequest().isDebug())
       {
@@ -213,7 +221,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
                                            .withMaxPageSize(pageSize)//
                                            .withMaxResultSize(pageSize);
 
-      Predicate skPred = dynamoExpression.getExcludedPredicate(dynamoExpression.getSortField());
+      Predicate skPred = dynamoExpression.getExcludedPredicate(orderCol);
       if (skPred != null)
       {
          RangeKeyCondition rkc = DynamoDb.predicateToRangeKeyCondition(skPred, dynamoExpression.getTable());
@@ -225,13 +233,13 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          }
       }
 
-      if (dynamoExpression.getSortDirection() != null)
+      if (orderDir != null)
       {
-         boolean scanForward = !dynamoExpression.getSortDirection().equalsIgnoreCase("DESC");
+         boolean scanForward = !orderDir.equalsIgnoreCase("DESC");
          querySpec.withScanIndexForward(scanForward);
          if (chain.getRequest().isDebug())
          {
-            res.debug("Sorting By:         " + dynamoExpression.getSortField() + " " + dynamoExpression.getSortDirection());
+            res.debug("Sorting By:         " + orderCol + " " + orderDir);
          }
       }
 

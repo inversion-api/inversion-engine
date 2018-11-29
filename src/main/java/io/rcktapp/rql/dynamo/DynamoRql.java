@@ -11,6 +11,7 @@ import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
 import io.rcktapp.rql.Order;
+import io.rcktapp.rql.Parser;
 import io.rcktapp.rql.Predicate;
 import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.Stmt;
@@ -44,40 +45,32 @@ public class DynamoRql extends Rql
       List<Predicate> predicates = stmt.where;
       List<Order> orderList = stmt.order;
 
-      //ElasticRql rql = (ElasticRql) Rql.getRql("elastic");
-      //QueryDsl queryDsl = rql.toQueryDsl(requestParams);
-      //List<Predicate> predicates = queryDsl.getStmt().where;
       boolean hasPrimaryKey = predicatesContainField(predicates, pk);
       List<String> excludeList = new ArrayList<>();
       if (hasPrimaryKey)
       {
          // sorting only works for querying which means we must have a primary key to sort
-         //         if (queryDsl.getOrder() != null && !queryDsl.getOrder().getOrderList().isEmpty())
-         //         {
-         //            Map<String, String> order = queryDsl.getOrder().getOrderList().get(0);
-
          if (orderList != null && !orderList.isEmpty())
          {
             Order order = orderList.get(0);
-            String sortField = order.col;
-            String sortDirection = order.dir;
-            Index index = DynamoDb.findIndexByColumnName(table, sortField);
+            order.col = Parser.dequote(order.col);
+            Index index = DynamoDb.findIndexByTypeAndColumnName(table, DynamoDb.LOCAL_SECONDARY_TYPE, order.col);
             if (index != null)
             {
                // we must have an index for this field to be able to sort
-               dynamoExpression.setSortIndexInformation(sortField, sortDirection, index);
+               dynamoExpression.setOrderIndexInformation(order, index);
             }
-            else if (sk != null && sk.equals(sortField))
+            else if (sk != null && sk.equals(order.col))
             {
                // trying to sort by the table's sort key, no index is needed for this
-               dynamoExpression.setSortIndexInformation(sortField, sortDirection, null);
+               dynamoExpression.setOrderIndexInformation(order, null);
             }
          }
 
          excludeList.add(pk);
-         if (dynamoExpression.getSortField() != null)
+         if (dynamoExpression.getOrder() != null)
          {
-            excludeList.add(dynamoExpression.getSortField());
+            excludeList.add(dynamoExpression.getOrder().col);
          }
       }
 
