@@ -52,22 +52,22 @@ public class AclHandler extends AbstractHandler
 
       log.debug("Request Path: " + req.getPath());
 
-      for (AclRule acl : api.getAcls())
+      for (AclRule aclRule : api.getAclRules())
       {
-         if (acl.ruleMatches(req))
+         if (aclRule.ruleMatches(req))
          {
-            log.debug("Matched ACL: " + acl.getName());
-            if (!acl.isAllow())
+            log.debug("Matched ACL: " + aclRule.getName());
+            if (!aclRule.isAllow())
             {
                allowed = false;
                break;
             }
-            else if (!acl.isInfo() && acl.isAllow())
+            else if (!aclRule.isInfo() && aclRule.isAllow())
             {
                allowed = true;
             }
 
-            matched.add(acl);
+            matched.add(aclRule);
          }
       }
 
@@ -79,10 +79,10 @@ public class AclHandler extends AbstractHandler
       Set requires = new HashSet();
       Set restricts = new HashSet();
 
-      for (AclRule acl : matched)
+      for (AclRule aclRule : matched)
       {
-         requires.addAll(acl.getRequires());
-         restricts.addAll(acl.getRestricts());
+         requires.addAll(aclRule.getRequires());
+         restricts.addAll(aclRule.getRestricts());
       }
 
       log.debug("ACL requires: " + requires);

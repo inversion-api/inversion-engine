@@ -75,6 +75,16 @@ public class AclRule extends Rule
 
       return hasRole && hasPerms;
    }
+   
+   
+
+   @Override
+   public void setApi(Api api)
+   {
+      this.api = api;
+      api.addAclRule(this);
+   }
+
 
    public ArrayList<Permission> getPermissions()
    {

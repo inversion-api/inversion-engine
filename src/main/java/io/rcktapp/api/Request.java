@@ -30,6 +30,7 @@ import io.forty11.web.Url;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
+import io.rcktapp.api.service.Service.ApiMatch;
 import io.rcktapp.utils.CaseInsensitiveLookupMap;
 
 public class Request
@@ -39,6 +40,7 @@ public class Request
 
    String                   apiUrl           = null;
    Api                      api              = null;
+   Endpoint                 endpoint         = null;
 
    String                   accountCode      = null;
    String                   apiCode          = null;
@@ -66,17 +68,22 @@ public class Request
    //CaseInsensitiveMap params           = new CaseInsensitiveMap();
    CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
 
-   public Request(HttpServletRequest req, String method, Url url, Api api, String apiUrl)
+   public Request(HttpServletRequest req, ApiMatch match)// String method, Url url, Api api, Endpoint endpoint, String apiUrl)
    {
       this.request = req;
-      this.api = api;
-      this.apiUrl = apiUrl;
+      this.api = match.api;
+      this.endpoint = match.endpoint;
+      this.method = match.method;
+      this.url = match.reqUrl;
+      this.apiUrl = match.apiUrl;
+      this.path = match.apiPath;
+
       this.accountCode = api.getAccountCode();
       this.apiCode = api.getApiCode();
 
-      this.method = method;
+      //this.method = method;
 
-      this.url = url;
+      //this.url = url;
 
       if (apiUrl != null)
       {
@@ -90,27 +97,47 @@ public class Request
          if (urlStr.indexOf("?") > 0)
             urlStr = urlStr.substring(0, urlStr.indexOf("?"));
 
-         path = urlStr.substring(apiUrl.length(), urlStr.length());
-         while (path.startsWith("/"))
-            path = path.substring(1, path.length());
+         //         path = urlStr.substring(apiUrl.length(), urlStr.length());
+         //         while (path.startsWith("/"))
+         //            path = path.substring(1, path.length());
 
-         String[] parts = path.split("/");
+         List<String> parts = J.explode("/", path);//path.split("/");
 
-         if (!path.endsWith("/"))
-            path = path + "/";
+         //         if (!path.endsWith("/"))
+         //            path = path + "/";
 
-         int idx = 0;
-         if (parts.length > idx)
-            collectionKey = parts[idx++];
+         if (endpoint != null)
+         {
+            String endpointPath = endpoint.getPath();
+            if (endpointPath != null)
+            {
+               List<String> epPath = J.explode("/", endpointPath);
+               for (int i = 0; i < epPath.size(); i++)
+               {
+                  if (parts.get(0).equalsIgnoreCase(epPath.get(i)))
+                  {
+                     parts.remove(0);
+                  }
+                  else
+                  {
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The endpoint.path is not match the start of apiPath but it should have");
+                  }
+               }
+            }
 
-         if (collectionKey == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
+            int idx = 0;
+            if (parts.size() > idx)
+               collectionKey = parts.get(idx++);
 
-         if (parts.length > idx)
-            entityKey = parts[idx++];
+            if (collectionKey == null)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
 
-         if (parts.length > idx)
-            subCollectionKey = parts[idx++];
+            if (parts.size() > idx)
+               entityKey = parts.get(idx++);
+
+            if (parts.size() > idx)
+               subCollectionKey = parts.get(idx++);
+         }
       }
 
       //-- copy params

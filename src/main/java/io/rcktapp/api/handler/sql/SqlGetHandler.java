@@ -102,7 +102,7 @@ public class SqlGetHandler extends SqlHandler
          params.addAll(sqlParams);
       }
 
-      if (!J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()) && !J.empty(req.getSubCollectionKey()))
+      if (collection != null && entity != null && !J.empty(req.getSubCollectionKey()))
       {
          //-- this is an entity sub collection listing request
          //-- ${http://host/apipath}/collectionKey/entityKey/subCollectionKey

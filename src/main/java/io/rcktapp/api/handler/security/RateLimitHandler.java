@@ -31,60 +31,54 @@ import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.service.Service;
 
+/**
+ * Provides a blank or client specific request rate limit of <code>limitRequests</code> per 
+ * <code>limitMinutes</code>.  
+ * 
+ * Endpoint/Action configurations override limitMinutes,limitRequests,limitToken so that
+ * an Endpoint/Action can customize rates to fit their needs.  
+ * 
+ * NOTICE 
+ * There is intentionally no concurrency control on this class
+ * other than using Hashtables instead of HashMaps.
+ * The net result of no concurrency control should be limited
+ * to a slightly leaky system that may allow more hits than 
+ * configured.  In exchange, we don't have to worry about 
+ * synchronization performance.
+ *    
+ * 
+ * @author wells
+ *
+ */
 public class RateLimitHandler implements Handler
 {
-   protected int    limitMinutes  = 1;
-   protected int    limitRequests = 200;
+   protected int       limitMinutes   = 1;
+   protected int       limitUserHits  = -1;
+   protected int       limitTotalHits = -1;
 
-   long             resetAt       = 0;
-   Map<String, Num> counts        = new Hashtable();
-
-   class Num
-   {
-      int num = 0;
-
-      void inc()
-      {
-         num += 1;
-      }
-
-      int val()
-      {
-         return num;
-      }
-
-   }
+   Map<String, Bucket> buckets        = new Hashtable();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      int minutes = chain.getConfig("limitMinutes", this.limitMinutes);
-      int hits = chain.getConfig("limitRequests", this.limitRequests);
+      int limitMinutes = chain.getConfig("limitMinutes", this.limitMinutes);;
+      int limitUserHits = chain.getConfig("limitUserHits", this.limitUserHits);
+      int limitTotalHits = chain.getConfig("limitTotalHits", this.limitTotalHits);
 
-      if (resetAt < System.currentTimeMillis() - (minutes * 60000))
+      String bucketKey = new StringBuffer(limitMinutes).append("-").append(limitUserHits).append("-").append(limitTotalHits).toString();
+
+      String clientId = getClientId(req.getHttpServletRequest());
+
+      //this one handler can handle different rate configurations 
+      //such as 100 hits per minutes or or 10000 hits per 5 minutes
+      Bucket bucket = buckets.get(bucketKey);
+      if (bucket == null)
       {
-         synchronized (this)
-         {
-            if (resetAt < System.currentTimeMillis() - (minutes * 60000))
-            {
-               counts.clear();
-               resetAt = System.currentTimeMillis();
-            }
-         }
+         bucket = new Bucket(limitMinutes, limitUserHits, limitTotalHits);
+         buckets.put(bucketKey, bucket);
       }
 
-      String ip = getIp(req.getHttpServletRequest());
-      String token = ip;
-      Num num = counts.get(token);
-      if (num == null)
-      {
-         num = new Num();
-         counts.put(token, num);
-      }
-
-      num.inc();
-
-      if (num.val() >= hits)
+      if (!bucket.hit(clientId))
       {
          JSObject error = new JSObject("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
          res.setJson(error);
@@ -94,30 +88,113 @@ public class RateLimitHandler implements Handler
       }
    }
 
-   public static String getIp(HttpServletRequest request)
+   String getClientId(HttpServletRequest request)
    {
-      String ip = request.getHeader("X-Forwarded-For");
-      if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
+      String clientId = request.getHeader("X-Forwarded-For");
+      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
       {
-         ip = request.getHeader("Proxy-Client-IP");
+         clientId = request.getHeader("Proxy-Client-IP");
       }
-      if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
+      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
       {
-         ip = request.getHeader("WL-Proxy-Client-IP");
+         clientId = request.getHeader("WL-Proxy-Client-IP");
       }
-      if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
+      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
       {
-         ip = request.getHeader("HTTP_CLIENT_IP");
+         clientId = request.getHeader("HTTP_CLIENT_IP");
       }
-      if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
+      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
       {
-         ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+         clientId = request.getHeader("HTTP_X_FORWARDED_FOR");
       }
-      if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip))
+      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
       {
-         ip = request.getRemoteAddr();
+         clientId = request.getRemoteAddr();
       }
-      return ip;
+
+      if (clientId == null || clientId.length() == 0)
+         clientId = "unknown";
+
+      return clientId;
+   }
+
+   class Bucket
+   {
+      int              limitMillies   = 0;
+      int              limitUserHits  = 0;
+      int              limitTotalHits = 0;
+
+      long             resetAt        = 0;
+      Map<String, Num> userHits       = new Hashtable();
+      int              totalHits      = 0;
+
+      Bucket(int limitMinutes, int limitUserHits, int limitTotalHits)
+      {
+         this.limitMillies = limitMinutes * 60000;
+         this.limitUserHits = limitUserHits;
+         this.limitTotalHits = limitTotalHits;
+      }
+
+      boolean hit(String clientId)
+      {
+         if (expired())
+            reset();
+
+         if (limitTotalHits >= 0)
+         {
+            synchronized (this)
+            {
+               totalHits += -1;
+            }
+
+            if (totalHits > limitTotalHits)
+               return false;
+         }
+
+         if (limitUserHits > 0)
+         {
+            Num num = userHits.get(clientId);
+            if (num == null)
+            {
+               num = new Num();
+               userHits.put(clientId, num);
+            }
+
+            num.inc();
+
+            if (num.val() > limitUserHits)
+               return false;
+         }
+         return true;
+      }
+
+      boolean expired()
+      {
+         return resetAt < System.currentTimeMillis() - limitMillies;
+      }
+
+      void reset()
+      {
+         resetAt = System.currentTimeMillis();
+         totalHits = 0;
+         userHits.clear();
+      }
+
+      class Num
+      {
+         int num = 0;
+
+         void inc()
+         {
+            num += 1;
+         }
+
+         int val()
+         {
+            return num;
+         }
+      }
+
    }
 
 }

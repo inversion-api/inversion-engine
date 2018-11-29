@@ -49,6 +49,7 @@ public class Api extends Dto
 
    public Api()
    {
+      System.out.println("asdf");
    }
 
    public Api(String name)
@@ -219,7 +220,7 @@ public class Api extends Dto
    {
       String name = db.getName() != null ? db.getName() : "db";
       dbs.put(name.toLowerCase(), db);
-      if(db.getApi() != this)
+      if (db.getApi() != this)
          db.setApi(this);
    }
 
@@ -249,7 +250,7 @@ public class Api extends Dto
 
    public List<Endpoint> getEndpoints()
    {
-      return Collections.unmodifiableList(endpoints);
+      return new ArrayList(endpoints);
    }
 
    public void setEndpoints(List<Endpoint> endpoints)
@@ -261,12 +262,16 @@ public class Api extends Dto
 
    public void addEndpoint(Endpoint endpoint)
    {
-      endpoints.add(endpoint);
+      if (!endpoints.contains(endpoint))
+         endpoints.add(endpoint);
+
+      if (endpoint.getApi() != this)
+         endpoint.setApi(this);
    }
 
    public List<Action> getActions()
    {
-      return Collections.unmodifiableList(actions);
+      return new ArrayList(actions);
    }
 
    public void setActions(List<Action> actions)
@@ -278,26 +283,33 @@ public class Api extends Dto
 
    public void addAction(Action action)
    {
-      actions.add(action);
+      if (!actions.contains(action))
+         actions.add(action);
+
+      if (action.getApi() != this)
+         action.setApi(this);
    }
 
-   public void addAcl(AclRule acl)
+   public void addAclRule(AclRule acl)
    {
       if (!acls.contains(acl))
       {
          acls.add(acl);
          Collections.sort(acls);
       }
+
+      if (acl.getApi() != this)
+         acl.setApi(this);
    }
 
-   public void setAcls(List<AclRule> acls)
+   public void setAclRules(List<AclRule> acls)
    {
       this.acls.clear();
       for (AclRule acl : acls)
-         addAcl(acl);
+         addAclRule(acl);
    }
 
-   public List<AclRule> getAcls()
+   public List<AclRule> getAclRules()
    {
       return new ArrayList(acls);
    }
