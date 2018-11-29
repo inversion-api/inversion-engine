@@ -26,12 +26,13 @@ import io.forty11.j.J;
 public class Api extends Dto
 {
    String                            name        = null;
-   LinkedHashMap<String, String>     handlers    = new LinkedHashMap();
-   LinkedHashMap<String, Db>         dbs         = new LinkedHashMap();
+
+   List<Db>                          dbs         = new ArrayList();
    List<Endpoint>                    endpoints   = new ArrayList();
    List<Action>                      actions     = new ArrayList();
-   LinkedHashMap<String, Collection> collections = new LinkedHashMap();
    List<AclRule>                     acls        = new ArrayList();
+
+   LinkedHashMap<String, Collection> collections = new LinkedHashMap();
 
    String                            apiCode     = null;
    String                            accountCode = null;
@@ -49,7 +50,6 @@ public class Api extends Dto
 
    public Api()
    {
-      System.out.println("asdf");
    }
 
    public Api(String name)
@@ -57,9 +57,19 @@ public class Api extends Dto
       this.name = name;
    }
 
+   public String getName()
+   {
+      return name;
+   }
+
+   public void setName(String name)
+   {
+      this.name = name;
+   }
+
    public Table findTable(String name)
    {
-      for (Db db : dbs.values())
+      for (Db db : dbs)
       {
          Table t = db.getTable(name);
          if (t != null)
@@ -197,12 +207,25 @@ public class Api extends Dto
       collections.remove(collection.getName().toLowerCase());
    }
 
+   public Db getDb(String name)
+   {
+      if (name == null)
+         return null;
+
+      for (Db db : dbs)
+      {
+         if (name.equalsIgnoreCase(db.getName()))
+            return db;
+      }
+      return null;
+   }
+
    /**
     * @return the dbs
     */
    public List<Db> getDbs()
    {
-      return new ArrayList(dbs.values());
+      return new ArrayList(dbs);
    }
 
    /**
@@ -211,32 +234,41 @@ public class Api extends Dto
    public void setDbs(List<Db> dbs)
    {
       for (Db db : dbs)
-      {
          addDb(db);
-      }
    }
 
    public void addDb(Db db)
    {
-      String name = db.getName() != null ? db.getName() : "db";
-      dbs.put(name.toLowerCase(), db);
+      if (!dbs.contains(db))
+         dbs.add(db);
+
       if (db.getApi() != this)
          db.setApi(this);
    }
 
-   public Db getDb(String name)
-   {
-      return dbs.get(name.toLowerCase());
-   }
-
-   public void updateDbMap()
-   {
-      // This is needed because the Db objects coming into addDb don't have a name prop yet
-      // during auto-wiring.. this is called just after auto-wiring to update the keys in the map
-      List<Db> dbList = new ArrayList<>(dbs.values());
-      this.dbs.clear();
-      this.setDbs(dbList);
-   }
+   // public void addHandler(String name, String clazz)
+   // {
+   //    try
+   //    {
+   //       handlers.put(name.toLowerCase(), clazz);
+   //    }
+   //    catch (Exception ex)
+   //    {
+   //       throw new ApiException("Unable to add handler \"" + clazz + "\". Reason: " + J.getShortCause(ex));
+   //    }
+   // }
+   //
+   // public void setHandlers(String handlers)
+   // {
+   //    if (handlers == null)
+   //       return;
+   //
+   //    String[] parts = handlers.split(",");
+   //    for (int i = 0; i < parts.length - 1; i += 2)
+   //    {
+   //       addHandler(parts[i].trim(), parts[i + 1].trim());
+   //    }
+   // }
 
    public long getLoadTime()
    {
@@ -312,45 +344,6 @@ public class Api extends Dto
    public List<AclRule> getAclRules()
    {
       return new ArrayList(acls);
-   }
-
-   public String getName()
-   {
-      return name;
-   }
-
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
-   public void addHandler(String name, String clazz)
-   {
-      try
-      {
-         handlers.put(name.toLowerCase(), clazz);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unable to add handler \"" + clazz + "\". Reason: " + J.getShortCause(ex));
-      }
-   }
-
-   public void setHandlers(String handlers)
-   {
-      if (handlers == null)
-         return;
-
-      String[] parts = handlers.split(",");
-      for (int i = 0; i < parts.length - 1; i += 2)
-      {
-         addHandler(parts[i].trim(), parts[i + 1].trim());
-      }
-   }
-
-   public String getHandler(String name)
-   {
-      return handlers.get(name.toLowerCase());
    }
 
    public boolean isReloadable()

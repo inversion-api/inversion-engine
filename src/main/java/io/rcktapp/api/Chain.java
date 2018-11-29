@@ -111,22 +111,19 @@ public class Chain
    {
       LinkedHashSet values = new LinkedHashSet();
 
-      String value = null;
+      String value = endpoint.getConfig(key);
+      if (value != null)
+      {
+         values.addAll(J.explode(",", value));
+      }
+
       for (int i = next - 1; i >= 0; i--)
       {
          value = actions.get(i).getConfig(key);
          if (value != null)
          {
-            for (String str : value.split(","))
-               values.add(str.trim());
+            values.addAll(J.explode(",", value));
          }
-      }
-
-      value = endpoint.getConfig(key);
-      if (value != null)
-      {
-         for (String str : value.split(","))
-            values.add(str.trim());
       }
 
       return values;
@@ -136,21 +133,21 @@ public class Chain
    {
       return Integer.parseInt(getConfig(key, defaultValue + ""));
    }
-   
+
    public boolean getConfig(String key, boolean defaultValue)
    {
       return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
    }
-   
+
    public String getConfig(String key, String defaultValue)
    {
-      String value = actions.get(next - 1).getConfig(key);
+      String value = endpoint.getConfig(key);
       if (!J.empty(value))
       {
          return value;
       }
 
-      value = endpoint.getConfig(key);
+      value = actions.get(next - 1).getConfig(key);
       if (!J.empty(value))
       {
          return value;

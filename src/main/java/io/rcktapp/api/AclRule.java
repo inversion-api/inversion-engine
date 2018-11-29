@@ -8,15 +8,17 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.forty11.j.J;
 
 public class AclRule extends Rule
 {
@@ -75,8 +77,6 @@ public class AclRule extends Rule
 
       return hasRole && hasPerms;
    }
-   
-   
 
    @Override
    public void setApi(Api api)
@@ -84,7 +84,6 @@ public class AclRule extends Rule
       this.api = api;
       api.addAclRule(this);
    }
-
 
    public ArrayList<Permission> getPermissions()
    {
@@ -98,10 +97,22 @@ public class AclRule extends Rule
          addPermission(permission);
    }
 
+   public void setPermissions(String permissions)
+   {
+      this.permissions.clear();
+      for (String permission : J.explode(",",  permissions))
+         addPermission(permission);
+   }
+
    public void addPermission(Permission permission)
    {
       if (!permissions.contains(permission))
          permissions.add(permission);
+   }
+
+   public void addPermission(String permission)
+   {
+      addPermission(new Permission(permission));
    }
 
    public ArrayList<Role> getRoles()
