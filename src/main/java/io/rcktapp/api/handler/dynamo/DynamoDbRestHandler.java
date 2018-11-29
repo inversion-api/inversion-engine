@@ -38,4 +38,19 @@ public class DynamoDbRestHandler implements Handler
       }
    }
 
+   public void setGet(DynamoDbGetHandler get)
+   {
+      this.get = get;
+   }
+
+   public void setDelete(DynamoDbDeleteHandler delete)
+   {
+      this.delete = delete;
+   }
+
+   public void setPost(DynamoDbPostHandler post)
+   {
+      this.post = post;
+   }
+
 }

@@ -42,6 +42,8 @@ import io.rcktapp.rql.dynamo.DynamoRql;
 public class DynamoDbGetHandler extends DynamoDbHandler
 {
 
+   protected String nextKeyDelimeter = "~";
+
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
@@ -51,6 +53,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       AmazonDynamoDB dynamoClient = db.getDynamoClient();
       String pk = DynamoDb.findPartitionKeyName(table);
       String sk = DynamoDb.findSortKeyName(table);
+      boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
 
       if (chain.getRequest().isDebug())
       {
@@ -64,25 +67,49 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       }
 
       int pageSize = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : 100;
+      String next = req.removeParam("next");
+
       Set<String> includes = new HashSet<>(splitToList(req.removeParam("includes")));
       Set<String> excludes = new HashSet<>(splitToList(req.removeParam("excludes")));
 
       DynamoRql rql = (DynamoRql) Rql.getRql(db.getType());
       DynamoExpression dynamoExpression = rql.buildDynamoExpression(req.getParams(), table);
 
-      // TODO handle "next"
       KeyAttribute[] nextKeys = null;
+
+      if (next != null)
+      {
+         List<KeyAttribute> keyAttrList = new ArrayList<>();
+         String[] sArr = next.split(nextKeyDelimeter);
+         String nextPkVal = sArr[0];
+         if (api.isMultiTenant() && appendTenantIdToPk)
+         {
+            nextPkVal = addTenantIdToKey(tenantId, nextPkVal);
+         }
+         keyAttrList.add(new KeyAttribute(pk, nextPkVal));
+
+         if (sArr.length > 1)
+         {
+            keyAttrList.add(new KeyAttribute(sk, DynamoDb.cast(sArr[1], sk, table)));
+         }
+
+         if (sArr.length > 2 && !sk.equals(dynamoExpression.getSortField()))
+         {
+            keyAttrList.add(new KeyAttribute(dynamoExpression.getSortField(), DynamoDb.cast(sArr[2], dynamoExpression.getSortField(), table)));
+         }
+
+         nextKeys = keyAttrList.toArray(new KeyAttribute[keyAttrList.size()]);
+      }
 
       String primaryKeyValue = null;
       Predicate pkPred = dynamoExpression.getExcludedPredicate(pk);
       if (pkPred != null)
       {
          primaryKeyValue = pkPred.getTerms().get(1).getToken();
-         // TODO add/remove tenantid to key - where/how is this configured
-         //         if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
-         //         {
-         //            primaryKeyValue = addTenantIdToKey(tenantId, primaryKeyValue);
-         //         }
+         if (api.isMultiTenant() && appendTenantIdToPk)
+         {
+            primaryKeyValue = addTenantIdToKey(tenantId, primaryKeyValue);
+         }
       }
 
       DynamoResult dynamoResult = null;
@@ -97,41 +124,38 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       }
 
       String returnNext = null;
-      /*
-      if (lastKey != null && !lastKey.isEmpty())
+      if (dynamoResult != null && dynamoResult.lastKey != null && !dynamoResult.lastKey.isEmpty())
       {
-         returnNext = lastKey.get(tableInfo.primaryKey).getS();
-         if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
+         returnNext = dynamoResult.lastKey.get(pk).getS();
+         if (api.isMultiTenant() && appendTenantIdToPk)
          {
             returnNext = removeTenantIdFromKey(tenantId, returnNext);
          }
-      
-         if (lastKey.get(tableInfo.sortKey) != null)
+
+         if (dynamoResult.lastKey.get(sk) != null)
          {
-            String sortKeyVal = attributeValueAsString(lastKey.get(tableInfo.sortKey), tableInfo.sortKey, tableInfo.typeMap);
+            String sortKeyVal = DynamoDb.attributeValueAsString(dynamoResult.lastKey.get(sk), sk, table);
             returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
-      
-         String sortField = filterExpress.getSortField();
-         if (!sortField.equals(tableInfo.sortKey) && lastKey.get(sortField) != null)
+
+         String sortField = dynamoExpression.getSortField();
+         if (!sortField.equals(sk) && dynamoResult.lastKey.get(sortField) != null)
          {
-            String sortKeyVal = attributeValueAsString(lastKey.get(sortField), sortField, tableInfo.typeMap);
+            String sortKeyVal = DynamoDb.attributeValueAsString(dynamoResult.lastKey.get(sortField), sortField, table);
             returnNext = returnNext + nextKeyDelimeter + sortKeyVal;
          }
       }
-      */
 
       JSArray returnData = new JSArray();
       if (dynamoResult != null && !dynamoResult.items.isEmpty())
       {
          for (Map map : dynamoResult.items)
          {
-            // TODO
-            //            if (api.isMultiTenant() && tableInfo.appendTenantIdToPk)
-            //            {
-            //               String pkValue = (String) map.get(primaryKey);
-            //               map.put(primaryKey, removeTenantIdFromKey(tenantId, pkValue));
-            //            }
+            if (api.isMultiTenant() && appendTenantIdToPk)
+            {
+               String pkValue = (String) map.get(pk);
+               map.put(pk, removeTenantIdFromKey(tenantId, pkValue));
+            }
 
             returnData.add(new JSObject(includeExclude(map, includes, excludes)));
          }
@@ -257,6 +281,11 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          }
       }
       return m;
+   }
+
+   public void setNextKeyDelimeter(String nextKeyDelimeter)
+   {
+      this.nextKeyDelimeter = nextKeyDelimeter;
    }
 
    static class DynamoResult

@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
@@ -59,8 +60,12 @@ public class DynamoDb extends Db
     * A CSV of pipe delimited collection name to table name pairs.
     * 
     * Example: dynamodb.tables=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
+    * 
+    * Or if the collection name is the name as the table name you can just send a the name
+    * 
+    * Example: dynamodb.includeTables=orders,users,events
     */
-   protected String       tableMappings;
+   protected String       includeTables;
 
    /**
     * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
@@ -78,7 +83,7 @@ public class DynamoDb extends Db
 
       this.setType("dynamo");
 
-      if (tableMappings != null)
+      if (includeTables != null)
       {
          Map<String, String[]> blueprintRowMap = new HashMap<>();
          if (blueprintRow != null)
@@ -92,12 +97,16 @@ public class DynamoDb extends Db
             }
          }
 
-         String[] parts = tableMappings.split(",");
+         String[] parts = includeTables.split(",");
          for (String part : parts)
          {
             String[] arr = part.split("\\|");
             String collectionName = arr[0];
-            String tableName = arr[1];
+            String tableName = collectionName;
+            if (arr.length > 1)
+            {
+               tableName = arr[1];
+            }
 
             Table table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
             Entity entity = buildEntity(collectionName, table);
@@ -107,8 +116,6 @@ public class DynamoDb extends Db
             entity.getCollection().setApi(api);
 
          }
-
-         api.addDb(this);
 
       }
       else
@@ -386,9 +393,29 @@ public class DynamoDb extends Db
       return Parser.dequote(value);
    }
 
-   public void setTableMappings(String tableMappings)
+   public static String attributeValueAsString(AttributeValue attr, String colName, Table table)
    {
-      this.tableMappings = tableMappings;
+      Column col = table.getColumn(colName);
+
+      if (col != null)
+      {
+         switch (col.getType())
+         {
+            case "N":
+               return attr.getN();
+
+            case "BOOL":
+               return attr.getBOOL().toString();
+
+         }
+      }
+
+      return attr.getS();
+   }
+
+   public void setIncludeTables(String includeTables)
+   {
+      this.includeTables = includeTables;
    }
 
    public void setAwsRegion(String awsRegion)
@@ -433,7 +460,7 @@ public class DynamoDb extends Db
       try
       {
          DynamoDb dynamoDb = new DynamoDb();
-         dynamoDb.setTableMappings("promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev");
+         dynamoDb.setIncludeTables("promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev,tim-test");
 
          Api api = new Api();
          dynamoDb.setApi(api);

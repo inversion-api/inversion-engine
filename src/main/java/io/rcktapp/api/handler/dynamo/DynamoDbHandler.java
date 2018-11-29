@@ -21,41 +21,18 @@ import io.rcktapp.api.SC;
  */
 public abstract class DynamoDbHandler implements Handler
 {
-
-   //   public DynamoDb findDbOrThrow404(Api api, Chain chain, Request req) throws Exception
-   //   {
-   //      String dbName = (String) chain.get("db");
-   //
-   //      DynamoDb db = null;
-   //      if (!J.empty(dbName))
-   //      {
-   //         db = (DynamoDb) api.getDb(dbName);
-   //      }
-   //      else
-   //      {
-   //         db = (DynamoDb) api.findDb(req.getCollectionKey());
-   //         if (db == null)
-   //         {
-   //            db = (DynamoDb) api.findDb(req.getEntityKey());
-   //         }
-   //      }
-   //
-   //      if (db == null)
-   //      {
-   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a dynamodb table. Please check your endpoint.");
-   //      }
-   //
-   //      return db;
-   //
-   //   }
+   /**
+    * Used when "appendTenantIdToPk" is enabled for a table
+    * The default value for this field is "::" so the primary key will look like this..
+    * {tenant_id}::{pk_value}
+    * 
+    * Example:  1::4045551212
+    */
+   protected String tenantIdDelimiter = "::";
 
    public Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
       Collection collection = api.getCollection(req.getCollectionKey());
-      if (collection == null)
-      {
-         collection = (Collection) api.getCollection(req.getEntityKey());
-      }
 
       if (collection == null)
       {
@@ -70,7 +47,27 @@ public abstract class DynamoDbHandler implements Handler
       return collection;
 
    }
-   
+
+   protected boolean isAppendTenantIdToPk(Chain chain, String collectionName)
+   {
+      return chain.getConfigSet("appendTenantIdToPk").contains(collectionName);
+   }
+
+   String addTenantIdToKey(int tenantId, String key)
+   {
+      return tenantId + tenantIdDelimiter + key;
+   }
+
+   String removeTenantIdFromKey(int tenantId, String key)
+   {
+      if (key != null)
+      {
+         int preLength = (tenantId + tenantIdDelimiter).length();
+         return key.substring(preLength);
+      }
+      return key;
+   }
+
    protected List splitToList(String csv)
    {
       List<String> l = new ArrayList<>();
@@ -85,6 +82,11 @@ public abstract class DynamoDbHandler implements Handler
          }
       }
       return l;
+   }
+
+   public void setTenantIdDelimiter(String tenantIdDelimiter)
+   {
+      this.tenantIdDelimiter = tenantIdDelimiter;
    }
 
 }
