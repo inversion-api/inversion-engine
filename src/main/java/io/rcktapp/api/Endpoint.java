@@ -65,21 +65,35 @@ public class Endpoint extends Rule
 
    public void setPath(String path)
    {
-      if(path != null)
+      if (path != null)
       {
          path = path.toLowerCase();
-         path = J.implode("/", J.explode("/",  path));
-         
+         path = J.implode("/", J.explode("/", path));
+
          if (!J.empty(path) && !path.endsWith("/"))
             path += "/";
       }
-      
-      if(J.empty(path))
+
+      if (J.empty(path))
       {
          path = null;
       }
 
       this.path = path;
+   }
+
+   /**
+    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
+    * @throws ClassNotFoundException 
+    * @throws IllegalAccessException 
+    * @throws InstantiationException 
+    */
+   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+   {
+      for (String name : J.explode(",", classNames))
+      {
+         addHandler((Handler) Class.forName(name).newInstance());
+      }
    }
 
    public void addHandler(Handler handler)

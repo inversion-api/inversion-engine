@@ -20,53 +20,31 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import io.forty11.j.J;
 import io.forty11.j.utils.AutoWire;
 import io.forty11.j.utils.AutoWire.Includer;
 import io.forty11.j.utils.AutoWire.Namer;
-import io.forty11.sql.Rows.Row;
-import io.forty11.sql.Sql;
-import io.forty11.web.Url;
 import io.rcktapp.api.AclRule;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
-import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
-import io.rcktapp.api.Chain;
 import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Handler;
-import io.rcktapp.api.Permission;
 import io.rcktapp.api.Relationship;
-import io.rcktapp.api.Request;
-import io.rcktapp.api.Response;
-import io.rcktapp.api.Role;
-import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
-import io.rcktapp.api.handler.sql.SqlDb;
 
 public class Snooze extends Service
 {
@@ -86,7 +64,7 @@ public class Snooze extends Service
          inited = true;
 
          Properties props = findProps();
-         
+
          if (log.isInfoEnabled())
          {
             List<String> keys = new ArrayList(props.keySet());
@@ -119,6 +97,7 @@ public class Snooze extends Service
                }
             };
          wire.load(props);
+         autoWireApi(wire);
 
          for (Api api : wire.getBeans(Api.class))
          {
@@ -144,11 +123,12 @@ public class Snooze extends Service
 
          wire.clear();
          wire.load(autoProps);
+         autoWireApi(wire);
+
+         //autowire DBs if there is only 1 API and no DBS have been set no it
 
          for (Api api : wire.getBeans(Api.class))
          {
-            api.updateDbMap();
-
             //process excluded
             for (io.rcktapp.api.Collection col : api.getCollections())
             {
@@ -202,6 +182,26 @@ public class Snooze extends Service
       catch (Exception e)
       {
          throw new ServletException("Error loading configuration", e);
+      }
+   }
+
+   void autoWireApi(AutoWire wire)
+   {
+      List<Api> apis = wire.getBeans(Api.class);
+      if (apis.size() == 1)
+      {
+         Api api = apis.get(0);
+         if (api.getDbs().size() == 0)
+            api.setDbs(wire.getBeans(Db.class));
+
+         if (api.getEndpoints().size() == 0)
+            api.setEndpoints(wire.getBeans(Endpoint.class));
+
+         if (api.getActions().size() == 0)
+            api.setActions(wire.getBeans(Action.class));
+
+         if (api.getAclRules().size() == 0)
+            api.setAclRules(wire.getBeans(AclRule.class));
       }
    }
 
