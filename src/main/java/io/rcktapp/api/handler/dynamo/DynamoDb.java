@@ -1,5 +1,6 @@
 package io.rcktapp.api.handler.dynamo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,14 +23,17 @@ import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Entity;
 import io.rcktapp.api.Index;
+import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 import io.rcktapp.rql.Parser;
+import io.rcktapp.rql.Predicate;
 import io.rcktapp.rql.dynamo.DynamoRql;
 
 public class DynamoDb extends Db
@@ -332,6 +336,23 @@ public class DynamoDb extends Db
       return null;
    }
 
+   public static List<Index> findIndexesByType(Table table, String type)
+   {
+      List<Index> l = new ArrayList<Index>();
+
+      if (table != null && table.getIndexes() != null)
+      {
+         for (Index index : table.getIndexes())
+         {
+            if (index.getType().equals(type))
+            {
+               l.add(index);
+            }
+         }
+      }
+      return l;
+   }
+
    public static Index findIndexByColumnName(Table table, String colName)
    {
       if (table != null && table.getIndexes() != null)
@@ -411,6 +432,45 @@ public class DynamoDb extends Db
       }
 
       return attr.getS();
+   }
+
+   public static RangeKeyCondition predicateToRangeKeyCondition(Predicate pred, Table table)
+   {
+      String name = pred.getTerms().get(0).getToken();
+      Object val = DynamoDb.cast((String) pred.getTerms().get(1).getToken(), name, table);
+
+      RangeKeyCondition rkc = new RangeKeyCondition(name);
+      switch (pred.getToken())
+      {
+         case "eq":
+            rkc.eq(val);
+            break;
+
+         case "gt":
+            rkc.gt(val);
+            break;
+
+         case "ge":
+            rkc.ge(val);
+            break;
+
+         case "lt":
+            rkc.lt(val);
+            break;
+
+         case "le":
+            rkc.le(val);
+            break;
+
+         case "sw":
+            rkc.beginsWith((String) val);
+            break;
+
+         default :
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Operator '" + pred.getToken() + "' is not supported for a dynamo range key condition");
+      }
+
+      return rkc;
    }
 
    public void setIncludeTables(String includeTables)

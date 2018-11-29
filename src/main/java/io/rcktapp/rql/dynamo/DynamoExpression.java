@@ -140,6 +140,11 @@ public class DynamoExpression
       return fields;
    }
 
+   public Table getTable()
+   {
+      return table;
+   }
+
    public void addExcludedPredicate(String name, Predicate pred)
    {
       this.excludedPredicates.put(name, pred);
