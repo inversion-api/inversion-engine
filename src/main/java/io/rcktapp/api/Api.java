@@ -49,6 +49,7 @@ public class Api extends Dto
 
    public Api()
    {
+      System.out.println("asdf");
    }
 
    public Api(String name)
@@ -282,7 +283,7 @@ public class Api extends Dto
 
    public void addAction(Action action)
    {
-      if (actions.contains(action))
+      if (!actions.contains(action))
          actions.add(action);
 
       if (action.getApi() != this)

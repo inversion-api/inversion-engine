@@ -161,14 +161,14 @@ public class Service extends HttpServlet
          }
 
          String apiUrl = null;
-         ApiMatch match = findApi(url);
+         ApiMatch match = findApi(method, url);
          if (match != null)
          {
             api = match.api;
-            apiUrl = match.url;
+            apiUrl = match.apiUrl;
          }
 
-         if (api == null || api.isDebug() || urlstr.indexOf("://localhost") > 0)
+         if (match == null || match.api.isDebug() || match.reqUrl.getHost().equals("localhost"))
          {
             res.debug("");
             res.debug("");
@@ -188,16 +188,9 @@ public class Service extends HttpServlet
             throw new ApiException(SC.SC_400_BAD_REQUEST, "No API found matching URL: \"" + url + "\"");
          }
 
-         req = new Request(httpReq, method, url, api, apiUrl);
+         req = new Request(httpReq, match);
 
-         if (J.empty(req.getCollectionKey()))
-         {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
-         }
-
-         Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
-
-         if (endpoint == null)
+         if (match.endpoint == null)
          {
             //check to see if a non plural version of the collection endpoint 
             //was passed in, if it was redirect to the plural version
@@ -205,16 +198,21 @@ public class Service extends HttpServlet
                return;
          }
 
-         if (endpoint == null)
+         if (match.endpoint == null)
          {
             String buff = "";
             for (Endpoint e : api.getEndpoints())
                buff += e.getMethods() + ": includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "No endpoint found matching \"" + req.getMethod() + ": " + url + "\" Valid end points include: " + buff);
+            throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + url + "\" Valid end points include: " + buff);
          }
 
-         doService(this, null, match, endpoint, req, res);
+         if (J.empty(req.getCollectionKey()))
+         {
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
+         }
+
+         doService(this, null, match, req, res);
          ConnectionLocal.commit();
       }
       catch (Throwable ex)
@@ -288,11 +286,11 @@ public class Service extends HttpServlet
    {
       Api api = null;
       String apiUrl = null;
-      ApiMatch match = findApi(new Url(url));
+      ApiMatch match = findApi(method, new Url(url));
       if (match != null)
       {
          api = match.api;
-         apiUrl = match.url;
+         apiUrl = match.apiUrl;
       }
 
       if (match == null)
@@ -300,7 +298,7 @@ public class Service extends HttpServlet
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No api found matching " + method + " " + url);
       }
 
-      Request req = new Request(null, method, new Url(url), api, apiUrl);
+      Request req = new Request(null, match);//method, new Url(url), api, match, apiUrl);
       req.setUser(parent.getRequest().getUser());
       req.setBody(body);
 
@@ -314,7 +312,7 @@ public class Service extends HttpServlet
 
       try
       {
-         doService(this, parent, match, endpoint, req, res);
+         doService(this, parent, match, req, res);
       }
       catch (Throwable ex)
       {
@@ -345,10 +343,10 @@ public class Service extends HttpServlet
       return res;
    }
 
-   protected void doService(Service service, Chain parent, ApiMatch match, Endpoint endpoint, Request req, Response res) throws Exception
+   protected void doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
    {
       //this will get all actions specifically configured on the endpoint
-      List<Action> actions = endpoint.getActions(req);
+      List<Action> actions = match.endpoint.getActions(req);
 
       //this matches for actions that can run across multiple endpoints.
       //this might be something like an authorization or logging action
@@ -362,7 +360,7 @@ public class Service extends HttpServlet
 
       //TODO: filter all request params for security -- "restrict" && "require"
 
-      Chain chain = new Chain(this, match.api, endpoint, actions, req, res);
+      Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
       chain.setParent(parent);
       chain.go();
    }
@@ -419,20 +417,27 @@ public class Service extends HttpServlet
       return false;
    }
 
-   static class ApiMatch
+   public static class ApiMatch
    {
-      public Api    api = null;
-      public String url = null;
+      public Api      api      = null;
+      public Endpoint endpoint = null;
+      public String   method   = null;
+      public Url      reqUrl   = null;
+      public String   apiUrl   = null;
+      public String   apiPath  = null;
 
-      public ApiMatch(Api api, String url)
+      public ApiMatch(Api api, Endpoint endpoint, String method, Url reqUrl, String apiUrl, String apiPath)
       {
          this.api = api;
-         this.url = url;
+         this.endpoint = endpoint;
+         this.method = method;
+         this.reqUrl = reqUrl;
+         this.apiUrl = apiUrl;
+         this.apiPath = apiPath;
       }
-
    }
 
-   ApiMatch findApi(Url url) throws Exception
+   ApiMatch findApi(String method, Url url) throws Exception
    {
       String accountCode = null;
 
@@ -491,7 +496,26 @@ public class Service extends HttpServlet
             if (!apiUrl.endsWith("/"))
                apiUrl += "/";
 
-            return new ApiMatch(a, apiUrl);
+            String reqUrl = url.toString();
+
+            path = reqUrl.substring(apiUrl.length(), reqUrl.length());
+            while (path.startsWith("/"))
+               path = path.substring(1, path.length());
+
+            if (!path.endsWith("/"))
+               path = path + "/";
+
+            Endpoint endpoint = null;
+            for (Endpoint e : a.getEndpoints())
+            {
+               if (e.matches(method, path))
+               {
+                  endpoint = e;
+                  break;
+               }
+            }
+
+            return new ApiMatch(a, endpoint, method, url, apiUrl, path);
          }
       }
 

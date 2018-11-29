@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.forty11.j.J;
+
 public class Endpoint extends Rule
 {
    protected String       path    = null;
@@ -26,25 +28,28 @@ public class Endpoint extends Rule
 
    public boolean matches(String method, String path)
    {
-      if (methods.contains(method))
-      {
-         for (String includePath : includePaths)
-         {
-            if (pathMatches(includePath, path))
-            {
-               for (String excludePath : excludePaths)
-               {
-                  if (pathMatches(excludePath, path))
-                  {
-                     return false;
-                  }
-               }
+      if (!methods.contains(method))
+         return false;
 
-               return true;
+      if (this.path != null && !path.toLowerCase().startsWith(this.path))
+         return false;
+
+      for (String includePath : includePaths)
+      {
+         if (pathMatches(includePath, path))
+         {
+            for (String excludePath : excludePaths)
+            {
+               if (pathMatches(excludePath, path))
+               {
+                  return false;
+               }
             }
+            return true;
          }
       }
-      return false;
+
+      return this.path != null;
    }
 
    public void setApi(Api api)
@@ -60,6 +65,20 @@ public class Endpoint extends Rule
 
    public void setPath(String path)
    {
+      if(path != null)
+      {
+         path = path.toLowerCase();
+         path = J.implode("/", J.explode("/",  path));
+         
+         if (!J.empty(path) && !path.endsWith("/"))
+            path += "/";
+      }
+      
+      if(J.empty(path))
+      {
+         path = null;
+      }
+
       this.path = path;
    }
 
