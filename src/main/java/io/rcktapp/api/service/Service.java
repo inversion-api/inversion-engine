@@ -16,17 +16,13 @@
 package io.rcktapp.api.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 
 import javax.servlet.ServletException;
@@ -39,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
-import io.forty11.j.utils.DoubleKeyMap;
 import io.forty11.web.Url;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
@@ -48,7 +43,6 @@ import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
-import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
@@ -302,16 +296,7 @@ public class Service extends HttpServlet
          {
             byte[] bytes = res.getText().getBytes();
             http.setContentType("text/text");
-
-            if (debug)
-            {
-               res.debug(bytes);
-            }
-            else
-            {
-               out.write(bytes);
-            }
-            res.debug(bytes);
+            out.write(bytes);
          }
          else if (res.getJson() != null)
          {
@@ -710,5 +695,10 @@ public class Service extends HttpServlet
    public void setAllowHeaders(String allowedHeaders)
    {
       this.allowedHeaders = allowedHeaders;
+   }
+
+   public InputStream getResource(String name)
+   {
+      return getServletContext().getResourceAsStream(name);
    }
 }
