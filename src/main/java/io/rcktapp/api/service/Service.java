@@ -17,7 +17,6 @@ package io.rcktapp.api.service;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,19 +24,16 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import io.forty11.j.J;
 import io.forty11.j.utils.DoubleKeyMap;
 import io.forty11.web.Url;
-import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -57,44 +52,59 @@ import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
-import io.rcktapp.api.handler.sql.SqlDb;
 import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service extends HttpServlet
 {
-   Logger               log            = LoggerFactory.getLogger(getClass());
-   Logger               requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   Logger           log            = LoggerFactory.getLogger(getClass());
+   Logger           requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   Hashtable<Long, Api> apis           = new Hashtable();
-
-   Map<String, Handler> globalHandlers = new Hashtable();
-   DoubleKeyMap         apiHandlers    = new DoubleKeyMap();
-
-   List<String>         corsHeaders    = new ArrayList();
+   List<Api>        apis           = new Vector();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected String     servletMapping = null;
+   protected String servletMapping = null;
 
-   public Service()
-   {
-      corsHeaders.add("origin");
-      corsHeaders.add("accept");
-      corsHeaders.add("Content-Type");
-      corsHeaders.add("x-auth-token");
-      corsHeaders.add("authorization");
-   }
+   /**
+    * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
+    * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
+    * probably won't need to customize this list. 
+    */
+   String           allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    @Override
    protected void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
    {
       String method = httpReq.getMethod();
 
+      //--
+      //-- CORS header setup
+      //--
+      String allowedHeaders = new String(this.allowedHeaders);
+      String corsRequestHeader = httpReq.getHeader("Access-Control-Request-Header");
+      if (corsRequestHeader != null)
+      {
+         List<String> headers = Arrays.asList(corsRequestHeader.split(","));
+         for (String h : headers)
+         {
+            h = h.trim();
+            allowedHeaders = allowedHeaders.concat(h).concat(",");
+         }
+      }
+      httpResp.addHeader("Access-Control-Allow-Origin", "*");
+      httpResp.addHeader("Access-Control-Allow-Credentials", "true");
+      httpResp.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+      httpResp.addHeader("Access-Control-Allow-Headers", allowedHeaders);
+
+      //--
+      //-- End CORS Header Setup
+
       if (method.equalsIgnoreCase("options"))
       {
-         handlePreflightRequest(httpReq, httpResp);
+         //this is a CORS preflight request. All of hte work was done bove
+         httpResp.setStatus(200);
          return;
       }
 
@@ -111,30 +121,6 @@ public class Service extends HttpServlet
       try
       {
          res = new Response(httpResp);
-
-         //--
-         //-- CORS header setup
-         //--
-         res.addHeader("Access-Control-Allow-Credentials", "true");
-         //res.addHeader("Access-Control-Allow-Origin", req.getHeader("origin"));
-         res.addHeader("Access-Control-Allow-Origin", "*");
-         res.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-
-         Set<String> headers = new HashSet(this.corsHeaders);
-
-         Enumeration<String> eh = httpReq.getHeaderNames();
-         while (eh.hasMoreElements())
-         {
-            String name = eh.nextElement();
-            headers.add(name);
-         }
-
-         for (String header : headers)
-         {
-            res.addHeader("Access-Control-Allow-Headers", header);
-         }
-         //--
-         //-- End COORS Header Setup
 
          String urlstr = httpReq.getRequestURL().toString();
 
@@ -278,261 +264,6 @@ public class Service extends HttpServlet
       }
    }
 
-   /**
-    * This method is designed to be called by handlers who want to "go back through the front door"
-    * for additional functionality.
-    */
-   public Response include(Chain parent, String method, String url, String body) throws Exception
-   {
-      Api api = null;
-      String apiUrl = null;
-      ApiMatch match = findApi(method, new Url(url));
-      if (match != null)
-      {
-         api = match.api;
-         apiUrl = match.apiUrl;
-      }
-
-      if (match == null)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No api found matching " + method + " " + url);
-      }
-
-      Request req = new Request(null, match);//method, new Url(url), api, match, apiUrl);
-      req.setUser(parent.getRequest().getUser());
-      req.setBody(body);
-
-      Response res = new Response(null);
-      Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
-
-      if (endpoint == null)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No endpoint found matching " + method + " " + url);
-      }
-
-      try
-      {
-         doService(this, parent, match, req, res);
-      }
-      catch (Throwable ex)
-      {
-         String status = SC.SC_500_INTERNAL_SERVER_ERROR;
-
-         if (ex instanceof ApiException)
-         {
-            log.error("Error in Service", ex);
-            status = ((ApiException) ex).getStatus();
-         }
-         else
-         {
-            log.error("Error in Service", ex);
-         }
-
-         res.setStatus(status);
-         JSObject response = new JSObject("message", ex.getMessage());
-         if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
-            response.put("error", J.getShortCause(ex));
-
-         res.setJson(response);
-      }
-      finally
-      {
-         parent.getResponse().addChanges(res.getChanges());
-      }
-
-      return res;
-   }
-
-   protected void doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
-   {
-      //this will get all actions specifically configured on the endpoint
-      List<Action> actions = match.endpoint.getActions(req);
-
-      //this matches for actions that can run across multiple endpoints.
-      //this might be something like an authorization or logging action
-      //that acts like a filter
-      for (Action a : match.api.getActions())
-      {
-         if (a.matches(req.getMethod(), req.getPath()))
-            actions.add(a);
-      }
-      Collections.sort(actions);
-
-      //TODO: filter all request params for security -- "restrict" && "require"
-
-      Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
-      chain.setParent(parent);
-      chain.go();
-   }
-
-   private void handlePreflightRequest(HttpServletRequest httpReq, HttpServletResponse httpResp)
-   {
-      String allowedHeaders = "authorization,accept-language,origin,host,access-control-request-headers,connection,access-control-request-method,x-auth-token,accept-encoding,accept,Content-Type,user-agent";
-      String corsRequestHeader = httpReq.getHeader("Access-Control-Request-Header");
-      if (corsRequestHeader != null)
-      {
-         List<String> headers = Arrays.asList(corsRequestHeader.split(","));
-         for (String h : headers)
-         {
-            h = h.trim();
-            allowedHeaders = allowedHeaders.concat(h).concat(",");
-         }
-      }
-      httpResp.addHeader("Access-Control-Allow-Origin", "*");
-      httpResp.addHeader("Access-Control-Allow-Credentials", "true");
-      httpResp.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-      httpResp.addHeader("Access-Control-Allow-Headers", allowedHeaders);
-      httpResp.setStatus(200);
-      return;
-   }
-
-   boolean redirectPlural(Request req, Response res) throws IOException
-   {
-      String collection = req.getCollectionKey();
-      if (!J.empty(collection))
-      {
-         String plural = English.plural(collection);
-         if (!plural.equals(collection))
-         {
-            String path = req.getPath();
-            path = path.replaceFirst(collection, plural);
-            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
-            if (rightEndpoint != null)
-            {
-               String redirect = req.getHttpServletRequest().getRequestURI();
-               //redirect = req.getHttpServletRequest().getRequest
-               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
-
-               String queryString = req.getHttpServletRequest().getQueryString();
-               if (!J.empty(queryString))
-               {
-                  redirect += "?" + queryString;
-               }
-
-               res.getHttpResp().sendRedirect(redirect);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public static class ApiMatch
-   {
-      public Api      api      = null;
-      public Endpoint endpoint = null;
-      public String   method   = null;
-      public Url      reqUrl   = null;
-      public String   apiUrl   = null;
-      public String   apiPath  = null;
-
-      public ApiMatch(Api api, Endpoint endpoint, String method, Url reqUrl, String apiUrl, String apiPath)
-      {
-         this.api = api;
-         this.endpoint = endpoint;
-         this.method = method;
-         this.reqUrl = reqUrl;
-         this.apiUrl = apiUrl;
-         this.apiPath = apiPath;
-      }
-   }
-
-   ApiMatch findApi(String method, Url url) throws Exception
-   {
-      String accountCode = null;
-
-      String path = url.getPath() + "";
-
-      String host = url.getHost();
-      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
-      {
-         accountCode = host.substring(0, host.indexOf("."));
-      }
-
-      for (Api a : apis.values())
-      {
-         String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
-         String halfPath = "/" + a.getApiCode() + "/";
-
-         if (!J.empty(servletMapping))
-         {
-            fullPath = "/" + servletMapping + fullPath;
-            halfPath = "/" + servletMapping + halfPath;
-         }
-
-         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
-               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && path.startsWith(halfPath))) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
-         {
-
-            if (path.startsWith(fullPath))
-            {
-               path = fullPath;
-            }
-            else
-            {
-               path = halfPath;
-            }
-
-            String apiUrl = url.toString();
-            int idx = apiUrl.indexOf(path);
-            apiUrl = apiUrl.substring(0, idx + path.length());
-
-            if (a.isMultiTenant())
-            {
-               String u = url.toString();
-               int start = apiUrl.length();
-               int end = u.indexOf('/', start + 1);
-               if (end < 0)
-                  end = u.length();
-               String tenantId = u.substring(start, end);
-
-               if (!apiUrl.endsWith("/"))
-                  apiUrl += "/";
-               apiUrl += tenantId;
-            }
-
-            if (!apiUrl.endsWith("/"))
-               apiUrl += "/";
-
-            String reqUrl = url.toString();
-
-            path = reqUrl.substring(apiUrl.length(), reqUrl.length());
-            while (path.startsWith("/"))
-               path = path.substring(1, path.length());
-
-            if (!path.endsWith("/"))
-               path = path + "/";
-
-            Endpoint endpoint = null;
-            for (Endpoint e : a.getEndpoints())
-            {
-               if (e.matches(method, path))
-               {
-                  endpoint = e;
-                  break;
-               }
-            }
-
-            return new ApiMatch(a, endpoint, method, url, apiUrl, path);
-         }
-      }
-
-      return null;
-
-   }
-
-   Endpoint findEndpoint(Api api, String method, String path)
-   {
-      for (Endpoint endpoint : api.getEndpoints())
-      {
-         if (endpoint.matches(method, path))
-            return endpoint;
-      }
-      return null;
-   }
-
    void writeResponse(Request req, Response res) throws Exception
    {
       boolean debug = req != null && req.isDebug();
@@ -624,6 +355,309 @@ public class Service extends HttpServlet
          out.write(bytes);
    }
 
+   /**
+    * This method is designed to be called by handlers who want to "go back through the front door"
+    * for additional functionality.
+    */
+   public Response include(Chain parent, String method, String url, String body) throws Exception
+   {
+      Api api = null;
+      String apiUrl = null;
+      ApiMatch match = findApi(method, new Url(url));
+      if (match != null)
+      {
+         api = match.api;
+         apiUrl = match.apiUrl;
+      }
+
+      if (match == null)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No api found matching " + method + " " + url);
+      }
+
+      Request req = new Request(null, match);//method, new Url(url), api, match, apiUrl);
+      req.setUser(parent.getRequest().getUser());
+      req.setBody(body);
+
+      Response res = new Response(null);
+      Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
+
+      if (endpoint == null)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No endpoint found matching " + method + " " + url);
+      }
+
+      try
+      {
+         doService(this, parent, match, req, res);
+      }
+      catch (Throwable ex)
+      {
+         String status = SC.SC_500_INTERNAL_SERVER_ERROR;
+
+         if (ex instanceof ApiException)
+         {
+            log.error("Error in Service", ex);
+            status = ((ApiException) ex).getStatus();
+         }
+         else
+         {
+            log.error("Error in Service", ex);
+         }
+
+         res.setStatus(status);
+         JSObject response = new JSObject("message", ex.getMessage());
+         if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
+            response.put("error", J.getShortCause(ex));
+
+         res.setJson(response);
+      }
+      finally
+      {
+         parent.getResponse().addChanges(res.getChanges());
+      }
+
+      return res;
+   }
+
+   protected void doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
+   {
+      //this will get all actions specifically configured on the endpoint
+      List<Action> actions = match.endpoint.getActions(req);
+
+      //this matches for actions that can run across multiple endpoints.
+      //this might be something like an authorization or logging action
+      //that acts like a filter
+      for (Action a : match.api.getActions())
+      {
+         if (a.matches(req.getMethod(), req.getPath()))
+            actions.add(a);
+      }
+      Collections.sort(actions);
+
+      //TODO: filter all request params for security -- "restrict" && "require"
+
+      Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
+      chain.setParent(parent);
+      chain.go();
+   }
+
+   boolean redirectPlural(Request req, Response res) throws IOException
+   {
+      String collection = req.getCollectionKey();
+      if (!J.empty(collection))
+      {
+         String plural = English.plural(collection);
+         if (!plural.equals(collection))
+         {
+            String path = req.getPath();
+            path = path.replaceFirst(collection, plural);
+            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
+            if (rightEndpoint != null)
+            {
+               String redirect = req.getHttpServletRequest().getRequestURI();
+               //redirect = req.getHttpServletRequest().getRequest
+               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
+
+               String queryString = req.getHttpServletRequest().getQueryString();
+               if (!J.empty(queryString))
+               {
+                  redirect += "?" + queryString;
+               }
+
+               res.getHttpResp().sendRedirect(redirect);
+               return true;
+            }
+         }
+      }
+      return false;
+   }
+
+   public static class ApiMatch
+   {
+      public Api      api      = null;
+      public Endpoint endpoint = null;
+      public String   method   = null;
+      public Url      reqUrl   = null;
+      public String   apiUrl   = null;
+      public String   apiPath  = null;
+
+      public ApiMatch(Api api, Endpoint endpoint, String method, Url reqUrl, String apiUrl, String apiPath)
+      {
+         this.api = api;
+         this.endpoint = endpoint;
+         this.method = method;
+         this.reqUrl = reqUrl;
+         this.apiUrl = apiUrl;
+         this.apiPath = apiPath;
+      }
+   }
+
+   ApiMatch findApi(String method, Url url) throws Exception
+   {
+      String accountCode = null;
+
+      String path = url.getPath() + "";
+
+      String host = url.getHost();
+      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
+      {
+         accountCode = host.substring(0, host.indexOf("."));
+      }
+
+      for (Api a : apis)
+      {
+         String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
+         String halfPath = "/" + a.getApiCode() + "/";
+
+         if (!J.empty(servletMapping))
+         {
+            fullPath = "/" + servletMapping + fullPath;
+            halfPath = "/" + servletMapping + halfPath;
+         }
+
+         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && path.startsWith(halfPath))) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
+         {
+
+            if (path.startsWith(fullPath))
+            {
+               path = fullPath;
+            }
+            else
+            {
+               path = halfPath;
+            }
+
+            String apiUrl = url.toString();
+            int idx = apiUrl.indexOf(path);
+            apiUrl = apiUrl.substring(0, idx + path.length());
+
+            if (a.isMultiTenant())
+            {
+               String u = url.toString();
+               int start = apiUrl.length();
+               int end = u.indexOf('/', start + 1);
+               if (end < 0)
+                  end = u.length();
+               String tenantId = u.substring(start, end);
+
+               if (!apiUrl.endsWith("/"))
+                  apiUrl += "/";
+               apiUrl += tenantId;
+            }
+
+            if (!apiUrl.endsWith("/"))
+               apiUrl += "/";
+
+            String reqUrl = url.toString();
+
+            path = reqUrl.substring(apiUrl.length(), reqUrl.length());
+            while (path.startsWith("/"))
+               path = path.substring(1, path.length());
+
+            if (!path.endsWith("/"))
+               path = path + "/";
+
+            Endpoint endpoint = null;
+            for (Endpoint e : a.getEndpoints())
+            {
+               if (e.matches(method, path))
+               {
+                  endpoint = e;
+                  break;
+               }
+            }
+
+            return new ApiMatch(a, endpoint, method, url, apiUrl, path);
+         }
+      }
+
+      return null;
+
+   }
+
+   Endpoint findEndpoint(Api api, String method, String path)
+   {
+      for (Endpoint endpoint : api.getEndpoints())
+      {
+         if (endpoint.matches(method, path))
+            return endpoint;
+      }
+      return null;
+   }
+
+   public Db getDb(Api api, String collectionKey) throws ApiException
+   {
+      Db db = null;
+
+      if (collectionKey != null)
+      {
+         db = api.findDb(collectionKey);
+      }
+
+      if (db == null)
+      {
+         if (api.getDbs() == null || api.getDbs().size() == 0)
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There are no database connections configured for this API.");
+         db = api.getDbs().get(0);
+      }
+
+      return db;
+   }
+
+   public List<Api> getApis()
+   {
+      return new ArrayList(apis);
+   }
+
+   public synchronized void addApi(Api api)
+   {
+      List<Api> newList = new ArrayList(apis);
+
+      Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+      if (existingApi != null && existingApi != api)
+      {
+         newList.remove(existingApi);
+         newList.add(api);
+      }
+      else if (existingApi == null)
+      {
+         newList.add(api);
+      }
+
+      if (existingApi != api)
+         api.startup();
+
+      apis = newList;
+
+      if (existingApi != null && existingApi != api)
+      {
+         existingApi.shutdown();
+      }
+   }
+
+   public synchronized void removeApi(Api api)
+   {
+      List newList = new ArrayList(apis);
+      newList.remove(api);
+      apis = newList;
+
+      api.shutdown();
+   }
+
+   public synchronized Api getApi(String accountCode, String apiCode)
+   {
+      for (Api api : apis)
+      {
+         if (accountCode.equalsIgnoreCase(api.getAccountCode()) && apiCode.equalsIgnoreCase(api.getApiCode()))
+            return api;
+      }
+      return null;
+   }
+
    public static String buildLink(Request req, String collectionKey, Object entityKey, String subCollectionKey)
    {
       String url = req.getApiUrl();
@@ -663,134 +697,6 @@ public class Service extends HttpServlet
 
    }
 
-   //   public Handler getHandler(Api api, String name)
-   //   {
-   //      try
-   //      {
-   //         String clazz = null;
-   //
-   //         //first see if it is cached
-   //         Handler h = (Handler) apiHandlers.get(api.getName(), name);
-   //         if (h == null && api.getHandler(name) != null)
-   //         {
-   //            //ok, it is not cached but it is a registred short name to class name
-   //            clazz = api.getHandler(name);
-   //            h = (Handler) Class.forName(clazz).newInstance();
-   //            apiHandlers.put(api.getName(), name, h);
-   //            return h;
-   //         }
-   //
-   //         //so it is not a registered api handler, maybe it is a global handler
-   //         h = globalHandlers.get(name);
-   //
-   //         if (h == null && name.indexOf(".") > 0)
-   //         {
-   //            //nope, so maybe it is just a class name
-   //            h = (Handler) Class.forName(name).newInstance();
-   //            apiHandlers.put(api.getName(), name, h);
-   //         }
-   //
-   //         return h;
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
-   //      }
-   //   }
-
-   /**
-    * Adds a global handler useable by all APIs
-    * @param name
-    * @param clazz
-    */
-   public void addHandler(String name, Handler handler)
-   {
-      try
-      {
-         globalHandlers.put(name, handler);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
-      }
-   }
-
-   public synchronized Api getApi(long id)
-   {
-      return apis.get(id);
-   }
-
-   public synchronized void addApi(Api api)
-   {
-      Hashtable apisClone = new Hashtable(apis);
-
-      long id = api.getId();
-      if (id <= 0)
-         id = api.hashCode();
-
-      apisClone.put(id, api);
-      apis = apisClone;
-   }
-
-   public synchronized void removeApi(Api api)
-   {
-      Hashtable apisClone = new Hashtable(apis);
-
-      long id = api.getId();
-      if (id <= 0)
-         id = api.hashCode();
-
-      apisClone.remove(id);
-      apis = apisClone;
-   }
-
-   public Collection<Api> getApis()
-   {
-      return apis.values();
-   }
-
-   public Api getApi(String name)
-   {
-      for (Api api : apis.values())
-      {
-         if (name.equalsIgnoreCase(api.getName()))
-            return api;
-      }
-
-      return null;
-   }
-
-   int first(String str, char... chars)
-   {
-      int first = -1;
-      for (char c : chars)
-      {
-         int idx = str.indexOf(c);
-         if (first < 0)
-            first = idx;
-         else if (idx < first)
-            first = idx;
-
-      }
-      return first;
-   }
-
-   /**
-    * Cleans/normalizes a path strings
-    */
-   public static String path(String path)
-   {
-      path = J.path(path.replace('\\', '/'));
-
-      if (!path.endsWith("*") && !path.endsWith("/"))
-         path += "/";
-
-      if (path.startsWith("/"))
-         path = path.substring(1, path.length());
-
-      return path;
-   }
-
    public String getServletMapping()
    {
       return servletMapping;
@@ -801,23 +707,8 @@ public class Service extends HttpServlet
       this.servletMapping = servletMapping;
    }
 
-   public Db getDb(Api api, String collectionKey) throws ApiException
+   public void setAllowHeaders(String allowedHeaders)
    {
-      Db db = null;
-
-      if (collectionKey != null)
-      {
-         db = api.findDb(collectionKey);
-      }
-
-      if (db == null)
-      {
-         if (api.getDbs() == null || api.getDbs().size() == 0)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There are no database connections configured for this API.");
-         db = api.getDbs().get(0);
-      }
-
-      return db;
+      this.allowedHeaders = allowedHeaders;
    }
-
 }

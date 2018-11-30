@@ -25,28 +25,25 @@ import io.forty11.j.J;
 
 public class Api extends Dto
 {
-   String                            name        = null;
+   protected String                            name        = null;
+   boolean                                     debug       = false;
 
-   List<Db>                          dbs         = new ArrayList();
-   List<Endpoint>                    endpoints   = new ArrayList();
-   List<Action>                      actions     = new ArrayList();
-   List<AclRule>                     acls        = new ArrayList();
+   protected String                            apiCode     = null;
+   protected String                            accountCode = null;
+   protected boolean                           multiTenant = false;
+   protected String                            url         = null;
 
-   LinkedHashMap<String, Collection> collections = new LinkedHashMap();
+   protected List<Db>                          dbs         = new ArrayList();
+   protected List<Endpoint>                    endpoints   = new ArrayList();
+   protected List<Action>                      actions     = new ArrayList();
+   protected List<AclRule>                     aclRules    = new ArrayList();
 
-   String                            apiCode     = null;
-   String                            accountCode = null;
+   protected LinkedHashMap<String, Collection> collections = new LinkedHashMap();
 
-   boolean                           multiTenant = false;
+   transient long                              loadTime    = 0;
+   protected String                            hash        = null;
 
-   transient long                    loadTime    = 0;
-
-   boolean                           reloadable  = false;
-   boolean                           debug       = false;
-
-   String                            url         = null;
-
-   transient Hashtable               cache       = new Hashtable();
+   transient Hashtable                         cache       = new Hashtable();
 
    public Api()
    {
@@ -57,6 +54,22 @@ public class Api extends Dto
       this.name = name;
    }
 
+   public void startup()
+   {
+      for (Db db : dbs)
+      {
+         db.startup();
+      }
+   }
+
+   public void shutdown()
+   {
+      for (Db db : dbs)
+      {
+         db.shutdown();
+      }
+   }
+
    public String getName()
    {
       return name;
@@ -65,6 +78,16 @@ public class Api extends Dto
    public void setName(String name)
    {
       this.name = name;
+   }
+
+   public String getHash()
+   {
+      return hash;
+   }
+
+   public void setHash(String hash)
+   {
+      this.hash = hash;
    }
 
    public Table findTable(String name)
@@ -324,10 +347,10 @@ public class Api extends Dto
 
    public void addAclRule(AclRule acl)
    {
-      if (!acls.contains(acl))
+      if (!aclRules.contains(acl))
       {
-         acls.add(acl);
-         Collections.sort(acls);
+         aclRules.add(acl);
+         Collections.sort(aclRules);
       }
 
       if (acl.getApi() != this)
@@ -336,24 +359,14 @@ public class Api extends Dto
 
    public void setAclRules(List<AclRule> acls)
    {
-      this.acls.clear();
+      this.aclRules.clear();
       for (AclRule acl : acls)
          addAclRule(acl);
    }
 
    public List<AclRule> getAclRules()
    {
-      return new ArrayList(acls);
-   }
-
-   public boolean isReloadable()
-   {
-      return reloadable;
-   }
-
-   public void setReloadable(boolean reloadable)
-   {
-      this.reloadable = reloadable;
+      return new ArrayList(aclRules);
    }
 
    public boolean isDebug()
