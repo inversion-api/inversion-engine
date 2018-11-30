@@ -119,7 +119,6 @@ public class Snooze extends Service
 
    void loadConfig(Config config, boolean forceReload) throws Exception
    {
-
       AutoWire wire = new AutoWire()
          {
             @Override
@@ -158,6 +157,7 @@ public class Snooze extends Service
          autoProps.putAll(config.props);
          wire.clear();
          wire.load(autoProps);
+         autoWireApi(wire);
 
          for (Api api : wire.getBeans(Api.class))
          {
@@ -382,7 +382,7 @@ public class Snooze extends Service
       for (int i = -1; i <= 100; i++)
       {
          String fileName = configPath + "snooze" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = getServletContext().getResourceAsStream(fileName);
+         InputStream is = getResource(fileName);
          if (is != null)
          {
             config.files.add(fileName);
@@ -395,7 +395,7 @@ public class Snooze extends Service
          for (int i = -1; i <= 100; i++)
          {
             String fileName = configPath + "snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
-            InputStream is = getServletContext().getResourceAsStream(fileName);
+            InputStream is = getResource(fileName);
             if (is != null)
             {
                config.files.add(fileName);
