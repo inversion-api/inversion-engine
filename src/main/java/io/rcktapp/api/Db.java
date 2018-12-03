@@ -47,6 +47,14 @@ public abstract class Db extends Dto
 
    public abstract void bootstrapApi() throws Exception;
 
+   public void startup()
+   {
+   }
+
+   public void shutdown()
+   {
+   }
+
    protected String makeRelationshipName(Relationship rel)
    {
       String name = null;

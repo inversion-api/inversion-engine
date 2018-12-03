@@ -46,16 +46,18 @@ public class SqlDb extends Db
    public static final int               MIN_POOL_SIZE            = 3;
    public static final int               MAX_POOL_SIZE            = 10;
 
-   String                                driver                   = null;
-   String                                url                      = null;
-   String                                user                     = null;
-   String                                pass                     = null;
-   int                                   poolMin                  = 3;
-   int                                   poolMax                  = 10;
-   int                                   idleConnectionTestPeriod = 3600;         // in seconds
+   protected String                      driver                   = null;
+   protected String                      url                      = null;
+   protected String                      user                     = null;
+   protected String                      pass                     = null;
+   protected int                         poolMin                  = 3;
+   protected int                         poolMax                  = 10;
+   protected int                         idleConnectionTestPeriod = 3600;         // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-   boolean                               calcRowsFound            = true;
+   protected boolean                     calcRowsFound            = true;
+
+   boolean                               shutdown                 = false;
 
    static Map<Db, ComboPooledDataSource> pools                    = new HashMap();
 
@@ -80,12 +82,25 @@ public class SqlDb extends Db
       return null;
    }
 
+   public void shutdown()
+   {
+      shutdown = true;
+      
+      synchronized(this)
+      {
+         for(ComboPooledDataSource pool : pools.values())
+         {
+            pool.close();
+         }
+      }
+   }
+
    public Connection getConnection() throws ApiException
    {
       try
       {
          Connection conn = ConnectionLocal.getConnection(this);
-         if (conn == null)
+         if (conn == null && !shutdown)
          {
             ComboPooledDataSource pool = pools.get(this);
 
@@ -95,7 +110,7 @@ public class SqlDb extends Db
                {
                   pool = pools.get(this);
 
-                  if (pool == null)
+                  if (pool == null && !shutdown)
                   {
                      String driver = getDriver();
                      String url = getUrl();

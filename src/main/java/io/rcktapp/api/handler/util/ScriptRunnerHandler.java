@@ -3,6 +3,7 @@
  */
 package io.rcktapp.api.handler.util;
 
+import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -12,11 +13,14 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.graalvm.polyglot.Context;
@@ -24,6 +28,7 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.forty11.j.J;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
@@ -53,6 +58,14 @@ public class ScriptRunnerHandler implements Handler
    Map<String, Object> CACHE;
 
    boolean             inited             = false;
+
+   String              scriptsDir         = "/WEB-INF/scripts";
+   Map                 scriptTypes        = new HashMap();
+
+   public ScriptRunnerHandler()
+   {
+      scriptTypes.put("js", "javascript");
+   }
 
    void init()
    {
@@ -106,7 +119,7 @@ public class ScriptRunnerHandler implements Handler
 
       // find script
       String scriptName = req.getEntityKey();
-      JSObject scriptJson = findScriptJson(scriptName, chain, req);
+      JSObject scriptJson = findScriptJson(service, scriptName, chain, req);
 
       // execute script
       if (scriptJson != null)
@@ -149,7 +162,7 @@ public class ScriptRunnerHandler implements Handler
       context.close();
    }
 
-   JSObject findScriptJson(String scriptName, Chain chain, Request req) throws Exception
+   JSObject findScriptJson(Service service, String scriptName, Chain chain, Request req) throws Exception
    {
       String noScriptCache = req.removeParam("noScriptCache");
       String clearScriptCache = req.removeParam("clearScriptCache");
@@ -165,6 +178,16 @@ public class ScriptRunnerHandler implements Handler
       }
       if (scriptJson == null)
       {
+         String ext = scriptName.indexOf(".") > 0 ? scriptName.substring(scriptName.lastIndexOf(".") + 1, scriptName.length()).toLowerCase() : null;
+         if (scriptName.indexOf("../") < 0 && scriptTypes.containsKey(ext))
+         {
+            InputStream is = service.getResource(scriptsDir + "/" + scriptName);
+            if (is != null)
+            {
+               return new JSObject("type", scriptTypes.get(ext), "script", J.read(is));
+            }
+         }
+
          String url = req.getApiUrl() + scriptsCollection + "?name=" + scriptName;
          Response r = chain.getService().include(chain, "GET", url, null);
          if (r.getStatusCode() == 200)

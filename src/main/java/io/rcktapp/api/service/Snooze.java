@@ -36,43 +36,149 @@ import io.forty11.j.utils.AutoWire.Namer;
 import io.rcktapp.api.AclRule;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Entity;
-import io.rcktapp.api.Index;
 import io.rcktapp.api.Relationship;
+import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 
 public class Snooze extends Service
 {
-   boolean          inited     = false;
+   boolean          inited        = false;
+   volatile boolean destroyed     = false;
 
-   protected String profile    = null;
+   protected String profile       = null;
 
-   protected String configPath = "/WEB-INF/";
+   protected String configPath    = "/WEB-INF/";
 
-   public void init() throws ServletException
+   protected int    reloadTimeout = 10000;
+
+   public void destroy()
    {
+      super.destroy();
+      destroyed = true;
+   }
+
+   public synchronized void init() throws ServletException
+   {
+      super.init();
+
+      if (inited)
+         return;
+      inited = true;
+
       try
       {
-         if (inited)
-            return;
+         Config config = findConfig();
+         AutoWire w = new AutoWire();
+         w.putBean("snooze", this);
+         w.load(config.props);
 
-         inited = true;
+         loadConfig(config, true);
+      }
+      catch (Exception e)
+      {
+         throw new ServletException("Unable to load snooze configs: " + e.getMessage(), e);
+      }
 
-         Properties props = findProps();
+      if (reloadTimeout > 0)
+      {
+         Thread t = new Thread(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  while (true)
+                  {
+                     try
+                     {
+                        J.sleep(reloadTimeout);
+                        if (destroyed)
+                           return;
+
+                        Config config = findConfig();
+                        loadConfig(config, false);
+                     }
+                     catch (Throwable t)
+                     {
+                        log.warn("Error loading config", t);
+                     }
+                  }
+               }
+            }, "snooze-config-reloader");
+
+         t.setDaemon(true);
+         t.start();
+      }
+   }
+
+   void loadConfig(Config config, boolean forceReload) throws Exception
+   {
+      AutoWire wire = new AutoWire()
+         {
+            @Override
+            public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
+            {
+               Field field = getField("name", module.getClass());
+               if (field != null && field.get(module) == null)
+                  field.set(module, name);
+            }
+         };
+      wire.load(config.props);
+      autoWireApi(wire);
+
+      boolean doLoad = false;
+
+      for (Api api : wire.getBeans(Api.class))
+      {
+         if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
+
+         Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+         if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
+         {
+            doLoad = true;
+
+            for (Db db : ((Api) api).getDbs())
+            {
+               db.bootstrapApi();
+            }
+         }
+      }
+
+      if (doLoad)
+      {
+         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
+         autoProps.putAll(config.props);
+         wire.clear();
+         wire.load(autoProps);
+         autoWireApi(wire);
+
+         for (Api api : wire.getBeans(Api.class))
+         {
+            Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
+            {
+               api.setHash(config.hash);
+
+               removeExcludes(api);
+               addApi(api);
+            }
+         }
 
          if (log.isInfoEnabled())
          {
-            List<String> keys = new ArrayList(props.keySet());
+            List<String> keys = new ArrayList(config.props.keySet());
             Collections.sort(keys);
             log.info("-- merged user supplied configuration -------------------------");
             for (String key : keys)
             {
-               String value = props.getProperty(key);
+               String value = config.props.getProperty(key);
 
                if (shouldMask(key))
                   value = "###############";
@@ -80,108 +186,18 @@ public class Snooze extends Service
                log.info(" > " + key + "=" + value);
             }
             log.info("-- end merged user supplied configuration ---------------------");
-         }
 
-         AutoWire w = new AutoWire();
-         w.putBean("snooze", this);
-         w.load(props);
-
-         AutoWire wire = new AutoWire()
+            log.info("-- loading final configuration -------------------------");
+            for (String key : AutoWire.sort(autoProps.keySet()))
             {
-               @Override
-               public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
-               {
-                  Field field = getField("name", module.getClass());
-                  if (field != null && field.get(module) == null)
-                     field.set(module, name);
-               }
-            };
-         wire.load(props);
-         autoWireApi(wire);
+               String value = autoProps.getProperty(key);
+               if (shouldMask(key))
+                  value = "###############";
 
-         for (Api api : wire.getBeans(Api.class))
-         {
-            for (Db db : ((Api) api).getDbs())
-            {
-               db.bootstrapApi();
+               log.info(" > " + key + "=" + value);
             }
+            log.info("-- end final config -------");
          }
-
-         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
-         autoProps.putAll(props);
-
-         log.info("-- loading final configuration -------------------------");
-         for (String key : AutoWire.sort(autoProps.keySet()))
-         {
-            String value = autoProps.getProperty(key);
-            if (shouldMask(key))
-               value = "###############";
-
-            log.info(" > " + key + "=" + value);
-         }
-         log.info("-- end final config -------");
-
-         wire.clear();
-         wire.load(autoProps);
-         autoWireApi(wire);
-
-         //autowire DBs if there is only 1 API and no DBS have been set no it
-
-         for (Api api : wire.getBeans(Api.class))
-         {
-            //process excluded
-            for (io.rcktapp.api.Collection col : api.getCollections())
-            {
-               if (col.isExclude() || col.getEntity().isExclude())
-               {
-                  api.removeCollection(col);
-               }
-               else
-               {
-                  for (Attribute attr : col.getEntity().getAttributes())
-                  {
-                     if (attr.isExclude())
-                     {
-                        col.getEntity().removeAttribute(attr);
-                     }
-                  }
-
-                  for (Relationship rel : col.getEntity().getRelationships())
-                  {
-                     if (rel.isExclude())
-                     {
-                        col.getEntity().removeRelationship(rel);
-                     }
-                  }
-               }
-            }
-
-            for (Db db : api.getDbs())
-            {
-               for (Table table : db.getTables())
-               {
-                  if (table.isExclude())
-                  {
-                     db.removeTable(table);
-                  }
-                  else
-                  {
-                     for (Column col : table.getColumns())
-                     {
-                        if (col.isExclude())
-                           table.removeColumn(col);
-                     }
-                  }
-               }
-            }
-
-            addApi(api);
-         }
-
-      }
-      catch (Exception e)
-      {
-         throw new ServletException("Error loading configuration", e);
       }
    }
 
@@ -205,9 +221,57 @@ public class Snooze extends Service
       }
    }
 
+   void removeExcludes(Api api)
+   {
+      for (io.rcktapp.api.Collection col : api.getCollections())
+      {
+         if (col.isExclude() || col.getEntity().isExclude())
+         {
+            api.removeCollection(col);
+         }
+         else
+         {
+            for (Attribute attr : col.getEntity().getAttributes())
+            {
+               if (attr.isExclude())
+               {
+                  col.getEntity().removeAttribute(attr);
+               }
+            }
+
+            for (Relationship rel : col.getEntity().getRelationships())
+            {
+               if (rel.isExclude())
+               {
+                  col.getEntity().removeRelationship(rel);
+               }
+            }
+         }
+      }
+
+      for (Db db : api.getDbs())
+      {
+         for (Table table : db.getTables())
+         {
+            if (table.isExclude())
+            {
+               db.removeTable(table);
+            }
+            else
+            {
+               for (Column col : table.getColumns())
+               {
+                  if (col.isExclude())
+                     table.removeColumn(col);
+               }
+            }
+         }
+      }
+   }
+
    static class ApiIncluder implements Includer
    {
-      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
+      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class,   //
             Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class);
 
       List<Field> excludes = Arrays.asList(J.getField("handlers", Api.class));
@@ -304,18 +368,25 @@ public class Snooze extends Service
       }
    }
 
-   Properties findProps() throws IOException
+   class Config
    {
-      Properties props = new Properties();
+      String       hash  = null;
+      List<String> files = new ArrayList();
+      Properties   props = new Properties();
+   }
+
+   Config findConfig() throws IOException
+   {
+      Config config = new Config();
 
       for (int i = -1; i <= 100; i++)
       {
          String fileName = configPath + "snooze" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = getServletContext().getResourceAsStream(fileName);
+         InputStream is = getResource(fileName);
          if (is != null)
          {
-            log.info("Loading properties file: " + fileName);
-            props.load(is);
+            config.files.add(fileName);
+            config.props.load(is);
          }
       }
 
@@ -324,16 +395,26 @@ public class Snooze extends Service
          for (int i = -1; i <= 100; i++)
          {
             String fileName = configPath + "snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
-            InputStream is = getServletContext().getResourceAsStream(fileName);
+            InputStream is = getResource(fileName);
             if (is != null)
             {
-               log.info("Loading properties file: " + fileName);
-               props.load(is);
+               config.files.add(fileName);
+               config.props.load(is);
             }
          }
       }
 
-      return props;
+      List keys = new ArrayList(config.props.keySet());
+      Collections.sort(keys);
+      StringBuffer buff = new StringBuffer();
+      for (Object key : config.props.keySet())
+      {
+         buff.append(key).append(config.props.get(key));
+      }
+
+      config.hash = J.md5(buff.toString().getBytes());
+
+      return config;
    }
 
    boolean shouldMask(String str)
