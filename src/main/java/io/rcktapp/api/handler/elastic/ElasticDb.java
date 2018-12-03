@@ -58,22 +58,7 @@ public class ElasticDb extends Db
          for (Map.Entry<String, String> entry : jsContentMap.entrySet())
          {
             // we now have the index and with it, it's aliases and mappings
-            String indexName = entry.getKey();
-            JSObject jsIndex = JS.toJSObject(entry.getValue());
-
-            Table table = new Table(this, indexName);
-            addTable(table);
-
-            // use the mapping to add columns to the table.
-            Map<String, String> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
-
-            for (Map.Entry<String, String> propEntry : jsMappingsDocProps.entrySet())
-            {
-               String colName = propEntry.getKey();
-
-
-            }
-
+            createTable(entry.getKey(), JS.toJSObject(entry.getValue()));
          }
       }
       else
@@ -88,26 +73,33 @@ public class ElasticDb extends Db
    {
 
    }
+   
+   private void createTable(String indexName, JSObject jsIndex)
+   {
+      Table table = new Table(this, indexName);
+      addTable(table);
+
+      // use the mapping to add columns to the table.
+      Map<String, Object> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
+      addColumns(table, false, jsMappingsDocProps, "");
+   }
 
    /**
-    * This method was created specifically as a helper for creating nested columns, but ended up
-    * able to be used for all types of columns.
     * @param table - add the column to this table
     * @param nullable - lets the column nullable
-    * @param jsParentObj - contains the parent's nested properties
+    * @param jsPropsMap - contains the parent's nested properties
+    * @param parentPrefix - necessary for 'nested' column names.
     */
-   private void createColumns(Table table, boolean nullable, JSObject jsParentObj, String parentName)
+   private void addColumns(Table table, boolean nullable, Map<String, Object> jsPropsMap, String parentPrefix)
    {
-
       for (Map.Entry<String, Object> propEntry : jsPropsMap.entrySet())
       {
-         String colName = parentName + propEntry.getKey();
+         String colName = parentPrefix + propEntry.getKey();
          JSObject propValue = (JSObject) propEntry.getValue();
          if (!propValue.getString("type").equalsIgnoreCase("nested"))
          {
             // not a 'nested' type.
 
-            // TODO handle nested properties using the entire dot-notated name. ex: 'related.locationcode';
             // TODO what to do about column types (specifically 'keyword')
             // potential types include: keyword, long, nested, object, boolean
             String colType = null;
@@ -116,7 +108,7 @@ public class ElasticDb extends Db
          }
          else
          {
-            createColumns(table, true, propValue.getObject("properties"), colName + ".");
+            addColumns(table, true, propValue.getObject("properties").asMap(), colName + ".");
 
          }
       }
