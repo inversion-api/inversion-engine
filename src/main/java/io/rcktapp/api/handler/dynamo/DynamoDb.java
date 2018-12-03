@@ -301,6 +301,11 @@ public class DynamoDb extends Db
       return dynamoClient;
    }
 
+   public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)
+   {
+      return new DynamoDB(getDynamoClient()).getTable(tableName);
+   }
+
    public static String findPartitionKeyName(Table table)
    {
       Index index = findIndexByName(table, PARTITION_KEY_INDEX);

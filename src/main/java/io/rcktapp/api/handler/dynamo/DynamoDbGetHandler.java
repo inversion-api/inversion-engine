@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
@@ -45,6 +43,10 @@ import io.rcktapp.rql.dynamo.DynamoRql;
 /**
  * @author tc-rocket
  *
+ * Endpoint/Action Config
+ *  - appendTenantIdToPk :        Enables appending the tenant id to the primary key
+ *                                FORMAT: collection name (comma separated)
+ *
  */
 public class DynamoDbGetHandler extends DynamoDbHandler
 {
@@ -57,7 +59,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       Collection collection = findCollectionOrThrow404(api, chain, req);
       Table table = collection.getEntity().getTable();
       DynamoDb db = (DynamoDb) table.getDb();
-      AmazonDynamoDB dynamoClient = db.getDynamoClient();
+      com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
       String pk = DynamoDb.findPartitionKeyName(table);
       String sk = DynamoDb.findSortKeyName(table);
       boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
@@ -129,9 +131,6 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             primaryKeyValue = addTenantIdToKey(tenantIdOrCode, primaryKeyValue);
          }
       }
-
-      DynamoDB dynamoDB = new DynamoDB(dynamoClient);
-      com.amazonaws.services.dynamodbv2.document.Table dynamoTable = dynamoDB.getTable(table.getName());
 
       DynamoResult dynamoResult = null;
       if (primaryKeyValue != null)

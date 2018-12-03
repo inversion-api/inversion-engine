@@ -92,6 +92,10 @@ public class DynamoRql extends Rql
    {
       if (predicates != null)
       {
+         if (depth > 0)
+         {
+            express.append("\n");
+         }
          express.appendSpaces(depth);
          express.append("(");
 
