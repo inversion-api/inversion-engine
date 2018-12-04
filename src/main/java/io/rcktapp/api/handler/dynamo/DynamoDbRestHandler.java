@@ -2,11 +2,13 @@ package io.rcktapp.api.handler.dynamo;
 
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
+import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
+import io.rcktapp.api.SC;
 import io.rcktapp.api.service.Service;
 
 /**
@@ -35,6 +37,10 @@ public class DynamoDbRestHandler implements Handler
       else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
       {
          post.service(service, api, endpoint, action, chain, req, res);
+      }
+      else
+      {
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET, PUT, POST and DELETE requests");
       }
    }
 

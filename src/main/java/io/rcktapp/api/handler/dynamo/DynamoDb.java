@@ -301,6 +301,11 @@ public class DynamoDb extends Db
       return dynamoClient;
    }
 
+   public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)
+   {
+      return new DynamoDB(getDynamoClient()).getTable(tableName);
+   }
+
    public static String findPartitionKeyName(Table table)
    {
       Index index = findIndexByName(table, PARTITION_KEY_INDEX);
@@ -371,6 +376,29 @@ public class DynamoDb extends Db
             }
          }
       }
+      return null;
+   }
+
+   public static Index findIndexByTypeAndColumnName(Table table, String typeName, String colName)
+   {
+      if (table != null)
+      {
+         List<Index> list = findIndexesByType(table, typeName);
+         for (Index index : list)
+         {
+            if (!index.getColumns().isEmpty())
+            {
+               for (Column column : index.getColumns())
+               {
+                  if (column.getName().equalsIgnoreCase(colName))
+                  {
+                     return index;
+                  }
+               }
+            }
+         }
+      }
+
       return null;
    }
 

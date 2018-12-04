@@ -3,8 +3,13 @@
  */
 package io.rcktapp.api.handler.dynamo;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.forty11.j.J;
 import io.rcktapp.api.Api;
@@ -21,6 +26,8 @@ import io.rcktapp.api.SC;
  */
 public abstract class DynamoDbHandler implements Handler
 {
+   static ObjectMapper mapper            = new ObjectMapper();
+
    /**
     * Used when "appendTenantIdToPk" is enabled for a table
     * The default value for this field is "::" so the primary key will look like this..
@@ -28,7 +35,7 @@ public abstract class DynamoDbHandler implements Handler
     * 
     * Example:  1::4045551212
     */
-   protected String tenantIdDelimiter = "::";
+   protected String    tenantIdDelimiter = "::";
 
    public Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
@@ -53,16 +60,16 @@ public abstract class DynamoDbHandler implements Handler
       return chain.getConfigSet("appendTenantIdToPk").contains(collectionName);
    }
 
-   String addTenantIdToKey(int tenantId, String key)
+   String addTenantIdToKey(Object tenantIdOrCode, String key)
    {
-      return tenantId + tenantIdDelimiter + key;
+      return tenantIdOrCode + tenantIdDelimiter + key;
    }
 
-   String removeTenantIdFromKey(int tenantId, String key)
+   String removeTenantIdFromKey(Object tenantIdOrCode, String key)
    {
       if (key != null)
       {
-         int preLength = (tenantId + tenantIdDelimiter).length();
+         int preLength = (tenantIdOrCode + tenantIdDelimiter).length();
          return key.substring(preLength);
       }
       return key;
@@ -82,6 +89,11 @@ public abstract class DynamoDbHandler implements Handler
          }
       }
       return l;
+   }
+
+   static Object jsonStringToObject(String jsonStr) throws JsonParseException, JsonMappingException, IOException
+   {
+      return mapper.readValue(jsonStr, Object.class);
    }
 
    public void setTenantIdDelimiter(String tenantIdDelimiter)
