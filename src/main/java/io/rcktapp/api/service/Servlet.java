@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -15,11 +16,16 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
+import com.amazonaws.util.IOUtils;
 
 import io.forty11.j.J;
 import io.forty11.web.Url;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Request;
+import io.rcktapp.api.Request.Upload;
+import io.rcktapp.api.Request.Uploader;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 
@@ -92,7 +98,55 @@ public class Servlet extends HttpServlet
 
          req = new Request(url, method, headers, params, body);
          req.setRemoteAddr(httpReq.getRemoteAddr());
-         
+
+         req.setUploader(new Uploader()
+            {
+               @Override
+               public List<Upload> getUploads()
+               {
+                  try
+                  {
+                     String fileName = null;
+                     long fileSize = 0;
+                     String requestPath = null;
+                     InputStream inputStream = null;
+
+                     for (Part part : httpReq.getParts())
+                     {
+                        if (part.getName() == null)
+                        {
+                           continue;
+                        }
+                        if (part.getName().equals("file"))
+                        {
+                           inputStream = part.getInputStream();
+                           fileName = part.getSubmittedFileName();
+                           fileSize = part.getSize();
+                        }
+                        else if (part.getName().equals("requestPath"))
+                        {
+                           requestPath = IOUtils.toString(part.getInputStream());
+                           if (requestPath.indexOf("/") == 0)
+                              requestPath = requestPath.substring(1);
+                        }
+                     }
+
+                     List uploads = new ArrayList();
+
+                     if (inputStream != null)
+                     {
+                        uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                     }
+                     return uploads;
+                  }
+                  catch (Exception ex)
+                  {
+                     J.rethrow(ex);
+                  }
+                  return null;
+               }
+            });
+
          res = new Response();
 
          service.service(req, res);
