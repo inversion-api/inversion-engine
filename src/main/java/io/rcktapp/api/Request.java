@@ -15,15 +15,8 @@
  */
 package io.rcktapp.api;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 import io.forty11.j.J;
 import io.forty11.web.Url;
@@ -36,7 +29,7 @@ import io.rcktapp.utils.CaseInsensitiveLookupMap;
 public class Request
 {
    Url                      url              = null;
-   HttpServletRequest       request          = null;
+   //HttpServletRequest       request          = null;
 
    String                   apiUrl           = null;
    Api                      api              = null;
@@ -54,6 +47,8 @@ public class Request
 
    String                   path             = null;
 
+   String                   remoteAddr       = null;
+
    /**
     * The path minus any Endpoint.path prefix
     */
@@ -63,6 +58,8 @@ public class Request
    String                   entityKey        = null;
    String                   subCollectionKey = null;
 
+   CaseInsensitiveLookupMap headers          = new CaseInsensitiveLookupMap();
+   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
    String                   body             = null;
    JSObject                 json             = null;
 
@@ -70,12 +67,51 @@ public class Request
 
    boolean                  explain          = false;
 
-   //CaseInsensitiveMap params           = new CaseInsensitiveMap();
-   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
-
-   public Request(HttpServletRequest req, ApiMatch match)// String method, Url url, Api api, Endpoint endpoint, String apiUrl)
+   public Request(ApiMatch match)
    {
-      this.request = req;
+      setUrl(match.reqUrl);
+      setApiMatch(match);
+   }
+
+   public Request(Url url, String method, Map headers, Map params, String body)
+   {
+      setMethod(method);
+      setUrl(url);
+      addParams(params);
+      addHeaders(headers);
+      setBody(body);
+   }
+
+   public void setUrl(Url url)
+   {
+      this.url = url;
+      String query = url.getQuery();
+      if (!J.empty(query))
+      {
+         this.params.putAll(Url.parseQuery(query));
+      }
+   }
+
+   public void setMethod(String method)
+   {
+      this.method = method;
+   }
+
+   public void addHeaders(Map<String, String> headers)
+   {
+      this.headers.putAll(headers);
+   }
+
+   public void addParams(Map params)
+   {
+      this.params.putAll(params);
+
+      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
+      this.explain = this.explain || explain;
+   }
+
+   public void setApiMatch(ApiMatch match)
+   {
       this.api = match.api;
       this.endpoint = match.endpoint;
       this.method = match.method;
@@ -87,9 +123,11 @@ public class Request
       this.accountCode = api.getAccountCode();
       this.apiCode = api.getApiCode();
 
-      //this.method = method;
+      if (this.path.indexOf("?") > 0)
+         this.path = this.path.substring(0, this.path.indexOf("?"));
 
-      //this.url = url;
+      if (this.subpath.indexOf("?") > 0)
+         this.subpath = this.subpath.substring(0, this.subpath.indexOf("?"));
 
       if (apiUrl != null)
       {
@@ -147,35 +185,6 @@ public class Request
                subCollectionKey = parts.get(idx++);
          }
       }
-
-      //-- copy params
-      if (req != null)
-      {
-         Enumeration<String> enumer = req.getParameterNames();
-         while (enumer.hasMoreElements())
-         {
-            String key = enumer.nextElement();
-            String val = req.getParameter(key);
-            params.put(key, val);
-         }
-      }
-      else
-      {
-         String query = url.getQuery();
-         if (!J.empty(query))
-         {
-            params.putAll(Url.parseQuery(query));
-         }
-      }
-
-      if (params.containsKey("explain"))
-      {
-         explain = !(params.get("explain") + "").trim().equalsIgnoreCase("false");
-         params.remove("explain");
-      }
-
-      //--
-
    }
 
    public boolean isDebug()
@@ -194,60 +203,8 @@ public class Request
       return isDebug() && explain;
    }
 
-   public static String readBody(HttpServletRequest request) throws ApiException
-   {
-      if (request == null)
-         return null;
-
-      StringBuilder stringBuilder = new StringBuilder();
-      BufferedReader bufferedReader = null;
-
-      try
-      {
-         InputStream inputStream = request.getInputStream();
-         if (inputStream != null)
-         {
-            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            char[] charBuffer = new char[128];
-            int bytesRead = -1;
-            while ((bytesRead = bufferedReader.read(charBuffer)) > 0)
-            {
-               stringBuilder.append(charBuffer, 0, bytesRead);
-            }
-         }
-         else
-         {
-            stringBuilder.append("");
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to read request body", ex);
-      }
-      finally
-      {
-         if (bufferedReader != null)
-         {
-            try
-            {
-               bufferedReader.close();
-            }
-            catch (IOException ex)
-            {
-               //throw ex;
-            }
-         }
-      }
-
-      return stringBuilder.toString();
-   }
-
    public String getBody()
    {
-      if (body != null)
-         return body;
-
-      body = readBody(request);
       return body;
    }
 
@@ -336,14 +293,6 @@ public class Request
    }
 
    /**
-    * @return the request
-    */
-   public HttpServletRequest getHttpServletRequest()
-   {
-      return request;
-   }
-
-   /**
     * @return the method
     */
    public String getMethod()
@@ -378,10 +327,7 @@ public class Request
 
    public String getHeader(String header)
    {
-      if (request == null)
-         return null;
-
-      return request.getHeader(header);
+      return (String) headers.get(header);
    }
 
    public String getParam(String key)
@@ -504,6 +450,38 @@ public class Request
    public void setSubpath(String subpath)
    {
       this.subpath = subpath;
+   }
+
+   public String getRemoteAddr()
+   {
+      String remoteAddr = getHeader("X-Forwarded-For");
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("Proxy-Client-IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("WL-Proxy-Client-IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("HTTP_CLIENT_IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("HTTP_X_FORWARDED_FOR");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = this.remoteAddr;
+      }
+
+      return remoteAddr;
+   }
+
+   public void setRemoteAddr(String remoteAddr)
+   {
+      this.remoteAddr = remoteAddr;
    }
 
 }

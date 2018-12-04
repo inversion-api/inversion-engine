@@ -48,74 +48,68 @@ import io.rcktapp.api.Relationship;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 
-public class Snooze extends Service
+public class Configurator
 {
-   boolean          inited        = false;
-   volatile boolean destroyed     = false;
+   boolean destroyed = false;
 
-   protected String profile       = null;
-
-   protected String configPath    = "/WEB-INF/";
-
-   protected int    reloadTimeout = 10000;
+   Service service   = null;
 
    public void destroy()
    {
-      super.destroy();
       destroyed = true;
    }
 
-   public synchronized void init() throws ServletException
+   public synchronized void loadConfg(Service service)
    {
-      super.init();
-
-      if (inited)
+      if (this.service != null)
          return;
-      inited = true;
+
+      this.service = service;
 
       try
       {
          Config config = findConfig();
          AutoWire w = new AutoWire();
-         w.putBean("snooze", this);
+         w.putBean("snooze", service);
          w.load(config.props);
 
          loadConfig(config, true);
       }
       catch (Exception e)
       {
-         throw new ServletException("Unable to load snooze configs: " + e.getMessage(), e);
+         e.printStackTrace();
+         throw new RuntimeException("Unable to load snooze configs: " + e.getMessage(), e);
       }
 
-      if (reloadTimeout > 0)
-      {
-         Thread t = new Thread(new Runnable()
-            {
-               @Override
-               public void run()
-               {
-                  while (true)
-                  {
-                     try
-                     {
-                        J.sleep(reloadTimeout);
-                        if (destroyed)
-                           return;
-
-                        Config config = findConfig();
-                        loadConfig(config, false);
-                     }
-                     catch (Throwable t)
-                     {
-                        log.warn("Error loading config", t);
-                     }
-                  }
-               }
-            }, "snooze-config-reloader");
-
-         t.setDaemon(true);
-         t.start();
-      }
+//      if (service.getrereloadTimeout > 0)
+//      {
+//         Thread t = new Thread(new Runnable()
+//            {
+//               @Override
+//               public void run()
+//               {
+//                  while (true)
+//                  {
+//                     try
+//                     {
+//                        J.sleep(reloadTimeout);
+//                        if (destroyed)
+//                           return;
+//
+//                        Config config = findConfig();
+//                        loadConfig(config, false);
+//                     }
+//                     catch (Throwable t)
+//                     {
+//                        log.warn("Error loading config", t);
+//                     }
+//                  }
+//               }
+//            }, "snooze-config-reloader");
+//
+//         t.setDaemon(true);
+//         t.start();
+//      }
    }
 
    void loadConfig(Config config, boolean forceReload) throws Exception
@@ -140,7 +134,7 @@ public class Snooze extends Service
          if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
             throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
 
-         Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+         Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
          if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
          {
             doLoad = true;
@@ -162,43 +156,43 @@ public class Snooze extends Service
 
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+            Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.setHash(config.hash);
 
                removeExcludes(api);
-               addApi(api);
+               service.addApi(api);
             }
          }
 
-         if (log.isInfoEnabled())
-         {
-            List<String> keys = new ArrayList(config.props.keySet());
-            Collections.sort(keys);
-            log.info("-- merged user supplied configuration -------------------------");
-            for (String key : keys)
-            {
-               String value = config.props.getProperty(key);
-
-               if (shouldMask(key))
-                  value = "###############";
-
-               log.info(" > " + key + "=" + value);
-            }
-            log.info("-- end merged user supplied configuration ---------------------");
-
-            log.info("-- loading final configuration -------------------------");
-            for (String key : AutoWire.sort(autoProps.keySet()))
-            {
-               String value = autoProps.getProperty(key);
-               if (shouldMask(key))
-                  value = "###############";
-
-               log.info(" > " + key + "=" + value);
-            }
-            log.info("-- end final config -------");
-         }
+         //         if (log.isInfoEnabled())
+         //         {
+         //            List<String> keys = new ArrayList(config.props.keySet());
+         //            Collections.sort(keys);
+         //            log.info("-- merged user supplied configuration -------------------------");
+         //            for (String key : keys)
+         //            {
+         //               String value = config.props.getProperty(key);
+         //
+         //               if (shouldMask(key))
+         //                  value = "###############";
+         //
+         //               log.info(" > " + key + "=" + value);
+         //            }
+         //            log.info("-- end merged user supplied configuration ---------------------");
+         //
+         //            log.info("-- loading final configuration -------------------------");
+         //            for (String key : AutoWire.sort(autoProps.keySet()))
+         //            {
+         //               String value = autoProps.getProperty(key);
+         //               if (shouldMask(key))
+         //                  value = "###############";
+         //
+         //               log.info(" > " + key + "=" + value);
+         //            }
+         //            log.info("-- end final config -------");
+         //         }
       }
    }
 
@@ -272,7 +266,7 @@ public class Snooze extends Service
 
    static class ApiIncluder implements Includer
    {
-      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,  //
+      List        includes = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
             Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class);
 
       List<Field> excludes = Arrays.asList(J.getField("handlers", Api.class));
@@ -387,8 +381,8 @@ public class Snooze extends Service
 
       for (int i = -1; i <= 100; i++)
       {
-         String fileName = configPath + "snooze" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = getResource(fileName);
+         String fileName = service.getConfigPath() + "snooze" + (i < 0 ? "" : i) + ".properties";
+         InputStream is = service.getResource(fileName);
          if (is != null)
          {
             config.files.add(fileName);
@@ -396,12 +390,12 @@ public class Snooze extends Service
          }
       }
 
-      if (profile != null)
+      if (service.getProfile() != null)
       {
          for (int i = -1; i <= 100; i++)
          {
-            String fileName = configPath + "snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
-            InputStream is = getResource(fileName);
+            String fileName = service.getConfigPath() + "snooze" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
+            InputStream is = service.getResource(fileName);
             if (is != null)
             {
                config.files.add(fileName);
@@ -432,26 +426,6 @@ public class Snooze extends Service
          return true;
 
       return false;
-   }
-
-   public String getProfile()
-   {
-      return profile;
-   }
-
-   public void setProfile(String profile)
-   {
-      this.profile = profile;
-   }
-
-   public String getConfigPath()
-   {
-      return configPath;
-   }
-
-   public void setConfigPath(String configPath)
-   {
-      this.configPath = configPath;
    }
 
 }

@@ -30,7 +30,7 @@
 		<description></description>
 		<display-name>Snooze</display-name>
 		<servlet-name>Snooze</servlet-name>
-		<servlet-class>io.rcktapp.api.service.Snooze</servlet-class>
+		<servlet-class>io.rcktapp.api.service.Servlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>

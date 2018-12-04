@@ -88,65 +88,65 @@ public class S3UploadHandler implements Handler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      String requestPath = null;
-      String fileName = null;
-      Long fileSize = null;
-      DigestInputStream uploadStream = null;
-
-      try
-      {
-         for (Part part : req.getHttpServletRequest().getParts())
-         {
-            if (part.getName() == null)
-            {
-               continue;
-            }
-            if (part.getName().equals("file"))
-            {
-               uploadStream = new DigestInputStream(part.getInputStream(), MessageDigest.getInstance("MD5"));
-               String[] fileNameParts = part.getSubmittedFileName().split("[.]");
-               fileName = "" + fileNameParts[0] + "-" + System.currentTimeMillis() + "." + fileNameParts[1];
-               fileSize = part.getSize();
-            }
-            else if (part.getName().equals("requestPath"))
-            {
-               requestPath = IOUtils.toString(part.getInputStream());
-               if (requestPath.indexOf("/") == 0)
-                  requestPath = requestPath.substring(1);
-            }
-         }
-
-         if (uploadStream == null)
-         {
-            error(res, null, "No file was uploaded in the multipart request");
-            return;
-         }
-
-         //String pathAndFileName = buildFullPath(fileName, requestPath);
-         Map<String, Object> responseContent = new HashMap<>();
-
-         try
-         {
-            responseContent = saveFile(chain, uploadStream, fileName, requestPath);
-         }
-         catch (Exception e)
-         {
-            error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
-
-            return;
-         }
-
-         responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
-         responseContent.put("fileSizeBytes", fileSize);
-         res.setJson(new JSObject(responseContent));
-      }
-      finally
-      {
-         if (uploadStream != null)
-         {
-            uploadStream.close();
-         }
-      }
+//      String requestPath = null;
+//      String fileName = null;
+//      Long fileSize = null;
+//      DigestInputStream uploadStream = null;
+//
+//      try
+//      {
+//         for (Part part : req.getHttpServletRequest().getParts())
+//         {
+//            if (part.getName() == null)
+//            {
+//               continue;
+//            }
+//            if (part.getName().equals("file"))
+//            {
+//               uploadStream = new DigestInputStream(part.getInputStream(), MessageDigest.getInstance("MD5"));
+//               String[] fileNameParts = part.getSubmittedFileName().split("[.]");
+//               fileName = "" + fileNameParts[0] + "-" + System.currentTimeMillis() + "." + fileNameParts[1];
+//               fileSize = part.getSize();
+//            }
+//            else if (part.getName().equals("requestPath"))
+//            {
+//               requestPath = IOUtils.toString(part.getInputStream());
+//               if (requestPath.indexOf("/") == 0)
+//                  requestPath = requestPath.substring(1);
+//            }
+//         }
+//
+//         if (uploadStream == null)
+//         {
+//            error(res, null, "No file was uploaded in the multipart request");
+//            return;
+//         }
+//
+//         //String pathAndFileName = buildFullPath(fileName, requestPath);
+//         Map<String, Object> responseContent = new HashMap<>();
+//
+//         try
+//         {
+//            responseContent = saveFile(chain, uploadStream, fileName, requestPath);
+//         }
+//         catch (Exception e)
+//         {
+//            error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
+//
+//            return;
+//         }
+//
+//         responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
+//         responseContent.put("fileSizeBytes", fileSize);
+//         res.setJson(new JSObject(responseContent));
+//      }
+//      finally
+//      {
+//         if (uploadStream != null)
+//         {
+//            uploadStream.close();
+//         }
+//      }
    }
 
    void error(Response res, Exception exception, String message)

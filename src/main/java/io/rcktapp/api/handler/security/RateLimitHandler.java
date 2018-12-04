@@ -67,7 +67,7 @@ public class RateLimitHandler implements Handler
 
       String bucketKey = new StringBuffer(limitMinutes).append("-").append(limitUserHits).append("-").append(limitTotalHits).toString();
 
-      String clientId = getClientId(req.getHttpServletRequest());
+      String clientId = req.getRemoteAddr();
 
       //this one handler can handle different rate configurations 
       //such as 100 hits per minutes or or 10000 hits per 5 minutes
@@ -86,36 +86,6 @@ public class RateLimitHandler implements Handler
 
          chain.cancel();
       }
-   }
-
-   String getClientId(HttpServletRequest request)
-   {
-      String clientId = request.getHeader("X-Forwarded-For");
-      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
-      {
-         clientId = request.getHeader("Proxy-Client-IP");
-      }
-      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
-      {
-         clientId = request.getHeader("WL-Proxy-Client-IP");
-      }
-      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
-      {
-         clientId = request.getHeader("HTTP_CLIENT_IP");
-      }
-      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
-      {
-         clientId = request.getHeader("HTTP_X_FORWARDED_FOR");
-      }
-      if (clientId == null || clientId.length() == 0 || "unknown".equalsIgnoreCase(clientId))
-      {
-         clientId = request.getRemoteAddr();
-      }
-
-      if (clientId == null || clientId.length() == 0)
-         clientId = "unknown";
-
-      return clientId;
    }
 
    class Bucket
