@@ -54,6 +54,11 @@ public class Request
 
    String                   path             = null;
 
+   /**
+    * The path minus any Endpoint.path prefix
+    */
+   String                   subpath          = null;
+
    String                   collectionKey    = null;
    String                   entityKey        = null;
    String                   subCollectionKey = null;
@@ -77,6 +82,7 @@ public class Request
       this.url = match.reqUrl;
       this.apiUrl = match.apiUrl;
       this.path = match.apiPath;
+      this.subpath = match.apiPath;
 
       this.accountCode = api.getAccountCode();
       this.apiCode = api.getApiCode();
@@ -124,6 +130,8 @@ public class Request
                   }
                }
             }
+
+            subpath = J.implode("/", parts) + "/";
 
             int idx = 0;
             if (parts.size() > idx)
@@ -486,6 +494,16 @@ public class Request
    public void setSubCollectionKey(String subCollectionKey)
    {
       this.subCollectionKey = subCollectionKey;
+   }
+
+   public String getSubpath()
+   {
+      return subpath;
+   }
+
+   public void setSubpath(String subpath)
+   {
+      this.subpath = subpath;
    }
 
 }
