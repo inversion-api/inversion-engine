@@ -12,7 +12,7 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 
 import io.forty11.web.js.JSObject;
-import io.rcktapp.api.handler.script.ScriptRunnerHandler;
+import io.rcktapp.api.handler.script.ScriptHandler;
 import io.rcktapp.api.service.Service;
 
 public class VelocityResourceLoader extends ResourceLoader
@@ -29,7 +29,7 @@ public class VelocityResourceLoader extends ResourceLoader
    {
       try
       {
-         JSObject script = ScriptRunnerHandler.findScript(source);
+         JSObject script = ScriptHandler.findScript(source);
          if (script != null)
          {
             return new InputStreamReader(new ByteArrayInputStream(script.getString("script").getBytes()));

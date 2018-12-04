@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
 import io.forty11.web.js.JS;
-import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -60,33 +59,33 @@ import net.jodah.expiringmap.ExpiringMap;
  * @author tc-rocket
  *
  */
-public class ScriptRunnerHandler implements Handler
+public class ScriptHandler implements Handler
 {
-   static ThreadLocal<ScriptRunnerHandler> scriptLocal        = new ThreadLocal();
-   static ThreadLocal<Chain>               chainLocal         = new ThreadLocal();
+   static ThreadLocal<ScriptHandler> scriptLocal        = new ThreadLocal();
+   static ThreadLocal<Chain>         chainLocal         = new ThreadLocal();
 
-   Logger                                  log                = LoggerFactory.getLogger(ScriptRunnerHandler.class);
-   String                                  scriptsCollection  = "scripts";
+   Logger                            log                = LoggerFactory.getLogger(ScriptHandler.class);
+   String                            scriptsCollection  = "scripts";
 
-   long                                    cacheExpireSeconds = 60 * 30;
-   Map<String, Object>                     CACHE;
+   long                              cacheExpireSeconds = 60 * 30;
+   Map<String, JSObject>             CACHE;
 
-   boolean                                 inited             = false;
+   boolean                           inited             = false;
 
-   String                                  scriptsDir         = "/WEB-INF/scripts";
-   Map                                     scriptTypes        = new HashMap();
+   String                            scriptsDir         = "/WEB-INF/scripts";
+   Map                               scriptTypes        = new LinkedHashMap();
 
-   VelocityEngine                          velocity           = null;
+   VelocityEngine                    velocity           = null;
 
-   List<String>                            reservedNames      = new ArrayList(Arrays.asList("switch", "layout", "settings"));
+   List<String>                      reservedNames      = new ArrayList(Arrays.asList("switch", "layout", "settings"));
 
-   public ScriptRunnerHandler()
+   public ScriptHandler()
    {
       scriptTypes.put("js", "javascript");
       scriptTypes.put("vm", "velocity");
    }
 
-   void init(Service service)
+   synchronized void init(Service service)
    {
       if (!inited)
       {
@@ -101,12 +100,10 @@ public class ScriptRunnerHandler implements Handler
          VelocityResourceLoader vrl = new VelocityResourceLoader();
 
          velocity = new VelocityEngine();
-         
+
          velocity.setProperty(RuntimeConstants.RESOURCE_LOADER, "snooze");
          velocity.setProperty("snooze.resource.loader.class", VelocityResourceLoader.class.getName());
          velocity.setProperty("userdirective", SwitchDirective.class.getName() + ", " + SaveDirective.class.getName() + ", " + LayoutDirective.class.getName());
-         //velocity.setProperty("userdirective", SaveDirective.class.getName());
-         //velocity.setProperty("userdirective", LayoutDirective.class.getName());
          velocity.init();
 
          //---------------------------------------------------------
@@ -121,7 +118,7 @@ public class ScriptRunnerHandler implements Handler
           */
          try
          {
-            Enumeration<URL> en = ScriptRunnerHandler.class.getClassLoader().getResources("META-INF/truffle/language");
+            Enumeration<URL> en = ScriptHandler.class.getClassLoader().getResources("META-INF/truffle/language");
             while (en.hasMoreElements())
             {
                URL u = en.nextElement();
@@ -171,6 +168,8 @@ public class ScriptRunnerHandler implements Handler
 
       try
       {
+         String content = null;
+
          for (String path : scripts.keySet())
          {
             JSObject script = scripts.get(path);
@@ -197,7 +196,12 @@ public class ScriptRunnerHandler implements Handler
                   bindings.putMember("util", new Util());
                   bindings.putMember("js", new JS());
                }
+
+               context.getBindings("js").putMember("content", content);
+
                context.eval("js", script.getString("script"));
+
+               content = context.getBindings("js").getMember("content").asString();
             }
             else if ("velocity".equals(type))
             {
@@ -222,6 +226,8 @@ public class ScriptRunnerHandler implements Handler
                   ec.attachToContext(context);
                }
 
+               context.put("content", content);
+
                Template template = velocity.getTemplate(path);
 
                ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -232,31 +238,32 @@ public class ScriptRunnerHandler implements Handler
                writer.flush();
                writer.close();
 
-               String output = baos.toString();
+               content = baos.toString();
+               context.put("content", content);
+            }
+         }
 
-               output = output.trim();
-
-               boolean setText = true;
-               if (output.startsWith("{") || output.startsWith("["))
+         if (!J.empty(content) && J.empty(res.getText()) && (res.getJson() == null || res.getJson().getProperties().size() == 0))
+         {
+            boolean setText = true;
+            if (content.startsWith("{") || content.startsWith("["))
+            {
+               try
                {
-                  try
-                  {
-                     JSObject obj = JS.toJSObject(output);
-                     res.setJson(obj);
-                     setText = false;
-                  }
-                  catch (Exception ex)
-                  {
-
-                  }
+                  JSObject obj = JS.toJSObject(content);
+                  res.setJson(obj);
+                  setText = false;
                }
-
-               if (setText)
+               catch (Exception ex)
                {
-                  res.setText(output);
+
                }
             }
 
+            if (setText)
+            {
+               res.setText(content.trim());
+            }
          }
       }
       finally
@@ -267,7 +274,6 @@ public class ScriptRunnerHandler implements Handler
                ((Context) context).close();
          }
       }
-
    }
 
    public LinkedHashMap<String, JSObject> findScripts(Service service, Chain chain, Request req) throws Exception
@@ -310,36 +316,39 @@ public class ScriptRunnerHandler implements Handler
          scripts.add(script);
          paths.put(script, path);
 
-         //         List<JSObject> settings = new ArrayList();
-         //         for (int i = 0; i < parts.size(); i++)
-         //         {
-         //            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i - 1));
-         //            path = J.implode("/", base, "settings");
-         //
-         //            script = findScript(path);
-         //            if (script != null)
-         //            {
-         //               settings.add(script);
-         //            }
-         //         }
-         //
-         //         if (settings.size() > 0)
-         //         {
-         //            scripts.addAll(0, settings);
-         //            paths.put(script, path);
-         //         }
-         //
-         //         for (int i = parts.size() - 1; i >= 0; i--)
-         //         {
-         //            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i - 1));
-         //            path = J.implode("/", base, "layout");
-         //            script = findScript(path);
-         //            if (script != null)
-         //            {
-         //               scripts.add(script);
-         //               paths.put(script, path);
-         //            }
-         //         }
+         parts = J.explode("/", path);
+
+         List<JSObject> settings = new ArrayList();
+
+         for (int i = 0; i < parts.size(); i++)
+         {
+            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i - 1));
+            path = J.implode("/", base, "settings");
+
+            script = findScript(path);
+            if (script != null)
+            {
+               settings.add(script);
+            }
+         }
+
+         if (settings.size() > 0)
+         {
+            scripts.addAll(0, settings);
+            paths.put(script, path);
+         }
+
+         for (int i = parts.size() - 1; i >= 0; i--)
+         {
+            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i));
+            path = J.implode("/", base, "layout");
+            script = findScript(path);
+            if (script != null)
+            {
+               scripts.add(script);
+               paths.put(script, path);
+            }
+         }
       }
 
       LinkedHashMap ordered = new LinkedHashMap();
@@ -351,10 +360,13 @@ public class ScriptRunnerHandler implements Handler
       return ordered;
    }
 
-   public static JSObject findScript(String path) throws Exception
+   public static JSObject findScript(final String path) throws Exception
    {
-      ScriptRunnerHandler handler = scriptLocal.get();
+      ScriptHandler handler = scriptLocal.get();
       Chain chain = chainLocal.get();
+
+      //      if (handler.CACHE.containsKey(path))
+      //         return handler.CACHE.get(path);
 
       String ext = path.indexOf(".") > 0 ? path.substring(path.lastIndexOf(".") + 1, path.length()).toLowerCase() : null;
       if (ext != null && !handler.scriptTypes.containsKey(ext))
@@ -382,29 +394,37 @@ public class ScriptRunnerHandler implements Handler
             paths.add(path + "." + e);
       }
 
+      JSObject script = null;
+
       for (String p : paths)
       {
+
          ext = handler.ext(p);
          InputStream is = chain.getService().getResource(J.implode("/", scriptsDir, p));
          if (is != null)
          {
-            return new JSObject("type", handler.scriptTypes.get(ext), "script", J.read(is));
-         }
-
-      }
-
-      String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
-      Response r = chain.getService().include(chain, "GET", url, null);
-      if (r.getStatusCode() == 200)
-      {
-         JSArray dataArr = r.getJson().getArray("data");
-         if (!dataArr.asList().isEmpty())
-         {
-            return dataArr.getObject(0);
+            script = new JSObject("type", handler.scriptTypes.get(ext), "script", J.read(is));
+            break;
          }
       }
 
-      return null;
+      //      if (script == null && !J.empty(scriptsCollection))
+      //      {
+      //         String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
+      //         Response r = chain.getService().include(chain, "GET", url, null);
+      //         if (r.getStatusCode() == 200)
+      //         {
+      //            JSArray dataArr = r.getJson().getArray("data");
+      //            if (!dataArr.asList().isEmpty())
+      //            {
+      //               return dataArr.getObject(0);
+      //            }
+      //         }
+      //      }
+
+      handler.CACHE.put(path, script);
+
+      return script;
    }
 
    String ext(String fileName)
