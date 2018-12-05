@@ -90,12 +90,12 @@ public class AclRule extends Rule
       return new ArrayList(permissions);
    }
 
-   public void setPermissions(List<Permission> permissions)
-   {
-      this.permissions.clear();
-      for (Permission permission : permissions)
-         addPermission(permission);
-   }
+//   public void setPermissions(List<Permission> permissions)
+//   {
+//      this.permissions.clear();
+//      for (Permission permission : permissions)
+//         addPermission(permission);
+//   }
 
    public void setPermissions(String permissions)
    {
