@@ -19,8 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-
 import io.forty11.j.J;
 import io.forty11.j.utils.ListMap;
 import io.forty11.web.js.JSObject;
@@ -38,60 +36,51 @@ public class Response
    String                  contentType = null;
    List<Change>            changes     = new ArrayList();
 
-   StringBuffer            debug       = null;
+   StringBuffer            debug       = new StringBuffer();
 
-   ByteArrayOutputStream   out         = new ByteArrayOutputStream();
+   StringBuffer            out         = new StringBuffer();
 
    public Response()
    {
 
    }
 
-   public void debug(Object... msgs)
+   public void write(StringBuffer buff, Object... msgs)
    {
-      if (debug == null)
-         debug = new StringBuffer();
-
       for (int i = 0; msgs != null && i < msgs.length; i++)
       {
          Object msg = msgs[i];
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
-         debug.append(msg).append("\r\n");
+         buff.append(msg).append("\r\n");
       }
    }
 
-   public void out(byte[] bytes)
+   public void debug(Object... msgs)
    {
-      try
-      {
-         debug("\r\n");
-         debug(bytes);
-         out.write(bytes);
-      }
-      catch (Exception ex)
-      {
-         J.rethrow(ex);
-      }
+      write(debug, msgs);
    }
 
-   public byte[] getOutput()
+   public void out(Object... msgs)
    {
-      try
-      {
-         out.flush();
-      }
-      catch (Exception ex)
-      {
-         J.rethrow(ex);
-      }
-      return out.toByteArray();
+      debug(msgs);
+      write(out, msgs);
+   }
+
+   public void setOutput(String output)
+   {
+      out = new StringBuffer(output);
+   }
+
+   public String getOutput()
+   {
+      return out.toString();
    }
 
    public String getDebug()
    {
-      return debug == null ? "<EMPTY>" : debug.toString();
+      return debug.toString();
    }
 
    /**
@@ -208,6 +197,8 @@ public class Response
 
    public void setContentType(String contentType)
    {
+      headers.remove("Content-Type");
+      headers.put("Content-Type", contentType);
       this.contentType = contentType;
    }
 

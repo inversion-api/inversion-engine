@@ -175,6 +175,13 @@ public class ScriptHandler implements Handler
             JSObject script = scripts.get(path);
             String type = script.getString("type");
 
+            List<String> parts = J.explode("/", path);
+            String componentStr = parts.size() > 1 ? parts.get(parts.size() - 2) : parts.get(0);
+            String actionStr = parts.size() > 1 ? parts.get(parts.size() - 1) : null;
+
+            if (actionStr == null || actionStr.indexOf(".") > 0)
+               actionStr = "";
+
             if ("javascript".equals(type))
             {
                Context context = (Context) contexts.get("javascript");
@@ -185,6 +192,7 @@ public class ScriptHandler implements Handler
                   contexts.put("javascript", context);
 
                   Value bindings = context.getBindings("js");
+
                   bindings.putMember("service", service);
                   bindings.putMember("api", api);
                   bindings.putMember("endpoint", endpoint);
@@ -211,6 +219,8 @@ public class ScriptHandler implements Handler
                {
                   context = new VelocityContext();
                   contexts.put("velocity", context);
+
+                  context.put("method", req.getMethod());
                   context.put("service", service);
                   context.put("api", api);
                   context.put("endpoint", endpoint);
@@ -300,7 +310,8 @@ public class ScriptHandler implements Handler
 
       if (ext(parts.get(0)) == null)
          guesses.add("switch");
-      else
+
+      if(parts.size() == 1)
          guesses.add(parts.get(0));
 
       for (String guess : guesses)

@@ -15,6 +15,9 @@
  */
 package io.rcktapp.api.service;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -27,7 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.servlet.ServletException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
 import io.forty11.j.utils.AutoWire;
@@ -50,6 +54,8 @@ import io.rcktapp.api.Table;
 
 public class Configurator
 {
+   Logger  log       = LoggerFactory.getLogger(Service.class.getName() + ".configuration");
+
    boolean destroyed = false;
 
    Service service   = null;
@@ -73,7 +79,7 @@ public class Configurator
          w.putBean("snooze", service);
          w.load(config.props);
 
-         loadConfig(config, true);
+         loadConfig(config, true, service.isConfigFast());
       }
       catch (Exception e)
       {
@@ -81,38 +87,38 @@ public class Configurator
          throw new RuntimeException("Unable to load snooze configs: " + e.getMessage(), e);
       }
 
-//      if (service.getrereloadTimeout > 0)
-//      {
-//         Thread t = new Thread(new Runnable()
-//            {
-//               @Override
-//               public void run()
-//               {
-//                  while (true)
-//                  {
-//                     try
-//                     {
-//                        J.sleep(reloadTimeout);
-//                        if (destroyed)
-//                           return;
-//
-//                        Config config = findConfig();
-//                        loadConfig(config, false);
-//                     }
-//                     catch (Throwable t)
-//                     {
-//                        log.warn("Error loading config", t);
-//                     }
-//                  }
-//               }
-//            }, "snooze-config-reloader");
-//
-//         t.setDaemon(true);
-//         t.start();
-//      }
+      //      if (service.getrereloadTimeout > 0)
+      //      {
+      //         Thread t = new Thread(new Runnable()
+      //            {
+      //               @Override
+      //               public void run()
+      //               {
+      //                  while (true)
+      //                  {
+      //                     try
+      //                     {
+      //                        J.sleep(reloadTimeout);
+      //                        if (destroyed)
+      //                           return;
+      //
+      //                        Config config = findConfig();
+      //                        loadConfig(config, false);
+      //                     }
+      //                     catch (Throwable t)
+      //                     {
+      //                        log.warn("Error loading config", t);
+      //                     }
+      //                  }
+      //               }
+      //            }, "snooze-config-reloader");
+      //
+      //         t.setDaemon(true);
+      //         t.start();
+      //      }
    }
 
-   void loadConfig(Config config, boolean forceReload) throws Exception
+   void loadConfig(Config config, boolean forceReload, boolean fastLoad) throws Exception
    {
       AutoWire wire = new AutoWire()
          {
@@ -129,30 +135,60 @@ public class Configurator
 
       boolean doLoad = false;
 
-      for (Api api : wire.getBeans(Api.class))
+      if (!fastLoad)
       {
-         if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
-
-         Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
-         if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
+         for (Api api : wire.getBeans(Api.class))
          {
-            doLoad = true;
+            if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
 
-            for (Db db : ((Api) api).getDbs())
+            Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
+            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
-               db.bootstrapApi();
+               doLoad = true;
+
+               for (Db db : ((Api) api).getDbs())
+               {
+                  db.bootstrapApi();
+               }
+            }
+         }
+
+         if (doLoad)
+         {
+            Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
+            autoProps.putAll(config.props);
+            wire.clear();
+            wire.load(autoProps);
+            autoWireApi(wire);
+
+            if (!J.empty(service.getConfigOut()))
+            {
+               String fileName = "./" + service.getConfigOut().trim();
+
+               File file = new File(fileName);
+
+               log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
+
+               file.getParentFile().mkdirs();
+               BufferedWriter out = new BufferedWriter(new FileWriter(file));
+
+               autoProps.store(out, "");
+
+               for (String key : AutoWire.sort(autoProps.keySet()))
+               {
+                  String value = autoProps.getProperty(key);
+                  if (shouldMask(key))
+                     value = "###############";
+               }
+               out.flush();
+               out.close();
             }
          }
       }
 
-      if (doLoad)
+      if (doLoad || fastLoad)
       {
-         Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
-         autoProps.putAll(config.props);
-         wire.clear();
-         wire.load(autoProps);
-         autoWireApi(wire);
 
          for (Api api : wire.getBeans(Api.class))
          {
@@ -166,33 +202,22 @@ public class Configurator
             }
          }
 
-         //         if (log.isInfoEnabled())
-         //         {
-         //            List<String> keys = new ArrayList(config.props.keySet());
-         //            Collections.sort(keys);
-         //            log.info("-- merged user supplied configuration -------------------------");
-         //            for (String key : keys)
-         //            {
-         //               String value = config.props.getProperty(key);
-         //
-         //               if (shouldMask(key))
-         //                  value = "###############";
-         //
-         //               log.info(" > " + key + "=" + value);
-         //            }
-         //            log.info("-- end merged user supplied configuration ---------------------");
-         //
-         //            log.info("-- loading final configuration -------------------------");
-         //            for (String key : AutoWire.sort(autoProps.keySet()))
-         //            {
-         //               String value = autoProps.getProperty(key);
-         //               if (shouldMask(key))
-         //                  value = "###############";
-         //
-         //               log.info(" > " + key + "=" + value);
-         //            }
-         //            log.info("-- end final config -------");
-         //         }
+         if (log.isInfoEnabled() && service.isConfigDebug())
+         {
+            List<String> keys = new ArrayList(config.props.keySet());
+            Collections.sort(keys);
+            log.info("-- merged user supplied configuration -------------------------");
+            for (String key : keys)
+            {
+               String value = config.props.getProperty(key);
+
+               if (shouldMask(key))
+                  value = "###############";
+
+               log.info(" > " + key + "=" + value);
+            }
+            log.info("-- end merged user supplied configuration ---------------------");
+         }
       }
    }
 

@@ -47,7 +47,7 @@ public class Service
 
    protected String profile        = null;
 
-   protected String configPath     = "/WEB-INF/";
+   protected String configPath     = "";
 
    protected int    reloadTimeout  = 10000;
 
@@ -58,37 +58,11 @@ public class Service
 
    ResourceLoader   resourceLoader = null;
 
+   boolean          configFast     = false;
+   boolean          configDebug    = false;
+   String           configOut      = null;
+
    Configurator     configurator   = new Configurator();
-
-   public String getProfile()
-   {
-      return profile;
-   }
-
-   public void setProfile(String profile)
-   {
-      this.profile = profile;
-   }
-
-   public String getConfigPath()
-   {
-      return configPath;
-   }
-
-   public void setConfigPath(String configPath)
-   {
-      this.configPath = configPath;
-   }
-
-   public Configurator getConfigurator()
-   {
-      return configurator;
-   }
-
-   public void setConfigurator(Configurator configurator)
-   {
-      this.configurator = configurator;
-   }
 
    /**
     * Must be set to match your servlet path if your servlet is not 
@@ -114,10 +88,12 @@ public class Service
          return;
       inited = true;
       configurator.loadConfg(this);
+
    }
 
-   public void service(Request req, Response res)
+   public Chain service(Request req, Response res)
    {
+      Chain chain = null;
       String method = req.getMethod();
 
       //--
@@ -146,13 +122,13 @@ public class Service
       {
          //this is a CORS preflight request. All of hte work was done bove
          res.setStatus(SC.SC_200_OK);
-         return;
+         return chain;
       }
 
       if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
       {
          res.setStatus(SC.SC_404_NOT_FOUND);
-         return;
+         return chain;
       }
 
       Api api = null;
@@ -176,9 +152,8 @@ public class Service
          {
             api = match.api;
             apiUrl = match.apiUrl;
+            req.setApiMatch(match);
          }
-
-         req.setApiMatch(match);
 
          if (match == null || match.api.isDebug() || match.reqUrl.getHost().equals("localhost"))
          {
@@ -205,7 +180,7 @@ public class Service
             //check to see if a non plural version of the collection endpoint 
             //was passed in, if it was redirect to the plural version
             if (redirectPlural(req, res))
-               return;
+               return chain;
          }
 
          if (match.endpoint == null)
@@ -222,7 +197,7 @@ public class Service
             throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
          }
 
-         doService(this, null, match, req, res);
+         chain = doService(this, null, match, req, res);
          ConnectionLocal.commit();
       }
       catch (Throwable ex)
@@ -251,7 +226,7 @@ public class Service
                //an endpoint could have match the url "such as GET * but then not 
                //known what to do with the URL because the collection was not pluralized
                if (redirectPlural(req, res))
-                  return;
+                  return chain;
             }
          }
          else
@@ -286,6 +261,8 @@ public class Service
             log.error("Error in Service", ex);
          }
       }
+
+      return chain;
    }
 
    void writeResponse(Request req, Response res) throws Exception
@@ -295,40 +272,61 @@ public class Service
 
       String method = req != null ? req.getMethod() : null;
 
-      res.debug("\r\n<< response -------------\r\n");
-      res.debug(res.getStatusCode());
-
       if ("OPTIONS".equals(method))
       {
          //
       }
-      else if (res.getText() != null)
+      else
       {
-         if (res.getContentType() == null)
-            res.setContentType("text/text");
+         res.debug("\r\n<< response -------------\r\n");
+         res.debug(res.getStatusCode());
 
-         byte[] bytes = res.getText().getBytes();
-         res.out(bytes);
-      }
-      else if (res.getJson() != null)
-      {
-         if (res.getContentType() == null)
-            res.setContentType("application/json");
+         String output = res.getText();
+         if (output != null)
+         {
+            if (res.getContentType() == null)
+            {
+               if (output.indexOf("<html") > -1)
+                  res.setContentType("text/html");
+               else
+                  res.setContentType("text/text");
+            }
+         }
+         else if (output == null && res.getJson() != null)
+         {
+            output = res.getJson().toString();
 
-         byte[] bytes = res.getJson().toString().getBytes();
-         res.out(bytes);
-      }
+            if (res.getContentType() == null)
+               res.setContentType("application/json");
+         }
 
-      res.debug("\r\n-- done -----------------\r\n");
+         JSObject headers = new JSObject();
+         for (String key : res.getHeaders().keySet())
+         {
+            List values = res.getHeaders().get(key);
+            StringBuffer buff = new StringBuffer();
+            for (int i = 0; i < values.size(); i++)
+            {
+               buff.append(values.get(i));
+               if (i < values.size() - 1)
+                  buff.append(",");
+            }
+            res.debug(key + " " + buff);
+         }
 
-      if (debug)
-      {
-         requestLog.info(res.getDebug());
-      }
+         res.out(output);
 
-      if (explain)
-      {
-         res.out(res.getDebug().getBytes());
+         res.debug("\r\n-- done -----------------\r\n");
+
+         //         if (debug)
+         //         {
+         //            requestLog.info(res.getDebug());
+         //         }
+
+         if (explain)
+         {
+            res.setOutput(res.getDebug());
+         }
       }
    }
 
@@ -397,7 +395,7 @@ public class Service
       return res;
    }
 
-   protected void doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
+   protected Chain doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
    {
       //this will get all actions specifically configured on the endpoint
       List<Action> actions = match.endpoint.getActions(req);
@@ -417,6 +415,8 @@ public class Service
       Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
       chain.setParent(parent);
       chain.go();
+
+      return chain;
    }
 
    boolean redirectPlural(Request req, Response res)
@@ -477,10 +477,10 @@ public class Service
       String path = url.getPath() + "";
 
       String host = url.getHost();
-      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
-      {
-         accountCode = host.substring(0, host.indexOf("."));
-      }
+      //      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
+      //      {
+      //         accountCode = host.substring(0, host.indexOf("."));
+      //      }
 
       for (Api a : apis)
       {
@@ -489,8 +489,8 @@ public class Service
 
          if (!J.empty(servletMapping))
          {
-            fullPath = "/" + servletMapping + fullPath;
-            halfPath = "/" + servletMapping + halfPath;
+            fullPath = "/" + J.implode("/", servletMapping, fullPath);
+            halfPath = "/" + J.implode("/", servletMapping, halfPath);
          }
 
          if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -677,6 +677,36 @@ public class Service
 
    }
 
+   public String getProfile()
+   {
+      return profile;
+   }
+
+   public void setProfile(String profile)
+   {
+      this.profile = profile;
+   }
+
+   public String getConfigPath()
+   {
+      return configPath;
+   }
+
+   public void setConfigPath(String configPath)
+   {
+      this.configPath = configPath;
+   }
+
+   public Configurator getConfigurator()
+   {
+      return configurator;
+   }
+
+   public void setConfigurator(Configurator configurator)
+   {
+      this.configurator = configurator;
+   }
+
    public String getServletMapping()
    {
       return servletMapping;
@@ -714,4 +744,35 @@ public class Service
 
       return getClass().getClassLoader().getResourceAsStream(name);
    }
+
+   public boolean isConfigFast()
+   {
+      return configFast;
+   }
+
+   public void setConfigFast(boolean configFast)
+   {
+      this.configFast = configFast;
+   }
+
+   public boolean isConfigDebug()
+   {
+      return configDebug;
+   }
+
+   public void setConfigDebug(boolean configDebug)
+   {
+      this.configDebug = configDebug;
+   }
+
+   public String getConfigOut()
+   {
+      return configOut;
+   }
+
+   public void setConfigOut(String configOut)
+   {
+      this.configOut = configOut;
+   }
+
 }

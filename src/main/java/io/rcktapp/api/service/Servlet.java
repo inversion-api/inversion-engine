@@ -236,7 +236,7 @@ public class Servlet extends HttpServlet
          else
          {
             String contentType = res.getContentType();
-            byte[] bytes = res.getOutput();
+            byte[] bytes = res.getOutput().getBytes();
 
             http.setContentType(contentType);
             res.addHeader("Content-Length", bytes.length + "");
