@@ -15,30 +15,26 @@
  */
 package io.rcktapp.api;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 import io.forty11.j.J;
 import io.forty11.web.Url;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
+import io.rcktapp.api.service.Service.ApiMatch;
 import io.rcktapp.utils.CaseInsensitiveLookupMap;
 
 public class Request
 {
    Url                      url              = null;
-   HttpServletRequest       request          = null;
+   //HttpServletRequest       request          = null;
 
    String                   apiUrl           = null;
    Api                      api              = null;
+   Endpoint                 endpoint         = null;
 
    String                   accountCode      = null;
    String                   apiCode          = null;
@@ -52,10 +48,19 @@ public class Request
 
    String                   path             = null;
 
+   String                   remoteAddr       = null;
+
+   /**
+    * The path minus any Endpoint.path prefix
+    */
+   String                   subpath          = null;
+
    String                   collectionKey    = null;
    String                   entityKey        = null;
    String                   subCollectionKey = null;
 
+   CaseInsensitiveLookupMap headers          = new CaseInsensitiveLookupMap();
+   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
    String                   body             = null;
    JSObject                 json             = null;
 
@@ -63,20 +68,69 @@ public class Request
 
    boolean                  explain          = false;
 
-   //CaseInsensitiveMap params           = new CaseInsensitiveMap();
-   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
+   public Uploader          uploader         = null;
 
-   public Request(HttpServletRequest req, String method, Url url, Api api, String apiUrl)
+   public Request(ApiMatch match)
    {
-      this.request = req;
-      this.api = api;
-      this.apiUrl = apiUrl;
+      setUrl(match.reqUrl);
+      setApiMatch(match);
+   }
+
+   public Request(Url url, String method, Map headers, Map params, String body)
+   {
+      setMethod(method);
+      setUrl(url);
+      addParams(params);
+      addHeaders(headers);
+      setBody(body);
+   }
+
+   public void setUrl(Url url)
+   {
+      this.url = url;
+      String query = url.getQuery();
+      if (!J.empty(query))
+      {
+         this.params.putAll(Url.parseQuery(query));
+      }
+   }
+
+   public void setMethod(String method)
+   {
+      this.method = method;
+   }
+
+   public void addHeaders(Map<String, String> headers)
+   {
+      this.headers.putAll(headers);
+   }
+
+   public void addParams(Map params)
+   {
+      this.params.putAll(params);
+
+      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
+      this.explain = this.explain || explain;
+   }
+
+   public void setApiMatch(ApiMatch match)
+   {
+      this.api = match.api;
+      this.endpoint = match.endpoint;
+      this.method = match.method;
+      this.url = match.reqUrl;
+      this.apiUrl = match.apiUrl;
+      this.path = match.apiPath;
+      this.subpath = match.apiPath;
+
       this.accountCode = api.getAccountCode();
       this.apiCode = api.getApiCode();
 
-      this.method = method;
+      if (this.path.indexOf("?") > 0)
+         this.path = this.path.substring(0, this.path.indexOf("?"));
 
-      this.url = url;
+      if (this.subpath.indexOf("?") > 0)
+         this.subpath = this.subpath.substring(0, this.subpath.indexOf("?"));
 
       if (apiUrl != null)
       {
@@ -90,57 +144,50 @@ public class Request
          if (urlStr.indexOf("?") > 0)
             urlStr = urlStr.substring(0, urlStr.indexOf("?"));
 
-         path = urlStr.substring(apiUrl.length(), urlStr.length());
-         while (path.startsWith("/"))
-            path = path.substring(1, path.length());
+         //         path = urlStr.substring(apiUrl.length(), urlStr.length());
+         //         while (path.startsWith("/"))
+         //            path = path.substring(1, path.length());
 
-         String[] parts = path.split("/");
+         List<String> parts = J.explode("/", path);//path.split("/");
 
-         if (!path.endsWith("/"))
-            path = path + "/";
+         //         if (!path.endsWith("/"))
+         //            path = path + "/";
 
-         int idx = 0;
-         if (parts.length > idx)
-            collectionKey = parts[idx++];
-
-         if (collectionKey == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
-
-         if (parts.length > idx)
-            entityKey = parts[idx++];
-
-         if (parts.length > idx)
-            subCollectionKey = parts[idx++];
-      }
-
-      //-- copy params
-      if (req != null)
-      {
-         Enumeration<String> enumer = req.getParameterNames();
-         while (enumer.hasMoreElements())
+         if (endpoint != null)
          {
-            String key = enumer.nextElement();
-            String val = req.getParameter(key);
-            params.put(key, val);
+            String endpointPath = endpoint.getPath();
+            if (endpointPath != null)
+            {
+               List<String> epPath = J.explode("/", endpointPath);
+               for (int i = 0; i < epPath.size(); i++)
+               {
+                  if (parts.get(0).equalsIgnoreCase(epPath.get(i)))
+                  {
+                     parts.remove(0);
+                  }
+                  else
+                  {
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The endpoint.path is not match the start of apiPath but it should have");
+                  }
+               }
+            }
+
+            subpath = J.implode("/", parts) + "/";
+
+            int idx = 0;
+            if (parts.size() > idx)
+               collectionKey = parts.get(idx++);
+
+            if (collectionKey == null)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
+
+            if (parts.size() > idx)
+               entityKey = parts.get(idx++);
+
+            if (parts.size() > idx)
+               subCollectionKey = parts.get(idx++);
          }
       }
-      else
-      {
-         String query = url.getQuery();
-         if (!J.empty(query))
-         {
-            params.putAll(Url.parseQuery(query));
-         }
-      }
-
-      if (params.containsKey("explain"))
-      {
-         explain = !(params.get("explain") + "").trim().equalsIgnoreCase("false");
-         params.remove("explain");
-      }
-
-      //--
-
    }
 
    public boolean isDebug()
@@ -156,63 +203,11 @@ public class Request
 
    public boolean isExplain()
    {
-      return explain;
-   }
-
-   public static String readBody(HttpServletRequest request) throws ApiException
-   {
-      if (request == null)
-         return null;
-
-      StringBuilder stringBuilder = new StringBuilder();
-      BufferedReader bufferedReader = null;
-
-      try
-      {
-         InputStream inputStream = request.getInputStream();
-         if (inputStream != null)
-         {
-            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            char[] charBuffer = new char[128];
-            int bytesRead = -1;
-            while ((bytesRead = bufferedReader.read(charBuffer)) > 0)
-            {
-               stringBuilder.append(charBuffer, 0, bytesRead);
-            }
-         }
-         else
-         {
-            stringBuilder.append("");
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to read request body", ex);
-      }
-      finally
-      {
-         if (bufferedReader != null)
-         {
-            try
-            {
-               bufferedReader.close();
-            }
-            catch (IOException ex)
-            {
-               //throw ex;
-            }
-         }
-      }
-
-      return stringBuilder.toString();
+      return isDebug() && explain;
    }
 
    public String getBody()
    {
-      if (body != null)
-         return body;
-
-      body = readBody(request);
       return body;
    }
 
@@ -301,14 +296,6 @@ public class Request
    }
 
    /**
-    * @return the request
-    */
-   public HttpServletRequest getHttpServletRequest()
-   {
-      return request;
-   }
-
-   /**
     * @return the method
     */
    public String getMethod()
@@ -343,10 +330,7 @@ public class Request
 
    public String getHeader(String header)
    {
-      if (request == null)
-         return null;
-
-      return request.getHeader(header);
+      return (String) headers.get(header);
    }
 
    public String getParam(String key)
@@ -459,6 +443,126 @@ public class Request
    public void setSubCollectionKey(String subCollectionKey)
    {
       this.subCollectionKey = subCollectionKey;
+   }
+
+   public String getSubpath()
+   {
+      return subpath;
+   }
+
+   public void setSubpath(String subpath)
+   {
+      this.subpath = subpath;
+   }
+
+   public String getRemoteAddr()
+   {
+      String remoteAddr = getHeader("X-Forwarded-For");
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("Proxy-Client-IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("WL-Proxy-Client-IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("HTTP_CLIENT_IP");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = getHeader("HTTP_X_FORWARDED_FOR");
+      }
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
+      {
+         remoteAddr = this.remoteAddr;
+      }
+
+      return remoteAddr;
+   }
+
+   public void setRemoteAddr(String remoteAddr)
+   {
+      this.remoteAddr = remoteAddr;
+   }
+
+   public Uploader getUploader()
+   {
+      return uploader;
+   }
+
+   public void setUploader(Uploader uploader)
+   {
+      this.uploader = uploader;
+   }
+
+   public static interface Uploader
+   {
+      public List<Upload> getUploads();
+   }
+
+   public static class Upload
+   {
+      String      fileName    = null;
+      long        fileSize    = 0;
+      String      requestPath = null;
+      InputStream inputStream = null;
+
+      public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream)
+      {
+         super();
+         this.fileName = fileName;
+         this.fileSize = fileSize;
+         this.requestPath = requestPath;
+         this.inputStream = inputStream;
+      }
+
+      public String getFileName()
+      {
+         return fileName;
+      }
+
+      public void setFileName(String fileName)
+      {
+         this.fileName = fileName;
+      }
+
+      public long getFileSize()
+      {
+         return fileSize;
+      }
+
+      public void setFileSize(long fileSize)
+      {
+         this.fileSize = fileSize;
+      }
+
+      public String getRequestPath()
+      {
+         return requestPath;
+      }
+
+      public void setRequestPath(String requestPath)
+      {
+         this.requestPath = requestPath;
+      }
+
+      public InputStream getInputStream()
+      {
+         return inputStream;
+      }
+
+      public void setInputStream(InputStream inputStream)
+      {
+         this.inputStream = inputStream;
+      }
+
+   }
+
+   public List<Upload> getUploads()
+   {
+      return uploader.getUploads();
    }
 
 }

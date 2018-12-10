@@ -15,37 +15,19 @@
  */
 package io.rcktapp.api.service;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.sql.Connection;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Vector;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.forty11.j.J;
-import io.forty11.j.utils.DoubleKeyMap;
 import io.forty11.web.Url;
-import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -53,183 +35,169 @@ import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Endpoint;
-import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
-import io.rcktapp.api.handler.sql.SqlDb;
 import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
-public class Service extends HttpServlet
+public class Service
 {
-   Hashtable<Long, Api> apis           = new Hashtable();
+   boolean          inited         = false;
+   volatile boolean destroyed      = false;
 
-   Map<String, Handler> globalHandlers = new Hashtable();
-   DoubleKeyMap         apiHandlers    = new DoubleKeyMap();
+   protected String profile        = null;
 
-   List<String>         corsHeaders    = new ArrayList();
+   protected String configPath     = "";
 
-   boolean              debug          = true;
+   protected int    reloadTimeout  = 10000;
 
-   Logger               log            = LoggerFactory.getLogger(getClass());
-   Logger               requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   Logger           log            = LoggerFactory.getLogger(getClass());
+   Logger           requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   String               servletMapping = null;
+   List<Api>        apis           = new Vector();
 
-   DataSource           ds             = null;
+   ResourceLoader   resourceLoader = null;
 
-   String               driver         = null;
-   String               url            = null;
-   String               user           = null;
-   String               pass           = null;
-   int                  poolMin        = SqlDb.MIN_POOL_SIZE;
-   int                  poolMax        = SqlDb.MAX_POOL_SIZE;
+   boolean          configFast     = false;
+   boolean          configDebug    = false;
+   String           configOut      = null;
 
-   static
+   Configurator     configurator   = new Configurator();
+
+   /**
+    * Must be set to match your servlet path if your servlet is not 
+    * mapped to /*
+    */
+   protected String servletMapping = null;
+
+   /**
+    * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
+    * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
+    * probably won't need to customize this list. 
+    */
+   protected String allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+
+   public void destroy()
    {
-      //initializes Log4J
-      //new Logs();
+      destroyed = true;
    }
 
-   public Service()
+   public synchronized void init()
    {
-      corsHeaders.add("origin");
-      corsHeaders.add("accept");
-      corsHeaders.add("Content-Type");
-      corsHeaders.add("x-auth-token");
-      corsHeaders.add("authorization");
+      if (inited)
+         return;
+      inited = true;
+      configurator.loadConfg(this);
+
    }
 
-   @Override
-   protected void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
+   public Chain service(Request req, Response res)
    {
-      String method = httpReq.getMethod();
+      Chain chain = null;
+      String method = req.getMethod();
+
+      //--
+      //-- CORS header setup
+      //--
+      String allowedHeaders = new String(this.allowedHeaders);
+      String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
+      if (corsRequestHeader != null)
+      {
+         List<String> headers = Arrays.asList(corsRequestHeader.split(","));
+         for (String h : headers)
+         {
+            h = h.trim();
+            allowedHeaders = allowedHeaders.concat(h).concat(",");
+         }
+      }
+      res.addHeader("Access-Control-Allow-Origin", "*");
+      res.addHeader("Access-Control-Allow-Credentials", "true");
+      res.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+      res.addHeader("Access-Control-Allow-Headers", allowedHeaders);
+
+      //--
+      //-- End CORS Header Setup
 
       if (method.equalsIgnoreCase("options"))
       {
-         handlePreflightRequest(httpReq, httpResp);
-         return;
+         //this is a CORS preflight request. All of hte work was done bove
+         res.setStatus(SC.SC_200_OK);
+         return chain;
       }
 
-      if (httpReq.getRequestURI().indexOf("/favicon.ico") >= 0)
+      if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
       {
-         httpResp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-         return;
+         res.setStatus(SC.SC_404_NOT_FOUND);
+         return chain;
       }
 
       Api api = null;
-      Response res = null;
-      Request req = null;
 
       try
       {
-         res = new Response(httpResp);
-
-         //--
-         //-- CORS header setup
-         //--
-         res.addHeader("Access-Control-Allow-Credentials", "true");
-         //res.addHeader("Access-Control-Allow-Origin", req.getHeader("origin"));
-         res.addHeader("Access-Control-Allow-Origin", "*");
-         res.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-
-         Set<String> headers = new HashSet(this.corsHeaders);
-
-         Enumeration<String> eh = httpReq.getHeaderNames();
-         while (eh.hasMoreElements())
-         {
-            String name = eh.nextElement();
-            headers.add(name);
-         }
-
-         for (String header : headers)
-         {
-            res.addHeader("Access-Control-Allow-Headers", header);
-         }
-         //--
-         //-- End COORS Header Setup
-
-         String urlstr = httpReq.getRequestURL().toString();
-
-         if (!urlstr.endsWith("/"))
-            urlstr = urlstr + "/";
-
-         String query = httpReq.getQueryString();
-         if (!J.empty(query))
-         {
-            urlstr += "?" + query;
-         }
-
-         Url url = new Url(urlstr);
-
-         String xfp = httpReq.getHeader("X-Forwarded-Proto");
-         String xfh = httpReq.getHeader("X-Forwarded-Host");
+         String xfp = req.getHeader("X-Forwarded-Proto");
+         String xfh = req.getHeader("X-Forwarded-Host");
          if (xfp != null || xfh != null)
          {
             if (xfp != null)
-               url.setProtocol(xfp);
+               req.getUrl().setProtocol(xfp);
 
             if (xfh != null)
-               url.setHost(xfh);
+               req.getUrl().setHost(xfh);
          }
 
-         //if (isDebug(req))
+         String apiUrl = null;
+         ApiMatch match = findApi(method, req.getUrl());
+         if (match != null)
+         {
+            api = match.api;
+            apiUrl = match.apiUrl;
+            req.setApiMatch(match);
+         }
+
+         if (match == null || match.api.isDebug() || match.reqUrl.getHost().equals("localhost"))
          {
             res.debug("");
             res.debug("");
             res.debug(">> request --------------");
-            res.debug(method + ": " + url);
-            Enumeration<String> e = httpReq.getHeaderNames();
-            while (e.hasMoreElements())
-            {
-               String name = e.nextElement();
-               String value = httpReq.getHeader(name);
-               res.debug(name + " - " + value);
-            }
-
-            //res.debug(req.getJson());
-         }
-
-         String apiUrl = null;
-         ApiMatch match = findApi(url);
-         if (match != null)
-         {
-            api = match.api;
-            apiUrl = match.url;
+            //            res.debug(method + ": " + url);
+            //            
+            //            while (e.hasMoreElements())
+            //            {
+            //               String name = e.nextElement();
+            //               String value = req.getHeader(name);
+            //               res.debug(name + " - " + value);
+            //            }
          }
 
          if (match == null)
          {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "No API found matching URL: \"" + url + "\"");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "No API found matching URL: \"" + req.getUrl() + "\"");
          }
 
-         req = new Request(httpReq, method, url, api, apiUrl);
+         if (match.endpoint == null)
+         {
+            //check to see if a non plural version of the collection endpoint 
+            //was passed in, if it was redirect to the plural version
+            if (redirectPlural(req, res))
+               return chain;
+         }
+
+         if (match.endpoint == null)
+         {
+            String buff = "";
+            for (Endpoint e : api.getEndpoints())
+               buff += e.getMethods() + ": includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+
+            throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
+         }
 
          if (J.empty(req.getCollectionKey()))
          {
             throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
          }
 
-         Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
-
-         if (endpoint == null)
-         {
-            //check to see if a non plural version of the collection endpoint 
-            //was passed in, if it was redirect to the plural version
-            if (redirectPlural(req, res))
-               return;
-         }
-
-         if (endpoint == null)
-         {
-            String buff = "";
-            for (Endpoint e : api.getEndpoints())
-               buff += e.getMethods() + ": includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
-
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "No endpoint found matching \"" + req.getMethod() + ": " + url + "\" Valid end points include: " + buff);
-         }
-
-         doService(this, null, match, endpoint, req, res);
+         chain = doService(this, null, match, req, res);
          ConnectionLocal.commit();
       }
       catch (Throwable ex)
@@ -258,7 +226,7 @@ public class Service extends HttpServlet
                //an endpoint could have match the url "such as GET * but then not 
                //known what to do with the URL because the collection was not pluralized
                if (redirectPlural(req, res))
-                  return;
+                  return chain;
             }
          }
          else
@@ -293,6 +261,73 @@ public class Service extends HttpServlet
             log.error("Error in Service", ex);
          }
       }
+
+      return chain;
+   }
+
+   void writeResponse(Request req, Response res) throws Exception
+   {
+      boolean debug = req != null && req.isDebug();
+      boolean explain = req != null && req.isExplain();
+
+      String method = req != null ? req.getMethod() : null;
+
+      if ("OPTIONS".equals(method))
+      {
+         //
+      }
+      else
+      {
+         res.debug("\r\n<< response -------------\r\n");
+         res.debug(res.getStatusCode());
+
+         String output = res.getText();
+         if (output != null)
+         {
+            if (res.getContentType() == null)
+            {
+               if (output.indexOf("<html") > -1)
+                  res.setContentType("text/html");
+               else
+                  res.setContentType("text/text");
+            }
+         }
+         else if (output == null && res.getJson() != null)
+         {
+            output = res.getJson().toString();
+
+            if (res.getContentType() == null)
+               res.setContentType("application/json");
+         }
+
+         JSObject headers = new JSObject();
+         for (String key : res.getHeaders().keySet())
+         {
+            List values = res.getHeaders().get(key);
+            StringBuffer buff = new StringBuffer();
+            for (int i = 0; i < values.size(); i++)
+            {
+               buff.append(values.get(i));
+               if (i < values.size() - 1)
+                  buff.append(",");
+            }
+            res.debug(key + " " + buff);
+         }
+
+         res.out(output);
+
+         res.debug("\r\n-- done -----------------\r\n");
+
+         //         if (debug)
+         //         {
+         //            requestLog.info(res.getDebug());
+         //         }
+
+         if (explain)
+         {
+            res.setOutput(res.getDebug());
+         }
+      }
    }
 
    /**
@@ -303,11 +338,11 @@ public class Service extends HttpServlet
    {
       Api api = null;
       String apiUrl = null;
-      ApiMatch match = findApi(new Url(url));
+      ApiMatch match = findApi(method, new Url(url));
       if (match != null)
       {
          api = match.api;
-         apiUrl = match.url;
+         apiUrl = match.apiUrl;
       }
 
       if (match == null)
@@ -315,11 +350,11 @@ public class Service extends HttpServlet
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No api found matching " + method + " " + url);
       }
 
-      Request req = new Request(null, method, new Url(url), api, apiUrl);
+      Request req = new Request(match);//method, new Url(url), api, match, apiUrl);
       req.setUser(parent.getRequest().getUser());
       req.setBody(body);
 
-      Response res = new Response(null);
+      Response res = new Response();
       Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
 
       if (endpoint == null)
@@ -329,7 +364,7 @@ public class Service extends HttpServlet
 
       try
       {
-         doService(this, parent, match, endpoint, req, res);
+         doService(this, parent, match, req, res);
       }
       catch (Throwable ex)
       {
@@ -360,10 +395,10 @@ public class Service extends HttpServlet
       return res;
    }
 
-   protected void doService(Service service, Chain parent, ApiMatch match, Endpoint endpoint, Request req, Response res) throws Exception
+   protected Chain doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
    {
       //this will get all actions specifically configured on the endpoint
-      List<Action> actions = endpoint.getActions(req);
+      List<Action> actions = match.endpoint.getActions(req);
 
       //this matches for actions that can run across multiple endpoints.
       //this might be something like an authorization or logging action
@@ -377,33 +412,14 @@ public class Service extends HttpServlet
 
       //TODO: filter all request params for security -- "restrict" && "require"
 
-      Chain chain = new Chain(this, match.api, endpoint, actions, req, res);
+      Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
       chain.setParent(parent);
       chain.go();
+
+      return chain;
    }
 
-   private void handlePreflightRequest(HttpServletRequest httpReq, HttpServletResponse httpResp)
-   {
-      String allowedHeaders = "authorization,accept-language,origin,host,access-control-request-headers,connection,access-control-request-method,x-auth-token,accept-encoding,accept,Content-Type,user-agent";
-      String corsRequestHeader = httpReq.getHeader("Access-Control-Request-Header");
-      if (corsRequestHeader != null)
-      {
-         List<String> headers = Arrays.asList(corsRequestHeader.split(","));
-         for (String h : headers)
-         {
-            h = h.trim();
-            allowedHeaders = allowedHeaders.concat(h).concat(",");
-         }
-      }
-      httpResp.addHeader("Access-Control-Allow-Origin", "*");
-      httpResp.addHeader("Access-Control-Allow-Credentials", "true");
-      httpResp.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-      httpResp.addHeader("Access-Control-Allow-Headers", allowedHeaders);
-      httpResp.setStatus(200);
-      return;
-   }
-
-   boolean redirectPlural(Request req, Response res) throws IOException
+   boolean redirectPlural(Request req, Response res)
    {
       String collection = req.getCollectionKey();
       if (!J.empty(collection))
@@ -416,17 +432,17 @@ public class Service extends HttpServlet
             Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
             if (rightEndpoint != null)
             {
-               String redirect = req.getHttpServletRequest().getRequestURI();
+               String redirect = req.getUrl().toString();
                //redirect = req.getHttpServletRequest().getRequest
                redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
 
-               String queryString = req.getHttpServletRequest().getQueryString();
+               String queryString = req.getUrl().getQuery();
                if (!J.empty(queryString))
                {
                   redirect += "?" + queryString;
                }
 
-               res.getHttpResp().sendRedirect(redirect);
+               res.setRedirect(redirect);
                return true;
             }
          }
@@ -436,38 +452,45 @@ public class Service extends HttpServlet
 
    public static class ApiMatch
    {
-      public Api    api = null;
-      public String url = null;
+      public Api      api      = null;
+      public Endpoint endpoint = null;
+      public String   method   = null;
+      public Url      reqUrl   = null;
+      public String   apiUrl   = null;
+      public String   apiPath  = null;
 
-      public ApiMatch(Api api, String url)
+      public ApiMatch(Api api, Endpoint endpoint, String method, Url reqUrl, String apiUrl, String apiPath)
       {
          this.api = api;
-         this.url = url;
+         this.endpoint = endpoint;
+         this.method = method;
+         this.reqUrl = reqUrl;
+         this.apiUrl = apiUrl;
+         this.apiPath = apiPath;
       }
-
    }
 
-   public ApiMatch findApi(Url url) throws Exception
+   ApiMatch findApi(String method, Url url) throws Exception
    {
       String accountCode = null;
 
       String path = url.getPath() + "";
 
       String host = url.getHost();
-      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
-      {
-         accountCode = host.substring(0, host.indexOf("."));
-      }
+      //      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
+      //      {
+      //         accountCode = host.substring(0, host.indexOf("."));
+      //      }
 
-      for (Api a : apis.values())
+      for (Api a : apis)
       {
          String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
          String halfPath = "/" + a.getApiCode() + "/";
 
          if (!J.empty(servletMapping))
          {
-            fullPath = "/" + servletMapping + fullPath;
-            halfPath = "/" + servletMapping + halfPath;
+            fullPath = "/" + J.implode("/", servletMapping, fullPath);
+            halfPath = "/" + J.implode("/", servletMapping, halfPath);
          }
 
          if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -506,7 +529,29 @@ public class Service extends HttpServlet
             if (!apiUrl.endsWith("/"))
                apiUrl += "/";
 
-            return new ApiMatch(a, apiUrl);
+            String reqUrl = url.toString();
+
+            if (reqUrl.indexOf("?") > 0)
+               reqUrl = reqUrl.substring(0, reqUrl.indexOf("?"));
+
+            path = reqUrl.substring(apiUrl.length(), reqUrl.length());
+            while (path.startsWith("/"))
+               path = path.substring(1, path.length());
+
+            if (!path.endsWith("/"))
+               path = path + "/";
+
+            Endpoint endpoint = null;
+            for (Endpoint e : a.getEndpoints())
+            {
+               if (e.matches(method, path))
+               {
+                  endpoint = e;
+                  break;
+               }
+            }
+
+            return new ApiMatch(a, endpoint, method, url, apiUrl, path);
          }
       }
 
@@ -524,168 +569,73 @@ public class Service extends HttpServlet
       return null;
    }
 
-   void writeResponse(Request req, Response res) throws Exception
+   public Db getDb(Api api, String collectionKey) throws ApiException
    {
-      boolean debug = req != null && req.isDebug();
-      boolean explain = req != null && req.isExplain();
+      Db db = null;
 
-      String method = req != null ? req.getMethod() : null;
-      String format = req != null ? req.getParam("format") : null;
-
-      HttpServletResponse http = res.getHttpResp();
-
-      http.setStatus(res.getStatusCode());
-
-      res.debug("\r\n<< response -------------\r\n");
-      res.debug(res.getStatusCode());
-
-      OutputStream out = http.getOutputStream();
-      try
+      if (collectionKey != null)
       {
-         for (String key : res.getHeaders().keySet())
-         {
-            List values = res.getHeaders().get(key);
-            StringBuffer buff = new StringBuffer();
-            for (int i = 0; i < values.size(); i++)
-            {
-               buff.append(values.get(i));
-               if (i < values.size() - 1)
-                  buff.append(",");
-            }
-            http.setHeader(key, buff.toString());
-            res.debug(key + " " + buff);
-         }
-         if ("OPTIONS".equals(method))
-         {
-            //
-         }
-         else if (res.getText() != null)
-         {
-            byte[] bytes = res.getText().getBytes();
-            http.setContentType("text/text");
-
-            if (debug)
-            {
-               res.debug(bytes);
-            }
-            else
-            {
-               out.write(bytes);
-            }
-            res.debug(bytes);
-         }
-         else if (res.getJson() != null)
-         {
-            if ("csv".equalsIgnoreCase(format))
-            {
-               JSObject arr = res.getJson();
-               if (!(arr instanceof JSArray))
-               {
-                  arr = new JSArray(arr);
-               }
-
-               byte[] bytes = toCsv((JSArray) arr).getBytes();
-
-               res.addHeader("Content-Length", bytes.length + "");
-               res.debug("Content-Length " + bytes.length + "");
-               //http.setContentType("application/json; charset=utf-8");
-               //http.setCharacterEncoding("UTF-8");
-               http.setContentType("text/csv");
-
-               out(req, res, out, bytes);
-
-            }
-            else
-            {
-               byte[] bytes = res.getJson().toString().getBytes();
-
-               res.addHeader("Content-Length", bytes.length + "");
-               res.debug("Content-Length " + bytes.length + "");
-               //http.setContentType("application/json; charset=utf-8");
-               //http.setCharacterEncoding("UTF-8");
-               http.setContentType("application/json");
-
-               out(req, res, out, bytes);
-            }
-         }
-
-         res.debug("\r\n-- done -----------------\r\n");
-
-         if (debug)
-         {
-            requestLog.info(res.getDebug());
-         }
-
-         if (explain)
-         {
-            out.write(res.getDebug().getBytes());
-         }
-
+         db = api.findDb(collectionKey);
       }
-      finally
+
+      if (db == null)
       {
-         out.flush();
-         out.close();
+         if (api.getDbs() == null || api.getDbs().size() == 0)
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There are no database connections configured for this API.");
+         db = api.getDbs().get(0);
+      }
+
+      return db;
+   }
+
+   public List<Api> getApis()
+   {
+      return new ArrayList(apis);
+   }
+
+   public synchronized void addApi(Api api)
+   {
+      List<Api> newList = new ArrayList(apis);
+
+      Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+      if (existingApi != null && existingApi != api)
+      {
+         newList.remove(existingApi);
+         newList.add(api);
+      }
+      else if (existingApi == null)
+      {
+         newList.add(api);
+      }
+
+      if (existingApi != api)
+         api.startup();
+
+      apis = newList;
+
+      if (existingApi != null && existingApi != api)
+      {
+         existingApi.shutdown();
       }
    }
 
-   void out(Request req, Response res, OutputStream out, byte[] bytes) throws Exception
+   public synchronized void removeApi(Api api)
    {
-      res.debug(bytes);
+      List newList = new ArrayList(apis);
+      newList.remove(api);
+      apis = newList;
 
-      if (req == null || !req.isExplain())
-         out.write(bytes);
+      api.shutdown();
    }
 
-   public String toCsv(JSArray arr) throws Exception
+   public synchronized Api getApi(String accountCode, String apiCode)
    {
-      StringBuffer buff = new StringBuffer();
-
-      LinkedHashSet<String> keys = new LinkedHashSet();
-
-      for (int i = 0; i < arr.length(); i++)
+      for (Api api : apis)
       {
-         JSObject obj = (JSObject) arr.get(i);
-         if (obj != null)
-         {
-            for (String key : obj.keys())
-            {
-               Object val = obj.get(key);
-               if (!(val instanceof JSArray) && !(val instanceof JSObject))
-                  keys.add(key);
-            }
-         }
+         if (accountCode.equalsIgnoreCase(api.getAccountCode()) && apiCode.equalsIgnoreCase(api.getApiCode()))
+            return api;
       }
-
-      CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
-
-      List<String> keysList = new ArrayList(keys);
-      for (String key : keysList)
-      {
-         printer.print(key);
-      }
-      printer.println();
-
-      for (int i = 0; i < arr.length(); i++)
-      {
-         for (String key : keysList)
-         {
-            Object val = ((JSObject) arr.get(i)).get(key);
-            if (val != null)
-            {
-               printer.print(val);
-            }
-            else
-            {
-               printer.print("");
-            }
-         }
-         printer.println();
-      }
-      printer.flush();
-      printer.close();
-
-      return buff.toString();
+      return null;
    }
 
    public static String buildLink(Request req, String collectionKey, Object entityKey, String subCollectionKey)
@@ -727,137 +677,34 @@ public class Service extends HttpServlet
 
    }
 
-   public Handler getHandler(Api api, String name)
+   public String getProfile()
    {
-      try
-      {
-         String clazz = null;
-
-         //first see if it is cached
-         Handler h = (Handler) apiHandlers.get(api.getName(), name);
-         if (h == null && api.getHandler(name) != null)
-         {
-            //ok, it is not cached but it is a registred short name to class name
-            clazz = api.getHandler(name);
-            h = (Handler) Class.forName(clazz).newInstance();
-            apiHandlers.put(api.getName(), name, h);
-            return h;
-         }
-
-         //so it is not a registered api handler, maybe it is a global handler
-         h = globalHandlers.get(name);
-
-         if (h == null && name.indexOf(".") > 0)
-         {
-            //nope, so maybe it is just a class name
-            h = (Handler) Class.forName(name).newInstance();
-            apiHandlers.put(api.getName(), name, h);
-         }
-
-         return h;
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
-      }
+      return profile;
    }
 
-   /**
-    * Adds a global handler useable by all APIs
-    * @param name
-    * @param clazz
-    */
-   public void addHandler(String name, Handler handler)
+   public void setProfile(String profile)
    {
-      try
-      {
-         globalHandlers.put(name, handler);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unknown handler \"" + name + "\". " + J.getShortCause(ex));
-      }
+      this.profile = profile;
    }
 
-   public synchronized Api getApi(long id)
+   public String getConfigPath()
    {
-      return apis.get(id);
+      return configPath;
    }
 
-   public synchronized void addApi(Api api)
+   public void setConfigPath(String configPath)
    {
-      Hashtable apisClone = new Hashtable(apis);
-
-      long id = api.getId();
-      if (id <= 0)
-         id = api.hashCode();
-
-      apisClone.put(id, api);
-      apis = apisClone;
+      this.configPath = configPath;
    }
 
-   public synchronized void removeApi(Api api)
+   public Configurator getConfigurator()
    {
-      Hashtable apisClone = new Hashtable(apis);
-
-      long id = api.getId();
-      if (id <= 0)
-         id = api.hashCode();
-
-      apisClone.remove(id);
-      apis = apisClone;
+      return configurator;
    }
 
-   public Collection<Api> getApis()
+   public void setConfigurator(Configurator configurator)
    {
-      return apis.values();
-   }
-
-   public Api getApi(String name)
-   {
-      for (Api api : apis.values())
-      {
-         if (name.equalsIgnoreCase(api.getName()))
-            return api;
-      }
-
-      return null;
-   }
-
-   public void setDebug(boolean debug)
-   {
-      this.debug = debug;
-   }
-
-   int first(String str, char... chars)
-   {
-      int first = -1;
-      for (char c : chars)
-      {
-         int idx = str.indexOf(c);
-         if (first < 0)
-            first = idx;
-         else if (idx < first)
-            first = idx;
-
-      }
-      return first;
-   }
-
-   /**
-    * Cleans/normalizes a path strings
-    */
-   public static String path(String path)
-   {
-      path = J.path(path.replace('\\', '/'));
-
-      if (!path.endsWith("*") && !path.endsWith("/"))
-         path += "/";
-
-      if (path.startsWith("/"))
-         path = path.substring(1, path.length());
-
-      return path;
+      this.configurator = configurator;
    }
 
    public String getServletMapping()
@@ -870,32 +717,62 @@ public class Service extends HttpServlet
       this.servletMapping = servletMapping;
    }
 
-   public Connection getConnection() throws Exception
+   public void setAllowHeaders(String allowedHeaders)
    {
-      if (ds != null)
-      {
-         return ds.getConnection();
-      }
-      return null;
+      this.allowedHeaders = allowedHeaders;
    }
 
-   public Db getDb(Api api, String collectionKey) throws ApiException
+   public interface ResourceLoader
    {
-      Db db = null;
+      InputStream getResource(String name);
+   }
 
-      if (collectionKey != null)
-      {
-         db = api.findDb(collectionKey);
-      }
+   public ResourceLoader getResourceLoader()
+   {
+      return resourceLoader;
+   }
 
-      if (db == null)
-      {
-         if (api.getDbs() == null || api.getDbs().size() == 0)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There are no database connections configured for this API.");
-         db = api.getDbs().get(0);
-      }
+   public void setResourceLoader(ResourceLoader resourceLoader)
+   {
+      this.resourceLoader = resourceLoader;
+   }
 
-      return db;
+   public InputStream getResource(String name)
+   {
+      if (resourceLoader != null)
+         return resourceLoader.getResource(name);
+
+      return getClass().getClassLoader().getResourceAsStream(name);
+   }
+
+   public boolean isConfigFast()
+   {
+      return configFast;
+   }
+
+   public void setConfigFast(boolean configFast)
+   {
+      this.configFast = configFast;
+   }
+
+   public boolean isConfigDebug()
+   {
+      return configDebug;
+   }
+
+   public void setConfigDebug(boolean configDebug)
+   {
+      this.configDebug = configDebug;
+   }
+
+   public String getConfigOut()
+   {
+      return configOut;
+   }
+
+   public void setConfigOut(String configOut)
+   {
+      this.configOut = configOut;
    }
 
 }

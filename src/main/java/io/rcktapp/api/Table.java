@@ -23,6 +23,7 @@ public class Table extends Dto
    Db                db          = null;
    String            name        = null;
    ArrayList<Column> columns     = new ArrayList();
+   ArrayList<Index>  indexes     = new ArrayList();
 
    /**
     * Set to true if this is a two column
@@ -88,7 +89,6 @@ public class Table extends Dto
       return null;
    }
 
-
    public String toString()
    {
       return name != null ? name : super.toString();
@@ -152,6 +152,28 @@ public class Table extends Dto
    public void removeColumn(Column column)
    {
       columns.remove(column);
+   }
+
+   public ArrayList<Index> getIndexes()
+   {
+      return indexes;
+   }
+
+   public void setIndexes(ArrayList<Index> indexes)
+   {
+      this.indexes = indexes;
+   }
+
+   public void addIndex(Index index)
+   {
+      if (index != null && !indexes.contains(index))
+         indexes.add(index);
+
+   }
+
+   public void removeIndex(Index index)
+   {
+      indexes.remove(index);
    }
 
    /**

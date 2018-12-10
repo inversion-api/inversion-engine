@@ -22,7 +22,7 @@ public class Entity extends Dto
 {
    Table                   table         = null;
    Collection              collection    = null;
-   Attribute               key           = null;
+   ArrayList<Attribute>    keys          = new ArrayList();
    ArrayList<Attribute>    attributes    = new ArrayList();
    ArrayList<Relationship> relationships = new ArrayList();
    String                  hint          = null;
@@ -162,12 +162,37 @@ public class Entity extends Dto
       this.hint = hint;
    }
 
+   public ArrayList<Attribute> getKeys()
+   {
+      return keys;
+   }
+
+   public void setKeys(ArrayList<Attribute> keys)
+   {
+      this.keys = keys;
+   }
+
+   public void addKey(Attribute attribute)
+   {
+      if (attribute != null && !keys.contains(attribute))
+         keys.add(attribute);
+   }
+
+   public void removeKey(Attribute attribute)
+   {
+      keys.remove(attribute);
+   }
+
    /**
     * @return the key
     */
    public Attribute getKey()
    {
-      return key;
+      if (!this.keys.isEmpty())
+      {
+         return this.keys.get(0);
+      }
+      return null;
    }
 
    /**
@@ -175,7 +200,8 @@ public class Entity extends Dto
     */
    public void setKey(Attribute key)
    {
-      this.key = key;
+      this.keys.clear();
+      this.keys.add(key);
    }
 
 }

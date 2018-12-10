@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 public abstract class Db extends Dto
 {
+   protected Api    api       = null;
+
    protected Logger log       = LoggerFactory.getLogger(getClass());
 
    protected String name      = null;
@@ -43,7 +45,15 @@ public abstract class Db extends Dto
       this.name = name;
    }
 
-   public abstract void bootstrapApi(Api api) throws Exception;
+   public abstract void bootstrapApi() throws Exception;
+
+   public void startup()
+   {
+   }
+
+   public void shutdown()
+   {
+   }
 
    protected String makeRelationshipName(Relationship rel)
    {
@@ -73,6 +83,17 @@ public abstract class Db extends Dto
       name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
 
       return name;
+   }
+
+   public void setApi(Api api)
+   {
+      this.api = api;
+      api.addDb(this);
+   }
+
+   public Api getApi()
+   {
+      return api;
    }
 
    public Table getTable(String tableName)

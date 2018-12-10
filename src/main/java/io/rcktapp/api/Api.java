@@ -25,27 +25,25 @@ import io.forty11.j.J;
 
 public class Api extends Dto
 {
-   String                            name        = null;
-   LinkedHashMap<String, String>     handlers    = new LinkedHashMap();
-   LinkedHashMap<String, Db>         dbs         = new LinkedHashMap();
-   List<Endpoint>                    endpoints   = new ArrayList();
-   List<Action>                      actions     = new ArrayList();
-   LinkedHashMap<String, Collection> collections = new LinkedHashMap();
-   List<AclRule>                     acls        = new ArrayList();
+   protected String                            name        = null;
+   boolean                                     debug       = false;
 
-   String                            apiCode     = null;
-   String                            accountCode = null;
+   protected String                            apiCode     = null;
+   protected String                            accountCode = null;
+   protected boolean                           multiTenant = false;
+   protected String                            url         = null;
 
-   boolean                           multiTenant = false;
+   protected List<Db>                          dbs         = new ArrayList();
+   protected List<Endpoint>                    endpoints   = new ArrayList();
+   protected List<Action>                      actions     = new ArrayList();
+   protected List<AclRule>                     aclRules    = new ArrayList();
 
-   transient long                    loadTime    = 0;
+   protected LinkedHashMap<String, Collection> collections = new LinkedHashMap();
 
-   boolean                           reloadable  = false;
-   boolean                           debug       = false;
+   transient long                              loadTime    = 0;
+   protected String                            hash        = null;
 
-   String                            url         = null;
-
-   transient Hashtable               cache       = new Hashtable();
+   transient Hashtable                         cache       = new Hashtable();
 
    public Api()
    {
@@ -56,9 +54,45 @@ public class Api extends Dto
       this.name = name;
    }
 
+   public void startup()
+   {
+      for (Db db : dbs)
+      {
+         db.startup();
+      }
+   }
+
+   public void shutdown()
+   {
+      for (Db db : dbs)
+      {
+         db.shutdown();
+      }
+   }
+
+   public String getName()
+   {
+      return name;
+   }
+
+   public void setName(String name)
+   {
+      this.name = name;
+   }
+
+   public String getHash()
+   {
+      return hash;
+   }
+
+   public void setHash(String hash)
+   {
+      this.hash = hash;
+   }
+
    public Table findTable(String name)
    {
-      for (Db db : dbs.values())
+      for (Db db : dbs)
       {
          Table t = db.getTable(name);
          if (t != null)
@@ -196,12 +230,25 @@ public class Api extends Dto
       collections.remove(collection.getName().toLowerCase());
    }
 
+   public Db getDb(String name)
+   {
+      if (name == null)
+         return null;
+
+      for (Db db : dbs)
+      {
+         if (name.equalsIgnoreCase(db.getName()))
+            return db;
+      }
+      return null;
+   }
+
    /**
     * @return the dbs
     */
    public List<Db> getDbs()
    {
-      return new ArrayList(dbs.values());
+      return new ArrayList(dbs);
    }
 
    /**
@@ -209,32 +256,42 @@ public class Api extends Dto
        */
    public void setDbs(List<Db> dbs)
    {
-      int cnt = 0;
       for (Db db : dbs)
-      {
-         addDb(db, cnt++);
-      }
+         addDb(db);
    }
 
-   public void addDb(Db db, int cnt)
+   public void addDb(Db db)
    {
-      String name = db.getName() != null ? db.getName() : "db" + cnt;
-      dbs.put(name.toLowerCase(), db);
+      if (!dbs.contains(db))
+         dbs.add(db);
+
+      if (db.getApi() != this)
+         db.setApi(this);
    }
 
-   public Db getDb(String name)
-   {
-      return dbs.get(name.toLowerCase());
-   }
-
-   public void updateDbMap()
-   {
-      // This is needed because the Db objects coming into addDb don't have a name prop yet
-      // during auto-wiring.. this is called just after auto-wiring to update the keys in the map
-      List<Db> dbList = new ArrayList<>(dbs.values());
-      this.dbs.clear();
-      this.setDbs(dbList);
-   }
+   // public void addHandler(String name, String clazz)
+   // {
+   //    try
+   //    {
+   //       handlers.put(name.toLowerCase(), clazz);
+   //    }
+   //    catch (Exception ex)
+   //    {
+   //       throw new ApiException("Unable to add handler \"" + clazz + "\". Reason: " + J.getShortCause(ex));
+   //    }
+   // }
+   //
+   // public void setHandlers(String handlers)
+   // {
+   //    if (handlers == null)
+   //       return;
+   //
+   //    String[] parts = handlers.split(",");
+   //    for (int i = 0; i < parts.length - 1; i += 2)
+   //    {
+   //       addHandler(parts[i].trim(), parts[i + 1].trim());
+   //    }
+   // }
 
    public long getLoadTime()
    {
@@ -248,7 +305,7 @@ public class Api extends Dto
 
    public List<Endpoint> getEndpoints()
    {
-      return Collections.unmodifiableList(endpoints);
+      return new ArrayList(endpoints);
    }
 
    public void setEndpoints(List<Endpoint> endpoints)
@@ -260,12 +317,16 @@ public class Api extends Dto
 
    public void addEndpoint(Endpoint endpoint)
    {
-      endpoints.add(endpoint);
+      if (!endpoints.contains(endpoint))
+         endpoints.add(endpoint);
+
+      if (endpoint.getApi() != this)
+         endpoint.setApi(this);
    }
 
    public List<Action> getActions()
    {
-      return Collections.unmodifiableList(actions);
+      return new ArrayList(actions);
    }
 
    public void setActions(List<Action> actions)
@@ -277,77 +338,35 @@ public class Api extends Dto
 
    public void addAction(Action action)
    {
-      actions.add(action);
+      if (!actions.contains(action))
+         actions.add(action);
+
+      if (action.getApi() != this)
+         action.setApi(this);
    }
 
-   public void addAcl(AclRule acl)
+   public void addAclRule(AclRule acl)
    {
-      if (!acls.contains(acl))
+      if (!aclRules.contains(acl))
       {
-         acls.add(acl);
-         Collections.sort(acls);
+         aclRules.add(acl);
+         Collections.sort(aclRules);
       }
+
+      if (acl.getApi() != this)
+         acl.setApi(this);
    }
 
-   public void setAcls(List<AclRule> acls)
+   public void setAclRules(List<AclRule> acls)
    {
-      this.acls.clear();
+      this.aclRules.clear();
       for (AclRule acl : acls)
-         addAcl(acl);
+         addAclRule(acl);
    }
 
-   public List<AclRule> getAcls()
+   public List<AclRule> getAclRules()
    {
-      return new ArrayList(acls);
-   }
-
-   public String getName()
-   {
-      return name;
-   }
-
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
-   public void addHandler(String name, String clazz)
-   {
-      try
-      {
-         handlers.put(name.toLowerCase(), clazz);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException("Unable to add handler \"" + clazz + "\". Reason: " + J.getShortCause(ex));
-      }
-   }
-
-   public void setHandlers(String handlers)
-   {
-      if (handlers == null)
-         return;
-
-      String[] parts = handlers.split(",");
-      for (int i = 0; i < parts.length - 1; i += 2)
-      {
-         addHandler(parts[i].trim(), parts[i + 1].trim());
-      }
-   }
-
-   public String getHandler(String name)
-   {
-      return handlers.get(name.toLowerCase());
-   }
-
-   public boolean isReloadable()
-   {
-      return reloadable;
-   }
-
-   public void setReloadable(boolean reloadable)
-   {
-      this.reloadable = reloadable;
+      return new ArrayList(aclRules);
    }
 
    public boolean isDebug()

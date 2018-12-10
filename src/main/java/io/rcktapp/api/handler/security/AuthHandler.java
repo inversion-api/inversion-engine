@@ -172,7 +172,7 @@ public class AuthHandler implements Handler
             {
                //only attempt to validate password and log the attempt 
                //if the user has failed login fewer than failedMax times
-               String remoteAddr = req.getHttpServletRequest().getRemoteAddr();
+               String remoteAddr = req.getRemoteAddr();
                authorized = checkPassword(conn, tempUser, password);
 
                if (shouldTrackRequestTimes)
@@ -223,7 +223,7 @@ public class AuthHandler implements Handler
             sessionKey = req.getApi().getId() + "_" + newSessionId();//
             sessions.put(sessionKey, user);
 
-            resp.getHttpResp().setHeader("x-auth-token", "Session " + sessionKey);
+            resp.addHeader("x-auth-token", "Session " + sessionKey);
             JSObject obj = new JSObject();
             obj.put("id", user.getId());
             obj.put("username", username);

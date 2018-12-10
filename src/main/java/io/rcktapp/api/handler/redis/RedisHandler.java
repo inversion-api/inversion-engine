@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.rcktapp.api.handler.redis;
 
-import java.time.Duration;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -46,81 +61,119 @@ import redis.clients.jedis.JedisPoolConfig;
  */
 public class RedisHandler implements Handler
 {
-   Logger                log               = LoggerFactory.getLogger(RedisHandler.class);
+   Logger                       log                                = LoggerFactory.getLogger(getClass());
 
    // configurable snooze.props 
-   private String        host              = "";
-   private int           port              = 6379;
-   private String        skipCache         = "nocache";
-   private int           readSocketTimeout = 2500;                                       // time in milliseconds
-   private int           ttl               = 15552000;                                   // time to live 15,552,000s == 180 days
+   protected String             redisHost                          = null;
+   protected int                redisPort                          = 6379;
 
-   final JedisPoolConfig poolConfig        = buildPoolConfig();
-   JedisPool             jedisPool         = null;
+   protected int                redisPoolMin                       = 16;
+   protected int                redisPoolMax                       = 128;
+   protected boolean            redisTestOnBorrow                  = true;
+   protected boolean            redisTestOnReturn                  = true;
+   protected boolean            redisTestWhileIdle                 = true;
+   protected int                redisMinEvictableIdleTimeMillis    = 60000;
+   protected int                redisTimeBetweenEvictionRunsMillis = 30000;
+   protected int                redisNumTestsPerEvictionRun        = 3;
+   protected boolean            redisBlockWhenExhausted            = true;
+
+   protected String             redisNocacheParam                  = "nocache";
+   protected int                redisReadSocketTimeout             = 2500;                               // time in milliseconds
+   protected int                redisTtl                           = 15552000;                           // time to live 15,552,000s == 180 days
+
+   Hashtable<String, JedisPool> pools                              = new Hashtable();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      if (jedisPool == null)
-         jedisPool = new JedisPool(poolConfig, host, port, readSocketTimeout);
+      //caching only makes sense for GET requests
+      if (!"GET".equalsIgnoreCase(req.getMethod()))
+         return;
 
-      Jedis jedis = jedisPool.getResource();
+      //only cache top level request, on internal recursive requests
+      if (chain.getParent() != null)
+         return;
+
+      String nocacheParam = chain.getConfig("redisNocacheParam", this.redisNocacheParam);
 
       // remove this param before creating the key, so this param is not included in the key
-      String skipCacheLookup = req.removeParam(skipCache);
+      boolean skipCache = (req.removeParam(nocacheParam) != null);
 
-      // the key is derived from the URL
-      String key = removeUrlProtocol(req.getApiUrl()) + req.getPath() + sortRequestParameters(req.getParams());
-      log.info("key: " + key);
+      if (skipCache)
+         return;
 
-      // request should include a json object
-      JSObject resJson = null;
+      Jedis jedis = null;
 
       try
       {
-         String value = null;
+         if (!skipCache)
+         {
+            // the key is derived from the URL
+            String key = getCacheKey(chain);
 
-         // attempt to get the value from Redis
-         if (skipCacheLookup == null)
-            value = jedis.get(key);
+            // request should include a json object
+            JSObject resJson = null;
 
-         if (value != null)
-            resJson = JS.toJSObject(value);
+            String value = null;
+            try
+            {
+               jedis = getPool(chain).getResource();
+               value = jedis.get(key);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Failed to retrieve from Redis the key: " + key, ex);
+            }
 
-      }
-      catch (Exception e)
-      {
-         // most likely a read socket timeout exception... log it and move on.
-         log.warn("Failed to retrieve from Redis the key: " + key, e);
+            if (value != null)
+            {
+               log.debug("CACHE HIT : " + key);
+
+               resJson = JS.toJSObject(value);
+               res.setJson(resJson);
+               res.setStatus(SC.SC_200_OK);
+               chain.cancel();
+            }
+            else
+            {
+               log.debug("CACHE MISS: " + key);
+
+               chain.go();
+
+               // TODO should the naming convention include the TTL in the name?
+
+               // see class header for explanation on setex()  
+               // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
+
+               if (res.getStatusCode() == 200)
+               {
+                  try
+                  {
+                     int ttl = chain.getConfig("redisTtl", this.redisTtl);
+                     jedis.setex(key, ttl, chain.getResponse().getJson().toString());
+                  }
+                  catch (Exception ex)
+                  {
+                     log.warn("Failed to save Redis key: " + key, ex);
+                  }
+               }
+            }
+         }
       }
       finally
       {
-         if (resJson == null)
+         if (jedis != null)
          {
-            chain.go();
-
-            // TODO should the naming convention include the TTL in the name?
-
-            // see class header for explanation on setex()  
-            // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
-            jedis.setex(key, ttl, chain.getResponse().getJson().toString());
-
-            if (jedis != null)
+            try
+            {
                jedis.close();
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error closing redis connection", ex);
+            }
          }
-         else
-         {
-            chain.cancel();
-
-            res.setStatus(SC.SC_200_OK);
-            res.setJson(resJson);
-         }
-
       }
-
-      // TODO close down the pool on shutdown
-      //jedisPool.close();
-
    }
 
    /**
@@ -128,9 +181,9 @@ public class RedisHandler implements Handler
     * @param requestParamMap map representing the request parameters
     * @return a concatenated string of each param beginning with '?' and joined by '&'
     */
-   private String sortRequestParameters(Map<String, String> requestParamMap)
+   String getCacheKey(Chain chain)
    {
-      TreeMap<String, String> sortedKeyMap = new TreeMap<>(requestParamMap);
+      TreeMap<String, String> sortedKeyMap = new TreeMap<>(chain.getRequest().getParams());
 
       String sortedParams = "";
 
@@ -155,28 +208,48 @@ public class RedisHandler implements Handler
 
       }
 
-      return sortedParams;
+      String key = chain.getRequest().getApiUrl();
+      key = key.substring(key.indexOf("://") + 3);
+      key += chain.getRequest().getPath();
+      key += sortedParams;
+
+      return key;
    }
 
-   private String removeUrlProtocol(String url)
+   JedisPool getPool(Chain chain)
    {
-      return url.substring(url.indexOf("://") + 3);
-   }
+      String host = chain.getConfig("redisHost", this.redisHost);
+      int port = chain.getConfig("redisPort", this.redisPort);
 
-   private JedisPoolConfig buildPoolConfig()
-   {
-      final JedisPoolConfig poolConfig = new JedisPoolConfig();
-      poolConfig.setMaxTotal(128);
-      poolConfig.setMaxIdle(128);
-      poolConfig.setMinIdle(16);
-      poolConfig.setTestOnBorrow(true);
-      poolConfig.setTestOnReturn(true);
-      poolConfig.setTestWhileIdle(true);
-      poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(60).toMillis());
-      poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(30).toMillis());
-      poolConfig.setNumTestsPerEvictionRun(3);
-      poolConfig.setBlockWhenExhausted(true);
-      return poolConfig;
+      String poolKey = chain.getConfig("redisPoolKey", host + ":" + port);
+
+      JedisPool jedis = pools.get(poolKey);
+      if (jedis == null)
+      {
+         synchronized (this)
+         {
+            jedis = pools.get(poolKey);
+            if (jedis == null)
+            {
+               JedisPoolConfig poolConfig = new JedisPoolConfig();
+               poolConfig.setMaxTotal(chain.getConfig("redisPoolMax", this.redisPoolMax));
+               poolConfig.setMaxIdle(chain.getConfig("redisPoolMax", this.redisPoolMax));
+               poolConfig.setMinIdle(chain.getConfig("redisPoolMin", this.redisPoolMin));
+               poolConfig.setTestOnBorrow(chain.getConfig("redisTestOnBorrow", this.redisTestOnBorrow));
+               poolConfig.setTestOnReturn(chain.getConfig("redisTestOnReturn", this.redisTestOnReturn));
+               poolConfig.setTestWhileIdle(chain.getConfig("redisTestWhileIdle", this.redisTestWhileIdle));
+               poolConfig.setMinEvictableIdleTimeMillis(chain.getConfig("redisMinEvictableIdleTimeMillis", this.redisMinEvictableIdleTimeMillis));
+               poolConfig.setTimeBetweenEvictionRunsMillis(chain.getConfig("redisTimeBetweenEvictionRunsMillis", this.redisTimeBetweenEvictionRunsMillis));
+               poolConfig.setNumTestsPerEvictionRun(chain.getConfig("redisNumTestsPerEvictionRun", this.redisNumTestsPerEvictionRun));
+               poolConfig.setBlockWhenExhausted(chain.getConfig("redisBlockWhenExhausted", this.redisBlockWhenExhausted));
+
+               jedis = new JedisPool(poolConfig, host, port, chain.getConfig("redisReadSocketTimeout", this.redisReadSocketTimeout));
+               pools.put(poolKey, jedis);
+            }
+         }
+      }
+
+      return jedis;
    }
 
 }

@@ -41,12 +41,13 @@ import io.rcktapp.api.service.Service;
 
 public class LogHandler implements Handler
 {
-   private Logger             log             = LoggerFactory.getLogger(LogHandler.class);
+   Logger                               log            = LoggerFactory.getLogger(getClass());
 
-   String                     logTable;
-   String                     logChangeTable;
+   protected String                     logMask        = "* * * * * * * * * *";
+   protected String                     logTable       = null;
+   protected String                     logChangeTable = null;;
 
-   CaseInsensitiveSet<String> sensitiveFields = new CaseInsensitiveSet<>();
+   protected CaseInsensitiveSet<String> logMaskFields  = new CaseInsensitiveSet<>();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -64,6 +65,10 @@ public class LogHandler implements Handler
       }
       finally
       {
+         String logMask = chain.getConfig("logMask", this.logMask);
+         String logTable = chain.getConfig("logTable", this.logTable);
+         String logChangeTable = chain.getConfig("logChangeTable", this.logChangeTable);
+
          try
          {
             if (res.getStatusCode() > 199 && res.getStatusCode() < 300)
@@ -90,7 +95,7 @@ public class LogHandler implements Handler
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
                   logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
 
-                  JSObject bodyJson = obfuscateSensitiveFields(req.getJson());
+                  JSObject bodyJson = maskFields(req.getJson(), logMask);
                   if (bodyJson != null)
                   {
                      logParams.put("body", bodyJson.toString());
@@ -133,7 +138,7 @@ public class LogHandler implements Handler
       }
    }
 
-   JSObject obfuscateSensitiveFields(JSObject json)
+   JSObject maskFields(JSObject json, String mask)
    {
       if (json != null)
       {
@@ -143,7 +148,7 @@ public class LogHandler implements Handler
             {
                if (o instanceof JSObject)
                {
-                  obfuscateSensitiveFields((JSObject) o);
+                  maskFields((JSObject) o, mask);
                }
             }
          }
@@ -151,9 +156,9 @@ public class LogHandler implements Handler
          {
             for (String key : json.keys())
             {
-               if (sensitiveFields.contains(key))
+               if (logMaskFields.contains(key))
                {
-                  json.put(key, "* * * * * * * * * *");
+                  json.put(key, mask);
                }
             }
          }
@@ -162,15 +167,15 @@ public class LogHandler implements Handler
       return json;
    }
 
-   public List<String> getSensitiveFields()
+   public List<String> getLogMaskFields()
    {
-      return new ArrayList(sensitiveFields);
+      return new ArrayList(logMaskFields);
    }
 
-   public void setSensitiveFields(java.util.Collection<String> whitelist)
+   public void setLogMaskFields(java.util.Collection<String> logMaskFields)
    {
-      this.sensitiveFields.clear();
-      this.sensitiveFields.addAll(whitelist);
+      this.logMaskFields.clear();
+      this.logMaskFields.addAll(logMaskFields);
    }
 
 }

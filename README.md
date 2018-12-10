@@ -1,6 +1,6 @@
-# rckt_snooze
+# Snooze API as a Service Platform
 
-Snooze is an "API as a Service" platform and the fastest way to deliver a REST API.
+Snooze is the fastest way to deliver a REST API.
 
 With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
 
@@ -11,19 +11,15 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 ## Contents
 1. [Features & Benefits](#features--benefits)
 1. [Quick Start](#quickstart)
+1. [URL Structure](#url-structure)
 1. [Configuring Your Api](#configuring-your-api)
    * [Configuration Files Loading](#configuration-file-loading)
-   * [URL Structure](#url-structure)
-   * [Account](#account)
-   * [Api](#api)
-   * [Collections, Entities and Attributes](#collections-entities-and-attributes)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
+   * [Apis](#apis)
+   * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
    * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
-   * [AclRule](#aclrule)
-   * [Permission](#permission)
-   * [Change](#change)
-   * [Db](#db)
-   * [Tables, Columns and Relationships](#tables-columns-and-relationships)
-   * [Tenant](#tenant)
+   * [AclRules](#aclrules)
+   * [Permissions](#permissions)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted & Required Parameters](#restricted--required-query-parameters)
@@ -44,6 +40,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 1. [Elasticsearch Specifics](#elasticsearch-specifics)
 1. [DynamoDB Specifics](#dynamodb-specifics)  
 1. [Developer Notes](#developer-notes)
+   * [Javadocs](#Javadocs)
    * [Logging](#logging)
    * [Gradle, Maven, etc.](#gradle-maven-etc)    
 1. [Changes](#changes)   
@@ -56,11 +53,10 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
  * Tables exposed as REST collections
  * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
- * RQL
  * Nested document expansion for foreign keys
  * Nested document put/post
- * Pagination / ordering
  * Batch/bulk put/post/delete
+ * Pagination / ordering
  * Declarative security
  * Sql Injection proof
  * Consistent response envelope
@@ -79,8 +75,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 The fasted way to get going is to checkout/fork the [Snooze Spring Boot Starter Project](https://github.com/RocketPartners/rckt_snooze_spring)
 and follow the readme instructions to get going in less than 5 minutes.  
 
-If you are comfortable with Gradle, Eclipse, and Tomact then you can start with this project and configure your Tomcat servlet with the web.xml 
-included in this project.
+If you are comfortable with Gradle, Eclipse, Tomact etc. then you can start with this project and configure your application 
+server of choice with the web.xml included in this project.   
 
 In either case, all you need to do is supply edit your JDBC connection information the soooze.properties configuration file.
 Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
@@ -93,18 +89,22 @@ Try out some [RQL](#resource-query-language-rql) queries like:
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
 
-Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
+Add '&explain' to your query string to see debug output of what exactly the server is doing.
+
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY&explain
+
+No swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' in your config, restart and your API will be fully CRUD ready!
  
 
 ```properties
     
-snooze.debug=true
-snooze.servletMapping=api
+#snooze.servletMapping=api
 
 ########################################################################
 ## APIs 
 ########################################################################
 api.class=io.rcktapp.api.Api
+api.debug
 api.accountCode=demo
 api.apiCode=helloworld
 api.dbs=db
@@ -115,7 +115,7 @@ api.endpoints=restEp
 ########################################################################
 ## DATABASES 
 ########################################################################
-db.class=io.rcktapp.api.Db
+db.class=io.rcktapp.api.handler.sql.SqlDb
 db.name=db
 db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
@@ -149,43 +149,11 @@ restEp.includePaths=*
 restEp.excludePaths=somethingExcluded*
 restEp.methods=GET
 #restEp.methods=GET,PUT,POST,DELETE
-restEp.handler=restH
 
 
 ```
 
-
-## Configuring Your API
-
-
-### Configuration File Loading
-
-Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
-order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
-key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
-that do not have to duplicate config between them.
-  
-The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
-
-Configuration and API bootstrapping takes place in the following stages:
-
-1. Initial loading - this stage loads all of the user supplied values according to the above algorithm
-1. Db reflection - the system looks for all Db config objects and inspects the table/column structure (this goes for Dynamo and ElasticSearch too) and generates
-   bean.property=value markup for everything it finds.
-1. Api creation - Column,Table,Entity,Collection configuration is created to match the underlying Dbs.
-1. The user supplied config is merged down (overwriting any shared keys) into the generated config map including the Db and Api information.
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
-
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
-of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Snooze writes the merged output to the console so you can inspect any keys you might want to customize.
-
-
-
-
-### URL Structure
+## URL Structure
 
 Snooze is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
 with an AccountCode and ApiCode path components.  The AccountCode uniquely identifies the organization that owns the API and is unique to the 
@@ -210,22 +178,65 @@ Examples example:
  * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 
-### Account
 
-Snooze itself is multi-tenant, designed to host multiple APIs that may be owned by different organizations.  An Account represents an organization that
-ownes an Api...which may be different from the organization that is running the Snooze instance hosting the Api.  
+## Configuring Your API
 
 
-### Api
+### Configuration File Loading
+
+Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
+order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
+that do not have to duplicate config between them.
+  
+The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Snooze servlet wiring - All 'snooze.' bean propertie are set on the Snooze servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
+1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
+1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
+1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that mapp back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialzied back out to name=value property format as if it were user supplied config.    
+1. The user supplied config from step 1 are then merged down on onto the dynamically config map.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  Snooze logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
+you might want to customize.
+
+
+## Keeping Passwords out of Config Files
+
+If you want to keep your database passwords (or any other sensative info) out of your snoooze.properties config files, you can simply set an environment variable OR
+VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
+to the top of the batch file you use to launch our app or application server.  
+
+### Snooze Servlet Config
+
+As you may have seen in the [Quickstart](#quickstart) example above 'snooze' is a reserved known bean name in the configuration files. 'snooze' referers to the 
+Snooze servlet itself and you can set any bean properties you want.
+
+### Dbs, Tables, Columns and Indexs
+
+TODO
+
+
+### Apis
 
 An Api exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
    
 
-### Collections, Entities, and Attributes
+### Collections, Entities, Attributes and Relationships
 
 Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
 to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
 in a URL or as a JSON property name.
+
 
 
 ### Endpoints, Actions and Handlers
@@ -245,41 +256,25 @@ is a custom Handler. Handlers do not have to be singletons but the design patter
 ties things back to the url/http method being invoked.
 
 
-Example Handlers:
- * io.rcktapp.api.handler.sql.GetHandler
- * io.rcktapp.api.handler.sql.PostHandler
- * io.rcktapp.api.handler.sql.DeleteHandler
- * io.rcktapp.api.handler.auth.AuthHandler
- * io.rcktapp.api.handler.auth.AclHandler
- * io.rcktapp.api.handler.util.LogHandler
- * io.rcktapp.api.handler.util.S3UploadHandler
- * io.rcktapp.api.handler.util.RateHandler
+Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io/rcktapp/api/Handler.html):
+ * SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
+ * SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
+ * SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
+ * AuthHandler - Logs a user in and puts a User object in the session  
+ * AclHandler - Processes AclRules to secure your Endpoints
+ * LogHandler - Logs requests and the JSON payloads
+ * S3UploadHandler - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
+ * RateLimitHandler - Protecs Endpoints from accidental or intentional DoS type traffic
 
 
-
-
-### AclRule
+### AclRules
 
 AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
 be setup (in that order) to protect resources according to configed AclRules.
     
-### Permissions 
+### Permissions
 
 The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
-
-### Change
-
-Supplied default Handler implementations accumulate Changes that occur as part of any request.  LogHandler can be configured to save the list of Changes to a Db to implement 
-effective per request user level change logging.  Custom Handler implementors should call Response.addChange if a call modifies persistent data.
-
-
-
-### Db - change to data source to accomodate dynamo and elastic
-### Table
-### Column
-### Relationship
-
-### Tenant - relationship between app and multiple users of the app - goes with use of the api
 
     
 
@@ -302,9 +297,11 @@ you use to query a REST collection for entities that match specific criteria or 
   You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-[See io.rcktapp.api.service.TestRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/RqlToSqlTest.java)
+[See io.rcktapp.rql.TestSqlRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/TestSqlRql.java)
 
 ### Reserved Query String Parameters
+
+TODO: this section needs work
 
  * q - 
  * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
@@ -312,7 +309,10 @@ you use to query a REST collection for entities that match specific criteria or 
    to work. 
  * includes - 
  * excludes - 
- * expands - 
+ * expands -
+ * colapse 
+
+
 
 ### Restricted & Required Query Parameters
 
@@ -648,6 +648,40 @@ TODO: add more specific doco here.
 
 ## Developer Notes
 
+### Javadocs
+
+For all Handler configuration options or to understand how to use Snooze as a framework for a custom application
+check out the Javadocs.
+
+ * 0.3.x - https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/
+
+
+### Runtime Profiles
+
+As discussed in [Configuration File Loading](#configuration-file-loading) Snooze was designed to support different runtime profiles.  
+You can set a JVM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
+Suppose you had the following config files in WEB-INF directory:
+
+* snooze.properties
+* snooze3.properties
+* snooze-dev.properties
+* snooze99-dev.properties
+* snooze-stage.propeties
+* snooze-prod.properties
+* snooze1-prod.properties
+* snooze2-prod.properties
+
+If you were to add '-Dsnooze.profile=prod' to your JVM launch command then snooze.properties, snooze3.properties, snooze-prod.properties
+snooze1-prod.properties, and snooze2-prod.properties would be loaded in that order.  snooze-dev.properties and snooze-stage.propeties
+would be completely ignored.  
+
+This technique makes it simple to use the same build WAR asset to be deployed to multiple different runtime targets. 
+
+Another helpful trick here would be to launch in development with '-Dsnooze.profile=dev' add something like "snooze99-dev.properties" 
+to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
+and you custom settings will load last trumping any other keys shared with other files. 
+
+
 ### Logging
  * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 ```
@@ -672,16 +706,16 @@ configurations.all {
 }
 
 dependencies {
-    compile 'com.github.RocketPartners:rckt_snooze:release-0.2.x-SNAPSHOT'
+    compile 'com.github.RocketPartners:rckt_snooze:release-0.3.x-SNAPSHOT'
 } 
 ```   
 
-Include the spring-boot dependencies to your custom project to quickly get it running with ```gradle bootRun```
-```
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-actuator'
-    compile 'org.springframework.boot:spring-boot-starter-jdbc'
-```
+### Spring Boot
+
+If you don't want to monkey with an application server deployment, a this [Snooze Spring Boot starter project](https://github.com/RocketPartners/rckt_snooze_spring) 
+will get you up and running in less than 5 minutes.
+
+
 
 ## Rest API Design Resources
 
@@ -740,40 +774,41 @@ Include the spring-boot dependencies to your custom project to quickly get it ru
   
 ## Changes
 
-2018-05-09 --------------------------------
+2018-11-20 0.3.x --------------------------
+
+  * Created 0.3.x branch refactored Rql and Db and changed package structure
+    of Handlers to accomodate recent additions of DynamoDb and Elasticsearch.
+    The 0.2.x branch and before were signifficantly RDBMS centric.  This is
+    an attempt to make the design more accomodating to additional backends
+
+2018-05-09 0.2.x --------------------------
 
  * Changed the way that GetHandler expands documents so that netsted collection
    requrests are set back through the "front door" and will obey all endpoint
    security requirments for that subcollection
-
  * Added "explain" query string param for debugging sql queries
-
  * Added "required" and "restricted" action/endpoint configuration params that enable 
    api designers to enhance security
 
 
-2018-05-04 --------------------------------
+2018-05-04 0.2.x --------------------------
 
  * Add Reponse.changes to allow handlers to accumulate a list of changes
    that occure durring a request.  
-
  * Updated LogHandler to persist Response.changes values
 
-2018-05-02 -------------------------------- 
+2018-05-02 0.3.x --------------------------
  
  * Corrected rql handling off 'offset'
-
  * Corrected rql handling double quoted string params
-
  * Added test for double/single quotes
-
  * Rehabbed TestRql so that all tests pass
 
-2018-04-24 --------------------------------
+2018-04-24 0.2.x --------------------------
  
  * Fixed incorrectly named "href" fields for expanded relationships
 
-2018-04-04 --------------------------------
+2018-04-04 0.2.x --------------------------
  
  * Changed Endpoint.path to Endpoint.paths and Endpoint.method to Endpoint.methods.  A comma separated list
    from either the db configuration or props file configuration will correctly parse into a collection.
@@ -785,19 +820,19 @@ Include the spring-boot dependencies to your custom project to quickly get it ru
  * Added RestHandler as a shortcut that delegates to a stock Get/Post/Delete handler.  This made it much
    easier to minimize configuration now that a Endpoint can easily map to multiple methods.
    
-2018-03-02 --------------------------------
+2018-03-02 0.2.x --------------------------
 
  * Corrected Endpoint order sorting defect
  * Added support for comma separated list of methods for Endpoint matching
 
-2018-02-23 --------------------------------
+2018-02-23 0.2.x --------------------------
 
  * Enhanced pluralization redirects to cover 404 errors generated by handlers.
  * Prevented attempts at pluralization of things ending in 's'.  It was to error prone
  * Added 'order' column to Endpoint so that wildcard with conflicting paths can be prioritized
  * Added quoting for tables to prevent sql errors when tables have reserved names
   
-2018-02-18 --------------------------------
+2018-02-18 0.2.x --------------------------
  
  * Enabled schema refresh.  If api.debug=ture and api.refresh=true the schema will be refreshed
    from the DB within 60 seconds of the last API call.  This "developer mode" allows you to 
@@ -811,7 +846,7 @@ Include the spring-boot dependencies to your custom project to quickly get it ru
    
    http(s)://whateverhost/[${servletPrefix}/]${account.code}/${collection}
 
-2017-11-16 --------------------------------
+2017-11-16 0.2.x --------------------------
 
 * Changed default behavior of the GetHandler so that all responses are wrapped as if they were
   paginated with a wrapper {meta:{}, data:[]}

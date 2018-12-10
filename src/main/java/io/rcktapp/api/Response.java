@@ -8,60 +8,79 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-
+import io.forty11.j.J;
 import io.forty11.j.utils.ListMap;
 import io.forty11.web.js.JSObject;
 
 public class Response
 {
-
-   HttpServletResponse     httpResp    = null;
    ListMap<String, String> headers     = new ListMap();
 
    int                     statusCode  = 200;
    String                  statusMesg  = "OK";
    String                  statusError = null;
+   String                  redirect    = null;
    JSObject                json        = new JSObject();
    String                  text        = null;
-
+   String                  contentType = null;
    List<Change>            changes     = new ArrayList();
 
-   StringBuffer            debug       = null;
+   StringBuffer            debug       = new StringBuffer();
 
-   public Response(HttpServletResponse httpResp) throws Exception
+   StringBuffer            out         = new StringBuffer();
+
+   public Response()
    {
-      this.httpResp = httpResp;
+
    }
 
-   public void debug(Object... msgs)
+   public void write(StringBuffer buff, Object... msgs)
    {
-      if (debug == null)
-         debug = new StringBuffer();
-
       for (int i = 0; msgs != null && i < msgs.length; i++)
       {
          Object msg = msgs[i];
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
-         debug.append(msg).append("\r\n");
+         buff.append(msg).append("\r\n");
       }
+   }
+
+   public void debug(Object... msgs)
+   {
+      write(debug, msgs);
+   }
+
+   public void out(Object... msgs)
+   {
+      debug(msgs);
+      write(out, msgs);
+   }
+
+   public void setOutput(String output)
+   {
+      out = new StringBuffer(output);
+   }
+
+   public String getOutput()
+   {
+      return out.toString();
    }
 
    public String getDebug()
    {
-      return debug == null ? "<EMPTY>" : debug.toString();
+      return debug.toString();
    }
 
    /**
@@ -113,13 +132,13 @@ public class Response
       this.json = json;
    }
 
-   /**
-    * @return the httpResp
-    */
-   public HttpServletResponse getHttpResp()
-   {
-      return httpResp;
-   }
+   //   /**
+   //    * @return the httpResp
+   //    */
+   //   public HttpServletResponse getHttpResp()
+   //   {
+   //      return httpResp;
+   //   }
 
    /**
     * @return the statusMesg
@@ -159,6 +178,28 @@ public class Response
          }
       }
       return null;
+   }
+
+   public String getRedirect()
+   {
+      return redirect;
+   }
+
+   public void setRedirect(String redirect)
+   {
+      this.redirect = redirect;
+   }
+
+   public String getContentType()
+   {
+      return contentType;
+   }
+
+   public void setContentType(String contentType)
+   {
+      headers.remove("Content-Type");
+      headers.put("Content-Type", contentType);
+      this.contentType = contentType;
    }
 
    public List<Change> getChanges()

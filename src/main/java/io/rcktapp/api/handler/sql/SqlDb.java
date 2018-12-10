@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.rcktapp.api.handler.sql;
 
 import java.lang.reflect.Field;
@@ -26,31 +41,81 @@ import io.rcktapp.api.Entity;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
+import io.rcktapp.rql.sql.SqlRql;
 
 public class SqlDb extends Db
 {
+   static
+   {
+      try
+      {
+         //bootstraps the SqlRql type
+         Class.forName(SqlRql.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
+
    public static final int               MIN_POOL_SIZE            = 3;
    public static final int               MAX_POOL_SIZE            = 10;
 
-   String                                driver                   = null;
-   String                                url                      = null;
-   String                                user                     = null;
-   String                                pass                     = null;
-   int                                   poolMin                  = 3;
-   int                                   poolMax                  = 10;
-   int                                   idleConnectionTestPeriod = 3600;         // in seconds
+   protected String                      driver                   = null;
+   protected String                      url                      = null;
+   protected String                      user                     = null;
+   protected String                      pass                     = null;
+   protected int                         poolMin                  = 3;
+   protected int                         poolMax                  = 10;
+   protected int                         idleConnectionTestPeriod = 3600;         // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-   boolean                               calcRowsFound            = true;
+   protected boolean                     calcRowsFound            = true;
+
+   boolean                               shutdown                 = false;
 
    static Map<Db, ComboPooledDataSource> pools                    = new HashMap();
+
+   @Override
+   public String getType()
+   {
+      if (type != null)
+         return type;
+
+      if (driver != null)
+      {
+         if (driver.indexOf("mysql") >= 0)
+            return "mysql";
+
+         if (driver.indexOf("postgres") >= 0)
+            return "postgres";
+
+         if (driver.indexOf("redshift") >= 0)
+            return "redshift";
+      }
+
+      return null;
+   }
+
+   public void shutdown()
+   {
+      shutdown = true;
+      
+      synchronized(this)
+      {
+         for(ComboPooledDataSource pool : pools.values())
+         {
+            pool.close();
+         }
+      }
+   }
 
    public Connection getConnection() throws ApiException
    {
       try
       {
          Connection conn = ConnectionLocal.getConnection(this);
-         if (conn == null)
+         if (conn == null && !shutdown)
          {
             ComboPooledDataSource pool = pools.get(this);
 
@@ -60,7 +125,7 @@ public class SqlDb extends Db
                {
                   pool = pools.get(this);
 
-                  if (pool == null)
+                  if (pool == null && !shutdown)
                   {
                      String driver = getDriver();
                      String url = getUrl();
@@ -215,10 +280,10 @@ public class SqlDb extends Db
       }
    }
 
-   public void bootstrapApi(Api api) throws Exception
+   public void bootstrapApi() throws Exception
    {
       reflectDb();
-      configApi(api);
+      configApi();
    }
 
    public void reflectDb() throws Exception
@@ -338,7 +403,7 @@ public class SqlDb extends Db
       }
    }
 
-   public void configApi(Api api) throws Exception
+   public void configApi() throws Exception
    {
       for (Table t : getTables())
       {
