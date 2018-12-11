@@ -25,7 +25,6 @@ import org.atteo.evo.inflector.English;
 import io.forty11.web.Web;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSObject;
-import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Collection;
@@ -39,10 +38,22 @@ import io.rcktapp.api.Table;
 public class ElasticDb extends Db
 {
 
-   // https://vpc-liftck-gen2-dev-f44d6n5phip7ffw3js6lqa4hda.us-east-1.es.amazonaws.com
-   protected static String               elasticURL = "";
+   static
+   {
+      try
+      {
+         //bootstraps the ElasticDb type
+         Class.forName(ElasticDb.class.getName());
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+   }
 
-   protected static Map<Integer, String> SC_MAP     = new HashMap<>();
+   protected static String               url    = null;
+
+   protected static Map<Integer, String> SC_MAP = new HashMap<>();
    static
    {
       SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
@@ -54,8 +65,10 @@ public class ElasticDb extends Db
    @Override
    public void bootstrapApi() throws Exception
    {
+      this.setType("elastic");
+      
       reflectDb();
-      configApi(api);
+      configApi();
    }
 
    private void reflectDb() throws Exception
@@ -66,7 +79,7 @@ public class ElasticDb extends Db
       }
 
       // 'GET _all' returns all indices/aliases/mappings
-      Web.Response allResp = Web.get(elasticURL + "/_all", 0).get(10, TimeUnit.SECONDS);
+      Web.Response allResp = Web.get(url + "/_all", 0).get(10, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {
@@ -74,12 +87,15 @@ public class ElasticDb extends Db
 
          JSObject jsObj = JS.toJSObject(allResp.getContent());
 
-         Map<String, String> jsContentMap = jsObj.asMap();
+         Map<String, JSObject> jsContentMap = jsObj.asMap();
 
-         for (Map.Entry<String, String> entry : jsContentMap.entrySet())
+         // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
+         Map<String, Table> tableMap = new HashMap<String, Table>();
+         
+         for (Map.Entry<String, JSObject> entry : jsContentMap.entrySet())
          {
             // we now have the index and with it, it's aliases and mappings
-            buildAliasTables(entry.getKey(), JS.toJSObject(entry.getValue()));;
+            buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
          }
       }
       else
@@ -90,7 +106,7 @@ public class ElasticDb extends Db
 
    }
 
-   private void configApi(Api api)
+   private void configApi()
    {
       for (Table t : getTables())
       {
@@ -145,15 +161,13 @@ public class ElasticDb extends Db
     * @param jsIndex
     * @return
     */
-   private void buildAliasTables(String elasticName, JSObject jsIndex)
+   private void buildAliasTables(String elasticName, JSObject jsIndex, Map<String, Table> tableMap)
    {
 
-      Map<String, Table> tableMap = new HashMap<String, Table>();
-
       String aliasName = null;
-      Map<String, Object> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
-      Map<String, Object> jsAliasProps = jsIndex.getObject("aliases").asMap();
-      for (Map.Entry<String, Object> propEntry : jsAliasProps.entrySet())
+      Map<String, JSObject> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
+      Map<String, JSObject> jsAliasProps = jsIndex.getObject("aliases").asMap();
+      for (Map.Entry<String, JSObject> propEntry : jsAliasProps.entrySet())
       {
          aliasName = propEntry.getKey();
 
@@ -162,11 +176,12 @@ public class ElasticDb extends Db
          // use the previously created table if it exists.
          if (tableMap.containsKey(aliasName))
             table = tableMap.get(aliasName);
-         else {
+         else
+         {
             table = new Table(this, aliasName);
             tableMap.put(aliasName, table);
          }
-         
+
          Index index = new Index(table, elasticName, null);
          table.addIndex(index);
          addTable(table);
@@ -182,12 +197,12 @@ public class ElasticDb extends Db
     * @param jsPropsMap - contains the parent's nested properties
     * @param parentPrefix - necessary for 'nested' column names.
     */
-   private void addColumns(Table table, boolean nullable, Map<String, Object> jsPropsMap, String parentPrefix)
+   private void addColumns(Table table, boolean nullable, Map<String, JSObject> jsPropsMap, String parentPrefix)
    {
-      for (Map.Entry<String, Object> propEntry : jsPropsMap.entrySet())
+      for (Map.Entry<String, JSObject> propEntry : jsPropsMap.entrySet())
       {
          String colName = parentPrefix + propEntry.getKey();
-         JSObject propValue = (JSObject) propEntry.getValue();
+         JSObject propValue = propEntry.getValue();
 
          if (!propValue.getString("type").equalsIgnoreCase("nested"))
          {
@@ -209,7 +224,7 @@ public class ElasticDb extends Db
 
    public static String getURL()
    {
-      return elasticURL;
+      return url;
    }
 
 }

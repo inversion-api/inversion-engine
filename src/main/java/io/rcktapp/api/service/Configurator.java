@@ -202,7 +202,7 @@ public class Configurator
             }
          }
 
-         if (log.isInfoEnabled() && service.isConfigDebug())
+        // if (log.isInfoEnabled() && service.isConfigDebug())
          {
             List<String> keys = new ArrayList(config.props.keySet());
             Collections.sort(keys);
@@ -215,6 +215,10 @@ public class Configurator
                   value = "###############";
 
                log.info(" > " + key + "=" + value);
+            }
+            for(String file : config.files)
+            {
+               log.info("# config file: " + file);
             }
             log.info("-- end merged user supplied configuration ---------------------");
          }

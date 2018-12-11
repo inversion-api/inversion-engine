@@ -34,11 +34,13 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
+import io.rcktapp.api.Collection;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
+import io.rcktapp.api.Table;
 import io.rcktapp.api.service.Service;
 import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.elastic.ElasticRql;
@@ -52,22 +54,12 @@ import io.rcktapp.rql.elastic.QueryDsl;
  */
 public class ElasticHandler implements Handler
 {
-   Logger                      log           = LoggerFactory.getLogger(ElasticHandler.class);
+   Logger  log           = LoggerFactory.getLogger(ElasticHandler.class);
 
    // The following properties can be assigned via snooze.properties
-//   String                      elasticURL    = "";
-   int                         maxRows       = 100;
-   String                      defaultSource = null;
-   boolean                     isOneSrcArray = true;
-
-//   static Map<Integer, String> SC_MAP        = new HashMap<>();
-//   static
-//   {
-//      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
-//      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
-//      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
-//      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
-//   }
+   int     maxRows       = 100;
+   String  defaultSource = null;
+   boolean isOneSrcArray = true;
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -75,6 +67,10 @@ public class ElasticHandler implements Handler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
+
+      Collection collection = findCollectionOrThrow404(api, chain, req);
+      Table table = collection.getEntity().getTable();
+      ElasticDb db = (ElasticDb) table.getDb();
 
       // examples...
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
@@ -88,7 +84,7 @@ public class ElasticHandler implements Handler
       }
       else
       {
-         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath());
+         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db);
       }
 
    }
@@ -101,14 +97,14 @@ public class ElasticHandler implements Handler
     * @param paths
     * @throws Exception
     */
-   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl) throws Exception
+   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticDb db) throws Exception
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
          req.putParam("source", defaultSource);
       }
 
-      ElasticRql elasticRQL = (ElasticRql) Rql.getRql("elastic");
+      ElasticRql elasticRQL = (ElasticRql) Rql.getRql(db.getType());
 
       Integer wantedPage = null;
       if (req.getParam("wantedpage") != null)
@@ -533,6 +529,24 @@ public class ElasticHandler implements Handler
       }
 
       return data;
+   }
+   
+   private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
+   {
+      Collection collection = api.getCollection(req.getCollectionKey());
+
+      if (collection == null)
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
+      }
+
+      if (!(collection.getEntity().getTable().getDb() instanceof ElasticDb))
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
+      }
+
+      return collection;
+
    }
 
 }
