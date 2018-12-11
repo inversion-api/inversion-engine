@@ -17,7 +17,6 @@ package io.rcktapp.api.handler.elastic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -56,19 +55,19 @@ public class ElasticHandler implements Handler
    Logger                      log           = LoggerFactory.getLogger(ElasticHandler.class);
 
    // The following properties can be assigned via snooze.properties
-   String                      elasticURL    = "";
+//   String                      elasticURL    = "";
    int                         maxRows       = 100;
    String                      defaultSource = null;
    boolean                     isOneSrcArray = true;
 
-   static Map<Integer, String> SC_MAP        = new HashMap<>();
-   static
-   {
-      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
-      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
-      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
-      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
-   }
+//   static Map<Integer, String> SC_MAP        = new HashMap<>();
+//   static
+//   {
+//      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
+//      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
+//      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
+//      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
+//   }
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -219,7 +218,7 @@ public class ElasticHandler implements Handler
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         String status = SC_MAP.get(r.getCode());
+         String status = ElasticDb.SC_MAP.get(r.getCode());
          throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
@@ -325,7 +324,7 @@ public class ElasticHandler implements Handler
       }
       else
       {
-         String status = SC_MAP.get(r.getCode());
+         String status = ElasticDb.SC_MAP.get(r.getCode());
          throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
@@ -351,7 +350,7 @@ public class ElasticHandler implements Handler
       headers.add("Content-Type");
       headers.add("application/json");
 
-      return elasticURL + indexAndType + "_search";
+      return ElasticDb.getURL() + indexAndType + "_search";
    }
 
    /**
