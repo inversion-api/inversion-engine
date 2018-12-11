@@ -16,27 +16,33 @@
 package io.rcktapp.api.handler.elastic;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.atteo.evo.inflector.English;
 
 import io.forty11.web.Web;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
+import io.rcktapp.api.Attribute;
+import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
+import io.rcktapp.api.Entity;
+import io.rcktapp.api.Index;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 
 public class ElasticDb extends Db
 {
 
-   // TODO elasticURL and SC_MAP are duplicated variables from ElasticHandler...they should not be housed in two separate locations.
+   // https://vpc-liftck-gen2-dev-f44d6n5phip7ffw3js6lqa4hda.us-east-1.es.amazonaws.com
+   protected static String               elasticURL = "";
 
-   String                      elasticURL = "https://vpc-liftck-gen2-dev-f44d6n5phip7ffw3js6lqa4hda.us-east-1.es.amazonaws.com";
-
-   static Map<Integer, String> SC_MAP     = new HashMap<>();
+   protected static Map<Integer, String> SC_MAP     = new HashMap<>();
    static
    {
       SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
@@ -73,7 +79,7 @@ public class ElasticDb extends Db
          for (Map.Entry<String, String> entry : jsContentMap.entrySet())
          {
             // we now have the index and with it, it's aliases and mappings
-            createTable(entry.getKey(), JS.toJSObject(entry.getValue()));
+            buildAliasTables(entry.getKey(), JS.toJSObject(entry.getValue()));;
          }
       }
       else
@@ -86,17 +92,88 @@ public class ElasticDb extends Db
 
    private void configApi(Api api)
    {
+      for (Table t : getTables())
+      {
+         List<Column> cols = t.getColumns();
+         Collection collection = new Collection();
 
+         String collectionName = t.getName();
+
+         collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
+
+         if (!collectionName.endsWith("s"))
+            collectionName = English.plural(collectionName);
+
+         collection.setName(collectionName);
+
+         Entity entity = new Entity();
+         entity.setTbl(t);
+         entity.setHint(t.getName());
+         entity.setCollection(collection);
+
+         collection.setEntity(entity);
+
+         for (Column col : cols)
+         {
+            //            if (col.getPk() == null)
+            //            {
+            Attribute attr = new Attribute();
+            attr.setEntity(entity);
+            attr.setName(col.getName());
+            attr.setColumn(col);
+            attr.setHint(col.getTable().getName() + "." + col.getName());
+            attr.setType(col.getType());
+
+            entity.addAttribute(attr);
+            //            }
+         }
+
+         api.addCollection(collection);
+         collection.setApi(api);
+      }
    }
-   
-   private void createTable(String indexName, JSObject jsIndex)
-   {
-      Table table = new Table(this, indexName);
-      addTable(table);
 
-      // use the mapping to add columns to the table.
+   /**
+    * At the time of writing, there is no need to parse settings.
+    * This method creates tables based on alias names of 
+    * elastic indexes.  If no alias exists, no table is created.
+    * 
+    * The name of the elastic index will be used as a table index.
+    * Most tables will only have one index. An example of a 
+    * table with multiple indexes would be the alias 'all'.
+    * @param indexName
+    * @param jsIndex
+    * @return
+    */
+   private void buildAliasTables(String elasticName, JSObject jsIndex)
+   {
+
+      Map<String, Table> tableMap = new HashMap<String, Table>();
+
+      String aliasName = null;
       Map<String, Object> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
-      addColumns(table, false, jsMappingsDocProps, "");
+      Map<String, Object> jsAliasProps = jsIndex.getObject("aliases").asMap();
+      for (Map.Entry<String, Object> propEntry : jsAliasProps.entrySet())
+      {
+         aliasName = propEntry.getKey();
+
+         Table table = null;
+
+         // use the previously created table if it exists.
+         if (tableMap.containsKey(aliasName))
+            table = tableMap.get(aliasName);
+         else {
+            table = new Table(this, aliasName);
+            tableMap.put(aliasName, table);
+         }
+         
+         Index index = new Index(table, elasticName, null);
+         table.addIndex(index);
+         addTable(table);
+
+         // use the mapping to add columns to the table.
+         addColumns(table, false, jsMappingsDocProps, "");
+      }
    }
 
    /**
@@ -111,22 +188,28 @@ public class ElasticDb extends Db
       {
          String colName = parentPrefix + propEntry.getKey();
          JSObject propValue = (JSObject) propEntry.getValue();
+
          if (!propValue.getString("type").equalsIgnoreCase("nested"))
          {
-            // not a 'nested' type.
-
-            // TODO what to do about column types (specifically 'keyword')
             // potential types include: keyword, long, nested, object, boolean
-            String colType = null;
-            Column column = new Column(table, colName, colType, true);
-            table.addColumn(column);            
+            Column column = null;
+            if (propValue.hasProperty("type"))
+            {
+               column = new Column(table, colName, propValue.getString("type"), true);
+               table.addColumn(column);
+            }
          }
-         else
+         else // found a nested property
          {
             addColumns(table, true, propValue.getObject("properties").asMap(), colName + ".");
 
          }
       }
+   }
+
+   public static String getURL()
+   {
+      return elasticURL;
    }
 
 }
