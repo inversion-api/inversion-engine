@@ -432,6 +432,9 @@ public class Configurator
             }
          }
       }
+      
+      if (config.files.isEmpty())
+         log.warn("### WARNING!!! No '*.properties' files have been loaded.");
 
       List keys = new ArrayList(config.props.keySet());
       Collections.sort(keys);
