@@ -52,9 +52,9 @@ import io.rcktapp.rql.elastic.QueryDsl;
  * @author kfrankic
  *
  */
-public class ElasticHandler implements Handler
+public class ElasticDbGetHandler implements Handler
 {
-   Logger  log           = LoggerFactory.getLogger(ElasticHandler.class);
+   Logger  log           = LoggerFactory.getLogger(ElasticDbGetHandler.class);
 
    // The following properties can be assigned via snooze.properties
    int     maxRows       = 100;

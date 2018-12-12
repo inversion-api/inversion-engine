@@ -34,6 +34,7 @@ import io.rcktapp.api.Entity;
 import io.rcktapp.api.Index;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
+import io.rcktapp.rql.elastic.ElasticRql;
 
 public class ElasticDb extends Db
 {
@@ -42,8 +43,8 @@ public class ElasticDb extends Db
    {
       try
       {
-         //bootstraps the ElasticDb type
-         Class.forName(ElasticDb.class.getName());
+         //bootstraps the ElasticRql type
+         Class.forName(ElasticRql.class.getName());
       }
       catch (Exception ex)
       {
@@ -204,8 +205,8 @@ public class ElasticDb extends Db
          String colName = parentPrefix + propEntry.getKey();
          JSObject propValue = propEntry.getValue();
 
-         if (!propValue.getString("type").equalsIgnoreCase("nested"))
-         {
+//         if (!propValue.getString("type").equalsIgnoreCase("nested"))
+//         {
             // potential types include: keyword, long, nested, object, boolean
             Column column = null;
             if (propValue.hasProperty("type"))
@@ -213,12 +214,12 @@ public class ElasticDb extends Db
                column = new Column(table, colName, propValue.getString("type"), true);
                table.addColumn(column);
             }
-         }
-         else // found a nested property
-         {
-            addColumns(table, true, propValue.getObject("properties").asMap(), colName + ".");
-
-         }
+//         }
+//         else // found a nested property
+//         {
+//            addColumns(table, true, propValue.getObject("properties").asMap(), colName + ".");
+//
+//         }
       }
    }
 
