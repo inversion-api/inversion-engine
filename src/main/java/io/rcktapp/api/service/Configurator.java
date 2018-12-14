@@ -473,6 +473,9 @@ public class Configurator
          }
       }
 
+      if (config.files.isEmpty())
+         log.warn("\n\n######################################################\n# WARNING!!! No '.properties' files have been loaded.#\n######################################################\n");
+
       List keys = new ArrayList(config.props.keySet());
       Collections.sort(keys);
       StringBuffer buff = new StringBuffer();
