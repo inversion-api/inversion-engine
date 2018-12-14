@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.forty11.j.J;
 import io.forty11.web.Url;
@@ -48,7 +50,7 @@ public abstract class Rule extends Dto implements Comparable<Rule>
    {
       return System.identityHashCode(this) + " - " + name;
    }
-   
+
    public abstract void setApi(Api api);
    //   {
    //      this.api = api;
@@ -62,6 +64,68 @@ public abstract class Rule extends Dto implements Comparable<Rule>
 
    public static boolean pathMatches(String wildcardPath, String path)
    {
+      try
+      {
+         if (wildcardPath.indexOf("{") > -1)
+         {
+            List<String> regexParts = J.explode("/", wildcardPath);
+            List<String> pathParts = J.explode("/", path);
+
+            if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
+               return false;
+
+            if (regexParts.size() != pathParts.size())
+               return false;
+
+            for (int i = 0; i < regexParts.size(); i++)
+            {
+               String matchPart = regexParts.get(i);
+
+               if (pathParts.size() <= i)
+                  return false;
+
+               String pathPart = pathParts.get(i);
+
+               if (matchPart.startsWith("{"))
+               {
+                  int colonIdx = matchPart.indexOf(":");
+                  if (colonIdx < 0)
+                     continue;
+
+                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}"));
+
+                  Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+                  Matcher matcher = pattern.matcher(pathPart);
+
+                  if (!matcher.matches())
+                     return false;
+               }
+               else if (!J.wildcardMatch(matchPart, pathPart))
+               {
+                  return false;
+               }
+
+               if (matchPart.endsWith("*") && i == regexParts.size() - 1)
+                  return true;
+            }
+
+            return true;
+         }
+         else
+         {
+            return J.wildcardMatch(wildcardPath, path);
+         }
+      }
+      catch (NullPointerException npe)
+      {
+         npe.printStackTrace();
+      }
+      catch (Exception ex)
+      {
+         //intentionally ignore
+      }
+
+      return false;
       //      wildcardPath = J.path(wildcardPath.replace('\\', '/'));
       //      path = J.path(path.replace('\\', '/'));
       //
@@ -77,7 +141,6 @@ public abstract class Rule extends Dto implements Comparable<Rule>
       //      if (path.startsWith("/"))
       //         path = path.substring(1, path.length());
 
-      return J.wildcardMatch(wildcardPath, path);
    }
 
    public boolean matches(String method, String path)

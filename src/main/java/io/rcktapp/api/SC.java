@@ -30,4 +30,21 @@ public class SC
    public static final String SC_404_NOT_FOUND             = "404 Not Found";
    public static final String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 
+   public static boolean matches(Object responseCode, int... choices)
+   {
+      String code = responseCode.toString();
+      if (code.indexOf(" ") > 0)
+         code = code.substring(0, code.indexOf(" "));
+
+      int num = Integer.parseInt(code);
+
+      for (int i = 0; i < choices.length; i++)
+      {
+         if (num == choices[i])
+            return true;
+      }
+
+      return false;
+   }
+
 }
