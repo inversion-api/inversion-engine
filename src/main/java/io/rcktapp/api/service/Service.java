@@ -519,7 +519,7 @@ public class Service
                int end = u.indexOf('/', start + 1);
                if (end < 0)
                   end = u.length();
-               String tenantId = u.substring(start, end);
+               String tenantId = u.substring(start + 1, end);
 
                if (!apiUrl.endsWith("/"))
                   apiUrl += "/";
