@@ -17,32 +17,34 @@ package io.rcktapp.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import io.forty11.j.utils.ListMap;
 
 public class Api extends Dto
 {
-   protected String         name        = null;
-   boolean                  debug       = false;
+   protected String                  name        = null;
+   boolean                           debug       = false;
 
-   protected String         apiCode     = null;
-   protected String         accountCode = null;
-   protected boolean        multiTenant = false;
-   protected String         url         = null;
+   protected String                  apiCode     = null;
+   protected String                  accountCode = null;
+   protected boolean                 multiTenant = false;
+   protected String                  url         = null;
 
-   protected List<Db>       dbs         = new ArrayList();
-   protected List<Endpoint> endpoints   = new ArrayList();
-   protected List<Action>   actions     = new ArrayList();
-   protected List<AclRule>  aclRules    = new ArrayList();
+   protected List<Db>                dbs         = new ArrayList();
+   protected List<Endpoint>          endpoints   = new ArrayList();
+   protected List<Action>            actions     = new ArrayList();
+   protected List<AclRule>           aclRules    = new ArrayList();
 
-   protected ListMap        collections = new ListMap();
+   protected Map<String, Collection> collections = new HashMap();
 
-   transient long           loadTime    = 0;
-   protected String         hash        = null;
+   transient long                    loadTime    = 0;
+   protected String                  hash        = null;
 
-   transient Hashtable      cache       = new Hashtable();
+   transient Hashtable               cache       = new Hashtable();
 
    public Api()
    {
@@ -149,63 +151,53 @@ public class Api extends Dto
 
    public Collection getCollection(String name, Class dbClass)
    {
-      List<Collection> collections = this.collections.get(name.toLowerCase());
-      for (Collection collection : collections)
+      for (Collection collection : collections.values())
       {
-         if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
-            return collection;
+         if (collection.getName().equalsIgnoreCase(name))
+         {
+            if (dbClass == null)
+               return collection;
+            else if (dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
+               return collection;
+         }
       }
-
       return null;
    }
 
    public Collection getCollection(Table tbl)
    {
-      for (String name : ((java.util.Collection<String>) collections.keySet()))
+      for (Collection collection : collections.values())
       {
-         for (Collection col : ((List<Collection>) collections.get(name)))
-         {
-            if (col.getEntity().getTable() == tbl)
-               return col;
-         }
+         if (collection.getEntity().getTable() == tbl)
+            return collection;
       }
       return null;
    }
 
    public Collection getCollection(Entity entity)
    {
-      for (String name : ((java.util.Collection<String>) collections.keySet()))
+      for (Collection collection : collections.values())
       {
-         for (Collection col : ((List<Collection>) collections.get(name)))
-         {
-            if (col.getEntity() == entity)
-               return col;
-         }
+         if (collection.getEntity() == entity)
+            return collection;
       }
       return null;
    }
 
    public Entity getEntity(Table table)
    {
-      for (String name : ((java.util.Collection<String>) collections.keySet()))
+      for (Collection collection : collections.values())
       {
-         for (Collection col : ((List<Collection>) collections.get(name)))
-         {
-            if (col.getEntity().getTable() == table)
-               return col.getEntity();
-         }
+         if (collection.getEntity().getTable() == table)
+            return collection.getEntity();
       }
+
       return null;
    }
 
    public List<Collection> getCollections()
    {
-      List cols = new ArrayList();
-      for (List<Collection> collections : (((java.util.Collection<List<Collection>>) this.collections.values())))
-      {
-         cols.addAll(collections);
-      }
-      return cols;
+      return new ArrayList(collections.values());
    }
    //
    //   public List<Entity> getEntities()
@@ -259,7 +251,7 @@ public class Api extends Dto
 
    public void addCollection(Collection collection)
    {
-      collections.put(collection.getName().toLowerCase(), collection);
+      collections.put(collection.getEntity().getTable().getDb().getName().toLowerCase() + "." + collection.getName().toLowerCase(), collection);
    }
 
    public void removeCollection(Collection collection)
