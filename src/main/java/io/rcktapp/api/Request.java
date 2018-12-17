@@ -172,6 +172,42 @@ public class Request
                }
             }
 
+            for (String wildcard : endpoint.getIncludePaths())
+            {
+               if (Endpoint.pathMatches(wildcard, path))
+               {
+                  List<String> matchParts = J.explode("/", wildcard);
+                  List<String> pathParts = J.explode("/", path);
+                  for (int i = 0; i < matchParts.size(); i++)
+                  {
+                     if (i >= pathParts.size())
+                        break;
+
+                     String matchPart = matchParts.get(i);
+
+                     while (matchPart.startsWith("[") && matchPart.endsWith("]"))
+                     {
+                        matchPart = matchPart.substring(1, matchPart.length() - 1);
+                     }
+
+                     if (matchPart.startsWith("{") && matchPart.endsWith("}"))
+                     {
+                        int end = matchPart.indexOf(":");
+                        end = end > 0 ? end : matchPart.lastIndexOf("}");
+                        if (end < 0)
+                           end = matchPart.length() - 1;
+
+                        String key = matchPart.substring(1, end).trim();
+                        if (key.length() > 0)
+                        {
+                           String value = pathParts.get(i);
+                           params.put(key, value);
+                        }
+                     }
+                  }
+               }
+            }
+
             subpath = J.implode("/", parts) + "/";
 
             int idx = 0;

@@ -20,6 +20,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
    * [AclRules](#aclrules)
    * [Permissions](#permissions)
+   * [Path Matching](#path-matching)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted & Required Parameters](#restricted--required-query-parameters)
@@ -107,7 +108,6 @@ api.class=io.rcktapp.api.Api
 api.debug
 api.accountCode=demo
 api.apiCode=helloworld
-api.dbs=db
 api.actions=restA
 api.endpoints=restEp
 
@@ -116,7 +116,6 @@ api.endpoints=restEp
 ## DATABASES 
 ########################################################################
 db.class=io.rcktapp.api.handler.sql.SqlDb
-db.name=db
 db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
 db.user=YOUR_JDBC_USER_HERE
@@ -184,30 +183,36 @@ Examples example:
 
 ### Configuration File Loading
 
-Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
-order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+Snooze looks for files named snooze[1-100][-${snooze.profile}].properties in the classpath (for example in the WEB-INF folder).  Files without a profile are always loaded first in numerically ascending 
+order and then files with a profile matching ${snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
 key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
 that do not have to duplicate config between them.
   
-The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
 notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
 
 Configuration and API bootstrapping takes place in the following stages:
 
-1. Snooze servlet wiring - All 'snooze.' bean propertie are set on the Snooze servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
+1. Snooze service wiring - All 'snooze.*' bean properties are set on the core Snooze service instance.  This is useful for things like setting 'snooze.debug' or changing 'snooze.profile'.  
 1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
 1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
 1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
-model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that mapp back to the Tables,Columns and Indexes. 
-1. Serialization - The dynamically configured Api model is then serialzied back out to name=value property format as if it were user supplied config.    
-1. The user supplied config from step 1 are then merged down on onto the dynamically config map.  This means that you can overwrite any dynamically configured key/value pair.  
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
+1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Snooze.addApi() and are ready to run.
 
 This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
 of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Snooze logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
-you might want to customize.
+happens in memory at runtime NOT development time.  
+
+If you set the config property "snooze.configOut=some/file/path/merged.properties" Snooze will output the final merged properites file so you can inpspect any keys to find 
+any that you may want to customize. 
+
+The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
+supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
+the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
 
 
 ## Keeping Passwords out of Config Files
@@ -216,7 +221,7 @@ If you want to keep your database passwords (or any other sensative info) out of
 VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
 to the top of the batch file you use to launch our app or application server.  
 
-### Snooze Servlet Config
+### Snooze Service Config
 
 As you may have seen in the [Quickstart](#quickstart) example above 'snooze' is a reserved known bean name in the configuration files. 'snooze' referers to the 
 Snooze servlet itself and you can set any bean properties you want.
@@ -241,14 +246,14 @@ in a URL or as a JSON property name.
 
 ### Endpoints, Actions and Handlers
 
-Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose analogy of a an Endpoint 
-acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Snooze is in the implementation 
-of various Handlers.
+An Endpoint maps a URL pattern to one or more Actions by [path matching](#path-matching).  Actions map to an Handler which is where work actually gets done. Multiple Actions can map to the same Handler instance. Programmers 
+familiar with AOP might be comfortable with a loose analogy of a an Endpoint acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application 
+specific about this pattern.  The magic of Snooze is in the implementation of various Handlers.
 
 An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
 to run when an Endpoint is called by a client.  
 
-Actions link Endpoints to Handlers.  Behind each Endpoint can be an orderd list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
+Actions link Endpoints to Handlers.  Behind each Endpoint can be an ordered list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
 based on the configuration information on the Action.  Actions are mapped to URL paths / http methods and as such may be selected to run as part of one or more Endpoints.     
 
 Work is done in the Handlers.  If an application must have custom business logic or otherwise can't manage to achieve a desired result via configuration, 99% of the time, the answer
@@ -270,13 +275,40 @@ Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io
 ### AclRules
 
 AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
-be setup (in that order) to protect resources according to configed AclRules.
+be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [path matching](#path-matching) just like Endpoints and Actions.
     
 ### Permissions
 
 The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
 
     
+### Path Matching
+
+Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" 
+configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used match any arbitrary path ending and 
+regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
+Leading and trailing '/' characters are not considered when path matching.
+
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex
+based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
+path parts optional.  Regular expression matches can not match across a '/'.
+
+Here are some examples: 
+
+ * endpoint1.includesPaths=dir1/dir2/*
+ * endpoint1.excludePaths=dir1/dir2/hidden/*
+ * endpoint2.includePath=something/{collection:[a-z]}/*
+ 
+One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
+ 
+ * endpoint3.includesPaths={collection:customers|books|albums}/[{entity:[0-9]}]/{relationship:[a-z]}
+
+If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
+have been supplied by the query string.
+
+The names "component", "entity", and "relationship" are special.  If supply them, the Request parser will use those values when configuring the Request object.
+If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
+
 
 ## Resource Query Language (RQL)
 

@@ -74,15 +74,24 @@ public abstract class Rule extends Dto implements Comparable<Rule>
             if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
                return false;
 
-            if (regexParts.size() != pathParts.size())
-               return false;
+            boolean optional = false;
 
             for (int i = 0; i < regexParts.size(); i++)
             {
                String matchPart = regexParts.get(i);
 
-               if (pathParts.size() <= i)
+               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
+               {
+                  matchPart = matchPart.substring(1, matchPart.length() - 1);
+                  optional = true;
+               }
+               
+               if (pathParts.size() == i)
+               {
+                  if (optional)
+                     return true;
                   return false;
+               }
 
                String pathPart = pathParts.get(i);
 
