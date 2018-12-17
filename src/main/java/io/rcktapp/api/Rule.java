@@ -80,12 +80,12 @@ public abstract class Rule extends Dto implements Comparable<Rule>
             {
                String matchPart = regexParts.get(i);
 
-               if (matchPart.startsWith("[") && matchPart.endsWith("]"))
+               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
                {
                   matchPart = matchPart.substring(1, matchPart.length() - 1);
                   optional = true;
                }
-
+               
                if (pathParts.size() == i)
                {
                   if (optional)
