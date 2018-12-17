@@ -80,7 +80,7 @@ public class ElasticDbGetHandler implements Handler
       String[] paths = req.getPath().split("/");
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
-         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"));
+         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db);
       }
       else
       {
@@ -159,7 +159,7 @@ public class ElasticDbGetHandler implements Handler
 
       res.debug(url, json, headers);
 
-      Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+      Web.Response r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -195,7 +195,7 @@ public class ElasticDbGetHandler implements Handler
             dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
             json = mapper.writeValueAsString(dsl.toDslMap());
 
-            r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
             jsObj = JS.toJSObject(r.getContent());
             hits = jsObj.getObject("hits").getArray("hits");
 
@@ -214,8 +214,7 @@ public class ElasticDbGetHandler implements Handler
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         String status = ElasticDb.SC_MAP.get(r.getCode());
-         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -231,7 +230,7 @@ public class ElasticDbGetHandler implements Handler
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type) throws Exception
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticDb db) throws Exception
    {
 
       int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
@@ -283,7 +282,7 @@ public class ElasticDbGetHandler implements Handler
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(10, TimeUnit.SECONDS);
+      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -309,7 +308,7 @@ public class ElasticDbGetHandler implements Handler
             {
                req.putParam("tenantId", tenantId);
             }
-            handleAutoSuggestRequest(req, res, paths, "wildcard");
+            handleAutoSuggestRequest(req, res, paths, "wildcard", db);
          }
          else
          {
@@ -320,8 +319,7 @@ public class ElasticDbGetHandler implements Handler
       }
       else
       {
-         String status = ElasticDb.SC_MAP.get(r.getCode());
-         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -332,7 +330,7 @@ public class ElasticDbGetHandler implements Handler
       // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
       if (paths.length < 3)
       {
-         //         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+         // indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
          indexAndType = "/" + paths[1] + "/_doc/";
       }
       // if the type is of 'no-type', dont' include it 
@@ -449,7 +447,7 @@ public class ElasticDbGetHandler implements Handler
                      dsl.getOrder().reverseOrdering();
                      ObjectMapper mapper = new ObjectMapper();
                      String json = mapper.writeValueAsString(dsl.toDslMap());
-                     Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
+                     Web.Response r = Web.post(elasticUrl, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
                      if (r.isSuccess())
                      {
@@ -533,7 +531,7 @@ public class ElasticDbGetHandler implements Handler
    
    private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
-      Collection collection = api.getCollection(req.getCollectionKey());
+      Collection collection = api.getCollection(req.getCollectionKey(), ElasticDb.class);
 
       if (collection == null)
       {

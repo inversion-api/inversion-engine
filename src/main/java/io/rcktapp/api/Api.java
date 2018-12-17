@@ -249,9 +249,18 @@ public class Api extends Dto
          addCollection(collection);
    }
 
+   /**
+    * Bi-directional method also sets 'this' api on the collection
+    * @param collection
+    */
    public void addCollection(Collection collection)
    {
-      collections.put(collection.getEntity().getTable().getDb().getName().toLowerCase() + "." + collection.getName().toLowerCase(), collection);
+      String collectionName = collection.getEntity().getTable().getDb().getName().toLowerCase() + "." + collection.getName().toLowerCase();
+      if (!collections.containsKey(collectionName))
+         collections.put(collectionName, collection);
+
+      if (collection.getApi() != this)
+         collection.setApi(this);
    }
 
    public void removeCollection(Collection collection)

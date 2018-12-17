@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.atteo.evo.inflector.English;
-
 import io.forty11.web.Web;
 import io.forty11.web.js.JS;
 import io.forty11.web.js.JSObject;
@@ -31,7 +29,6 @@ import io.rcktapp.api.Collection;
 import io.rcktapp.api.Column;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Entity;
-import io.rcktapp.api.Index;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 import io.rcktapp.rql.elastic.ElasticRql;
@@ -52,22 +49,17 @@ public class ElasticDb extends Db
       }
    }
 
-   protected static String               url    = null;
+   protected static String    url                        = null;
 
-   protected static Map<Integer, String> SC_MAP = new HashMap<>();
-   static
-   {
-      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
-      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
-      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
-      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
-   }
+   protected static int       maxRequestDuration         = 10;                  // duration in seconds.
+
+   protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
    @Override
    public void bootstrapApi() throws Exception
    {
       this.setType("elastic");
-      
+
       reflectDb();
       configApi();
    }
@@ -80,7 +72,7 @@ public class ElasticDb extends Db
       }
 
       // 'GET _all' returns all indices/aliases/mappings
-      Web.Response allResp = Web.get(url + "/_all", 0).get(10, TimeUnit.SECONDS);
+      Web.Response allResp = Web.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {
@@ -101,8 +93,7 @@ public class ElasticDb extends Db
       }
       else
       {
-         String status = SC_MAP.get(allResp.getCode());
-         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(allResp.getCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -114,14 +105,7 @@ public class ElasticDb extends Db
          List<Column> cols = t.getColumns();
          Collection collection = new Collection();
 
-         String collectionName = t.getName();
-
-         collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-
-         if (!collectionName.endsWith("s"))
-            collectionName = English.plural(collectionName);
-
-         collection.setName(collectionName);
+         collection.setName(lowercaseAndPluralizeString(t.getName()));
 
          Entity entity = new Entity();
          entity.setTbl(t);
@@ -132,8 +116,6 @@ public class ElasticDb extends Db
 
          for (Column col : cols)
          {
-            //            if (col.getPk() == null)
-            //            {
             Attribute attr = new Attribute();
             attr.setEntity(entity);
             attr.setName(col.getName());
@@ -142,7 +124,6 @@ public class ElasticDb extends Db
             attr.setType(col.getType());
 
             entity.addAttribute(attr);
-            //            }
          }
 
          api.addCollection(collection);
@@ -183,8 +164,6 @@ public class ElasticDb extends Db
             tableMap.put(aliasName, table);
          }
 
-         Index index = new Index(table, elasticName, null);
-         table.addIndex(index);
          addTable(table);
 
          // use the mapping to add columns to the table.
@@ -205,21 +184,13 @@ public class ElasticDb extends Db
          String colName = parentPrefix + propEntry.getKey();
          JSObject propValue = propEntry.getValue();
 
-//         if (!propValue.getString("type").equalsIgnoreCase("nested"))
-//         {
-            // potential types include: keyword, long, nested, object, boolean
-            Column column = null;
-            if (propValue.hasProperty("type"))
-            {
-               column = new Column(table, colName, propValue.getString("type"), true);
-               table.addColumn(column);
-            }
-//         }
-//         else // found a nested property
-//         {
-//            addColumns(table, true, propValue.getObject("properties").asMap(), colName + ".");
-//
-//         }
+         // potential types include: keyword, long, nested, object, boolean
+         Column column = null;
+         if (propValue.hasProperty("type"))
+         {
+            column = new Column(table, colName, propValue.getString("type"), true);
+            table.addColumn(column);
+         }
       }
    }
 

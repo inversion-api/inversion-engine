@@ -61,11 +61,19 @@ public class Collection extends Dto
    }
 
    /**
+    * Bi-directional method that also adds 'this' collection to the api assuming
+    * the entity and it's table have been set. 
     * @param api the api to set
     */
    public void setApi(Api api)
    {
       this.api = api;
+
+      if ((this.getEntity() != null) && (this.getEntity().getTable() != null))
+      {
+         if (api.getCollection(this.getEntity().getTable().getDb().getName().toLowerCase() + "." + this.getName().toLowerCase()) != this)
+            api.addCollection(this);
+      }
    }
 
    /**

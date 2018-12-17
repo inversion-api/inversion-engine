@@ -15,20 +15,36 @@
  */
 package io.rcktapp.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @see http://www.restapitutorial.com/httpstatuscodes.html
  */
 public class SC
 {
 
-   public static final String SC_200_OK                    = "200 OK";
-   public static final String SC_201_CREATED               = "201 Created";
-   public static final String SC_400_BAD_REQUEST           = "400 Bad Request";
-   public static final String SC_401_UNAUTHORIZED          = "401 Unauthorized";
-   public static final String SC_403_FORBIDDEN             = "403 Forbidden";
-   public static final String SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
-   public static final String SC_404_NOT_FOUND             = "404 Not Found";
-   public static final String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
+   public static final String         SC_200_OK                    = "200 OK";
+   public static final String         SC_201_CREATED               = "201 Created";
+   public static final String         SC_400_BAD_REQUEST           = "400 Bad Request";
+   public static final String         SC_401_UNAUTHORIZED          = "401 Unauthorized";
+   public static final String         SC_403_FORBIDDEN             = "403 Forbidden";
+   public static final String         SC_404_NOT_FOUND             = "404 Not Found";
+   public static final String         SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
+   public static final String         SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
+
+   public static Map<Integer, String> SC_MAP                       = new HashMap<>();
+   static
+   {
+      SC_MAP.put(200, SC_200_OK);
+      SC_MAP.put(201, SC_201_CREATED);
+      SC_MAP.put(400, SC_400_BAD_REQUEST);
+      SC_MAP.put(401, SC_401_UNAUTHORIZED);
+      SC_MAP.put(403, SC_403_FORBIDDEN);
+      SC_MAP.put(404, SC_404_NOT_FOUND);
+      SC_MAP.put(429, SC_429_TOO_MANY_REQUESTS);
+      SC_MAP.put(500, SC_500_INTERNAL_SERVER_ERROR);
+   }
 
    public static boolean matches(Object responseCode, int... choices)
    {
