@@ -567,13 +567,13 @@ public class Service
       return null;
    }
 
-   public Db getDb(Api api, String collectionKey) throws ApiException
+   public Db getDb(Api api, String collectionKey, Class dbClass) throws ApiException
    {
       Db db = null;
 
       if (collectionKey != null)
       {
-         db = api.findDb(collectionKey);
+         db = api.findDb(collectionKey, dbClass);
       }
 
       if (db == null)

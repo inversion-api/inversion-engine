@@ -83,13 +83,13 @@ public class SqlGetHandler extends SqlHandler
       }
       else
       {
-         db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey());
+         db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       }
       SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
       conn = db.getConnection();
 
-      Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey()) : null;
+      Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey(), SqlDb.class) : null;
       Entity entity = collection != null ? collection.getEntity() : null;
 
       Table tbl = entity != null ? entity.getTable() : null;

@@ -89,7 +89,7 @@ public class LogHandler implements Handler
 
                if (changes.size() > 0)
                {
-                  Connection conn = ((SqlDb) service.getDb(req.getApi(), req.getCollectionKey())).getConnection();
+                  Connection conn = ((SqlDb) service.getDb(req.getApi(), req.getCollectionKey(), SqlDb.class)).getConnection();
                   Map<String, Object> logParams = new HashMap<>();
                   logParams.put("method", req.getMethod());
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());

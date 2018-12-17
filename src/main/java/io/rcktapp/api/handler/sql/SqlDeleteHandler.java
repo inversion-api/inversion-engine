@@ -158,10 +158,10 @@ public class SqlDeleteHandler extends SqlHandler
       }
 
       Request req = chain.getRequest();
-      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey());
+      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       Connection conn = db.getConnection();
 
-      Collection collection = req.getApi().getCollection(req.getCollectionKey());
+      Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
       Entity entity = collection.getEntity();
 
       SqlRql rql = (SqlRql) Rql.getRql(db.getType());
@@ -187,10 +187,10 @@ public class SqlDeleteHandler extends SqlHandler
    {
       try
       {
-         SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey());
+         SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
          SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
-         Collection collection = req.getApi().getCollection(req.getCollectionKey());
+         Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
 
          Entity entity = collection.getEntity();
          String entityKey = req.getEntityKey();

@@ -73,7 +73,7 @@ public class SqlSuggestHandler extends SqlHandler
          value = value.replace("\"", "");
       }
 
-      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey());
+      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
       String sql = "";

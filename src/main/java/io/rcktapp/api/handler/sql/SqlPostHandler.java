@@ -65,11 +65,11 @@ public class SqlPostHandler extends SqlHandler
 
       List<Change> changes = new ArrayList();
 
-      Connection conn = ((SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey())).getConnection();
+      Connection conn = ((SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class)).getConnection();
 
       List<String> hrefs = new ArrayList();
 
-      Collection collection = req.getApi().getCollection(req.getCollectionKey());
+      Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
       Entity entity = collection.getEntity();
 
       JSObject obj = req.getJson();

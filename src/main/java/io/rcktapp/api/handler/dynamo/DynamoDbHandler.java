@@ -51,7 +51,7 @@ public abstract class DynamoDbHandler implements Handler
 
    public Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
-      Collection collection = api.getCollection(req.getCollectionKey());
+      Collection collection = api.getCollection(req.getCollectionKey(), DynamoDb.class);
 
       if (collection == null)
       {

@@ -17,34 +17,31 @@ package io.rcktapp.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
-import io.forty11.j.utils.ListMap;
 
 public class Api extends Dto
 {
-   protected String                  name        = null;
-   boolean                           debug       = false;
+   protected String                            name        = null;
+   boolean                                     debug       = false;
 
-   protected String                  apiCode     = null;
-   protected String                  accountCode = null;
-   protected boolean                 multiTenant = false;
-   protected String                  url         = null;
+   protected String                            apiCode     = null;
+   protected String                            accountCode = null;
+   protected boolean                           multiTenant = false;
+   protected String                            url         = null;
 
-   protected List<Db>                dbs         = new ArrayList();
-   protected List<Endpoint>          endpoints   = new ArrayList();
-   protected List<Action>            actions     = new ArrayList();
-   protected List<AclRule>           aclRules    = new ArrayList();
+   protected List<Db>                          dbs         = new ArrayList();
+   protected List<Endpoint>                    endpoints   = new ArrayList();
+   protected List<Action>                      actions     = new ArrayList();
+   protected List<AclRule>                     aclRules    = new ArrayList();
 
-   protected Map<String, Collection> collections = new HashMap();
+   protected LinkedHashMap<String, Collection> collections = new LinkedHashMap();
 
-   transient long                    loadTime    = 0;
-   protected String                  hash        = null;
+   transient long                              loadTime    = 0;
+   protected String                            hash        = null;
 
-   transient Hashtable               cache       = new Hashtable();
+   transient Hashtable                         cache       = new Hashtable();
 
    public Api()
    {
@@ -102,9 +99,9 @@ public class Api extends Dto
       return null;
    }
 
-   public Db findDb(String collection)
+   public Db findDb(String collection, Class dbClass)
    {
-      Collection c = getCollection(collection);
+      Collection c = getCollection(collection, dbClass);
       if (c != null)
          return c.getEntity().getTable().getDb();
 
@@ -256,6 +253,11 @@ public class Api extends Dto
    public void addCollection(Collection collection)
    {
       String collectionName = collection.getEntity().getTable().getDb().getName().toLowerCase() + "." + collection.getName().toLowerCase();
+
+      boolean test = false;
+      if (collection.getName().toLowerCase().equals("ads"))
+         test = true;
+      
       if (!collections.containsKey(collectionName))
          collections.put(collectionName, collection);
 
