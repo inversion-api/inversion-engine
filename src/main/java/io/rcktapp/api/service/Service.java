@@ -42,40 +42,38 @@ import io.rcktapp.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service
 {
-   boolean          inited         = false;
-   volatile boolean destroyed      = false;
+   boolean           inited         = false;
+   volatile boolean  destroyed      = false;
 
-   protected String profile        = null;
+   Logger            log            = LoggerFactory.getLogger(getClass());
+   Logger            requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   protected String configPath     = "";
+   List<Api>         apis           = new Vector();
 
-   protected int    reloadTimeout  = 10000;
+   ResourceLoader    resourceLoader = null;
 
-   Logger           log            = LoggerFactory.getLogger(getClass());
-   Logger           requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
-
-   List<Api>        apis           = new Vector();
-
-   ResourceLoader   resourceLoader = null;
-
-   boolean          configFast     = false;
-   boolean          configDebug    = false;
-   String           configOut      = null;
-
-   Configurator     configurator   = new Configurator();
+   Configurator      configurator   = new Configurator();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected String servletMapping = null;
+   protected String  servletMapping = null;
+
+   protected String  profile        = null;
+
+   protected String  configPath     = "";
+   protected int     configTimeout  = 10000;
+   protected boolean configFast     = false;
+   protected boolean configDebug    = false;
+   protected String  configOut      = null;
 
    /**
     * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String  allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public void destroy()
    {
@@ -773,6 +771,16 @@ public class Service
    public void setConfigOut(String configOut)
    {
       this.configOut = configOut;
+   }
+
+   public int getConfigTimeout()
+   {
+      return configTimeout;
+   }
+
+   public void setConfigTimeout(int configTimeout)
+   {
+      this.configTimeout = configTimeout;
    }
 
 }

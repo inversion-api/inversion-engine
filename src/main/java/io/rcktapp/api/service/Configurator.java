@@ -87,35 +87,35 @@ public class Configurator
          throw new RuntimeException("Unable to load snooze configs: " + e.getMessage(), e);
       }
 
-      //      if (service.getrereloadTimeout > 0)
-      //      {
-      //         Thread t = new Thread(new Runnable()
-      //            {
-      //               @Override
-      //               public void run()
-      //               {
-      //                  while (true)
-      //                  {
-      //                     try
-      //                     {
-      //                        J.sleep(reloadTimeout);
-      //                        if (destroyed)
-      //                           return;
-      //
-      //                        Config config = findConfig();
-      //                        loadConfig(config, false);
-      //                     }
-      //                     catch (Throwable t)
-      //                     {
-      //                        log.warn("Error loading config", t);
-      //                     }
-      //                  }
-      //               }
-      //            }, "snooze-config-reloader");
-      //
-      //         t.setDaemon(true);
-      //         t.start();
-      //      }
+      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
+      {
+         Thread t = new Thread(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  while (true)
+                  {
+                     try
+                     {
+                        J.sleep(service.getConfigTimeout());
+                        if (destroyed)
+                           return;
+
+                        Config config = findConfig();
+                        loadConfig(config, false, false);
+                     }
+                     catch (Throwable t)
+                     {
+                        log.warn("Error loading config", t);
+                     }
+                  }
+               }
+            }, "snooze-config-reloader");
+
+         t.setDaemon(true);
+         t.start();
+      }
    }
 
    void loadConfig(Config config, boolean forceReload, boolean fastLoad) throws Exception
