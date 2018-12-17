@@ -58,23 +58,23 @@ public class SqlDb extends Db
       }
    }
 
-   public static final int               MIN_POOL_SIZE            = 3;
-   public static final int               MAX_POOL_SIZE            = 10;
+   public static final int MIN_POOL_SIZE            = 3;
+   public static final int MAX_POOL_SIZE            = 10;
 
-   protected String                      driver                   = null;
-   protected String                      url                      = null;
-   protected String                      user                     = null;
-   protected String                      pass                     = null;
-   protected int                         poolMin                  = 3;
-   protected int                         poolMax                  = 10;
-   protected int                         idleConnectionTestPeriod = 3600;         // in seconds
+   boolean                 shutdown                 = false;
+
+   ComboPooledDataSource   pool                     = null;
+
+   protected String        driver                   = null;
+   protected String        url                      = null;
+   protected String        user                     = null;
+   protected String        pass                     = null;
+   protected int           poolMin                  = 3;
+   protected int           poolMax                  = 10;
+   protected int           idleConnectionTestPeriod = 3600; // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-   protected boolean                     calcRowsFound            = true;
-
-   boolean                               shutdown                 = false;
-
-   static Map<Db, ComboPooledDataSource> pools                    = new HashMap();
+   protected boolean       calcRowsFound            = true;
 
    @Override
    public String getType()
@@ -100,13 +100,10 @@ public class SqlDb extends Db
    public void shutdown()
    {
       shutdown = true;
-      
-      synchronized(this)
+
+      synchronized (this)
       {
-         for(ComboPooledDataSource pool : pools.values())
-         {
-            pool.close();
-         }
+         pool.close();
       }
    }
 
@@ -117,14 +114,10 @@ public class SqlDb extends Db
          Connection conn = ConnectionLocal.getConnection(this);
          if (conn == null && !shutdown)
          {
-            ComboPooledDataSource pool = pools.get(this);
-
             if (pool == null)
             {
                synchronized (this)
                {
-                  pool = pools.get(this);
-
                   if (pool == null && !shutdown)
                   {
                      String driver = getDriver();
@@ -149,8 +142,6 @@ public class SqlDb extends Db
                      pool.setIdleConnectionTestPeriod(idleTestPeriod);
                      //                     if (idleTestPeriod > 0)
                      //                        pool.setTestConnectionOnCheckin(true);
-
-                     pools.put(this, pool);
                   }
                }
             }
