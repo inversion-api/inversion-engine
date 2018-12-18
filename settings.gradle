@@ -11,7 +11,7 @@
 gradle.ext {
 
 	rckt_snooze = [
-		'addFortJProjectToClasspath':true
+		'addFortJProjectToClasspath':false
 	]
 
 	// Values to edit
