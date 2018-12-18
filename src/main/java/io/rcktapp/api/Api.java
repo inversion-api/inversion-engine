@@ -122,9 +122,7 @@ public class Api extends Dto
       {
          if (collection.getName().equalsIgnoreCase(name))
          {
-            if (dbClass == null)
-               return collection;
-            else if (dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
+            if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
                return collection;
          }
       }
