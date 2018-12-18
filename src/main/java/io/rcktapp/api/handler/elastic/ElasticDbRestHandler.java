@@ -55,7 +55,7 @@ public class ElasticDbRestHandler implements Handler
 //      }
       else
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET, PUT, POST and DELETE requests");
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET requests");
       }
    }
 
