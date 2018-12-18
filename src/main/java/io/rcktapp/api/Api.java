@@ -26,25 +26,25 @@ import io.forty11.j.utils.ListMap;
 
 public class Api extends Dto
 {
-   protected String                  name        = null;
-   boolean                           debug       = false;
+   protected String           name        = null;
+   boolean                    debug       = false;
 
-   protected String                  apiCode     = null;
-   protected String                  accountCode = null;
-   protected boolean                 multiTenant = false;
-   protected String                  url         = null;
+   protected String           apiCode     = null;
+   protected String           accountCode = null;
+   protected boolean          multiTenant = false;
+   protected String           url         = null;
 
-   protected List<Db>                dbs         = new ArrayList();
-   protected List<Endpoint>          endpoints   = new ArrayList();
-   protected List<Action>            actions     = new ArrayList();
-   protected List<AclRule>           aclRules    = new ArrayList();
+   protected List<Db>         dbs         = new ArrayList();
+   protected List<Endpoint>   endpoints   = new ArrayList();
+   protected List<Action>     actions     = new ArrayList();
+   protected List<AclRule>    aclRules    = new ArrayList();
 
-   protected Map<String, Collection> collections = new HashMap();
+   protected List<Collection> collections = new ArrayList();
 
-   transient long                    loadTime    = 0;
-   protected String                  hash        = null;
+   transient long             loadTime    = 0;
+   protected String           hash        = null;
 
-   transient Hashtable               cache       = new Hashtable();
+   transient Hashtable        cache       = new Hashtable();
 
    public Api()
    {
@@ -111,39 +111,6 @@ public class Api extends Dto
       return null;
    }
 
-   //   public Entity getEntity(Table tbl)
-   //   {
-   //      for (Collection col : collections.values())
-   //      {
-   //         if (col.getEntity().getTable() == tbl)
-   //            return col.getEntity();
-   //      }
-   //      return null;
-   //   }
-   //
-   //   public Attribute getAttribute(Column col)
-   //   {
-   //      for (Collection c : collections.values())
-   //      {
-   //         for (Attribute a : c.getEntity().getAttributes())
-   //         {
-   //            if (a.getColumn() == col)
-   //               return a;
-   //         }
-   //      }
-   //      return null;
-   //   }
-   //
-   //   public Collection getCollection(Entity entity)
-   //   {
-   //      for (Collection collection : collections.values())
-   //      {
-   //         if (entity.equals(collection.getEntity()))
-   //            return collection;
-   //      }
-   //      return null;
-   //   }
-
    public Collection getCollection(String name)
    {
       return getCollection(name, null);
@@ -151,7 +118,7 @@ public class Api extends Dto
 
    public Collection getCollection(String name, Class dbClass)
    {
-      for (Collection collection : collections.values())
+      for (Collection collection : collections)
       {
          if (collection.getName().equalsIgnoreCase(name))
          {
@@ -166,7 +133,7 @@ public class Api extends Dto
 
    public Collection getCollection(Table tbl)
    {
-      for (Collection collection : collections.values())
+      for (Collection collection : collections)
       {
          if (collection.getEntity().getTable() == tbl)
             return collection;
@@ -176,7 +143,7 @@ public class Api extends Dto
 
    public Collection getCollection(Entity entity)
    {
-      for (Collection collection : collections.values())
+      for (Collection collection : collections)
       {
          if (collection.getEntity() == entity)
             return collection;
@@ -186,7 +153,7 @@ public class Api extends Dto
 
    public Entity getEntity(Table table)
    {
-      for (Collection collection : collections.values())
+      for (Collection collection : collections)
       {
          if (collection.getEntity().getTable() == table)
             return collection.getEntity();
@@ -197,50 +164,8 @@ public class Api extends Dto
 
    public List<Collection> getCollections()
    {
-      return new ArrayList(collections.values());
+      return new ArrayList(collections);
    }
-   //
-   //   public List<Entity> getEntities()
-   //   {
-   //      List<Entity> entities = new ArrayList();
-   //      for (Collection col : collections.values())
-   //      {
-   //         entities.add(col.getEntity());
-   //      }
-   //      return entities;
-   //   }
-   //
-   //   public List<Relationship> getRelationships()
-   //   {
-   //      List<Relationship> rels = new ArrayList();
-   //      for (Collection col : collections.values())
-   //      {
-   //         rels.addAll(col.getEntity().getRelationships());
-   //      }
-   //      return rels;
-   //   }
-   //
-   //   public List<Attribute> getAttributes()
-   //   {
-   //      List<Attribute> attrs = new ArrayList();
-   //      for (Collection col : collections.values())
-   //      {
-   //         attrs.addAll(col.getEntity().getAttributes());
-   //      }
-   //      return attrs;
-   //   }
-
-   //   /**
-   //    * @return the collections
-   //    */
-   //   public List<Collection> getCollections()
-   //   {
-   //      return collections;
-   //   }
-
-   //   /**
-   //    * @param collections the collections to set
-   //    */
 
    public void setCollections(List<Collection> collections)
    {
@@ -255,14 +180,8 @@ public class Api extends Dto
     */
    public void addCollection(Collection collection)
    {
-      String collectionName = collection.getEntity().getTable().getDb().getName().toLowerCase() + "." + collection.getName().toLowerCase();
-
-      boolean test = false;
-      if (collection.getName().toLowerCase().equals("ads"))
-         test = true;
-      
-      if (!collections.containsKey(collectionName))
-         collections.put(collectionName, collection);
+      if (!collections.contains(collection))
+         collections.add(collection);
 
       if (collection.getApi() != this)
          collection.setApi(this);
@@ -270,7 +189,7 @@ public class Api extends Dto
 
    public void removeCollection(Collection collection)
    {
-      collections.remove(collection.getName().toLowerCase(), collection);
+      collections.remove(collection);
    }
 
    public Db getDb(String name)
