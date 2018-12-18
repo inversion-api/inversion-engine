@@ -81,6 +81,7 @@ public class SqlSuggestHandler extends SqlHandler
       sql += " \r\n FROM (";
 
       List<String> propertyList = J.explode(",", properties);
+      String collectionKey = null;
       for (int i = 0; i < propertyList.size(); i++)
       {
          String prop = propertyList.get(i);
@@ -91,7 +92,8 @@ public class SqlSuggestHandler extends SqlHandler
          if (prop.indexOf(".") < 0)
             throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
 
-         String tableName = Sql.check(api.getCollection(prop.substring(0, prop.indexOf("."))).getEntity().getTable().getName());
+         collectionKey = prop.substring(0, prop.indexOf("."));
+         String tableName = Sql.check(api.getCollection(collectionKey).getEntity().getTable().getName());
          String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
          sql += " \r\nSELECT DISTINCT " + rql.asCol(column) + " AS " + searchProp + " FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + rql.asCol(column) + " != ''";
@@ -107,6 +109,11 @@ public class SqlSuggestHandler extends SqlHandler
 
       // removing the tenantId here so the Get Handler won't add an additional where clause to the sql we are sending it
       req.removeParam("tenantId");
+      if(collectionKey != null) {
+         db = (SqlDb) chain.getService().getDb(req.getApi(), collectionKey, SqlDb.class);
+         if (db != null)
+            chain.put("db", db.getName());
+      }
       chain.put("select", sql);
    }
 
