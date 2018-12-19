@@ -17,7 +17,6 @@ package io.rcktapp.api.handler.elastic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -35,11 +34,13 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
+import io.rcktapp.api.Collection;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
+import io.rcktapp.api.Table;
 import io.rcktapp.api.service.Service;
 import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.elastic.ElasticRql;
@@ -51,24 +52,14 @@ import io.rcktapp.rql.elastic.QueryDsl;
  * @author kfrankic
  *
  */
-public class ElasticHandler implements Handler
+public class ElasticDbGetHandler implements Handler
 {
-   Logger                      log           = LoggerFactory.getLogger(ElasticHandler.class);
+   Logger  log           = LoggerFactory.getLogger(ElasticDbGetHandler.class);
 
    // The following properties can be assigned via snooze.properties
-   String                      elasticURL    = "";
-   int                         maxRows       = 100;
-   String                      defaultSource = null;
-   boolean                     isOneSrcArray = true;
-
-   static Map<Integer, String> SC_MAP        = new HashMap<>();
-   static
-   {
-      SC_MAP.put(400, SC.SC_400_BAD_REQUEST);
-      SC_MAP.put(401, SC.SC_401_UNAUTHORIZED);
-      SC_MAP.put(403, SC.SC_403_FORBIDDEN);
-      SC_MAP.put(404, SC.SC_404_NOT_FOUND);
-   }
+   int     maxRows       = 100;
+   String  defaultSource = null;
+   boolean isOneSrcArray = true;
 
    /**
     * @see io.rcktapp.api.Handler#service(io.rcktapp.api.service.Service, io.rcktapp.api.Api, io.rcktapp.api.Endpoint, io.rcktapp.api.Action, io.rcktapp.api.Chain, io.rcktapp.api.Request, io.rcktapp.api.Response)
@@ -76,6 +67,10 @@ public class ElasticHandler implements Handler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
+
+      Collection collection = findCollectionOrThrow404(api, chain, req);
+      Table table = collection.getEntity().getTable();
+      ElasticDb db = (ElasticDb) table.getDb();
 
       // examples...
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
@@ -85,11 +80,11 @@ public class ElasticHandler implements Handler
       String[] paths = req.getPath().split("/");
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
-         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"));
+         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db);
       }
       else
       {
-         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath());
+         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db);
       }
 
    }
@@ -102,14 +97,14 @@ public class ElasticHandler implements Handler
     * @param paths
     * @throws Exception
     */
-   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl) throws Exception
+   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticDb db) throws Exception
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
          req.putParam("source", defaultSource);
       }
 
-      ElasticRql elasticRQL = (ElasticRql) Rql.getRql("elastic");
+      ElasticRql elasticRQL = (ElasticRql) Rql.getRql(db.getType());
 
       Integer wantedPage = null;
       if (req.getParam("wantedpage") != null)
@@ -164,7 +159,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url, json, headers);
 
-      Web.Response r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+      Web.Response r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -200,7 +195,7 @@ public class ElasticHandler implements Handler
             dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
             json = mapper.writeValueAsString(dsl.toDslMap());
 
-            r = Web.post(url, json, headers, 0).get(10, TimeUnit.SECONDS);
+            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
             jsObj = JS.toJSObject(r.getContent());
             hits = jsObj.getObject("hits").getArray("hits");
 
@@ -219,8 +214,7 @@ public class ElasticHandler implements Handler
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         String status = SC_MAP.get(r.getCode());
-         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -236,7 +230,7 @@ public class ElasticHandler implements Handler
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type) throws Exception
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticDb db) throws Exception
    {
 
       int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
@@ -288,7 +282,7 @@ public class ElasticHandler implements Handler
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(10, TimeUnit.SECONDS);
+      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -314,7 +308,7 @@ public class ElasticHandler implements Handler
             {
                req.putParam("tenantId", tenantId);
             }
-            handleAutoSuggestRequest(req, res, paths, "wildcard");
+            handleAutoSuggestRequest(req, res, paths, "wildcard", db);
          }
          else
          {
@@ -325,8 +319,7 @@ public class ElasticHandler implements Handler
       }
       else
       {
-         String status = SC_MAP.get(r.getCode());
-         throw new ApiException(status != null ? status : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -337,7 +330,7 @@ public class ElasticHandler implements Handler
       // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
       if (paths.length < 3)
       {
-         //         indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+         // indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
          indexAndType = "/" + paths[1] + "/_doc/";
       }
       // if the type is of 'no-type', dont' include it 
@@ -351,7 +344,7 @@ public class ElasticHandler implements Handler
       headers.add("Content-Type");
       headers.add("application/json");
 
-      return elasticURL + indexAndType + "_search";
+      return ElasticDb.getURL() + indexAndType + "_search";
    }
 
    /**
@@ -454,7 +447,7 @@ public class ElasticHandler implements Handler
                      dsl.getOrder().reverseOrdering();
                      ObjectMapper mapper = new ObjectMapper();
                      String json = mapper.writeValueAsString(dsl.toDslMap());
-                     Web.Response r = Web.post(elasticUrl, json, headers, 0).get(10, TimeUnit.SECONDS);
+                     Web.Response r = Web.post(elasticUrl, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
 
                      if (r.isSuccess())
                      {
@@ -534,6 +527,24 @@ public class ElasticHandler implements Handler
       }
 
       return data;
+   }
+   
+   private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
+   {
+      Collection collection = api.getCollection(req.getCollectionKey(), ElasticDb.class);
+
+      if (collection == null)
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
+      }
+
+      if (!(collection.getEntity().getTable().getDb() instanceof ElasticDb))
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
+      }
+
+      return collection;
+
    }
 
 }

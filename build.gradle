@@ -6,75 +6,79 @@ apply plugin: 'java'
 //This file is shipped as a java plugin project not a war plugin project because
 //other projects use jitpack to include the snooze api as a dependency.  If
 //it were a war project by default jipack would serve the war not the jar which
-//would be useless. 
+//would be useless.
 //apply plugin: 'war'
 
 project.docsDirName='../docs/0.3.x/'
 
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
+configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 
 
 version = '0.3.x'
 group = 'com.github.RocketPartners'
 sourceCompatibility = 1.8
 
-repositories { 
+repositories {
    mavenLocal()
-   mavenCentral() 
+   mavenCentral()
    maven { url 'https://jitpack.io' }
    maven { url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release" }
 }
 
 dependencies {
 
-   	compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
-   	compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
-   	compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
-   	compile("com.github.wellsb1:fort_fusion_vtl:master-SNAPSHOT") { changing = true }
+   if (gradle.ext.rckt_snooze['addFortJProjectToClasspath']) {
+      compile findProject(":fort_j")
+   }
+   else {
+      compile("com.github.wellsb1:fort_j:release-1.0.x-SNAPSHOT") { changing = true }
+   }
 
-	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.55'
-	
-	compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
-	compile group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.11'
-	
-	compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
-	compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
-	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
-	compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
+   compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
+   compile("com.github.wellsb1:fort_w:release-1.0.x-SNAPSHOT") { changing = true }
+   compile("com.github.wellsb1:fort_fusion_vtl:master-SNAPSHOT") { changing = true }
 
-	
-	// required for the Redis client
-    compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
-	
-	compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
-	compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
+   compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.55'
 
-    //drivers for supportd DBs	
-	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
-	compile 'org.postgresql:postgresql:42.1.4'
-    compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
-	
-	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
-	
-	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.11'
-	
-	compile "javax.servlet:javax.servlet-api:3.1.0"
-	
-	compile 'net.jodah:expiringmap:0.5.8'
-	compile group: 'org.graalvm', name: 'graal-sdk', version: '1.0.0-rc7'
-	compile group: 'com.oracle.truffle', name: 'truffle-api', version: '1.0.0-rc7'
-	compile files('libs/graaljs.jar')
-    compile files('libs/tregex.jar')
-	
-	
-	compile group: 'org.apache.velocity', name: 'velocity-engine-core', version: '2.0'
-//	compile group: 'org.apache.velocity', name: 'velocity-engine-scripting', version: '2.0'
-	
-	testCompile 'junit:junit:4.12'
-	
+   compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+   compile group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.11'
+
+   compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
+   compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
+   compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
+   compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
+   compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
+
+
+   // required for the Redis client
+   compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
+
+   compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
+   compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
+
+   //drivers for supportd DBs
+   compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
+   compile 'org.postgresql:postgresql:42.1.4'
+   compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.18.1036'
+
+   compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
+
+   compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.11'
+
+   compile "javax.servlet:javax.servlet-api:3.1.0"
+
+   compile 'net.jodah:expiringmap:0.5.8'
+   compile group: 'org.graalvm', name: 'graal-sdk', version: '1.0.0-rc7'
+   compile group: 'com.oracle.truffle', name: 'truffle-api', version: '1.0.0-rc7'
+   compile files('libs/graaljs.jar')
+   compile files('libs/tregex.jar')
+
+
+   compile group: 'org.apache.velocity', name: 'velocity-engine-core', version: '2.0'
+   //	compile group: 'org.apache.velocity', name: 'velocity-engine-scripting', version: '2.0'
+
+   testCompile 'junit:junit:4.12'
+
 }
 
 
@@ -83,12 +87,12 @@ dependencies {
  * already exist when running 'gradle eclipse'
  */
 eclipse {
-    classpath {
-        file {
-            tasks.eclipse.dependsOn(cleanEclipseClasspath)
-            tasks.eclipse.dependsOn("create-dirs")
-        }
-    }
+   classpath {
+      file {
+         tasks.eclipse.dependsOn(cleanEclipseClasspath)
+         tasks.eclipse.dependsOn("create-dirs")
+      }
+   }
 }
 
 
@@ -100,15 +104,15 @@ eclipse {
  * 'gradle eclipse' command.
  */
 task "create-dirs" {
-    doLast {
-       sourceSets*.java.srcDirs*.each { it.mkdirs() }
-       sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+   doLast {
+      sourceSets*.java.srcDirs*.each { it.mkdirs() }
+      sourceSets*.resources.srcDirs*.each { it.mkdirs() }
    }
 }
 
 javadoc {
-    exclude "**/utils/**"
-    exclude "**/evo/**"
+   exclude "**/utils/**"
+   exclude "**/evo/**"
 }
 
-  
+

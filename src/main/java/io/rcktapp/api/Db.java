@@ -84,6 +84,15 @@ public abstract class Db extends Dto
 
       return name;
    }
+   
+   protected String lowercaseAndPluralizeString(String collectionName) {
+      collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
+
+      if (!collectionName.endsWith("s"))
+         collectionName = English.plural(collectionName);
+      
+      return collectionName;
+   }
 
    public void setApi(Api api)
    {

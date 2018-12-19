@@ -498,11 +498,12 @@ Retrieve locations with an empty state value
 
 Example Config
 ```
-elasticH.class=io.rcktapp.api.service.ElasticHandler
-elasticH.elasticURL=https://yourElasticSearchDB.amazonaws.com
+elasticdb.class=io.rcktapp.api.handler.elastic.ElasticDb
+elasticdb.url=https://yourElasticSearchDB.amazonaws.com
 
+elasticH.class=io.rcktapp.api.handler.elastic.ElasticDbRestHandler
 elasticEp.class=io.rcktapp.api.Endpoint
-elasticEp.includePaths=elastic*
+elasticEp.path=desiredPath
 elasticEp.methods=GET
 elasticEp.handler=elasticH
 ```

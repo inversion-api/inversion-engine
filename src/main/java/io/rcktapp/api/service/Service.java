@@ -517,7 +517,7 @@ public class Service
                int end = u.indexOf('/', start + 1);
                if (end < 0)
                   end = u.length();
-               String tenantId = u.substring(start, end);
+               String tenantId = u.substring(start + 1, end);
 
                if (!apiUrl.endsWith("/"))
                   apiUrl += "/";
@@ -567,13 +567,13 @@ public class Service
       return null;
    }
 
-   public Db getDb(Api api, String collectionKey) throws ApiException
+   public Db getDb(Api api, String collectionKey, Class dbClass) throws ApiException
    {
       Db db = null;
 
       if (collectionKey != null)
       {
-         db = api.findDb(collectionKey);
+         db = api.findDb(collectionKey, dbClass);
       }
 
       if (db == null)

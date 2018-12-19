@@ -132,7 +132,6 @@ public class DynamoDb extends Db
 
             addTable(table);
             api.addCollection(entity.getCollection());
-            entity.getCollection().setApi(api);
 
          }
 

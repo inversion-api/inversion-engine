@@ -1,0 +1,31 @@
+/*
+ * Loads before build.gradle
+ * This is necessary for loading projects independent of this project.
+ *
+ * Set to true if you are making changes to a fort project
+ * and want to see those changes immediately affect 
+ * this project within eclipse without need of running 
+ * 'gradle install' and then refreshing the project.
+ */
+
+gradle.ext {
+
+	rckt_snooze = [
+		'addFortJProjectToClasspath':false
+	]
+
+	// Values to edit
+	def pathToFortJ= '../fort_j'
+	
+	
+	// ###################################################
+	// Below loads the project ... no need to edit.
+	
+	
+	if (rckt_snooze['addFortJProjectToClasspath']) {
+		include ':fort_j'
+		project(":fort_j").projectDir = file(pathToFortJ)
+	}
+	
+	
+}

@@ -26,9 +26,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Vector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,6 +166,16 @@ public class Configurator
 
             if (!J.empty(service.getConfigOut()))
             {
+               //               autoProps = new Properties(autoProps)
+               //                  {
+               //                     public Enumeration keys()
+               //                     {
+               //                        Vector keys = new Vector(super.keySet());
+               //                        Collections.sort(keys);
+               //                        return keys.elements();
+               //                     }
+               //                  };
+
                String fileName = "./" + service.getConfigOut().trim();
 
                File file = new File(fileName);
@@ -173,16 +185,44 @@ public class Configurator
                file.getParentFile().mkdirs();
                BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
+               Properties sorted = new Properties() {
+                 
+                  public Enumeration keys()
+                  {
+                     Vector v = new Vector(AutoWire.sort(keySet()));
+                     return v.elements();
+                  }
+               };
+               
+               sorted.putAll(autoProps);
+               autoProps = sorted;
+               
+               
                autoProps.store(out, "");
 
-               for (String key : AutoWire.sort(autoProps.keySet()))
-               {
-                  String value = autoProps.getProperty(key);
-                  if (shouldMask(key))
-                     value = "###############";
-               }
+               //               for (String key : AutoWire.sort(autoProps.keySet()))
+               //               {
+               //                  String value = autoProps.getProperty(key);
+               //                  if (shouldMask(key))
+               //                     value = "###############";
+               //               }
                out.flush();
                out.close();
+
+               List<String> keys = AutoWire.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
+               Collections.sort(keys);
+               log.info("-- merged user supplied configuration -------------------------");
+               for (String key : keys)
+               {
+                  String value = autoProps.getProperty(key);
+
+                  if (shouldMask(key))
+                     value = "###############";
+
+                  log.info(" > " + key + "=" + value);
+               }
+               log.info("-- end merged user supplied configuration ---------------------");
+
             }
          }
       }
@@ -202,7 +242,7 @@ public class Configurator
             }
          }
 
-         if (log.isInfoEnabled() && service.isConfigDebug())
+         // if (log.isInfoEnabled() && service.isConfigDebug())
          {
             List<String> keys = new ArrayList(config.props.keySet());
             Collections.sort(keys);
@@ -215,6 +255,10 @@ public class Configurator
                   value = "###############";
 
                log.info(" > " + key + "=" + value);
+            }
+            for (String file : config.files)
+            {
+               log.info("# config file: " + file);
             }
             log.info("-- end merged user supplied configuration ---------------------");
          }
@@ -369,7 +413,7 @@ public class Configurator
          else if (o instanceof Collection)
          {
             Collection col = (Collection) o;
-            name = col.getApi().getName() + ".collections." + col.getName();
+            name = col.getApi().getName() + ".collections." + col.getEntity().getTable().getDb().getName() + "_" + col.getName();
          }
          else if (o instanceof Entity)
          {
@@ -428,6 +472,9 @@ public class Configurator
             }
          }
       }
+
+      if (config.files.isEmpty())
+         log.warn("\n\n######################################################\n# WARNING!!! No '.properties' files have been loaded.#\n######################################################\n");
 
       List keys = new ArrayList(config.props.keySet());
       Collections.sort(keys);
