@@ -2,6 +2,7 @@ package io.rcktapp.rql;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -60,13 +61,7 @@ public class TestParts
       }
       else
       {
-         str1 = str1.replaceAll("\\s+", " ").trim();
-         str2 = str2.replaceAll("\\s+", " ").trim();
-         
-         if (!J.equal(str1, str2))
-            compare(str1, str2);
-
-         assertEquals(str1.trim(), str2.trim());
+         assertTrue(compare(str1.trim(), str2.trim()));
       }
    }
 
@@ -77,12 +72,6 @@ public class TestParts
 
       if (!str1.equals(str2))
       {
-         str2 = str2.replaceAll("SQL_CALC_FOUND_ROWS ", "");
-         str2 = str2.replaceAll(" LIMIT 0, 100", "");
-
-         str1 = str1.replaceAll("SQL_CALC_FOUND_ROWS ", "");
-         str1 = str1.replaceAll(" LIMIT 0, 100", "");
-
          if (!str1.equals(str2))
          {
             System.out.println("\r\n");
