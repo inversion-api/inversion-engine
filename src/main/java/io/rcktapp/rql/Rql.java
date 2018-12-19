@@ -106,7 +106,7 @@ public class Rql
    char            stringQuote     = '\'';
    char            identifierQuote = '"';
 
-   boolean         calcRowsFound   = true;
+   boolean         calcRowsFound   = false;
 
    protected Rql(String type)
    {

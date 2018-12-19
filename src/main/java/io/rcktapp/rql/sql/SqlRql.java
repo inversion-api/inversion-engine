@@ -32,6 +32,7 @@ public class SqlRql extends Rql
       if (type != null && type.toLowerCase().indexOf("mysql") > -1)
       {
          setIdentifierQuote('`');
+         setCalcRowsFound(true);
       }
 
       for (String reserved : RESERVED)
