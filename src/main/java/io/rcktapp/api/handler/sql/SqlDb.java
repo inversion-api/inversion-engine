@@ -74,6 +74,7 @@ public class SqlDb extends Db
    protected int           idleConnectionTestPeriod = 3600; // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
+   // Only impacts 'mysql' types
    protected boolean       calcRowsFound            = true;
 
    @Override
@@ -629,6 +630,9 @@ public class SqlDb extends Db
 
    public boolean isCalcRowsFound()
    {
+      if (driver.indexOf("mysql") < 0)
+         return false;
+      
       return calcRowsFound;
    }
 
