@@ -48,8 +48,12 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.forty11.fusionvtl.directives.LayoutDirective;
+import io.forty11.fusionvtl.directives.SaveDirective;
+import io.forty11.fusionvtl.directives.SwitchDirective;
 import io.forty11.j.J;
 import io.forty11.web.js.JS;
+import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -60,9 +64,6 @@ import io.rcktapp.api.Handler;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
-import io.forty11.fusionvtl.directives.LayoutDirective;
-import io.forty11.fusionvtl.directives.SaveDirective;
-import io.forty11.fusionvtl.directives.SwitchDirective;
 import io.rcktapp.api.handler.script.velocity.VelocityResourceLoader;
 import io.rcktapp.api.service.Service;
 import net.jodah.expiringmap.ExpiringMap;
@@ -325,6 +326,9 @@ public class ScriptHandler implements Handler
 
       if (parts.size() == 1)
          guesses.add(parts.get(0));
+      
+      // last chance, look for the file name 
+      guesses.add(req.getEntityKey());
 
       for (String guess : guesses)
       {
@@ -431,19 +435,19 @@ public class ScriptHandler implements Handler
          }
       }
 
-      //      if (script == null && !J.empty(scriptsCollection))
-      //      {
-      //         String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
-      //         Response r = chain.getService().include(chain, "GET", url, null);
-      //         if (r.getStatusCode() == 200)
-      //         {
-      //            JSArray dataArr = r.getJson().getArray("data");
-      //            if (!dataArr.asList().isEmpty())
-      //            {
-      //               return dataArr.getObject(0);
-      //            }
-      //         }
-      //      }
+      if (script == null && !J.empty(scriptsCollection))
+      {
+         String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
+         Response r = chain.getService().include(chain, "GET", url, null);
+         if (r.getStatusCode() == 200)
+         {
+            JSArray dataArr = r.getJson().getArray("data");
+            if (!dataArr.asList().isEmpty())
+            {
+               script =  dataArr.getObject(0);
+            }
+         }
+      }
 
       handler.CACHE.put(path, script);
 

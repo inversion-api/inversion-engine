@@ -8,12 +8,15 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.rql;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.forty11.j.J;
 
@@ -28,13 +31,13 @@ public class Parts
 
    public Parts(String sql)
    {
-      select = chopFirst(sql, "select ", " from");
+      select = chopFirst(sql, "select", "from");
 
       if (J.empty(select))
-         select = chopFirst(sql, "update ", " where");
+         select = chopFirst(sql, "update", "where");
 
       if (J.empty(select))
-         select = chopFirst(sql, "delete ", " from");
+         select = chopFirst(sql, "delete", "from");
 
       if (select != null)
       {
@@ -42,12 +45,12 @@ public class Parts
 
          if (sql.trim().substring(4).trim().startsWith("("))
          {
-            int end = sql.lastIndexOf("as ") + 3;
+            int end = sql.lastIndexOf("as") + 3;
             String rest = sql.substring(end, sql.length());
-            int other = firstIdx(rest, "where ", " group by ", "order ", " limit ");
-            if (other > -1)
+            int[] otherIdx = findFirstOfFirstOccurances(rest, "where", " group by", "order", "limit");
+            if (otherIdx != null)
             {
-               end += other;
+               end += otherIdx[0];
             }
             else
             {
@@ -59,74 +62,98 @@ public class Parts
          }
          else
          {
-            from = chop(sql, "from ", "where ", " group by ", " order ", " limit ");
+            from = chopLast(sql, "from", "where", "group by", "order", "limit");
          }
-         where = chop(sql, "where ", " group by ", " order ", " limit ");
-         group = chop(sql, "group by ", " order ", " limit ");
-         order = chop(sql, "order ", " limit ");
-         limit = chop(sql, "limit ");
+         where = chopLast(sql, "where", "group by", "order", "limit");
+         group = chopLast(sql, "group by", "order", "limit");
+         order = chopLast(sql, "order", "limit");
+         limit = chopLast(sql, "limit");
       }
    }
 
-   /**
-    * Finds the 
-    * @param haystack
-    * @param needles
-    * @return
-    */
-   static int firstLastIdx(String haystack, String... needles)
+   public static void main(String[] args)
    {
-      int idx = -1;
-      for (String needle : needles)
-      {
-         int i = haystack.lastIndexOf(needle);
-         if (idx == -1 || (i >= 0 && i < idx))
-            idx = i;
-      }
-      return idx;
+      int[] found = findFirstOfFirstOccurances("asdasdfa order \r\n \t by asdasdf", "order by ");
+      System.out.println(found);
    }
 
-   static int firstIdx(String haystack, String... needles)
+   static int[] findFirstOfFirstOccurances(String haystack, String... regexes)
    {
-      int idx = -1;
-      for (String needle : needles)
+      int[] first = null;
+      for (String regex : regexes)
       {
-         int i = haystack.indexOf(needle);
-         if (idx == -1 || (i >= 0 && i < idx))
-            idx = i;
+         regex = "\\b(" + regex.trim().replaceAll(" ", "\\\\s*") + ")\\b";
+         Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(haystack);
+         if (m.find())
+         {
+            int start = m.start(1);
+            int end = m.end(1);
+
+            if (first == null || start < first[0])
+               first = new int[]{start, end};
+         }
       }
-      return idx;
+      //      if (first != null)
+      //         System.out.println("found first '" + haystack.substring(first[0], first[1]) + "'");
+      return first;
    }
 
-   protected String chop(String haystack, String start, String... ends)
+   static int[] findFirstOfLastOccurances(String haystack, String... regexes)
    {
-      String lc = haystack.toLowerCase();
+      int[] first = null;
 
-      int idx1 = lc.indexOf(start);
-      if (idx1 >= 0)
+      for (String regex : regexes)
       {
-         int end = firstLastIdx(lc, ends);
-         if (end < 0)
-            end = lc.length();
+         int[] last = null;
 
-         return haystack.substring(idx1, end).trim() + " ";
+         regex = "\\b(" + regex.trim().replaceAll(" ", "\\\\s*") + ")\\b";
+         Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(haystack);
+         while (m.find())
+         {
+            int start = m.start(1);
+            int end = m.end(1);
+
+            if (last == null || start > last[0])
+               last = new int[]{start, end};
+         }
+
+         if (last != null && (first == null || last[0] < first[0]))
+            first = last;
+      }
+      //      if (first != null)
+      //         System.out.println("found first last'" + haystack.substring(first[0], first[1]) + "'");
+
+      return first;
+   }
+
+   protected String chopLast(String haystack, String start, String... ends)
+   {
+      int[] startIdx = findFirstOfFirstOccurances(haystack, start);
+
+      if (startIdx != null)
+      {
+         int[] endIdx = findFirstOfLastOccurances(haystack, ends);
+         if (endIdx != null)
+            return haystack.substring(startIdx[0], endIdx[0]).trim() + " ";
+         else
+            return haystack.substring(startIdx[0], haystack.length()).trim() + " ";
       }
       return null;
    }
 
    protected String chopFirst(String haystack, String start, String... ends)
    {
-      String lc = haystack.toLowerCase();
+      int[] startIdx = findFirstOfFirstOccurances(haystack, start);
 
-      int idx1 = lc.indexOf(start);
-      if (idx1 >= 0)
+      if (startIdx != null)
       {
-         int end = firstIdx(lc, ends);
-         if (end < 0)
-            end = lc.length();
-
-         return haystack.substring(idx1, end).trim() + " ";
+         int[] endIdx = findFirstOfFirstOccurances(haystack, ends);
+         if (endIdx != null)
+            return haystack.substring(startIdx[0], endIdx[0]).trim() + " ";
+         else
+            return haystack.substring(startIdx[0], haystack.length()).trim() + " ";
       }
       return null;
    }
+
 }
