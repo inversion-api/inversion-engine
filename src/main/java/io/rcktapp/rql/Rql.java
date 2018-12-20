@@ -271,9 +271,6 @@ public class Rql
          addConditional(word);
    }
 
-   //##############################################################################################################################################################
-   //   private boolean        calcRowsFound   = true;
-   
    public Stmt createStmt(String sqlStr, Table table, Map<String, String> params) throws Exception
    {
       return createStmt(sqlStr, table, params, null);
