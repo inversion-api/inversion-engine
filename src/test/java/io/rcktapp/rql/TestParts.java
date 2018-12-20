@@ -6,8 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import io.forty11.j.J;
-
 public class TestParts
 {
 
