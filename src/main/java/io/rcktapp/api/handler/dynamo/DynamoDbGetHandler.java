@@ -81,6 +81,9 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          res.debug("Dynamo Table:       " + table.getName() + ", PK: " + pk + ", SK: " + sk);
 
          List<Index> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.LOCAL_SECONDARY_TYPE);
+         
+         // TODO KEVIN - also.. might need to do something here for Global Secondary Indexes
+         
          if (!lsIndexes.isEmpty())
          {
             res.debug("Local Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
@@ -144,6 +147,9 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          }
       }
 
+      // TODO KEVIN - will need to add something about.. we don't have a pk as a param
+      // but do we have a GSI for any of the keys that are in the request params, if so.. need to do a query
+      
       DynamoResult dynamoResult = null;
       if (primaryKeyValue != null)
       {
