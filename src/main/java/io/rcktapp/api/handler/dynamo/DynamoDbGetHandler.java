@@ -15,6 +15,7 @@
  */
 package io.rcktapp.api.handler.dynamo;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Collection;
+import io.rcktapp.api.Column;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Index;
 import io.rcktapp.api.Request;
@@ -80,14 +82,20 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       {
          res.debug("Dynamo Table:       " + table.getName() + ", PK: " + pk + ", SK: " + sk);
 
-         List<Index> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.LOCAL_SECONDARY_TYPE);
-         
-         // TODO KEVIN - also.. might need to do something here for Global Secondary Indexes
-         
+         List<Index> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.GLOBAL_SECONDARY_TYPE);
+
+         if (!lsIndexes.isEmpty())
+         {
+            res.debug("Global Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
+         }
+
+         lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.LOCAL_SECONDARY_TYPE);
+
          if (!lsIndexes.isEmpty())
          {
             res.debug("Local Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
          }
+
       }
 
       String tenantIdOrCode = null;
@@ -147,9 +155,6 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          }
       }
 
-      // TODO KEVIN - will need to add something about.. we don't have a pk as a param
-      // but do we have a GSI for any of the keys that are in the request params, if so.. need to do a query
-      
       DynamoResult dynamoResult = null;
       if (primaryKeyValue != null)
       {
@@ -158,8 +163,50 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       }
       else
       {
-         // Scan
-         dynamoResult = doScan(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys);
+         // #################################################################
+         // #################################################################
+         // #################################################################
+         List<DynamoIndex> gsiList = new ArrayList<DynamoIndex>();
+         for (Index index : table.getIndexes())
+         {
+            if (index.getType() != null && index.getType().equals(DynamoDb.GLOBAL_SECONDARY_TYPE))
+            {
+               if (dynamoExpression.getFields().containsValue(((DynamoIndex) index).getPartitionKey()))
+               {
+                  gsiList.add((DynamoIndex) index);
+                  appendTenantIdToPk = false;
+                  break;
+               }
+               // TODO should the sort key also be searched for within the expression? 
+            }
+         }
+
+         // For now, choose the first GSI found.  In the future, we may need to look at req params to determine
+         // which GSI is chosen.
+         if (gsiList.size() > 0)
+         {
+            DynamoIndex index = gsiList.get(0);
+
+            pk = index.getPartitionKey();
+            sk = index.getSortKey();
+
+            // rebuild the dynamoExpression using the GSI
+            dynamoExpression = rql.buildDynamoExpressionUsingIndex(req.getParams(), index);
+
+            pkPred = dynamoExpression.getExcludedPredicate(pk);
+            Object partitionKeyValue = DynamoDb.cast(pkPred.getTerms().get(1).getToken(), pk, table);
+
+            // Query
+            dynamoResult = doQuery(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys, pk, partitionKeyValue);
+         }
+         else
+         {
+            // Scan
+            dynamoResult = doScan(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys);
+         }
+         // #################################################################
+         // #################################################################
+         // #################################################################
       }
 
       String returnNext = null;
@@ -220,7 +267,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       if (chain.getRequest().isDebug())
       {
          res.debug("Query Type:         Query");
-         res.debug("Primary Key:        " + pk + " = " + primaryKeyValue);
+         res.debug("Partition Key:      " + pk + " = " + primaryKeyValue);
       }
 
       QueryApi queryApi = dynamoTable;

@@ -33,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
@@ -53,12 +54,13 @@ import io.rcktapp.rql.dynamo.DynamoRql;
 
 public class DynamoDb extends Db
 {
-   public static final String PARTITION_KEY_INDEX  = "Partition Key Index";
-   public static final String SORT_KEY_INDEX       = "Sort Key Index";
+   public static final String PARTITION_KEY_INDEX   = "Partition Key Index";
+   public static final String SORT_KEY_INDEX        = "Sort Key Index";
 
-   public static final String PARTITION_TYPE       = "partition";
-   public static final String SORT_TYPE            = "sort";
-   public static final String LOCAL_SECONDARY_TYPE = "localsecondary";
+   public static final String PARTITION_TYPE        = "partition";
+   public static final String SORT_TYPE             = "sort";
+   public static final String LOCAL_SECONDARY_TYPE  = "localsecondary";
+   public static final String GLOBAL_SECONDARY_TYPE = "globalsecondary";
 
    static
    {
@@ -237,6 +239,40 @@ public class DynamoDb extends Db
             table.addColumn(column);
          }
       }
+
+      // #################################################################
+      // #################################################################
+      // #################################################################
+      if (tableDescription.getGlobalSecondaryIndexes() != null)
+      {
+         for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
+         {
+            DynamoIndex index = new DynamoIndex(table, indexDesc.getIndexName(), GLOBAL_SECONDARY_TYPE);
+
+            for (KeySchemaElement keyInfo : indexDesc.getKeySchema())
+            {
+               Column column = table.getColumns().stream()//
+                                    .filter(c -> c.getName().equals(keyInfo.getAttributeName()))//
+                                    .findFirst().orElse(null);
+               index.addColumn(column);
+
+               if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
+               {
+                  index.setPartitionKey(keyInfo.getAttributeName());
+               }
+
+               else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+               {
+                  index.setSortKey(keyInfo.getAttributeName());
+               }
+            }
+
+            table.addIndex(index);
+         }
+      }
+      // #################################################################
+      // #################################################################
+      // #################################################################
 
       if (tableDescription.getLocalSecondaryIndexes() != null)
       {

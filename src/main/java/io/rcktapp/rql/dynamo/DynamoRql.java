@@ -7,9 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+
 import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
+import io.rcktapp.api.handler.dynamo.DynamoIndex;
 import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Parser;
 import io.rcktapp.rql.Predicate;
@@ -41,7 +44,7 @@ public class DynamoRql extends Rql
 
       DynamoExpression dynamoExpression = new DynamoExpression(table);
 
-      Stmt stmt = buildStmt(new Stmt(this, null, null, null), null, requestParams, null);
+      Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, requestParams, null);
       List<Predicate> predicates = stmt.where;
       List<Order> orderList = stmt.order;
 
@@ -87,6 +90,71 @@ public class DynamoRql extends Rql
 
       return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
    }
+
+   // #################################################################
+   // #################################################################
+   // #################################################################
+   public DynamoExpression buildDynamoExpressionUsingIndex(Map<String, String> requestParams, DynamoIndex index) throws Exception
+   {
+      String pk = index.getPartitionKey();
+      String sk = index.getSortKey();
+
+      DynamoExpression dynamoExpression = new DynamoExpression(index.getTable());
+
+      Stmt stmt = buildStmt(new Stmt(this, null, null, null), null, requestParams, null);
+      List<Predicate> predicates = stmt.where;
+      List<Order> orderList = stmt.order;
+
+      boolean hasPartitionKey = predicatesContainField(predicates, pk);
+      List<String> excludeList = new ArrayList<>();
+      if (hasPartitionKey)
+      {
+         boolean hasSortKey = predicatesContainField(predicates, sk);
+
+         // sorting only works for querying which means we must have a partition key to sort
+         // TODO how to invoke this section of the 'if' ??? 
+         if (orderList != null && !orderList.isEmpty())
+         {
+            Order order = orderList.get(0);
+            order.col = Parser.dequote(order.col);
+            if (sk != null && sk.equals(order.col))
+            {
+               // trying to sort by the table's sort key, no index is needed for this
+               dynamoExpression.setOrderIndexInformation(order, index);
+            }
+         }
+         // the index's sort key was found 
+         else if (hasSortKey)
+         {
+            dynamoExpression.setOrderIndexInformation(new Order(sk, null), index);
+         }
+         else // no sort key was found
+            dynamoExpression.setOrderIndexInformation(null, index);
+
+         excludeList.add(pk);
+         if (dynamoExpression.getOrder() != null)
+         {
+            excludeList.add(dynamoExpression.getOrder().col);
+         }
+
+      }
+
+      String andOr = "and";
+      if (predicates.size() == 1)
+      {
+         if (predicates.get(0).getToken().equalsIgnoreCase("and") || predicates.get(0).getToken().equalsIgnoreCase("or"))
+         {
+            andOr = predicates.get(0).getToken();
+            Predicate pred = predicates.get(0);
+            predicates = pred.getTerms();
+         }
+      }
+
+      return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
+   }
+   // #################################################################
+   // #################################################################
+   // #################################################################
 
    DynamoExpression recursePredicates(List<Predicate> predicates, DynamoExpression express, String andOr, List<String> excludes, int depth) throws Exception
    {
