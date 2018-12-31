@@ -169,30 +169,31 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             if (index.getType() != null && index.getType().equals(DynamoDb.GLOBAL_SECONDARY_TYPE))
             {
                if (dynamoExpression.getFields().containsValue(((DynamoIndex) index).getPartitionKey()))
-               {
                   gsiList.add((DynamoIndex) index);
-                  appendTenantIdToPk = isAppendTenantIdToPk(chain, ((DynamoIndex) index).getPartitionKey());
-               } 
             }
          }
-         
+
          if (gsiList.size() > 0)
          {
-            
+
             DynamoIndex index = null;
-            
+
             // does an index exist with the sort key found from the dynamo expression?
-            for(DynamoIndex gsi : gsiList) {
-               if (dynamoExpression.getFields().containsValue(gsi.getSortKey())) {
+            for (DynamoIndex gsi : gsiList)
+            {
+               if (dynamoExpression.getFields().containsValue(gsi.getSortKey()))
+               {
                   index = gsi;
                   break;
                }
             }
-            
-            if (index == null) {
+
+            if (index == null)
+            {
                index = gsiList.get(0);
             }
 
+            appendTenantIdToPk = isAppendTenantIdToPk(chain, index.getPartitionKey());
             pk = index.getPartitionKey();
 
             // rebuild the dynamoExpression using the GSI
