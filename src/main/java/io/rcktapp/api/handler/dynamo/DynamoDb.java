@@ -240,9 +240,6 @@ public class DynamoDb extends Db
          }
       }
 
-      // #################################################################
-      // #################################################################
-      // #################################################################
       if (tableDescription.getGlobalSecondaryIndexes() != null)
       {
          for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
@@ -270,9 +267,6 @@ public class DynamoDb extends Db
             table.addIndex(index);
          }
       }
-      // #################################################################
-      // #################################################################
-      // #################################################################
 
       if (tableDescription.getLocalSecondaryIndexes() != null)
       {

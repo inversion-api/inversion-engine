@@ -91,9 +91,6 @@ public class DynamoRql extends Rql
       return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
    }
 
-   // #################################################################
-   // #################################################################
-   // #################################################################
    public DynamoExpression buildDynamoExpressionUsingIndex(Map<String, String> requestParams, DynamoIndex index) throws Exception
    {
       String pk = index.getPartitionKey();
@@ -123,7 +120,7 @@ public class DynamoRql extends Rql
                dynamoExpression.setOrderIndexInformation(order, index);
             }
          }
-         // the index's sort key was found 
+         // the index's sort key was found
          else if (hasSortKey)
          {
             dynamoExpression.setOrderIndexInformation(new Order(sk, null), index);
@@ -152,9 +149,6 @@ public class DynamoRql extends Rql
 
       return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
    }
-   // #################################################################
-   // #################################################################
-   // #################################################################
 
    DynamoExpression recursePredicates(List<Predicate> predicates, DynamoExpression express, String andOr, List<String> excludes, int depth) throws Exception
    {

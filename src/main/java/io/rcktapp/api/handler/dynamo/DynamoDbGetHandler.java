@@ -163,9 +163,6 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       }
       else
       {
-         // #################################################################
-         // #################################################################
-         // #################################################################
          List<DynamoIndex> gsiList = new ArrayList<DynamoIndex>();
          for (Index index : table.getIndexes())
          {
@@ -174,21 +171,29 @@ public class DynamoDbGetHandler extends DynamoDbHandler
                if (dynamoExpression.getFields().containsValue(((DynamoIndex) index).getPartitionKey()))
                {
                   gsiList.add((DynamoIndex) index);
-                  appendTenantIdToPk = false;
-                  break;
-               }
-               // TODO should the sort key also be searched for within the expression? 
+                  appendTenantIdToPk = false; // TODO how is it decided if this should be set?
+               } 
             }
          }
-
-         // For now, choose the first GSI found.  In the future, we may need to look at req params to determine
-         // which GSI is chosen.
+         
          if (gsiList.size() > 0)
          {
-            DynamoIndex index = gsiList.get(0);
+            
+            DynamoIndex index = null;
+            
+            // does an index exist with the sort key found from the dynamo expression?
+            for(DynamoIndex gsi : gsiList) {
+               if (dynamoExpression.getFields().containsValue(gsi.getSortKey())) {
+                  index = gsi;
+                  break;
+               }
+            }
+            
+            if (index == null) {
+               index = gsiList.get(0);
+            }
 
             pk = index.getPartitionKey();
-            sk = index.getSortKey();
 
             // rebuild the dynamoExpression using the GSI
             dynamoExpression = rql.buildDynamoExpressionUsingIndex(req.getParams(), index);
@@ -204,9 +209,6 @@ public class DynamoDbGetHandler extends DynamoDbHandler
             // Scan
             dynamoResult = doScan(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys);
          }
-         // #################################################################
-         // #################################################################
-         // #################################################################
       }
 
       String returnNext = null;
