@@ -171,7 +171,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
                if (dynamoExpression.getFields().containsValue(((DynamoIndex) index).getPartitionKey()))
                {
                   gsiList.add((DynamoIndex) index);
-                  appendTenantIdToPk = false; // TODO how is it decided if this should be set?
+                  appendTenantIdToPk = isAppendTenantIdToPk(chain, ((DynamoIndex) index).getPartitionKey());
                } 
             }
          }
