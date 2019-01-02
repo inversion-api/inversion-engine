@@ -15,7 +15,6 @@
  */
 package io.rcktapp.api.handler.dynamo;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,9 +40,7 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;
 import io.rcktapp.api.Collection;
-import io.rcktapp.api.Column;
 import io.rcktapp.api.Endpoint;
-import io.rcktapp.api.Index;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
 import io.rcktapp.api.Table;
@@ -74,29 +71,6 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       Table table = collection.getEntity().getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
-      String pk = DynamoDb.findPartitionKeyName(table);
-      String sk = DynamoDb.findSortKeyName(table);
-      boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
-
-      if (chain.getRequest().isDebug())
-      {
-         res.debug("Dynamo Table:       " + table.getName() + ", PK: " + pk + ", SK: " + sk);
-
-         List<Index> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.GLOBAL_SECONDARY_TYPE);
-
-         if (!lsIndexes.isEmpty())
-         {
-            res.debug("Global Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
-         }
-
-         lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.LOCAL_SECONDARY_TYPE);
-
-         if (!lsIndexes.isEmpty())
-         {
-            res.debug("Local Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
-         }
-
-      }
 
       String tenantIdOrCode = null;
       if (req.getApi().isMultiTenant())
@@ -117,6 +91,31 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       DynamoRql rql = (DynamoRql) Rql.getRql(db.getType());
       DynamoExpression dynamoExpression = rql.buildDynamoExpression(req.getParams(), table);
       Order order = dynamoExpression.getOrder();
+
+      DynamoIndex dynamoIdx = dynamoExpression.getIndex();
+      String pk = dynamoIdx.getPartitionKey();
+      String sk = dynamoIdx.getSortKey();
+      boolean appendTenantIdToPk = dynamoIdx.getType().equals(DynamoDb.PRIMARY_TYPE) ? isAppendTenantIdToPk(chain, collection.getName()) : false;;
+
+      if (chain.getRequest().isDebug())
+      {
+         res.debug("Dynamo Table:       " + table.getName() + ", PK: " + pk + ", SK: " + sk);
+
+         List<DynamoIndex> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.GLOBAL_SECONDARY_TYPE);
+
+         if (!lsIndexes.isEmpty())
+         {
+            res.debug("Global Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
+         }
+
+         lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.LOCAL_SECONDARY_TYPE);
+
+         if (!lsIndexes.isEmpty())
+         {
+            res.debug("Local Sec Indexes:  " + lsIndexes.stream().map(i -> i.getName()).collect(Collectors.joining(",")));
+         }
+
+      }
 
       KeyAttribute[] nextKeys = null;
 
@@ -144,72 +143,29 @@ public class DynamoDbGetHandler extends DynamoDbHandler
          nextKeys = keyAttrList.toArray(new KeyAttribute[keyAttrList.size()]);
       }
 
-      String primaryKeyValue = null;
+      Object partitionKeyValue = null;
       Predicate pkPred = dynamoExpression.getExcludedPredicate(pk);
       if (pkPred != null)
       {
-         primaryKeyValue = pkPred.getTerms().get(1).getToken();
+         partitionKeyValue = pkPred.getTerms().get(1).getToken();
          if (api.isMultiTenant() && appendTenantIdToPk)
          {
-            primaryKeyValue = addTenantIdToKey(tenantIdOrCode, primaryKeyValue);
+            partitionKeyValue = addTenantIdToKey(tenantIdOrCode, partitionKeyValue.toString());
          }
+         else
+            partitionKeyValue = DynamoDb.cast(pkPred.getTerms().get(1).getToken(), pk, table);
       }
 
       DynamoResult dynamoResult = null;
-      if (primaryKeyValue != null)
+      if (partitionKeyValue != null)
       {
          // Query
-         dynamoResult = doQuery(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys, pk, primaryKeyValue);
+         dynamoResult = doQuery(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys, pk, partitionKeyValue);
       }
       else
       {
-         List<DynamoIndex> gsiList = new ArrayList<DynamoIndex>();
-         for (Index index : table.getIndexes())
-         {
-            if (index.getType() != null && index.getType().equals(DynamoDb.GLOBAL_SECONDARY_TYPE))
-            {
-               if (dynamoExpression.getFields().containsValue(((DynamoIndex) index).getPartitionKey()))
-                  gsiList.add((DynamoIndex) index);
-            }
-         }
-
-         if (gsiList.size() > 0)
-         {
-
-            DynamoIndex index = null;
-
-            // does an index exist with the sort key found from the dynamo expression?
-            for (DynamoIndex gsi : gsiList)
-            {
-               if (dynamoExpression.getFields().containsValue(gsi.getSortKey()))
-               {
-                  index = gsi;
-                  break;
-               }
-            }
-
-            if (index == null)
-            {
-               index = gsiList.get(0);
-            }
-
-            appendTenantIdToPk = isAppendTenantIdToPk(chain, index.getPartitionKey());
-            pk = index.getPartitionKey();
-
-            // rebuild the dynamoExpression using the GSI
-            dynamoExpression = rql.buildDynamoExpressionUsingIndex(req.getParams(), index);
-
-            pkPred = dynamoExpression.getExcludedPredicate(pk);
-            Object partitionKeyValue = DynamoDb.cast(pkPred.getTerms().get(1).getToken(), pk, table);
-
-            // Query
-            dynamoResult = doQuery(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys, pk, partitionKeyValue);
-         }
-         else
-         {
-            // Scan
-            dynamoResult = doScan(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys);
-         }
+         // Scan
+         dynamoResult = doScan(dynamoExpression, dynamoTable, chain, res, pageSize, nextKeys);
       }
 
       String returnNext = null;
@@ -274,7 +230,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       }
 
       QueryApi queryApi = dynamoTable;
-      if (dynamoExpression.getIndex() != null)
+      if (dynamoExpression.getIndex() != null && !dynamoExpression.getIndex().getType().equals(DynamoDb.PRIMARY_TYPE))
       {
          queryApi = dynamoTable.getIndex(dynamoExpression.getIndex().getName());
          if (chain.getRequest().isDebug())

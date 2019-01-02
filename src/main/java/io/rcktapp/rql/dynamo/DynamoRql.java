@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-
-import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
 import io.rcktapp.api.handler.dynamo.DynamoIndex;
@@ -39,25 +36,57 @@ public class DynamoRql extends Rql
 
    public DynamoExpression buildDynamoExpression(Map<String, String> requestParams, Table table) throws Exception
    {
-      String pk = DynamoDb.findPartitionKeyName(table);
-      String sk = DynamoDb.findSortKeyName(table);
 
       DynamoExpression dynamoExpression = new DynamoExpression(table);
 
       Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, requestParams, null);
+
+      DynamoIndex dynamoIdx = null;
+
       List<Predicate> predicates = stmt.where;
       List<Order> orderList = stmt.order;
 
-      boolean hasPrimaryKey = predicatesContainField(predicates, pk);
+      boolean hasPartitionKey = false;
+
+      // find the best index to use based on the given request params
+      List<DynamoIndex> potentialIndexList = new ArrayList<DynamoIndex>();
+      for (DynamoIndex idx : (List<DynamoIndex>) (List<?>) table.getIndexes())
+      {
+         if (predicatesContainField(predicates, idx.getPartitionKey()))
+         {
+            potentialIndexList.add(idx);
+            dynamoIdx = idx;
+            hasPartitionKey = true;
+         }
+         // always fallback to the index to the primary index
+         if (dynamoIdx == null && idx.getType().equals(DynamoDb.PRIMARY_TYPE))
+            dynamoIdx = idx;
+      }
+
+      boolean hasSortKey = false;
+
+      // does an index with a sort key exist?
+      for (DynamoIndex idx : potentialIndexList)
+      {
+         if (predicatesContainField(predicates, idx.getSortKey()))
+         {
+            dynamoIdx = idx;
+            hasSortKey = true;
+         }
+      }
+
+      String pk = dynamoIdx.getPartitionKey();
+      String sk = dynamoIdx.getSortKey();
+
       List<String> excludeList = new ArrayList<>();
-      if (hasPrimaryKey)
+      if (hasPartitionKey)
       {
          // sorting only works for querying which means we must have a primary key to sort
          if (orderList != null && !orderList.isEmpty())
          {
             Order order = orderList.get(0);
             order.col = Parser.dequote(order.col);
-            Index index = DynamoDb.findIndexByTypeAndColumnName(table, DynamoDb.LOCAL_SECONDARY_TYPE, order.col);
+            DynamoIndex index = DynamoDb.findIndexByTypeAndColumnName(table, DynamoDb.LOCAL_SECONDARY_TYPE, order.col);
             if (index != null)
             {
                // we must have an index for this field to be able to sort
@@ -69,72 +98,19 @@ public class DynamoRql extends Rql
                dynamoExpression.setOrderIndexInformation(order, null);
             }
          }
-
-         excludeList.add(pk);
-         if (dynamoExpression.getOrder() != null)
-         {
-            excludeList.add(dynamoExpression.getOrder().col);
-         }
-      }
-
-      String andOr = "and";
-      if (predicates.size() == 1)
-      {
-         if (predicates.get(0).getToken().equalsIgnoreCase("and") || predicates.get(0).getToken().equalsIgnoreCase("or"))
-         {
-            andOr = predicates.get(0).getToken();
-            Predicate pred = predicates.get(0);
-            predicates = pred.getTerms();
-         }
-      }
-
-      return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
-   }
-
-   public DynamoExpression buildDynamoExpressionUsingIndex(Map<String, String> requestParams, DynamoIndex index) throws Exception
-   {
-      String pk = index.getPartitionKey();
-      String sk = index.getSortKey();
-
-      DynamoExpression dynamoExpression = new DynamoExpression(index.getTable());
-
-      Stmt stmt = buildStmt(new Stmt(this, null, null, null), null, requestParams, null);
-      List<Predicate> predicates = stmt.where;
-      List<Order> orderList = stmt.order;
-
-      boolean hasPartitionKey = predicatesContainField(predicates, pk);
-      List<String> excludeList = new ArrayList<>();
-      if (hasPartitionKey)
-      {
-         boolean hasSortKey = predicatesContainField(predicates, sk);
-
-         // sorting only works for querying which means we must have a partition key to sort
-         // TODO how to invoke this section of the 'if' ??? 
-         if (orderList != null && !orderList.isEmpty())
-         {
-            Order order = orderList.get(0);
-            order.col = Parser.dequote(order.col);
-            if (sk != null && sk.equals(order.col))
-            {
-               // trying to sort by the table's sort key, no index is needed for this
-               dynamoExpression.setOrderIndexInformation(order, index);
-            }
-         }
-         // the index's sort key was found
-         else if (hasSortKey)
-         {
-            dynamoExpression.setOrderIndexInformation(new Order(sk, null), index);
-         }
+         else if (hasSortKey) // necessary for Global Secondary Indexes
+            dynamoExpression.setOrderIndexInformation(new Order(sk, null), dynamoIdx);
          else // no sort key was found
-            dynamoExpression.setOrderIndexInformation(null, index);
+            dynamoExpression.setOrderIndexInformation(null, dynamoIdx);
 
          excludeList.add(pk);
          if (dynamoExpression.getOrder() != null)
          {
             excludeList.add(dynamoExpression.getOrder().col);
          }
-
       }
+      else
+         dynamoExpression.setOrderIndexInformation(null, dynamoIdx);
 
       String andOr = "and";
       if (predicates.size() == 1)
