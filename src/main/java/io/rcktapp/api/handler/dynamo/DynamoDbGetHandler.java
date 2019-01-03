@@ -95,7 +95,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       DynamoIndex dynamoIdx = dynamoExpression.getIndex();
       String pk = dynamoIdx.getPartitionKey();
       String sk = dynamoIdx.getSortKey();
-      boolean appendTenantIdToPk = dynamoIdx.getType().equals(DynamoDb.PRIMARY_TYPE) ? isAppendTenantIdToPk(chain, collection.getName()) : false;;
+      boolean appendTenantIdToPk = !dynamoIdx.getType().equals(DynamoDb.GLOBAL_SECONDARY_TYPE) ? isAppendTenantIdToPk(chain, collection.getName()) : false;
 
       if (chain.getRequest().isDebug())
       {
