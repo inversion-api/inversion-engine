@@ -155,15 +155,6 @@ public class DynamoExpression
       return this.excludedPredicates.get(name);
    }
 
-   /**
-    * This is used when the user is trying to sort using a Local Secondary Index
-    */
-   public void setOrderIndexInformation(Order order, DynamoIndex index)
-   {
-      this.order = order;
-      this.index = index;
-   }
-
    public Order getOrder()
    {
       return order;
@@ -173,5 +164,17 @@ public class DynamoExpression
    {
       return index;
    }
+
+   public void setOrder(Order order)
+   {
+      this.order = order;
+   }
+
+   public void setIndex(DynamoIndex index)
+   {
+      this.index = index;
+   }
+   
+   
 
 }
