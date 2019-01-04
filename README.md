@@ -387,7 +387,7 @@ RQL query params as well as for JSON properties.
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
- sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     |                    | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
+ sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     | :grey_exclamation: | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
  sort(col1,[...colN])             | :heavy_check_mark:  |                     |                    | same as sort= but with "function format"
  order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
@@ -533,6 +533,9 @@ Configuration is done on the Endpoint's config property.
 	* FORMAT: collection name (comma separated)  
 	* EXAMPLE: promo,loyalty-punchcard
 	* On POST, this will append the tenant id to the primary key, for example, if the pk is a mobile number and was sent up as 4045551212 and the tenantId was 1, this record will be stored with a primary key of 1::4045551212.  On GET and DELETE, this will automatically append the tenantId prior to looking up the record and will strip it out of the results. So, this is completely invisible to the api user, they will only ever see the mobilenumber as 4045551212.  If you login to the AWS console and view the table, there you will see the actually mobilenumber as 1::4045551212.
+* sorting queries
+	* Scans cannot be sorted, only queries can.
+	* When sorting a query, the field that is sorted MUST match the sort key of the query index
 
 Example Config
 ```

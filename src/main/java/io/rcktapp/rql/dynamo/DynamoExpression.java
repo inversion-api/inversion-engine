@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
+import io.rcktapp.api.handler.dynamo.DynamoIndex;
 import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Predicate;
 
@@ -48,7 +48,7 @@ public class DynamoExpression
    Map<String, Predicate> excludedPredicates = new HashMap<>();
 
    Order                  order;
-   Index                  index;
+   DynamoIndex            index;
 
    public DynamoExpression(Table table)
    {
@@ -155,23 +155,26 @@ public class DynamoExpression
       return this.excludedPredicates.get(name);
    }
 
-   /**
-    * This is used when the user is trying to sort using a Local Secondary Index
-    */
-   public void setOrderIndexInformation(Order order, Index index)
-   {
-      this.order = order;
-      this.index = index;
-   }
-
    public Order getOrder()
    {
       return order;
    }
 
-   public Index getIndex()
+   public DynamoIndex getIndex()
    {
       return index;
    }
+
+   public void setOrder(Order order)
+   {
+      this.order = order;
+   }
+
+   public void setIndex(DynamoIndex index)
+   {
+      this.index = index;
+   }
+   
+   
 
 }
