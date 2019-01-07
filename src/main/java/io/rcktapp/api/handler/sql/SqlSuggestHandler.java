@@ -16,7 +16,6 @@
 package io.rcktapp.api.handler.sql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import io.forty11.j.J;
@@ -26,6 +25,7 @@ import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;
+import io.rcktapp.api.Collection;
 import io.rcktapp.api.Endpoint;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Response;
@@ -60,6 +60,9 @@ public class SqlSuggestHandler extends SqlHandler
       if (J.empty(properties))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
 
+      if (!properties.contains("."))
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be in the format '{collection}.{property}'");
+
       String value = req.removeParam(searchProp);
       if (J.empty(value))
       {
@@ -73,15 +76,21 @@ public class SqlSuggestHandler extends SqlHandler
          value = value.replace("\"", "");
       }
 
-      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
-      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
-
       String sql = "";
       sql += " SELECT DISTINCT " + searchProp;
       sql += " \r\n FROM (";
 
       List<String> propertyList = J.explode(",", properties);
-      String collectionKey = null;
+      String firstProp = propertyList.get(0);
+      String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
+
+      Collection collection = req.getApi().getCollection(collectionKey);
+      if (collection == null)
+         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
+
+      SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
+      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
+
       for (int i = 0; i < propertyList.size(); i++)
       {
          String prop = propertyList.get(i);
@@ -93,6 +102,7 @@ public class SqlSuggestHandler extends SqlHandler
             throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
 
          collectionKey = prop.substring(0, prop.indexOf("."));
+
          String tableName = Sql.check(api.getCollection(collectionKey).getEntity().getTable().getName());
          String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
@@ -109,11 +119,8 @@ public class SqlSuggestHandler extends SqlHandler
 
       // removing the tenantId here so the Get Handler won't add an additional where clause to the sql we are sending it
       req.removeParam("tenantId");
-      if(collectionKey != null) {
-         db = (SqlDb) chain.getService().getDb(req.getApi(), collectionKey, SqlDb.class);
-         if (db != null)
-            chain.put("db", db.getName());
-      }
+
+      chain.put("db", db.getName());
       chain.put("select", sql);
    }
 
