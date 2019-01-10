@@ -52,7 +52,7 @@ public class DynamoDbPostHandler extends DynamoDbHandler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      Collection collection = findCollectionOrThrow404(api, chain, req);
+      Collection collection = api.getCollection(req.getCollectionKey(), DynamoDb.class);
       Table table = collection.getEntity().getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());

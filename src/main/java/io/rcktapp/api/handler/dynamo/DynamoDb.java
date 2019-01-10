@@ -37,6 +37,7 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
+import io.forty11.j.J;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
@@ -309,7 +310,14 @@ public class DynamoDb extends Db
    {
       if (this.dynamoClient == null)
       {
-         this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+         if (J.empty(awsRegion))
+         {
+            this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+         }
+         else
+         {
+            this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+         }
       }
 
       return dynamoClient;

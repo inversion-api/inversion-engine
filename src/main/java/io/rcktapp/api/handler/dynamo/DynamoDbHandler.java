@@ -49,24 +49,6 @@ public abstract class DynamoDbHandler implements Handler
     */
    protected String    tenantIdDelimiter = "::";
 
-   public Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
-   {
-      Collection collection = api.getCollection(req.getCollectionKey(), DynamoDb.class);
-
-      if (collection == null)
-      {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "A dynamo table is not configured for this collection key, please edit your query or your config and try again.");
-      }
-
-      if (!(collection.getEntity().getTable().getDb() instanceof DynamoDb))
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the dynamo handler, but this collection is not related to a dynamodb");
-      }
-
-      return collection;
-
-   }
-
    protected boolean isAppendTenantIdToPk(Chain chain, String collectionName)
    {
       return chain.getConfigSet("appendTenantIdToPk").contains(collectionName);
