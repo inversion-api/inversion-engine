@@ -55,6 +55,7 @@ dependencies {
 
    compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
    compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
+   compile 'com.amazonaws:aws-java-sdk-kinesis:1.11.390'
 
    //drivers for supportd DBs
    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'

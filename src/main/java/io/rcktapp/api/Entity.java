@@ -29,6 +29,16 @@ public class Entity extends Dto
 
    boolean                 exclude       = false;
 
+   public Entity()
+   {
+
+   }
+
+   public Entity(Table table)
+   {
+      setTbl(table);
+   }
+
    public boolean isExclude()
    {
       return exclude || table.isExclude();
