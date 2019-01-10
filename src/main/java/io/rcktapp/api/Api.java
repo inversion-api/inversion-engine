@@ -17,12 +17,8 @@ package io.rcktapp.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-
-import io.forty11.j.utils.ListMap;
 
 public class Api extends Dto
 {
@@ -116,7 +112,7 @@ public class Api extends Dto
       return getCollection(name, null);
    }
 
-   public Collection getCollection(String name, Class dbClass)
+   public Collection getCollection(String name, Class dbClass) throws ApiException
    {
       for (Collection collection : collections)
       {
@@ -126,7 +122,14 @@ public class Api extends Dto
                return collection;
          }
       }
-      return null;
+      if (dbClass != null)
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
+      }
+      else 
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
+      }
    }
 
    public Collection getCollection(Table tbl)
