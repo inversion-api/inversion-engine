@@ -48,30 +48,30 @@ import io.rcktapp.api.service.Service;
 
 public class AuthHandler implements Handler
 {
-   long    sessionExp              = 1000 * 60 * 30; //30 minute default timeput
-   int     sessionMax              = 10000;
+   long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeput
+   protected int              sessionMax              = 10000;
 
-   int     failedMax               = 10;
-   int     failedExp               = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
+   protected int              failedMax               = 10;
+   protected int              failedExp               = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
 
-   String  collection              = null;
+   protected String           collection              = null;
 
-   LRUMap  sessions                = null;
+   protected AuthSessionCache sessionCache            = null;
 
-   SqlDb   db                      = null;
+   protected SqlDb            db                      = null;
 
-   boolean shouldTrackRequestTimes = true;
+   protected boolean          shouldTrackRequestTimes = true;
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
    {
       //one time init
-      if (sessions == null)
+      if (sessionCache == null)
       {
          synchronized (this)
          {
-            if (sessions == null)
-               sessions = new LRUMap(sessionMax);
+            if (sessionCache == null)
+               sessionCache = new LRUAuthSessionCache(sessionMax);
          }
       }
 
@@ -156,7 +156,7 @@ public class AuthHandler implements Handler
          if (sessionKey == null)
             throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
 
-         sessions.remove(sessionKey);
+         sessionCache.remove(sessionKey);
       }
       else if (!J.empty(username, password))
       {
@@ -199,12 +199,12 @@ public class AuthHandler implements Handler
 
       if (sessionKey != null)
       {
-         user = (User) sessions.get(sessionKey);
+         user = sessionCache.get(sessionKey);
          if (user != null && sessionExp > 0)
          {
             if (now - user.getRequestAt() > sessionExp)
             {
-               sessions.remove(token);
+               sessionCache.remove(token);
                user = null;
             }
          }
@@ -221,7 +221,7 @@ public class AuthHandler implements Handler
          if (sessionReq && req.isPost())
          {
             sessionKey = req.getApi().getId() + "_" + newSessionId();//
-            sessions.put(sessionKey, user);
+            sessionCache.put(sessionKey, user);
 
             resp.addHeader("x-auth-token", "Session " + sessionKey);
             JSObject obj = new JSObject();
@@ -440,6 +440,76 @@ public class AuthHandler implements Handler
       String id = UUID.randomUUID().toString();
       id = id.replace("-", "");
       return id;
+   }
+
+   public void setSessionMax(int sessionMax)
+   {
+      this.sessionMax = sessionMax;
+   }
+
+   public void setFailedMax(int failedMax)
+   {
+      this.failedMax = failedMax;
+   }
+
+   public void setFailedExp(int failedExp)
+   {
+      this.failedExp = failedExp;
+   }
+
+   public void setCollection(String collection)
+   {
+      this.collection = collection;
+   }
+
+   public void setSessionCache(AuthSessionCache sessionCache)
+   {
+      this.sessionCache = sessionCache;
+   }
+
+   public void setShouldTrackRequestTimes(boolean shouldTrackRequestTimes)
+   {
+      this.shouldTrackRequestTimes = shouldTrackRequestTimes;
+   }
+
+   public void setSessionExp(long sessionExp)
+   {
+      this.sessionExp = sessionExp;
+   }
+
+   public void setDb(SqlDb db)
+   {
+      this.db = db;
+   }
+
+   class LRUAuthSessionCache implements AuthSessionCache
+   {
+      LRUMap map;
+
+      public LRUAuthSessionCache(int sessionMax)
+      {
+         super();
+         this.map = new LRUMap(sessionMax);;
+      }
+
+      @Override
+      public User get(String sessionKey)
+      {
+         return (User) map.get(sessionKey);
+      }
+
+      @Override
+      public void put(String sessionKey, User user)
+      {
+         map.put(sessionKey, user);
+      }
+
+      @Override
+      public void remove(String sessionKey)
+      {
+         map.remove(sessionKey);
+      }
+
    }
 
 }

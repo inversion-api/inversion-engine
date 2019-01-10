@@ -50,8 +50,9 @@ public class DynamoDbDeleteHandler extends DynamoDbHandler
       Table table = collection.getEntity().getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
-      String pk = DynamoDb.findPartitionKeyName(table);
-      String sk = DynamoDb.findSortKeyName(table);
+      DynamoIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDb.PRIMARY_INDEX);
+      String pk = dynamoIdx.getPartitionKey();
+      String sk = dynamoIdx.getSortKey();
       boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
 
       Object tenantIdOrCode = null;

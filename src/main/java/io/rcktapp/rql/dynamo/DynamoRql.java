@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.rcktapp.api.Index;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.dynamo.DynamoDb;
+import io.rcktapp.api.handler.dynamo.DynamoIndex;
 import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Parser;
 import io.rcktapp.rql.Predicate;
@@ -36,42 +36,85 @@ public class DynamoRql extends Rql
 
    public DynamoExpression buildDynamoExpression(Map<String, String> requestParams, Table table) throws Exception
    {
-      String pk = DynamoDb.findPartitionKeyName(table);
-      String sk = DynamoDb.findSortKeyName(table);
 
       DynamoExpression dynamoExpression = new DynamoExpression(table);
 
-      Stmt stmt = buildStmt(new Stmt(this, null, null, null), null, requestParams, null);
+      Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, requestParams, null);
+
+      DynamoIndex dynamoIdx = null;
+
       List<Predicate> predicates = stmt.where;
       List<Order> orderList = stmt.order;
 
-      boolean hasPrimaryKey = predicatesContainField(predicates, pk);
-      List<String> excludeList = new ArrayList<>();
-      if (hasPrimaryKey)
+      boolean hasPartitionKey = false;
+
+      DynamoIndex primaryIdx = null;
+
+      // find the best index to use based on the given request params
+      List<DynamoIndex> potentialIndexList = new ArrayList<DynamoIndex>();
+      for (DynamoIndex idx : (List<DynamoIndex>) (List<?>) table.getIndexes())
       {
-         // sorting only works for querying which means we must have a primary key to sort
+         if (predicatesContainField(predicates, idx.getPartitionKey()))
+         {
+            potentialIndexList.add(idx);
+            dynamoIdx = idx;
+            hasPartitionKey = true;
+         }
+
+         // the primary index is the fallback 'best' index when no other appropriate indexes are found
+         if (idx.getType().equals(DynamoDb.PRIMARY_TYPE))
+            primaryIdx = idx;
+      }
+
+      boolean hasSortKey = false;
+
+      // does an index with a sort key exist?
+      for (DynamoIndex idx : potentialIndexList)
+      {
+         if (predicatesContainField(predicates, idx.getSortKey()))
+         {
+            dynamoIdx = idx;
+            hasSortKey = true;
+         }
+      }
+
+      // This isn't necessary but makes debugging easier to understand when the primary index is expected though
+      // a secondary index could have been used.
+      if ((hasPartitionKey && !hasSortKey && dynamoIdx.getPartitionKey().equals(primaryIdx.getPartitionKey())) || !hasPartitionKey)
+         dynamoIdx = primaryIdx;
+
+      dynamoExpression.setIndex(dynamoIdx);
+
+      String pk = dynamoIdx.getPartitionKey();
+      String sk = dynamoIdx.getSortKey();
+
+      List<String> excludeList = new ArrayList<>();
+      if (hasPartitionKey)
+      {
+         // sorting only works for querying which means we must have a partition key to sort
          if (orderList != null && !orderList.isEmpty())
          {
-            Order order = orderList.get(0);
+            Order order = orderList.get(0); // an index can only have one sort key
             order.col = Parser.dequote(order.col);
-            Index index = DynamoDb.findIndexByTypeAndColumnName(table, DynamoDb.LOCAL_SECONDARY_TYPE, order.col);
-            if (index != null)
+            if (sk != null)
             {
-               // we must have an index for this field to be able to sort
-               dynamoExpression.setOrderIndexInformation(order, index);
-            }
-            else if (sk != null && sk.equals(order.col))
-            {
-               // trying to sort by the table's sort key, no index is needed for this
-               dynamoExpression.setOrderIndexInformation(order, null);
+               if (sk.equals(order.col))
+                  dynamoExpression.setOrder(order);
+               else
+                  throw new Exception("Cannot sort on field: '" + order.col + "' that does not match the sort key: '" + sk + "'");
             }
          }
+         else if (hasSortKey) // default to the index's sort key if it exists but is not being specified.
+            dynamoExpression.setOrder(new Order(sk, "ASC"));
 
          excludeList.add(pk);
          if (dynamoExpression.getOrder() != null)
          {
             excludeList.add(dynamoExpression.getOrder().col);
          }
+      }
+      else if (orderList != null && !orderList.isEmpty()) {
+         throw new Exception("Cannot sort when executing a SCAN.");
       }
 
       String andOr = "and";

@@ -33,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
@@ -54,12 +55,11 @@ import io.rcktapp.rql.dynamo.DynamoRql;
 
 public class DynamoDb extends Db
 {
-   public static final String PARTITION_KEY_INDEX  = "Partition Key Index";
-   public static final String SORT_KEY_INDEX       = "Sort Key Index";
+   public static final String PRIMARY_INDEX         = "Primary Index";
 
-   public static final String PARTITION_TYPE       = "partition";
-   public static final String SORT_TYPE            = "sort";
-   public static final String LOCAL_SECONDARY_TYPE = "localsecondary";
+   public static final String PRIMARY_TYPE          = "primary";
+   public static final String LOCAL_SECONDARY_TYPE  = "localsecondary";
+   public static final String GLOBAL_SECONDARY_TYPE = "globalsecondary";
 
    static
    {
@@ -209,6 +209,8 @@ public class DynamoDb extends Db
 
       if (bluePrintMap != null)
       {
+         DynamoIndex index = new DynamoIndex(table, PRIMARY_INDEX, PRIMARY_TYPE);
+
          for (String k : bluePrintMap.keySet())
          {
             Object obj = bluePrintMap.get(k);
@@ -223,19 +225,28 @@ public class DynamoDb extends Db
             if (pk.equals(k))
             {
                // pk column
-               Index index = new Index(table, PARTITION_KEY_INDEX, PARTITION_TYPE);
+               index.setPartitionKey(pk);
                index.addColumn(column);
-               table.addIndex(index);
+
             }
             if (sk != null && sk.equals(k))
             {
                // sk column
-               Index index = new Index(table, SORT_KEY_INDEX, SORT_TYPE);
+               index.setSortKey(sk);
                index.addColumn(column);
-               table.addIndex(index);
             }
 
             table.addColumn(column);
+         }
+
+         table.addIndex(index);
+      }
+
+      if (tableDescription.getGlobalSecondaryIndexes() != null)
+      {
+         for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
+         {
+            addTableIndex(GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
          }
       }
 
@@ -243,26 +254,37 @@ public class DynamoDb extends Db
       {
          for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
          {
-            for (KeySchemaElement keyInfo : indexDesc.getKeySchema())
-            {
-               if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
-               {
-                  Index index = new Index(table, indexDesc.getIndexName(), LOCAL_SECONDARY_TYPE);
-
-                  Column column = table.getColumns().stream()//
-                                       .filter(c -> c.getName().equals(keyInfo.getAttributeName()))//
-                                       .findFirst().orElse(null);
-
-                  index.addColumn(column);
-                  table.addIndex(index);
-                  break;
-               }
-            }
+            addTableIndex(LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
          }
       }
 
       return table;
 
+   }
+
+   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
+   {
+      DynamoIndex index = new DynamoIndex(table, indexName, type);
+
+      for (KeySchemaElement keyInfo : keySchemaList)
+      {
+         Column column = table.getColumns().stream()//
+                              .filter(c -> c.getName().equals(keyInfo.getAttributeName()))//
+                              .findFirst().orElse(null);
+         index.addColumn(column);
+
+         if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
+         {
+            index.setPartitionKey(keyInfo.getAttributeName());
+         }
+
+         else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+         {
+            index.setSortKey(keyInfo.getAttributeName());
+         }
+      }
+
+      table.addIndex(index);
    }
 
    Entity buildEntity(String collectionName, Table table)
@@ -281,8 +303,9 @@ public class DynamoDb extends Db
 
       collection.setName(collectionName);
 
-      String pk = findPartitionKeyName(table);
-      String sk = findSortKeyName(table);
+      DynamoIndex index = findIndexByName(table, PRIMARY_INDEX);
+      String pk = index.getPartitionKey();
+      String sk = index.getSortKey();
 
       for (Column col : table.getColumns())
       {
@@ -328,31 +351,11 @@ public class DynamoDb extends Db
       return new DynamoDB(getDynamoClient()).getTable(tableName);
    }
 
-   public static String findPartitionKeyName(Table table)
-   {
-      Index index = findIndexByName(table, PARTITION_KEY_INDEX);
-      if (index != null && index.getColumns() != null)
-      {
-         return index.getColumns().get(0).getName();
-      }
-      return null;
-   }
-
-   public static String findSortKeyName(Table table)
-   {
-      Index index = findIndexByName(table, SORT_KEY_INDEX);
-      if (index != null && index.getColumns() != null)
-      {
-         return index.getColumns().get(0).getName();
-      }
-      return null;
-   }
-
-   public static Index findIndexByName(Table table, String name)
+   public static DynamoIndex findIndexByName(Table table, String name)
    {
       if (table != null && table.getIndexes() != null)
       {
-         for (Index index : table.getIndexes())
+         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
          {
             if (index.getName().equals(name))
             {
@@ -363,13 +366,13 @@ public class DynamoDb extends Db
       return null;
    }
 
-   public static List<Index> findIndexesByType(Table table, String type)
+   public static List<DynamoIndex> findIndexesByType(Table table, String type)
    {
-      List<Index> l = new ArrayList<Index>();
+      List<DynamoIndex> l = new ArrayList<DynamoIndex>();
 
       if (table != null && table.getIndexes() != null)
       {
-         for (Index index : table.getIndexes())
+         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
          {
             if (index.getType().equals(type))
             {
@@ -380,11 +383,11 @@ public class DynamoDb extends Db
       return l;
    }
 
-   public static Index findIndexByColumnName(Table table, String colName)
+   public static DynamoIndex findIndexByColumnName(Table table, String colName)
    {
       if (table != null && table.getIndexes() != null)
       {
-         for (Index index : table.getIndexes())
+         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
          {
             if (!index.getColumns().isEmpty())
             {
@@ -401,12 +404,12 @@ public class DynamoDb extends Db
       return null;
    }
 
-   public static Index findIndexByTypeAndColumnName(Table table, String typeName, String colName)
+   public static DynamoIndex findIndexByTypeAndColumnName(Table table, String typeName, String colName)
    {
       if (table != null)
       {
-         List<Index> list = findIndexesByType(table, typeName);
-         for (Index index : list)
+         List<DynamoIndex> list = findIndexesByType(table, typeName);
+         for (DynamoIndex index : list)
          {
             if (!index.getColumns().isEmpty())
             {
