@@ -339,6 +339,16 @@ public class Request
       return method;
    }
 
+   public boolean isMethod(String... methods)
+   {
+      for (String method : methods)
+      {
+         if (this.method.equalsIgnoreCase(method))
+            return true;
+      }
+      return false;
+   }
+
    public boolean isPut()
    {
       return "put".equalsIgnoreCase(method);
