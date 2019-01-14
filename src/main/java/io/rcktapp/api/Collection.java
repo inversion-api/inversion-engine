@@ -71,7 +71,7 @@ public class Collection extends Dto
 
       if ((this.getEntity() != null) && (this.getEntity().getTable() != null))
       {
-         if (api.getCollection(this.getEntity().getTable().getDb().getName().toLowerCase() + "." + this.getName().toLowerCase()) != this)
+         if (api.getCollection(entity) != this)
             api.addCollection(this);
       }
    }
