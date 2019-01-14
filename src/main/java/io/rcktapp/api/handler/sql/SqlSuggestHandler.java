@@ -84,7 +84,7 @@ public class SqlSuggestHandler extends SqlHandler
       String firstProp = propertyList.get(0);
       String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
 
-      Collection collection = req.getApi().getCollection(collectionKey);
+      Collection collection = req.getApi().getCollection(collectionKey, SqlDb.class);
       if (collection == null)
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
@@ -103,7 +103,7 @@ public class SqlSuggestHandler extends SqlHandler
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 
-         String tableName = Sql.check(api.getCollection(collectionKey).getEntity().getTable().getName());
+         String tableName = Sql.check(api.getCollection(collectionKey, SqlDb.class).getEntity().getTable().getName());
          String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
          sql += " \r\nSELECT DISTINCT " + rql.asCol(column) + " AS " + searchProp + " FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + rql.asCol(column) + " != ''";
