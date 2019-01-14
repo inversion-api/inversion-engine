@@ -80,11 +80,11 @@ public class ElasticDbGetHandler implements Handler
       String[] paths = req.getPath().split("/");
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
-         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db);
+         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, table);
       }
       else
       {
-         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db);
+         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, table);
       }
 
    }
@@ -97,7 +97,7 @@ public class ElasticDbGetHandler implements Handler
     * @param paths
     * @throws Exception
     */
-   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticDb db) throws Exception
+   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticDb db, Table table) throws Exception
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
@@ -155,7 +155,7 @@ public class ElasticDbGetHandler implements Handler
       // HttpClient httpClient = Web.getHttpClient();
 
       List<String> headers = new ArrayList<String>();
-      String url = buildSearchUrlAndHeaders(paths, headers);
+      String url = buildSearchUrlAndHeaders(table, paths, headers);
 
       res.debug(url, json, headers);
 
@@ -230,7 +230,7 @@ public class ElasticDbGetHandler implements Handler
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticDb db) throws Exception
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticDb db, Table table) throws Exception
    {
 
       int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
@@ -278,7 +278,7 @@ public class ElasticDbGetHandler implements Handler
       }
 
       List<String> headers = new ArrayList<String>();
-      String url = buildSearchUrlAndHeaders(paths, headers);
+      String url = buildSearchUrlAndHeaders(table, paths, headers);
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
@@ -308,7 +308,7 @@ public class ElasticDbGetHandler implements Handler
             {
                req.putParam("tenantId", tenantId);
             }
-            handleAutoSuggestRequest(req, res, paths, "wildcard", db);
+            handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
          }
          else
          {
@@ -324,22 +324,22 @@ public class ElasticDbGetHandler implements Handler
 
    }
 
-   private String buildSearchUrlAndHeaders(String[] paths, List<String> headers)
+   private String buildSearchUrlAndHeaders(Table table, String[] paths, List<String> headers)
    {
       String indexAndType = null;
       // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
       if (paths.length < 3)
       {
          // indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
-         indexAndType = "/" + paths[1] + "/_doc/";
+         indexAndType = "/" + table.getName() + "/_doc/";
       }
       // if the type is of 'no-type', dont' include it 
       else if (paths[2].toLowerCase().equals("no-type"))
       {
-         indexAndType = "/" + paths[1] + "/";
+         indexAndType = "/" + table.getName() + "/";
       }
       else
-         indexAndType = "/" + paths[1] + "/" + paths[2] + "/";
+         indexAndType = "/" + table.getName() + "/" + paths[2] + "/";
 
       headers.add("Content-Type");
       headers.add("application/json");
