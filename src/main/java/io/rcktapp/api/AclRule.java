@@ -126,11 +126,23 @@ public class AclRule extends Rule
       for (Role role : roles)
          addRole(role);
    }
+   
+   public void setRoles(String roles)
+   {
+      this.roles.clear();
+      for (String role : J.explode(",",  roles))
+         addRole(role);
+   }
 
    public void addRole(Role role)
    {
       if (!roles.contains(role))
          roles.add(role);
+   }
+   
+   public void addRole(String role)
+   {
+      addRole(new Role(role));
    }
 
    public void setRestricts(List<String> restricts)
