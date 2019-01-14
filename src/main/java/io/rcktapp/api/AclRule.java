@@ -90,17 +90,17 @@ public class AclRule extends Rule
       return new ArrayList(permissions);
    }
 
-//   public void setPermissions(List<Permission> permissions)
-//   {
-//      this.permissions.clear();
-//      for (Permission permission : permissions)
-//         addPermission(permission);
-//   }
+   //   public void setPermissions(List<Permission> permissions)
+   //   {
+   //      this.permissions.clear();
+   //      for (Permission permission : permissions)
+   //         addPermission(permission);
+   //   }
 
    public void setPermissions(String permissions)
    {
       this.permissions.clear();
-      for (String permission : J.explode(",",  permissions))
+      for (String permission : J.explode(",", permissions))
          addPermission(permission);
    }
 
@@ -126,23 +126,11 @@ public class AclRule extends Rule
       for (Role role : roles)
          addRole(role);
    }
-   
-   public void setRoles(String roles)
-   {
-      this.roles.clear();
-      for (String role : J.explode(",",  roles))
-         addRole(role);
-   }
 
    public void addRole(Role role)
    {
       if (!roles.contains(role))
          roles.add(role);
-   }
-   
-   public void addRole(String role)
-   {
-      addRole(new Role(role));
    }
 
    public void setRestricts(List<String> restricts)
