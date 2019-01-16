@@ -334,7 +334,7 @@ public class Service
     */
    public Response include(Chain parent, String method, String url, String body) throws Exception
    {
-      if (!url.startsWith("http:") || !url.startsWith("https:"))
+      if (!url.startsWith("http:") && !url.startsWith("https:"))
       {
          String apiUrl = parent.getRequest().getApiUrl();
          if (!apiUrl.endsWith("/"))
