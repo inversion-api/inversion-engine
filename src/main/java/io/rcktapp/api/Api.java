@@ -122,6 +122,21 @@ public class Api extends Dto
                return collection;
          }
       }
+
+      for (Collection collection : collections)
+      {
+         // This loop is done separately from the one above to allow 
+         // collections to have precedence over aliases
+         for (String alias : collection.getAliases())
+         {
+            if (name.equalsIgnoreCase(alias))
+            {
+               if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
+                  return collection;
+            }
+         }
+      }
+
       if (dbClass != null)
       {
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");

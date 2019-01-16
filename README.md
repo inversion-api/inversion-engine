@@ -242,6 +242,7 @@ Collections logically map to Db Tables.  An Entity logically represents a row in
 to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
 in a URL or as a JSON property name.
 
+Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
 
 ### Endpoints, Actions and Handlers
