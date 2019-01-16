@@ -261,7 +261,14 @@ public class Request
       if (J.empty(body))
          return null;
 
-      json = JS.toJSObject(body);
+      try
+      {
+         json = JS.toJSObject(body);
+      }
+      catch (Exception ex)
+      {
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unparsable JSON body");
+      }
       prune(json);
 
       return json;

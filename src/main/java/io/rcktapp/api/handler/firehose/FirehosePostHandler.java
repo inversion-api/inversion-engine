@@ -78,14 +78,13 @@ public class FirehosePostHandler implements Handler
       if (body == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Attempting to post an empty body to a Firehose stream");
 
-      if (body instanceof JSObject)
+      if (!(body instanceof JSArray))
          body = new JSArray(body);
 
       JSArray array = (JSArray) body;
 
       List<Record> batch = new ArrayList();
 
-      
       for (int i = 0; i < array.length(); i++)
       {
          Object data = array.get(i);
@@ -114,64 +113,4 @@ public class FirehosePostHandler implements Handler
 
       res.setStatus(SC.SC_201_CREATED);
    }
-
-   public static final String upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-   public static final String lower   = upper.toLowerCase();
-
-   public static final String digits  = "0123456789";
-
-   public static final char[] symbols = (upper + lower + digits).toCharArray();
-
-   static SecureRandom        random  = new SecureRandom();
-
-   public static String randomString(int size)
-   {
-
-      char[] buf = new char[size];
-      for (int idx = 0; idx < buf.length; ++idx)
-         buf[idx] = symbols[random.nextInt(symbols.length)];
-      return new String(buf);
-   }
-
-   public static void main(String[] args) throws Exception
-   {
-      System.out.println(randomString(100));
-
-      AmazonKinesisFirehose firehose = AmazonKinesisFirehoseClientBuilder.defaultClient();
-
-      ListDeliveryStreamsRequest listDeliveryStreamsRequest = new ListDeliveryStreamsRequest();
-      ListDeliveryStreamsResult listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
-      List<String> deliveryStreamNames = listDeliveryStreamsResult.getDeliveryStreamNames();
-      while (listDeliveryStreamsResult.isHasMoreDeliveryStreams())
-      {
-         if (deliveryStreamNames.size() > 0)
-         {
-            listDeliveryStreamsRequest.setExclusiveStartDeliveryStreamName(deliveryStreamNames.get(deliveryStreamNames.size() - 1));
-         }
-         listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
-         deliveryStreamNames.addAll(listDeliveryStreamsResult.getDeliveryStreamNames());
-      }
-
-      System.out.println(deliveryStreamNames);
-
-      for (int i = 0; i < 2000; i++)
-      {
-         List<Record> records = new ArrayList();
-         for (int j = 0; j < 500; j++)
-         {
-            JSObject json = new JSObject("tenantCode", "us", "yearid", 2019, "monthid", 201901, "dayid", 20190110, "locationCode", "asdfasdf", "playerCode", "us-12345667-1", "adId", (i * j), "somecrapproperrty", randomString(500));
-            records.add(new Record().withData(ByteBuffer.wrap((json.toString(false).trim() + "\n").getBytes())));
-         }
-
-         PutRecordBatchRequest put = new PutRecordBatchRequest();
-         put.setDeliveryStreamName("liftck-player9-impression");
-         put.setRecords(records);
-         firehose.putRecordBatch(put);
-
-         System.out.println(i);
-      }
-
-   }
-
 }
