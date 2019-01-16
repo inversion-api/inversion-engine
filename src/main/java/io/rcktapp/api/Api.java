@@ -130,7 +130,10 @@ public class Api extends Dto
          for (String alias : collection.getAliases())
          {
             if (name.equalsIgnoreCase(alias))
-               return collection;
+            {
+               if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
+                  return collection;
+            }
          }
       }
 
