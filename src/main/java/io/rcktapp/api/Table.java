@@ -16,6 +16,7 @@
 package io.rcktapp.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Table extends Dto
@@ -131,7 +132,9 @@ public class Table extends Dto
     */
    public List<Column> getColumns()
    {
-      return columns;
+      ArrayList cols = new ArrayList(columns);
+      Collections.sort(cols);
+      return cols;
    }
 
    /**
@@ -139,7 +142,9 @@ public class Table extends Dto
     */
    public void setColumns(List<Column> cols)
    {
-      this.columns = new ArrayList(cols);
+      this.columns.clear();
+      for (Column col : cols)
+         addColumn(col);
    }
 
    public void addColumn(Column column)
@@ -156,12 +161,14 @@ public class Table extends Dto
 
    public ArrayList<Index> getIndexes()
    {
-      return indexes;
+      return new ArrayList(indexes);
    }
 
    public void setIndexes(ArrayList<Index> indexes)
    {
-      this.indexes = indexes;
+      this.indexes.clear();
+      for (Index index : indexes)
+         addIndex(index);
    }
 
    public void addIndex(Index index)

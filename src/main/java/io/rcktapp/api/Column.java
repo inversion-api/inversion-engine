@@ -15,7 +15,7 @@
  */
 package io.rcktapp.api;
 
-public class Column extends Dto
+public class Column extends Dto implements Comparable<Column>
 {
    Table   table    = null;
 
@@ -25,6 +25,7 @@ public class Column extends Dto
     */
    Column  pk       = null;
 
+   int     number   = 0;
    String  name     = null;
    String  type     = null;
    boolean nullable = false;
@@ -33,19 +34,27 @@ public class Column extends Dto
 
    String  hint     = null;
 
-   public Column()
-   {
-
-   }
-
-   public Column(Table table, String name, String type, boolean nullable)
+   public Column(Table table, int number, String name, String type, boolean nullable)
    {
       super();
       this.table = table;
+      this.number = number;
       this.name = name;
       this.type = type;
       this.nullable = nullable;
       this.hint = table.getName() + "." + name;
+   }
+
+   @Override
+   public int compareTo(Column o)
+   {
+      if (o == null)
+         return 1;
+
+      if (o.table == table)
+         return this.number > o.number ? 1 : -1;
+
+      return 0;
    }
 
    public boolean isExclude()

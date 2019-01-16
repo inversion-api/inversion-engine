@@ -85,7 +85,7 @@ public abstract class Rule extends Dto implements Comparable<Rule>
                   matchPart = matchPart.substring(1, matchPart.length() - 1);
                   optional = true;
                }
-               
+
                if (pathParts.size() == i)
                {
                   if (optional)
@@ -199,7 +199,8 @@ public abstract class Rule extends Dto implements Comparable<Rule>
    public void setMethods(List<String> methods)
    {
       this.methods.clear();
-      this.methods.addAll(methods);
+      for (String method : methods)
+         addMethod(method);
    }
 
    public void addMethod(String method)
