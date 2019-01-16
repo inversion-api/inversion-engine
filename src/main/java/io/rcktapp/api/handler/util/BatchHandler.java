@@ -13,6 +13,21 @@ import io.rcktapp.api.Response;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.service.Service;
 
+/**
+ * 
+ * {
+ *   meta: {},
+ *   data: [
+ *           {
+ *              method: '',
+ *              url:    '',
+ *              body:   ''
+ *            },
+ *            ...
+ *          ]
+ * }
+ *
+ */
 public class BatchHandler implements Handler
 {
 
@@ -21,7 +36,7 @@ public class BatchHandler implements Handler
    {
       try
       {
-         JSArray arr = (JSArray) req.getJson();
+         JSArray arr = (JSArray) req.getJson().getArray("data");
          for (int i = 0; i < arr.length(); i++)
          {
             JSObject json = arr.getObject(i);
@@ -38,7 +53,7 @@ public class BatchHandler implements Handler
       }
       catch (ClassCastException ex)
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Batch requests must be of the form [{method: '', url: '', body: ''},{method: '', url: '', body: ''}...]");
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "Batch requests must be of the form { meta: '', data: [{method: '', url: '', body: ''},{method: '', url: '', body: ''}...]}");
       }
 
    }

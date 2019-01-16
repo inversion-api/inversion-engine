@@ -67,12 +67,10 @@ public class Collection extends Dto
     */
    public void setApi(Api api)
    {
-      this.api = api;
-
-      if ((this.getEntity() != null) && (this.getEntity().getTable() != null))
+      if(api != null && this.api != api)
       {
-         if (api.getCollection(this.getEntity().getTable().getDb().getName().toLowerCase() + "." + this.getName().toLowerCase()) != this)
-            api.addCollection(this);
+         this.api = api;
+         api.addCollection(this);
       }
    }
 

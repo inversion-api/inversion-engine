@@ -334,6 +334,18 @@ public class Service
     */
    public Response include(Chain parent, String method, String url, String body) throws Exception
    {
+      if (!url.startsWith("http:") || url.startsWith("https:"))
+      {
+         String apiUrl = parent.getRequest().getApiUrl();
+         if (!apiUrl.endsWith("/"))
+            apiUrl += "/";
+
+         while (url.startsWith("/"))
+            url = url.substring(1, url.length());
+
+         url = apiUrl + url;
+      }
+
       Api api = null;
       String apiUrl = null;
       ApiMatch match = findApi(method, new Url(url));

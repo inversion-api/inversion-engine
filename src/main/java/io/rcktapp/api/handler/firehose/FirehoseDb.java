@@ -2,8 +2,11 @@ package io.rcktapp.api.handler.firehose;
 
 import org.atteo.evo.inflector.English;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.forty11.j.J;
 import io.rcktapp.api.Collection;
@@ -13,6 +16,8 @@ import io.rcktapp.api.Table;
 
 public class FirehoseDb extends Db
 {
+   protected String      awsAccessKey   = null;
+   protected String      awsSecretKey   = null;
    protected String      awsRegion      = null;
 
    /**
@@ -77,15 +82,23 @@ public class FirehoseDb extends Db
    {
       if (this.firehoseClient == null)
       {
-         if (J.empty(awsRegion))
+         synchronized (this)
          {
-            firehoseClient = AmazonKinesisFirehoseClientBuilder.defaultClient();
-         }
-         else
-         {
-            firehoseClient = AmazonKinesisFirehoseClientBuilder.standard().withRegion(awsRegion).build();
-         }
+            if (this.firehoseClient == null)
+            {
+               AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
+               if (!J.empty(awsRegion))
+                  builder.withRegion(awsRegion);
 
+               if (!J.empty(awsAccessKey) && !J.empty(awsSecretKey))
+               {
+                  BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+                  builder.withCredentials(new AWSStaticCredentialsProvider(creds));
+               }
+
+               firehoseClient = builder.build();
+            }
+         }
       }
 
       return firehoseClient;

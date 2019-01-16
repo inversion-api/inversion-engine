@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
+import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
+import com.amazonaws.services.kinesisfirehose.model.ListDeliveryStreamsRequest;
+import com.amazonaws.services.kinesisfirehose.model.ListDeliveryStreamsResult;
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
@@ -63,7 +66,8 @@ public class FirehosePostHandler implements Handler
       if (!req.isMethod("PUT", "POST"))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
 
-      Collection col = api.getCollection(req.getCollectionKey(), FirehoseDb.class);
+      String collectionKey = req.getCollectionKey();
+      Collection col = api.getCollection(collectionKey, FirehoseDb.class);
       Table table = col.getEntity().getTable();
       String streamName = table.getName();
 
@@ -81,7 +85,8 @@ public class FirehosePostHandler implements Handler
 
       List<Record> batch = new ArrayList();
 
-      for (int i = 0; i < batchMax; i++)
+      
+      for (int i = 0; i < array.length(); i++)
       {
          Object data = array.get(i);
 
@@ -129,55 +134,43 @@ public class FirehosePostHandler implements Handler
       return new String(buf);
    }
 
-   public static void fillStream() throws Exception
+   public static void main(String[] args) throws Exception
    {
       System.out.println(randomString(100));
 
-      //      AmazonKinesisFirehose firehose = AmazonKinesisFirehoseClientBuilder.defaultClient();
-      //
-      //      ListDeliveryStreamsRequest listDeliveryStreamsRequest = new ListDeliveryStreamsRequest();
-      //      ListDeliveryStreamsResult listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
-      //      List<String> deliveryStreamNames = listDeliveryStreamsResult.getDeliveryStreamNames();
-      //      while (listDeliveryStreamsResult.isHasMoreDeliveryStreams())
-      //      {
-      //         if (deliveryStreamNames.size() > 0)
-      //         {
-      //            listDeliveryStreamsRequest.setExclusiveStartDeliveryStreamName(deliveryStreamNames.get(deliveryStreamNames.size() - 1));
-      //         }
-      //         listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
-      //         deliveryStreamNames.addAll(listDeliveryStreamsResult.getDeliveryStreamNames());
-      //      }
-      //
-      //      System.out.println(deliveryStreamNames);
-      //
-      //      
-      //      
-      //      
-      //      
-      //      for (int i = 0; i < 2000; i++)
-      //      {
-      //         List<Record> records = new ArrayList();
-      //         for (int j = 0; j < 500; j++)
-      //         {
-      //            
-      //            
-      //           }
-      //
-      //
-      //            
-      //            
-      //            
-      //            JSObject json = new JSObject("tenantCode", "us", "yearid", 2019, "monthid", 201901, "dayid", 20190110, "locationCode", new , "playerCode", "us-12345667-1", "adId", (i * j), "somecrapproperrty", "asdfasdf");
-      //            records.add(new Record().withData(ByteBuffer.wrap((json.toString(false).trim() + "\n").getBytes())));
-      //         }
-      //
-      //         PutRecordBatchRequest put = new PutRecordBatchRequest();
-      //         put.setDeliveryStreamName("liftck-player9-impression");
-      //         put.setRecords(records);
-      //         firehose.putRecordBatch(put);
-      //
-      //         System.out.println(i);
-      //      }
+      AmazonKinesisFirehose firehose = AmazonKinesisFirehoseClientBuilder.defaultClient();
+
+      ListDeliveryStreamsRequest listDeliveryStreamsRequest = new ListDeliveryStreamsRequest();
+      ListDeliveryStreamsResult listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
+      List<String> deliveryStreamNames = listDeliveryStreamsResult.getDeliveryStreamNames();
+      while (listDeliveryStreamsResult.isHasMoreDeliveryStreams())
+      {
+         if (deliveryStreamNames.size() > 0)
+         {
+            listDeliveryStreamsRequest.setExclusiveStartDeliveryStreamName(deliveryStreamNames.get(deliveryStreamNames.size() - 1));
+         }
+         listDeliveryStreamsResult = firehose.listDeliveryStreams(listDeliveryStreamsRequest);
+         deliveryStreamNames.addAll(listDeliveryStreamsResult.getDeliveryStreamNames());
+      }
+
+      System.out.println(deliveryStreamNames);
+
+      for (int i = 0; i < 2000; i++)
+      {
+         List<Record> records = new ArrayList();
+         for (int j = 0; j < 500; j++)
+         {
+            JSObject json = new JSObject("tenantCode", "us", "yearid", 2019, "monthid", 201901, "dayid", 20190110, "locationCode", "asdfasdf", "playerCode", "us-12345667-1", "adId", (i * j), "somecrapproperrty", randomString(500));
+            records.add(new Record().withData(ByteBuffer.wrap((json.toString(false).trim() + "\n").getBytes())));
+         }
+
+         PutRecordBatchRequest put = new PutRecordBatchRequest();
+         put.setDeliveryStreamName("liftck-player9-impression");
+         put.setRecords(records);
+         firehose.putRecordBatch(put);
+
+         System.out.println(i);
+      }
 
    }
 
