@@ -499,8 +499,8 @@ public class Service
 
          if (!J.empty(servletMapping))
          {
-            fullPath = "/" + J.implode("/", servletMapping, fullPath);
-            halfPath = "/" + J.implode("/", servletMapping, halfPath);
+            fullPath = "/" + J.implode("/", servletMapping, fullPath) + "/";
+            halfPath = "/" + J.implode("/", servletMapping, halfPath) + "/";
          }
 
          if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -526,10 +526,10 @@ public class Service
             {
                String u = url.toString();
                int start = apiUrl.length();
-               int end = u.indexOf('/', start + 1);
+               int end = u.indexOf('/', start);
                if (end < 0)
                   end = u.length();
-               String tenantId = u.substring(start + 1, end);
+               String tenantId = u.substring(start, end);
 
                if (!apiUrl.endsWith("/"))
                   apiUrl += "/";
