@@ -126,7 +126,7 @@ public class Api extends Dto
       {
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
       }
-      else 
+      else
       {
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
       }

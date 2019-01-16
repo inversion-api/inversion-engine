@@ -56,6 +56,8 @@ public class AuthHandler implements Handler
 
    protected String           collection              = null;
 
+   protected String           authenticatedPerm       = null;           // apply this perm to all authenticated users, allows ACL to target all authenticated users
+
    protected AuthSessionCache sessionCache            = null;
 
    protected SqlDb            db                      = null;
@@ -85,6 +87,7 @@ public class AuthHandler implements Handler
       }
 
       String collection = action.getConfig("collection", this.collection);
+      String authenticatedPerm = action.getConfig("authenticatedPerm", this.authenticatedPerm);
       long failedMax = Long.parseLong(action.getConfig("failedMax", this.failedMax + ""));
       long sessionExp = Long.parseLong(action.getConfig("sessionExp", this.sessionExp + ""));
 
@@ -186,6 +189,10 @@ public class AuthHandler implements Handler
                   tempUser.setRequestAt(now);
                   tempUser.setRoles(getRoles(conn, req.getApi(), tempUser));
                   tempUser.setPermissions(getPermissions(conn, req.getApi(), tempUser));
+                  if (!J.empty(authenticatedPerm))
+                  {
+                     tempUser.getPermissions().add(new Permission(authenticatedPerm));
+                  }
 
                   user = tempUser;
                }
@@ -460,6 +467,11 @@ public class AuthHandler implements Handler
    public void setCollection(String collection)
    {
       this.collection = collection;
+   }
+
+   public void setAuthenticatedPerm(String authenticatedPerm)
+   {
+      this.authenticatedPerm = authenticatedPerm;
    }
 
    public void setSessionCache(AuthSessionCache sessionCache)
