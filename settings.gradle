@@ -10,22 +10,36 @@
 
 gradle.ext {
 
-	rckt_snooze = [
-		'addFortJProjectToClasspath':false
-	]
+   rckt_snooze = [
+      'addFortJProjectToClasspath':false,
+      'addFortSProjectToClasspath':false,
+      'addFortWProjectToClasspath':false
+   ]
 
-	// Values to edit
-	def pathToFortJ= '../fort_j'
-	
-	
-	// ###################################################
-	// Below loads the project ... no need to edit.
-	
-	
-	if (rckt_snooze['addFortJProjectToClasspath']) {
-		include ':fort_j'
-		project(":fort_j").projectDir = file(pathToFortJ)
-	}
-	
-	
+   // Values to edit
+   def pathToFortJ= '../fort_j'
+   def pathToFortS= '../fort_s'
+   def pathToFortW= '../fort_w'
+
+
+   // ###################################################
+   // Below loads the project ... no need to edit.
+
+
+   if (rckt_snooze['addFortJProjectToClasspath']) {
+      include ':fort_j'
+      project(":fort_j").projectDir = file(pathToFortJ)
+   }
+
+   if (rckt_snooze['addFortSProjectToClasspath']) {
+      include ':fort_s'
+      project(":fort_s").projectDir = file(pathToFortS)
+   }
+
+   if (rckt_snooze['addFortWProjectToClasspath']) {
+      apply from: "${pathToFortW}/settings.gradle"
+      include ':fort_w'
+      project(":fort_w").projectDir = file(pathToFortW)
+   }
+
 }
