@@ -290,6 +290,11 @@ public class Service
                   res.setContentType("text/text");
             }
          }
+         else if (!J.empty(res.getRedirect()))
+         {
+            res.addHeader("Location", res.getRedirect());
+            res.setStatus("302 Found");
+         }
          else if (output == null && res.getJson() != null)
          {
             output = res.getJson().toString();
@@ -445,12 +450,6 @@ public class Service
                String redirect = req.getUrl().toString();
                //redirect = req.getHttpServletRequest().getRequest
                redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
-
-               String queryString = req.getUrl().getQuery();
-               if (!J.empty(queryString))
-               {
-                  redirect += "?" + queryString;
-               }
 
                res.setRedirect(redirect);
                return true;
