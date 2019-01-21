@@ -39,8 +39,8 @@ import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * The service builds a key from the request url & parameters.  If the key does not exist within Redis,
- * the request is passed along to the GetHandler.  The response from the GetHandler will be inserted
- * into Redis with an expiration.
+ * the request is passed along to the GetHandler.  The JSON response from the GetHandler will be inserted
+ * into Redis with an expiration if the JSON is not null or empty.
  * 
  * The initial Redis check can be bypassed by including the skipCache (verify value below) request parameter. 
  * 
@@ -144,13 +144,16 @@ public class RedisHandler implements Handler
 
                // see class header for explanation on setex()  
                // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
+               
+               JSObject json = res.getJson();
 
-               if (res.getStatusCode() == 200)
+               if (res.getStatusCode() == 200 && json != null && json.getProperties().size() > 0)
                {
+                  // will NOT store empty JSON responses
                   try
                   {
                      int ttl = chain.getConfig("redisTtl", this.redisTtl);
-                     jedis.setex(key, ttl, chain.getResponse().getJson().toString());
+                     jedis.setex(key, ttl, json.toString());
                   }
                   catch (Exception ex)
                   {
