@@ -293,7 +293,7 @@ public class Service
          else if (!J.empty(res.getRedirect()))
          {
             res.addHeader("Location", res.getRedirect());
-            res.setStatus("302 Found");
+            res.setStatus(SC.SC_302_FOUND);
          }
          else if (output == null && res.getJson() != null)
          {
