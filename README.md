@@ -897,7 +897,7 @@ will get you up and running in less than 5 minutes.
   2. http(s)://${account.code}.domain.com/[${servletPrefix}/]${account.code}${api.code}/${collection}
   3. http(s)://${account.code}.domain.com/[${servletPrefix}/]${api.code}/${collection}
   
-  
+.  
   
              
              
