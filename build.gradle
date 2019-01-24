@@ -73,7 +73,7 @@ dependencies {
    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
    compile 'org.postgresql:postgresql:42.1.4'
    
-   // Beware of changing the redshift driver version. As of 1/24/2019 newer versions are not thread-safe
+   // Beware of changing the redshift driver version. Newer versions of this driver are not thread-safe
    // Version 1.2.10.1009 is thread-safe
    // https://stackoverflow.com/questions/52884036/java-sql-sqlnontransientexception-amazonjdbc10900-not-all-parameters-have
    compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.10.1009'
