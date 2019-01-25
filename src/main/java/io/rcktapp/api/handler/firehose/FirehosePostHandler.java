@@ -36,16 +36,19 @@ import io.rcktapp.api.service.Service;
  * <li>a JSON array - each element in the array is submitted as a single record.
  * </ul>
  * 
- * Unless <code>prettyPrint</code> is set to <code>true</code> all JSON
+ * Unless <code>jsonPrettyPrint</code> is set to <code>true</code> all JSON
  * records are stringified without return characters.
  * 
  * All records are always submitted in batches of up to <code>batchMax</code>.  
  * You can submit more than <code>batchMax</code> to the handler and it will try to
  * send as many batches as required. 
  * 
- * If <code>separator</code> is not null (it is '\n' by default) and the 
+ * If <code>jsonSeparator</code> is not null (it is '\n' by default) and the 
  * stringified record does not end in <code>separator</code>,
  * <code>separator</code> will be appended to the record.
+ * 
+ * If your firehose is Redshift, you probably want to leave <code>jsonLowercaseNames</code>
+ * at its default which is true.  Redshift only matches to lowercase names on COPY.
  * 
  * The underlying Firehose stream is mapped to the collection name through
  * the FireshoseDb.includeStreams property.
@@ -56,9 +59,10 @@ import io.rcktapp.api.service.Service;
  */
 public class FirehosePostHandler implements Handler
 {
-   protected int     batchMax    = 500;
-   protected String  separator   = "\n";
-   protected boolean prettyPrint = false;
+   protected int     batchMax           = 500;
+   protected String  jsonSeparator      = "\n";
+   protected boolean jsonPrettyPrint    = false;
+   protected boolean jsonLowercaseNames = true;
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -92,10 +96,10 @@ public class FirehosePostHandler implements Handler
          if (data == null)
             continue;
 
-         String string = data instanceof JSObject ? ((JSObject) data).toString(prettyPrint) : data.toString();
+         String string = data instanceof JSObject ? ((JSObject) data).toString(jsonPrettyPrint, jsonLowercaseNames) : data.toString();
 
-         if (separator != null && !string.endsWith(separator))
-            string += separator;
+         if (jsonSeparator != null && !string.endsWith(jsonSeparator))
+            string += jsonSeparator;
 
          batch.add(new Record().withData(ByteBuffer.wrap(string.getBytes())));
 
