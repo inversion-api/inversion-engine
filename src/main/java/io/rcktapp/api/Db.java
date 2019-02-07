@@ -84,13 +84,14 @@ public abstract class Db extends Dto
 
       return name;
    }
-   
-   protected String lowercaseAndPluralizeString(String collectionName) {
+
+   protected String lowercaseAndPluralizeString(String collectionName)
+   {
       collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
 
       if (!collectionName.endsWith("s"))
          collectionName = English.plural(collectionName);
-      
+
       return collectionName;
    }
 
@@ -158,7 +159,9 @@ public abstract class Db extends Dto
     */
    public void setTables(List<Table> tbls)
    {
-      this.tables = new ArrayList(tbls);
+      this.tables.clear();
+      for (Table table : tbls)
+         addTable(table);
    }
 
    public void addTable(Table tbl)

@@ -211,8 +211,10 @@ public class DynamoDb extends Db
       {
          DynamoIndex index = new DynamoIndex(table, PRIMARY_INDEX, PRIMARY_TYPE);
 
+         int columnNumber = 0;
          for (String k : bluePrintMap.keySet())
          {
+            columnNumber += 1;
             Object obj = bluePrintMap.get(k);
             boolean nullable = true;
             if (pk.equals(k) || (sk != null && sk.equals(k)))
@@ -220,7 +222,7 @@ public class DynamoDb extends Db
                nullable = false; // keys are not nullable
             }
 
-            Column column = new Column(table, k, getTypeStringFromObject(obj), nullable);
+            Column column = new Column(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
 
             if (pk.equals(k))
             {

@@ -15,6 +15,7 @@
  */
 package io.rcktapp.api;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +46,7 @@ public class Chain
       this.service = service;
       this.api = api;
       this.endpoint = endpoint;
-      this.actions = actions;
+      setActions(actions);
       this.request = req;
       this.response = res;
    }
@@ -203,7 +204,22 @@ public class Chain
 
    public List<Action> getActions()
    {
-      return actions;
+      return new ArrayList(actions);
+   }
+
+   public void setActions(List<Action> actions)
+   {
+      actions.clear();
+      for (Action action : actions)
+      {
+         addAction(action);
+      }
+   }
+
+   public void addAction(Action action)
+   {
+      if (action != null && !actions.contains(action))
+         actions.add(action);
    }
 
    public Request getRequest()

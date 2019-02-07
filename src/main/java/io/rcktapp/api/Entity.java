@@ -107,7 +107,7 @@ public class Entity extends Dto
     */
    public List<Attribute> getAttributes()
    {
-      return attributes;
+      return new ArrayList(attributes);
    }
 
    /**
@@ -115,7 +115,9 @@ public class Entity extends Dto
     */
    public void setAttributes(List<Attribute> attributes)
    {
-      this.attributes = new ArrayList(attributes);
+      this.attributes.clear();
+      for (Attribute attr : attributes)
+         addAttribute(attr);
    }
 
    /**
@@ -123,7 +125,7 @@ public class Entity extends Dto
     */
    public List<Relationship> getRelationships()
    {
-      return relationships;
+      return new ArrayList(relationships);
    }
 
    /**
@@ -131,7 +133,9 @@ public class Entity extends Dto
     */
    public void setRelationships(List<Relationship> relationships)
    {
-      this.relationships = new ArrayList(relationships);
+      this.relationships.clear();
+      for (Relationship rel : relationships)
+         addRelationship(rel);
    }
 
    public void addRelationship(Relationship relationship)

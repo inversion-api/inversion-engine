@@ -320,15 +320,17 @@ public class SqlDb extends Db
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
+            int columnNumber = 0;
             while (colsRs.next())
             {
+               columnNumber += 1;
                String colName = colsRs.getString("COLUMN_NAME");
                Object type = colsRs.getString("DATA_TYPE");
                String colType = types.get(type);
 
                boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
 
-               Column column = new Column(table, colName, colType, nullable);
+               Column column = new Column(table, columnNumber, colName, colType, nullable);
                table.addColumn(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
@@ -632,7 +634,7 @@ public class SqlDb extends Db
    {
       if (driver.indexOf("mysql") < 0)
          return false;
-      
+
       return calcRowsFound;
    }
 
