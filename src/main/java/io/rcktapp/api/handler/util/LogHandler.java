@@ -24,10 +24,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.sql.Sql;
+import io.rocketpartners.sql.Sql;
 import io.forty11.utils.CaseInsensitiveSet;
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;

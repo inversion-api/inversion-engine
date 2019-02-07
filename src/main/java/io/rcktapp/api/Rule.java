@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.forty11.j.J;
-import io.forty11.web.Url;
+import io.rocketpartners.J;
+import io.rocketpartners.rest.Url;
 
 public abstract class Rule extends Dto implements Comparable<Rule>
 {

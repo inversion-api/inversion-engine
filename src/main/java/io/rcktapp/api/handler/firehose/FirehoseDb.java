@@ -8,7 +8,7 @@ import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 import io.rcktapp.api.Collection;
 import io.rcktapp.api.Db;
 import io.rcktapp.api.Entity;

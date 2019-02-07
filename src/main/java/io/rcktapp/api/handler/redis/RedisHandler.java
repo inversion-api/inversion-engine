@@ -22,8 +22,8 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.web.js.JS;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JS;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;

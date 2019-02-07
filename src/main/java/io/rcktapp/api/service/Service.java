@@ -26,9 +26,9 @@ import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.j.J;
-import io.forty11.web.Url;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.J;
+import io.rocketpartners.rest.Url;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;

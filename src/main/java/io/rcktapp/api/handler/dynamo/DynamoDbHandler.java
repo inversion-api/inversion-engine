@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;

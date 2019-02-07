@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.forty11.j.J;
-import io.forty11.sql.Sql;
+import io.rocketpartners.J;
+import io.rocketpartners.sql.Sql;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Chain;

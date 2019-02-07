@@ -34,8 +34,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;

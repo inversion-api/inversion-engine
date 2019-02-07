@@ -26,7 +26,7 @@ import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.handler.script.ScriptHandler;
 import io.rcktapp.api.service.Service;
 

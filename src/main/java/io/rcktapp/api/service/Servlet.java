@@ -35,8 +35,8 @@ import javax.servlet.http.Part;
 
 import com.amazonaws.util.IOUtils;
 
-import io.forty11.j.J;
-import io.forty11.web.Url;
+import io.rocketpartners.J;
+import io.rocketpartners.rest.Url;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.Request.Upload;

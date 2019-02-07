@@ -19,9 +19,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.forty11.j.J;
-import io.forty11.j.utils.ListMap;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.J;
+import io.rocketpartners.utils.ListMap;
+import io.rocketpartners.rest.JSObject;
 
 public class Response
 {

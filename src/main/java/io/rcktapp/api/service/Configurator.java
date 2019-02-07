@@ -35,10 +35,6 @@ import java.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.j.J;
-import io.forty11.j.utils.AutoWire;
-import io.forty11.j.utils.AutoWire.Includer;
-import io.forty11.j.utils.AutoWire.Namer;
 import io.rcktapp.api.AclRule;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -53,6 +49,10 @@ import io.rcktapp.api.Index;
 import io.rcktapp.api.Relationship;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
+import io.rcktapp.utils.AutoWire;
+import io.rcktapp.utils.AutoWire.Includer;
+import io.rcktapp.utils.AutoWire.Namer;
+import io.rocketpartners.J;
 
 public class Configurator
 {

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.forty11.web.Web;
-import io.forty11.web.js.JS;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.Web;
+import io.rocketpartners.rest.JS;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;
 import io.rcktapp.api.Collection;

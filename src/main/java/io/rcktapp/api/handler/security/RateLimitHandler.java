@@ -20,7 +20,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.Chain;

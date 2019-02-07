@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 import io.rcktapp.api.Table;
 import io.rcktapp.rql.Order;
 import io.rcktapp.rql.Predicate;

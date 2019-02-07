@@ -27,10 +27,6 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.map.LRUMap;
 
-import io.forty11.j.J;
-import io.forty11.sql.Sql;
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
@@ -45,6 +41,10 @@ import io.rcktapp.api.SC;
 import io.rcktapp.api.User;
 import io.rcktapp.api.handler.sql.SqlDb;
 import io.rcktapp.api.service.Service;
+import io.rocketpartners.J;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
+import io.rocketpartners.sql.Sql;
 
 public class AuthHandler implements Handler
 {

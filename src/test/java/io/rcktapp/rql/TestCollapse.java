@@ -5,9 +5,9 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import io.forty11.web.js.JS;
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JS;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.handler.sql.SqlPostHandler;
 import junit.framework.TestCase;
 

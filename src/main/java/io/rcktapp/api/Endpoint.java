@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 
 public class Endpoint extends Rule
 {

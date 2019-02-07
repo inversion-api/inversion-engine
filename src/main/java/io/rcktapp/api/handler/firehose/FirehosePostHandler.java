@@ -12,8 +12,8 @@ import com.amazonaws.services.kinesisfirehose.model.ListDeliveryStreamsResult;
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
-import io.forty11.web.js.JSArray;
-import io.forty11.web.js.JSObject;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;

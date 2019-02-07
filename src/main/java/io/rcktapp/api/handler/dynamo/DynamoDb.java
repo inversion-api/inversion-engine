@@ -38,7 +38,7 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;

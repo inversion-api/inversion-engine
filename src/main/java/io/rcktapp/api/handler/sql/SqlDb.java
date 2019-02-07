@@ -30,7 +30,7 @@ import org.atteo.evo.inflector.English;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
-import io.forty11.sql.Sql;
+import io.rocketpartners.sql.Sql;
 import io.rcktapp.api.Api;
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Attribute;

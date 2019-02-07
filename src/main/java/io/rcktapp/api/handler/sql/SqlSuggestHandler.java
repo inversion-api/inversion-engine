@@ -18,8 +18,8 @@ package io.rcktapp.api.handler.sql;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.forty11.j.J;
-import io.forty11.sql.Sql;
+import io.rocketpartners.J;
+import io.rocketpartners.sql.Sql;
 import io.forty11.utils.CaseInsensitiveSet;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;

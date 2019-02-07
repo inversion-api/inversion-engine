@@ -18,7 +18,7 @@ package io.rcktapp.rql;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.forty11.j.J;
+import io.rocketpartners.J;
 
 public class Parts
 {
