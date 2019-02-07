@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+package io.rocketpartners.cloud.api.handler.security;
+
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
+import io.rocketpartners.cloud.api.Action;
+import io.rocketpartners.cloud.api.Api;
+import io.rocketpartners.cloud.api.Chain;
+import io.rocketpartners.cloud.api.Endpoint;
+import io.rocketpartners.cloud.api.Handler;
+import io.rocketpartners.cloud.api.Request;
+import io.rocketpartners.cloud.api.Response;
+import io.rocketpartners.cloud.api.service.Service;
+
+public class PasswordHandler implements Handler
+{
+   String passwordField = "password";
+
+   @Override
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   {
+      if (chain.getParent() != null)
+      {
+         // this must be a nested call to service.include so the outer call
+         // is responsible for logging this change
+         return;
+      }
+
+      JSObject json = req.getJson();
+
+      if (json == null)
+         return;
+
+      if (json instanceof JSArray)
+         return;
+
+      String password = (String) json.remove(passwordField);
+      if (password == null)
+      {
+         return;
+      }
+      else
+      {
+         json.put(passwordField, "ENCRYPTING...");
+      }
+
+      try
+      {
+         chain.go();
+      }
+      finally
+      {
+         JSObject js = res.getJson().getObject("data");
+         if (js instanceof JSArray && ((JSArray) js).length() == 1)
+         {
+            JSObject user = (JSObject) ((JSArray) js).get(0);
+            if (user.get("id") != null)
+            {
+               String encryptedPassword = AuthHandler.hashPassword(user.get("id"), password);
+               JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
+               String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
+               service.include(chain, "PUT", url, body.toString());
+            }
+         }
+      }
+   }
+
+}
