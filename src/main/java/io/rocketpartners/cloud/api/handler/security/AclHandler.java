@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.J;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;
+import io.rocketpartners.cloud.api.AbstractHandler;
 import io.rocketpartners.cloud.api.AclRule;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
@@ -37,7 +38,6 @@ import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.handler.AbstractHandler;
 import io.rocketpartners.cloud.api.service.Service;
 
 public class AclHandler extends AbstractHandler

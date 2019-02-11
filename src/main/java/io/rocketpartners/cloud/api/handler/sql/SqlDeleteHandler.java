@@ -21,25 +21,23 @@ import java.util.List;
 import java.util.Map;
 
 import io.rocketpartners.J;
-import io.rocketpartners.sql.Sql;
-import io.rocketpartners.rest.JSArray;
-import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Chain;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Entity;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.service.Service;
-import io.rocketpartners.cloud.rql.Rql;
-import io.rocketpartners.cloud.rql.Replacer;
-import io.rocketpartners.cloud.rql.Stmt;
-import io.rocketpartners.cloud.rql.sql.SqlRql;
+import io.rocketpartners.db.Sql;
+import io.rocketpartners.rest.JSArray;
+import io.rocketpartners.rest.JSObject;
+import io.rocketpartners.rql.Rql;
+import io.rocketpartners.rql.sql.SqlQuery;
+import io.rocketpartners.rql.sql.SqlRql;
 
 public class SqlDeleteHandler extends SqlHandler
 {
@@ -166,8 +164,8 @@ public class SqlDeleteHandler extends SqlHandler
 
       SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
-      String table = rql.asCol(entity.getTable().getName());
-      String idCol = rql.asCol(entity.getKey().getColumn().getName());
+      String table = rql.quoteCol(entity.getTable().getName());
+      String idCol = rql.quoteCol(entity.getKey().getColumn().getName());
 
       List ids = Sql.selectList(conn, sql, args);
       if (ids.size() > 0)
@@ -204,13 +202,15 @@ public class SqlDeleteHandler extends SqlHandler
             params.put("in(`" + keyAttr + "`," + entityKey + ")", null);
          }
 
-         String sql = "SELECT " + rql.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + rql.asCol(entity.getTable().getName());
+         SqlQuery query = rql.build(params);
 
-         Replacer replacer = new Replacer(rql);
+         String sql = "SELECT " + query.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + query.asCol(entity.getTable().getName());
 
-         Stmt stmt = rql.createStmt(sql, entity.getTable(), params, replacer);
-         stmt.setMaxRows(-1);
-         sql = rql.toSql(stmt);
+         query.withSelectSql(sql);
+
+         //query.page().setMaxRows(0);
+
+         sql = query.getPreparedStmt();
 
          sql = sql.replaceAll("SQL_CALC_FOUND_ROWS", "");
 
@@ -219,11 +219,10 @@ public class SqlDeleteHandler extends SqlHandler
 
          sqls.add(sql);
 
-         for (int i = 0; i < replacer.cols.size(); i++)
+         for (int i = 0; i < query.getNumCols(); i++)
          {
-            String col = replacer.cols.get(i);
-            String val = replacer.vals.get(i);
-
+            String col = query.getCol(i);
+            String val = query.getVals(i);
             args.add(cast(collection, col, val));
          }
       }

@@ -40,16 +40,15 @@ public class DynamoDbRestHandler implements Handler
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      String method = req.getMethod();
-      if ("GET".equalsIgnoreCase(method))
+      if (req.isMethod("get"))
       {
          get.service(service, api, endpoint, action, chain, req, res);
       }
-      else if ("DELETE".equalsIgnoreCase(method))
+      else if (req.isMethod("delete"))
       {
          delete.service(service, api, endpoint, action, chain, req, res);
       }
-      else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
+      else if (req.isMethod("post", "put"))
       {
          post.service(service, api, endpoint, action, chain, req, res);
       }

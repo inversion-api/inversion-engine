@@ -30,8 +30,6 @@ import org.atteo.evo.inflector.English;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
-import io.rocketpartners.sql.Sql;
-import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
@@ -41,7 +39,8 @@ import io.rocketpartners.cloud.api.Entity;
 import io.rocketpartners.cloud.api.Relationship;
 import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.rql.sql.SqlRql;
+import io.rocketpartners.db.Sql;
+import io.rocketpartners.rql.sql.SqlRql;
 
 public class SqlDb extends Db
 {

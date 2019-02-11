@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.rocketpartners.J;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
@@ -40,17 +41,15 @@ import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.Table;
 import io.rocketpartners.cloud.api.service.Service;
-import io.rocketpartners.cloud.rql.Replacer;
-import io.rocketpartners.cloud.rql.Rql;
-import io.rocketpartners.cloud.rql.Stmt;
-import io.rocketpartners.cloud.rql.sql.SqlRql;
 import io.rocketpartners.cloud.utils.CaseInsensitiveSet;
-import io.rocketpartners.J;
+import io.rocketpartners.db.Rows;
+import io.rocketpartners.db.Sql;
+import io.rocketpartners.db.Rows.Row;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;
-import io.rocketpartners.sql.Rows;
-import io.rocketpartners.sql.Rows.Row;
-import io.rocketpartners.sql.Sql;
+import io.rocketpartners.rql.Rql;
+import io.rocketpartners.rql.sql.SqlQuery;
+import io.rocketpartners.rql.sql.SqlRql;
 import io.rocketpartners.utils.DoubleKeyMap;
 import io.rocketpartners.utils.ISO8601Util;
 import io.rocketpartners.utils.ListMap;
@@ -86,6 +85,7 @@ public class SqlGetHandler extends SqlHandler
          db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       }
       SqlRql rql = (SqlRql) Rql.getRql(db.getType());
+      SqlQuery query = rql.build();
 
       conn = db.getConnection();
 
@@ -125,8 +125,8 @@ public class SqlGetHandler extends SqlHandler
 
                if (rel.isManyToOne())
                {
-                  String relTbl = rql.asCol(rel.getFkCol1().getTable().getName());
-                  String relFk = rql.asCol(rel.getFkCol1().getName());
+                  String relTbl = query.quoteCol(rel.getFkCol1().getTable().getName());
+                  String relFk = query.quoteCol(rel.getFkCol1().getName());
 
                   sql += " SELECT id FROM " + relTbl;
                   sql += " WHERE " + relFk + " = ? ";
@@ -135,9 +135,9 @@ public class SqlGetHandler extends SqlHandler
                {
                   collection = req.getApi().getCollection(rel.getFkCol2().getPk().getTable());
 
-                  String linkTblKey = rql.asCol(rel.getFkCol1().getName());
-                  String linkTblFk = rql.asCol(rel.getFkCol2().getName());
-                  String linkTbl = rql.asCol(rel.getFkCol1().getTable().getName());
+                  String linkTblKey = query.quoteCol(rel.getFkCol1().getName());
+                  String linkTblFk = query.quoteCol(rel.getFkCol2().getName());
+                  String linkTbl = query.quoteCol(rel.getFkCol1().getTable().getName());
 
                   String pkCol = linkTbl + "." + linkTblKey;
                   String fkCol = linkTbl + "." + linkTblFk;
@@ -151,10 +151,10 @@ public class SqlGetHandler extends SqlHandler
 
                String newUrl = Service.buildLink(req, collection.getName(), J.implode(",", ids.toArray()), null);
 
-               String query = req.getQuery();
-               if (!J.empty(query))
+               String queryStr = req.getQuery();
+               if (!J.empty(queryStr))
                {
-                  newUrl += "?" + query;
+                  newUrl += "?" + queryStr;
                }
 
                Response included = service.include(chain, "GET", newUrl, null);
@@ -175,14 +175,14 @@ public class SqlGetHandler extends SqlHandler
 
          String inClause = Sql.getInClauseStr(J.explode(",", Sql.check(req.getEntityKey())));
 
-         sql += " SELECT * FROM " + rql.asCol(tbl.getName());
+         sql += " SELECT * FROM " + query.quoteCol(tbl.getName());
          sql += " WHERE " + Sql.check(keyCol) + " IN (" + inClause + ") ";
       }
       else if (tbl != null)
       {
          //-- this is a listing request
          //-- ${http://host/apipath}/collectionKey
-         sql += " SELECT * FROM " + rql.asCol(tbl.getName());
+         sql += " SELECT * FROM " + query.quoteCol(tbl.getName());
       }
 
       //-- support for custom sql statements from a Rule
@@ -199,25 +199,26 @@ public class SqlGetHandler extends SqlHandler
          throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
       }
 
-      Replacer replacer = new Replacer(rql);
+      //Replacer replacer = new Replacer(rql);
 
       Map rqlParams = req.getParams();
 
-      Stmt stmt = rql.createStmt(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
-      stmt.setMaxRows(chain.getConfig("maxRows", maxRows)); //this is a default value
+      //Stmt stmt = rql.createStmt(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
+      //stmt.setMaxRows(chain.getConfig("maxRows", maxRows)); //this is a default value
 
-      sql = rql.toSql(stmt);
+      query.withTerms(rqlParams);
+
+      sql = query.getPreparedStmt();
 
       if (includes.size() > 0)
       {
-         includes = new CaseInsensitiveSet<String>(stmt.cols.keySet());
+         includes = new CaseInsensitiveSet<String>(query.getCols());
       }
 
-      for (int i = 0; i < replacer.cols.size(); i++)
+      for (int i = 0; i < query.getNumCols(); i++)
       {
-         String col = replacer.cols.get(i);
-         String val = replacer.vals.get(i);
-
+         String col = query.getCol(i);
+         String val = query.getVals(i);
          params.add(cast(collection, col, val));
       }
 
@@ -229,7 +230,7 @@ public class SqlGetHandler extends SqlHandler
 
       if (collection != null && collection.getEntity().getKey() != null)
       {
-         results = queryObjects(rql, service, chain, action, req, res, db, conn, includes, excludes, expands, "", collection, sql, params);
+         results = queryObjects(query, service, chain, action, req, res, db, conn, includes, excludes, expands, "", collection, sql, params);
       }
       else
       {
@@ -265,12 +266,12 @@ public class SqlGetHandler extends SqlHandler
          }
 
          meta.put("rowCount", rowCount);
-         meta.put("pageSize", stmt.limit + "");
+         meta.put("pageSize", query.page().getLimit() + "");
 
          if (db.isCalcRowsFound())
          {
-            meta.put("pageNum", stmt.pagenum);
-            int pages = (int) Math.ceil((double) rowCount / (double) stmt.limit);
+            meta.put("pageNum", query.page().getPageNum());
+            int pages = (int) Math.ceil((double) rowCount / (double) query.page().getLimit());
             meta.put("pageCount", pages);
          }
 
@@ -348,7 +349,7 @@ public class SqlGetHandler extends SqlHandler
       return rows;
    }
 
-   List<JSObject> queryObjects(Rql rql, Service service, Chain chain, Action action, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
+   List<JSObject> queryObjects(SqlQuery query, Service service, Chain chain, Action action, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
    {
       List<JSObject> results = new ArrayList();
 
@@ -400,7 +401,7 @@ public class SqlGetHandler extends SqlHandler
          }
       }
 
-      expand(rql, chain, conn, req.getApi(), collection, path, results, includes, excludes, expands, pkCache);
+      expand(query, chain, conn, req.getApi(), collection, path, results, includes, excludes, expands, pkCache);
 
       return results;
    }
@@ -471,7 +472,7 @@ public class SqlGetHandler extends SqlHandler
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
-   protected void expand(Rql rql, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, DoubleKeyMap pkCache) throws Exception
+   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, DoubleKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;
@@ -559,7 +560,7 @@ public class SqlGetHandler extends SqlHandler
                      }
                   }
 
-                  expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+                  expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
                }
             }
             else if (rel.isManyToOne()) //MANY_TO_ONE - Location.id <- Player.locationId
@@ -579,8 +580,8 @@ public class SqlGetHandler extends SqlHandler
                }
 
                String sql = "";
-               sql += " SELECT " + rql.asCol(childPkCol) + " FROM " + rql.asCol(relTbl);
-               sql += " WHERE " + rql.asCol(childFkCol) + " IN (" + Sql.getQuestionMarkStr(parentIds.size()) + ")";
+               sql += " SELECT " + query.asCol(childPkCol) + " FROM " + query.asCol(relTbl);
+               sql += " WHERE " + query.asCol(childFkCol) + " IN (" + Sql.getQuestionMarkStr(parentIds.size()) + ")";
 
                if (chain.getRequest().isDebug())
                {
@@ -614,7 +615,7 @@ public class SqlGetHandler extends SqlHandler
                         }
                      }
                   }
-                  expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+                  expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
                }
             }
             else //many-to-many
@@ -637,10 +638,10 @@ public class SqlGetHandler extends SqlHandler
                      parentObj.put(rel.getName(), new JSArray());
                }
 
-               String sql = " SELECT " + rql.asCol(linkTblParentFkCol) + ", " + rql.asCol(linkTblChildFkCol) + //
-                     " FROM " + rql.asCol(linkTbl) + //
-                     " WHERE " + rql.asCol(linkTblChildFkCol) + " IS NOT NULL " + //
-                     " AND " + rql.asCol(linkTblParentFkCol) + " IN(" + Sql.getQuestionMarkStr(parentIds.size()) + ") ";
+               String sql = " SELECT " + query.asCol(linkTblParentFkCol) + ", " + query.asCol(linkTblChildFkCol) + //
+                     " FROM " + query.asCol(linkTbl) + //
+                     " WHERE " + query.asCol(linkTblChildFkCol) + " IS NOT NULL " + //
+                     " AND " + query.asCol(linkTblParentFkCol) + " IN(" + Sql.getQuestionMarkStr(parentIds.size()) + ") ";
 
                if (chain.getRequest().isDebug())
                {
@@ -682,7 +683,7 @@ public class SqlGetHandler extends SqlHandler
                   array.add(childObj);
                }
 
-               expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+               expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
             }
          }
       }

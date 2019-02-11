@@ -31,9 +31,8 @@ import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
 import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.rql.elastic.ElasticRql;
 
-public class ElasticDb extends Db
+public class ElasticsearchDb extends Db
 {
 
    static

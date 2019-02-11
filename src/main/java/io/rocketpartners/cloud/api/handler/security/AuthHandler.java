@@ -41,10 +41,10 @@ import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.User;
 import io.rocketpartners.cloud.api.handler.sql.SqlDb;
 import io.rocketpartners.cloud.api.service.Service;
+import io.rocketpartners.db.Sql;
 import io.rocketpartners.J;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;
-import io.rocketpartners.sql.Sql;
 
 public class AuthHandler implements Handler
 {

@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.rocketpartners.J;
-import io.rocketpartners.sql.Sql;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Chain;
@@ -31,7 +30,7 @@ import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Handler;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.rql.Rql;
+import io.rocketpartners.db.Sql;
 
 public abstract class SqlHandler implements Handler
 {

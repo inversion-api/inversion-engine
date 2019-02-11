@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.rocketpartners.J;
-import io.rocketpartners.sql.Sql;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
@@ -30,9 +29,11 @@ import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.service.Service;
-import io.rocketpartners.cloud.rql.Rql;
-import io.rocketpartners.cloud.rql.sql.SqlRql;
 import io.rocketpartners.cloud.utils.CaseInsensitiveSet;
+import io.rocketpartners.db.Sql;
+import io.rocketpartners.rql.Rql;
+import io.rocketpartners.rql.sql.SqlQuery;
+import io.rocketpartners.rql.sql.SqlRql;
 
 public class SqlSuggestHandler extends SqlHandler
 {
@@ -89,7 +90,8 @@ public class SqlSuggestHandler extends SqlHandler
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
       SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
-      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
+      
+      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).build(); 
 
       for (int i = 0; i < propertyList.size(); i++)
       {
@@ -106,10 +108,10 @@ public class SqlSuggestHandler extends SqlHandler
          String tableName = Sql.check(api.getCollection(collectionKey, SqlDb.class).getEntity().getTable().getName());
          String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
-         sql += " \r\nSELECT DISTINCT " + rql.asCol(column) + " AS " + searchProp + " FROM " + rql.asCol(tableName) + " WHERE " + rql.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + rql.asCol(column) + " != ''";
+         sql += " \r\nSELECT DISTINCT " + query.asCol(column) + " AS " + searchProp + " FROM " + query.asCol(tableName) + " WHERE " + query.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + query.asCol(column) + " != ''";
 
          if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
-            sql += " AND " + rql.asCol(tenantCol) + "=" + req.getUser().getTenantId();
+            sql += " AND " + query.asCol(tenantCol) + "=" + req.getUser().getTenantId();
 
          if (i + 1 < propertyList.size())
             sql += " \r\nUNION ";

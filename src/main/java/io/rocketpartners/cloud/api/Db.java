@@ -15,25 +15,17 @@
  */
 package io.rocketpartners.cloud.api;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Db extends Dto
+import io.rocketpartners.db.Index;
+
+public abstract class Db<D extends Db, T extends Table, C extends Column, I extends Index> extends io.rocketpartners.db.Db
 {
    protected Api    api       = null;
 
    protected Logger log       = LoggerFactory.getLogger(getClass());
-
-   protected String name      = null;
-   protected String type      = null;
-
-   ArrayList<Table> tables    = new ArrayList();
-
-   // set this to false, if you don't want to Snooze.bootstrapDb to do anything
    boolean          bootstrap = true;
 
    public Db()
@@ -106,88 +98,6 @@ public abstract class Db extends Dto
       return api;
    }
 
-   public Table getTable(String tableName)
-   {
-      for (Table t : tables)
-      {
-         if (t.getName().equalsIgnoreCase(tableName))
-            return t;
-      }
-      return null;
-   }
-
-   public void removeTable(Table table)
-   {
-      tables.remove(table);
-   }
-
-   public Column getColumn(String table, String col)
-   {
-      for (Table t : tables)
-      {
-         if (t.getName().equalsIgnoreCase(table))
-         {
-            for (Column c : t.getColumns())
-            {
-               if (c.getName().equalsIgnoreCase(col))
-               {
-                  return c;
-               }
-            }
-
-            return null;
-         }
-      }
-      return null;
-   }
-
-   public String getQuote()
-   {
-      return "'";
-   }
-
-   /**
-    * @return the tables
-    */
-   public List<Table> getTables()
-   {
-      return tables;
-   }
-
-   /**
-    * @param tables the tables to set
-    */
-   public void setTables(List<Table> tbls)
-   {
-      this.tables.clear();
-      for (Table table : tbls)
-         addTable(table);
-   }
-
-   public void addTable(Table tbl)
-   {
-      if (tbl != null && !tables.contains(tbl))
-      {
-         tables.add(tbl);
-      }
-   }
-
-   /**
-    * @return the name
-    */
-   public String getName()
-   {
-      return name;
-   }
-
-   /**
-    * @param name the name to set
-    */
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
    public boolean isBootstrap()
    {
       return bootstrap;
@@ -196,16 +106,6 @@ public abstract class Db extends Dto
    public void setBootstrap(boolean bootstrap)
    {
       this.bootstrap = bootstrap;
-   }
-
-   public String getType()
-   {
-      return type;
-   }
-
-   public void setType(String type)
-   {
-      this.type = type;
    }
 
 }

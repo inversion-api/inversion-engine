@@ -48,8 +48,6 @@ import io.rocketpartners.cloud.api.service.Service;
 import io.rocketpartners.cloud.rql.Order;
 import io.rocketpartners.cloud.rql.Predicate;
 import io.rocketpartners.cloud.rql.Rql;
-import io.rocketpartners.cloud.rql.dynamo.DynamoExpression;
-import io.rocketpartners.cloud.rql.dynamo.DynamoRql;
 
 /**
  * @author tc-rocket
@@ -88,11 +86,11 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       Set<String> includes = new HashSet<>(splitToList(req.removeParam("includes")));
       Set<String> excludes = new HashSet<>(splitToList(req.removeParam("excludes")));
 
-      DynamoRql rql = (DynamoRql) Rql.getRql(db.getType());
-      DynamoExpression dynamoExpression = rql.buildDynamoExpression(req.getParams(), table);
+      DynamoDbRql rql = (DynamoDbRql) Rql.getRql(db.getType());
+      DynamoDbQuery dynamoExpression = rql.buildDynamoExpression(req.getParams(), table);
       Order order = dynamoExpression.getOrder();
 
-      DynamoIndex dynamoIdx = dynamoExpression.getIndex();
+      DynamoDbIndex dynamoIdx = dynamoExpression.getIndex();
       String pk = dynamoIdx.getPartitionKey();
       String sk = dynamoIdx.getSortKey();
       boolean appendTenantIdToPk = !dynamoIdx.getType().equals(DynamoDb.GLOBAL_SECONDARY_TYPE) ? isAppendTenantIdToPk(chain, collection.getName()) : false;
@@ -101,7 +99,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       {
          res.debug("Dynamo Table:       " + table.getName() + ", PK: " + pk + ", SK: " + sk);
 
-         List<DynamoIndex> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.GLOBAL_SECONDARY_TYPE);
+         List<DynamoDbIndex> lsIndexes = DynamoDb.findIndexesByType(table, DynamoDb.GLOBAL_SECONDARY_TYPE);
 
          if (!lsIndexes.isEmpty())
          {
@@ -216,7 +214,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
 
    }
 
-   DynamoResult doQuery(DynamoExpression dynamoExpression, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, Chain chain, Response res, int pageSize, KeyAttribute[] nextKeys, String pk, Object primaryKeyValue)
+   DynamoResult doQuery(DynamoDbQuery dynamoExpression, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, Chain chain, Response res, int pageSize, KeyAttribute[] nextKeys, String pk, Object primaryKeyValue)
    {
       String expressionStr = dynamoExpression.buildExpression();
       Order order = dynamoExpression.getOrder();
@@ -247,7 +245,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
       Predicate skPred = dynamoExpression.getExcludedPredicate(orderCol);
       if (skPred != null)
       {
-         RangeKeyCondition rkc = DynamoDb.predicateToRangeKeyCondition(skPred, dynamoExpression.getTable());
+         RangeKeyCondition rkc = DynamoDb.buildRangeKeyCondition(skPred, dynamoExpression.getTable());
          querySpec = querySpec.withRangeKeyCondition(rkc);
 
          if (chain.getRequest().isDebug())
@@ -312,7 +310,7 @@ public class DynamoDbGetHandler extends DynamoDbHandler
 
    }
 
-   DynamoResult doScan(DynamoExpression dynamoExpression, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, Chain chain, Response res, int pageSize, KeyAttribute[] nextKeys)
+   DynamoResult doScan(DynamoDbQuery dynamoExpression, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, Chain chain, Response res, int pageSize, KeyAttribute[] nextKeys)
    {
       String expressionStr = dynamoExpression.buildExpression();
 

@@ -1,15 +1,13 @@
 /**
  * 
  */
-package io.rocketpartners.cloud.rql.dynamo;
+package io.rocketpartners.cloud.api.handler.dynamo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoIndex;
 import io.rocketpartners.cloud.rql.Order;
 import io.rocketpartners.cloud.rql.Parser;
 import io.rocketpartners.cloud.rql.Predicate;
@@ -20,39 +18,39 @@ import io.rocketpartners.cloud.rql.Stmt;
  * @author tc-rocket
  *
  */
-public class DynamoRql extends Rql
+public class DynamoDbRql extends Rql<DynamoQuery>
 {
 
    static
    {
-      Rql.addRql(new DynamoRql());
+      Rql.addRql(new DynamoDbRql());
    }
 
-   private DynamoRql()
+   private DynamoDbRql()
    {
       super("dynamo");
       setDoQuote(false);
    }
 
-   public DynamoExpression buildDynamoExpression(Map<String, String> requestParams, Table table) throws Exception
+   public DynamoDbQuery buildDynamoExpression(Map<String, String> requestParams, Table table) throws Exception
    {
 
-      DynamoExpression dynamoExpression = new DynamoExpression(table);
+      DynamoDbQuery dynamoExpression = new DynamoDbQuery(table);
 
       Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, requestParams, null);
 
-      DynamoIndex dynamoIdx = null;
+      DynamoDbIndex dynamoIdx = null;
 
       List<Predicate> predicates = stmt.where;
       List<Order> orderList = stmt.order;
 
       boolean hasPartitionKey = false;
 
-      DynamoIndex primaryIdx = null;
+      DynamoDbIndex primaryIdx = null;
 
       // find the best index to use based on the given request params
-      List<DynamoIndex> potentialIndexList = new ArrayList<DynamoIndex>();
-      for (DynamoIndex idx : (List<DynamoIndex>) (List<?>) table.getIndexes())
+      List<DynamoDbIndex> potentialIndexList = new ArrayList<DynamoDbIndex>();
+      for (DynamoDbIndex idx : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
       {
          if (predicatesContainField(predicates, idx.getPartitionKey()))
          {
@@ -69,7 +67,7 @@ public class DynamoRql extends Rql
       boolean hasSortKey = false;
 
       // does an index with a sort key exist?
-      for (DynamoIndex idx : potentialIndexList)
+      for (DynamoDbIndex idx : potentialIndexList)
       {
          if (predicatesContainField(predicates, idx.getSortKey()))
          {
@@ -131,7 +129,7 @@ public class DynamoRql extends Rql
       return recursePredicates(predicates, dynamoExpression, andOr, excludeList, 0);
    }
 
-   DynamoExpression recursePredicates(List<Predicate> predicates, DynamoExpression express, String andOr, List<String> excludes, int depth) throws Exception
+   DynamoDbQuery recursePredicates(List<Predicate> predicates, DynamoDbQuery express, String andOr, List<String> excludes, int depth) throws Exception
    {
       if (predicates != null)
       {
@@ -163,7 +161,7 @@ public class DynamoRql extends Rql
                   express.append(andOr);
                }
 
-               if (DynamoExpression.isKnownOperator(pred.getToken()))
+               if (DynamoDbQuery.isKnownOperator(pred.getToken()))
                {
                   String val = pred.getTerms().get(1).getToken();
 
@@ -171,7 +169,7 @@ public class DynamoRql extends Rql
                   express.appendSpaces(depth);
                   express.appendOperatorExpression(pred.getToken(), name, val);
                }
-               else if (DynamoExpression.isKnownFunction(pred.getToken()))
+               else if (DynamoDbQuery.isKnownFunction(pred.getToken()))
                {
                   String val = null;
                   if (pred.getTerms().size() >= 2)
@@ -211,7 +209,7 @@ public class DynamoRql extends Rql
       {
          for (Predicate pred : predicates)
          {
-            if (DynamoExpression.isKnownOperator(pred.getToken()) || DynamoExpression.isKnownFunction(pred.getToken()))
+            if (DynamoDbQuery.isKnownOperator(pred.getToken()) || DynamoDbQuery.isKnownFunction(pred.getToken()))
             {
                String name = pred.getTerms().get(0).getToken();
                if (name.equalsIgnoreCase(field))

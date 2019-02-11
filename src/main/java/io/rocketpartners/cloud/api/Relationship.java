@@ -15,7 +15,7 @@
  */
 package io.rocketpartners.cloud.api;
 
-public class Relationship extends Dto
+public class Relationship<C extends Column> extends io.rocketpartners.db.Relationship<C>
 {
    public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
@@ -23,12 +23,6 @@ public class Relationship extends Dto
 
    Entity                     entity           = null;
    Entity                     related          = null;
-   String                     name             = null;
-   String                     hint             = null;
-   String                     type             = null;
-
-   Column                     fkCol1           = null;
-   Column                     fkCol2           = null;
 
    boolean                    exclude          = false;
 
@@ -43,10 +37,10 @@ public class Relationship extends Dto
       if (related != null && related.isExclude())
          return true;
 
-      if (fkCol1 != null && fkCol1.isExclude())
+      if (fkCol1 != null && ((Column) fkCol1).isExclude())
          return true;
 
-      if (fkCol2 != null && fkCol2.isExclude())
+      if (fkCol2 != null && ((Column) fkCol2).isExclude())
          return true;
 
       return exclude;
@@ -60,106 +54,6 @@ public class Relationship extends Dto
    public void setExclude(boolean exclude)
    {
       this.exclude = exclude;
-   }
-
-   public boolean isManyToMany()
-   {
-      return REL_MANY_TO_MANY.equalsIgnoreCase(type);
-   }
-
-   public boolean isManyToOne()
-   {
-      return REL_MANY_TO_ONE.equalsIgnoreCase(type);
-   }
-
-   public boolean isOneToMany()
-   {
-      return REL_ONE_TO_MANY.equalsIgnoreCase(type);
-   }
-
-   /**
-    * @return the name
-    */
-   public String getName()
-   {
-      return name;
-   }
-
-   /**
-    * @param name the name to set
-    */
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
-   /**
-    * @return the hint
-    */
-   public String getHint()
-   {
-      return hint;
-   }
-
-   public String toString()
-   {
-      return getName() + " : " + getHint();
-   }
-
-   /**
-    * @param hint the hint to set
-    */
-   public void setHint(String hint)
-   {
-      this.hint = hint;
-   }
-
-   /**
-    * @return the type
-    */
-   public String getType()
-   {
-      return type;
-   }
-
-   /**
-    * @param type the type to set
-    */
-   public void setType(String type)
-   {
-      this.type = type;
-   }
-
-   /**
-    * @return the fkCol1
-    */
-   public Column getFkCol1()
-   {
-      return fkCol1;
-   }
-
-   /**
-    * @param fkCol1 the fkCol1 to set
-    */
-   public void setFkCol1(Column fkCol1)
-   {
-      this.fkCol1 = fkCol1;
-   }
-
-   /**
-    * @return the fkCol2
-    */
-   public Column getFkCol2()
-   {
-      return fkCol2;
-   }
-
-   /**
-    * @param fkCol2 the fkCol2 to set
-    */
-   public void setFkCol2(Column fkCol2)
-   {
-      this.fkCol2 = fkCol2;
    }
 
    /**

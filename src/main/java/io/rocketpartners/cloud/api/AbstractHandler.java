@@ -13,15 +13,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.api.handler;
+package io.rocketpartners.cloud.api;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import io.rocketpartners.cloud.api.Chain;
-import io.rocketpartners.cloud.api.Handler;
-import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.J;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;

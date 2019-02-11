@@ -31,9 +31,9 @@ import io.rocketpartners.cloud.api.service.Service;
  * @author kfrankic
  *
  */
-public class ElasticDbRestHandler implements Handler
+public class ElasticsearchRestHandler implements Handler
 {
-   ElasticDbGetHandler    get    = new ElasticDbGetHandler();
+   ElasticsearchGetHandler    get    = new ElasticsearchGetHandler();
 //   ElasticDbDeleteHandler delete = new ElasticDbDeleteHandler();
 //   ElasticDbPostHandler   post   = new ElasticDbPostHandler();
 
@@ -59,7 +59,7 @@ public class ElasticDbRestHandler implements Handler
       }
    }
 
-   public void setGet(ElasticDbGetHandler get)
+   public void setGet(ElasticsearchGetHandler get)
    {
       this.get = get;
    }

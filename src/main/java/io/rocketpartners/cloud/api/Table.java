@@ -15,188 +15,23 @@
  */
 package io.rocketpartners.cloud.api;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import io.rocketpartners.db.Index;
 
-public class Table extends Dto
+public class Table<D extends Db, C extends Column, I extends Index> extends io.rocketpartners.db.Table<D, C, I>
 {
-   Db                db          = null;
-   String            name        = null;
-   ArrayList<Column> columns     = new ArrayList();
-   ArrayList<Index>  indexes     = new ArrayList();
-
-   /**
-    * Set to true if this is a two column
-    * table where both columns are foreign
-    * keys.  Means this is the link table
-    * in a MANY_TO_MANY relationship
-    */
-   boolean           linkTbl     = false;
-
-   /**
-    * Set to a colunn matching a name
-    * in ApiService.DELETED_FLAGS. If
-    * exists, rows won't be deleted
-    * only marked as deletedFlag = true.
-    * Additionally deletedFlag = true
-    * columns won't be returned
-    * in gets unless the matching
-    * attribute is specifically set to
-    * true in as a query parameter
-    */
-   Column            deletedFlag = null;
-
    /**
     * Set to true to completely exclude from API.
     */
-   boolean           exclude     = false;
+   boolean exclude = false;
 
    public Table()
    {
       super();
    }
 
-   public Table(Db db, String name)
+   public Table(D db, String name)
    {
-      super();
-      this.db = db;
-      this.name = name;
-   }
-
-   /**
-    * @return the linkTbl
-    */
-   public boolean isLinkTbl()
-   {
-      return linkTbl;
-   }
-
-   /**
-    * @param linkTbl the linkTbl to set
-    */
-   public void setLinkTbl(boolean linkTbl)
-   {
-      this.linkTbl = linkTbl;
-   }
-
-   public Column getColumn(String name)
-   {
-      for (Column col : columns)
-      {
-         if (name.equalsIgnoreCase(col.getName()))
-            return col;
-      }
-      return null;
-   }
-
-   public String toString()
-   {
-      return name != null ? name : super.toString();
-   }
-
-   /**
-    * @return the db
-    */
-   public Db getDb()
-   {
-      return db;
-   }
-
-   /**
-    * @param db the db to set
-    */
-   public void setDb(Db db)
-   {
-      this.db = db;
-   }
-
-   /**
-    * @return the name
-    */
-   public String getName()
-   {
-      return name;
-   }
-
-   /**
-    * @param name the name to set
-    */
-   public void setName(String name)
-   {
-      this.name = name;
-   }
-
-   /**
-    * @return the columns
-    */
-   public List<Column> getColumns()
-   {
-      ArrayList cols = new ArrayList(columns);
-      Collections.sort(cols);
-      return cols;
-   }
-
-   /**
-    * @param columns the columns to set
-    */
-   public void setColumns(List<Column> cols)
-   {
-      this.columns.clear();
-      for (Column col : cols)
-         addColumn(col);
-   }
-
-   public void addColumn(Column column)
-   {
-      if (column != null && !columns.contains(column))
-         columns.add(column);
-
-   }
-
-   public void removeColumn(Column column)
-   {
-      columns.remove(column);
-   }
-
-   public ArrayList<Index> getIndexes()
-   {
-      return new ArrayList(indexes);
-   }
-
-   public void setIndexes(ArrayList<Index> indexes)
-   {
-      this.indexes.clear();
-      for (Index index : indexes)
-         addIndex(index);
-   }
-
-   public void addIndex(Index index)
-   {
-      if (index != null && !indexes.contains(index))
-         indexes.add(index);
-
-   }
-
-   public void removeIndex(Index index)
-   {
-      indexes.remove(index);
-   }
-
-   /**
-    * @return the deletedFlag
-    */
-   public Column getDeletedFlag()
-   {
-      return deletedFlag;
-   }
-
-   /**
-    * @param deletedFlag the deletedFlag to set
-    */
-   public void setDeletedFlag(Column deletedFlag)
-   {
-      this.deletedFlag = deletedFlag;
+      super(db, name);
    }
 
    public boolean isExclude()

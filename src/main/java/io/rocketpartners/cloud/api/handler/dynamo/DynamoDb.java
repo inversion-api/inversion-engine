@@ -15,7 +15,6 @@
  */
 package io.rocketpartners.cloud.api.handler.dynamo;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,41 +31,32 @@ import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rocketpartners.J;
-import io.rocketpartners.cloud.api.Api;
-import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
 import io.rocketpartners.cloud.api.Column;
 import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Index;
-import io.rocketpartners.cloud.api.SC;
 import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.rql.Parser;
-import io.rocketpartners.cloud.rql.Predicate;
-import io.rocketpartners.cloud.rql.dynamo.DynamoRql;
+import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbColumn;
+import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbIndex;
+import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbTable;
+import io.rocketpartners.db.Index;
 
-public class DynamoDb extends Db
+public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, DynamoDbIndex>
 {
-   public static final String PRIMARY_INDEX         = "Primary Index";
-
-   public static final String PRIMARY_TYPE          = "primary";
-   public static final String LOCAL_SECONDARY_TYPE  = "localsecondary";
-   public static final String GLOBAL_SECONDARY_TYPE = "globalsecondary";
 
    static
    {
       try
       {
          //bootstraps the DynamoRql type
-         Class.forName(DynamoRql.class.getName());
+         Class.forName(DynamoDbRql.class.getName());
       }
       catch (Exception ex)
       {
@@ -128,7 +118,7 @@ public class DynamoDb extends Db
                tableName = arr[1];
             }
 
-            Table table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
+            DynamoDbTable table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
             Entity entity = buildEntity(collectionName, table);
 
             addTable(table);
@@ -144,10 +134,10 @@ public class DynamoDb extends Db
 
    }
 
-   Table buildTable(String tableName, String[] bluePrintArr, AmazonDynamoDB dynamoClient)
+   DynamoDbTable buildTable(String tableName, String[] bluePrintArr, AmazonDynamoDB dynamoClient)
    {
 
-      Table table = new Table(this, tableName);
+      DynamoDbTable table = new DynamoDbTable(this, tableName);
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = dynamoDB.getTable(tableName);
@@ -209,7 +199,7 @@ public class DynamoDb extends Db
 
       if (bluePrintMap != null)
       {
-         DynamoIndex index = new DynamoIndex(table, PRIMARY_INDEX, PRIMARY_TYPE);
+         DynamoDbIndex index = new DynamoDbIndex(table, DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
 
          int columnNumber = 0;
          for (String k : bluePrintMap.keySet())
@@ -222,7 +212,7 @@ public class DynamoDb extends Db
                nullable = false; // keys are not nullable
             }
 
-            Column column = new Column(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
+            DynamoDbColumn column = new DynamoDbColumn(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
 
             if (pk.equals(k))
             {
@@ -248,7 +238,7 @@ public class DynamoDb extends Db
       {
          for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
          {
-            addTableIndex(GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
+            addTableIndex(DynamoDbIndex.GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
          }
       }
 
@@ -256,7 +246,7 @@ public class DynamoDb extends Db
       {
          for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
          {
-            addTableIndex(LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
+            addTableIndex(DynamoDbIndex.LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
          }
       }
 
@@ -264,15 +254,14 @@ public class DynamoDb extends Db
 
    }
 
-   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
+   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, DynamoDbTable table)
    {
-      DynamoIndex index = new DynamoIndex(table, indexName, type);
+      DynamoDbIndex index = new DynamoDbIndex(table, indexName, type);
 
       for (KeySchemaElement keyInfo : keySchemaList)
       {
-         Column column = table.getColumns().stream()//
-                              .filter(c -> c.getName().equals(keyInfo.getAttributeName()))//
-                              .findFirst().orElse(null);
+         Column column = table.getColumn(keyInfo.getAttributeName());
+
          index.addColumn(column);
 
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
@@ -289,7 +278,7 @@ public class DynamoDb extends Db
       table.addIndex(index);
    }
 
-   Entity buildEntity(String collectionName, Table table)
+   Entity buildEntity(String collectionName, DynamoDbTable table)
    {
       Entity entity = new Entity();
       Collection collection = new Collection();
@@ -305,11 +294,11 @@ public class DynamoDb extends Db
 
       collection.setName(collectionName);
 
-      DynamoIndex index = findIndexByName(table, PRIMARY_INDEX);
+      DynamoDbIndex index = findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
       String pk = index.getPartitionKey();
       String sk = index.getSortKey();
 
-      for (Column col : table.getColumns())
+      for (DynamoDbColumn col : table.getColumns())
       {
          Attribute attr = new Attribute();
          attr.setEntity(entity);
@@ -353,11 +342,11 @@ public class DynamoDb extends Db
       return new DynamoDB(getDynamoClient()).getTable(tableName);
    }
 
-   public static DynamoIndex findIndexByName(Table table, String name)
+   public static DynamoDbIndex findIndexByName(Table table, String name)
    {
       if (table != null && table.getIndexes() != null)
       {
-         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
+         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
          {
             if (index.getName().equals(name))
             {
@@ -368,66 +357,66 @@ public class DynamoDb extends Db
       return null;
    }
 
-   public static List<DynamoIndex> findIndexesByType(Table table, String type)
-   {
-      List<DynamoIndex> l = new ArrayList<DynamoIndex>();
+   //   public static List<DynamoDbIndex> findIndexesByType(Table table, String type)
+   //   {
+   //      List<DynamoDbIndex> l = new ArrayList<DynamoDbIndex>();
+   //
+   //      if (table != null && table.getIndexes() != null)
+   //      {
+   //         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
+   //         {
+   //            if (index.getType().equals(type))
+   //            {
+   //               l.add(index);
+   //            }
+   //         }
+   //      }
+   //      return l;
+   //   }
 
-      if (table != null && table.getIndexes() != null)
-      {
-         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
-         {
-            if (index.getType().equals(type))
-            {
-               l.add(index);
-            }
-         }
-      }
-      return l;
-   }
+   //   public static DynamoDbIndex findIndexByColumnName(Table table, String colName)
+   //   {
+   //      if (table != null && table.getIndexes() != null)
+   //      {
+   //         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
+   //         {
+   //            if (!index.getColumns().isEmpty())
+   //            {
+   //               for (Column column : index.getColumns())
+   //               {
+   //                  if (column.getName().equalsIgnoreCase(colName))
+   //                  {
+   //                     return index;
+   //                  }
+   //               }
+   //            }
+   //         }
+   //      }
+   //      return null;
+   //   }
 
-   public static DynamoIndex findIndexByColumnName(Table table, String colName)
-   {
-      if (table != null && table.getIndexes() != null)
-      {
-         for (DynamoIndex index : (List<DynamoIndex>) (List<?>) table.getIndexes())
-         {
-            if (!index.getColumns().isEmpty())
-            {
-               for (Column column : index.getColumns())
-               {
-                  if (column.getName().equalsIgnoreCase(colName))
-                  {
-                     return index;
-                  }
-               }
-            }
-         }
-      }
-      return null;
-   }
-
-   public static DynamoIndex findIndexByTypeAndColumnName(Table table, String typeName, String colName)
-   {
-      if (table != null)
-      {
-         List<DynamoIndex> list = findIndexesByType(table, typeName);
-         for (DynamoIndex index : list)
-         {
-            if (!index.getColumns().isEmpty())
-            {
-               for (Column column : index.getColumns())
-               {
-                  if (column.getName().equalsIgnoreCase(colName))
-                  {
-                     return index;
-                  }
-               }
-            }
-         }
-      }
-
-      return null;
-   }
+   //   public static DynamoDbIndex findIndexByTypeAndColumnName(Table table, String typeName, String colName)
+   //   {
+   //      if (table != null)
+   //      {
+   //         List<DynamoDbIndex> list = findIndexesByType(table, typeName);
+   //         for (DynamoDbIndex index : list)
+   //         {
+   //            if (!index.getColumns().isEmpty())
+   //            {
+   //               for (Column column : index.getColumns())
+   //               {
+   //                  if (column.getName().equalsIgnoreCase(colName))
+   //                  {
+   //                     return index;
+   //                  }
+   //               }
+   //            }
+   //         }
+   //      }
+   //
+   //      return null;
+   //   }
 
    /*
     * These match the string that dynamo uses for these types.
@@ -449,84 +438,64 @@ public class DynamoDb extends Db
       }
    }
 
-   public static Object cast(String value, String colName, Table table)
-   {
-      Column col = table.getColumn(colName);
+   //   public static String attributeValueAsString(AttributeValue attr, String colName, Table table)
+   //   {
+   //      Column col = table.getColumn(colName);
+   //
+   //      if (col != null)
+   //      {
+   //         switch (col.getType())
+   //         {
+   //            case "N":
+   //               return attr.getN();
+   //
+   //            case "BOOL":
+   //               return attr.getBOOL().toString();
+   //
+   //         }
+   //      }
+   //
+   //      return attr.getS();
+   //   }
 
-      if (col != null)
-      {
-         switch (col.getType())
-         {
-            case "N":
-               return Long.parseLong(value);
-
-            case "BOOL":
-               return Boolean.parseBoolean(value);
-
-         }
-      }
-
-      return Parser.dequote(value);
-   }
-
-   public static String attributeValueAsString(AttributeValue attr, String colName, Table table)
-   {
-      Column col = table.getColumn(colName);
-
-      if (col != null)
-      {
-         switch (col.getType())
-         {
-            case "N":
-               return attr.getN();
-
-            case "BOOL":
-               return attr.getBOOL().toString();
-
-         }
-      }
-
-      return attr.getS();
-   }
-
-   public static RangeKeyCondition predicateToRangeKeyCondition(Predicate pred, Table table)
-   {
-      String name = pred.getTerms().get(0).getToken();
-      Object val = DynamoDb.cast((String) pred.getTerms().get(1).getToken(), name, table);
-
-      RangeKeyCondition rkc = new RangeKeyCondition(name);
-      switch (pred.getToken())
-      {
-         case "eq":
-            rkc.eq(val);
-            break;
-
-         case "gt":
-            rkc.gt(val);
-            break;
-
-         case "ge":
-            rkc.ge(val);
-            break;
-
-         case "lt":
-            rkc.lt(val);
-            break;
-
-         case "le":
-            rkc.le(val);
-            break;
-
-         case "sw":
-            rkc.beginsWith((String) val);
-            break;
-
-         default :
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Operator '" + pred.getToken() + "' is not supported for a dynamo range key condition");
-      }
-
-      return rkc;
-   }
+   //   public static RangeKeyCondition predicateToRangeKeyCondition(Predicate pred, Table table)
+   //   {
+   //      String name = pred.getTerms().get(0).getToken();
+   //      Object val = DynamoDb.cast((String) pred.getTerms().get(1).getToken(), name, table);
+   //
+   //      RangeKeyCondition rkc = new RangeKeyCondition(name);
+   //      switch (pred.getToken())
+   //      {
+   //         case "eq":
+   //            rkc.eq(val);
+   //            break;
+   //
+   //         case "gt":
+   //            rkc.gt(val);
+   //            break;
+   //
+   //         case "ge":
+   //            rkc.ge(val);
+   //            break;
+   //
+   //         case "lt":
+   //            rkc.lt(val);
+   //            break;
+   //
+   //         case "le":
+   //            rkc.le(val);
+   //            break;
+   //
+   //         case "sw":
+   //            rkc.beginsWith((String) val);
+   //            break;
+   //
+   //         default :
+   //            throw new ApiException(SC.SC_400_BAD_REQUEST, "Operator '" + pred.getToken() + "' is not supported for a dynamo range key condition");
+   //      }
+   //
+   //      return rkc;
+   //   }
 
    public void setIncludeTables(String includeTables)
    {
@@ -549,44 +518,136 @@ public class DynamoDb extends Db
       return this.getClass().getSimpleName() + " - " + this.getName() + " - " + this.getTables();
    }
 
-   public String verboseToString()
+   //   public String verboseToString()
+   //   {
+   //      String s = "";
+   //      s = s + this.getName() + "\n";
+   //      s = s + this.getApi().getAccountCode() + "/" + this.getApi().getApiCode() + "\n";
+   //      for (Table table : this.getTables())
+   //      {
+   //         s = s + "TABLE:     " + table.getName() + "\n";
+   //         for (Column column : table.getColumns())
+   //         {
+   //            s = s + " > COLUMN: " + column.getName() + " (" + column.getType() + ")\n";
+   //         }
+   //         for (Index index : table.getIndexes())
+   //         {
+   //            s = s + " > INDEX:  " + index.getName() + " (" + index.getType() + " / " + index.getColumns() + ")\n";
+   //         }
+   //      }
+   //
+   //      return s;
+   //   }
+
+   //   public static void main(String[] args)
+   //   {
+   //      try
+   //      {
+   //         DynamoDb dynamoDb = new DynamoDb();
+   //         dynamoDb.setIncludeTables("promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev,tim-test");
+   //
+   //         Api api = new Api();
+   //         dynamoDb.setApi(api);
+   //         dynamoDb.bootstrapApi();
+   //
+   //         System.out.println(dynamoDb.verboseToString());
+   //      }
+   //      catch (Exception e)
+   //      {
+   //         e.printStackTrace();
+   //      }
+   //   }
+
+   public static class DynamoDbTable extends Table<DynamoDb, DynamoDbColumn, DynamoDbIndex>
    {
-      String s = "";
-      s = s + this.getName() + "\n";
-      s = s + this.getApi().getAccountCode() + "/" + this.getApi().getApiCode() + "\n";
-      for (Table table : this.getTables())
+      public DynamoDbTable()
       {
-         s = s + "TABLE:     " + table.getName() + "\n";
-         for (Column column : table.getColumns())
-         {
-            s = s + " > COLUMN: " + column.getName() + " (" + column.getType() + ")\n";
-         }
-         for (Index index : table.getIndexes())
-         {
-            s = s + " > INDEX:  " + index.getName() + " (" + index.getType() + " / " + index.getColumns() + ")\n";
-         }
+         super();
       }
 
-      return s;
+      public DynamoDbTable(DynamoDb db, String name)
+      {
+         super(db, name);
+      }
    }
 
-   public static void main(String[] args)
+   public static class DynamoDbColumn extends Column<DynamoDbTable, DynamoDbColumn>
    {
-      try
+      public DynamoDbColumn(DynamoDbTable table, int number, String name, String type, boolean nullable)
       {
-         DynamoDb dynamoDb = new DynamoDb();
-         dynamoDb.setIncludeTables("promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev,tim-test");
-
-         Api api = new Api();
-         dynamoDb.setApi(api);
-         dynamoDb.bootstrapApi();
-
-         System.out.println(dynamoDb.verboseToString());
+         super(table, number, name, type, nullable);
       }
-      catch (Exception e)
+   }
+
+   /**
+    * Used to keep track of Partition and Sort keys for a dynamo index.
+    * 
+    * @author kfrankic
+    *
+    */
+   public static class DynamoDbIndex extends Index
+   {
+      public static final String PRIMARY_INDEX         = "Primary Index";
+
+      public static final String PRIMARY_TYPE          = "primary";
+      public static final String LOCAL_SECONDARY_TYPE  = "localsecondary";
+      public static final String GLOBAL_SECONDARY_TYPE = "globalsecondary";
+
+      protected String           partitionKey          = null;
+      protected String           sortKey               = null;
+
+      public DynamoDbIndex()
       {
-         e.printStackTrace();
+         super();
       }
+
+      public boolean isLocalIndex()
+      {
+         return LOCAL_SECONDARY_TYPE.equalsIgnoreCase(type);
+      }
+
+      public boolean isPrimaryIndex()
+      {
+         return PRIMARY_TYPE.equalsIgnoreCase(type);
+      }
+
+      public boolean isGlobalSecondary()
+      {
+         return !isLocalIndex() && !isPrimaryIndex();
+      }
+
+      public DynamoDbIndex(Table table, String name, String type)
+      {
+         super(table, name, type);
+      }
+
+      public DynamoDbIndex(Table table, String name, String type, String pk, String sk)
+      {
+         super(table, name, type);
+         this.partitionKey = pk;
+         this.sortKey = sk;
+      }
+
+      public String getPartitionKey()
+      {
+         return partitionKey;
+      }
+
+      public void setPartitionKey(String partitionKey)
+      {
+         this.partitionKey = partitionKey;
+      }
+
+      public String getSortKey()
+      {
+         return sortKey;
+      }
+
+      public void setSortKey(String sortKey)
+      {
+         this.sortKey = sortKey;
+      }
+
    }
 
 }

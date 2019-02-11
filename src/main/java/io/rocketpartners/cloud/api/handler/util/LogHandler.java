@@ -24,7 +24,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.sql.Sql;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.cloud.api.Action;
@@ -38,6 +37,7 @@ import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.handler.sql.SqlDb;
 import io.rocketpartners.cloud.api.service.Service;
 import io.rocketpartners.cloud.utils.CaseInsensitiveSet;
+import io.rocketpartners.db.Sql;
 
 public class LogHandler implements Handler
 {
