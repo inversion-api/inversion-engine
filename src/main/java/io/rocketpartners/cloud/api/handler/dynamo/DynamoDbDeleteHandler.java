@@ -33,7 +33,8 @@ import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Table;
+import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.api.service.Service;
 
 /**
@@ -50,7 +51,7 @@ public class DynamoDbDeleteHandler extends DynamoDbHandler
       Table table = collection.getEntity().getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
-      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDb.PRIMARY_INDEX);
+      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
       String pk = dynamoIdx.getPartitionKey();
       String sk = dynamoIdx.getSortKey();
       boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());

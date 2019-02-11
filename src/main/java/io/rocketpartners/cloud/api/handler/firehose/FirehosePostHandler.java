@@ -24,7 +24,7 @@ import io.rocketpartners.cloud.api.Handler;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.cloud.api.service.Service;
 
 /**

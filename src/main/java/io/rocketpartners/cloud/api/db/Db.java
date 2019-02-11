@@ -13,15 +13,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.api;
+package io.rocketpartners.cloud.api.db;
 
 import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.db.Index;
+import io.rocketpartners.cloud.api.Api;
 
-public abstract class Db<D extends Db, T extends Table, C extends Column, I extends Index> extends io.rocketpartners.db.Db
+public abstract class Db extends io.rocketpartners.db.Db<Db, Table, Column, Index>
 {
    protected Api    api       = null;
 

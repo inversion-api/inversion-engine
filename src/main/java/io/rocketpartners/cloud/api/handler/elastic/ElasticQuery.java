@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.rocketpartners.db.Table;
 import io.rocketpartners.fluent.Term;
 import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.rql.Group;
@@ -35,8 +36,8 @@ import io.rocketpartners.rql.Where;
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // only include non-null values.
-@JsonInclude(Include.NON_NULL)
-public class ElasticQuery extends Query<ElasticQuery, ElasticQuery, Select<Select<Select, ElasticQuery>, ElasticQuery>, Where<Where<Where, ElasticQuery>, ElasticQuery>, Group<Group<Group, ElasticQuery>, ElasticQuery>, Order<Order<Order, ElasticQuery>, ElasticQuery>, Page<Page<Page, ElasticQuery>, ElasticQuery>>
+
+public class ElasticQuery extends Query<Table, ElasticQuery, ElasticQuery, Select<Select<Select, ElasticQuery>, ElasticQuery>, Where<Where<Where, ElasticQuery>, ElasticQuery>, Group<Group<Group, ElasticQuery>, ElasticQuery>, Order<Order<Order, ElasticQuery>, ElasticQuery>, Page<Page<Page, ElasticQuery>, ElasticQuery>>
 {
    // identifies a nested path
    @JsonIgnore
@@ -54,6 +55,11 @@ public class ElasticQuery extends Query<ElasticQuery, ElasticQuery, Select<Selec
    //   private List<String> source;
    //
    //   private List<String> excludes;
+
+   public ElasticQuery(Table table)
+   {
+      super(table);
+   }
 
    protected ElasticPage createPage()
    {

@@ -39,16 +39,13 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import io.rocketpartners.J;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Column;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbColumn;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbIndex;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbTable;
-import io.rocketpartners.db.Index;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Index;
+import io.rocketpartners.cloud.api.db.Table;
 
-public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, DynamoDbIndex>
+public class DynamoDb extends Db
 {
 
    static
@@ -118,7 +115,7 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
                tableName = arr[1];
             }
 
-            DynamoDbTable table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
+            Table table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
             Entity entity = buildEntity(collectionName, table);
 
             addTable(table);
@@ -134,10 +131,10 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
 
    }
 
-   DynamoDbTable buildTable(String tableName, String[] bluePrintArr, AmazonDynamoDB dynamoClient)
+   Table buildTable(String tableName, String[] bluePrintArr, AmazonDynamoDB dynamoClient)
    {
 
-      DynamoDbTable table = new DynamoDbTable(this, tableName);
+      Table table = new Table(this, tableName);
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = dynamoDB.getTable(tableName);
@@ -212,7 +209,7 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
                nullable = false; // keys are not nullable
             }
 
-            DynamoDbColumn column = new DynamoDbColumn(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
+            Column column = new Column(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
 
             if (pk.equals(k))
             {
@@ -254,7 +251,7 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
 
    }
 
-   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, DynamoDbTable table)
+   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
    {
       DynamoDbIndex index = new DynamoDbIndex(table, indexName, type);
 
@@ -278,12 +275,12 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
       table.addIndex(index);
    }
 
-   Entity buildEntity(String collectionName, DynamoDbTable table)
+   Entity buildEntity(String collectionName, Table table)
    {
       Entity entity = new Entity();
       Collection collection = new Collection();
 
-      entity.setTbl(table);
+      entity.setTable(table);
       entity.setHint(table.getName());
       entity.setCollection(collection);
 
@@ -298,7 +295,7 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
       String pk = index.getPartitionKey();
       String sk = index.getSortKey();
 
-      for (DynamoDbColumn col : table.getColumns())
+      for (Column col : table.getColumns())
       {
          Attribute attr = new Attribute();
          attr.setEntity(entity);
@@ -557,27 +554,27 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
    //         e.printStackTrace();
    //      }
    //   }
-
-   public static class DynamoDbTable extends Table<DynamoDb, DynamoDbColumn, DynamoDbIndex>
-   {
-      public DynamoDbTable()
-      {
-         super();
-      }
-
-      public DynamoDbTable(DynamoDb db, String name)
-      {
-         super(db, name);
-      }
-   }
-
-   public static class DynamoDbColumn extends Column<DynamoDbTable, DynamoDbColumn>
-   {
-      public DynamoDbColumn(DynamoDbTable table, int number, String name, String type, boolean nullable)
-      {
-         super(table, number, name, type, nullable);
-      }
-   }
+   //
+   //   public static class DynamoDbTable extends Table<DynamoDb, DynamoDbColumn, DynamoDbIndex>
+   //   {
+   //      public DynamoDbTable()
+   //      {
+   //         super();
+   //      }
+   //
+   //      public DynamoDbTable(DynamoDb db, String name)
+   //      {
+   //         super(db, name);
+   //      }
+   //   }
+   //
+   //   public static class DynamoDbColumn extends Column<DynamoDbTable, DynamoDbColumn>
+   //   {
+   //      public DynamoDbColumn(DynamoDbTable table, int number, String name, String type, boolean nullable)
+   //      {
+   //         super(table, number, name, type, nullable);
+   //      }
+   //   }
 
    /**
     * Used to keep track of Partition and Sort keys for a dynamo index.
@@ -601,6 +598,18 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
          super();
       }
 
+      public DynamoDbIndex(Table table, String name, String type)
+      {
+         super(table, name, type);
+      }
+
+      public DynamoDbIndex(Table table, String name, String type, String pk, String sk)
+      {
+         super(table, name, type);
+         this.partitionKey = pk;
+         this.sortKey = sk;
+      }
+
       public boolean isLocalIndex()
       {
          return LOCAL_SECONDARY_TYPE.equalsIgnoreCase(type);
@@ -614,18 +623,6 @@ public class DynamoDb extends Db<DynamoDb, DynamoDbTable, DynamoDbColumn, Dynamo
       public boolean isGlobalSecondary()
       {
          return !isLocalIndex() && !isPrimaryIndex();
-      }
-
-      public DynamoDbIndex(Table table, String name, String type)
-      {
-         super(table, name, type);
-      }
-
-      public DynamoDbIndex(Table table, String name, String type, String pk, String sk)
-      {
-         super(table, name, type);
-         this.partitionKey = pk;
-         this.sortKey = sk;
       }
 
       public String getPartitionKey()

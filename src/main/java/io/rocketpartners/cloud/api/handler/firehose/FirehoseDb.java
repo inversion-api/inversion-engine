@@ -10,9 +10,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.rocketpartners.J;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Table;
 
 public class FirehoseDb extends Db
 {
@@ -63,7 +63,7 @@ public class FirehoseDb extends Db
             collection.setName(collectionName);
 
             Entity entity = new Entity();
-            entity.setTbl(table);
+            entity.setTable(table);
             entity.setHint(table.getName());
             entity.setCollection(collection);
 

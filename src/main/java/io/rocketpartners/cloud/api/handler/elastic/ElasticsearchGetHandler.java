@@ -16,15 +16,12 @@
 package io.rocketpartners.cloud.api.handler.elastic;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
@@ -36,7 +33,7 @@ import io.rocketpartners.cloud.api.Handler;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.cloud.api.service.Service;
 import io.rocketpartners.rest.JS;
 import io.rocketpartners.rest.JSArray;
@@ -103,7 +100,7 @@ public class ElasticsearchGetHandler implements Handler
       }
 
       ElasticRql elasticRQL = (ElasticRql) Rql.getRql(db.getType());
-      ElasticQuery elasticQ = elasticRQL.build(req.getParams());
+      ElasticQuery elasticQ = elasticRQL.buildQuery(table, req.getParams());
 
       //      Integer wantedPage = null;
       //      if (req.getParam("wantedpage") != null)

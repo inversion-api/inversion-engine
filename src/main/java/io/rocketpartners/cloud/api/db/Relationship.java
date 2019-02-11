@@ -13,9 +13,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.api;
+package io.rocketpartners.cloud.api.db;
 
-public class Relationship<C extends Column> extends io.rocketpartners.db.Relationship<C>
+import io.rocketpartners.cloud.api.Entity;
+
+//public class Relationship<C extends Column<Table<Db, Column<Table, Column>, Index>, Column<Table, Column>>> extends io.rocketpartners.db.Relationship<C>
+//public class Relationship extends io.rocketpartners.db.Relationship<Column<Table,Column<Table, Column>>>
+//public class Relationship extends io.rocketpartners.db.Relationship<Column<Table,Column<Table, Column>>>
+public class Relationship extends io.rocketpartners.db.Relationship<Column>
 {
    public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";

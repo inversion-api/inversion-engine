@@ -33,17 +33,20 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Column;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Relationship;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Relationship;
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.db.Sql;
 import io.rocketpartners.rql.sql.SqlRql;
 
+// public class SqlDb extends Db<SqlDb, SqlDbTable, SqlDbColumn, SqlDbIndex>
 public class SqlDb extends Db
 {
+   //<D extends Db, T extends Table, C extends Column, I extends Index> extends io.rocketpartners.db.Db
+
    static
    {
       try
@@ -413,7 +416,7 @@ public class SqlDb extends Db
          collection.setName(collectionName);
 
          Entity entity = new Entity();
-         entity.setTbl(t);
+         entity.setTable(t);
          entity.setHint(t.getName());
 
          entity.setCollection(collection);
@@ -641,5 +644,49 @@ public class SqlDb extends Db
    {
       this.calcRowsFound = calcRowsFound;
    }
+
+   //   public static class SqlDbTable extends Table<SqlDb, SqlDbColumn, SqlDbIndex>
+   //   {
+   //      public SqlDbTable()
+   //      {
+   //         super();
+   //      }
+   //
+   //      public SqlDbTable(SqlDb db, String name)
+   //      {
+   //         super(db, name);
+   //      }
+   //   }
+   //
+   //   public static class SqlDbRelationship extends Relationship<SqlDbColumn>
+   //   {
+   //   }
+   //
+   //   public static class SqlDbColumn extends Column<SqlDbTable, SqlDbColumn>
+   //   {
+   //      public SqlDbColumn(SqlDbTable table, int number, String name, String type, boolean nullable)
+   //      {
+   //         super(table, number, name, type, nullable);
+   //      }
+   //   }
+   //
+   //   /**
+   //    * Used to keep track of Partition and Sort keys for a dynamo index.
+   //    * 
+   //    * @author kfrankic
+   //    *
+   //    */
+   //   public static class SqlDbIndex extends Index<SqlDbTable, SqlDbColumn>
+   //   {
+   //      public SqlDbIndex()
+   //      {
+   //         super();
+   //      }
+   //
+   //      public SqlDbIndex(SqlDbTable table, String name, String type)
+   //      {
+   //         super(table, name, type);
+   //      }
+   //   }
 
 }

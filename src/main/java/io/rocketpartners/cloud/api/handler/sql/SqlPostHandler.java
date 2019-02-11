@@ -36,13 +36,13 @@ import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Chain;
 import io.rocketpartners.cloud.api.Change;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Column;
 import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Relationship;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Relationship;
 import io.rocketpartners.cloud.api.service.Service;
 import io.rocketpartners.db.Sql;
 

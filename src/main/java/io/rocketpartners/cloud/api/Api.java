@@ -20,6 +20,9 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Table;
+
 public class Api extends Dto
 {
    protected String           name        = null;

@@ -18,7 +18,10 @@ package io.rocketpartners.cloud.api;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Entity extends Dto
+import io.rocketpartners.cloud.api.db.Relationship;
+import io.rocketpartners.cloud.api.db.Table;
+
+public class Entity
 {
    Table                   table         = null;
    Collection              collection    = null;
@@ -36,7 +39,7 @@ public class Entity extends Dto
 
    public Entity(Table table)
    {
-      setTbl(table);
+      setTable(table);
    }
 
    public boolean isExclude()
@@ -97,7 +100,7 @@ public class Entity extends Dto
    /**
     * @param tbl the tbl to set
     */
-   public void setTbl(Table tbl)
+   public void setTable(Table tbl)
    {
       this.table = tbl;
    }

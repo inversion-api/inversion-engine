@@ -18,11 +18,9 @@ import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.J;
-import io.rocketpartners.cloud.api.Table;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbColumn;
 import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbIndex;
-import io.rocketpartners.cloud.api.handler.dynamo.DynamoDb.DynamoDbTable;
 import io.rocketpartners.db.Rows;
+import io.rocketpartners.db.Table;
 import io.rocketpartners.fluent.Term;
 import io.rocketpartners.rql.Group;
 import io.rocketpartners.rql.Order;
@@ -30,7 +28,6 @@ import io.rocketpartners.rql.Page;
 import io.rocketpartners.rql.Query;
 import io.rocketpartners.rql.Select;
 import io.rocketpartners.rql.Where;
-import io.rocketpartners.rql.sql.SqlQuery;
 
 /**
  * @author tc-rocket
@@ -41,7 +38,7 @@ import io.rocketpartners.rql.sql.SqlQuery;
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
  * 
  */
-public class DynamoDbQuery extends Query<Table<DynamoDb, DynamoDbColumn, DynamoDbIndex>, DynamoDbQuery, SqlQuery, Select<Select<Select, DynamoDbQuery>, SqlQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
+public class DynamoDbQuery extends Query<Table, DynamoDbQuery, DynamoDbQuery, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
 {
 
    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
@@ -66,7 +63,7 @@ public class DynamoDbQuery extends Query<Table<DynamoDb, DynamoDbColumn, DynamoD
    Term          partKey = null;
    Term          sortKey = null;
 
-   public DynamoDbQuery(DynamoDbTable table)
+   public DynamoDbQuery(Table table)
    {
       super(table);
       where().clearTokens();
@@ -359,7 +356,7 @@ public class DynamoDbQuery extends Query<Table<DynamoDb, DynamoDbColumn, DynamoD
       return value;
    }
 
-   static class DynamoResult extends Rows
+   public static class DynamoResult extends Rows
    {
       Map<String, AttributeValue> lastKey;
 

@@ -33,11 +33,11 @@ import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Chain;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
+import io.rocketpartners.cloud.api.db.Db;
 import io.rocketpartners.cloud.api.handler.sql.SqlDb.ConnectionLocal;
 
 public class Service

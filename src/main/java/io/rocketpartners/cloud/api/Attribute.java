@@ -15,6 +15,8 @@
  */
 package io.rocketpartners.cloud.api;
 
+import io.rocketpartners.cloud.api.db.Column;
+
 public class Attribute extends Dto
 {
    Entity  entity  = null;

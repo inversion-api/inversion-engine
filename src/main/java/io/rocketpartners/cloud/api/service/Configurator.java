@@ -35,24 +35,24 @@ import java.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.rocketpartners.J;
 import io.rocketpartners.cloud.api.AclRule;
 import io.rocketpartners.cloud.api.Action;
 import io.rocketpartners.cloud.api.Api;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Column;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Index;
-import io.rocketpartners.cloud.api.Relationship;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Index;
+import io.rocketpartners.cloud.api.db.Relationship;
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.cloud.utils.AutoWire;
 import io.rocketpartners.cloud.utils.AutoWire.Includer;
 import io.rocketpartners.cloud.utils.AutoWire.Namer;
-import io.rocketpartners.J;
 
 public class Configurator
 {
@@ -185,19 +185,19 @@ public class Configurator
                file.getParentFile().mkdirs();
                BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
-               Properties sorted = new Properties() {
-                 
-                  public Enumeration keys()
+               Properties sorted = new Properties()
                   {
-                     Vector v = new Vector(AutoWire.sort(keySet()));
-                     return v.elements();
-                  }
-               };
-               
+
+                     public Enumeration keys()
+                     {
+                        Vector v = new Vector(AutoWire.sort(keySet()));
+                        return v.elements();
+                     }
+                  };
+
                sorted.putAll(autoProps);
                autoProps = sorted;
-               
-               
+
                autoProps.store(out, "");
 
                //               for (String key : AutoWire.sort(autoProps.keySet()))

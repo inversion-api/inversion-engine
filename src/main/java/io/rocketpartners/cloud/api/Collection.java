@@ -18,6 +18,8 @@ package io.rocketpartners.cloud.api;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.rocketpartners.cloud.api.db.Relationship;
+
 public class Collection extends Dto
 {
    Api          api     = null;

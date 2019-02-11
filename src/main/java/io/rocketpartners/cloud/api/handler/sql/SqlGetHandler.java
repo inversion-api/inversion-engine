@@ -35,16 +35,17 @@ import io.rocketpartners.cloud.api.Chain;
 import io.rocketpartners.cloud.api.Collection;
 import io.rocketpartners.cloud.api.Endpoint;
 import io.rocketpartners.cloud.api.Entity;
-import io.rocketpartners.cloud.api.Relationship;
 import io.rocketpartners.cloud.api.Request;
 import io.rocketpartners.cloud.api.Response;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Relationship;
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.cloud.api.service.Service;
 import io.rocketpartners.cloud.utils.CaseInsensitiveSet;
 import io.rocketpartners.db.Rows;
-import io.rocketpartners.db.Sql;
 import io.rocketpartners.db.Rows.Row;
+import io.rocketpartners.db.Sql;
 import io.rocketpartners.rest.JSArray;
 import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.rql.Rql;
@@ -84,8 +85,6 @@ public class SqlGetHandler extends SqlHandler
       {
          db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       }
-      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
-      SqlQuery query = rql.build();
 
       conn = db.getConnection();
 
@@ -100,6 +99,10 @@ public class SqlGetHandler extends SqlHandler
       catch (ApiException e)
       {
       }
+
+      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
+      SqlQuery query = rql.buildQuery(collection.getEntity().getTable(), req.getParams());
+
       Entity entity = collection != null ? collection.getEntity() : null;
 
       Table tbl = entity != null ? entity.getTable() : null;
@@ -212,13 +215,13 @@ public class SqlGetHandler extends SqlHandler
 
       if (includes.size() > 0)
       {
-         includes = new CaseInsensitiveSet<String>(query.getCols());
+         includes = new CaseInsensitiveSet<String>(query.getColValueKeys());
       }
 
-      for (int i = 0; i < query.getNumCols(); i++)
+      for (int i = 0; i < query.getNumValues(); i++)
       {
-         String col = query.getCol(i);
-         String val = query.getVals(i);
+         String col = query.getColValue(i).getKey();
+         String val = query.getColValue(i).getValue();
          params.add(cast(collection, col, val));
       }
 
@@ -482,6 +485,8 @@ public class SqlGetHandler extends SqlHandler
          Collection childCollection = api.getCollection(rel.getRelated().getTable());
          if (rel.isManyToMany())
             childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
+
+         Column c = rel.getFkCol1();
 
          if (!include(rel.getName(), includes, excludes, path))
             continue;

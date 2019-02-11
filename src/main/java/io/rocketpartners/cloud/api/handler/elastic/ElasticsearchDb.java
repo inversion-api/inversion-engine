@@ -26,11 +26,11 @@ import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.cloud.api.ApiException;
 import io.rocketpartners.cloud.api.Attribute;
 import io.rocketpartners.cloud.api.Collection;
-import io.rocketpartners.cloud.api.Column;
-import io.rocketpartners.cloud.api.Db;
 import io.rocketpartners.cloud.api.Entity;
 import io.rocketpartners.cloud.api.SC;
-import io.rocketpartners.cloud.api.Table;
+import io.rocketpartners.cloud.api.db.Column;
+import io.rocketpartners.cloud.api.db.Db;
+import io.rocketpartners.cloud.api.db.Table;
 
 public class ElasticsearchDb extends Db
 {
@@ -107,7 +107,7 @@ public class ElasticsearchDb extends Db
          collection.setName(lowercaseAndPluralizeString(t.getName()));
 
          Entity entity = new Entity();
-         entity.setTbl(t);
+         entity.setTable(t);
          entity.setHint(t.getName());
          entity.setCollection(collection);
 

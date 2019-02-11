@@ -91,7 +91,7 @@ public class SqlSuggestHandler extends SqlHandler
 
       SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
       
-      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).build(); 
+      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).buildQuery(collection.getEntity().getTable(), req.getParams()); 
 
       for (int i = 0; i < propertyList.size(); i++)
       {

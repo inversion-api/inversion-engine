@@ -38,6 +38,7 @@ import io.rocketpartners.rest.JSObject;
 import io.rocketpartners.rql.Rql;
 import io.rocketpartners.rql.sql.SqlQuery;
 import io.rocketpartners.rql.sql.SqlRql;
+import io.rocketpartners.utils.KVPair;
 
 public class SqlDeleteHandler extends SqlHandler
 {
@@ -202,7 +203,7 @@ public class SqlDeleteHandler extends SqlHandler
             params.put("in(`" + keyAttr + "`," + entityKey + ")", null);
          }
 
-         SqlQuery query = rql.build(params);
+         SqlQuery query = rql.buildQuery(collection.getEntity().getTable(), params);
 
          String sql = "SELECT " + query.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + query.asCol(entity.getTable().getName());
 
@@ -219,10 +220,11 @@ public class SqlDeleteHandler extends SqlHandler
 
          sqls.add(sql);
 
-         for (int i = 0; i < query.getNumCols(); i++)
+         for (int i = 0; i < query.getNumValues(); i++)
          {
-            String col = query.getCol(i);
-            String val = query.getVals(i);
+            KVPair<String, String> pair = query.getColValue(i);
+            String col = pair.getKey();
+            String val = pair.getValue();
             args.add(cast(collection, col, val));
          }
       }

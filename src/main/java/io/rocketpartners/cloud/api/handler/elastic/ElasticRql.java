@@ -2,9 +2,10 @@ package io.rocketpartners.cloud.api.handler.elastic;
 
 import java.util.Map;
 
+import io.rocketpartners.cloud.api.db.Table;
 import io.rocketpartners.rql.Rql;
 
-public class ElasticRql extends Rql<ElasticQuery>
+public class ElasticRql extends Rql<Table, ElasticQuery>
 {
    static
    {
@@ -18,14 +19,9 @@ public class ElasticRql extends Rql<ElasticQuery>
       super("elastic");
    }
 
-   public ElasticQuery build()
+   public ElasticQuery buildQuery(Table table, Map<String, String> queryParams)
    {
-      return new ElasticQuery();
-   }
-
-   public ElasticQuery build(Map<String, String> queryParams)
-   {
-      ElasticQuery query = build();
+      ElasticQuery query = new ElasticQuery(table);
       query.withTerms(queryParams);
 
       return query;

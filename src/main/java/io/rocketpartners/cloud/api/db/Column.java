@@ -13,25 +13,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.api;
+package io.rocketpartners.cloud.api.db;
 
-import io.rocketpartners.db.Index;
-
-public class Table<D extends Db, C extends Column, I extends Index> extends io.rocketpartners.db.Table<D, C, I>
+public class Column extends io.rocketpartners.db.Column<Table, Column>
 {
-   /**
-    * Set to true to completely exclude from API.
-    */
    boolean exclude = false;
 
-   public Table()
+   public Column(Table table, int number, String name, String type, boolean nullable)
    {
-      super();
-   }
-
-   public Table(D db, String name)
-   {
-      super(db, name);
+      super(table, number, name, type, nullable);
    }
 
    public boolean isExclude()
@@ -43,5 +33,4 @@ public class Table<D extends Db, C extends Column, I extends Index> extends io.r
    {
       this.exclude = exclude;
    }
-
 }
