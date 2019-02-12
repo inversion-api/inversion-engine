@@ -64,7 +64,6 @@ public class Endpoint extends Rule<Endpoint>
       return path;
    }
 
-
    public void setPath(String path)
    {
       if (path != null)
@@ -84,26 +83,26 @@ public class Endpoint extends Rule<Endpoint>
       this.path = path;
    }
 
-//   /**
-//    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
-//    * @throws ClassNotFoundException 
-//    * @throws IllegalAccessException 
-//    * @throws InstantiationException 
-//    */
-//   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
-//   {
-//      for (String name : J.explode(",", classNames))
-//      {
-//         addHandler((Handler) Class.forName(name).newInstance());
-//      }
-//   }
-//
-//   public void addHandler(Handler handler)
-//   {
-//      Action a = new Action();
-//      a.setHandler(handler);
-//      addAction(a);
-//   }
+   //   /**
+   //    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
+   //    * @throws ClassNotFoundException 
+   //    * @throws IllegalAccessException 
+   //    * @throws InstantiationException 
+   //    */
+   //   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+   //   {
+   //      for (String name : J.explode(",", classNames))
+   //      {
+   //         addHandler((Handler) Class.forName(name).newInstance());
+   //      }
+   //   }
+   //
+   //   public void addHandler(Handler handler)
+   //   {
+   //      Action a = new Action();
+   //      a.setHandler(handler);
+   //      addAction(a);
+   //   }
 
    public List<Action> getActions(Request req)
    {
@@ -129,11 +128,17 @@ public class Endpoint extends Rule<Endpoint>
    {
       if (!actions.contains(action))
          actions.add(action);
-      
-      if(action.getApi() != getApi())
+
+      if (action.getApi() != getApi())
          action.setApi(getApi());
-      
+
       Collections.sort(actions);
+   }
+
+   public <T extends Action> T withAction(int order, T action)
+   {
+      action.setOrder(order);
+      return withAction(action);
    }
 
    public <T extends Action> T withAction(T action)
@@ -141,5 +146,5 @@ public class Endpoint extends Rule<Endpoint>
       addAction(action);
       return action;
    }
-   
+
 }
