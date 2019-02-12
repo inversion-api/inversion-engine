@@ -83,16 +83,18 @@ public class Api
       }
    }
 
-   public void init() throws Exception
+   public Api init() throws Exception
    {
-      if (inited)
-         return;
-      inited = true;
-
-      for (Db db : getDbs())
+      if (!inited)
       {
-         db.bootstrapApi();
+         inited = true;
+
+         for (Db db : getDbs())
+         {
+            db.bootstrapApi();
+         }
       }
+      return this;
    }
 
    public void setService(Service service)

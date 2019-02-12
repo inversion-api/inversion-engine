@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.forty11.j.utils.ISO8601Util;
 import io.rocketpartners.utils.Rows.Row;
 
 /**
@@ -224,27 +225,7 @@ public class Sql
          }
          else
          {
-
-//            DatabaseMetaData dbmd = conn.getMetaData();
-//            rs = dbmd.getTables(null, null, "%", new String[]{"TABLE", "VIEW"});
-//            while (rs.next())
-//            {
-//               String tableCat = rs.getString("TABLE_CAT");
-//               String tableSchem = rs.getString("TABLE_SCHEM");
-//               String tableName = rs.getString("TABLE_NAME");
-//
-//               
-//               sql = "SELECT * FROM " + tableName;
-//               
-//
-//               System.out.println(tableName);
-//            }
-
             stmt = conn.createStatement();
-
-            //System.out.println(sql);
-            //sql = "SELECT * FROM CATEGORIES";
-            //sql = sql.replace("\r\n", "");
             rs = stmt.executeQuery(sql);
          }
 

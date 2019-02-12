@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.forty11.j.utils.ISO8601Util;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -44,7 +45,6 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.CaseInsensitiveSet;
 import io.rocketpartners.utils.DoubleKeyMap;
-import io.rocketpartners.utils.ISO8601Util;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
@@ -287,7 +287,6 @@ public class SqlGetAction extends SqlAction
             data.add(js);
          }
       }
-
    }
 
    List getRows(Chain chain, Action action, Request req, SqlDb db, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
@@ -390,6 +389,11 @@ public class SqlGetAction extends SqlAction
             Object value = row.get(colName);
             String attrName = colName;
 
+            if(collection != null)
+            {
+               attrName = collection.getAttributeName(attrName);
+            }
+            
             if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
             {
                String href = Service.buildLink(req, req.getCollectionKey(), value, null);

@@ -47,6 +47,16 @@ public class Collection
       return entity.getRelationship(name);
    }
 
+   public String getAttributeName(String columnName)
+   {
+      for (Attribute attr : entity.getAttributes())
+      {
+         attr.getColumn().getName().equalsIgnoreCase(columnName);
+         return attr.getName();
+      }
+      return columnName;
+   }
+
    public String toString()
    {
       return name;
@@ -67,7 +77,7 @@ public class Collection
     */
    public void setApi(Api api)
    {
-      if(api != null && this.api != api)
+      if (api != null && this.api != api)
       {
          this.api = api;
          api.addCollection(this);

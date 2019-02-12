@@ -52,6 +52,8 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import io.forty11.j.utils.ISO8601Util;
+
 /**
  * Collection of utility methods designed to make
  * java programming less verbose
