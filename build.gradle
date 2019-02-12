@@ -61,8 +61,10 @@ dependencies {
 
    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.55'
 
-   compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
-   compile group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.11'
+   compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.1'
+
+   //compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+   //compile group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.11'
 
    compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'

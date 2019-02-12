@@ -20,30 +20,36 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
+import io.rocketpartners.cloud.service.Service;
+
 public class Api
 {
-   protected String           name        = null;
-   boolean                    debug       = false;
+   protected transient Service service     = null;
 
-   protected int              id          = 0;
-   protected int              accountId   = 0;
+   protected String            name        = null;
+   boolean                     debug       = false;
 
-   protected String           apiCode     = null;
-   protected String           accountCode = null;
-   protected boolean          multiTenant = false;
-   protected String           url         = null;
+   protected int               id          = 0;
+   protected int               accountId   = 0;
 
-   protected List<Db>         dbs         = new ArrayList();
-   protected List<Endpoint>   endpoints   = new ArrayList();
-   protected List<Action>     actions     = new ArrayList();
-   protected List<AclRule>    aclRules    = new ArrayList();
+   protected String            apiCode     = null;
+   protected String            accountCode = null;
+   protected boolean           multiTenant = false;
+   protected String            url         = null;
 
-   protected List<Collection> collections = new ArrayList();
+   protected List<Db>          dbs         = new ArrayList();
+   protected List<Endpoint>    endpoints   = new ArrayList();
+   protected List<Action>      actions     = new ArrayList();
+   protected List<AclRule>     aclRules    = new ArrayList();
 
-   transient long             loadTime    = 0;
-   protected String           hash        = null;
+   protected List<Collection>  collections = new ArrayList();
 
-   transient Hashtable        cache       = new Hashtable();
+   transient long              loadTime    = 0;
+   protected String            hash        = null;
+
+   transient Hashtable         cache       = new Hashtable();
+
+   transient boolean           inited      = false;
 
    public Api()
    {
@@ -52,6 +58,13 @@ public class Api
    public Api(String name)
    {
       this.name = name;
+   }
+
+   public Api(String name, String accountCode, String apiCode)
+   {
+      withName(name);
+      withAccountCode(accountCode);
+      withApiCode(apiCode);
    }
 
    public void startup()
@@ -70,14 +83,41 @@ public class Api
       }
    }
 
+   public void init() throws Exception
+   {
+      if (inited)
+         return;
+      inited = true;
+
+      for (Db db : getDbs())
+      {
+         db.bootstrapApi();
+      }
+   }
+
+   public void setService(Service service)
+   {
+      if (this.service != service)
+      {
+         this.service = service;
+         service.addApi(this);
+      }
+   }
+
+   public Service getService()
+   {
+      return service;
+   }
+
    public String getName()
    {
       return name;
    }
 
-   public void setName(String name)
+   public Api withName(String name)
    {
       this.name = name;
+      return this;
    }
 
    public int getId()
@@ -265,6 +305,12 @@ public class Api
          db.setApi(this);
    }
 
+   public <T extends Db> T withDb(T db)
+   {
+      addDb(db);
+      return db;
+   }
+
    // public void addHandler(String name, String clazz)
    // {
    //    try
@@ -318,6 +364,19 @@ public class Api
 
       if (endpoint.getApi() != this)
          endpoint.setApi(this);
+   }
+
+   public Endpoint withEndpoint(String method, String includePaths)
+   {
+      Endpoint endpoint = new Endpoint().withMethods(method).withIncludePaths(includePaths);
+      addEndpoint(endpoint);
+      return endpoint;
+   }
+
+   public <T extends Action> T withAction(T action)
+   {
+      addAction(action);
+      return action;
    }
 
    public List<Action> getActions()
@@ -380,9 +439,10 @@ public class Api
       return apiCode;
    }
 
-   public void setApiCode(String apiCode)
+   public Api withApiCode(String apiCode)
    {
       this.apiCode = apiCode;
+      return this;
    }
 
    public String getAccountCode()
@@ -390,9 +450,10 @@ public class Api
       return accountCode;
    }
 
-   public void setAccountCode(String accountCode)
+   public Api withAccountCode(String accountCode)
    {
       this.accountCode = accountCode;
+      return this;
    }
 
    public boolean isMultiTenant()

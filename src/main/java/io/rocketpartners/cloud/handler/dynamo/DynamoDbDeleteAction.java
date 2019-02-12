@@ -41,7 +41,7 @@ import io.rocketpartners.cloud.service.Service;
  * @author tc-rocket
  *
  */
-public class DynamoDbDeleteHandler extends DynamoDbHandler
+public class DynamoDbDeleteAction extends DynamoDbAction
 {
 
    @Override

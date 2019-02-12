@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -36,6 +37,7 @@ import io.rocketpartners.utils.English;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Url;
+import io.rocketpartners.utils.UrlBuilder;
 
 public class Service
 {
@@ -84,6 +86,21 @@ public class Service
       inited = true;
       configurator.loadConfg(this);
 
+   }
+
+   public Response service(String method, String url)
+   {
+      return service(method, url, null);
+   }
+
+   public Response service(String method, String url, String body)
+   {
+      Url u = new Url(url);
+      Request req = new Request(u, method, new HashMap(), u.getParams(), body);
+      Response res = new Response();
+
+      service(req, res);
+      return res;
    }
 
    public Chain service(Request req, Response res)
@@ -425,6 +442,9 @@ public class Service
       //TODO: filter all request params for security -- "restrict" && "require"
 
       Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
+      if (res.getChain() == null)
+         res.setChain(chain);
+
       chain.setParent(parent);
       chain.go();
 
@@ -504,6 +524,8 @@ public class Service
                (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
                (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && path.startsWith(halfPath))) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
          {
+
+            a.init();
 
             if (path.startsWith(fullPath))
             {
@@ -599,8 +621,20 @@ public class Service
       return new ArrayList(apis);
    }
 
+   public Api withApi(String accountCode, String apiCode)
+   {
+      Api api = new Api();
+      api.withAccountCode(accountCode);
+      api.withApiCode(apiCode);
+      addApi(api);
+      return api;
+   }
+
    public synchronized void addApi(Api api)
    {
+      if(apis.contains(api))
+         return;
+      
       List<Api> newList = new ArrayList(apis);
 
       Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
@@ -623,6 +657,8 @@ public class Service
       {
          existingApi.shutdown();
       }
+      
+      api.setService(this);
    }
 
    public synchronized void removeApi(Api api)

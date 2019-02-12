@@ -39,7 +39,7 @@ import io.rocketpartners.utils.Url;
 /**
  * @author wells
  */
-public class SnoozeRequestStreamHandler implements RequestStreamHandler
+public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
    Service service = null;
 

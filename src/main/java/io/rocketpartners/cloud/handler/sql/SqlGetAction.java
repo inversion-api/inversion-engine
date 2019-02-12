@@ -53,7 +53,7 @@ import io.rocketpartners.utils.Rows;
 import io.rocketpartners.utils.Rows.Row;
 import io.rocketpartners.utils.Sql;
 
-public class SqlGetHandler extends SqlHandler
+public class SqlGetAction extends SqlAction
 {
    int maxRows        = 100;
 
@@ -709,6 +709,12 @@ public class SqlGetHandler extends SqlHandler
             }
          }
       }
+   }
+   
+   public SqlGetAction withMaxRows(int maxRows)
+   {
+      this.maxRows = maxRows;
+      return this;
    }
 
    static String expandPath(String path, Object next)

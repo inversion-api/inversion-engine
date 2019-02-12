@@ -33,7 +33,7 @@ import io.rocketpartners.utils.CaseInsensitiveSet;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.Sql;
 
-public class SqlSuggestHandler extends SqlHandler
+public class SqlSuggestAction extends SqlAction
 {
    protected CaseInsensitiveSet<String> whitelist    = new CaseInsensitiveSet<>();
 

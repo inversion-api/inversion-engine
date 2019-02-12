@@ -18,14 +18,11 @@ package io.rocketpartners.cloud.handler.security;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -50,7 +47,7 @@ import io.rocketpartners.utils.JSObject;
  * @author wells
  *
  */
-public class RateLimitHandler implements Handler
+public class RateLimitAction extends Action<RateLimitAction>
 {
    protected int       limitMinutes   = 1;
    protected int       limitUserHits  = -1;

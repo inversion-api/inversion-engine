@@ -15,36 +15,33 @@
  */
 package io.rocketpartners.cloud.model;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.JSArray;
+import io.rocketpartners.utils.JSObject;
 
 /**
- * An Action exists to parameterize the invocation of a Handler
- * and allow the Endpoint to order its list of handlers
- * 
  * @author wells
  */
-public class Action extends Rule
+public class Action<A extends Action> extends Rule<A>
 {
-   String  comment   = null;
-
-   //JSObject config    = null;
-
-   int     handlerId = 0;   //crutch for db persistance
-   Handler handler   = null;
+   protected String comment = null;
 
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      if (handler == null)
-         return;
+      service(service, api, endpoint, this, chain, req, res);
+   }
 
-      //req.setEntityKey(action.getParam("entityKey", req.getEntityKey()));
-      //req.setCollectionKey(action.getParam("collectionKey", req.getCollectionKey()));
-      //req.setSubCollectionKey(action.getParam("subCollectionKey", req.getSubCollectionKey()));
-      handler.service(service, api, endpoint, this, chain, req, res);
+   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   {
+
    }
 
    @Override
@@ -52,31 +49,6 @@ public class Action extends Rule
    {
       this.api = api;
       api.addAction(this);
-   }
-
-   public Handler getHandler()
-   {
-      return handler;
-   }
-
-   public void setHandlerClass(String className) throws Exception
-   {
-      setHandler((Handler) Class.forName(className).newInstance());
-   }
-
-   public void setHandler(Handler handler)
-   {
-      this.handler = handler;
-   }
-
-   public void setHandlerId(int handlerId)
-   {
-      this.handlerId = handlerId;
-   }
-
-   public int getHandlerId()
-   {
-      return handlerId;
    }
 
    public String getComment()
@@ -87,6 +59,120 @@ public class Action extends Rule
    public void setComment(String comment)
    {
       this.comment = comment;
+   }
+
+   public A withComment(String comment)
+   {
+      setComment(comment);
+      return (A) this;
+   }
+
+   public static List<JSObject> find(Object parent, String... paths)
+   {
+      List<JSObject> found = new ArrayList();
+      for (String apath : paths)
+      {
+         for (String path : (List<String>) J.explode(",", apath))
+         {
+            find(parent, found, path, ".");
+         }
+      }
+      return found;
+   }
+
+   public static void find(Object parent, List<JSObject> found, String targetPath, String currentPath)
+   {
+      if (parent instanceof JSArray)
+      {
+         for (Object child : ((JSArray) parent).asList())
+         {
+            if (child instanceof JSObject)
+               find(child, found, targetPath, currentPath);
+         }
+      }
+      else if (parent instanceof JSObject)
+      {
+         if (!found.contains(parent) && J.wildcardMatch(targetPath, currentPath))
+         {
+            found.add((JSObject) parent);
+         }
+
+         for (String key : ((JSObject) parent).keySet())
+         {
+            Object child = ((JSObject) parent).get(key);
+            String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
+            find(child, found, targetPath, nextPath);
+         }
+      }
+   }
+
+   public static String getValue(Chain chain, String key)
+   {
+      //      if ("apiId".equalsIgnoreCase(key))
+      //      {
+      //         return chain.getRequest().getApi().getId() + "";
+      //      }
+      //      else 
+      if ("apiCode".equalsIgnoreCase(key))
+      {
+         return chain.getRequest().getApi().getApiCode();
+      }
+      //      else if ("accountId".equalsIgnoreCase(key))
+      //      {
+      //         return chain.getRequest().getApi().getAccountId() + "";
+      //      }
+      else if ("accountCode".equalsIgnoreCase(key))
+      {
+         return chain.getRequest().getApi().getAccountCode();
+      }
+      else if ("tenantId".equalsIgnoreCase(key))
+      {
+         if (chain.getRequest().getUser() != null)
+            return chain.getRequest().getUser().getTenantId() + "";
+      }
+      else if ("tenantCode".equalsIgnoreCase(key))
+      {
+         if (chain.getRequest().getUser() != null)
+            return chain.getRequest().getUser().getTenantCode();
+      }
+      else if ("userId".equalsIgnoreCase(key))
+      {
+         if (chain.getRequest().getUser() != null)
+            return chain.getRequest().getUser().getId() + "";
+      }
+      else if ("username".equalsIgnoreCase(key))
+      {
+         if (chain.getRequest().getUser() != null)
+            return chain.getRequest().getUser().getUsername();
+      }
+
+      Object val = chain.get(key);
+      if (val != null)
+         return val.toString();
+      return null;
+   }
+
+   public static LinkedHashSet<String> splitParam(Request req, String key)
+   {
+      LinkedHashSet map = new LinkedHashSet();
+      String param = req.getParam(key);
+      if (!J.empty(param))
+      {
+         String[] arr = param.split(",");
+         for (String e : arr)
+         {
+            e = e.trim().toLowerCase();
+            if (!J.empty(e))
+               map.add(e);
+         }
+      }
+
+      return map;
+   }
+
+   public static String nextPath(String path, String next)
+   {
+      return J.empty(path) ? next : path + "." + next;
    }
 
 }

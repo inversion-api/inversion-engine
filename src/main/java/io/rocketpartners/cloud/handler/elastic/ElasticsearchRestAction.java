@@ -21,7 +21,6 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -31,9 +30,9 @@ import io.rocketpartners.cloud.service.Service;
  * @author kfrankic
  *
  */
-public class ElasticsearchRestHandler implements Handler
+public class ElasticsearchRestAction<T extends ElasticsearchRestAction> extends Action<T>
 {
-   ElasticsearchGetHandler    get    = new ElasticsearchGetHandler();
+   ElasticsearchGetAction    get    = new ElasticsearchGetAction();
 //   ElasticDbDeleteHandler delete = new ElasticDbDeleteHandler();
 //   ElasticDbPostHandler   post   = new ElasticDbPostHandler();
 
@@ -59,7 +58,7 @@ public class ElasticsearchRestHandler implements Handler
       }
    }
 
-   public void setGet(ElasticsearchGetHandler get)
+   public void setGet(ElasticsearchGetAction get)
    {
       this.get = get;
    }

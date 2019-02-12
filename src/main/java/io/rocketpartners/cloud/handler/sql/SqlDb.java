@@ -30,6 +30,9 @@ import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcConnectionPool;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
@@ -129,13 +132,34 @@ public class SqlDb extends Db
 
                   if (pool == null && !shutdown)
                   {
-                     System.out.print(new File("./").getCanonicalPath());
-                     Class.forName(getDriver());
-
-                     //conn = DriverManager.getConnection("jdbc:h2:./northwind", "sa", "");
-
-                     pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
+                     //                     System.out.print(new File("./").getCanonicalPath());
+                     //                     Class.forName(getDriver());
+                     //
+                     //                     //conn = DriverManager.getConnection("jdbc:h2:./northwind", "sa", "");
+                     //
+                     //                     pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
                      //                     
+
+                     HikariConfig config = new HikariConfig();
+                     config.setDriverClassName(getDriver());
+                     config.setJdbcUrl(getUrl());
+                     config.setUsername(getUser());
+                     config.setPassword(getPass());
+                     //config.addDataSourceProperty("cachePrepStmts", "true");
+                     //config.addDataSourceProperty("prepStmtCacheSize", "250");
+                     //config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+                     //int minPoolSize = getPoolMin();
+                     int maxPoolSize = getPoolMax();
+                     //int idleTestPeriod = getIdleConnectionTestPeriod();
+
+                     //minPoolSize = Math.max(MIN_POOL_SIZE, minPoolSize);
+                     maxPoolSize = Math.min(maxPoolSize, MAX_POOL_SIZE);
+
+                     config.setMaximumPoolSize(maxPoolSize);
+
+                     pool = new HikariDataSource(config);
+
                      //                     conn = pool.getConnection();
 
                      //System.out.println(Sql.execute(conn, "SELECT * FROM TERRITORIES")); 
@@ -450,6 +474,14 @@ public class SqlDb extends Db
       return collectionName;
    }
 
+   protected String beautifyAttributeName(String inName)
+   {
+      if (inName.toUpperCase().equals(inName))
+         inName = inName.toLowerCase();
+
+      return inName;
+   }
+
    public void configApi() throws Exception
    {
       for (Table t : getTables())
@@ -479,7 +511,7 @@ public class SqlDb extends Db
             {
                Attribute attr = new Attribute();
                attr.setEntity(entity);
-               attr.setName(col.getName());
+               attr.setName(beautifyAttributeName(col.getName()));
                attr.setColumn(col);
                attr.setHint(col.getTable().getName() + "." + col.getName());
                attr.setType(col.getType());
@@ -618,9 +650,19 @@ public class SqlDb extends Db
       return driver;
    }
 
-   public void setDriver(String driver)
+   public SqlDb withConfig(String driver, String url, String user, String pass)
+   {
+      withDriver(driver);
+      withUrl(url);
+      withUser(user);
+      withPass(pass);
+      return this;
+   }
+   
+   public SqlDb withDriver(String driver)
    {
       this.driver = driver;
+      return this;
    }
 
    public String getUrl()
@@ -628,9 +670,10 @@ public class SqlDb extends Db
       return url;
    }
 
-   public void setUrl(String url)
+   public SqlDb withUrl(String url)
    {
       this.url = url;
+      return this;
    }
 
    public String getUser()
@@ -638,9 +681,10 @@ public class SqlDb extends Db
       return user;
    }
 
-   public void setUser(String user)
+   public SqlDb withUser(String user)
    {
       this.user = user;
+      return this;
    }
 
    public String getPass()
@@ -648,9 +692,10 @@ public class SqlDb extends Db
       return pass;
    }
 
-   public void setPass(String pass)
+   public SqlDb withPass(String pass)
    {
       this.pass = pass;
+      return this;
    }
 
    public int getPoolMin()

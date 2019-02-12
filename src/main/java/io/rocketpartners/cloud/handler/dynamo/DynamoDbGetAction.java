@@ -38,7 +38,7 @@ import io.rocketpartners.utils.Rows.Row;
  *                                FORMAT: collection name (comma separated)
  *
  */
-public class DynamoDbGetHandler extends DynamoDbHandler
+public class DynamoDbGetAction extends DynamoDbAction
 {
 
    protected String nextKeyDelimeter = "~";

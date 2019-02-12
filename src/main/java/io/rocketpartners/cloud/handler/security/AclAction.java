@@ -25,24 +25,23 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.utils.J;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.cloud.model.AclRule;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.service.AbstractHandler;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.JSArray;
+import io.rocketpartners.utils.JSObject;
 
-public class AclHandler extends AbstractHandler
+public class AclAction extends Action<AclAction>
 {
-   Logger log = LoggerFactory.getLogger(AclHandler.class);
+   Logger log = LoggerFactory.getLogger(AclAction.class);
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
@@ -146,7 +145,7 @@ public class AclHandler extends AbstractHandler
          for (String key : req.getParams().keySet())
          {
             String value = req.getParam(key);
-            if (matches(restricted, key) || matches(restricted, value))
+            if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
             }
@@ -166,7 +165,7 @@ public class AclHandler extends AbstractHandler
          boolean found = false;
          for (String key : req.getParams().keySet())
          {
-            if (matches(required, key))
+            if (matchesVal(required, key))
             {
                String value = req.getParam(key);
                if (J.empty(value))
@@ -281,7 +280,7 @@ public class AclHandler extends AbstractHandler
       }
    }
 
-   boolean matches(String restricted, String value)
+   boolean matchesVal(String restricted, String value)
    {
       if (restricted == null || value == null)
          return false;

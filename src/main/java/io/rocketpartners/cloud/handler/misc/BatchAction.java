@@ -6,7 +6,6 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -28,7 +27,7 @@ import io.rocketpartners.utils.JSObject;
  * }
  *
  */
-public class BatchHandler implements Handler
+public class BatchAction<T extends BatchAction> extends Action<T>
 {
 
    @Override

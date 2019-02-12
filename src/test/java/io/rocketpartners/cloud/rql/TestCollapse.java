@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.handler.sql.SqlPostHandler;
+import io.rocketpartners.cloud.handler.sql.SqlPostAction;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
@@ -40,7 +40,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
+      SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());
@@ -72,7 +72,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
+      SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());
@@ -111,7 +111,7 @@ public class TestCollapse extends TestCase
 
       JSObject collapsed = JS.toJSObject(parent.toString());
 
-      SqlPostHandler.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
+      SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
 
       JSObject benchmark = JS.toJSObject(parent.toString());
       benchmark = JS.toJSObject(parent.toString());

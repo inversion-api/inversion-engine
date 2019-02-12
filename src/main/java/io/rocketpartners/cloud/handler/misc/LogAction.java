@@ -24,22 +24,21 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.utils.CaseInsensitiveSet;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Sql;
 import io.rocketpartners.cloud.handler.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.utils.CaseInsensitiveSet;
+import io.rocketpartners.utils.JSArray;
+import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.utils.Sql;
 
-public class LogHandler implements Handler
+public class LogAction extends Action<LogAction>
 {
    Logger                               log            = LoggerFactory.getLogger(getClass());
 

@@ -38,7 +38,7 @@ import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.KVPair;
 import io.rocketpartners.utils.Sql;
 
-public class SqlDeleteHandler extends SqlHandler
+public class SqlDeleteAction extends SqlAction
 {
    boolean      allowBatchDelete = true;
 

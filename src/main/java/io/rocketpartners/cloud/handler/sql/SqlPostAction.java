@@ -46,7 +46,7 @@ import io.rocketpartners.utils.Sql;
 import io.rocketpartners.utils.Url;
 import io.rocketpartners.utils.JSObject.Property;
 
-public class SqlPostHandler extends SqlHandler
+public class SqlPostAction extends SqlAction
 {
    boolean collapseAll    = false;
    boolean strictRest     = false;

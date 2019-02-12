@@ -47,7 +47,7 @@ import io.rocketpartners.cloud.service.Service;
  *                                FORMAT: collection name | withConditionExpression | payload fields  (comma seperated)  - EXAMPLE: promos|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate
  *
  */
-public class DynamoDbPostHandler extends DynamoDbHandler
+public class DynamoDbPostAction extends DynamoDbAction
 {
 
    @Override

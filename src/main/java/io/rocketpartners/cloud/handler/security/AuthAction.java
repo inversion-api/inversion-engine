@@ -37,7 +37,6 @@ import io.rocketpartners.cloud.model.Role;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -46,7 +45,7 @@ import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Sql;
 
-public class AuthHandler implements Handler
+public class AuthAction extends Action<AuthAction>
 {
    long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeput
    protected int              sessionMax              = 10000;

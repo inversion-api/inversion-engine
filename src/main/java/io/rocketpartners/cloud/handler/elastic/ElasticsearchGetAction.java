@@ -32,7 +32,6 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -47,9 +46,9 @@ import io.rocketpartners.utils.Web;
  * @author kfrankic
  *
  */
-public class ElasticsearchGetHandler implements Handler
+public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 {
-   Logger  log           = LoggerFactory.getLogger(ElasticsearchGetHandler.class);
+   Logger  log           = LoggerFactory.getLogger(ElasticsearchGetAction.class);
 
    // The following properties can be assigned via snooze.properties
    int     maxRows       = 100;

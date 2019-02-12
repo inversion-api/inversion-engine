@@ -61,11 +61,12 @@ public class Url implements Serializable
       return params;
    }
 
-   protected String protocol = "http";
-   protected String host     = null;
-   protected int    port     = 0;
-   protected String path     = null;
-   protected String query    = null;
+   protected String              protocol = "http";
+   protected String              host     = null;
+   protected int                 port     = 0;
+   protected String              path     = null;
+   protected String              query    = null;
+   protected Map<String, String> params   = new HashMap();
 
    public Url(String url)
    {
@@ -90,6 +91,8 @@ public class Url implements Serializable
       this.port = port;
       this.path = path;
       this.query = query;
+      if (!J.empty(query))
+         this.params = parseQuery(query);
    }
 
    protected void parse(Url parent, String url)
@@ -106,6 +109,8 @@ public class Url implements Serializable
          {
             query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
+
+            this.params = parseQuery(query);
          }
 
          //replace slashes after stripping off query to leave query as it was found
@@ -346,6 +351,16 @@ public class Url implements Serializable
       }
 
       return null;
+   }
+
+   public Map<String, String> getParams()
+   {
+      return params;
+   }
+
+   public void setParams(Map<String, String> params)
+   {
+      this.params = params;
    }
 
 }

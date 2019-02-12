@@ -19,11 +19,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.utils.J;
 
-public class Endpoint extends Rule
+public class Endpoint extends Rule<Endpoint>
 {
    protected String       path    = null;
    protected List<Action> actions = new ArrayList();
@@ -65,6 +64,7 @@ public class Endpoint extends Rule
       return path;
    }
 
+
    public void setPath(String path)
    {
       if (path != null)
@@ -84,26 +84,26 @@ public class Endpoint extends Rule
       this.path = path;
    }
 
-   /**
-    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
-    * @throws ClassNotFoundException 
-    * @throws IllegalAccessException 
-    * @throws InstantiationException 
-    */
-   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
-   {
-      for (String name : J.explode(",", classNames))
-      {
-         addHandler((Handler) Class.forName(name).newInstance());
-      }
-   }
-
-   public void addHandler(Handler handler)
-   {
-      Action a = new Action();
-      a.setHandler(handler);
-      addAction(a);
-   }
+//   /**
+//    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
+//    * @throws ClassNotFoundException 
+//    * @throws IllegalAccessException 
+//    * @throws InstantiationException 
+//    */
+//   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+//   {
+//      for (String name : J.explode(",", classNames))
+//      {
+//         addHandler((Handler) Class.forName(name).newInstance());
+//      }
+//   }
+//
+//   public void addHandler(Handler handler)
+//   {
+//      Action a = new Action();
+//      a.setHandler(handler);
+//      addAction(a);
+//   }
 
    public List<Action> getActions(Request req)
    {
@@ -129,8 +129,17 @@ public class Endpoint extends Rule
    {
       if (!actions.contains(action))
          actions.add(action);
-
+      
+      if(action.getApi() != getApi())
+         action.setApi(getApi());
+      
       Collections.sort(actions);
    }
 
+   public <T extends Action> T withAction(T action)
+   {
+      addAction(action);
+      return action;
+   }
+   
 }

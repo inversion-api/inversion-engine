@@ -26,6 +26,8 @@ import io.rocketpartners.cloud.model.Change;
 
 public class Response
 {
+   Chain                   chain       = null;
+
    ListMap<String, String> headers     = new ListMap();
 
    int                     statusCode  = 200;
@@ -56,6 +58,16 @@ public class Response
 
          buff.append(msg).append("\r\n");
       }
+   }
+
+   public Chain getChain()
+   {
+      return chain;
+   }
+
+   public void setChain(Chain chain)
+   {
+      this.chain = chain;
    }
 
    public void debug(Object... msgs)

@@ -51,10 +51,6 @@ import org.slf4j.LoggerFactory;
 import io.forty11.fusionvtl.directives.LayoutDirective;
 import io.forty11.fusionvtl.directives.SaveDirective;
 import io.forty11.fusionvtl.directives.SwitchDirective;
-import io.rocketpartners.utils.J;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.cloud.handler.script.velocity.VelocityResourceLoader;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
@@ -62,22 +58,25 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.JS;
+import io.rocketpartners.utils.JSArray;
+import io.rocketpartners.utils.JSObject;
 import net.jodah.expiringmap.ExpiringMap;
 
 /**
  * @author tc-rocket
  *
  */
-public class ScriptHandler implements Handler
+public class ScriptAction extends Action<ScriptAction>
 {
-   static ThreadLocal<ScriptHandler> scriptLocal        = new ThreadLocal();
+   static ThreadLocal<ScriptAction> scriptLocal        = new ThreadLocal();
    static ThreadLocal<Chain>         chainLocal         = new ThreadLocal();
 
-   Logger                            log                = LoggerFactory.getLogger(ScriptHandler.class);
+   Logger                            log                = LoggerFactory.getLogger(ScriptAction.class);
    String                            scriptsCollection  = "scripts";
 
    long                              cacheExpireSeconds = 60 * 30;
@@ -92,7 +91,7 @@ public class ScriptHandler implements Handler
 
    List<String>                      reservedNames      = new ArrayList(Arrays.asList("switch", "layout", "settings"));
 
-   public ScriptHandler()
+   public ScriptAction()
    {
       scriptTypes.put("js", "javascript");
       scriptTypes.put("vm", "velocity");
@@ -131,7 +130,7 @@ public class ScriptHandler implements Handler
           */
          try
          {
-            Enumeration<URL> en = ScriptHandler.class.getClassLoader().getResources("META-INF/truffle/language");
+            Enumeration<URL> en = ScriptAction.class.getClassLoader().getResources("META-INF/truffle/language");
             while (en.hasMoreElements())
             {
                URL u = en.nextElement();
@@ -389,7 +388,7 @@ public class ScriptHandler implements Handler
 
    public static JSObject findScript(final String path) throws Exception
    {
-      ScriptHandler handler = scriptLocal.get();
+      ScriptAction handler = scriptLocal.get();
       Chain chain = chainLocal.get();
 
       //      if (handler.CACHE.containsKey(path))

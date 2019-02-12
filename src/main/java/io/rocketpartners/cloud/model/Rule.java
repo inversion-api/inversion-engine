@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.Url;
 
-public abstract class Rule implements Comparable<Rule>
+public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
    Api          api          = null;
 
@@ -196,6 +196,11 @@ public abstract class Rule implements Comparable<Rule>
       return new ArrayList(methods);
    }
 
+   public void setMethods(String methods)
+   {
+      setMethods(J.explode(",", methods));
+   }
+
    public void setMethods(List<String> methods)
    {
       this.methods.clear();
@@ -289,4 +294,33 @@ public abstract class Rule implements Comparable<Rule>
       }
    }
 
+   public R withExcludePaths(String... paths)
+   {
+      for (String path : J.explode(",", paths))
+         addIncludePath(path);
+
+      return (R) this;
+   }
+
+   public R withIncludePaths(String... paths)
+   {
+      for (String path : J.explode(",", paths))
+         addIncludePath(path);
+
+      return (R) this;
+   }
+
+   public R withMethods(String... methods)
+   {
+      for (String method : J.explode(",", methods))
+         addMethod(method);
+
+      return (R) this;
+   }
+
+   public R withOrder(int order)
+   {
+      setOrder(order);
+      return (R) this;
+   }
 }

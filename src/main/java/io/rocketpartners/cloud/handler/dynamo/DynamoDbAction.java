@@ -23,20 +23,15 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
-import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.utils.J;
 
 /**
  * @author tc-rocket
  *
  */
-public abstract class DynamoDbHandler implements Handler
+public abstract class DynamoDbAction<A extends DynamoDbAction> extends Action<A>
 {
    static ObjectMapper mapper            = new ObjectMapper();
 

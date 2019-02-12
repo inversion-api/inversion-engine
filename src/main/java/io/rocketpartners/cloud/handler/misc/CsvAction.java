@@ -26,7 +26,6 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -41,7 +40,7 @@ import io.rocketpartners.utils.JSObject;
  * 
  * @author wells
  */
-public class CsvHandler implements Handler
+public class CsvAction extends BatchAction<CsvAction>
 {
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception

@@ -39,9 +39,9 @@ import io.rocketpartners.cloud.service.Servlet;
  *
  */
 @RestController
-public class SnoozeController implements InitializingBean
+public class SpringController implements InitializingBean
 {
-   Logger         log     = LoggerFactory.getLogger(SnoozeController.class);
+   Logger         log     = LoggerFactory.getLogger(SpringController.class);
 
    @Autowired
    ResourceLoader resourceLoader;

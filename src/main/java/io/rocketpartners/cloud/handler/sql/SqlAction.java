@@ -27,37 +27,35 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.Sql;
 
-public abstract class SqlHandler implements Handler
+public abstract class SqlAction<T extends SqlAction> extends Action<T>
 {
 
-   public LinkedHashSet<String> splitParam(Request req, String key)
-   {
-      LinkedHashSet map = new LinkedHashSet();
-      String param = req.getParam(key);
-      if (!J.empty(param))
-      {
-         String[] arr = param.split(",");
-         for (String e : arr)
-         {
-            e = e.trim().toLowerCase();
-            if (!J.empty(e))
-               map.add(e);
-         }
-      }
-
-      return map;
-   }
+//   public LinkedHashSet<String> splitParam(Request req, String key)
+//   {
+//      LinkedHashSet map = new LinkedHashSet();
+//      String param = req.getParam(key);
+//      if (!J.empty(param))
+//      {
+//         String[] arr = param.split(",");
+//         for (String e : arr)
+//         {
+//            e = e.trim().toLowerCase();
+//            if (!J.empty(e))
+//               map.add(e);
+//         }
+//      }
+//
+//      return map;
+//   }
 
    public static String nextPath(String path, String next)
    {
       return J.empty(path) ? next : path + "." + next;
    }
-
 
    /**
     * Replaces variables of the form '${key}' with values associated with 

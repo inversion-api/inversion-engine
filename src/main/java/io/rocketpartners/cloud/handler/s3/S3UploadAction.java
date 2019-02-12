@@ -26,28 +26,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.Part;
-
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.util.IOUtils;
 
-import io.rocketpartners.utils.J;
-import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
+import io.rocketpartners.cloud.service.Request.Upload;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.service.Request.Upload;
+import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.JSObject;
 
 /**
  * Sends browser multi-part file uploads to a defined S3 location
@@ -75,7 +71,7 @@ import io.rocketpartners.cloud.service.Request.Upload;
  * to config the credentials at all.
  *
  */
-public class S3UploadHandler implements Handler
+public class S3UploadAction extends Action<S3UploadAction>
 {
 
    protected String s3AccessKey = null;

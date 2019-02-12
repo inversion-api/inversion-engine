@@ -19,14 +19,13 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 
-public class PasswordHandler implements Handler
+public class PasswordAction extends Action<PasswordAction>
 {
    String passwordField = "password";
 
@@ -70,7 +69,7 @@ public class PasswordHandler implements Handler
             JSObject user = (JSObject) ((JSArray) js).get(0);
             if (user.get("id") != null)
             {
-               String encryptedPassword = AuthHandler.hashPassword(user.get("id"), password);
+               String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
                JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
                service.include(chain, "PUT", url, body.toString());

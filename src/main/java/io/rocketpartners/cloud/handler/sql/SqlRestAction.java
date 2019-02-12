@@ -8,69 +8,42 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.handler.dynamo;
+package io.rocketpartners.cloud.handler.sql;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Handler;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 
-/**
- * 
- * @author tc-rocket
- *
- */
-public class DynamoDbRestHandler implements Handler
+public class SqlRestAction<T extends SqlRestAction> extends Action<T>
 {
-   DynamoDbGetHandler    get    = new DynamoDbGetHandler();
-   DynamoDbDeleteHandler delete = new DynamoDbDeleteHandler();
-   DynamoDbPostHandler   post   = new DynamoDbPostHandler();
+   SqlGetAction    get    = new SqlGetAction();
+   SqlDeleteAction delete = new SqlDeleteAction();
+   SqlPostAction   post   = new SqlPostAction();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
-      if (req.isMethod("get"))
+      String method = req.getMethod();
+      if ("GET".equalsIgnoreCase(method))
       {
          get.service(service, api, endpoint, action, chain, req, res);
       }
-      else if (req.isMethod("delete"))
+      else if ("DELETE".equalsIgnoreCase(method))
       {
          delete.service(service, api, endpoint, action, chain, req, res);
       }
-      else if (req.isMethod("post", "put"))
+      else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
       {
          post.service(service, api, endpoint, action, chain, req, res);
       }
-      else
-      {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET, PUT, POST and DELETE requests");
-      }
    }
-
-   public void setGet(DynamoDbGetHandler get)
-   {
-      this.get = get;
-   }
-
-   public void setDelete(DynamoDbDeleteHandler delete)
-   {
-      this.delete = delete;
-   }
-
-   public void setPost(DynamoDbPostHandler post)
-   {
-      this.post = post;
-   }
-
 }
