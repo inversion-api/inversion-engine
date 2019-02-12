@@ -1,4 +1,10 @@
 
+
+Make superclass "beautify" method for collection names and attribute names
+
+Pull "expands" out of SqlGetHandler and put it into a superclass that can work with Dynamo/Elastic etc.
+
+
 SQL functions supported by big query
 https://cloud.google.com/bigquery/docs/reference/legacy-sql
 

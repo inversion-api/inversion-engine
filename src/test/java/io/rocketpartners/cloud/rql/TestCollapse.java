@@ -5,10 +5,10 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import io.rocketpartners.rest.JS;
-import io.rocketpartners.rest.JSArray;
-import io.rocketpartners.rest.JSObject;
-import io.rocketpartners.cloud.api.handler.sql.SqlPostHandler;
+import io.rocketpartners.cloud.handler.sql.SqlPostHandler;
+import io.rocketpartners.utils.JS;
+import io.rocketpartners.utils.JSArray;
+import io.rocketpartners.utils.JSObject;
 import junit.framework.TestCase;
 
 public class TestCollapse extends TestCase

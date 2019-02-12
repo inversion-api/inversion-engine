@@ -32,3 +32,5 @@ output/
 /logs/
 
 snooze99.properties
+/northwind.mv.db
+/northwind.trace.db

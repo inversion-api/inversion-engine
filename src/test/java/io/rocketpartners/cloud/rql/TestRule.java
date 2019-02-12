@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.api.Rule;
+import io.rocketpartners.cloud.model.Rule;
 
 public class TestRule
 {
