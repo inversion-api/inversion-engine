@@ -56,7 +56,7 @@ public class Url implements Serializable
       }
       catch (Exception ex)
       {
-         J.rethrow(ex);
+         Utils.rethrow(ex);
       }
       return params;
    }
@@ -91,7 +91,7 @@ public class Url implements Serializable
       this.port = port;
       this.path = path;
       this.query = query;
-      if (!J.empty(query))
+      if (!Utils.empty(query))
          this.params = parseQuery(query);
    }
 
@@ -237,7 +237,7 @@ public class Url implements Serializable
             url += ":" + port;
       }
 
-      if (!J.empty(path))
+      if (!Utils.empty(path))
       {
          if (!path.startsWith("/"))
             url += "/";
@@ -245,7 +245,7 @@ public class Url implements Serializable
          url += path;
       }
 
-      if (!J.empty(query))
+      if (!Utils.empty(query))
       {
          if (!query.startsWith("?"))
             url += "?";

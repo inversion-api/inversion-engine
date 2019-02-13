@@ -58,7 +58,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  *
  * @author Wells Burke
  */
-public class J
+public class Utils
 {
    public static final int         KB                 = 1048;
    public static final int         MB                 = 1048576;
@@ -153,14 +153,14 @@ public class J
       List exploded = new ArrayList();
       for (int i = 0; pieces != null && i < pieces.length; i++)
       {
-         if (J.empty(pieces[i]))
+         if (Utils.empty(pieces[i]))
             continue;
 
          String[] parts = pieces[i].split(delim);
          for (int j = 0; j < parts.length; j++)
          {
             String part = parts[j].trim();
-            if (!J.empty(part))
+            if (!Utils.empty(part))
             {
                exploded.add(part);
             }

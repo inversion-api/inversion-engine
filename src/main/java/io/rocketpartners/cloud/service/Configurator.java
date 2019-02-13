@@ -56,7 +56,7 @@ import io.rocketpartners.utils.AutoWire;
 import io.rocketpartners.utils.AutoWire.Ignore;
 import io.rocketpartners.utils.AutoWire.Includer;
 import io.rocketpartners.utils.AutoWire.Namer;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class Configurator
 {
@@ -108,7 +108,7 @@ public class Configurator
                   {
                      try
                      {
-                        J.sleep(service.getConfigTimeout());
+                        Utils.sleep(service.getConfigTimeout());
                         if (destroyed)
                            return;
 
@@ -149,7 +149,7 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            if (J.empty(api.getApiCode()))
+            if (Utils.empty(api.getApiCode()))
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'apiCode'.  An Api can not be loaded without one.");
 
             Api existingApi = service.getApi(api.getApiCode());
@@ -172,7 +172,7 @@ public class Configurator
             wire.load(autoProps);
             autoWireApi(wire);
 
-            if (!J.empty(service.getConfigOut()))
+            if (!Utils.empty(service.getConfigOut()))
             {
                //               autoProps = new Properties(autoProps)
                //                  {
@@ -347,7 +347,7 @@ public class Configurator
       //            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class,                               //
       //            boolean.class, char.class, byte.class, short.class, int.class, long.class, float.class, double.class, void.class);
 
-      List<Field> excludes     = Arrays.asList(J.getField("handlers", Api.class));
+      List<Field> excludes     = Arrays.asList(Utils.getField("handlers", Api.class));
 
       List        excludeTypes = new ArrayList(Arrays.asList(Logger.class, Action.class, Endpoint.class, Rule.class));
 
@@ -416,7 +416,7 @@ public class Configurator
          Class clazz = o.getClass();
          if (o instanceof Api || o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
          {
-            name = J.getField("name", clazz).get(o);
+            name = Utils.getField("name", clazz).get(o);
          }
          else if (o instanceof Table)
          {
@@ -455,7 +455,7 @@ public class Configurator
          }
 
          if (name == null)
-            name = J.getProperty("name", o);
+            name = Utils.getProperty("name", o);
 
          if (name != null)
             return name.toString();
@@ -511,7 +511,7 @@ public class Configurator
          buff.append(key).append(config.props.get(key));
       }
 
-      config.hash = J.md5(buff.toString().getBytes());
+      config.hash = Utils.md5(buff.toString().getBytes());
 
       return config;
    }

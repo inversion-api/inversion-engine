@@ -172,7 +172,7 @@ public class UrlBuilder
       }
       catch (Exception ex)
       {
-         J.rethrow(ex);
+         Utils.rethrow(ex);
       }
       return this;
    }
@@ -186,7 +186,7 @@ public class UrlBuilder
          for (int i = 0; i < query.size(); i++)
          {
             KVPair pair = query.get(i);
-            if (J.empty(pair.value))
+            if (Utils.empty(pair.value))
                queryStr += pair.key;
             else
                queryStr += pair.key + "=" + pair.value;

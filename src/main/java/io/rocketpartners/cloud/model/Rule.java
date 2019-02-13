@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Url;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
@@ -68,8 +68,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          if (wildcardPath.indexOf("{") > -1)
          {
-            List<String> regexParts = J.explode("/", wildcardPath);
-            List<String> pathParts = J.explode("/", path);
+            List<String> regexParts = Utils.explode("/", wildcardPath);
+            List<String> pathParts = Utils.explode("/", path);
 
             if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
                return false;
@@ -109,7 +109,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
                   if (!matcher.matches())
                      return false;
                }
-               else if (!J.wildcardMatch(matchPart, pathPart))
+               else if (!Utils.wildcardMatch(matchPart, pathPart))
                {
                   return false;
                }
@@ -122,7 +122,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          }
          else
          {
-            return J.wildcardMatch(wildcardPath, path);
+            return Utils.wildcardMatch(wildcardPath, path);
          }
       }
       catch (NullPointerException npe)
@@ -198,7 +198,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public void setMethods(String methods)
    {
-      setMethods(J.explode(",", methods));
+      setMethods(Utils.explode(",", methods));
    }
 
    public void setMethods(List<String> methods)
@@ -296,7 +296,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public R withExcludePaths(String... paths)
    {
-      for (String path : J.explode(",", paths))
+      for (String path : Utils.explode(",", paths))
          addIncludePath(path);
 
       return (R) this;
@@ -304,7 +304,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public R withIncludePaths(String... paths)
    {
-      for (String path : J.explode(",", paths))
+      for (String path : Utils.explode(",", paths))
          addIncludePath(path);
 
       return (R) this;
@@ -312,7 +312,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public R withMethods(String... methods)
    {
-      for (String method : J.explode(",", methods))
+      for (String method : Utils.explode(",", methods))
          addMethod(method);
 
       return (R) this;

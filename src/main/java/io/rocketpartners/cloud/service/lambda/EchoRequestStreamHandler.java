@@ -24,7 +24,7 @@ import java.io.OutputStreamWriter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSObject;
 
@@ -43,7 +43,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler
       responseJson.put("headers", new JSObject("Access-Control-Allow-Origin", "*"));
       try
       {
-         String input = J.read(new BufferedInputStream(inputStream));
+         String input = Utils.read(new BufferedInputStream(inputStream));
          context.getLogger().log(input);
          JSObject request = JS.toJSObject(input);
          responseBody.put("request", request);
@@ -51,7 +51,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler
       }
       catch (Exception ex)
       {
-         responseBody.put("error", J.getShortCause(ex));
+         responseBody.put("error", Utils.getShortCause(ex));
       }
 
       responseJson.put("body", responseBody.toString());

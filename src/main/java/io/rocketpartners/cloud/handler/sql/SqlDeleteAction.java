@@ -32,7 +32,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.KVPair;
@@ -64,7 +64,7 @@ public class SqlDeleteAction extends SqlAction
 
          if (req.getJson() != null)
          {
-            if (!J.empty(entityKey))
+            if (!Utils.empty(entityKey))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to an entity key in the url and also include a JSON body.");
 
             JSObject obj = req.getJson();
@@ -110,7 +110,7 @@ public class SqlDeleteAction extends SqlAction
          {
             String collection = req.getCollectionKey().toLowerCase();
 
-            if (!J.empty(entityKey) || //
+            if (!Utils.empty(entityKey) || //
                   (allowBatchDelete && //
                         ((batchAllow.isEmpty() && batchDeny.isEmpty()) || //
                               (!batchAllow.isEmpty() && batchAllow.contains(collection)) || (batchAllow.isEmpty() && !batchDeny.contains(collection)))))
@@ -169,7 +169,7 @@ public class SqlDeleteAction extends SqlAction
       List ids = Sql.selectList(conn, sql, args);
       if (ids.size() > 0)
       {
-         String idstr = Sql.check(J.implode(",", ids));
+         String idstr = Sql.check(Utils.implode(",", ids));
          Sql.execute(conn, "DELETE FROM " + table + " WHERE " + idCol + " IN (" + idstr + ")");
       }
 
@@ -196,7 +196,7 @@ public class SqlDeleteAction extends SqlAction
 
          Map params = req.getParams();
          String keyAttr = collection.getEntity().getKey().getName();
-         if (!J.empty(entityKey))
+         if (!Utils.empty(entityKey))
          {
             params.put("in(`" + keyAttr + "`," + entityKey + ")", null);
          }

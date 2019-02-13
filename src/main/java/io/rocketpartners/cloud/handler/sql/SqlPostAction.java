@@ -37,7 +37,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
@@ -91,7 +91,7 @@ public class SqlPostAction extends SqlAction
       {
          if (obj instanceof JSArray)
          {
-            if (!J.empty(req.getEntityKey()))
+            if (!Utils.empty(req.getEntityKey()))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
 
             for (JSObject child : (List<JSObject>) ((JSArray) obj).getObjects())
@@ -265,7 +265,7 @@ public class SqlPostAction extends SqlAction
                }
             }
 
-            if ("null".equals((value + "").toLowerCase()) || J.empty(value))
+            if ("null".equals((value + "").toLowerCase()) || Utils.empty(value))
             {
                value = null;
             }

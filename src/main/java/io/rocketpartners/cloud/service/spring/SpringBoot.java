@@ -25,7 +25,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
@@ -41,7 +41,7 @@ public class SpringBoot
       }
       catch (Exception ex)
       {
-         J.getCause(ex).printStackTrace();
+         Utils.getCause(ex).printStackTrace();
       }
    }
 

@@ -268,7 +268,7 @@ public class Web
                   Url u = new Url(url);
                   String fileName = u.getFile();
                   if (fileName == null)
-                     fileName = J.slugify(u.toString());
+                     fileName = Utils.slugify(u.toString());
 
                   // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
                   if (response.code == 404)
@@ -295,7 +295,7 @@ public class Web
                         fileName += "_ext";
                      }
 
-                     tempFile = J.createTempFile(fileName);
+                     tempFile = Utils.createTempFile(fileName);
                      tempFile.deleteOnExit();
                      debug("## Creating temp file .. " + tempFile);
                   }
@@ -303,7 +303,7 @@ public class Web
                   response.setFile(tempFile);
 
                   // stream to the temp file with append set to true (this is crucial for resumable downloads)
-                  J.pipe(is, new FileOutputStream(tempFile, true));
+                  Utils.pipe(is, new FileOutputStream(tempFile, true));
 
                   if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize())
                   {
@@ -899,13 +899,13 @@ public class Web
          {
             if (isSuccess() && file != null && file.length() > 0)
             {
-               String string = J.read(getInputStream());
+               String string = Utils.read(getInputStream());
                return string;
             }
          }
          catch (Exception ex)
          {
-            J.rethrow(ex);
+            Utils.rethrow(ex);
          }
          return null;
       }
@@ -916,13 +916,13 @@ public class Web
          {
             if (!isSuccess() && file != null && file.length() > 0)
             {
-               String string = J.read(getInputStream());
+               String string = Utils.read(getInputStream());
                return string;
             }
          }
          catch (Exception ex)
          {
-            J.rethrow(ex);
+            Utils.rethrow(ex);
          }
          return null;
       }
@@ -1026,7 +1026,7 @@ public class Web
 
       public void setUrl(String url)
       {
-         if (!J.empty(url))
+         if (!Utils.empty(url))
          {
             url = url.trim();
             url = url.replaceAll(" ", "%20");
@@ -1034,12 +1034,12 @@ public class Web
 
          this.url = url;
 
-         if (J.empty(fileName))
+         if (Utils.empty(fileName))
          {
             try
             {
                fileName = new URL(url).getFile();
-               if (J.empty(fileName))
+               if (Utils.empty(fileName))
                   fileName = null;
             }
             catch (Exception ex)

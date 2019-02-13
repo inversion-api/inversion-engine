@@ -25,7 +25,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class Chain
 {
@@ -95,7 +95,7 @@ public class Chain
       for (int i = next - 1; i >= 0; i--)
       {
          Object param = actions.get(i).getConfig(key);
-         if (!J.empty(param))
+         if (!Utils.empty(param))
             return param;
       }
 
@@ -117,7 +117,7 @@ public class Chain
       String value = endpoint.getConfig(key);
       if (value != null)
       {
-         values.addAll(J.explode(",", value));
+         values.addAll(Utils.explode(",", value));
       }
 
       for (int i = next - 1; i >= 0; i--)
@@ -125,7 +125,7 @@ public class Chain
          value = actions.get(i).getConfig(key);
          if (value != null)
          {
-            values.addAll(J.explode(",", value));
+            values.addAll(Utils.explode(",", value));
          }
       }
 
@@ -145,13 +145,13 @@ public class Chain
    public String getConfig(String key, String defaultValue)
    {
       String value = endpoint.getConfig(key);
-      if (!J.empty(value))
+      if (!Utils.empty(value))
       {
          return value;
       }
 
       value = actions.get(next - 1).getConfig(key);
-      if (!J.empty(value))
+      if (!Utils.empty(value))
       {
          return value;
       }

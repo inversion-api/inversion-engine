@@ -35,7 +35,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 
@@ -168,7 +168,7 @@ public class AclAction extends Action<AclAction>
             if (matchesVal(required, key))
             {
                String value = req.getParam(key);
-               if (J.empty(value))
+               if (Utils.empty(value))
                {
                   value = getValue(chain, key);
                   if (value != null)

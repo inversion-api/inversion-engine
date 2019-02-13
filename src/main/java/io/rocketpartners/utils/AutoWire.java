@@ -70,7 +70,7 @@ public class AutoWire
       }
       catch (Exception ex)
       {
-         J.rethrow(ex);
+         Utils.rethrow(ex);
       }
       add(props);
    }
@@ -373,7 +373,7 @@ public class AutoWire
       }
       catch (Exception ex)
       {
-         J.rethrow("Error setting " + key + " = " + prop, ex);
+         Utils.rethrow("Error setting " + key + " = " + prop, ex);
       }
    }
 
@@ -617,7 +617,7 @@ public class AutoWire
 
          props.put(name + ".class", object.getClass().getName());
 
-         List<Field> fields = J.getFields(object.getClass());
+         List<Field> fields = Utils.getFields(object.getClass());
 
          if (!defaults.containsKey(object.getClass()))
          {
@@ -667,7 +667,7 @@ public class AutoWire
                      String childKey = encode(child, props, namer, includer, names, defaults);
                      values.add(childKey);
                   }
-                  props.put(fieldKey, J.implode(",", values));
+                  props.put(fieldKey, Utils.implode(",", values));
                }
                else if (value instanceof Map)
                {
@@ -724,7 +724,7 @@ public class AutoWire
 
       String name = "";
 
-      Field nameField = J.getField("name", object.getClass());
+      Field nameField = Utils.getField("name", object.getClass());
       if (nameField != null)
       {
          name = nameField.get(object) + "";

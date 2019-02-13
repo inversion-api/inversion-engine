@@ -23,7 +23,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 
@@ -72,7 +72,7 @@ public class Action<A extends Action> extends Rule<A>
       List<JSObject> found = new ArrayList();
       for (String apath : paths)
       {
-         for (String path : (List<String>) J.explode(",", apath))
+         for (String path : (List<String>) Utils.explode(",", apath))
          {
             find(parent, found, path, ".");
          }
@@ -92,7 +92,7 @@ public class Action<A extends Action> extends Rule<A>
       }
       else if (parent instanceof JSObject)
       {
-         if (!found.contains(parent) && J.wildcardMatch(targetPath, currentPath))
+         if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
          {
             found.add((JSObject) parent);
          }
@@ -152,13 +152,13 @@ public class Action<A extends Action> extends Rule<A>
    {
       LinkedHashSet map = new LinkedHashSet();
       String param = req.getParam(key);
-      if (!J.empty(param))
+      if (!Utils.empty(param))
       {
          String[] arr = param.split(",");
          for (String e : arr)
          {
             e = e.trim().toLowerCase();
-            if (!J.empty(e))
+            if (!Utils.empty(e))
                map.add(e);
          }
       }
@@ -168,7 +168,7 @@ public class Action<A extends Action> extends Rule<A>
 
    public static String nextPath(String path, String next)
    {
-      return J.empty(path) ? next : path + "." + next;
+      return Utils.empty(path) ? next : path + "." + next;
    }
 
 }

@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.CaseInsensitiveSet;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Sql;
 
 public class SqlSuggestAction extends SqlAction
@@ -51,19 +51,19 @@ public class SqlSuggestAction extends SqlAction
       CaseInsensitiveSet<String> whitelist = this.whitelist;
       if (whitelistStr != null)
       {
-         whitelist = new CaseInsensitiveSet(J.explode(",", whitelistStr));
+         whitelist = new CaseInsensitiveSet(Utils.explode(",", whitelistStr));
       }
 
       String properties = req.removeParam(propertyProp);
 
-      if (J.empty(properties))
+      if (Utils.empty(properties))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
 
       if (!properties.contains("."))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be in the format '{collection}.{property}'");
 
       String value = req.removeParam(searchProp);
-      if (J.empty(value))
+      if (Utils.empty(value))
       {
          value = "";
       }
@@ -79,7 +79,7 @@ public class SqlSuggestAction extends SqlAction
       sql += " SELECT DISTINCT " + searchProp;
       sql += " \r\n FROM (";
 
-      List<String> propertyList = J.explode(",", properties);
+      List<String> propertyList = Utils.explode(",", properties);
       String firstProp = propertyList.get(0);
       String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
 

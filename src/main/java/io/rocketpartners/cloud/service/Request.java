@@ -26,7 +26,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.service.Service.ApiMatch;
 import io.rocketpartners.utils.CaseInsensitiveLookupMap;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
@@ -93,7 +93,7 @@ public class Request
    {
       this.url = url;
       String query = url.getQuery();
-      if (!J.empty(query))
+      if (!Utils.empty(query))
       {
          this.params.putAll(Url.parseQuery(query));
       }
@@ -139,7 +139,7 @@ public class Request
       {
          if (api.isMultiTenant())
          {
-            List<String> p = J.explode("/", apiUrl);
+            List<String> p = Utils.explode("/", apiUrl);
             tenantCode = p.get(p.size() - 1);
          }
 
@@ -151,7 +151,7 @@ public class Request
          //         while (path.startsWith("/"))
          //            path = path.substring(1, path.length());
 
-         List<String> parts = J.explode("/", path);//path.split("/");
+         List<String> parts = Utils.explode("/", path);//path.split("/");
 
          //         if (!path.endsWith("/"))
          //            path = path + "/";
@@ -161,7 +161,7 @@ public class Request
             String endpointPath = endpoint.getPath();
             if (endpointPath != null)
             {
-               List<String> epPath = J.explode("/", endpointPath);
+               List<String> epPath = Utils.explode("/", endpointPath);
                for (int i = 0; i < epPath.size(); i++)
                {
                   if (parts.get(0).equalsIgnoreCase(epPath.get(i)))
@@ -179,8 +179,8 @@ public class Request
             {
                if (Endpoint.pathMatches(wildcard, path))
                {
-                  List<String> matchParts = J.explode("/", wildcard);
-                  List<String> pathParts = J.explode("/", path);
+                  List<String> matchParts = Utils.explode("/", wildcard);
+                  List<String> pathParts = Utils.explode("/", path);
                   for (int i = 0; i < matchParts.size(); i++)
                   {
                      if (i >= pathParts.size())
@@ -211,7 +211,7 @@ public class Request
                }
             }
 
-            subpath = J.implode("/", parts) + "/";
+            subpath = Utils.implode("/", parts) + "/";
 
             int idx = 0;
             if (parts.size() > idx)
@@ -261,7 +261,7 @@ public class Request
          return json;
 
       String body = getBody();
-      if (J.empty(body))
+      if (Utils.empty(body))
          return null;
 
       try

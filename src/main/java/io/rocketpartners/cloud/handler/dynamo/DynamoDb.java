@@ -42,7 +42,7 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class DynamoDb extends Db
 {
@@ -320,7 +320,7 @@ public class DynamoDb extends Db
    {
       if (this.dynamoClient == null)
       {
-         if (J.empty(awsRegion))
+         if (Utils.empty(awsRegion))
          {
             this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
          }

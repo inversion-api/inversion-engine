@@ -28,7 +28,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Sql;
 
 public abstract class SqlAction<T extends SqlAction> extends Action<T>
@@ -54,7 +54,7 @@ public abstract class SqlAction<T extends SqlAction> extends Action<T>
 
    public static String nextPath(String path, String next)
    {
-      return J.empty(path) ? next : path + "." + next;
+      return Utils.empty(path) ? next : path + "." + next;
    }
 
    /**

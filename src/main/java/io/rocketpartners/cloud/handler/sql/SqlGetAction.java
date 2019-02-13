@@ -46,7 +46,7 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.CaseInsensitiveSet;
 import io.rocketpartners.utils.ISO8601Util;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.ListMap;
@@ -76,7 +76,7 @@ public class SqlGetAction extends SqlAction
 
       String dbName = (String) chain.get("db");
       SqlDb db = null;
-      if (!J.empty(dbName))
+      if (!Utils.empty(dbName))
       {
          db = (SqlDb) api.getDb(dbName);
       }
@@ -114,7 +114,7 @@ public class SqlGetAction extends SqlAction
          params.addAll(sqlParams);
       }
 
-      if (collection != null && entity != null && !J.empty(req.getSubCollectionKey()))
+      if (collection != null && entity != null && !Utils.empty(req.getSubCollectionKey()))
       {
          //-- this is an entity sub collection listing request
          //-- ${http://host/apipath}/collectionKey/entityKey/subCollectionKey
@@ -151,10 +151,10 @@ public class SqlGetAction extends SqlAction
 
                List ids = Sql.selectList(conn, sql, req.getEntityKey());
 
-               String newUrl = Service.buildLink(req, collection.getName(), J.implode(",", ids.toArray()), null);
+               String newUrl = Service.buildLink(req, collection.getName(), Utils.implode(",", ids.toArray()), null);
 
                String queryStr = req.getQuery();
-               if (!J.empty(queryStr))
+               if (!Utils.empty(queryStr))
                {
                   newUrl += "?" + queryStr;
                }
@@ -168,14 +168,14 @@ public class SqlGetAction extends SqlAction
             }
          }
       }
-      else if (entity != null && !J.empty(req.getCollectionKey()) && !J.empty(req.getEntityKey()))
+      else if (entity != null && !Utils.empty(req.getCollectionKey()) && !Utils.empty(req.getEntityKey()))
       {
          String keyCol = entity.getKey().getName();
 
          //-- this is a request for one or more entities by ID
          //-- ${http://host/apipath}/collectionKey/entityKey[,entityKey2,entityKey3....,entityKeyN]
 
-         String inClause = Sql.getInClauseStr(J.explode(",", Sql.check(req.getEntityKey())));
+         String inClause = Sql.getInClauseStr(Utils.explode(",", Sql.check(req.getEntityKey())));
 
          sql += " SELECT * FROM " + query.quoteCol(tbl.getName());
          sql += " WHERE " + Sql.check(keyCol) + " IN (" + inClause + ") ";
@@ -192,12 +192,12 @@ public class SqlGetAction extends SqlAction
       //--
 
       String passedInSelect = (String) chain.remove("select");
-      if (!J.empty(passedInSelect))
+      if (!Utils.empty(passedInSelect))
       {
          sql = passedInSelect.trim();
       }
 
-      if (J.empty(sql))
+      if (Utils.empty(sql))
       {
          throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
       }
@@ -444,7 +444,7 @@ public class SqlGetAction extends SqlAction
             if (url.indexOf("?") < 0)
                url += "?";
             url += URLEncoder.encode(lcKey, "UTF-8");
-            if (!J.empty(value))
+            if (!Utils.empty(value))
                url += "=" + URLEncoder.encode(value, "UTF-8");
          }
       }
@@ -726,7 +726,7 @@ public class SqlGetAction extends SqlAction
 
    static String expandPath(String path, Object next)
    {
-      if (J.empty(path))
+      if (Utils.empty(path))
          return next + "";
       else
          return path + "." + next;
@@ -786,11 +786,11 @@ public class SqlGetAction extends SqlAction
       for (String pattern : haystack)
       {
          pattern = pattern.toLowerCase();
-         if (J.wildcardMatch(pattern, lc))
+         if (Utils.wildcardMatch(pattern, lc))
             return true;
 
          if (pattern.startsWith("*") || pattern.startsWith("."))
-            if (J.wildcardMatch(pattern, "." + lc))
+            if (Utils.wildcardMatch(pattern, "." + lc))
                return true;
       }
       return false;

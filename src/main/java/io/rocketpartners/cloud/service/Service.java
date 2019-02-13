@@ -34,7 +34,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Url;
 import io.rocketpartners.utils.UrlBuilder;
@@ -204,7 +204,7 @@ public class Service
             throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
          }
 
-         if (J.empty(req.getCollectionKey()))
+         if (Utils.empty(req.getCollectionKey()))
          {
             throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
          }
@@ -249,7 +249,7 @@ public class Service
          res.setStatus(status);
          JSObject response = new JSObject("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
-            response.put("error", J.getShortCause(ex));
+            response.put("error", Utils.getShortCause(ex));
 
          res.setJson(response);
       }
@@ -304,7 +304,7 @@ public class Service
                   res.setContentType("text/text");
             }
          }
-         else if (!J.empty(res.getRedirect()))
+         else if (!Utils.empty(res.getRedirect()))
          {
             res.addHeader("Location", res.getRedirect());
             res.setStatus(SC.SC_302_FOUND);
@@ -412,7 +412,7 @@ public class Service
          res.setStatus(status);
          JSObject response = new JSObject("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
-            response.put("error", J.getShortCause(ex));
+            response.put("error", Utils.getShortCause(ex));
 
          res.setJson(response);
       }
@@ -454,7 +454,7 @@ public class Service
    boolean redirectPlural(Request req, Response res)
    {
       String collection = req.getCollectionKey();
-      if (!J.empty(collection))
+      if (!Utils.empty(collection))
       {
          String plural = English.plural(collection);
          if (!plural.equals(collection))
@@ -511,10 +511,10 @@ public class Service
          //String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
          String halfPath = "/" + a.getApiCode() + "/";
 
-         if (!J.empty(servletMapping))
+         if (!Utils.empty(servletMapping))
          {
             //fullPath = "/" + J.implode("/", servletMapping, fullPath) + "/";
-            halfPath = "/" + J.implode("/", servletMapping, halfPath) + "/";
+            halfPath = "/" + Utils.implode("/", servletMapping, halfPath) + "/";
          }
 
 //         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -690,7 +690,7 @@ public class Service
    {
       String url = req.getApiUrl();
 
-      if (!J.empty(collectionKey))
+      if (!Utils.empty(collectionKey))
       {
          if (!url.endsWith("/"))
             url += "/";
@@ -698,10 +698,10 @@ public class Service
          url += collectionKey;
       }
 
-      if (!J.empty(entityKey))
+      if (!Utils.empty(entityKey))
          url += "/" + entityKey;
 
-      if (!J.empty(subCollectionKey))
+      if (!Utils.empty(subCollectionKey))
          url += "/" + subCollectionKey;
 
       if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
@@ -715,7 +715,7 @@ public class Service
       else
       {
          String proto = req.getHeader("x-forwarded-proto");
-         if (!J.empty(proto))
+         if (!Utils.empty(proto))
          {
             url = proto + url.substring(url.indexOf(':'), url.length());
          }

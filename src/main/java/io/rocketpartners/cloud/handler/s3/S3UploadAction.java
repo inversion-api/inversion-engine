@@ -42,7 +42,7 @@ import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Request.Upload;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSObject;
 
 /**
@@ -143,7 +143,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    void error(Response res, Exception exception, String message)
    {
       if (exception != null)
-         message += "\r\n\r\n" + J.getShortCause(exception);
+         message += "\r\n\r\n" + Utils.getShortCause(exception);
 
       res.setStatus(SC.SC_400_BAD_REQUEST);
       Map<String, String> content = new HashMap<>();

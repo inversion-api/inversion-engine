@@ -61,7 +61,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
@@ -187,7 +187,7 @@ public class ScriptAction extends Action<ScriptAction>
             JSObject script = scripts.get(path);
             String type = script.getString("type");
 
-            List<String> parts = J.explode("/", path);
+            List<String> parts = Utils.explode("/", path);
             String componentStr = parts.size() > 1 ? parts.get(parts.size() - 2) : parts.get(0);
             String actionStr = parts.size() > 1 ? parts.get(parts.size() - 1) : null;
 
@@ -265,7 +265,7 @@ public class ScriptAction extends Action<ScriptAction>
             }
          }
 
-         if (!J.empty(content) && J.empty(res.getText()) && (res.getJson() == null || res.getJson().getProperties().size() == 0))
+         if (!Utils.empty(content) && Utils.empty(res.getText()) && (res.getJson() == null || res.getJson().getProperties().size() == 0))
          {
             boolean setText = true;
             if (content.startsWith("{") || content.startsWith("["))
@@ -305,7 +305,7 @@ public class ScriptAction extends Action<ScriptAction>
 
       String subpath = req.getSubpath();
 
-      List<String> parts = J.explode("/", subpath);
+      List<String> parts = Utils.explode("/", subpath);
 
       JSObject script = null;
       String path = null;
@@ -315,9 +315,9 @@ public class ScriptAction extends Action<ScriptAction>
       {
          if (ext(parts.get(1)) == null)
          {
-            guesses.add(J.implode("/", parts.get(0), "switch"));
+            guesses.add(Utils.implode("/", parts.get(0), "switch"));
          }
-         guesses.add(J.implode("/", parts.get(0), parts.get(1)));
+         guesses.add(Utils.implode("/", parts.get(0), parts.get(1)));
       }
 
       if (ext(parts.get(0)) == null)
@@ -342,14 +342,14 @@ public class ScriptAction extends Action<ScriptAction>
          scripts.add(script);
          paths.put(script, path);
 
-         parts = J.explode("/", path);
+         parts = Utils.explode("/", path);
 
          List<JSObject> settings = new ArrayList();
 
          for (int i = 0; i < parts.size(); i++)
          {
-            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i - 1));
-            path = J.implode("/", base, "settings");
+            String base = i == 0 ? "" : Utils.implode("/", parts.subList(0, i - 1));
+            path = Utils.implode("/", base, "settings");
 
             script = findScript(path);
             if (script != null)
@@ -366,8 +366,8 @@ public class ScriptAction extends Action<ScriptAction>
 
          for (int i = parts.size() - 1; i >= 0; i--)
          {
-            String base = i == 0 ? "" : J.implode("/", parts.subList(0, i));
-            path = J.implode("/", base, "layout");
+            String base = i == 0 ? "" : Utils.implode("/", parts.subList(0, i));
+            path = Utils.implode("/", base, "layout");
             script = findScript(path);
             if (script != null)
             {
@@ -426,15 +426,15 @@ public class ScriptAction extends Action<ScriptAction>
       {
 
          ext = handler.ext(p);
-         InputStream is = chain.getService().getResource(J.implode("/", scriptsDir, p));
+         InputStream is = chain.getService().getResource(Utils.implode("/", scriptsDir, p));
          if (is != null)
          {
-            script = new JSObject("type", handler.scriptTypes.get(ext), "script", J.read(is));
+            script = new JSObject("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
             break;
          }
       }
 
-      if (script == null && !J.empty(scriptsCollection))
+      if (script == null && !Utils.empty(scriptsCollection))
       {
          String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
          Response r = chain.getService().include(chain, "GET", url, null);

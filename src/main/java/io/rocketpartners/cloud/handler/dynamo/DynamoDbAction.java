@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 /**
  * @author tc-rocket
@@ -73,7 +73,7 @@ public abstract class DynamoDbAction<A extends DynamoDbAction> extends Action<A>
          for (String e : arr)
          {
             e = e.trim();
-            if (!J.empty(e))
+            if (!Utils.empty(e))
                l.add(e);
          }
       }

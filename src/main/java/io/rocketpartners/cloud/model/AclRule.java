@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class AclRule extends Rule
 {
@@ -101,7 +101,7 @@ public class AclRule extends Rule
    public void setPermissions(String permissions)
    {
       this.permissions.clear();
-      for (String permission : J.explode(",", permissions))
+      for (String permission : Utils.explode(",", permissions))
          addPermission(permission);
    }
 

@@ -10,7 +10,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class FirehoseDb extends Db
 {
@@ -38,7 +38,7 @@ public class FirehoseDb extends Db
 
       this.setType("firehose");
 
-      if (!J.empty(includeStreams))
+      if (!Utils.empty(includeStreams))
       {
          String[] parts = includeStreams.split(",");
          for (String part : parts)
@@ -85,10 +85,10 @@ public class FirehoseDb extends Db
             if (this.firehoseClient == null)
             {
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
-               if (!J.empty(awsRegion))
+               if (!Utils.empty(awsRegion))
                   builder.withRegion(awsRegion);
 
-               if (!J.empty(awsAccessKey) && !J.empty(awsSecretKey))
+               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
                {
                   BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
                   builder.withCredentials(new AWSStaticCredentialsProvider(creds));

@@ -26,7 +26,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.directive.InputBase;
 import org.apache.velocity.runtime.parser.node.Node;
 
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class SaveDirective extends InputBase
          n = node.jjtGetChild(1);
          Node argNode = node.jjtGetChild(0);
          Object argVar = argNode.value(context);
-         if (!J.empty(argVar))
+         if (!Utils.empty(argVar))
          {
             var = argVar.toString();
          }

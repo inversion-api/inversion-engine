@@ -94,7 +94,7 @@ public class JSObject
 
    public Object find(String path)
    {
-      List<String> props = J.explode("\\.", path);
+      List<String> props = Utils.explode("\\.", path);
 
       Object obj = this;
       for (String prop : props)
@@ -347,7 +347,7 @@ public class JSObject
          }
          else if (p.value instanceof Date)
          {
-            json.writeStringField(p.name, J.formatDate((Date) p.value, "yyyy-MM-dd'T'HH:mmZ"));
+            json.writeStringField(p.name, Utils.formatDate((Date) p.value, "yyyy-MM-dd'T'HH:mmZ"));
          }
          else if (p.value instanceof BigDecimal)
          {

@@ -35,7 +35,7 @@ import javax.servlet.http.Part;
 
 import com.amazonaws.util.IOUtils;
 
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Url;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.SC;
@@ -82,7 +82,7 @@ public class Servlet extends HttpServlet
             urlstr = urlstr + "/";
 
          String query = httpReq.getQueryString();
-         if (!J.empty(query))
+         if (!Utils.empty(query))
          {
             urlstr += "?" + query;
          }
@@ -154,7 +154,7 @@ public class Servlet extends HttpServlet
                   }
                   catch (Exception ex)
                   {
-                     J.rethrow(ex);
+                     Utils.rethrow(ex);
                   }
                   return null;
                }

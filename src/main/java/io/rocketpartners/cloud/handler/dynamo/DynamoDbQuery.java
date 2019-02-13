@@ -26,7 +26,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Rows;
 
 /**
@@ -259,7 +259,7 @@ public class DynamoDbQuery extends Query<Table, DynamoDbQuery, DynamoDbQuery, Se
 
          List columns = select().getColumnNames();
          if (columns.size() > 0)
-            querySpec.withProjectionExpression(J.implode(",", columns));
+            querySpec.withProjectionExpression(Utils.implode(",", columns));
 
          if (filterExpr.length() > 0)
          {
@@ -284,7 +284,7 @@ public class DynamoDbQuery extends Query<Table, DynamoDbQuery, DynamoDbQuery, Se
 
          List columns = select().getColumnNames();
          if (columns.size() > 0)
-            scanSpec.withProjectionExpression(J.implode(",", columns));
+            scanSpec.withProjectionExpression(Utils.implode(",", columns));
 
          if (filterExpr.length() > 0)
          {

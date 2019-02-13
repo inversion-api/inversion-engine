@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>
 {
@@ -69,13 +69,13 @@ public class Endpoint extends Rule<Endpoint>
       if (path != null)
       {
          path = path.toLowerCase();
-         path = J.implode("/", J.explode("/", path));
+         path = Utils.implode("/", Utils.explode("/", path));
 
-         if (!J.empty(path) && !path.endsWith("/"))
+         if (!Utils.empty(path) && !path.endsWith("/"))
             path += "/";
       }
 
-      if (J.empty(path))
+      if (Utils.empty(path))
       {
          path = null;
       }

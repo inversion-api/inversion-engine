@@ -40,7 +40,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Sql;
@@ -123,25 +123,25 @@ public class AuthAction extends Action<AuthAction>
          }
       }
 
-      if (req.isPost() && sessionReq && (J.empty(username, password)))
+      if (req.isPost() && sessionReq && (Utils.empty(username, password)))
       {
          username = req.getJson().getString("username");
          password = req.getJson().getString("password");
       }
 
-      if (sessionKey == null && J.empty(username, password))
+      if (sessionKey == null && Utils.empty(username, password))
       {
          username = req.removeParam("x-auth-username");
          password = req.removeParam("x-auth-password");
       }
 
-      if (sessionKey == null && J.empty(username, password))
+      if (sessionKey == null && Utils.empty(username, password))
       {
          username = req.getHeader("username");
          password = req.getHeader("password");
       }
 
-      if (sessionKey == null && J.empty(username, password))
+      if (sessionKey == null && Utils.empty(username, password))
       {
          username = req.removeParam("username");
          password = req.removeParam("password");
@@ -160,7 +160,7 @@ public class AuthAction extends Action<AuthAction>
 
          sessionCache.remove(sessionKey);
       }
-      else if (!J.empty(username, password))
+      else if (!Utils.empty(username, password))
       {
          Connection conn = db.getConnection();
 
@@ -188,7 +188,7 @@ public class AuthAction extends Action<AuthAction>
                   tempUser.setRequestAt(now);
                   tempUser.setRoles(getRoles(conn, req.getApi(), tempUser));
                   tempUser.setPermissions(getPermissions(conn, req.getApi(), tempUser));
-                  if (!J.empty(authenticatedPerm))
+                  if (!Utils.empty(authenticatedPerm))
                   {
                      tempUser.getPermissions().add(new Permission(authenticatedPerm));
                   }
@@ -293,10 +293,10 @@ public class AuthAction extends Action<AuthAction>
 
    protected User getUser(Connection conn, Api api, String tenantCode, String username, String accessKey) throws Exception
    {
-      if (J.empty(username, accessKey))
+      if (Utils.empty(username, accessKey))
          throw new ApiException(SC.SC_401_UNAUTHORIZED);
 
-      if (api.isMultiTenant() && J.empty(tenantCode))
+      if (api.isMultiTenant() && Utils.empty(tenantCode))
          throw new ApiException(SC.SC_401_UNAUTHORIZED);
 
       String sql = "";
@@ -316,7 +316,7 @@ public class AuthAction extends Action<AuthAction>
 
       sql += " WHERE (u.revoked IS NULL OR u.revoked != 1) ";
 
-      if (!J.empty(username))
+      if (!Utils.empty(username))
       {
          sql += " AND u.username = ? ";
          params.add(username);

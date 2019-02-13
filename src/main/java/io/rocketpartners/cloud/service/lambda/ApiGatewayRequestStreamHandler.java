@@ -31,7 +31,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Url;
@@ -52,7 +52,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
    {
       Chain chain = null;
 
-      String input = J.read(new BufferedInputStream(inputStream));
+      String input = Utils.read(new BufferedInputStream(inputStream));
 
       JSObject responseBody = new JSObject();
       JSObject config = null;
@@ -67,13 +67,13 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          String path = (String) json.find("requestContext.path");
          Url url = new Url("http://" + host + path);
 
-         String profile = path != null ? J.explode("/", path).get(0) : "";
+         String profile = path != null ? Utils.explode("/", path).get(0) : "";
 
          String proxyPath = (String) json.find("pathParameters.proxy");
          proxyPath = proxyPath != null ? proxyPath : "";
 
-         String pathStr = J.implode("/", path);
-         String proxyStr = J.implode("/", proxyPath);
+         String pathStr = Utils.implode("/", path);
+         String proxyStr = Utils.implode("/", proxyPath);
 
          String servletPath = "";
 
@@ -92,10 +92,10 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
                {
                   service = new Service();
 
-                  if (!J.empty(profile))
+                  if (!Utils.empty(profile))
                      service.setProfile(profile);
 
-                  if (!J.empty(servletPath))
+                  if (!Utils.empty(servletPath))
                      service.setServletMapping(servletPath);
 
                   service.init();
@@ -141,7 +141,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             if (config != null)
                responseBody.put("config", config);
 
-            responseBody.put("error", J.getShortCause(ex));
+            responseBody.put("error", Utils.getShortCause(ex));
 
             responseBody.put("request", JS.toJSObject(input));
 
