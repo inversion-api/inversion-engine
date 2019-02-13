@@ -18,8 +18,10 @@ package io.rocketpartners.cloud.handler.misc;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.CaseInsensitiveSet;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Sql;
@@ -46,7 +47,7 @@ public class LogAction extends Action<LogAction>
    protected String                     logTable       = null;
    protected String                     logChangeTable = null;;
 
-   protected CaseInsensitiveSet<String> logMaskFields  = new CaseInsensitiveSet<>();
+   protected Set<String> logMaskFields  = new HashSet<>();
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception

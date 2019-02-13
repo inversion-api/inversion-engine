@@ -16,7 +16,9 @@
 package io.rocketpartners.cloud.handler.sql;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
@@ -29,17 +31,16 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.CaseInsensitiveSet;
-import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.Sql;
+import io.rocketpartners.utils.Utils;
 
 public class SqlSuggestAction extends SqlAction
 {
-   protected CaseInsensitiveSet<String> whitelist    = new CaseInsensitiveSet<>();
+   protected HashSet<String> whitelist    = new HashSet();
 
-   protected String                     propertyProp = "property";
-   protected String                     searchProp   = "value";
-   protected String                     tenantCol    = "tenantId";
+   protected String          propertyProp = "property";
+   protected String          searchProp   = "value";
+   protected String          tenantCol    = "tenantId";
 
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
    {
@@ -48,10 +49,10 @@ public class SqlSuggestAction extends SqlAction
       String tenantCol = chain.getConfig("tenantCol", this.tenantCol);
 
       String whitelistStr = chain.getConfig("whitelist", null);
-      CaseInsensitiveSet<String> whitelist = this.whitelist;
+      Set<String> whitelist = this.whitelist;
       if (whitelistStr != null)
       {
-         whitelist = new CaseInsensitiveSet(Utils.explode(",", whitelistStr));
+         whitelist = new HashSet(Utils.explode(",", whitelistStr));
       }
 
       String properties = req.removeParam(propertyProp);
@@ -88,8 +89,8 @@ public class SqlSuggestAction extends SqlAction
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
       SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
-      
-      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).buildQuery(collection.getEntity().getTable(), req.getParams()); 
+
+      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).buildQuery(collection.getEntity().getTable(), req.getParams());
 
       for (int i = 0; i < propertyList.size(); i++)
       {

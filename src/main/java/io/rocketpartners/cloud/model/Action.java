@@ -18,14 +18,15 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.utils.Utils;
 
 /**
  * @author wells
@@ -148,22 +149,23 @@ public class Action<A extends Action> extends Rule<A>
       return null;
    }
 
-   public static LinkedHashSet<String> splitParam(Request req, String key)
+   /**
+    * Lower cases and splits param values on ","
+    * @param req
+    * @param key
+    * @return
+    */
+   public static Set<String> splitParam(Request req, String key)
    {
-      LinkedHashSet map = new LinkedHashSet();
+      LinkedHashSet set = new LinkedHashSet();
       String param = req.getParam(key);
       if (!Utils.empty(param))
       {
-         String[] arr = param.split(",");
-         for (String e : arr)
-         {
-            e = e.trim().toLowerCase();
-            if (!Utils.empty(e))
-               map.add(e);
-         }
+         for (String lcParam : Utils.explode(",", param.toLowerCase()))
+            set.add(lcParam);
       }
 
-      return map;
+      return set;
    }
 
    public static String nextPath(String path, String next)

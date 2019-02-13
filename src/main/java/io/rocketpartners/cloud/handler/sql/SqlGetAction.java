@@ -45,8 +45,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.CaseInsensitiveSet;
-import io.rocketpartners.utils.ISO8601Util;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Rows;
@@ -219,7 +217,7 @@ public class SqlGetAction extends SqlAction
 
       if (includes.size() > 0)
       {
-         includes = new CaseInsensitiveSet<String>(query.getColValueKeys());
+         includes = new HashSet<String>(query.getColValueKeys());
       }
 
       for (int i = 0; i < query.getNumValues(); i++)
@@ -282,7 +280,7 @@ public class SqlGetAction extends SqlAction
             meta.put("pageCount", pages);
          }
 
-         meta.put("created", ISO8601Util.format(new Date()));
+         meta.put("created", Utils.formatIso8601(new Date()));
 
          for (JSObject js : results)
          {

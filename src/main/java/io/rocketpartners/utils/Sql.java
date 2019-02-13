@@ -1144,7 +1144,7 @@ public class Sql
          //         DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
          //         TemporalAccessor accessor = timeFormatter.parse(date);
          //         return Date.from(Instant.from(accessor));
-         return ISO8601Util.parse(date, new ParsePosition(0));
+         return Utils.parseIso8601(date);
       }
       catch (Exception ex)
       {

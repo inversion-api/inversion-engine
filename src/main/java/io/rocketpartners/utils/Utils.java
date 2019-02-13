@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
+import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -51,6 +52,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 /**
  * Collection of utility methods designed to make
@@ -319,6 +322,16 @@ public class Utils
    //      return df.format(date);
    //   }
 
+   public static Date parseIso8601(String date)throws ParseException
+   {
+      return ISO8601Utils.parse(date, new ParsePosition(0));
+   }
+
+   public static String formatIso8601(Date date)
+   {
+      return ISO8601Utils.format(date);
+   }
+
    /**
     * Simple one liner to avoid verbosity of using SimpleDateFormat
     */
@@ -365,7 +378,7 @@ public class Utils
          //         DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
          //         TemporalAccessor accessor = timeFormatter.parse(date);
          //         return Date.from(Instant.from(accessor));
-         return ISO8601Util.parse(date, new ParsePosition(0));
+         return ISO8601Utils.parse(date, new ParsePosition(0));
       }
       catch (Exception ex)
       {
@@ -570,7 +583,7 @@ public class Utils
          {
             for (Field f : farr)
             {
-               if(!found.contains(f.getName()))
+               if (!found.contains(f.getName()))
                {
                   f.setAccessible(true);
                   found.add(f.getName());
