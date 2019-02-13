@@ -356,8 +356,8 @@ public class AuthAction extends Action<AuthAction>
    {
       String sql = "";
       sql += " SELECT DISTINCT r.* ";
-      sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ? and ur.accountId = ?";
-      return Sql.selectObjects(conn, sql, Role.class, user.getId(), api.getAccountId());
+      sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ";
+      return Sql.selectObjects(conn, sql, Role.class, user.getId());
    }
 
    protected List<Permission> getPermissions(Connection conn, Api api, User user) throws Exception

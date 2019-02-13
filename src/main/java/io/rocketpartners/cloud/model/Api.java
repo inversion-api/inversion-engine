@@ -30,10 +30,8 @@ public class Api
    boolean                     debug       = false;
 
    protected int               id          = 0;
-   protected int               accountId   = 0;
 
    protected String            apiCode     = null;
-   protected String            accountCode = null;
    protected boolean           multiTenant = false;
    protected String            url         = null;
 
@@ -60,10 +58,9 @@ public class Api
       this.name = name;
    }
 
-   public Api(String name, String accountCode, String apiCode)
+   public Api(String name, String apiCode)
    {
       withName(name);
-      withAccountCode(accountCode);
       withApiCode(apiCode);
    }
 
@@ -447,17 +444,6 @@ public class Api
       return this;
    }
 
-   public String getAccountCode()
-   {
-      return accountCode;
-   }
-
-   public Api withAccountCode(String accountCode)
-   {
-      this.accountCode = accountCode;
-      return this;
-   }
-
    public boolean isMultiTenant()
    {
       return multiTenant;
@@ -486,16 +472,6 @@ public class Api
    public void setUrl(String url)
    {
       this.url = url;
-   }
-
-   public int getAccountId()
-   {
-      return accountId;
-   }
-
-   public void setAccountId(int accountId)
-   {
-      this.accountId = accountId;
    }
 
 }

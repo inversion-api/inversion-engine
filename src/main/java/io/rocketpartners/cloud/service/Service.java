@@ -498,8 +498,6 @@ public class Service
 
    ApiMatch findApi(String method, Url url) throws Exception
    {
-      String accountCode = null;
-
       String path = url.getPath() + "";
 
       String host = url.getHost();
@@ -510,28 +508,31 @@ public class Service
 
       for (Api a : apis)
       {
-         String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
+         //String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
          String halfPath = "/" + a.getApiCode() + "/";
 
          if (!J.empty(servletMapping))
          {
-            fullPath = "/" + J.implode("/", servletMapping, fullPath) + "/";
+            //fullPath = "/" + J.implode("/", servletMapping, fullPath) + "/";
             halfPath = "/" + J.implode("/", servletMapping, halfPath) + "/";
          }
 
-         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
-               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && path.startsWith(halfPath))) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
+//         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+//               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+//               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+//               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && )) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
+         if(path.startsWith(halfPath))
          {
 
+            //TODO: WB 2/13/19 api will only init itself once but
+            //not sure if this is the most elegant place for this
             a.init();
 
-            if (path.startsWith(fullPath))
-            {
-               path = fullPath;
-            }
-            else
+//            if (path.startsWith(fullPath))
+//            {
+//               path = fullPath;
+//            }
+//            else
             {
                path = halfPath;
             }
@@ -621,10 +622,9 @@ public class Service
       return new ArrayList(apis);
    }
 
-   public Api withApi(String accountCode, String apiCode)
+   public Api withApi(String apiCode)
    {
       Api api = new Api();
-      api.withAccountCode(accountCode);
       api.withApiCode(apiCode);
       addApi(api);
       return api;
@@ -643,7 +643,7 @@ public class Service
 
       List<Api> newList = new ArrayList(apis);
 
-      Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
+      Api existingApi = getApi(api.getApiCode());
       if (existingApi != null && existingApi != api)
       {
          newList.remove(existingApi);
@@ -676,11 +676,11 @@ public class Service
       api.shutdown();
    }
 
-   public synchronized Api getApi(String accountCode, String apiCode)
+   public synchronized Api getApi(String apiCode)
    {
       for (Api api : apis)
       {
-         if (accountCode.equalsIgnoreCase(api.getAccountCode()) && apiCode.equalsIgnoreCase(api.getApiCode()))
+         if (apiCode.equalsIgnoreCase(api.getApiCode()))
             return api;
       }
       return null;

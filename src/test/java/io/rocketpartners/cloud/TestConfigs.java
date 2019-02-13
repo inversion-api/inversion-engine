@@ -71,7 +71,7 @@ public class TestConfigs extends TestCase
    public void test1() throws Exception
    {
       Service service = new Service()//
-                                     .withApi("demo", "helloworld")//
+                                     .withApi("test")//
                                      .withEndpoint("GET", "*").withAction(new SqlGetAction()).withMaxRows(100).getApi()//
                                      .withDb(new SqlDb()).withConfig("org.h2.Driver", "jdbc:h2:./northwind", "sa", "").getApi().getService();
 
@@ -85,7 +85,7 @@ public class TestConfigs extends TestCase
       //initDb();
 
       SpringBoot.run(new Service()//
-                                  .withApi("demo", "helloworld")//
+                                  .withApi("test")//
                                   .withEndpoint("GET", "*").withAction(new SqlGetAction()).withMaxRows(100).getApi()//
                                   .withDb(new SqlDb()).withConfig("org.h2.Driver", "jdbc:h2:./northwind", "sa", "").getApi().getService());
 

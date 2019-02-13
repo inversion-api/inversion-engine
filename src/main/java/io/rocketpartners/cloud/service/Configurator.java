@@ -81,10 +81,10 @@ public class Configurator
       try
       {
          Config config = findConfig();
-         
-         if(config.files.size() == 0)
+
+         if (config.files.size() == 0)
             return;
-         
+
          AutoWire w = new AutoWire();
          w.putBean("snooze", service);
          w.load(config.props);
@@ -149,10 +149,10 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
+            if (J.empty(api.getApiCode()))
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'apiCode'.  An Api can not be loaded without one.");
 
-            Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
+            Api existingApi = service.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                doLoad = true;
@@ -240,7 +240,7 @@ public class Configurator
 
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = service.getApi(api.getAccountCode(), api.getApiCode());
+            Api existingApi = service.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.setHash(config.hash);
@@ -343,9 +343,9 @@ public class Configurator
 
    static class ApiIncluder implements Includer
    {
-//      List        includes     = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
-//            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class,                               //
-//            boolean.class, char.class, byte.class, short.class, int.class, long.class, float.class, double.class, void.class);
+      //      List        includes     = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
+      //            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class,                               //
+      //            boolean.class, char.class, byte.class, short.class, int.class, long.class, float.class, double.class, void.class);
 
       List<Field> excludes     = Arrays.asList(J.getField("handlers", Api.class));
 

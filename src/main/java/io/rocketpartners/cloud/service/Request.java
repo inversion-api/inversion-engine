@@ -41,7 +41,6 @@ public class Request
    Api                      api              = null;
    Endpoint                 endpoint         = null;
 
-   String                   accountCode      = null;
    String                   apiCode          = null;
    String                   tenantCode       = null;
 
@@ -128,7 +127,6 @@ public class Request
       this.path = match.apiPath;
       this.subpath = match.apiPath;
 
-      this.accountCode = api.getAccountCode();
       this.apiCode = api.getApiCode();
 
       if (this.path.indexOf("?") > 0)
@@ -461,16 +459,6 @@ public class Request
    public void setUser(User user)
    {
       this.user = user;
-   }
-
-   public String getAccountCode()
-   {
-      return accountCode;
-   }
-
-   public void setAccountCode(String accountCode)
-   {
-      this.accountCode = accountCode;
    }
 
    public String getApiCode()

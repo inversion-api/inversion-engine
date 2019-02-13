@@ -121,10 +121,6 @@ public class Action<A extends Action> extends Rule<A>
       //      {
       //         return chain.getRequest().getApi().getAccountId() + "";
       //      }
-      else if ("accountCode".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getAccountCode();
-      }
       else if ("tenantId".equalsIgnoreCase(key))
       {
          if (chain.getRequest().getUser() != null)
