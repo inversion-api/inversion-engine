@@ -20,8 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.utils.KVPair;
 
 /**
  * 
@@ -45,7 +47,7 @@ public class Query<E extends Table, T extends Query, P extends Builder, S extend
    protected G                   page     = null;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KVPair>        values   = new ArrayList();
+   protected List<KeyValue>        values   = new ArrayList();
 
    //a map of rql attribute names to underlying db column names
    protected Map<String, String> colNames = new HashMap();
@@ -201,19 +203,19 @@ public class Query<E extends Table, T extends Query, P extends Builder, S extend
       if (column == null)
          column = key;
 
-      values.add(new KVPair(column, value));
+      values.add(new DefaultKeyValue(column, value));
       return r();
    }
 
    public List<String> getColValueKeys()
    {
       List keys = new ArrayList();
-      for (KVPair kv : values)
+      for (KeyValue kv : values)
          keys.add(kv.getKey());
       return keys;
    }
 
-   public KVPair<String, String> getColValue(int index)
+   public KeyValue<String, String> getColValue(int index)
    {
       return values.get(index);
    }

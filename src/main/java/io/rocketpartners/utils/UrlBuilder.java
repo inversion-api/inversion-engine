@@ -25,6 +25,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+
 public class UrlBuilder
 {
 
@@ -33,7 +36,7 @@ public class UrlBuilder
    Integer                      port     = null;
    String                       path     = null;
 
-   List<KVPair<String, String>> query    = new ArrayList();
+   List<KeyValue<String, String>> query    = new ArrayList();
 
    public UrlBuilder()
    {
@@ -72,7 +75,7 @@ public class UrlBuilder
 
       for (int i = 0; plist != null && i < plist.size(); i += 2)
       {
-         query.add(new KVPair(plist.get(i) + "", plist.get(i + 1) == null ? null : (plist.get(i + 1) + "")));
+         query.add(new DefaultKeyValue(plist.get(i) + "", plist.get(i + 1) == null ? null : (plist.get(i + 1) + "")));
       }
    }
 
@@ -159,7 +162,7 @@ public class UrlBuilder
       Map<String, String> params = Url.parseQuery(queryString);
       for (String key : params.keySet())
       {
-         query.add(new KVPair(key, params.get(key)));
+         query.add(new DefaultKeyValue(key, params.get(key)));
       }
       return this;
    }
@@ -168,7 +171,7 @@ public class UrlBuilder
    {
       try
       {
-         query.add(new KVPair(URLEncoder.encode(name, "UTF-8"), value != null ? URLEncoder.encode(value, "UTF-8") : null));
+         query.add(new DefaultKeyValue(URLEncoder.encode(name, "UTF-8"), value != null ? URLEncoder.encode(value, "UTF-8") : null));
       }
       catch (Exception ex)
       {
@@ -185,11 +188,11 @@ public class UrlBuilder
          queryStr = "";
          for (int i = 0; i < query.size(); i++)
          {
-            KVPair pair = query.get(i);
-            if (Utils.empty(pair.value))
-               queryStr += pair.key;
+            KeyValue pair = query.get(i);
+            if (Utils.empty(pair.getValue()))
+               queryStr += pair.getKey();
             else
-               queryStr += pair.key + "=" + pair.value;
+               queryStr += pair.getKey() + "=" + pair.getValue();
 
             if (i < query.size() - 1)
                queryStr += "&";

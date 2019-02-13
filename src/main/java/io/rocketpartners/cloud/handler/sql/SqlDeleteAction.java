@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.KeyValue;
+
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -32,11 +34,10 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.KVPair;
 import io.rocketpartners.utils.Sql;
+import io.rocketpartners.utils.Utils;
 
 public class SqlDeleteAction extends SqlAction
 {
@@ -220,7 +221,7 @@ public class SqlDeleteAction extends SqlAction
 
          for (int i = 0; i < query.getNumValues(); i++)
          {
-            KVPair<String, String> pair = query.getColValue(i);
+            KeyValue<String, String> pair = query.getColValue(i);
             String col = pair.getKey();
             String val = pair.getValue();
             args.add(cast(collection, col, val));
