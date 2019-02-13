@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.map.MultiKeyMap;
+
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -43,7 +45,6 @@ import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.CaseInsensitiveSet;
-import io.rocketpartners.utils.DoubleKeyMap;
 import io.rocketpartners.utils.ISO8601Util;
 import io.rocketpartners.utils.J;
 import io.rocketpartners.utils.JSArray;
@@ -371,7 +372,7 @@ public class SqlGetAction extends SqlAction
       Attribute keyAttr = collection.getEntity().getKey();
       //Entity entity = collection.getEntity();
 
-      DoubleKeyMap pkCache = new DoubleKeyMap();
+      MultiKeyMap pkCache = new MultiKeyMap();
 
       for (Row row : rows)
       {
@@ -483,7 +484,7 @@ public class SqlGetAction extends SqlAction
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
-   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, DoubleKeyMap pkCache) throws Exception
+   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;

@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.collections4.map.MultiKeyMap;
+
 public class AutoWire
 {
    @Retention(RetentionPolicy.RUNTIME)
@@ -592,7 +594,7 @@ public class AutoWire
    {
       Properties props = new Properties();
       Map names = new HashMap();
-      DoubleKeyMap defaults = new DoubleKeyMap();
+      MultiKeyMap<String, String> defaults = new MultiKeyMap();
 
       for (Object object : objects)
       {
@@ -601,7 +603,7 @@ public class AutoWire
       return props;
    }
 
-   static String encode(Object object, Properties props, Namer namer, Includer includer, Map<Object, String> names, DoubleKeyMap defaults) throws Exception
+   static String encode(Object object, Properties props, Namer namer, Includer includer, Map<Object, String> names, MultiKeyMap defaults) throws Exception
    {
       try
       {
