@@ -13,6 +13,11 @@
  */
 package io.rocketpartners.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Transforms English words from singular to plural form.
  * <p>
@@ -29,7 +34,7 @@ package io.rocketpartners.utils;
  * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
  * </p>
  */
-public class English extends TwoFormInflector
+public class English// extends TwoFormInflector
 {
    public static enum MODE {
       ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
@@ -49,8 +54,7 @@ public class English extends TwoFormInflector
    private static final String[] CATEGORY_A_AE     = {"alumna", "alga", "vertebra", "persona"};
 
    // Always o -> os
-   private static final String[] CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo",
-         "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
+   private static final String[] CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
 
    // Classical o -> i  (normally -> os)
    private static final String[] CATEGORY_O_I      = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
@@ -73,8 +77,7 @@ public class English extends TwoFormInflector
 
    private static final String[] CATEGORY_IX_IXES  = {"appendix"};
 
-   private static final String[] CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros",
-         "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
+   private static final String[] CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
 
    private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
 
@@ -94,8 +97,7 @@ public class English extends TwoFormInflector
             "fish", "ois", "sheep", "deer", "pox", "itis",
 
             // words
-            "bison", "flounder", "pliers", "bream", "gallows", "proceedings", "breeches", "graffiti", "rabies", "britches", "headquarters", "salmon", "carp", "herpes", "scissors", "chassis", "high-jinks", "sea-bass", "clippers", "homework", "series", "cod", "innings", "shears", "contretemps",
-            "jackanapes", "species", "corps", "mackerel", "swine", "debris", "measles", "trout", "diabetes", "mews", "tuna", "djinn", "mumps", "whiting", "eland", "news", "wildebeest", "elk", "pincers", "sugar"});
+            "bison", "flounder", "pliers", "bream", "gallows", "proceedings", "breeches", "graffiti", "rabies", "britches", "headquarters", "salmon", "carp", "herpes", "scissors", "chassis", "high-jinks", "sea-bass", "clippers", "homework", "series", "cod", "innings", "shears", "contretemps", "jackanapes", "species", "corps", "mackerel", "swine", "debris", "measles", "trout", "diabetes", "mews", "tuna", "djinn", "mumps", "whiting", "eland", "news", "wildebeest", "elk", "pincers", "sugar"});
 
       // 4. Handle standard irregular plurals (mongooses, oxen, etc.)
 
@@ -193,17 +195,17 @@ public class English extends TwoFormInflector
       rule("$", "s");
    }
 
-   /**
-    * Returns plural form of the given word.
-    *
-    * @param word word in singular form
-    * @return plural form of the word
-    */
-   @Override
-   public String getPlural(String word)
-   {
-      return super.getPlural(word);
-   }
+   //   /**
+   //    * Returns plural form of the given word.
+   //    *
+   //    * @param word word in singular form
+   //    * @return plural form of the word
+   //    */
+   //   @Override
+   //   public String getPlural(String word)
+   //   {
+   //      return super.getPlural(word);
+   //   }
 
    /**
     * Returns singular or plural form of the word based on count.
@@ -266,5 +268,129 @@ public class English extends TwoFormInflector
    {
       English newInflector = new English(mode);
       inflector = newInflector;
+   }
+
+   //   public static abstract class TwoFormInflector
+   //   {
+   private interface Rule
+   {
+      String getPlural(String singular);
+   }
+
+   private static class RegExpRule implements Rule
+   {
+      private final Pattern singular;
+      private final String  plural;
+
+      private RegExpRule(Pattern singular, String plural)
+      {
+         this.singular = singular;
+         this.plural = plural;
+      }
+
+      @Override
+      public String getPlural(String word)
+      {
+         StringBuffer buffer = new StringBuffer();
+         Matcher matcher = singular.matcher(word);
+         if (matcher.find())
+         {
+            matcher.appendReplacement(buffer, plural);
+            matcher.appendTail(buffer);
+            return buffer.toString();
+         }
+         return null;
+      }
+   }
+
+   private static class CategoryRule implements Rule
+   {
+      private final String[] list;
+      private final String   singular;
+      private final String   plural;
+
+      public CategoryRule(String[] list, String singular, String plural)
+      {
+         this.list = list;
+         this.singular = singular;
+         this.plural = plural;
+      }
+
+      @Override
+      public String getPlural(String word)
+      {
+         String lowerWord = word.toLowerCase();
+         for (String suffix : list)
+         {
+            if (lowerWord.endsWith(suffix))
+            {
+               if (!lowerWord.endsWith(singular))
+               {
+                  throw new RuntimeException("Internal error");
+               }
+               return word.substring(0, word.length() - singular.length()) + plural;
+            }
+         }
+         return null;
+      }
+   }
+
+   private final List<Rule> rules = new ArrayList<Rule>();
+
+   protected String getPlural(String word)
+   {
+      for (Rule rule : rules)
+      {
+         String result = rule.getPlural(word);
+         if (result != null)
+         {
+            return result;
+         }
+      }
+      return null;
+   }
+
+   protected void uncountable(String[] list)
+   {
+      rules.add(new CategoryRule(list, "", ""));
+   }
+
+   protected void irregular(String singular, String plural)
+   {
+      if (singular.charAt(0) == plural.charAt(0))
+      {
+         rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
+      }
+      else
+      {
+         rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
+         rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
+      }
+   }
+
+   protected void irregular(String[][] list)
+   {
+      for (String[] pair : list)
+      {
+         irregular(pair[0], pair[1]);
+      }
+   }
+
+   protected void rule(String singular, String plural)
+   {
+      rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
+   }
+
+   protected void rule(String[][] list)
+   {
+      for (String[] pair : list)
+      {
+         rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
+      }
+   }
+
+   protected void categoryRule(String[] list, String singular, String plural)
+   {
+      rules.add(new CategoryRule(list, singular, plural));
    }
 }
