@@ -71,10 +71,38 @@ public class Sql
       }
    }
 
+   static List<SqlListener> listeners = new ArrayList();
+
+   public static void addSqlListener(SqlListener listener)
+   {
+      if (!listeners.contains(listener))
+         listeners.add(listener);
+   }
+
+   public static void removeSqlListener(SqlListener listener)
+   {
+      listeners.remove(listener);
+   }
+
+   public static interface SqlListener
+   {
+      public void beforeStmt(String method, String sql, Object... vals);
+   }
+
+   public static void notifyBefore(String method, String sql, Object... vals)
+   {
+      for (SqlListener listener : listeners)
+      {
+         listener.beforeStmt(method, sql, vals);
+      }
+   }
+
    public static Object execute(Connection conn, String sql, Object... vals) throws Exception
    {
       if (vals != null && vals.length == 1 && vals[0] instanceof Collection)
          vals = ((Collection) vals[0]).toArray();
+
+      notifyBefore("execute", sql, vals);
 
       Statement stmt = null;
       ResultSet rs = null;
@@ -156,41 +184,6 @@ public class Sql
       return null;
    }
 
-   //   public static void executeUpdate(Connection conn, String sql, Object... vals) throws Exception
-   //   {
-   //      if (vals != null && vals.length == 1 && vals[0] instanceof List)
-   //         vals = ((List) vals[0]).toArray();
-   //
-   //      Statement stmt = null;
-   //      ResultSet rs = null;
-   //      try
-   //      {
-   //         if (vals != null && vals.length > 0)
-   //         {
-   //            stmt = conn.prepareStatement(sql);
-   //            for (int i = 0; vals != null && i < vals.length; i++)
-   //            {
-   //               ((PreparedStatement) stmt).setObject(i + 1, vals[i]);
-   //            }
-   //            ((PreparedStatement) stmt).execute();
-   //         }
-   //         else
-   //         {
-   //            stmt = conn.createStatement();
-   //            stmt.execute(sql);
-   //         }
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         ex = new Exception(ex.getMessage() + " SQL=" + sql);
-   //         throw ex;
-   //      }
-   //      finally
-   //      {
-   //         close(rs, stmt);
-   //      }
-   //   }
-
    /*
    +------------------------------------------------------------------------------+
    | SELECT UTILS
@@ -206,6 +199,8 @@ public class Sql
    {
       if (vals != null && vals.length == 1 && vals[0] instanceof List)
          vals = ((List) vals[0]).toArray();
+
+      notifyBefore("selectRows", sql, vals);
 
       Statement stmt = null;
       ResultSet rs = null;
@@ -425,6 +420,8 @@ public class Sql
       {
          for (Map row : rows)
          {
+            notifyBefore("insertMaps", sql, row);
+
             for (int i = 0; i < keys.size(); i++)
             {
                Object value = row.get(keys.get(i));
@@ -483,6 +480,8 @@ public class Sql
          sql.append(namesClause.substring(0, namesClause.length() - 1));
          sql.append(valuesClause.substring(0, valuesClause.length() - 1));
          sql.append(")");
+
+         notifyBefore("insert", sql.toString(), o);
 
          if (idField == null)
          {
@@ -600,6 +599,9 @@ public class Sql
             }
          }
          sql.append(" WHERE id = ?");
+
+         notifyBefore("update", sql.toString(), values);
+
          stmt = conn.prepareStatement(sql.toString());
          for (int i = 0; i < values.size(); i++)
          {
@@ -666,6 +668,9 @@ public class Sql
             }
          }
          sql.append(" WHERE id = ?");
+
+         notifyBefore("delete", sql.toString(), o);
+
          stmt = conn.prepareStatement(sql.toString());
          stmt.setObject(1, id);
          stmt.execute();

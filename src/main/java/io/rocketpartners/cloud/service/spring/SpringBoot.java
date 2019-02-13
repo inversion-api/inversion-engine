@@ -19,13 +19,59 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import io.forty11.j.J;
+import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.service.Service;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
-public class SpringApplication
+public class SpringBoot
 {
+   //static Service service = null;
+
    public static void main(String[] args)
    {
-      org.springframework.boot.SpringApplication.run(SpringApplication.class, args);
+      try
+      {
+         org.springframework.boot.SpringApplication.run(SpringBoot.class, args);
+      }
+      catch (Exception ex)
+      {
+         J.getCause(ex).printStackTrace();
+      }
    }
+
+   public static void run(Api api)
+   {
+      run(new Service().withApi(api));
+   }
+
+   public static void run(Service service)
+   {
+      new SpringApplicationBuilder(SpringBoot.class).initializers(new ServiceInitializer(service)).run();
+   }
+
+   static class ServiceInitializer implements ApplicationContextInitializer
+   {
+
+      Service service;
+
+      public ServiceInitializer(Service service)
+      {
+         super();
+         this.service = service;
+      }
+
+      @Override
+      public void initialize(ConfigurableApplicationContext applicationContext)
+      {
+         applicationContext.getBeanFactory().registerSingleton("service", service);
+      }
+
+   }
+
 }

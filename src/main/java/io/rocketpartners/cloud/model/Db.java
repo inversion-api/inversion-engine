@@ -58,6 +58,19 @@ public class Db
    {
    }
 
+   public boolean isType(String... types)
+   {
+      if (this.type == null)
+         return false;
+
+      for (String type : types)
+      {
+         if (this.type.equalsIgnoreCase(type))
+            return true;
+      }
+      return false;
+   }
+
    public Table getTable(String tableName)
    {
       for (Table t : tables)

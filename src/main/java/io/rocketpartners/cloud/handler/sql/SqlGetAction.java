@@ -208,10 +208,11 @@ public class SqlGetAction extends SqlAction
       //Stmt stmt = rql.createStmt(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
       //stmt.setMaxRows(chain.getConfig("maxRows", maxRows)); //this is a default value
 
-      
-      
       query.withSelectSql(sql);
       query.withTerms(rqlParams);
+
+      if (query.page().getLimit() <= 0)
+         query.page().limit(getMaxRows());
 
       sql = query.getPreparedStmt();
 
@@ -273,7 +274,7 @@ public class SqlGetAction extends SqlAction
          meta.put("rowCount", rowCount);
          meta.put("pageSize", query.page().getLimit() + "");
 
-         if (db.isCalcRowsFound())
+         //if (db.isCalcRowsFound())
          {
             meta.put("pageNum", query.page().getPageNum());
             int pages = (int) Math.ceil((double) rowCount / (double) query.page().getLimit());
@@ -326,20 +327,21 @@ public class SqlGetAction extends SqlAction
       }
 
       Rows rows = Sql.selectRows(conn, sql, vals);
-      if (db.isCalcRowsFound() && chain.get("rowCount") == null)
+      if (chain.get("rowCount") == null)
       {
-         sql = "SELECT FOUND_ROWS()";
-         //TODO "SELECT FOUND_ROWS() is MySQL specific
-         //         if(!mysql)
-         //         {
-         //            sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
-         //            if (sql.indexOf("LIMIT ") > 0)
-         //               sql = sql.substring(0, sql.indexOf("LIMIT "));
-         //
-         //            if (sql.indexOf("ORDER BY ") > 0)
-         //               sql = sql.substring(0, sql.indexOf("ORDER BY "));   
-         //         }
+         if (db.isType("mysql"))
+         {
+            sql = "SELECT FOUND_ROWS()";
+         }
+         else
+         {
+            sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
+            if (sql.indexOf("LIMIT ") > 0)
+               sql = sql.substring(0, sql.indexOf("LIMIT "));
 
+            if (sql.indexOf("ORDER BY ") > 0)
+               sql = sql.substring(0, sql.indexOf("ORDER BY "));
+         }
          int found = Sql.selectInt(conn, sql);
 
          if (chain.isDebug())
@@ -389,11 +391,11 @@ public class SqlGetAction extends SqlAction
             Object value = row.get(colName);
             String attrName = colName;
 
-            if(collection != null)
+            if (collection != null)
             {
                attrName = collection.getAttributeName(attrName);
             }
-            
+
             if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
             {
                String href = Service.buildLink(req, req.getCollectionKey(), value, null);
@@ -714,7 +716,7 @@ public class SqlGetAction extends SqlAction
          }
       }
    }
-   
+
    public SqlGetAction withMaxRows(int maxRows)
    {
       this.maxRows = maxRows;
@@ -792,6 +794,16 @@ public class SqlGetAction extends SqlAction
       }
       return false;
 
+   }
+
+   public int getMaxRows()
+   {
+      return maxRows;
+   }
+
+   public void setMaxRows(int maxRows)
+   {
+      this.maxRows = maxRows;
    }
 
 }

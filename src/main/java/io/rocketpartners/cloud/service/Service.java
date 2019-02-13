@@ -630,11 +630,17 @@ public class Service
       return api;
    }
 
+   public Service withApi(Api api)
+   {
+      addApi(api);
+      return this;
+   }
+
    public synchronized void addApi(Api api)
    {
-      if(apis.contains(api))
+      if (apis.contains(api))
          return;
-      
+
       List<Api> newList = new ArrayList(apis);
 
       Api existingApi = getApi(api.getAccountCode(), api.getApiCode());
@@ -657,7 +663,7 @@ public class Service
       {
          existingApi.shutdown();
       }
-      
+
       api.setService(this);
    }
 

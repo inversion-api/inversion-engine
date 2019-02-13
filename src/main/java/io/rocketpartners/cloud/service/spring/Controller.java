@@ -39,56 +39,86 @@ import io.rocketpartners.cloud.service.Servlet;
  *
  */
 @RestController
-public class SpringController implements InitializingBean
+public class Controller implements InitializingBean
 {
-   Logger         log     = LoggerFactory.getLogger(SpringController.class);
+   protected Logger         log     = LoggerFactory.getLogger(Controller.class);
 
    @Autowired
-   ResourceLoader resourceLoader;
+   protected ResourceLoader resourceLoader;
 
    @Autowired
-   Environment    environment;
+   protected Environment    environment;
 
-   Servlet        servlet = new Servlet();
+   @Autowired
+   protected Service        service = null;
+
+   protected Servlet        servlet = new Servlet();
+
+   /**
+    * Subclasses can override if it is easier to directly wire up 
+    * a service/api in this code here verses other options.
+    * 
+    * By default this will return the service that was autowired
+    * by spring if it exists.
+    * 
+    * If no service is autowired or created by a subclass here
+    * then afterPropertiesSet() will create a default one.  In 
+    * that case, you must have config files that will be discovered
+    * by the configuration process and used to build the
+    * api.
+    * 
+    * @return
+    */
+   public Service getService()
+   {
+      return service;
+   }
 
    @Override
    public void afterPropertiesSet() throws Exception
    {
       try
       {
-         String[] activeProfiles = environment.getActiveProfiles();
-         String profile = null;
-         if (activeProfiles.length > 0)
+         if (service != null)
          {
-            profile = activeProfiles[0];
-            log.info("Using profile '" + profile + "'");
+            servlet.setService(service);
          }
          else
          {
-            log.info("No active spring profile was configured - use 'spring.profiles.active' to configure one");
-         }
-
-         final ResourceLoaderServletContext ctx = new ResourceLoaderServletContext(resourceLoader);
-
-         servlet.getService().setResourceLoader(new Service.ResourceLoader()
+            String[] activeProfiles = environment.getActiveProfiles();
+            String profile = null;
+            if (activeProfiles.length > 0)
             {
-               @Override
-               public InputStream getResource(String name)
+               profile = activeProfiles[0];
+               log.info("Using profile '" + profile + "'");
+            }
+            else
+            {
+               log.info("No active spring profile was configured - use 'spring.profiles.active' to configure one");
+            }
+
+            final ResourceLoaderServletContext ctx = new ResourceLoaderServletContext(resourceLoader);
+
+            servlet.getService().setResourceLoader(new Service.ResourceLoader()
                {
-                  return ctx.getResourceAsStream(name);
-               }
-            });
+                  @Override
+                  public InputStream getResource(String name)
+                  {
+                     return ctx.getResourceAsStream(name);
+                  }
+               });
 
-         servlet.getService().setProfile(profile);
-         servlet.getService().init();
-
+            servlet.getService().setProfile(profile);
+            servlet.getService().init();
+         }
       }
       catch (Exception e)
       {
+         e.printStackTrace();
+
          log.error("Error initializing snooze", e);
          throw e;
       }
-
    }
 
    @RequestMapping(value = "/**")

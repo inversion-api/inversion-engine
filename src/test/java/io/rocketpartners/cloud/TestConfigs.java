@@ -2,6 +2,8 @@ package io.rocketpartners.cloud;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -9,24 +11,26 @@ import io.rocketpartners.cloud.handler.sql.SqlDb;
 import io.rocketpartners.cloud.handler.sql.SqlGetAction;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.J;
+import io.rocketpartners.cloud.service.spring.SpringBoot;
 import io.rocketpartners.utils.JSObject;
 import io.rocketpartners.utils.Sql;
+import io.rocketpartners.utils.Sql.SqlListener;
 import junit.framework.TestCase;
 
 public class TestConfigs extends TestCase
 {
-   static
-   {
-      try
-      {
-         initDb();
-      }
-      catch (Exception ex)
-      {
-         J.rethrow(ex);
-      }
-   }
+   //   static
+   //   {
+   //      try
+   //      {
+   //         initDb();
+   //      }
+   //      catch (Exception ex)
+   //      {
+   //         ex.printStackTrace();
+   //         J.rethrow(ex);
+   //      }
+   //   }
 
    public static void initDb() throws Exception
    {
@@ -43,13 +47,24 @@ public class TestConfigs extends TestCase
 
       Connection conn = db.getConnection();
       Sql.runDdl(conn, TestConfigs.class.getResourceAsStream("Northwind.H2.sql"));
-      //conn.close();
+
+      Sql.addSqlListener(new SqlListener()
+         {
+            @Override
+            public void beforeStmt(String method, String sql, Object... vals)
+            {
+               System.out.println("SQL " + method + " - " + sql.replaceAll("\r\n",  " ") + " - " + new ArrayList(Arrays.asList(vals)));
+            }
+         });
+
    }
 
    public static void main(String[] args) throws Exception
    {
       TestConfigs tests = new TestConfigs();
-      tests.test1();
+      //tests.test1();
+
+      tests.test2();
    }
 
    @Test
@@ -63,6 +78,19 @@ public class TestConfigs extends TestCase
       Response res = service.service("GET", "http://localhost/demo/helloworld/categories");
       JSObject json = res.getJson();
       System.out.println(json);
+   }
+
+   public void test2() throws Exception
+   {
+      //initDb();
+
+      SpringBoot.run(new Service()//
+                                  .withApi("demo", "helloworld")//
+                                  .withEndpoint("GET", "*").withAction(new SqlGetAction()).withMaxRows(100).getApi()//
+                                  .withDb(new SqlDb()).withConfig("org.h2.Driver", "jdbc:h2:./northwind", "sa", "").getApi().getService());
+
+      initDb();
+
    }
 
 }

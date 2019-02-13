@@ -93,7 +93,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
             page = (offset / limit) + 1;
          }
       }
-      return page;
+      return page < 1 ? 1 : page;
    }
 
    public int getPageNum()

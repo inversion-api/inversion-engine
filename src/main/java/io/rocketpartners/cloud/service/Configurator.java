@@ -81,6 +81,10 @@ public class Configurator
       try
       {
          Config config = findConfig();
+         
+         if(config.files.size() == 0)
+            return;
+         
          AutoWire w = new AutoWire();
          w.putBean("snooze", service);
          w.load(config.props);

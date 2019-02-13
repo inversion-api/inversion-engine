@@ -51,8 +51,8 @@ public class Collection
    {
       for (Attribute attr : entity.getAttributes())
       {
-         attr.getColumn().getName().equalsIgnoreCase(columnName);
-         return attr.getName();
+         if (attr.getColumn().getName().equalsIgnoreCase(columnName))
+            return attr.getName();
       }
       return columnName;
    }
