@@ -48,9 +48,9 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.forty11.fusionvtl.directives.LayoutDirective;
-import io.forty11.fusionvtl.directives.SaveDirective;
-import io.forty11.fusionvtl.directives.SwitchDirective;
+import io.rocketpartners.cloud.handler.script.velocity.LayoutDirective;
+import io.rocketpartners.cloud.handler.script.velocity.SaveDirective;
+import io.rocketpartners.cloud.handler.script.velocity.SwitchDirective;
 import io.rocketpartners.cloud.handler.script.velocity.VelocityResourceLoader;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;

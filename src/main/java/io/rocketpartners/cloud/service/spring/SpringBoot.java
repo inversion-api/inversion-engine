@@ -23,9 +23,9 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import io.forty11.j.J;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.utils.J;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
