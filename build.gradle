@@ -40,8 +40,6 @@ repositories {
 
 dependencies {
 
-	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.11'
-   
 	compile 'org.springframework.boot:spring-boot-starter-web'
 	compile 'org.springframework.boot:spring-boot-starter-actuator'
 	compile 'org.springframework.boot:spring-boot-starter-jdbc'
