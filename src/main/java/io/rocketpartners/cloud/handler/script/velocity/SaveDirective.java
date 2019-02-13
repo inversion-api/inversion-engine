@@ -26,7 +26,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.directive.InputBase;
 import org.apache.velocity.runtime.parser.node.Node;
 
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * 

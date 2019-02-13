@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>
 {

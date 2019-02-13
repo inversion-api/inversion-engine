@@ -31,10 +31,10 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Url;
+import io.rocketpartners.cloud.utils.JS;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Url;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * @author wells

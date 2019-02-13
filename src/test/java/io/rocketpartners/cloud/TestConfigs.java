@@ -12,25 +12,26 @@ import io.rocketpartners.cloud.handler.sql.SqlGetAction;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.spring.SpringBoot;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Sql;
-import io.rocketpartners.utils.Sql.SqlListener;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.Utils;
+import io.rocketpartners.cloud.utils.Sql.SqlListener;
 import junit.framework.TestCase;
 
 public class TestConfigs extends TestCase
 {
-   //   static
-   //   {
-   //      try
-   //      {
-   //         initDb();
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         ex.printStackTrace();
-   //         J.rethrow(ex);
-   //      }
-   //   }
+   static
+   {
+      try
+      {
+         initDb();
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+         Utils.rethrow(ex);
+      }
+   }
 
    public static void initDb() throws Exception
    {
@@ -53,7 +54,7 @@ public class TestConfigs extends TestCase
             @Override
             public void beforeStmt(String method, String sql, Object... vals)
             {
-               System.out.println("SQL " + method + " - " + sql.replaceAll("\r\n",  " ") + " - " + new ArrayList(Arrays.asList(vals)));
+               System.out.println("SQL " + method + " - " + sql.replaceAll("\r\n", " ") + " - " + new ArrayList(Arrays.asList(vals)));
             }
          });
 

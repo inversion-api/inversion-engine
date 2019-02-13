@@ -6,9 +6,9 @@ import java.util.HashSet;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.handler.sql.SqlPostAction;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JS;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
 import junit.framework.TestCase;
 
 public class TestCollapse extends TestCase

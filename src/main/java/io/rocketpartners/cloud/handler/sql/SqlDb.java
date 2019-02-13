@@ -42,9 +42,9 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.utils.AutoWire.Ignore;
-import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.Sql;
+import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.AutoWire.Ignore;
 
 public class SqlDb extends Db
 {

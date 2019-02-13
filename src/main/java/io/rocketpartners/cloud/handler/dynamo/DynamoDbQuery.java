@@ -26,8 +26,8 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * @author tc-rocket

@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * @author tc-rocket

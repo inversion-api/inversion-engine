@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.utils;
+package io.rocketpartners.cloud.utils;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;

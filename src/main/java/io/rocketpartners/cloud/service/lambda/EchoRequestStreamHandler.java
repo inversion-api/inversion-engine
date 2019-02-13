@@ -24,9 +24,9 @@ import java.io.OutputStreamWriter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JS;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * Simple handler to echo the request back 

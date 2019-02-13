@@ -9,8 +9,8 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class FirehoseDb extends Db
 {

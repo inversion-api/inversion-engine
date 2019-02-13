@@ -33,11 +33,11 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.utils.English;
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Url;
-import io.rocketpartners.utils.UrlBuilder;
+import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Url;
+import io.rocketpartners.cloud.utils.UrlBuilder;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
 {

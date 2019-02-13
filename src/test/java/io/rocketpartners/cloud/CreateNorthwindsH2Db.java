@@ -6,9 +6,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 
-import io.rocketpartners.utils.Rows;
-import io.rocketpartners.utils.Rows.Row;
-import io.rocketpartners.utils.Sql;
+import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.Rows.Row;
 
 /**
  * http://optique-project.eu/training-programme/module-ontop/

@@ -28,8 +28,8 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.Sql;
+import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class SqlAction<T extends SqlAction> extends Action<T>
 {

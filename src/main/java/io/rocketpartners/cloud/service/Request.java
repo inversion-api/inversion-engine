@@ -25,12 +25,12 @@ import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.service.Service.ApiMatch;
-import io.rocketpartners.utils.CaseInsensitiveLookupMap;
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Url;
+import io.rocketpartners.cloud.utils.CaseInsensitiveLookupMap;
+import io.rocketpartners.cloud.utils.JS;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Url;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
 {

@@ -28,7 +28,7 @@ import org.apache.velocity.util.ExtProperties;
 
 import io.rocketpartners.cloud.handler.script.ScriptAction;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JSObject;
 
 public class VelocityResourceLoader extends ResourceLoader
 {

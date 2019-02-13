@@ -25,7 +25,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Chain
 {

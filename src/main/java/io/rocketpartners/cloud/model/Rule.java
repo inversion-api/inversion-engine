@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.Url;
+import io.rocketpartners.cloud.utils.Url;
+import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {

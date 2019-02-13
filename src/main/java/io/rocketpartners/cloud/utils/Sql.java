@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.utils;
+package io.rocketpartners.cloud.utils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.rocketpartners.utils.Rows.Row;
+import io.rocketpartners.cloud.utils.Rows.Row;
 
 /**
  * TODO: http://www.symantec.com/connect/articles/detection-sql-injection-and-cross-site-scripting-attacks

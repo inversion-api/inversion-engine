@@ -22,8 +22,8 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
 
 public class PasswordAction extends Action<PasswordAction>
 {

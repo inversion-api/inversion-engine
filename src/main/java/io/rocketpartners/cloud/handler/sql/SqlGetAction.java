@@ -45,12 +45,12 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Rows;
-import io.rocketpartners.utils.Rows.Row;
-import io.rocketpartners.utils.Sql;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.Utils;
+import io.rocketpartners.cloud.utils.Rows.Row;
 
 public class SqlGetAction extends SqlAction
 {

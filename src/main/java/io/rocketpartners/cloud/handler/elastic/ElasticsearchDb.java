@@ -28,9 +28,9 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.utils.JS;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Web;
+import io.rocketpartners.cloud.utils.JS;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Web;
 
 public class ElasticsearchDb extends Db
 {

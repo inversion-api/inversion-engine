@@ -35,9 +35,9 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.JSArray;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.Sql;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Sql;
 
 public class LogAction extends Action<LogAction>
 {

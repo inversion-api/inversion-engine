@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Change;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JSObject;
 
 public class Response
 {

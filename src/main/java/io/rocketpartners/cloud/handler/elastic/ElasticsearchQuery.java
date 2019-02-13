@@ -29,7 +29,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.utils.JSObject;
+import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * @author kfrankic

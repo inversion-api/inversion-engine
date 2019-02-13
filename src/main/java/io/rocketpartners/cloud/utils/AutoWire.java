@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.utils;
+package io.rocketpartners.cloud.utils;
 
 import java.io.ByteArrayInputStream;
 import java.lang.annotation.ElementType;

@@ -52,11 +52,11 @@ import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.utils.AutoWire;
-import io.rocketpartners.utils.AutoWire.Ignore;
-import io.rocketpartners.utils.AutoWire.Includer;
-import io.rocketpartners.utils.AutoWire.Namer;
-import io.rocketpartners.utils.Utils;
+import io.rocketpartners.cloud.utils.AutoWire;
+import io.rocketpartners.cloud.utils.Utils;
+import io.rocketpartners.cloud.utils.AutoWire.Ignore;
+import io.rocketpartners.cloud.utils.AutoWire.Includer;
+import io.rocketpartners.cloud.utils.AutoWire.Namer;
 
 public class Configurator
 {

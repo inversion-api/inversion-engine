@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.rocketpartners.utils;
+package io.rocketpartners.cloud.utils;
 
 import java.util.HashMap;
 import java.util.Map;

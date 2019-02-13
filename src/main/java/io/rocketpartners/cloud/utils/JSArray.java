@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.utils;
+package io.rocketpartners.cloud.utils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
-import io.rocketpartners.utils.JSObject.Property;
+import io.rocketpartners.cloud.utils.JSObject.Property;
 
 public class JSArray extends JSObject
 {
