@@ -23,6 +23,10 @@ import java.util.Map;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
+import io.rocketpartners.cloud.model.Attribute;
+import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Table;
 
 /**
@@ -36,21 +40,23 @@ import io.rocketpartners.cloud.model.Table;
  * @author wells
  *
  */
-public class Query<E extends Table, T extends Query, P extends Builder, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, P>
+public class Query<T extends Query, D extends Db, E extends Table, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
-   protected E                   table    = null;
+   protected D                   db         = null;
+   protected Collection          collection = null;
+   protected E                   table      = null;
 
-   protected S                   select   = null;
-   protected W                   where    = null;
-   protected R                   group    = null;
-   protected O                   order    = null;
-   protected G                   page     = null;
+   protected S                   select     = null;
+   protected W                   where      = null;
+   protected R                   group      = null;
+   protected O                   order      = null;
+   protected G                   page       = null;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KeyValue>        values   = new ArrayList();
+   protected List<KeyValue>      values     = new ArrayList();
 
    //a map of rql attribute names to underlying db column names
-   protected Map<String, String> colNames = new HashMap();
+   protected Map<String, String> colNames   = new HashMap();
 
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
@@ -93,11 +99,21 @@ public class Query<E extends Table, T extends Query, P extends Builder, S extend
    //------------------------------------------------------------------
    //------------------------------------------------------------------
 
-   public Query(E table)
+   public Query(Collection collection)
+   {
+      this(collection, null);
+   }
+
+   public Query(Collection collection, Object terms)
    {
       super(null);
 
-      this.table = table;
+      if (collection != null)
+      {
+         withCollection(collection);
+      }
+
+      //      this.table = table;
 
       //order matters when multiple clauses can accept the same term 
       where();
@@ -105,6 +121,9 @@ public class Query<E extends Table, T extends Query, P extends Builder, S extend
       order();
       group();
       select();
+
+      if (terms != null)
+         withTerms(terms);
    }
 
    @Override
@@ -171,26 +190,75 @@ public class Query<E extends Table, T extends Query, P extends Builder, S extend
       return table;
    }
 
-   public T withColNames(Map<String, String> attrToColNames)
+   public D db()
    {
-      for (String attrName : attrToColNames.keySet())
-      {
-         colNames.put(attrName.toLowerCase(), attrToColNames.get(attrName));
-      }
+      return db;
+   }
+
+   public T withDb(D db)
+   {
+      this.db = db;
       return r();
    }
 
-   public String getColumnName(String attribute)
+   public T withTable(E table)
    {
-      return colNames.get(attribute.toLowerCase());
+      withDb((D) table.getDb());
+      this.table = table;
+      return r();
    }
 
-   
+   public Collection collection()
+   {
+      return collection;
+   }
+
+   public T withCollection(Collection collection)
+   {
+      this.collection = collection;
+
+      if (collection != null)
+      {
+         Entity entity = collection.getEntity();
+         if (entity != null)
+         {
+            Table table = entity.getTable();
+            withTable((E) table);
+         }
+      }
+
+      return r();
+   }
+
+   public String getColumnName(String attributeName)
+   {
+      if (collection != null)
+      {
+         Attribute attr = collection.getAttribute(attributeName);
+         if (attr != null)
+            return attr.getColumn().getName();
+
+         return null;
+      }
+      else
+      {
+         return attributeName;
+      }
+   }
+
+   public String getAttributeName(String columnName)
+   {
+      if (collection != null)
+         return collection.getAttributeName(columnName);
+
+      return columnName;
+   }
+
    public int getNumValues()
    {
       return values.size();
    }
-   
+
    protected T clearValues()
    {
       values.clear();

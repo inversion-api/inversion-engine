@@ -15,7 +15,6 @@
  */
 package io.rocketpartners.cloud.action.sql;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -30,9 +29,6 @@ import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcConnectionPool;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
@@ -42,25 +38,11 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.English;
-import io.rocketpartners.cloud.utils.Sql;
 import io.rocketpartners.cloud.utils.AutoWire.Ignore;
+import io.rocketpartners.cloud.utils.English;
 
 public class SqlDb extends Db
 {
-   static
-   {
-      try
-      {
-         //bootstraps the SqlRql type
-         Class.forName(SqlRql.class.getName());
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
-   }
-
    static Map<String, DataSource> pools                    = new HashMap();
 
    public static final int        MIN_POOL_SIZE            = 3;

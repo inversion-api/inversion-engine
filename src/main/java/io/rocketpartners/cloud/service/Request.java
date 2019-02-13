@@ -21,6 +21,7 @@ import java.util.Map;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
@@ -87,6 +88,14 @@ public class Request
       addParams(params);
       addHeaders(headers);
       setBody(body);
+   }
+
+   public Collection getCollection()
+   {
+      if (api != null && collectionKey != null)
+         return api.getCollection(collectionKey);
+
+      return null;
    }
 
    public void setUrl(Url url)

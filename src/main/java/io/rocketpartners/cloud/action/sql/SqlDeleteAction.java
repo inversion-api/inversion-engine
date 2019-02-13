@@ -29,7 +29,6 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -161,11 +160,10 @@ public class SqlDeleteAction extends SqlAction
 
       Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
       Entity entity = collection.getEntity();
+      SqlQuery query = new SqlQuery(collection);
 
-      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
-
-      String table = rql.quoteCol(entity.getTable().getName());
-      String idCol = rql.quoteCol(entity.getKey().getColumn().getName());
+      String table = query.quoteCol(entity.getTable().getName());
+      String idCol = query.quoteCol(entity.getKey().getColumn().getName());
 
       List ids = Sql.selectList(conn, sql, args);
       if (ids.size() > 0)
@@ -186,7 +184,7 @@ public class SqlDeleteAction extends SqlAction
       try
       {
          SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
-         SqlRql rql = (SqlRql) Rql.getRql(db.getType());
+         //SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
          Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
 
@@ -202,7 +200,7 @@ public class SqlDeleteAction extends SqlAction
             params.put("in(`" + keyAttr + "`," + entityKey + ")", null);
          }
 
-         SqlQuery query = rql.buildQuery(collection.getEntity().getTable(), params);
+         SqlQuery query = new SqlQuery(collection, params);
 
          String sql = "SELECT " + query.asCol(collection.getEntity().getKey().getColumn().getName()) + " FROM " + query.asCol(entity.getTable().getName());
 

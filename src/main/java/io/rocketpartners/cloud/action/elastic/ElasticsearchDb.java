@@ -34,20 +34,6 @@ import io.rocketpartners.cloud.utils.Web;
 
 public class ElasticsearchDb extends Db
 {
-
-   static
-   {
-      try
-      {
-         //bootstraps the ElasticRql type
-         Class.forName(ElasticsearchRql.class.getName());
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
-   }
-
    protected static String      url                      = null;
 
    protected static int         maxRequestDuration       = 10;                  // duration in seconds.

@@ -18,9 +18,9 @@ package io.rocketpartners.cloud.action.elastic;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.rocketpartners.cloud.action.sql.SqlDb;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -35,9 +35,8 @@ import io.rocketpartners.cloud.utils.JSObject;
  * @author kfrankic
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
-// only include non-null values.
-
-public class ElasticsearchQuery extends Query<Table, ElasticsearchQuery, ElasticsearchQuery, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
+// 
+public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
 {
    // identifies a nested path
    @JsonIgnore
@@ -56,9 +55,10 @@ public class ElasticsearchQuery extends Query<Table, ElasticsearchQuery, Elastic
    //
    //   private List<String> excludes;
 
-   public ElasticsearchQuery(Table table)
+   public ElasticsearchQuery(Collection collection, Object terms)
    {
-      super(table);
+      super(collection);
+      withTerms(terms);
    }
 
    protected ElasticsearchPage createPage()

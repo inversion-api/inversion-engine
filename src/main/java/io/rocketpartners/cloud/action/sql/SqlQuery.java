@@ -16,33 +16,53 @@
 package io.rocketpartners.cloud.action.sql;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
+import io.rocketpartners.cloud.rql.Order.Sort;
 import io.rocketpartners.cloud.rql.Page;
 import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.cloud.rql.Order.Sort;
 
-public class SqlQuery extends Query<Table, SqlQuery, SqlQuery, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
-   protected String type        = null;
-   String           selectSql   = null;
+   String         selectSql   = null;
 
-   protected char   stringQuote = '\'';
-   protected char   columnQuote = '"';
+   protected char stringQuote = '\'';
+   protected char columnQuote = '"';
 
-   public SqlQuery(Table table)
+   public SqlQuery(Collection collection)
    {
-      super(table);
+      super(collection);
+   }
+
+   public SqlQuery(Collection collection, Object terms)
+   {
+      this(collection);
+      withTerms(terms);
+   }
+
+   public SqlQuery(Collection collection, Object terms, String selectSql)
+   {
+      this(collection, terms);
+      withSelectSql(selectSql);
+   }
+
+   @Override
+   public SqlQuery withDb(SqlDb db)
+   {
+      super.withDb(db);
+      if (db.isType("mysql"))
+         withStringQuote('`');
+
+      return this;
    }
 
    public String getPreparedStmt()
@@ -201,18 +221,7 @@ public class SqlQuery extends Query<Table, SqlQuery, SqlQuery, Select<Select<Sel
       String s = null;
       if (limit >= 0 || offset >= 0)
       {
-         if ("postgres".equalsIgnoreCase(getType()) || "redshift".equalsIgnoreCase(getType()))
-         {
-            s = "";
-            if (offset >= 0)
-               s += "OFFSET " + offset;
-
-            if (limit >= 0)
-            {
-               s += " LIMIT " + limit;
-            }
-         }
-         else
+         if (db().isType("mysql"))
          {
             s = "LIMIT ";
             if (offset >= 0)
@@ -224,6 +233,17 @@ public class SqlQuery extends Query<Table, SqlQuery, SqlQuery, Select<Select<Sel
                   s += ", ";
 
                s += limit;
+            }
+         }
+         else
+         {
+            s = "";
+            if (offset >= 0)
+               s += "OFFSET " + offset;
+
+            if (limit >= 0)
+            {
+               s += " LIMIT " + limit;
             }
          }
       }
@@ -434,16 +454,16 @@ public class SqlQuery extends Query<Table, SqlQuery, SqlQuery, Select<Select<Sel
       return this;
    }
 
-   public SqlQuery withType(String type)
-   {
-      this.type = type;
-      return this;
-   }
-
-   public String getType()
-   {
-      return type;
-   }
+   //   public SqlQuery withType(String type)
+   //   {
+   //      this.type = type;
+   //      return this;
+   //   }
+   //
+   //   public String getType()
+   //   {
+   //      return type;
+   //   }
 
    public void withStringQuote(char stringQuote)
    {

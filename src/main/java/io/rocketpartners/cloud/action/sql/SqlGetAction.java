@@ -40,7 +40,6 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -48,13 +47,13 @@ import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Sql;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.Rows.Row;
 
 public class SqlGetAction extends SqlAction
 {
-   int maxRows        = 100;
+   protected int maxRows        = 100;
 
    Set reservedParams = new HashSet(Arrays.asList("includes", "excludes", "expands"));
 
@@ -97,8 +96,7 @@ public class SqlGetAction extends SqlAction
       {
       }
 
-      SqlRql rql = (SqlRql) Rql.getRql(db.getType());
-      SqlQuery query = rql.buildQuery(collection.getEntity().getTable(), req.getParams());
+      SqlQuery query = new SqlQuery(collection, req.getParams());
 
       Entity entity = collection != null ? collection.getEntity() : null;
 
@@ -271,7 +269,7 @@ public class SqlGetAction extends SqlAction
          }
 
          meta.put("rowCount", rowCount);
-         meta.put("pageSize", query.page().getLimit() + "");
+         meta.put("pageSize", query.page().getLimit());
 
          //if (db.isCalcRowsFound())
          {
@@ -338,7 +336,7 @@ public class SqlGetAction extends SqlAction
             if (sql.indexOf("LIMIT ") > 0)
                sql = sql.substring(0, sql.indexOf("LIMIT "));
 
-            if (sql.indexOf("ORDER BY ") > 0)
+            if (sql.indexOf("  ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
          }
          int found = Sql.selectInt(conn, sql);

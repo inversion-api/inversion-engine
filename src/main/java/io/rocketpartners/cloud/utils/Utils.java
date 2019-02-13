@@ -172,6 +172,12 @@ public class Utils
 
       return exploded;
    }
+   
+   public static int roundUp(int num, int divisor)
+   {
+      int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
+      return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
+   }
 
    /**
     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.

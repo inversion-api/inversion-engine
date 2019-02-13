@@ -47,19 +47,6 @@ import io.rocketpartners.cloud.utils.Utils;
 public class DynamoDb extends Db
 {
 
-   static
-   {
-      try
-      {
-         //bootstraps the DynamoRql type
-         Class.forName(DynamoDbRql.class.getName());
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
-   }
-
    protected String       awsRegion    = "us-east-1";
 
    /**
@@ -453,8 +440,6 @@ public class DynamoDb extends Db
    //
    //      return attr.getS();
    //   }
-
-
 
    public void setIncludeTables(String includeTables)
    {

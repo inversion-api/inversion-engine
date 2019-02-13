@@ -16,32 +16,17 @@
 package io.rocketpartners.cloud.rql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.sql.SqlQuery;
-import io.rocketpartners.cloud.action.sql.SqlRql;
-import io.rocketpartners.cloud.rql.Rql;
+
 import junit.framework.TestCase;
 
 public class TestSqlRql extends TestCase
 {
-
-   static
-   {
-      try
-      {
-         Class.forName(SqlRql.class.getName());
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
-   }
-
    public static void main(String[] args) throws Exception
    {
       new TestSqlRql().test1();
@@ -412,9 +397,10 @@ public class TestSqlRql extends TestCase
          RqlTest test = tests.get(j);
          try
          {
-            SqlRql sqlRql = (SqlRql) Rql.getRql("mysql");
+            SqlQuery query = new SqlQuery(null, test.rql, test.select);
+            query.withStringQuote('`');
 
-            String output = sqlRql.buildQuery(test.rql, test.select).getDynamicStmt();
+            String output = query.getDynamicStmt();
 
             if (test.dynamicSql != null && !compare(test.dynamicSql, output))
             {
@@ -427,9 +413,7 @@ public class TestSqlRql extends TestCase
 
             if (test.preparedSql != null)
             {
-               SqlQuery query = sqlRql.buildQuery(test.rql, test.select);
-
-               output = query.getPreparedStmt();//sqlRql.toSql(test.select, test.rql, r);
+               output = query.getPreparedStmt();
 
                if (!compare(test.preparedSql, output))
                {

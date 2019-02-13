@@ -21,7 +21,6 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -61,8 +60,8 @@ public class DynamoDbGetAction extends DynamoDbAction
       //         }
       //      }
 
-      DynamoDbRql rql = (DynamoDbRql) Rql.getRql(db.getType());
-      DynamoDbQuery query = rql.buildQuery(table, req.getParams());
+      
+      DynamoDbQuery query = new DynamoDbQuery(req.getCollection(), req.getParams());
       DynamoResult dynamoResult = query.doSelect(dynamoTable);
 
       JSArray returnData = new JSArray();

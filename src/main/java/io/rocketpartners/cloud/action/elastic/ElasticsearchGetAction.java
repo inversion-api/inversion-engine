@@ -30,7 +30,6 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -98,8 +97,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          req.putParam("source", defaultSource);
       }
 
-      ElasticsearchRql elasticRQL = (ElasticsearchRql) Rql.getRql(db.getType());
-      ElasticsearchQuery elasticQ = elasticRQL.buildQuery(table, req.getParams());
+      ElasticsearchQuery elasticQ = new ElasticsearchQuery(req.getCollection(), req.getParams());
 
       //      Integer wantedPage = null;
       //      if (req.getParam("wantedpage") != null)

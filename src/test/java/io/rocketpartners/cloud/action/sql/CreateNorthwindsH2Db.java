@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud;
+package io.rocketpartners.cloud.action.sql;
 
 import java.io.File;
 import java.sql.Connection;
@@ -28,7 +28,7 @@ public class CreateNorthwindsH2Db
       Connection conn = DriverManager.getConnection("jdbc:h2:./northwind", "sa", "");
 
       Sql.runDdl(conn, CreateNorthwindsH2Db.class.getResourceAsStream("Northwind.H2.sql"));
-      
+
       DatabaseMetaData dbmd = conn.getMetaData();
       ResultSet rs = dbmd.getTables(null, null, "%", new String[]{"TABLE", "VIEW"});
       while (rs.next())
@@ -41,12 +41,11 @@ public class CreateNorthwindsH2Db
       }
 
       Rows rows = Sql.selectRows(conn, "SELECT * FROM PRODUCTS");
-      for(Row row : rows)
+      for (Row row : rows)
       {
          System.out.println(row);
       }
-      
-      
+
       conn.close();
 
    }

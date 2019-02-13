@@ -26,7 +26,6 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.rql.Rql;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -90,7 +89,7 @@ public class SqlSuggestAction extends SqlAction
 
       SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
 
-      SqlQuery query = ((SqlRql) Rql.getRql(db.getType())).buildQuery(collection.getEntity().getTable(), req.getParams());
+      SqlQuery query = new SqlQuery(collection, req.getParams());
 
       for (int i = 0; i < propertyList.size(); i++)
       {

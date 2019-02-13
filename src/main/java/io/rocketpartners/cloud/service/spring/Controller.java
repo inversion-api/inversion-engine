@@ -83,34 +83,33 @@ public class Controller implements InitializingBean
          {
             servlet.setService(service);
          }
+
+         String[] activeProfiles = environment.getActiveProfiles();
+         String profile = null;
+         if (activeProfiles.length > 0)
+         {
+            profile = activeProfiles[0];
+            log.info("Using profile '" + profile + "'");
+         }
          else
          {
-            String[] activeProfiles = environment.getActiveProfiles();
-            String profile = null;
-            if (activeProfiles.length > 0)
-            {
-               profile = activeProfiles[0];
-               log.info("Using profile '" + profile + "'");
-            }
-            else
-            {
-               log.info("No active spring profile was configured - use 'spring.profiles.active' to configure one");
-            }
-
-            final ResourceLoaderServletContext ctx = new ResourceLoaderServletContext(resourceLoader);
-
-            servlet.getService().setResourceLoader(new Service.ResourceLoader()
-               {
-                  @Override
-                  public InputStream getResource(String name)
-                  {
-                     return ctx.getResourceAsStream(name);
-                  }
-               });
-
-            servlet.getService().setProfile(profile);
-            servlet.getService().init();
+            log.info("No active spring profile was configured - use 'spring.profiles.active' to configure one");
          }
+
+         final ResourceLoaderServletContext ctx = new ResourceLoaderServletContext(resourceLoader);
+
+         servlet.getService().setResourceLoader(new Service.ResourceLoader()
+            {
+               @Override
+               public InputStream getResource(String name)
+               {
+                  return ctx.getResourceAsStream(name);
+               }
+            });
+
+         servlet.getService().setProfile(profile);
+         servlet.getService().init();
+
       }
       catch (Exception e)
       {

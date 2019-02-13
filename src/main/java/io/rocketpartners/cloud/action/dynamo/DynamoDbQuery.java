@@ -18,6 +18,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
+import io.rocketpartners.cloud.action.sql.SqlDb;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -38,7 +40,7 @@ import io.rocketpartners.cloud.utils.Utils;
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
  * 
  */
-public class DynamoDbQuery extends Query<Table, DynamoDbQuery, DynamoDbQuery, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
+public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
 {
 
    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
@@ -63,9 +65,9 @@ public class DynamoDbQuery extends Query<Table, DynamoDbQuery, DynamoDbQuery, Se
    Term          partKey = null;
    Term          sortKey = null;
 
-   public DynamoDbQuery(Table table)
+   public DynamoDbQuery(Collection collection, Object terms)
    {
-      super(table);
+      super(collection, terms);
       where().clearTokens();
       where().withTokens("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "and", "or");
    }
