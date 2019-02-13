@@ -15,33 +15,32 @@
  */
 package io.rocketpartners.cloud.service;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.rocketpartners.utils.Utils;
-import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.ListMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
 import io.rocketpartners.cloud.model.Change;
+import io.rocketpartners.utils.JSObject;
 
 public class Response
 {
-   Chain                   chain       = null;
+   Chain                                  chain       = null;
 
-   ListMap<String, String> headers     = new ListMap();
+   ArrayListValuedHashMap<String, String> headers     = new ArrayListValuedHashMap();
 
-   int                     statusCode  = 200;
-   String                  statusMesg  = "OK";
-   String                  statusError = null;
-   String                  redirect    = null;
-   JSObject                json        = new JSObject();
-   String                  text        = null;
-   String                  contentType = null;
-   List<Change>            changes     = new ArrayList();
+   int                                    statusCode  = 200;
+   String                                 statusMesg  = "OK";
+   String                                 statusError = null;
+   String                                 redirect    = null;
+   JSObject                               json        = new JSObject();
+   String                                 text        = null;
+   String                                 contentType = null;
+   List<Change>                           changes     = new ArrayList();
 
-   StringBuffer            debug       = new StringBuffer();
+   StringBuffer                           debug       = new StringBuffer();
 
-   StringBuffer            out         = new StringBuffer();
+   StringBuffer                           out         = new StringBuffer();
 
    public Response()
    {
@@ -118,14 +117,14 @@ public class Response
    /**
     * @return the headers
     */
-   public ListMap<String, String> getHeaders()
+   public ArrayListValuedHashMap<String, String> getHeaders()
    {
       return headers;
    }
 
    public void addHeader(String key, String value)
    {
-      if (!headers.containsKey(key, value))
+      if (!headers.containsMapping(key, value))
          headers.put(key, value);
    }
 

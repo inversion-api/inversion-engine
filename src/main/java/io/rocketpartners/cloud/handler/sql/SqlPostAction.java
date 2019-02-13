@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -37,14 +39,13 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JS;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.ListMap;
+import io.rocketpartners.utils.JSObject.Property;
 import io.rocketpartners.utils.Sql;
 import io.rocketpartners.utils.Url;
-import io.rocketpartners.utils.JSObject.Property;
+import io.rocketpartners.utils.Utils;
 
 public class SqlPostAction extends SqlAction
 {
@@ -300,7 +301,7 @@ public class SqlPostAction extends SqlAction
 
    void storeManyTo(Chain chain, Connection conn, List<Change> changes, Object parentId, Entity entity, JSObject parent) throws Exception
    {
-      ListMap<Relationship, String> relateds = new ListMap();
+      ArrayListValuedHashMap<Relationship, String> relateds = new ArrayListValuedHashMap();
 
       // holds Relationships when an empty array was posted
       List<Relationship> emptyRelateds = new ArrayList<>();

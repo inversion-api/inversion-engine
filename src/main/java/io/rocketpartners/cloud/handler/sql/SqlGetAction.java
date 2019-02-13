@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
@@ -46,13 +47,12 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.utils.CaseInsensitiveSet;
 import io.rocketpartners.utils.ISO8601Util;
-import io.rocketpartners.utils.Utils;
 import io.rocketpartners.utils.JSArray;
 import io.rocketpartners.utils.JSObject;
-import io.rocketpartners.utils.ListMap;
 import io.rocketpartners.utils.Rows;
 import io.rocketpartners.utils.Rows.Row;
 import io.rocketpartners.utils.Sql;
+import io.rocketpartners.utils.Utils;
 
 public class SqlGetAction extends SqlAction
 {
@@ -668,7 +668,7 @@ public class SqlGetAction extends SqlAction
 
                Rows childRows = Sql.selectRows(conn, sql, parentIds);
 
-               ListMap parentLists = new ListMap();
+               ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
                Set childIds = new HashSet();
                for (Row row : childRows)
                {
