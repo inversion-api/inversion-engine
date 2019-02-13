@@ -26,7 +26,7 @@ import java.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.handler.sql.SqlDb.ConnectionLocal;
+import io.rocketpartners.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;

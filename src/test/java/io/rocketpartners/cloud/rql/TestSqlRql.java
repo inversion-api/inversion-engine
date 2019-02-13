@@ -22,8 +22,8 @@ import java.util.List;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.handler.sql.SqlQuery;
-import io.rocketpartners.cloud.handler.sql.SqlRql;
+import io.rocketpartners.cloud.action.sql.SqlQuery;
+import io.rocketpartners.cloud.action.sql.SqlRql;
 import io.rocketpartners.cloud.rql.Rql;
 import junit.framework.TestCase;
 

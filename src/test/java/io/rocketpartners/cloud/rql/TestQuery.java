@@ -17,7 +17,7 @@ package io.rocketpartners.cloud.rql;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.handler.sql.SqlQuery;
+import io.rocketpartners.cloud.action.sql.SqlQuery;
 import io.rocketpartners.cloud.rql.Query;
 import junit.framework.TestCase;
 

@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.handler.sql.SqlPostAction;
+import io.rocketpartners.cloud.action.sql.SqlPostAction;
 import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;

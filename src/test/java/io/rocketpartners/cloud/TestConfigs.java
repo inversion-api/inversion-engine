@@ -7,8 +7,8 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.handler.sql.SqlDb;
-import io.rocketpartners.cloud.handler.sql.SqlGetAction;
+import io.rocketpartners.cloud.action.sql.SqlDb;
+import io.rocketpartners.cloud.action.sql.SqlGetAction;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.spring.SpringBoot;
