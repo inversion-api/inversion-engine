@@ -248,6 +248,12 @@ public class Servlet extends HttpServlet
          {
             //
          }
+         else if (res.getInputStream() != null)
+         {
+            http.setContentType(res.getContentType());
+            J.pipe(res.getInputStream(), out);
+            res.getInputStream().close();
+         }
          else
          {
             String contentType = res.getContentType();

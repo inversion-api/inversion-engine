@@ -15,11 +15,10 @@
  */
 package io.rcktapp.api;
 
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.forty11.j.J;
 import io.forty11.j.utils.ListMap;
 import io.forty11.web.js.JSObject;
 
@@ -39,6 +38,8 @@ public class Response
    StringBuffer            debug       = new StringBuffer();
 
    StringBuffer            out         = new StringBuffer();
+
+   InputStream             in          = null;
 
    public Response()
    {
@@ -232,5 +233,15 @@ public class Response
    {
       for (int i = 0; entityKeys != null && i < entityKeys.length; i++)
          addChange(method, collectionKey, entityKeys[i]);
+   }
+
+   public void setInputStream(InputStream is)
+   {
+      in = is;
+   }
+
+   public InputStream getInputStream()
+   {
+      return in;
    }
 }
