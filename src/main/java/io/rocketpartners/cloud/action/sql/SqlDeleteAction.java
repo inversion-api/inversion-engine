@@ -174,7 +174,7 @@ public class SqlDeleteAction extends SqlAction
 
       for (Object id : ids)
       {
-         chain.getResponse().addChange("DELETE", collection.getName(), Long.parseLong(id + ""));
+         chain.getResponse().withChange("DELETE", collection.getName(), Long.parseLong(id + ""));
       }
 
    }

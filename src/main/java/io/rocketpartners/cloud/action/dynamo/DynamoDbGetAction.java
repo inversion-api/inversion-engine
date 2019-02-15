@@ -77,7 +77,7 @@ public class DynamoDbGetAction extends DynamoDbAction
       //         meta.put("next", returnNext);
       //      }
       JSObject wrapper = new JSObject("meta", meta, "data", returnData);
-      res.setJson(wrapper);
+      res.withJson(wrapper);
 
    }
 }

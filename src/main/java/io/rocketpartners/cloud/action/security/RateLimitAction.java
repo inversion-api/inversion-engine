@@ -78,8 +78,8 @@ public class RateLimitAction extends Action<RateLimitAction>
       if (!bucket.hit(clientId))
       {
          JSObject error = new JSObject("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
-         res.setJson(error);
-         res.setStatus(SC.SC_429_TOO_MANY_REQUESTS);
+         res.withJson(error);
+         res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
 
          chain.cancel();
       }

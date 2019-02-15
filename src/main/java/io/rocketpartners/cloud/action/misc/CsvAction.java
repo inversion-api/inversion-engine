@@ -61,12 +61,12 @@ public class CsvAction extends BatchAction<CsvAction>
 
       byte[] bytes = toCsv((JSArray) arr).getBytes();
 
-      res.addHeader("Content-Length", bytes.length + "");
+      res.withHeader("Content-Length", bytes.length + "");
       res.debug("Content-Length " + bytes.length + "");
       //res.setContentType("text/csv");
 
-      res.setText(new String(bytes));
-      res.setJson(null);
+      res.withText(new String(bytes));
+      res.withJson(null);
    }
 
    public String toCsv(JSArray arr) throws Exception

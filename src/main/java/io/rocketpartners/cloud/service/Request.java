@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -36,46 +38,75 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
 {
-   Service         service          = null;
+   Service                                service                = null;
 
-   Url             url              = null;
+   Url                                    url                    = null;
 
-   String          apiUrl           = null;
-   Api             api              = null;
-   Endpoint        endpoint         = null;
+   String                                 apiUrl                 = null;
+   Api                                    api                    = null;
+   Endpoint                               endpoint               = null;
 
-   String          apiCode          = null;
-   String          tenantCode       = null;
+   String                                 apiCode                = null;
+   String                                 tenantCode             = null;
 
-   User            user             = null;
+   User                                   user                   = null;
 
-   String          referrer         = null;
+   String                                 referrer               = null;
 
-   String          method           = null;
+   String                                 method                 = null;
 
-   String          path             = null;
+   String                                 path                   = null;
 
-   String          remoteAddr       = null;
+   String                                 remoteAddr             = null;
 
    /**
     * The path minus any Endpoint.path prefix
     */
-   String          subpath          = null;
+   String                                 subpath                = null;
 
-   String          collectionKey    = null;
-   String          entityKey        = null;
-   String          subCollectionKey = null;
+   String                                 collectionKey          = null;
+   String                                 entityKey              = null;
+   String                                 subCollectionKey       = null;
 
-   JSObject        headers          = new JSObject();
-   JSObject        params           = new JSObject();
-   String          body             = null;
-   JSObject        json             = null;
+   ArrayListValuedHashMap<String, String> headers                = new ArrayListValuedHashMap();
+   JSObject                               params                 = new JSObject();
 
-   boolean         browse           = false;
+   String                                 body                   = null;
+   JSObject                               json                   = null;
 
-   boolean         explain          = false;
+   boolean                                browse                 = false;
 
-   public Uploader uploader         = null;
+   boolean                                explain                = false;
+
+   public Uploader                        uploader               = null;
+
+   int                                    retryAttempts;
+   static final int                       DEFAULT_RETRY_ATTEMPTS = 5;
+
+   public Request(String method, String url)
+   {
+      this(method, url, null, null);
+   }
+
+   public Request(String method, String url, String body, List<String> headers)
+   {
+      this(method, url, body, headers, DEFAULT_RETRY_ATTEMPTS);
+   }
+
+   public Request(String method, String url, String body, List<String> headers, int retryAttempts)
+   {
+
+   }
+
+   public int getRetryAttempts()
+   {
+      return retryAttempts;
+   }
+
+   public void setRetryAttempts(int retryAttempts)
+   {
+      this.retryAttempts = retryAttempts;
+   }
 
    public Request(ApiMatch match)
    {
@@ -386,7 +417,7 @@ public class Request
 
    public Map<String, String> getParams()
    {
-      return (Map<String, String>)params.asMap();
+      return (Map<String, String>) params.asMap();
    }
 
    public String removeParam(String param)
@@ -442,9 +473,26 @@ public class Request
       return getHeader("referrer");
    }
 
-   public String getHeader(String header)
+   public String getHeader(String key)
    {
-      return (String) headers.get(header);
+      List<String> vals = headers.get(key);
+      if (vals != null && vals.size() > 0)
+         return vals.get(0);
+      return null;
+   }
+
+   /**
+    * @return the headers
+    */
+   public ArrayListValuedHashMap<String, String> getHeaders()
+   {
+      return headers;
+   }
+
+   public void withHeader(String key, String value)
+   {
+      if (!headers.containsMapping(key, value))
+         headers.put(key, value);
    }
 
    public String getParam(String key)

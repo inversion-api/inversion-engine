@@ -113,7 +113,7 @@ public class SqlPostAction extends SqlAction
             hrefs.add(href);
          }
 
-         res.addChanges(changes);
+         res.withChanges(changes);
 
          //-- take all of the hrefs and combine into a 
          //-- single href for the "Location" header
@@ -121,7 +121,7 @@ public class SqlPostAction extends SqlAction
          JSArray array = new JSArray();
          res.getJson().put("data", array);
 
-         res.setStatus(SC.SC_201_CREATED);
+         res.withStatus(SC.SC_201_CREATED);
          StringBuffer buff = new StringBuffer(hrefs.get(0));
          for (int i = 0; i < hrefs.size(); i++)
          {
@@ -163,7 +163,7 @@ public class SqlPostAction extends SqlAction
             buff.append(",").append(nextId);
          }
 
-         res.addHeader("Location", buff.toString());
+         res.withHeader("Location", buff.toString());
       }
       finally
       {

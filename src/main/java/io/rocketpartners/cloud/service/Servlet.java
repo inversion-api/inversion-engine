@@ -252,7 +252,7 @@ public class Servlet extends HttpServlet
             byte[] bytes = res.getOutput().getBytes();
 
             http.setContentType(contentType);
-            res.addHeader("Content-Length", bytes.length + "");
+            res.withHeader("Content-Length", bytes.length + "");
             res.debug("Content-Length " + bytes.length + "");
 
             out.write(bytes);

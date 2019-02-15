@@ -229,7 +229,7 @@ public class AuthAction extends Action<AuthAction>
             sessionKey = req.getApi().getId() + "_" + newSessionId();//
             sessionCache.put(sessionKey, user);
 
-            resp.addHeader("x-auth-token", "Session " + sessionKey);
+            resp.withHeader("x-auth-token", "Session " + sessionKey);
             JSObject obj = new JSObject();
             obj.put("id", user.getId());
             obj.put("username", username);
@@ -249,7 +249,7 @@ public class AuthAction extends Action<AuthAction>
             }
             obj.put("roles", roles);
 
-            resp.setJson(new JSObject("data", obj));
+            resp.withJson(new JSObject("data", obj));
          }
       }
 

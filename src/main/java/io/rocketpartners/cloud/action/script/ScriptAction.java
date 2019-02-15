@@ -273,7 +273,7 @@ public class ScriptAction extends Action<ScriptAction>
                try
                {
                   JSObject obj = JS.toJSObject(content);
-                  res.setJson(obj);
+                  res.withJson(obj);
                   setText = false;
                }
                catch (Exception ex)
@@ -284,7 +284,7 @@ public class ScriptAction extends Action<ScriptAction>
 
             if (setText)
             {
-               res.setText(content.trim());
+               res.withText(content.trim());
             }
          }
       }

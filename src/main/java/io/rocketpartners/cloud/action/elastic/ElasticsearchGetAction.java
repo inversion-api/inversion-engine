@@ -150,7 +150,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url, json, headers);
 
-      Web.Response r = Web.post(url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = Web.post(url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -200,14 +200,14 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          //JSObject wrapper = new JSObject("meta", meta, "data", data);
          JSObject wrapper = new JSObject("meta", new JSObject(), "data", data);
-         res.setJson(wrapper);
+         res.withJson(wrapper);
 
       }
       else
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getStatusCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -275,7 +275,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Web.Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -307,12 +307,12 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          {
             JSObject data = new JSObject("field", field, "results", resultArray);
             JSObject meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.setJson(new JSObject("meta", meta, "data", data));
+            res.withJson(new JSObject("meta", meta, "data", data));
          }
       }
       else
       {
-         throw new ApiException(SC.matches(r.getCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(r.getStatusCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }

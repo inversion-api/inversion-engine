@@ -86,7 +86,7 @@ public class DynamoDbDeleteAction extends DynamoDbAction
          deleteMapFromDynamo((Map) payloadObj, dynamoTable, pk, sk, tenantIdOrCode, api.isMultiTenant(), appendTenantIdToPk);
       }
 
-      res.setStatus(SC.SC_200_OK);
+      res.withStatus(SC.SC_200_OK);
 
    }
 

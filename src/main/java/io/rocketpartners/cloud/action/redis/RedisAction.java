@@ -129,8 +129,8 @@ public class RedisAction extends Action<RedisAction>
                log.debug("CACHE HIT : " + key);
 
                resJson = JS.toJSObject(value);
-               res.setJson(resJson);
-               res.setStatus(SC.SC_200_OK);
+               res.withJson(resJson);
+               res.withStatus(SC.SC_200_OK);
                chain.cancel();
             }
             else

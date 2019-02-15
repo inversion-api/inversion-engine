@@ -129,7 +129,7 @@ public class S3UploadAction extends Action<S3UploadAction>
 
          responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
          responseContent.put("fileSizeBytes", fileSize);
-         res.setJson(new JSObject(responseContent));
+         res.withJson(new JSObject(responseContent));
       }
       finally
       {
@@ -145,11 +145,11 @@ public class S3UploadAction extends Action<S3UploadAction>
       if (exception != null)
          message += "\r\n\r\n" + Utils.getShortCause(exception);
 
-      res.setStatus(SC.SC_400_BAD_REQUEST);
+      res.withStatus(SC.SC_400_BAD_REQUEST);
       Map<String, String> content = new HashMap<>();
       content.put("message", message);
       content.put("error", "Bad Request Exception");
-      res.setJson(new JSObject(content));
+      res.withJson(new JSObject(content));
 
    }
 

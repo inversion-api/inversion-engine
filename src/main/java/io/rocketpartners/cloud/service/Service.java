@@ -164,10 +164,10 @@ public class Service
             allowedHeaders = allowedHeaders.concat(h).concat(",");
          }
       }
-      res.addHeader("Access-Control-Allow-Origin", "*");
-      res.addHeader("Access-Control-Allow-Credentials", "true");
-      res.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-      res.addHeader("Access-Control-Allow-Headers", allowedHeaders);
+      res.withHeader("Access-Control-Allow-Origin", "*");
+      res.withHeader("Access-Control-Allow-Credentials", "true");
+      res.withHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+      res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
 
       //--
       //-- End CORS Header Setup
@@ -175,13 +175,13 @@ public class Service
       if (method.equalsIgnoreCase("options"))
       {
          //this is a CORS preflight request. All of hte work was done bove
-         res.setStatus(SC.SC_200_OK);
+         res.withStatus(SC.SC_200_OK);
          return chain;
       }
 
       if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
       {
-         res.setStatus(SC.SC_404_NOT_FOUND);
+         res.withStatus(SC.SC_404_NOT_FOUND);
          return chain;
       }
 
@@ -288,12 +288,12 @@ public class Service
             log.error("Error in Service", ex);
          }
 
-         res.setStatus(status);
+         res.withStatus(status);
          JSObject response = new JSObject("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
-         res.setJson(response);
+         res.withJson(response);
       }
       finally
       {
@@ -341,22 +341,22 @@ public class Service
             if (res.getContentType() == null)
             {
                if (output.indexOf("<html") > -1)
-                  res.setContentType("text/html");
+                  res.withContentType("text/html");
                else
-                  res.setContentType("text/text");
+                  res.withContentType("text/text");
             }
          }
          else if (!Utils.empty(res.getRedirect()))
          {
-            res.addHeader("Location", res.getRedirect());
-            res.setStatus(SC.SC_302_FOUND);
+            res.withHeader("Location", res.getRedirect());
+            res.withStatus(SC.SC_302_FOUND);
          }
          else if (output == null && res.getJson() != null)
          {
             output = res.getJson().toString();
 
             if (res.getContentType() == null)
-               res.setContentType("application/json");
+               res.withContentType("application/json");
          }
 
          JSObject headers = new JSObject();
@@ -384,7 +384,7 @@ public class Service
 
          if (explain)
          {
-            res.setOutput(res.getDebug());
+            res.withOutput(res.getDebug());
          }
       }
    }
@@ -451,16 +451,16 @@ public class Service
             log.error("Error in Service", ex);
          }
 
-         res.setStatus(status);
+         res.withStatus(status);
          JSObject response = new JSObject("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
-         res.setJson(response);
+         res.withJson(response);
       }
       finally
       {
-         parent.getResponse().addChanges(res.getChanges());
+         parent.getResponse().withChanges(res.getChanges());
       }
 
       return res;
@@ -485,7 +485,7 @@ public class Service
 
       Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
       if (res.getChain() == null)
-         res.setChain(chain);
+         res.withChain(chain);
 
       chain.setParent(parent);
       chain.go();
@@ -510,7 +510,7 @@ public class Service
                //redirect = req.getHttpServletRequest().getRequest
                redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
 
-               res.setRedirect(redirect);
+               res.withRedirect(redirect);
                return true;
             }
          }

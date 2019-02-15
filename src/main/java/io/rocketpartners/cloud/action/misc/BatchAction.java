@@ -44,8 +44,8 @@ public class BatchAction<T extends BatchAction> extends Action<T>
             Response batchResponse = service.include(chain, json.getString("method"), json.getString("url"), json.getString("body"));
             if(batchResponse.getStatusCode() > 299)
             {
-               res.setStatus(batchResponse.getStatus());
-               res.setOutput(batchResponse.getOutput());
+               res.withStatus(batchResponse.getStatus());
+               res.withOutput(batchResponse.getOutput());
                break;
             }
          }

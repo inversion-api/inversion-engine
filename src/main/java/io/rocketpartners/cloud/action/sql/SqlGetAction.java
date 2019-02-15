@@ -157,8 +157,8 @@ public class SqlGetAction extends SqlAction
 
                Response included = service.include(chain, "GET", newUrl, null);
 
-               res.setStatus(included.getStatus());
-               res.setJson(included.getJson());
+               res.withStatus(included.getStatus());
+               res.withJson(included.getJson());
 
                return;
             }
@@ -241,8 +241,8 @@ public class SqlGetAction extends SqlAction
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
-         res.setStatus(SC.SC_404_NOT_FOUND);
-         res.setJson(null);
+         res.withStatus(SC.SC_404_NOT_FOUND);
+         res.withJson(null);
       }
       else
       {
@@ -250,7 +250,7 @@ public class SqlGetAction extends SqlAction
          JSArray data = new JSArray();
 
          JSObject wrapper = new JSObject("meta", meta, "data", data);
-         res.setJson(wrapper);
+         res.withJson(wrapper);
 
          int rowCount = 1;
          if (req.getEntityKey() == null)

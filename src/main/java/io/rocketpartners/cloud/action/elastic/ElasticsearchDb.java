@@ -28,6 +28,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Web;
@@ -57,7 +58,7 @@ public class ElasticsearchDb extends Db
       }
 
       // 'GET _all' returns all indices/aliases/mappings
-      Web.Response allResp = Web.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
+      Response allResp = Web.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {
@@ -78,7 +79,7 @@ public class ElasticsearchDb extends Db
       }
       else
       {
-         throw new ApiException(SC.matches(allResp.getCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }

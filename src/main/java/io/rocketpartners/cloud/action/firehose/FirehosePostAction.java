@@ -110,6 +110,6 @@ public class FirehosePostAction extends Action<FirehosePostAction>
          firehose.putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(streamName).withRecords(batch));
       }
 
-      res.setStatus(SC.SC_201_CREATED);
+      res.withStatus(SC.SC_201_CREATED);
    }
 }

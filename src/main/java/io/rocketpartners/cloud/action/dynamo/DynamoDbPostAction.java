@@ -92,7 +92,7 @@ public class DynamoDbPostAction extends DynamoDbAction
          putMapToDynamo((Map) payloadObj, dynamoTable, pk, tenantIdOrCode, req.getApi().isMultiTenant(), appendTenantIdToPk, conditionalWriteConf);
       }
 
-      res.setStatus(SC.SC_200_OK);
+      res.withStatus(SC.SC_200_OK);
 
    }
 
