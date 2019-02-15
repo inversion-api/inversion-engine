@@ -35,38 +35,34 @@ import io.rocketpartners.cloud.utils.HttpUtils.ResponseHandler;
 
 public class Response
 {
-   Chain                                  chain             = null;
+   protected String                                 url               = null;
 
-   ArrayListValuedHashMap<String, String> headers           = new ArrayListValuedHashMap();
+   protected Chain                                  chain             = null;
 
-   int                                    statusCode        = 200;
-   String                                 statusMesg        = "OK";
-   String                                 statusError       = null;
-   String                                 redirect          = null;
-   JSObject                               json              = new JSObject();
-   String                                 text              = null;
-   String                                 contentType       = null;
-   List<Change>                           changes           = new ArrayList();
+   protected ArrayListValuedHashMap<String, String> headers           = new ArrayListValuedHashMap();
 
-   StringBuffer                           debug             = new StringBuffer();
-   StringBuffer                           out               = new StringBuffer();
+   protected int                                    statusCode        = 200;
+   protected String                                 statusMesg        = "OK";
+   protected String                                 statusError       = null;
+   protected String                                 redirect          = null;
 
-   static Log                             logger            = LogFactory.getLog(Response.class);
+   protected String                                 contentType       = null;
+   protected StringBuffer                           out               = new StringBuffer();
+   protected JSObject                               json              = new JSObject();
+   protected String                                 text              = null;
 
-   String                                 url               = null;
-   String                                 fileName          = null;
-   File                                   file              = null;
-   String                                 type              = null;
+   protected String                                 fileName          = null;
+   protected File                                   file              = null;
 
-   public Exception                       error             = null;
-   //public String                          log               = "";
+   protected Exception                              error             = null;
 
-   String                                 contentRangeUnit  = null;
-   long                                   contentRangeStart = -1;
-   long                                   contentRangeEnd   = -1;
-   long                                   contentRangeSize  = -1;
+   protected String                                 contentRangeUnit  = null;
+   protected long                                   contentRangeStart = -1;
+   protected long                                   contentRangeEnd   = -1;
+   protected long                                   contentRangeSize  = -1;
 
-   //public LinkedHashMap<String, String>   headers           = new LinkedHashMap();
+   protected List<Change>                           changes           = new ArrayList();
+   protected StringBuffer                           debug             = new StringBuffer();
 
    public Response()
    {
@@ -76,6 +72,11 @@ public class Response
    public Response(String url)
    {
       withUrl(url);
+   }
+
+   public Response withMeta(String key, String value)
+   {
+      return this;
    }
 
    public void write(StringBuffer buff, Object... msgs)
@@ -194,6 +195,9 @@ public class Response
    }
 
    /**
+    * @deprecated this method sets the root json document you should use withData and withMeta
+    * instead unless you REALLY want to change to wrapper document structure.
+    * 
     * @param json the json to set
     */
    public Response withJson(JSObject json)
@@ -516,6 +520,12 @@ public class Response
       return this;
    }
 
+   public Response withError(Exception ex)
+   {
+      this.error = ex;
+      return this;
+   }
+
    public String getFileName()
    {
       return fileName;
@@ -574,7 +584,7 @@ public class Response
    @Override
    public String toString()
    {
-      return "Response [url=" + url + ", type=" + type + ", status=" + getStatus() + "]";
+      return "Response [url=" + url + ", status=" + getStatus() + "]";
    }
 
    @Override

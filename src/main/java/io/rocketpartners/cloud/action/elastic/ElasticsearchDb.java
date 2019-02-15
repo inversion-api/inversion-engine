@@ -175,7 +175,7 @@ public class ElasticsearchDb extends Db
 
          // potential types include: keyword, long, nested, object, boolean
          Column column = null;
-         if (propValue.hasProperty("type"))
+         if (propValue.containsKey("type"))
          {
             column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
             table.addColumn(column);

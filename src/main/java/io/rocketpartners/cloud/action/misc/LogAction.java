@@ -144,7 +144,7 @@ public class LogAction extends Action<LogAction>
       {
          if (json instanceof JSArray)
          {
-            for (Object o : ((JSArray) json).getObjects())
+            for (Object o : (JSArray) json)
             {
                if (o instanceof JSObject)
                {
@@ -154,7 +154,7 @@ public class LogAction extends Action<LogAction>
          }
          else
          {
-            for (String key : json.keys())
+            for (String key : json.keySet())
             {
                if (logMaskFields.contains(key))
                {

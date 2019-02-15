@@ -81,18 +81,6 @@ public class JSObject implements Map<String, Object>
       return null;
    }
 
-   public Object get(Object name)
-   {
-      if(name == null)
-         return null;
-      
-      Property p = getProperty(name.toString());
-      if (p != null)
-         return p.getValue();
-
-      return null;
-   }
-
    public Object find(String path)
    {
       List<String> props = Utils.explode("\\.", path);
@@ -107,75 +95,61 @@ public class JSObject implements Map<String, Object>
       return obj;
    }
 
+   @Override
+   public Object get(Object name)
+   {
+      if (name == null)
+         return null;
+
+      Property p = getProperty(name.toString());
+      if (p != null)
+         return p.getValue();
+
+      return null;
+   }
+
+   @Override
    public Object put(String name, Object value)
    {
-      Property prop = putProperty(new Property(name, value));
+      Property prop = properties.put(name.toLowerCase(), new Property(name, value));
       return prop;
-   }
-
-   public boolean hasProperty(String name)
-   {
-      return properties.containsKey(name);
-   }
-
-   public boolean containsKey(Object name)
-   {
-      if(name == null)
-         return false;
-      return properties.containsKey(name.toString());
-   }
-
-   Property putProperty(Property prop)
-   {
-      String name = prop.getName();
-      Object value = prop.getValue();
-
-      //hack to support case insensitivity on property lookup
-      for (String key : (List<String>) new ArrayList(properties.keySet()))
-      {
-         if (key.equalsIgnoreCase(name))
-            properties.remove(key);
-      }
-
-      properties.put(name, prop);
-      return prop;
-   }
-
-   public Object remove(Object name)
-   {
-      if(name == null)
-         return null;
-      
-      Property old = removeProperty(name.toString());
-      return old != null ? old.getValue() : old;
-   }
-
-   public Set<String> keys()
-   {
-      return new LinkedHashSet(properties.keySet());
-   }
-
-   public Set<String> keySet()
-   {
-      return new LinkedHashSet(properties.keySet());
    }
 
    public Property getProperty(String name)
    {
-      Property p = properties.get(name);
-      if (p == null && properties.size() > 0)
+      return properties.get(name.toLowerCase());
+   }
+
+   @Override
+   public boolean containsKey(Object name)
+   {
+      if (name == null)
+         return false;
+
+      return properties.containsKey(name.toString().toLowerCase());
+   }
+
+   @Override
+   public Object remove(Object name)
+   {
+      if (name == null)
+         return null;
+
+      Property old = removeProperty(name.toString());
+      return old != null ? old.getValue() : old;
+   }
+
+   @Override
+   public Set<String> keySet()
+   {
+      //properties.getKeySet contains the lower case versions.
+      HashSet keys = new HashSet();
+      for (String key : properties.keySet())
       {
-         //hack to support case insensitivity on property lookup
-         for (String key : properties.keySet())
-         {
-            if (key.equalsIgnoreCase(name))
-            {
-               p = properties.get(key);
-               break;
-            }
-         }
+         Property p = properties.get(key);
+         keys.add(p.getName());
       }
-      return p;
+      return keys;
    }
 
    public List<Property> getProperties()
@@ -185,22 +159,11 @@ public class JSObject implements Map<String, Object>
 
    public Property removeProperty(String name)
    {
-      Property p = properties.get(name);
-      if (p == null && properties.size() > 0)
-      {
-         //hack to support case insensitivity on property lookup
-         for (String key : properties.keySet())
-         {
-            if (key.equalsIgnoreCase(name))
-            {
-               p = properties.get(key);
-               break;
-            }
-         }
-      }
-      if (p != null)
-         properties.remove(p.getName());
-      return p;
+      Property property = properties.get(name.toLowerCase());
+      if (property != null)
+         properties.remove(name.toLowerCase());
+
+      return property;
    }
 
    public static class Property

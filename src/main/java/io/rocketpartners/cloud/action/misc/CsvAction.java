@@ -79,7 +79,7 @@ public class CsvAction extends BatchAction<CsvAction>
          JSObject obj = (JSObject) arr.get(i);
          if (obj != null)
          {
-            for (String key : obj.keys())
+            for (String key : obj.keySet())
             {
                Object val = obj.get(key);
                if (!(val instanceof JSArray) && !(val instanceof JSObject))

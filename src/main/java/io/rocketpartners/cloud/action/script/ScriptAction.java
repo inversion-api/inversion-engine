@@ -440,7 +440,7 @@ public class ScriptAction extends Action<ScriptAction>
          if (r.getStatusCode() == 200)
          {
             JSArray dataArr = r.getJson().getArray("data");
-            if (!dataArr.asList().isEmpty())
+            if (!dataArr.isEmpty())
             {
                script = dataArr.getObject(0);
             }

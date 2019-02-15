@@ -74,7 +74,7 @@ public class SqlDeleteAction extends SqlAction
 
             List<String> urls = new ArrayList();
 
-            for (Object o : ((JSArray) obj).asList())
+            for (Object o : (JSArray) obj)
             {
                if (!(o instanceof String))
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");

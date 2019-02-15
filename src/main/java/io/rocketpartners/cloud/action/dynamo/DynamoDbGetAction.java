@@ -70,7 +70,7 @@ public class DynamoDbGetAction extends DynamoDbAction
          returnData.add(new JSObject(row));
       }
 
-      JSObject meta = new JSObject("pageSize", query.page().getPageSize(), "results", returnData.asList().size());
+      JSObject meta = new JSObject("pageSize", query.page().getPageSize(), "results", returnData.size());
       //      if (returnNext != null)
       //      {
       //         meta.put("next", returnNext);

@@ -23,12 +23,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
-public class JSArray extends JSObject
+public class JSArray extends JSObject implements Iterable
 {
    List objects = new ArrayList();
 
@@ -52,6 +53,7 @@ public class JSArray extends JSObject
       return objects.get(index);
    }
 
+   @Override
    public Object get(Object index)
    {
       return get(Integer.parseInt(index.toString().trim()));
@@ -62,6 +64,7 @@ public class JSArray extends JSObject
       return objects.set(index, o);
    }
 
+   @Override
    public Object put(String index, Object value)
    {
       return set(Integer.parseInt(index.trim()), value);
@@ -77,6 +80,7 @@ public class JSArray extends JSObject
       return objects.remove(index);
    }
 
+   @Override
    public Object remove(Object index)
    {
       return remove(Integer.parseInt(index.toString().trim()));
@@ -110,6 +114,11 @@ public class JSArray extends JSObject
    public boolean contains(Object object)
    {
       return objects.contains(object);
+   }
+
+   public int length()
+   {
+      return objects.size();
    }
 
    @Override
@@ -185,35 +194,20 @@ public class JSArray extends JSObject
          });
    }
 
-   /**
-    * @return the objects
-    */
-   public List getObjects()
-   {
-      return objects;
-   }
-
-   /**
-    * @param objects the objects to set
-    */
-   public void setObjects(List objects)
-   {
-      this.objects = objects;
-   }
-
    public List asList()
    {
       return new ArrayList(objects);
    }
-   
+
+   @Override
+   public Iterator iterator()
+   {
+      return asList().iterator();
+   }
+
    public Stream stream()
    {
       return asList().stream();
-   }
-
-   public int length()
-   {
-      return objects.size();
    }
 
 }

@@ -94,7 +94,7 @@ public class SqlPostAction extends SqlAction
             if (!Utils.empty(req.getEntityKey()))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
 
-            for (JSObject child : (List<JSObject>) ((JSArray) obj).getObjects())
+            for (JSObject child : (List<JSObject>) ((JSArray) obj))
             {
                String href = store(chain, conn, changes, entity, child);
                hrefs.add(href);
@@ -175,7 +175,7 @@ public class SqlPostAction extends SqlAction
    String store(Chain chain, Connection conn, List<Change> changes, Entity entity, JSObject parent) throws Exception
    {
       String href = parent.getString("href");
-      if (href != null && parent.keys().size() == 1)
+      if (href != null && parent.keySet().size() == 1)
          return href; //this object is empty except for the href...don't change anything
 
       String parentId = storeEntity(chain, conn, changes, entity, parent); //this also stores oneToMany relationships
@@ -326,7 +326,7 @@ public class SqlPostAction extends SqlAction
                   //thils shoudlbe ignored
 
                   JSObject js = (JSObject) arrayObj;
-                  if (js.keys().size() == 1 && js.containsKey("href"))
+                  if (js.keySet().size() == 1 && js.containsKey("href"))
                      continue;
                }
 
@@ -337,7 +337,7 @@ public class SqlPostAction extends SqlAction
 
             if (children.length() > 0)
             {
-               for (Object childObj : children.getObjects())
+               for (Object childObj : children)
                {
                   if (childObj == null)
                      continue;
@@ -480,7 +480,7 @@ public class SqlPostAction extends SqlAction
     */
    public static void collapse(JSObject parent, boolean collapseAll, Set collapses, String path)
    {
-      for (String key : (List<String>) new ArrayList(parent.keys()))
+      for (String key : (List<String>) new ArrayList(parent.keySet()))
       {
          Object value = parent.get(key);
 
@@ -509,7 +509,7 @@ public class SqlPostAction extends SqlAction
                   }
 
                   JSObject child = children.getObject(i);
-                  for (String key2 : (List<String>) new ArrayList(child.keys()))
+                  for (String key2 : (List<String>) new ArrayList(child.keySet()))
                   {
                      if (!key2.equalsIgnoreCase("href"))
                      {
@@ -517,7 +517,7 @@ public class SqlPostAction extends SqlAction
                      }
                   }
 
-                  if (child.keys().size() == 0)
+                  if (child.keySet().size() == 0)
                   {
 
                      children.remove(i);
@@ -532,14 +532,14 @@ public class SqlPostAction extends SqlAction
             else if (value instanceof JSObject)
             {
                JSObject child = (JSObject) value;
-               for (String key2 : (List<String>) new ArrayList(child.keys()))
+               for (String key2 : (List<String>) new ArrayList(child.keySet()))
                {
                   if (!key2.equalsIgnoreCase("href"))
                   {
                      child.remove(key2);
                   }
                }
-               if (child.keys().size() == 0)
+               if (child.keySet().size() == 0)
                   parent.remove(key);
             }
          }

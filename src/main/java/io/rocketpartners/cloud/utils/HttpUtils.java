@@ -321,7 +321,7 @@ public class HttpUtils
                }
                catch (Exception ex)
                {
-                  response.error = ex;
+                  response.withError(ex);
 
                   if (isNetworkException(ex))
                   {
@@ -659,7 +659,7 @@ public class HttpUtils
 
       public boolean isSuccess()
       {
-         if (response != null && response.error == null && response.getStatusCode() >= 200 && response.getStatusCode() < 300)
+         if (response != null && response.getError() == null && response.getStatusCode() >= 200 && response.getStatusCode() < 300)
             return true;
 
          return false;

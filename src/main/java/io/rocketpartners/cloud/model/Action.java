@@ -80,7 +80,7 @@ public class Action<A extends Action> extends Rule<A>
    {
       if (parent instanceof JSArray)
       {
-         for (Object child : ((JSArray) parent).asList())
+         for (Object child : (JSArray)parent)
          {
             if (child instanceof JSObject)
                find(child, found, targetPath, currentPath);
