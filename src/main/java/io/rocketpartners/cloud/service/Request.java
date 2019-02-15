@@ -399,7 +399,7 @@ public class Request
 
       try
       {
-         json = JS.toJSObject(body);
+         json = Utils.parseJsonObject(body);
       }
       catch (Exception ex)
       {

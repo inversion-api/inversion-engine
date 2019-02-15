@@ -37,7 +37,7 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 
 public class LogAction extends Action<LogAction>
 {
@@ -111,7 +111,7 @@ public class LogAction extends Action<LogAction>
                   {
                      logParams.put("tenantId", tenantId);
                   }
-                  Long logId = (Long) Sql.insertMap(conn, logTable, logParams);
+                  Long logId = (Long) SqlUtils.insertMap(conn, logTable, logParams);
 
                   List<Map> changeMap = new ArrayList();
                   for (Change c : changes)
@@ -127,7 +127,7 @@ public class LogAction extends Action<LogAction>
                      }
                      changeMap.add(changeParams);
                   }
-                  Sql.insertMaps(conn, logChangeTable, changeMap);
+                  SqlUtils.insertMaps(conn, logChangeTable, changeMap);
                }
             }
          }

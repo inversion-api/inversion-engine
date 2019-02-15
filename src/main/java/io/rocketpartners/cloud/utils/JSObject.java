@@ -390,7 +390,7 @@ public class JSObject implements Map<String, Object>
             }
             else
             {
-               strVal = JS.encodeString(strVal);
+               strVal = Utils.encodeJson(strVal);
                json.writeStringField(p.name, strVal);
             }
          }

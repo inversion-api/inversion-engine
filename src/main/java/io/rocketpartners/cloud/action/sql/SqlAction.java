@@ -28,7 +28,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class SqlAction<T extends SqlAction> extends Action<T>
@@ -144,7 +144,7 @@ public abstract class SqlAction<T extends SqlAction> extends Action<T>
             if (value == null)
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown collection filter param: \"" + key + "\"");
 
-            Sql.check(value);//sql injection check
+            SqlUtils.check(value);//sql injection check
 
             m.appendReplacement(buff, value);
          }
@@ -207,7 +207,7 @@ public abstract class SqlAction<T extends SqlAction> extends Action<T>
       if (type != null)
       {
          type = type.toLowerCase();
-         val = Sql.cast(val, type);
+         val = SqlUtils.cast(val, type);
       }
 
       return val;

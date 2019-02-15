@@ -52,9 +52,9 @@ public class JSArray extends JSObject
       return objects.get(index);
    }
 
-   public Object get(String index)
+   public Object get(Object index)
    {
-      return get(Integer.parseInt(index.trim()));
+      return get(Integer.parseInt(index.toString().trim()));
    }
 
    public Object set(int index, Object o)
@@ -77,9 +77,9 @@ public class JSArray extends JSObject
       return objects.remove(index);
    }
 
-   public Object remove(String index)
+   public Object remove(Object index)
    {
-      return remove(Integer.parseInt(index.trim()));
+      return remove(Integer.parseInt(index.toString().trim()));
    }
 
    public void add(Object object)
@@ -160,7 +160,7 @@ public class JSArray extends JSObject
          }
          else
          {
-            json.writeString(JS.encodeString(obj + ""));
+            json.writeString(Utils.encodeJson(obj + ""));
          }
       }
       json.writeEndArray();

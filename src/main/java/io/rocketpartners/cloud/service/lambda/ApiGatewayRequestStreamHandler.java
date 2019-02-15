@@ -60,7 +60,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       try
       {
-         JSObject json = JS.toJSObject(input);
+         JSObject json = Utils.parseJsonObject(input);
 
          String method = json.getString("httpMethod");
          String host = (String) json.find("headers.Host"); 
@@ -143,7 +143,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("error", Utils.getShortCause(ex));
 
-            responseBody.put("request", JS.toJSObject(input));
+            responseBody.put("request", Utils.parseJsonObject(input));
 
             JSObject responseJson = new JSObject();
             responseJson.put("isBase64Encoded", false);

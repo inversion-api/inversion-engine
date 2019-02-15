@@ -35,7 +35,7 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlDeleteAction extends SqlAction
@@ -165,11 +165,11 @@ public class SqlDeleteAction extends SqlAction
       String table = query.quoteCol(entity.getTable().getName());
       String idCol = query.quoteCol(entity.getKey().getColumn().getName());
 
-      List ids = Sql.selectList(conn, sql, args);
+      List ids = SqlUtils.selectList(conn, sql, args);
       if (ids.size() > 0)
       {
-         String idstr = Sql.check(Utils.implode(",", ids));
-         Sql.execute(conn, "DELETE FROM " + table + " WHERE " + idCol + " IN (" + idstr + ")");
+         String idstr = SqlUtils.check(Utils.implode(",", ids));
+         SqlUtils.execute(conn, "DELETE FROM " + table + " WHERE " + idCol + " IN (" + idstr + ")");
       }
 
       for (Object id : ids)

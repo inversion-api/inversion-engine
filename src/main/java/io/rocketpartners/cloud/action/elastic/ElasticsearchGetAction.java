@@ -34,9 +34,9 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.Web;
 
 /**
@@ -157,7 +157,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         JSObject jsObj = JS.toJSObject(r.getContent());
+         JSObject jsObj = Utils.parseJsonObject(r.getContent());
 
          int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getObject("hits").getArray("hits");
@@ -188,7 +188,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //            json = mapper.writeValueAsString(dsl.toDslMap());
          //
          //            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
-         //            jsObj = JS.toJSObject(r.getContent());
+         //            jsObj = Utils.toJSObject(r.getContent());
          //            hits = jsObj.getObject("hits").getArray("hits");
          //
          //            data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
@@ -279,7 +279,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         JSObject jsObj = JS.toJSObject(r.getContent());
+         JSObject jsObj = Utils.parseJsonObject(r.getContent());
          JSObject auto = (JSObject) jsObj.getObject("suggest").getArray("auto-suggest").get(0);
          JSArray resultArray = new JSArray();
          for (JSObject obj : (List<JSObject>) auto.getArray("options").asList())
@@ -444,7 +444,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       //
       //                     if (r.isSuccess())
       //                     {
-      //                        JSObject jsObj = JS.toJSObject(r.getContent());
+      //                        JSObject jsObj = Utils.toJSObject(r.getContent());
       //                        JSArray hits = jsObj.getObject("hits").getArray("hits");
       //                        JSObject prevLastHit = hits.getObject(hits.length() - 1);
       //

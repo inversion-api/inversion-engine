@@ -54,7 +54,7 @@ import io.rocketpartners.cloud.utils.Rows.Row;
  * TODO: http://www.symantec.com/connect/articles/detection-sql-injection-and-cross-site-scripting-attacks
  *
  */
-public class Sql
+public class SqlUtils
 {
    static String         QUOTE         = "`";
 
@@ -432,7 +432,7 @@ public class Sql
       }
       finally
       {
-         Sql.close(stmt);
+         SqlUtils.close(stmt);
       }
    }
 

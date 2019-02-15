@@ -30,8 +30,8 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Utils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -128,7 +128,7 @@ public class RedisAction extends Action<RedisAction>
             {
                log.debug("CACHE HIT : " + key);
 
-               resJson = JS.toJSObject(value);
+               resJson = Utils.parseJsonObject(value);
                res.withJson(resJson);
                res.withStatus(SC.SC_200_OK);
                chain.cancel();

@@ -29,8 +29,8 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Response;
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.Web;
 
 public class ElasticsearchDb extends Db
@@ -64,7 +64,7 @@ public class ElasticsearchDb extends Db
       {
          // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-         JSObject jsObj = JS.toJSObject(allResp.getContent());
+         JSObject jsObj = Utils.parseJsonObject(allResp.getContent());
 
          Map<String, JSObject> jsContentMap = jsObj.asMap();
 

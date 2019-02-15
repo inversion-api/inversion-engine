@@ -6,9 +6,9 @@ import java.util.HashSet;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.sql.SqlPostAction;
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestCollapse extends TestCase
@@ -38,12 +38,12 @@ public class TestCollapse extends TestCase
       child2.put("href", "http://child2");
       child2.put("name", "child2");
 
-      JSObject collapsed = JS.toJSObject(parent.toString());
+      JSObject collapsed = Utils.parseJsonObject(parent.toString());
 
       SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
 
-      JSObject benchmark = JS.toJSObject(parent.toString());
-      benchmark = JS.toJSObject(parent.toString());
+      JSObject benchmark = Utils.parseJsonObject(parent.toString());
+      benchmark = Utils.parseJsonObject(parent.toString());
       benchmark.remove("child2");
       benchmark.put("child2", new JSObject("href", "http://child2"));
 
@@ -70,12 +70,12 @@ public class TestCollapse extends TestCase
 
       parent.put("arrChildren", arrChildren);
 
-      JSObject collapsed = JS.toJSObject(parent.toString());
+      JSObject collapsed = Utils.parseJsonObject(parent.toString());
 
       SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
 
-      JSObject benchmark = JS.toJSObject(parent.toString());
-      benchmark = JS.toJSObject(parent.toString());
+      JSObject benchmark = Utils.parseJsonObject(parent.toString());
+      benchmark = Utils.parseJsonObject(parent.toString());
       benchmark.remove("arrChildren");
       arrChildren = new JSArray();
       for (int i = 0; i < 5; i++)
@@ -109,12 +109,12 @@ public class TestCollapse extends TestCase
       child3.put("href", "http://child3");
       child3.put("name", "child3");
 
-      JSObject collapsed = JS.toJSObject(parent.toString());
+      JSObject collapsed = Utils.parseJsonObject(parent.toString());
 
       SqlPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
 
-      JSObject benchmark = JS.toJSObject(parent.toString());
-      benchmark = JS.toJSObject(parent.toString());
+      JSObject benchmark = Utils.parseJsonObject(parent.toString());
+      benchmark = Utils.parseJsonObject(parent.toString());
       benchmark.getObject("child2").getObject("child3").remove("name");
 
       assertTrue(benchmark.toString().equals(collapsed.toString()));

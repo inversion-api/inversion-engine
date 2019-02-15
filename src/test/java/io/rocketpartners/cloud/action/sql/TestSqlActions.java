@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
@@ -52,7 +52,7 @@ public class TestSqlActions extends TestCase
                   }
 
                   Connection conn = db.getConnection();
-                  Sql.runDdl(conn, TestSqlActions.class.getResourceAsStream(ddl + ".ddl"));
+                  SqlUtils.runDdl(conn, TestSqlActions.class.getResourceAsStream(ddl + ".ddl"));
 
                   //                  Sql.addSqlListener(new SqlListener()
                   //                     {

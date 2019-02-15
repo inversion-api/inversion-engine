@@ -42,7 +42,7 @@ import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class AuthAction extends Action<AuthAction>
@@ -180,7 +180,7 @@ public class AuthAction extends Action<AuthAction>
                if (shouldTrackRequestTimes)
                {
                   String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
-                  Sql.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
+                  SqlUtils.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
                }
 
                if (authorized)
@@ -275,7 +275,7 @@ public class AuthAction extends Action<AuthAction>
             {
                Connection conn = db.getConnection();
 
-               Object tenant = Sql.selectValue(conn, "SELECT id FROM Tenant WHERE tenantCode = ?", tenantCode);
+               Object tenant = SqlUtils.selectValue(conn, "SELECT id FROM Tenant WHERE tenantCode = ?", tenantCode);
                if (tenant == null)
                   throw new ApiException(SC.SC_404_NOT_FOUND);
 
@@ -328,7 +328,7 @@ public class AuthAction extends Action<AuthAction>
       }
       sql += " LIMIT 1 ";
 
-      return Sql.selectObject(conn, sql, User.class, params);
+      return SqlUtils.selectObject(conn, sql, User.class, params);
    }
 
    boolean checkPassword(Connection conn, User user, String password)
@@ -357,7 +357,7 @@ public class AuthAction extends Action<AuthAction>
       String sql = "";
       sql += " SELECT DISTINCT r.* ";
       sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ";
-      return Sql.selectObjects(conn, sql, Role.class, user.getId());
+      return SqlUtils.selectObjects(conn, sql, Role.class, user.getId());
    }
 
    protected List<Permission> getPermissions(Connection conn, Api api, User user) throws Exception
@@ -381,7 +381,7 @@ public class AuthAction extends Action<AuthAction>
       sql += "\r\n  ) as perms";
 
       List args = Arrays.asList(user.getId(), api.getId(), user.getTenantId(), user.getId(), api.getId(), user.getTenantId());
-      return Sql.selectObjects(conn, sql, Permission.class, args);
+      return SqlUtils.selectObjects(conn, sql, Permission.class, args);
    }
 
    public static String hashPassword(Object salt, String password) throws ApiException

@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -53,6 +54,9 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 /**
@@ -171,6 +175,103 @@ public class Utils
       }
 
       return exploded;
+   }
+   
+   
+   public static JSArray parseJsonArray(String json)
+   {
+      return ((JSArray) parseJson(json));
+   }
+
+   public static JSObject parseJsonObject(String json)
+   {
+      return ((JSObject) parseJson(json));
+   }
+
+   static Object parseJson(String json)
+   {
+      try
+      {
+         ObjectMapper mapper = new ObjectMapper();
+         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
+
+         Object parsed = map(rootNode);
+         return parsed;
+      }
+      catch (Exception ex)
+      {
+         String msg = "Error parsing JSON:" + ex.getMessage();
+
+         if (!(ex instanceof JsonParseException))
+         {
+            msg += "\r\nSource:" + json;
+         }
+
+         throw new RuntimeException("400 Bad Request: '" + json + "'");
+      }
+   }
+
+   /**
+    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
+    * @param str
+    * @return
+    */
+   public static String encodeJson(String str)
+   {
+      if (str == null)
+         return null;
+
+      str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
+      return str;
+   }
+
+   static Object map(JsonNode json)
+   {
+      if (json == null)
+         return null;
+
+      if (json.isNull())
+         return null;
+
+      if (json.isValueNode())
+      {
+         if (json.isNumber())
+            return json.numberValue();
+
+         if (json.isBoolean())
+            return json.booleanValue();
+
+         return json.asText();
+      }
+
+      if (json.isArray())
+      {
+         JSArray retVal = null;
+         retVal = new JSArray();
+
+         for (JsonNode child : json)
+         {
+            retVal.add(map(child));
+         }
+
+         return retVal;
+      }
+      else if (json.isObject())
+      {
+         JSObject retVal = null;
+         retVal = new JSObject();
+
+         Iterator<String> it = json.fieldNames();
+         while (it.hasNext())
+         {
+            String field = it.next();
+            JsonNode value = json.get(field);
+            retVal.put(field, map(value));
+         }
+         return retVal;
+      }
+
+      throw new RuntimeException("unparsable json:" + json);
    }
    
    public static int roundUp(int num, int divisor)

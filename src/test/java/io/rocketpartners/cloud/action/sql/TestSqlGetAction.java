@@ -38,9 +38,13 @@ public class TestSqlGetAction extends TestSqlActions
       res = service.service("GET", "http://localhost/northwind/sql/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
       json = res.getJson();
       System.out.println(json);
+      
+      
       assertEquals(json.find("meta.pageSize"), 100);
       assertEquals(json.find("meta.rowCount"), 7);
       assertEquals(json.find("data.0.orderid"), 10501);
+      
+      assertTrue(((JSObject)json.find("data.0")).getProperty("ORDERID").getName().equals("orderid"));//test case insensativity of the JSObject but that the prop is actually lower cased
       
    }
 

@@ -48,7 +48,7 @@ import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlGetAction extends SqlAction
@@ -145,7 +145,7 @@ public class SqlGetAction extends SqlAction
                   sql += "\r\n WHERE " + fkCol + " IS NOT NULL AND " + pkCol + " =  ? ";
                }
 
-               List ids = Sql.selectList(conn, sql, req.getEntityKey());
+               List ids = SqlUtils.selectList(conn, sql, req.getEntityKey());
 
                String newUrl = Service.buildLink(req, collection.getName(), Utils.implode(",", ids.toArray()), null);
 
@@ -171,10 +171,10 @@ public class SqlGetAction extends SqlAction
          //-- this is a request for one or more entities by ID
          //-- ${http://host/apipath}/collectionKey/entityKey[,entityKey2,entityKey3....,entityKeyN]
 
-         String inClause = Sql.getInClauseStr(Utils.explode(",", Sql.check(req.getEntityKey())));
+         String inClause = SqlUtils.getInClauseStr(Utils.explode(",", SqlUtils.check(req.getEntityKey())));
 
          sql += " SELECT * FROM " + query.quoteCol(tbl.getName());
-         sql += " WHERE " + Sql.check(keyCol) + " IN (" + inClause + ") ";
+         sql += " WHERE " + SqlUtils.check(keyCol) + " IN (" + inClause + ") ";
       }
       else if (tbl != null)
       {
@@ -322,7 +322,7 @@ public class SqlGetAction extends SqlAction
          }
       }
 
-      Rows rows = Sql.selectRows(conn, sql, vals);
+      Rows rows = SqlUtils.selectRows(conn, sql, vals);
       if (chain.get("rowCount") == null)
       {
          if (db.isType("mysql"))
@@ -338,7 +338,7 @@ public class SqlGetAction extends SqlAction
             if (sql.indexOf("ORDER BY ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
          }
-         int found = Sql.selectInt(conn, sql, vals);
+         int found = SqlUtils.selectInt(conn, sql, vals);
 
          if (chain.isDebug())
          {
@@ -418,7 +418,7 @@ public class SqlGetAction extends SqlAction
       if (ids.size() == 0)
          return Collections.EMPTY_LIST;
 
-      String url = Service.buildLink(chain.getRequest(), collection.getName(), Sql.getInClauseStr(ids).replaceAll(" ", ""), null);
+      String url = Service.buildLink(chain.getRequest(), collection.getName(), SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
 
       //--
       //-- Nested param support
@@ -590,7 +590,7 @@ public class SqlGetAction extends SqlAction
 
                String sql = "";
                sql += " SELECT " + query.asCol(childPkCol) + " FROM " + query.asCol(relTbl);
-               sql += " WHERE " + query.asCol(childFkCol) + " IN (" + Sql.getQuestionMarkStr(parentIds.size()) + ")";
+               sql += " WHERE " + query.asCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
 
                if (chain.getRequest().isDebug())
                {
@@ -601,7 +601,7 @@ public class SqlGetAction extends SqlAction
                   }
                }
 
-               List thoseIds = Sql.selectList(conn, sql, parentIds);
+               List thoseIds = SqlUtils.selectList(conn, sql, parentIds);
 
                List<JSObject> childObjs = fetchObjects(chain, childCollection, thoseIds, includes, excludes, expandPath(path, rel.getName()));
 
@@ -650,7 +650,7 @@ public class SqlGetAction extends SqlAction
                String sql = " SELECT " + query.asCol(linkTblParentFkCol) + ", " + query.asCol(linkTblChildFkCol) + //
                      " FROM " + query.asCol(linkTbl) + //
                      " WHERE " + query.asCol(linkTblChildFkCol) + " IS NOT NULL " + //
-                     " AND " + query.asCol(linkTblParentFkCol) + " IN(" + Sql.getQuestionMarkStr(parentIds.size()) + ") ";
+                     " AND " + query.asCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
 
                if (chain.getRequest().isDebug())
                {
@@ -661,7 +661,7 @@ public class SqlGetAction extends SqlAction
                   }
                }
 
-               Rows childRows = Sql.selectRows(conn, sql, parentIds);
+               Rows childRows = SqlUtils.selectRows(conn, sql, parentIds);
 
                ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
                Set childIds = new HashSet();

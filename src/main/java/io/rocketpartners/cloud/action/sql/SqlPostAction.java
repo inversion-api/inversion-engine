@@ -42,7 +42,7 @@ import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Url;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.JSObject.Property;
@@ -84,7 +84,7 @@ public class SqlPostAction extends SqlAction
 
       if (collapseAll || collapses.size() > 0)
       {
-         obj = JS.toJSObject(obj.toString());
+         obj = Utils.parseJsonObject(obj.toString());
          collapse(obj, collapseAll, collapses, "");
       }
 
@@ -281,7 +281,7 @@ public class SqlPostAction extends SqlAction
          if (vals.size() > 1)
          {
             chain.debug("Sql.updateRow(`" + entity.getTable().getName() + "`", "id", vals.get("id"), vals);
-            Sql.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
+            SqlUtils.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
             changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
          }
          id = vals.get("id") + "";
@@ -289,7 +289,7 @@ public class SqlPostAction extends SqlAction
       else
       {
          chain.debug("Sql.insertMap(`" + entity.getTable().getName() + "`", vals);
-         id = Sql.insertMap(conn, "`" + entity.getTable().getName() + "`", vals) + "";
+         id = SqlUtils.insertMap(conn, "`" + entity.getTable().getName() + "`", vals) + "";
          changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
 
@@ -372,7 +372,7 @@ public class SqlPostAction extends SqlAction
          String table = "`" + rel.getFkCol1().getTable().getName() + "`";
          String parentKeyCol = rel.getFkCol1().getName();
          String childKeyCol = m2m ? rel.getFkCol2().getName() : chain.getRequest().getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
-         String qmarks = Sql.getQuestionMarkStr(relateds.get(rel).size());
+         String qmarks = SqlUtils.getQuestionMarkStr(relateds.get(rel).size());
 
          List args = new ArrayList(relateds.get(rel));
          args.add(0, parentId);
@@ -392,7 +392,7 @@ public class SqlPostAction extends SqlAction
             sql += " WHERE " + childPkCol + " IN (" + qmarks + ")";
 
             chain.debug(sql, args);
-            Sql.execute(conn, sql, args);
+            SqlUtils.execute(conn, sql, args);
 
             //these next statemets delete now removed relationshiops
             if (fk.isNullable())
@@ -417,7 +417,7 @@ public class SqlPostAction extends SqlAction
             }
 
             chain.debug(sql, args);
-            Sql.execute(conn, sql, args);
+            SqlUtils.execute(conn, sql, args);
          }
          else
          {
@@ -440,7 +440,7 @@ public class SqlPostAction extends SqlAction
             sql = "";
             sql += "DELETE FROM " + table + " WHERE " + parentKeyCol + " = ? AND " + childKeyCol + " NOT IN (" + qmarks + ")";
             chain.debug(sql, args);
-            Sql.execute(conn, sql, args);
+            SqlUtils.execute(conn, sql, args);
          }
       }
 
@@ -466,7 +466,7 @@ public class SqlPostAction extends SqlAction
          args.add(parentId);
 
          chain.debug(sql, args);
-         Sql.execute(conn, sql, args);
+         SqlUtils.execute(conn, sql, args);
       }
    }
 
@@ -565,7 +565,7 @@ public class SqlPostAction extends SqlAction
 
    Object cast(Column col, Object value)
    {
-      return Sql.cast(value, col.getType());
+      return SqlUtils.cast(value, col.getType());
       //      
       //      if (J.empty(value))
       //         return null;

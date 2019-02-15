@@ -45,7 +45,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler
       {
          String input = Utils.read(new BufferedInputStream(inputStream));
          context.getLogger().log(input);
-         JSObject request = JS.toJSObject(input);
+         JSObject request = Utils.parseJsonObject(input);
          responseBody.put("request", request);
 
       }

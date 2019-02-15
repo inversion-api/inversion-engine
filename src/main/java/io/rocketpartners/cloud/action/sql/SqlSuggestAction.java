@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.Sql;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlSuggestAction extends SqlAction
@@ -103,10 +103,10 @@ public class SqlSuggestAction extends SqlAction
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 
-         String tableName = Sql.check(api.getCollection(collectionKey, SqlDb.class).getEntity().getTable().getName());
-         String column = Sql.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
+         String tableName = SqlUtils.check(api.getCollection(collectionKey, SqlDb.class).getEntity().getTable().getName());
+         String column = SqlUtils.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
-         sql += " \r\nSELECT DISTINCT " + query.asCol(column) + " AS " + searchProp + " FROM " + query.asCol(tableName) + " WHERE " + query.asCol(column) + " LIKE '%" + Sql.check(value) + "%' AND " + query.asCol(column) + " != ''";
+         sql += " \r\nSELECT DISTINCT " + query.asCol(column) + " AS " + searchProp + " FROM " + query.asCol(tableName) + " WHERE " + query.asCol(column) + " LIKE '%" + SqlUtils.check(value) + "%' AND " + query.asCol(column) + " != ''";
 
          if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
             sql += " AND " + query.asCol(tenantCol) + "=" + req.getUser().getTenantId();
@@ -115,7 +115,7 @@ public class SqlSuggestAction extends SqlAction
             sql += " \r\nUNION ";
       }
       sql += " \r\n ) as v ";
-      sql += " \r\n ORDER BY CASE WHEN " + searchProp + " LIKE '" + Sql.check(value) + "%' THEN 0 ELSE 1 END, " + searchProp;
+      sql += " \r\n ORDER BY CASE WHEN " + searchProp + " LIKE '" + SqlUtils.check(value) + "%' THEN 0 ELSE 1 END, " + searchProp;
 
       // removing the tenantId here so the Get Handler won't add an additional where clause to the sql we are sending it
       req.removeParam("tenantId");
