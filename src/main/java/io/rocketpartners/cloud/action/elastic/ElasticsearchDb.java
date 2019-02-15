@@ -31,7 +31,7 @@ import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.Web;
+import io.rocketpartners.cloud.utils.HttpUtils;
 
 public class ElasticsearchDb extends Db
 {
@@ -58,7 +58,7 @@ public class ElasticsearchDb extends Db
       }
 
       // 'GET _all' returns all indices/aliases/mappings
-      Response allResp = Web.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
+      Response allResp = HttpUtils.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {

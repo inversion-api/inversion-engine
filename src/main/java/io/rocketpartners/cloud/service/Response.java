@@ -31,7 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.Web.ResponseHandler;
+import io.rocketpartners.cloud.utils.HttpUtils.ResponseHandler;
 
 public class Response
 {

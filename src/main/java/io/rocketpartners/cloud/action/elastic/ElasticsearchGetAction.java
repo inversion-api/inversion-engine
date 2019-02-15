@@ -37,7 +37,7 @@ import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.Web;
+import io.rocketpartners.cloud.utils.HttpUtils;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client
@@ -150,7 +150,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url, json, headers);
 
-      Response r = Web.post(url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = HttpUtils.post(url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -275,7 +275,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Response r = Web.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {

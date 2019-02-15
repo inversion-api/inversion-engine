@@ -72,9 +72,9 @@ import io.rocketpartners.cloud.service.Response;
  * @author Wells Burke
  *
  */
-public class Web
+public class HttpUtils
 {
-   static Log       log                      = LogFactory.getLog(Web.class);
+   static Log       log                      = LogFactory.getLog(HttpUtils.class);
 
    static final int DEFAULT_TIMEOUT          = 30000;
 
