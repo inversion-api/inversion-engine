@@ -39,7 +39,6 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.AutoWire.Ignore;
 import io.rocketpartners.cloud.utils.English;
 
 public class SqlDb extends Db
@@ -49,7 +48,6 @@ public class SqlDb extends Db
    public static final int        MIN_POOL_SIZE            = 3;
    public static final int        MAX_POOL_SIZE            = 10;
 
-   @Ignore
    transient boolean              shutdown                 = false;
 
    protected String               driver                   = null;

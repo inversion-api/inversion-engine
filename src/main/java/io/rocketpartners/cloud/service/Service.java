@@ -36,6 +36,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.utils.PropsConfig;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
@@ -50,7 +51,7 @@ public class Service
 
    ResourceLoader    resourceLoader = null;
 
-   Configurator      configurator   = new Configurator();
+   PropsConfig      configurator   = new PropsConfig();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
@@ -787,12 +788,12 @@ public class Service
       this.configPath = configPath;
    }
 
-   public Configurator getConfigurator()
+   public PropsConfig getConfigurator()
    {
       return configurator;
    }
 
-   public void setConfigurator(Configurator configurator)
+   public void setConfigurator(PropsConfig configurator)
    {
       this.configurator = configurator;
    }
