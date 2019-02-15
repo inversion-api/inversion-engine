@@ -145,7 +145,6 @@ public class Request
       else if (!url.endsWith("&"))
          url += "&";
 
-      //TODO: replace this with UrlBuilder
       List<String> keys = new ArrayList(params.keySet());
       for (int i = 0; i < keys.size(); i++)
       {
