@@ -242,6 +242,12 @@ public class Api
          withCollection(collection);
    }
 
+   public Collection withCollection(Table table, String name)
+   {
+      Collection collection = new Collection(this, table, name);
+      return collection;
+   }
+
    /**
     * Bi-directional method also sets 'this' api on the collection
     * @param collection
@@ -257,7 +263,7 @@ public class Api
          collections.add(collection);
 
       if (collection.getApi() != this)
-         collection.setApi(this);
+         collection.withApi(this);
 
       return this;
    }

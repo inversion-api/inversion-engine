@@ -177,17 +177,28 @@ public class Table
       return found;
    }
 
-   public void setIndexes(ArrayList<Index> indexes)
+   public Table withIndexes(ArrayList<Index> indexes)
    {
-      this.indexes.clear();
       for (Index index : indexes)
-         addIndex(index);
+         withIndex(index);
+
+      return this;
    }
 
-   public void addIndex(Index index)
+   public Table withIndex(Index index)
    {
       if (index != null && !indexes.contains(index))
          indexes.add(index);
+
+      return this;
+   }
+
+   public Index withIndex(Column column, String name, String type, boolean unique)
+   {
+      System.out.println("withIndex(" + getName() + "." + column.getName() + ", " + name + "," + type + "," + unique + ")");
+      Index index = new Index(this, column, name, type, unique);
+      withIndex(index);
+      return index;
    }
 
    public void removeIndex(Index index)

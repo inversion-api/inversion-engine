@@ -130,23 +130,23 @@ public class TestDynamoActions extends TestCase
                                            .getDb();
 
       Collection orders = new Collection(dynamoDb.getTable(dynamoTbl));
-      orders.setName("orders");
+      orders.withName("orders");
 
-      orders.getAttribute("hk").setName("orderId"); //get orders by id 
-      orders.getAttribute("sk").setName("type");
+      orders.getAttribute("hk").withName("orderId"); //get orders by id 
+      orders.getAttribute("sk").withName("type");
 
-      orders.getAttribute("gs1hk").setName("customerId"); //get orders by customer sorted by date
-      orders.getAttribute("gs1sk").setName("orderDate");
+      orders.getAttribute("gs1hk").withName("customerId"); //get orders by customer sorted by date
+      orders.getAttribute("gs1sk").withName("orderDate");
 
       //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
       //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
 
-      orders.getAttribute("field1").setName("shipName");
-      orders.getAttribute("field2").setName("shipAddress");
-      orders.getAttribute("ls1").setName("shipCity");
-      orders.getAttribute("field4").setName("shipRegion");
-      orders.getAttribute("field5").setName("shipPostalCode");
-      orders.getAttribute("field6").setName("shipCountry");
+      orders.getAttribute("field1").withName("shipName");
+      orders.getAttribute("field2").withName("shipAddress");
+      orders.getAttribute("ls1").withName("shipCity");
+      orders.getAttribute("field4").withName("shipRegion");
+      orders.getAttribute("field5").withName("shipPostalCode");
+      orders.getAttribute("field6").withName("shipCountry");
 
       service = TestSqlActions.service(apiName, ddl);
 
@@ -167,7 +167,7 @@ public class TestDynamoActions extends TestCase
       Response res = null;
       JSObject json = null;
 
-      res = service.get("northwind/sql/orders?pageSize=100&order=orderid").go();
+      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
       json = res.getJson();
       System.out.println(json);
       assertEquals(json.find("meta.pageSize"), 100);

@@ -329,9 +329,22 @@ public class SqlDb extends Db
             ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
             while (indexMd.next())
             {
+               String idxName = indexMd.getString("INDEX_NAME");
+               String idxType = indexMd.getString("TYPE");
                String colName = indexMd.getString("COLUMN_NAME");
-               Column col = getColumn(tableName, colName);
-               col.setUnique(true);
+
+               Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
+               boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
+
+               Column column = table.getColumn(colName);
+               
+               if (unique)
+               {
+                  column.setUnique(unique);
+               }
+
+               table.withIndex(column, idxName, idxType, unique);
+
             }
             indexMd.close();
 
@@ -391,9 +404,6 @@ public class SqlDb extends Db
       if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
          collectionName = English.plural(collectionName);
 
-      if ("null".equals(collectionName + ""))
-         System.out.println("asdfs");
-
       return collectionName;
    }
 
@@ -407,49 +417,37 @@ public class SqlDb extends Db
 
    public void configApi() throws Exception
    {
-      for (Table t : getTables())
+      for (Table table : getTables())
       {
-         List<Column> cols = t.getColumns();
+         List<Column> cols = table.getColumns();
+         String name = beautifyCollectionName(table.getName());
 
-         Collection collection = new Collection();
-         String collectionName = beautifyCollectionName(t.getName());
+         Collection collection = api.withCollection(table, name);
+         Entity entity = collection.withEntity(table);
 
-         //         collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-         //
-         //         if (!collectionName.endsWith("s"))
-         //            collectionName = English.plural(collectionName);
-
-         collection.setName(collectionName);
-
-         Entity entity = new Entity();
-         entity.withTable(t);
-         entity.setHint(t.getName());
-
-         entity.withCollection(collection);
-         collection.setEntity(entity);
-
-         for (Column col : cols)
+         for (Attribute attr : entity.getAttributes())
          {
-            if (col.getPk() == null)
-            {
-               Attribute attr = new Attribute();
-               attr.setEntity(entity);
-               attr.setName(beautifyAttributeName(col.getName()));
-               attr.setColumn(col);
-               attr.setHint(col.getTable().getName() + "." + col.getName());
-               attr.setType(col.getType());
-
-               entity.withAttribute(attr);
-
-               if (col.isUnique() && entity.getKey() == null)
-               {
-                  entity.withKey(attr);
-               }
-            }
+            attr.withName(beautifyAttributeName(attr.getName()));
          }
 
+         //         for (Column col : cols)
+         //         {
+         //            if (col.getPk() == null)
+         //            {
+         //               Attribute attr = entity.withAttribute(col, beautifyAttributeName(col.getName()));
+         //
+         //               System.out.println(attr.getName());
+         //               if (col.isUnique() && entity.getKey() == null)
+         //               {
+         //                  entity.withKey(attr);
+         //               }
+         //            }
+         //         }
+         System.out.println(entity.getAttributes().get(0).getName());
+         System.out.println(collection.getEntity().getAttributes().get(0).getName());
+
          api.withCollection(collection);
-         collection.setApi(api);
+         collection.withApi(api);
 
       }
 

@@ -39,6 +39,12 @@ public class Entity
       withTable(table);
    }
 
+   public Entity(Collection collection, Table table)
+   {
+      withCollection(collection);
+      withTable(table);
+   }
+
    public boolean isExclude()
    {
       return exclude || table.isExclude();
@@ -161,6 +167,22 @@ public class Entity
       relationships.remove(relationship);
    }
 
+   public Attribute withAttribute(Column column)
+   {
+      return withAttribute(column, null);
+   }
+
+   public Attribute withAttribute(Column column, String name)
+   {
+      Attribute attr = new Attribute(this, column);
+      if (name != null)
+         attr.withName(name);
+
+      withAttribute(attr);
+
+      return attr;
+   }
+
    public Entity withAttribute(Attribute attribute)
    {
       if (attribute != null && !attributes.contains(attribute))
@@ -190,48 +212,25 @@ public class Entity
       this.hint = hint;
    }
 
-   public ArrayList<Attribute> getKeys()
-   {
-      return keys;
-   }
-
-   public Entity withKeys(ArrayList<Attribute> keys)
-   {
-      this.keys = keys;
-      return this;
-   }
-
-   public void addKey(Attribute attribute)
-   {
-      if (attribute != null && !keys.contains(attribute))
-         keys.add(attribute);
-   }
-
-   public void removeKey(Attribute attribute)
-   {
-      keys.remove(attribute);
-   }
-
-   /**
-    * @return the key
-    */
    public Attribute getKey()
    {
-      if (!this.keys.isEmpty())
-      {
-         return this.keys.get(0);
-      }
+//      Table table = getTable();
+//      if (table != null)
+//      {
+//         for (Index index : table.getIndexes())
+//         {
+//            if (index.isUnique() && index.getColumns().size() == 1)
+//            {
+//               Column col = index.getColumns().get(0);
+//               for (Attribute attr : getAttributes())
+//               {
+//                  if (attr.getColumn() == col)
+//                     return attr;
+//               }
+//            }
+//         }
+//      }
       return null;
-   }
-
-   /**
-    * @param key the key to set
-    */
-   public Entity withKey(Attribute key)
-   {
-      this.keys.clear();
-      this.keys.add(key);
-      return this;
    }
 
 }

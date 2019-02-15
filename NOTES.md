@@ -1,5 +1,7 @@
 
 
+Put meta & data objects into response as first class citizens
+
 Make superclass "beautify" method for collection names and attribute names
 
 Pull "expands" out of SqlGetHandler and put it into a superclass that can work with Dynamo/Elastic etc.

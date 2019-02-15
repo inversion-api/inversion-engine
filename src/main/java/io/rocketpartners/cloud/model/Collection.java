@@ -20,16 +20,22 @@ import java.util.List;
 
 public class Collection
 {
-   Api          api     = null;
-   Entity       entity  = null;
-   String       name    = null;
-   List<String> aliases = new ArrayList();
-
-   boolean      exclude = false;
+   protected Api          api     = null;
+   protected Entity       entity  = null;
+   protected String       name    = null;
+   protected List<String> aliases = new ArrayList();
+   protected boolean      exclude = false;
 
    public Collection()
    {
 
+   }
+
+   public Collection(Api api, Table table, String name)
+   {
+      withApi(api);
+      withTable(table);
+      withName(name);
    }
 
    public Collection(Table table)
@@ -52,9 +58,10 @@ public class Collection
       return exclude || entity.isExclude();
    }
 
-   public void setExclude(boolean exclude)
+   public Collection withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
    public Attribute getAttribute(String name)
@@ -95,7 +102,7 @@ public class Collection
     * the entity and it's table have been set. 
     * @param api the api to set
     */
-   public void setApi(Api api)
+   public void withApi(Api api)
    {
       if (api != null && this.api != api)
       {
@@ -112,12 +119,19 @@ public class Collection
       return entity;
    }
 
+   public Entity withEntity(Table table)
+   {
+      entity = new Entity(this, table);
+      return entity;
+   }
+
    /**
     * @param entity the entity to set
     */
-   public void setEntity(Entity entity)
+   public Collection withEntity(Entity entity)
    {
       this.entity = entity;
+      return this;
    }
 
    /**
@@ -131,9 +145,11 @@ public class Collection
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public Collection withName(String name)
    {
+      //System.out.println("Collection.withName(" + name + ")");
       this.name = name;
+      return this;
    }
 
    public List<String> getAliases()
@@ -141,17 +157,19 @@ public class Collection
       return new ArrayList(aliases);
    }
 
-   public void setAliases(List<String> aliases)
+   public Collection withAliases(List<String> aliases)
    {
       this.aliases.clear();
       for (String alias : aliases)
-         addAlias(alias);
+         withAlias(alias);
+      return this;
    }
 
-   public void addAlias(String alias)
+   public Collection withAlias(String alias)
    {
       if (!aliases.contains(alias))
          aliases.add(alias);
+      return this;
    }
 
 }

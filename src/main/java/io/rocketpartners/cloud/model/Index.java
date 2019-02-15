@@ -28,6 +28,8 @@ public class Index
    protected Table        table   = null;
    protected String       name    = null;
    protected String       type    = null;           // primary, partition, sort, localsecondary, etc
+   protected boolean      unique  = true;
+
    protected List<Column> columns = new ArrayList();
 
    public Index()
@@ -37,10 +39,17 @@ public class Index
 
    public Index(Table table, String name, String type)
    {
+      this(table, null, name, type, true);
+   }
+
+   public Index(Table table, Column column, String name, String type, boolean unique)
+   {
       super();
       withTable(table);
+      withColumn(column);
       withName(name);
       withType(type);
+      withUnique(unique);
    }
 
    public Table getTable()
@@ -53,7 +62,7 @@ public class Index
       if (this.table != table)
       {
          this.table = table;
-         table.addIndex(this);
+         table.withIndex(this);
       }
       return this;
    }
@@ -88,6 +97,17 @@ public class Index
             return true;
       }
       return false;
+   }
+
+   public boolean isUnique()
+   {
+      return unique;
+   }
+
+   public Index withUnique(boolean unique)
+   {
+      this.unique = unique;
+      return this;
    }
 
    public boolean hasColumn(String name)

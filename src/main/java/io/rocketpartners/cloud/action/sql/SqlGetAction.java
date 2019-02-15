@@ -294,6 +294,8 @@ public class SqlGetAction extends SqlAction
 
       List<Row> rows = selectRows(chain, db, conn, sql, params);
 
+      Collection collection = req.getCollection();
+      
       for (int i = 0; i < rows.size(); i++)
       {
          JSObject o = new JSObject();
@@ -302,6 +304,11 @@ public class SqlGetAction extends SqlAction
          Row row = rows.get(i);
          for (String col : (Set<String>) row.keySet())
          {
+            if (collection != null)
+            {
+               col = collection.getAttributeName(col);
+            }
+            
             if (include(col, includes, excludes))
             {
                o.put(col, row.get(col));

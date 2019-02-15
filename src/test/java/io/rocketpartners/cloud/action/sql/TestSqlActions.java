@@ -31,7 +31,7 @@ public class TestSqlActions extends TestCase
 
       final SqlDb db = new SqlDb();
       db.withDriver("org.h2.Driver");
-      db.withUrl("jdbc:h2:./" + ddl + "-" + Utils.time());
+      db.withUrl("jdbc:h2:./.h2/" + ddl + "-" + Utils.time());
       db.withUser("sa");
       db.withPass("");
 
@@ -79,7 +79,7 @@ public class TestSqlActions extends TestCase
       service.withApi(apiName)//
              .withEndpoint("GET", "sql", "*").withAction(new SqlGetAction())//
              .withMaxRows(DEFAULT_MAX_ROWS).getApi()//
-             .withDb(new SqlDb()).withConfig("org.h2.Driver", "jdbc:h2:./northwind", "sa", "").getApi().getService();
+             .withDb(db).getApi().getService();
 
       services.put(apiName, service);
 

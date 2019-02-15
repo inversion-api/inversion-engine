@@ -17,14 +17,14 @@ package io.rocketpartners.cloud.model;
 
 public class Attribute
 {
-   Entity  entity  = null;
-   Column  column  = null;
+   protected Entity  entity  = null;
+   protected Column  column  = null;
 
-   String  name    = null;
-   String  type    = null;
-   String  hint    = null;
+   protected String  name    = null;
+   protected String  type    = null;
+   protected String  hint    = null;
 
-   boolean exclude = false;
+   protected boolean exclude = false;
 
    public Attribute()
    {
@@ -33,8 +33,8 @@ public class Attribute
 
    public Attribute(Entity entity, Column column)
    {
-      setEntity(entity);
-      setColumn(column);
+      withEntity(entity);
+      withColumn(column);
    }
 
    public boolean isExclude()
@@ -42,14 +42,15 @@ public class Attribute
       return exclude || column.isExclude();
    }
 
-   public void setExclude(boolean exclude)
+   public Attribute withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
    public String toString()
    {
-      return getHint();
+      return getName();//getHint();
    }
 
    /**
@@ -63,9 +64,10 @@ public class Attribute
    /**
     * @param entity the entity to set
     */
-   public void setEntity(Entity entity)
+   public Attribute withEntity(Entity entity)
    {
       this.entity = entity;
+      return this;
    }
 
    /**
@@ -79,14 +81,16 @@ public class Attribute
    /**
     * @param col the col to set
     */
-   public void setColumn(Column col)
+   public Attribute withColumn(Column col)
    {
       this.column = col;
-      if(name == null)
+      if (name == null)
       {
-         setName(col.getName());
-         setType(col.getType());
+         withName(col.getName());
       }
+      withType(col.getType());
+      
+      return this;
    }
 
    /**
@@ -100,9 +104,11 @@ public class Attribute
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public Attribute withName(String name)
    {
+      System.out.println("Attribute.withName(" + name + ")");
       this.name = name;
+      return this;
    }
 
    /**
@@ -116,9 +122,10 @@ public class Attribute
    /**
     * @param type the type to set
     */
-   public void setType(String type)
+   public Attribute withType(String type)
    {
       this.type = type;
+      return this;
    }
 
    /**
@@ -126,15 +133,16 @@ public class Attribute
     */
    public String getHint()
    {
-      return hint;
+      return hint != null ? hint : (column != null ? column.getTable().getName() + "." + column.getName() : name);
    }
 
    /**
     * @param hint the hint to set
     */
-   public void setHint(String hint)
+   public Attribute withHint(String hint)
    {
       this.hint = hint;
+      return this;
    }
 
 }

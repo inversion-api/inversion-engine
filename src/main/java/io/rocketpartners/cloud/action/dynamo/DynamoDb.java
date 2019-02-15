@@ -280,7 +280,7 @@ public class DynamoDb extends Db
          }
       }
 
-      table.addIndex(index);
+      table.withIndex(index);
    }
 
    Entity buildEntity(String collectionName, Table table)
@@ -292,26 +292,26 @@ public class DynamoDb extends Db
       entity.setHint(table.getName());
       entity.withCollection(collection);
 
-      collection.setEntity(entity);
+      collection.withEntity(entity);
 
       if (!collectionName.endsWith("s"))
          collectionName = English.plural(collectionName);
 
-      collection.setName(collectionName);
+      collection.withName(collectionName);
 
       DynamoDbIndex index = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
 
       for (Column col : table.getColumns())
       {
          Attribute attr = new Attribute();
-         attr.setEntity(entity);
-         attr.setName(col.getName());
-         attr.setColumn(col);
-         attr.setHint(col.getTable().getName() + "." + col.getName());
-         attr.setType(col.getType());
+         attr.withEntity(entity);
+         attr.withName(col.getName());
+         attr.withColumn(col);
+         attr.withHint(col.getTable().getName() + "." + col.getName());
+         attr.withType(col.getType());
 
-         if (col == index.getPartitionKey() || col == index.getSortKey())
-            entity.withKey(attr);
+//         if (col == index.getPartitionKey() || col == index.getSortKey())
+//            entity.withKey(attr);
       }
       return entity;
    }

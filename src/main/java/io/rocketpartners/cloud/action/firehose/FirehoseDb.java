@@ -58,14 +58,14 @@ public class FirehoseDb extends Db
             if (!collectionName.endsWith("s"))
                collectionName = English.plural(collectionName);
 
-            collection.setName(collectionName);
+            collection.withName(collectionName);
 
             Entity entity = new Entity();
             entity.withTable(table);
             entity.setHint(table.getName());
             entity.withCollection(collection);
 
-            collection.setEntity(entity);
+            collection.withEntity(entity);
 
             api.withCollection(collection);
          }

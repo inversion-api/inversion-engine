@@ -91,29 +91,29 @@ public class ElasticsearchDb extends Db
          List<Column> cols = t.getColumns();
          Collection collection = new Collection();
 
-         collection.setName(lowercaseAndPluralizeString(t.getName()));
+         collection.withName(lowercaseAndPluralizeString(t.getName()));
 
          Entity entity = new Entity();
          entity.withTable(t);
          entity.setHint(t.getName());
          entity.withCollection(collection);
 
-         collection.setEntity(entity);
+         collection.withEntity(entity);
 
          for (Column col : cols)
          {
             Attribute attr = new Attribute();
-            attr.setEntity(entity);
-            attr.setName(col.getName());
-            attr.setColumn(col);
-            attr.setHint(col.getTable().getName() + "." + col.getName());
-            attr.setType(col.getType());
+            attr.withEntity(entity);
+            attr.withName(col.getName());
+            attr.withColumn(col);
+            attr.withHint(col.getTable().getName() + "." + col.getName());
+            attr.withType(col.getType());
 
             entity.withAttribute(attr);
          }
 
          api.withCollection(collection);
-         collection.setApi(api);
+         collection.withApi(api);
       }
    }
 
