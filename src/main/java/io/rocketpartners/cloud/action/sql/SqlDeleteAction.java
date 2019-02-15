@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.apache.commons.collections4.KeyValue;
 
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -46,7 +45,7 @@ public class SqlDeleteAction extends SqlAction
    List<String> batchDeny        = new ArrayList();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       boolean rootDelete = chain.get("batch.delete.sqls") == null;
       if (rootDelete)

@@ -30,20 +30,20 @@ public class SqlRestAction<T extends SqlRestAction> extends Action<T>
    SqlPostAction   post   = new SqlPostAction();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String method = req.getMethod();
       if ("GET".equalsIgnoreCase(method))
       {
-         get.service(service, api, endpoint, action, chain, req, res);
+         get.run(service, api, endpoint, chain, req, res);
       }
       else if ("DELETE".equalsIgnoreCase(method))
       {
-         delete.service(service, api, endpoint, action, chain, req, res);
+         delete.run(service, api, endpoint, chain, req, res);
       }
       else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
       {
-         post.service(service, api, endpoint, action, chain, req, res);
+         post.run(service, api, endpoint, chain, req, res);
       }
    }
 }

@@ -83,7 +83,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String requestPath = null;
       String fileName = null;

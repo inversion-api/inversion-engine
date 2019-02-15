@@ -58,7 +58,7 @@ public class SqlGetAction extends SqlAction
    Set reservedParams = new HashSet(Arrays.asList("includes", "excludes", "expands"));
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Connection conn = null;
 
@@ -232,11 +232,11 @@ public class SqlGetAction extends SqlAction
 
       if (collection != null && collection.getEntity().getKey() != null)
       {
-         results = queryObjects(query, service, chain, action, req, res, db, conn, includes, excludes, expands, "", collection, sql, params);
+         results = queryObjects(query, service, chain, req, res, db, conn, includes, excludes, expands, "", collection, sql, params);
       }
       else
       {
-         results = getRows(chain, action, req, db, conn, includes, excludes, sql, params);
+         results = getRows(chain, req, db, conn, includes, excludes, sql, params);
       }
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
@@ -286,11 +286,11 @@ public class SqlGetAction extends SqlAction
       }
    }
 
-   List getRows(Chain chain, Action action, Request req, SqlDb db, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
+   List getRows(Chain chain, Request req, SqlDb db, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
    {
       List list = new ArrayList();
 
-      sql = parseSql(sql, chain, action, req, db, null, null);
+      sql = parseSql(sql, chain, req, db, null, null);
 
       List<Row> rows = selectRows(chain, db, conn, sql, params);
 
@@ -358,7 +358,7 @@ public class SqlGetAction extends SqlAction
       return rows;
    }
 
-   List<JSObject> queryObjects(SqlQuery query, Service service, Chain chain, Action action, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
+   List<JSObject> queryObjects(SqlQuery query, Service service, Chain chain, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
    {
       List<JSObject> results = new ArrayList();
 

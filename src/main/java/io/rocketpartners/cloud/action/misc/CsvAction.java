@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.service.Chain;
@@ -43,7 +42,7 @@ import io.rocketpartners.cloud.utils.JSObject;
 public class CsvAction extends BatchAction<CsvAction>
 {
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null)
       {

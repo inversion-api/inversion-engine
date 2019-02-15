@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -41,7 +40,7 @@ public class SqlSuggestAction extends SqlAction
    protected String          searchProp   = "value";
    protected String          tenantCol    = "tenantId";
 
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String propertyProp = chain.getConfig("propertyProp", this.propertyProp);
       String searchProp = chain.getConfig("searchProp", this.searchProp);

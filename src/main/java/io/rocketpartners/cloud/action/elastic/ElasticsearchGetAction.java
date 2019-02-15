@@ -55,10 +55,10 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    boolean isOneSrcArray = true;
 
    /**
-    * @see io.rocketpartners.cloud.service.Handler#service(io.rocketpartners.cloud.service.Service, io.rocketpartners.cloud.model.Api, io.rocketpartners.cloud.model.Endpoint, io.rocketpartners.cloud.model.Action, io.rocketpartners.cloud.service.Chain, io.rocketpartners.cloud.service.Request, io.rocketpartners.cloud.service.Response)
+    * @see io.rocketpartners.cloud.service.Handler#run(io.rocketpartners.cloud.service.Service, io.rocketpartners.cloud.model.Api, io.rocketpartners.cloud.model.Endpoint, io.rocketpartners.cloud.service.Chain, io.rocketpartners.cloud.service.Request, io.rocketpartners.cloud.service.Response)
     */
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
 
       Collection collection = findCollectionOrThrow404(api, chain, req);

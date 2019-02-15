@@ -64,7 +64,7 @@ public class AuthAction extends Action<AuthAction>
    protected boolean          shouldTrackRequestTimes = true;
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
       //one time init
       if (sessionCache == null)
@@ -85,10 +85,10 @@ public class AuthAction extends Action<AuthAction>
          return;
       }
 
-      String collection = action.getConfig("collection", this.collection);
-      String authenticatedPerm = action.getConfig("authenticatedPerm", this.authenticatedPerm);
-      long failedMax = Long.parseLong(action.getConfig("failedMax", this.failedMax + ""));
-      long sessionExp = Long.parseLong(action.getConfig("sessionExp", this.sessionExp + ""));
+      String collection = getConfig("collection", this.collection);
+      String authenticatedPerm = getConfig("authenticatedPerm", this.authenticatedPerm);
+      long failedMax = Long.parseLong(getConfig("failedMax", this.failedMax + ""));
+      long sessionExp = Long.parseLong(getConfig("sessionExp", this.sessionExp + ""));
 
       //-- END CONFIG
 

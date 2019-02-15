@@ -26,7 +26,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
@@ -51,7 +50,7 @@ public class DynamoDbPostAction extends DynamoDbAction
 {
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Collection collection = api.getCollection(req.getCollectionKey(), DynamoDb.class);
       Table table = collection.getEntity().getTable();

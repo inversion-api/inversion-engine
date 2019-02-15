@@ -83,7 +83,7 @@ public class RedisAction extends Action<RedisAction>
    Hashtable<String, JedisPool> pools                              = new Hashtable();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       //caching only makes sense for GET requests
       if (!"GET".equalsIgnoreCase(req.getMethod()))

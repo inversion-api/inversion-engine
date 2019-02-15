@@ -56,7 +56,7 @@ public class RateLimitAction extends Action<RateLimitAction>
    Map<String, Bucket> buckets        = new Hashtable();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       int limitMinutes = chain.getConfig("limitMinutes", this.limitMinutes);;
       int limitUserHits = chain.getConfig("limitUserHits", this.limitUserHits);

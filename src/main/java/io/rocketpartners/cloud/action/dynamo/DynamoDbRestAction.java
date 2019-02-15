@@ -37,19 +37,19 @@ public class DynamoDbRestAction<T extends DynamoDbRestAction> extends Action<T>
    DynamoDbPostAction   post   = new DynamoDbPostAction();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (req.isMethod("get"))
       {
-         get.service(service, api, endpoint, action, chain, req, res);
+         get.run(service, api, endpoint, chain, req, res);
       }
       else if (req.isMethod("delete"))
       {
-         delete.service(service, api, endpoint, action, chain, req, res);
+         delete.run(service, api, endpoint, chain, req, res);
       }
       else if (req.isMethod("post", "put"))
       {
-         post.service(service, api, endpoint, action, chain, req, res);
+         post.run(service, api, endpoint, chain, req, res);
       }
       else
       {

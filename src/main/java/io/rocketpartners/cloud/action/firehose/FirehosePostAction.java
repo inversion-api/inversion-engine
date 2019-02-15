@@ -60,7 +60,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
    protected boolean jsonLowercaseNames = true;
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (!req.isMethod("PUT", "POST"))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");

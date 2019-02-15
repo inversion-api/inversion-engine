@@ -73,23 +73,22 @@ import net.jodah.expiringmap.ExpiringMap;
 public class ScriptAction extends Action<ScriptAction>
 {
    static ThreadLocal<ScriptAction> scriptLocal        = new ThreadLocal();
-   static ThreadLocal<Chain>         chainLocal         = new ThreadLocal();
+   static ThreadLocal<Chain>        chainLocal         = new ThreadLocal();
 
-   Logger                            log                = LoggerFactory.getLogger(ScriptAction.class);
-   String                            scriptsCollection  = "scripts";
+   Logger                           log                = LoggerFactory.getLogger(ScriptAction.class);
+   String                           scriptsCollection  = "scripts";
 
-   
-   long                              cacheExpireSeconds = 60 * 30;
-   Map<String, JSObject>             CACHE;
+   long                             cacheExpireSeconds = 60 * 30;
+   Map<String, JSObject>            CACHE;
 
-   boolean                           inited             = false;
+   boolean                          inited             = false;
 
-   String                            scriptsDir         = "/WEB-INF/scripts";
-   Map                               scriptTypes        = new LinkedHashMap();
+   String                           scriptsDir         = "/WEB-INF/scripts";
+   Map                              scriptTypes        = new LinkedHashMap();
 
-   VelocityEngine                    velocity           = null;
+   VelocityEngine                   velocity           = null;
 
-   List<String>                      reservedNames      = new ArrayList(Arrays.asList("switch", "layout", "settings"));
+   List<String>                     reservedNames      = new ArrayList(Arrays.asList("switch", "layout", "settings"));
 
    public ScriptAction()
    {
@@ -157,7 +156,7 @@ public class ScriptAction extends Action<ScriptAction>
    }
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       scriptLocal.set(this);
       chainLocal.set(chain);
@@ -170,11 +169,11 @@ public class ScriptAction extends Action<ScriptAction>
       LinkedHashMap<String, JSObject> scripts = findScripts(service, chain, req);
       if (scripts.size() > 0)
       {
-         runScripts(service, api, endpoint, action, chain, req, res, scripts);
+         runScripts(service, api, endpoint, chain, req, res, scripts);
       }
    }
 
-   void runScripts(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res, LinkedHashMap<String, JSObject> scripts) throws Exception
+   void runScripts(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, JSObject> scripts) throws Exception
    {
       Map<String, Object> contexts = new HashMap();
 
@@ -208,7 +207,7 @@ public class ScriptAction extends Action<ScriptAction>
                   bindings.putMember("service", service);
                   bindings.putMember("api", api);
                   bindings.putMember("endpoint", endpoint);
-                  bindings.putMember("action", action);
+                  bindings.putMember("action", this);
                   bindings.putMember("chain", chain);
                   bindings.putMember("req", req);
                   bindings.putMember("res", res);
@@ -236,7 +235,7 @@ public class ScriptAction extends Action<ScriptAction>
                   context.put("service", service);
                   context.put("api", api);
                   context.put("endpoint", endpoint);
-                  context.put("action", action);
+                  context.put("action", this);
                   context.put("chain", chain);
                   context.put("req", req);
                   context.put("res", res);
@@ -325,7 +324,7 @@ public class ScriptAction extends Action<ScriptAction>
 
       if (parts.size() == 1)
          guesses.add(parts.get(0));
-      
+
       // last chance, look for the file name 
       guesses.add(req.getEntityKey());
 
@@ -443,7 +442,7 @@ public class ScriptAction extends Action<ScriptAction>
             JSArray dataArr = r.getJson().getArray("data");
             if (!dataArr.asList().isEmpty())
             {
-               script =  dataArr.getObject(0);
+               script = dataArr.getObject(0);
             }
          }
       }

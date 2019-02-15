@@ -44,7 +44,7 @@ public class AclAction extends Action<AclAction>
    Logger log = LoggerFactory.getLogger(AclAction.class);
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response resp) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
       List<AclRule> matched = new ArrayList<>();
       boolean allowed = false;

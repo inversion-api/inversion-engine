@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
@@ -54,7 +53,7 @@ public class SqlPostAction extends SqlAction
    boolean expandResponse = true;
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (strictRest)
       {

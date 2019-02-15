@@ -37,11 +37,6 @@ public class Action<A extends Action> extends Rule<A>
 
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      service(service, api, endpoint, this, chain, req, res);
-   }
-
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
-   {
 
    }
 

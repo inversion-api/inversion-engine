@@ -50,7 +50,7 @@ public class LogAction extends Action<LogAction>
    protected Set<String> logMaskFields  = new HashSet<>();
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (chain.getParent() != null)
       {

@@ -31,7 +31,7 @@ public class BatchAction<T extends BatchAction> extends Action<T>
 {
 
    @Override
-   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       try
       {

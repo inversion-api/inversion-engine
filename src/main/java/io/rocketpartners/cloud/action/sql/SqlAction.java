@@ -34,23 +34,23 @@ import io.rocketpartners.cloud.utils.Utils;
 public abstract class SqlAction<T extends SqlAction> extends Action<T>
 {
 
-//   public LinkedHashSet<String> splitParam(Request req, String key)
-//   {
-//      LinkedHashSet map = new LinkedHashSet();
-//      String param = req.getParam(key);
-//      if (!J.empty(param))
-//      {
-//         String[] arr = param.split(",");
-//         for (String e : arr)
-//         {
-//            e = e.trim().toLowerCase();
-//            if (!J.empty(e))
-//               map.add(e);
-//         }
-//      }
-//
-//      return map;
-//   }
+   //   public LinkedHashSet<String> splitParam(Request req, String key)
+   //   {
+   //      LinkedHashSet map = new LinkedHashSet();
+   //      String param = req.getParam(key);
+   //      if (!J.empty(param))
+   //      {
+   //         String[] arr = param.split(",");
+   //         for (String e : arr)
+   //         {
+   //            e = e.trim().toLowerCase();
+   //            if (!J.empty(e))
+   //               map.add(e);
+   //         }
+   //      }
+   //
+   //      return map;
+   //   }
 
    public static String nextPath(String path, String next)
    {
@@ -73,7 +73,7 @@ public abstract class SqlAction<T extends SqlAction> extends Action<T>
     *
     * @return
     */
-   public static String parseSql(String sql, Chain chain, Action action, Request req, Db db, String table, Collection keys)
+   public static String parseSql(String sql, Chain chain, Request req, Db db, String table, Collection keys)
    {
       if (sql != null)
       {
