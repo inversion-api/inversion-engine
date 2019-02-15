@@ -27,12 +27,12 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Service.ApiMatch;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Url;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Request

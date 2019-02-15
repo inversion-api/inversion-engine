@@ -27,13 +27,13 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 
 import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Url;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**

@@ -16,14 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.cloud.utils;
+package io.rocketpartners.cloud.model;
 
-import java.io.Serializable;
+
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Url implements Serializable
+import io.rocketpartners.cloud.utils.Utils;
+
+public class Url
 {
    public static Map<String, String> parseQuery(String query)
    {

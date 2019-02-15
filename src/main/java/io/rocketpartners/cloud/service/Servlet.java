@@ -37,9 +37,9 @@ import com.amazonaws.util.IOUtils;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Request.Upload;
 import io.rocketpartners.cloud.service.Request.Uploader;
-import io.rocketpartners.cloud.utils.Url;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Servlet extends HttpServlet

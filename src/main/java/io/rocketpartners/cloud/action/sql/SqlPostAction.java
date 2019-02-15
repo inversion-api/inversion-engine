@@ -35,6 +35,7 @@ import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -44,7 +45,6 @@ import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.JSObject.Property;
 import io.rocketpartners.cloud.utils.SqlUtils;
-import io.rocketpartners.cloud.utils.Url;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlPostAction extends SqlAction
