@@ -6,22 +6,22 @@ package io.rcktapp.api.handler.s3;
  */
 public class S3Request
 {
-   private String  table  = null;
+   private String  bucket  = null;
    private String  key    = null;
    private String  prefix = null;
    private Integer size   = null;
 
-   public S3Request(String table, String prefix, String key, Integer size)
+   public S3Request(String bucket, String prefix, String key, Integer size)
    {
-      this.table = table;
+      this.bucket = bucket;
       this.prefix = prefix;
       this.key = key;
       this.size = size;
    }
 
-   public String getTable()
+   public String getBucket()
    {
-      return table;
+      return bucket;
    }
 
    public String getKey()

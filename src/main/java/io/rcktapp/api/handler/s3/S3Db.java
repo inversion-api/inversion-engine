@@ -144,7 +144,7 @@ public class S3Db extends Db
    public S3Object getDownload(S3Request req)
    {
       client = getS3Client();
-      return client.getObject(new GetObjectRequest(req.getTable(), req.getKey()));
+      return client.getObject(new GetObjectRequest(req.getBucket(), req.getKey()));
    }
 
    public ObjectMetadata getExtendedMetaData(S3Request req)
@@ -153,7 +153,7 @@ public class S3Db extends Db
       String prefix = req.getPrefix();
 
       client = getS3Client();
-      return client.getObjectMetadata(new GetObjectMetadataRequest(req.getTable(), prefix != null ? prefix + key : key));
+      return client.getObjectMetadata(new GetObjectMetadataRequest(req.getBucket(), prefix != null ? prefix + key : key));
    }
 
    public PutObjectResult saveFile(InputStream inputStream, String bucketName, String key, ObjectMetadata meta)
@@ -185,7 +185,7 @@ public class S3Db extends Db
       client = getS3Client();
 
       ListObjectsRequest req = new ListObjectsRequest();
-      req.setBucketName(s3Req.getTable());
+      req.setBucketName(s3Req.getBucket());
       req.setMaxKeys(s3Req.getSize());
       req.setDelimiter("/");
       req.setMarker(marker);

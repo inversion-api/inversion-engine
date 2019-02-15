@@ -270,7 +270,7 @@ public class S3DbRestHandler implements Handler
 
          meta.setContentLength(upload.getFileSize());
 
-         PutObjectResult result = db.saveFile(uploadStream, s3Req.getTable(), fileName, meta);
+         PutObjectResult result = db.saveFile(uploadStream, s3Req.getBucket(), fileName, meta);
          if (result == null)
             throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Failed to POST/PUT file to s3: " + fileName);
       }
