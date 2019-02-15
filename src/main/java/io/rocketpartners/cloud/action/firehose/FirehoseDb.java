@@ -61,13 +61,13 @@ public class FirehoseDb extends Db
             collection.setName(collectionName);
 
             Entity entity = new Entity();
-            entity.setTable(table);
+            entity.withTable(table);
             entity.setHint(table.getName());
-            entity.setCollection(collection);
+            entity.withCollection(collection);
 
             collection.setEntity(entity);
 
-            api.addCollection(collection);
+            api.withCollection(collection);
          }
       }
       else

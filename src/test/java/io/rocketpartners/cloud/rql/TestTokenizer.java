@@ -85,7 +85,7 @@ public class TestTokenizer extends TestCase
             {
                String token = tokens.get(j);
                String check = test.get(j + 1);
-               assertTrue(Tests.compare(check, token));
+               assertTrue(TestRql.compare(check, token));
             }
          }
          catch (Throwable ex)

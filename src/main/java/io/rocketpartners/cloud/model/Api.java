@@ -239,14 +239,14 @@ public class Api
    {
       this.collections.clear();
       for (Collection collection : collections)
-         addCollection(collection);
+         withCollection(collection);
    }
 
    /**
     * Bi-directional method also sets 'this' api on the collection
     * @param collection
     */
-   public void addCollection(Collection collection)
+   public Api withCollection(Collection collection)
    {
       //      if ("null".equals(collection.getName() + ""))
       //         System.out.println("asdfs");
@@ -258,6 +258,8 @@ public class Api
 
       if (collection.getApi() != this)
          collection.setApi(this);
+
+      return this;
    }
 
    public void removeCollection(Collection collection)
@@ -353,22 +355,29 @@ public class Api
    {
       this.endpoints.clear();
       for (Endpoint endpoint : endpoints)
-         addEndpoint(endpoint);
+         withEndpoint(endpoint);
    }
 
-   public void addEndpoint(Endpoint endpoint)
+   public Api withEndpoint(Endpoint endpoint)
    {
       if (!endpoints.contains(endpoint))
          endpoints.add(endpoint);
 
       if (endpoint.getApi() != this)
          endpoint.setApi(this);
+
+      return this;
    }
 
    public Endpoint withEndpoint(String method, String includePaths)
    {
-      Endpoint endpoint = new Endpoint().withMethods(method).withIncludePaths(includePaths);
-      addEndpoint(endpoint);
+      return withEndpoint(method, null, includePaths);
+   }
+
+   public Endpoint withEndpoint(String method, String path, String includePaths)
+   {
+      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
+      withEndpoint(endpoint);
       return endpoint;
    }
 

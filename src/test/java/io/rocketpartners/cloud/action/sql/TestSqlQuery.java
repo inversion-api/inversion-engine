@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.rql;
+package io.rocketpartners.cloud.action.sql;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,11 +25,11 @@ import io.rocketpartners.cloud.action.sql.SqlQuery;
 
 import junit.framework.TestCase;
 
-public class TestSqlRql extends TestCase
+public class TestSqlQuery extends TestCase
 {
    public static void main(String[] args) throws Exception
    {
-      new TestSqlRql().test1();
+      new TestSqlQuery().test1();
    }
 
    @Test
@@ -398,7 +398,7 @@ public class TestSqlRql extends TestCase
          try
          {
             SqlQuery query = new SqlQuery(null, test.rql, test.select);
-            query.withStringQuote('`');
+            query.withColumnQuote('`');
 
             String output = query.getDynamicStmt();
 

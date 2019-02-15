@@ -42,21 +42,18 @@ import io.rocketpartners.cloud.model.Table;
  */
 public class Query<T extends Query, D extends Db, E extends Table, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
-   protected D                   db         = null;
-   protected Collection          collection = null;
-   protected E                   table      = null;
+   protected D              db         = null;
+   protected Collection     collection = null;
+   protected E              table      = null;
 
-   protected S                   select     = null;
-   protected W                   where      = null;
-   protected R                   group      = null;
-   protected O                   order      = null;
-   protected G                   page       = null;
+   protected S              select     = null;
+   protected W              where      = null;
+   protected R              group      = null;
+   protected O              order      = null;
+   protected G              page       = null;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KeyValue>      values     = new ArrayList();
-
-   //a map of rql attribute names to underlying db column names
-   protected Map<String, String> colNames   = new HashMap();
+   protected List<KeyValue> values     = new ArrayList();
 
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
@@ -232,26 +229,30 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    public String getColumnName(String attributeName)
    {
+      String name = attributeName;
       if (collection != null)
       {
          Attribute attr = collection.getAttribute(attributeName);
          if (attr != null)
-            return attr.getColumn().getName();
+            name = attr.getColumn().getName();
+      }
 
-         return null;
-      }
-      else
-      {
-         return attributeName;
-      }
+      if (name == null)
+         name = attributeName;
+
+      return name;
    }
 
    public String getAttributeName(String columnName)
    {
+      String name = columnName;
       if (collection != null)
-         return collection.getAttributeName(columnName);
+         name = collection.getAttributeName(columnName);
 
-      return columnName;
+      if (name == null)
+         name = columnName;
+
+      return name;
    }
 
    public int getNumValues()
@@ -265,13 +266,10 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   protected T withColValue(String key, String value)
+   protected T withColValue(String attributeName, String value)
    {
-      String column = key != null ? colNames.get(key.toLowerCase()) : null;
-      if (column == null)
-         column = key;
-
-      values.add(new DefaultKeyValue(column, value));
+      String columnName = getColumnName(attributeName);
+      values.add(new DefaultKeyValue(columnName, value));
       return r();
    }
 

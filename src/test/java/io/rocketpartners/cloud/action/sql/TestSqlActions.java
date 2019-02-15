@@ -2,31 +2,103 @@ package io.rocketpartners.cloud.action.sql;
 
 import java.io.File;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Sql;
-import io.rocketpartners.cloud.utils.Sql.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestSqlActions extends TestCase
 {
-   public static final int TABLE_ORDERS_ROWS = 830;
+   public static final int     TABLE_ORDERS_ROWS = 830;
+   public static final int     DEFAULT_MAX_ROWS  = 10;
 
-   static boolean          initedDb          = false;
+   static boolean              initedDb          = false;
 
-   public Service service()
+   static LinkedList<String>   sqls              = new LinkedList<>();
+
+   static Map<String, Service> services          = new HashMap();
+
+   public static synchronized Service service(String apiName, final String ddl)
    {
-      return new Service()
+      Service service = services.get(apiName.toLowerCase());
+      if (service != null)
+         return service;
+
+      final SqlDb db = new SqlDb();
+      db.withDriver("org.h2.Driver");
+      db.withUrl("jdbc:h2:./" + ddl + "-" + Utils.time());
+      db.withUser("sa");
+      db.withPass("");
+
+      service = new Service()
          {
             public void init()
             {
-               initDb();
-               super.init();
+               try
+               {
+                  File dir = new File("./.h2");
+                  dir.mkdir();
+
+                  File[] dbfiles = dir.listFiles();
+                  for (int i = 0; dbfiles != null && i < dbfiles.length; i++)
+                  {
+                     if (dbfiles[i].getName().startsWith(ddl))
+                        dbfiles[i].delete();
+                  }
+
+                  Connection conn = db.getConnection();
+                  Sql.runDdl(conn, TestSqlActions.class.getResourceAsStream(ddl + ".ddl"));
+
+                  //                  Sql.addSqlListener(new SqlListener()
+                  //                     {
+                  //                        @Override
+                  //                        public void beforeStmt(String method, String sql, Object... vals)
+                  //                        {
+                  //                           sqls.add(method);
+                  //                           while (sqls.size() > 0)
+                  //                              sqls.removeLast();
+                  //                        }
+                  //                     });
+
+                  super.init();
+               }
+               catch (Exception ex)
+               {
+                  ex.printStackTrace();
+                  Utils.rethrow(ex);
+               }
             }
          };
+
+      //
+      service.withApi(apiName)//
+             .withEndpoint("GET", "sql", "*").withAction(new SqlGetAction())//
+             .withMaxRows(DEFAULT_MAX_ROWS).getApi()//
+             .withDb(new SqlDb()).withConfig("org.h2.Driver", "jdbc:h2:./northwind", "sa", "").getApi().getService();
+
+      services.put(apiName, service);
+
+      return service;
+   }
+
+   public static String getSql(int idx)
+   {
+      return sqls.get(idx);
+   }
+
+   public static List<String> getSqls()
+   {
+      return sqls;
+   }
+
+   public static void clearSql()
+   {
+      sqls.clear();
    }
 
    /**
@@ -38,37 +110,11 @@ public class TestSqlActions extends TestCase
     * 
     * @throws Exception
     */
-   public static synchronized void initDb()
+   public static synchronized void initDb(String ddl)
    {
       try
       {
-         if (initedDb)
-            return;
 
-         initedDb = true;
-
-         new File("./northwind.db").delete();
-         new File("./northwind.mv.db").delete();
-         new File("./northwind.trace.db").delete();
-         new File("./northwind.lock.db").delete();
-
-         SqlDb db = new SqlDb();
-         db.withDriver("org.h2.Driver");
-         db.withUrl("jdbc:h2:./northwind");
-         db.withUser("sa");
-         db.withPass("");
-
-         Connection conn = db.getConnection();
-         Sql.runDdl(conn, TestSqlActions.class.getResourceAsStream("Northwind.H2.sql"));
-
-         Sql.addSqlListener(new SqlListener()
-            {
-               @Override
-               public void beforeStmt(String method, String sql, Object... vals)
-               {
-                  System.out.println("SQL " + method + " - " + sql.replaceAll("\r\n", " ") + " - " + new ArrayList(Arrays.asList(vals)));
-               }
-            });
       }
       catch (Exception ex)
       {

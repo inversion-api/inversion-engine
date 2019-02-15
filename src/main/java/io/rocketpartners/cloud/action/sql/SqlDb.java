@@ -27,7 +27,8 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.h2.jdbcx.JdbcConnectionPool;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
@@ -114,15 +115,15 @@ public class SqlDb extends Db
 
                   if (pool == null && !shutdown)
                   {
-                     pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
+                     //pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
 
-                     //                     HikariConfig config = new HikariConfig();
-                     //                     config.setDriverClassName(getDriver());
-                     //                     config.setJdbcUrl(getUrl());
-                     //                     config.setUsername(getUser());
-                     //                     config.setPassword(getPass());
-                     //                     config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
-                     //                     pool = new HikariDataSource(config);
+                     HikariConfig config = new HikariConfig();
+                     config.setDriverClassName(getDriver());
+                     config.setJdbcUrl(getUrl());
+                     config.setUsername(getUser());
+                     config.setPassword(getPass());
+                     config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
+                     pool = new HikariDataSource(config);
 
                      pools.put(getName(), pool);
                   }
@@ -423,10 +424,10 @@ public class SqlDb extends Db
          collection.setName(collectionName);
 
          Entity entity = new Entity();
-         entity.setTable(t);
+         entity.withTable(t);
          entity.setHint(t.getName());
 
-         entity.setCollection(collection);
+         entity.withCollection(collection);
          collection.setEntity(entity);
 
          for (Column col : cols)
@@ -440,16 +441,16 @@ public class SqlDb extends Db
                attr.setHint(col.getTable().getName() + "." + col.getName());
                attr.setType(col.getType());
 
-               entity.addAttribute(attr);
+               entity.withAttribute(attr);
 
                if (col.isUnique() && entity.getKey() == null)
                {
-                  entity.setKey(attr);
+                  entity.withKey(attr);
                }
             }
          }
 
-         api.addCollection(collection);
+         api.withCollection(collection);
          collection.setApi(api);
 
       }

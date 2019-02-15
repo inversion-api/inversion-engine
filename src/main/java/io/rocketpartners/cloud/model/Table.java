@@ -139,9 +139,26 @@ public class Table
 
    }
 
+   public Table withColumn(String name, String type)
+   {
+      Column column = new Column(this, getColumns().size() + 1, name, type, true);
+      addColumn(column);
+      return this;
+   }
+
    public void removeColumn(Column column)
    {
       columns.remove(column);
+   }
+
+   public Index getIndex(String indexName)
+   {
+      for (Index index : indexes)
+      {
+         if (indexName.equalsIgnoreCase(index.getName()))
+            return index;
+      }
+      return null;
    }
 
    public ArrayList<Index> getIndexes()

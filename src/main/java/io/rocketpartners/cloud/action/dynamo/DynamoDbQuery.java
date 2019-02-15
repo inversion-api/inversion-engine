@@ -139,29 +139,31 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             if (index.isLocalIndex())
                continue;
 
-            Term partKey = findTerm(index.getPartitionKey(), "eq");
+            Term partKey = findTerm(index.getPartitionKey().getName(), "eq");
             if (partKey != null)
             {
                this.index = index;
                this.partKey = partKey;
 
-               Term sortKey = findTerm(index.getSortKey(), "eq");
-               if (sortKey != null)
+               if (index.getSortKey() != null)
                {
-                  //this index has both values passed in with 'eq' so we are done
-                  this.sortKey = sortKey;
-                  return index;
-               }
-               else
-               {
-                  sortKey = findTerm(index.getSortKey(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
+                  Term sortKey = findTerm(index.getSortKey().getName(), "eq");
                   if (sortKey != null)
                   {
+                     //this index has both values passed in with 'eq' so we are done
                      this.sortKey = sortKey;
-                     //there could still be a double equality match so keep looking
+                     return index;
+                  }
+                  else
+                  {
+                     sortKey = findTerm(index.getSortKey().getName(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
+                     if (sortKey != null)
+                     {
+                        this.sortKey = sortKey;
+                        //there could still be a double equality match so keep looking
+                     }
                   }
                }
-
             }
          }
       }

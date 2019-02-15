@@ -132,6 +132,13 @@ public class Db
       }
    }
 
+   public Table withTable(String name)
+   {
+      Table table = new Table(this, name);
+      addTable(table);
+      return table;
+   }
+
    /**
     * @return the name
     */

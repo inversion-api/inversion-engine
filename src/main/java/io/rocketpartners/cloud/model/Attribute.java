@@ -26,6 +26,17 @@ public class Attribute
 
    boolean exclude = false;
 
+   public Attribute()
+   {
+
+   }
+
+   public Attribute(Entity entity, Column column)
+   {
+      setEntity(entity);
+      setColumn(column);
+   }
+
    public boolean isExclude()
    {
       return exclude || column.isExclude();
@@ -71,6 +82,11 @@ public class Attribute
    public void setColumn(Column col)
    {
       this.column = col;
+      if(name == null)
+      {
+         setName(col.getName());
+         setType(col.getType());
+      }
    }
 
    /**

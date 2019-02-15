@@ -83,7 +83,7 @@ public class TestParser
             else
                query = query.toString();
 
-            if (!Tests.compare(reference, (String) query))
+            if (!TestRql.compare(reference, (String) query))
                throw new Exception("Test case: " + (i + 1) + "[" + j + "] failed. src = " + reference + " - term = " + query);
          }
       }

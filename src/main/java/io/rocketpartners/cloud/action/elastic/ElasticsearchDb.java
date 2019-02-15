@@ -93,9 +93,9 @@ public class ElasticsearchDb extends Db
          collection.setName(lowercaseAndPluralizeString(t.getName()));
 
          Entity entity = new Entity();
-         entity.setTable(t);
+         entity.withTable(t);
          entity.setHint(t.getName());
-         entity.setCollection(collection);
+         entity.withCollection(collection);
 
          collection.setEntity(entity);
 
@@ -108,10 +108,10 @@ public class ElasticsearchDb extends Db
             attr.setHint(col.getTable().getName() + "." + col.getName());
             attr.setType(col.getType());
 
-            entity.addAttribute(attr);
+            entity.withAttribute(attr);
          }
 
-         api.addCollection(collection);
+         api.withCollection(collection);
          collection.setApi(api);
       }
    }

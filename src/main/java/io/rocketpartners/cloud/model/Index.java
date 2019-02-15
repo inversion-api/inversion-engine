@@ -38,9 +38,9 @@ public class Index
    public Index(Table table, String name, String type)
    {
       super();
-      this.table = table;
-      this.name = name;
-      this.type = type;
+      withTable(table);
+      withName(name);
+      withType(type);
    }
 
    public Table getTable()
@@ -48,9 +48,14 @@ public class Index
       return table;
    }
 
-   public void setTable(Table table)
+   public Index withTable(Table table)
    {
-      this.table = table;
+      if (this.table != table)
+      {
+         this.table = table;
+         table.addIndex(this);
+      }
+      return this;
    }
 
    public String getName()
@@ -58,9 +63,10 @@ public class Index
       return name;
    }
 
-   public void setName(String name)
+   public Index withName(String name)
    {
       this.name = name;
+      return this;
    }
 
    public String getType()
@@ -68,9 +74,10 @@ public class Index
       return type;
    }
 
-   public void setType(String type)
+   public Index withType(String type)
    {
       this.type = type;
+      return this;
    }
 
    public boolean isType(String... types)
@@ -103,15 +110,16 @@ public class Index
       this.columns.clear();
       for (Column column : columns)
       {
-         addColumn(column);
+         withColumn(column);
       }
    }
 
-   public void addColumn(Column column)
+   public Index withColumn(Column column)
    {
       if (column != null && !columns.contains(column))
          columns.add(column);
 
+      return this;
    }
 
    public void removeColumn(Column column)

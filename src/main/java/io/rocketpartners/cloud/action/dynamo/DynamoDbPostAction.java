@@ -58,7 +58,7 @@ public class DynamoDbPostAction extends DynamoDbAction
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
       DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
-      String pk = dynamoIdx.getPartitionKey();
+      String pk = dynamoIdx.getPartitionKey().getName();
       boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
       ConditionalWriteConf conditionalWriteConf = getConditionalWriteConf(collection, chain);
 

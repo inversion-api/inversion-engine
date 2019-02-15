@@ -24,10 +24,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-
-import io.rocketpartners.cloud.utils.JSObject.Property;
 
 public class JSArray extends JSObject
 {
@@ -205,6 +204,11 @@ public class JSArray extends JSObject
    public List asList()
    {
       return new ArrayList(objects);
+   }
+   
+   public Stream stream()
+   {
+      return asList().stream();
    }
 
    public int length()

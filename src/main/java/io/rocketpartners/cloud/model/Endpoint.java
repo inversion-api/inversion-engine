@@ -56,7 +56,7 @@ public class Endpoint extends Rule<Endpoint>
    public void setApi(Api api)
    {
       this.api = api;
-      api.addEndpoint(this);
+      api.withEndpoint(this);
    }
 
    public String getPath()
@@ -64,7 +64,7 @@ public class Endpoint extends Rule<Endpoint>
       return path;
    }
 
-   public void setPath(String path)
+   public Endpoint withPath(String path)
    {
       if (path != null)
       {
@@ -81,6 +81,7 @@ public class Endpoint extends Rule<Endpoint>
       }
 
       this.path = path;
+      return this;
    }
 
    //   /**

@@ -36,7 +36,7 @@ public class Entity
 
    public Entity(Table table)
    {
-      setTable(table);
+      withTable(table);
    }
 
    public boolean isExclude()
@@ -44,9 +44,10 @@ public class Entity
       return exclude || table.isExclude();
    }
 
-   public void setExclude(boolean exclude)
+   public Entity withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
    public Attribute getAttribute(String name)
@@ -89,17 +90,26 @@ public class Entity
    /**
     * @param collection the collection to set
     */
-   public void setCollection(Collection collection)
+   public Entity withCollection(Collection collection)
    {
       this.collection = collection;
+      return this;
    }
 
    /**
     * @param tbl the tbl to set
     */
-   public void setTable(Table tbl)
+   public Entity withTable(Table tbl)
    {
+      attributes.clear();
       this.table = tbl;
+
+      for (Column column : tbl.getColumns())
+      {
+         Attribute attr = new Attribute(this, column);
+         withAttribute(attr);
+      }
+      return this;
    }
 
    /**
@@ -113,11 +123,13 @@ public class Entity
    /**
     * @param attributes the attributes to set
     */
-   public void setAttributes(List<Attribute> attributes)
+   public Entity withAttributes(List<Attribute> attributes)
    {
       this.attributes.clear();
       for (Attribute attr : attributes)
-         addAttribute(attr);
+         withAttribute(attr);
+
+      return this;
    }
 
    /**
@@ -149,10 +161,12 @@ public class Entity
       relationships.remove(relationship);
    }
 
-   public void addAttribute(Attribute attribute)
+   public Entity withAttribute(Attribute attribute)
    {
       if (attribute != null && !attributes.contains(attribute))
          attributes.add(attribute);
+
+      return this;
    }
 
    public void removeAttribute(Attribute attribute)
@@ -181,9 +195,10 @@ public class Entity
       return keys;
    }
 
-   public void setKeys(ArrayList<Attribute> keys)
+   public Entity withKeys(ArrayList<Attribute> keys)
    {
       this.keys = keys;
+      return this;
    }
 
    public void addKey(Attribute attribute)
@@ -212,10 +227,11 @@ public class Entity
    /**
     * @param key the key to set
     */
-   public void setKey(Attribute key)
+   public Entity withKey(Attribute key)
    {
       this.keys.clear();
       this.keys.add(key);
+      return this;
    }
 
 }

@@ -206,7 +206,6 @@ public class SqlGetAction extends SqlAction
       //stmt.setMaxRows(chain.getConfig("maxRows", maxRows)); //this is a default value
 
       query.withSelectSql(sql);
-      query.withTerms(rqlParams);
 
       if (query.page().getLimit() <= 0)
          query.page().limit(getMaxRows());
@@ -336,10 +335,10 @@ public class SqlGetAction extends SqlAction
             if (sql.indexOf("LIMIT ") > 0)
                sql = sql.substring(0, sql.indexOf("LIMIT "));
 
-            if (sql.indexOf("  ") > 0)
+            if (sql.indexOf("ORDER BY ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
          }
-         int found = Sql.selectInt(conn, sql);
+         int found = Sql.selectInt(conn, sql, vals);
 
          if (chain.isDebug())
          {

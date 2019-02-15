@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud.rql;
+package io.rocketpartners.cloud;
 
 import java.util.Arrays;
 import java.util.HashSet;

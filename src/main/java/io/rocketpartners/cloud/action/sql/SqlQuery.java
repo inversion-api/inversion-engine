@@ -45,8 +45,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public SqlQuery(Collection collection, Object terms)
    {
-      this(collection);
-      withTerms(terms);
+      super(collection, terms);
    }
 
    public SqlQuery(Collection collection, Object terms, String selectSql)
@@ -221,7 +220,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       String s = null;
       if (limit >= 0 || offset >= 0)
       {
-         if (db().isType("mysql"))
+         if (db == null || db().isType("mysql"))
          {
             s = "LIMIT ";
             if (offset >= 0)
@@ -490,7 +489,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          return false;
 
       String token = term.getToken();
-      if (colNames.containsKey(token.toLowerCase()))
+      
+      if (collection != null && collection.getAttribute(token) != null)
          return true;
 
       if (term.getParent() != null && term.getParent().indexOf(term) == 0)
@@ -504,12 +504,15 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return columnQuote + str + columnQuote;
    }
 
-   public String asCol(String col)
+   public String asCol(String attributeName)
    {
-      if (colNames.containsKey(col.toLowerCase()))
-         col = colNames.get(col.toLowerCase());
+      //      if (colNames.containsKey(col.toLowerCase()))
+      //         col = colNames.get(col.toLowerCase());
 
-      return quoteCol(col);
+      String columnName = getColumnName(attributeName);
+      columnName = columnName != null ? columnName : attributeName;
+
+      return quoteCol(columnName);
    }
 
    public String asString(String string)

@@ -21,8 +21,8 @@ import org.junit.runners.Suite;
 import junit.framework.TestSuite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({TestTokenizer.class, TestParser.class, TestSqlRql.class, TestQuery.class})
-public class Tests extends TestSuite
+@Suite.SuiteClasses({TestTokenizer.class, TestParser.class, TestQuery.class})
+public class TestRql extends TestSuite
 {
 
    public static boolean compare(String str1, String str2)

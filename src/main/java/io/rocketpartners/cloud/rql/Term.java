@@ -18,6 +18,8 @@ package io.rocketpartners.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.assertj.core.util.Arrays;
+
 public class Term
 {
    public Term       parent = null;
@@ -27,7 +29,7 @@ public class Term
 
    public char       quote  = 0;
 
-   private Term(Term parent, String token)
+   protected Term(Term parent, String token)
    {
       withParent(parent);
       withToken(token);
@@ -110,12 +112,12 @@ public class Term
    {
       return terms.size() == 0;
    }
-   
+
    public boolean isLeaf(int childIndex)
    {
-      if(childIndex >= terms.size())
+      if (childIndex >= terms.size())
          return false;
-      
+
       return getTerm(childIndex).isLeaf();
    }
 
@@ -133,7 +135,7 @@ public class Term
    {
       return terms.size();
    }
-   
+
    public List<Term> getTerms()
    {
       return terms;
@@ -167,6 +169,12 @@ public class Term
          if (term.getParent() != this)
             term.withParent(this);
       }
+      return this;
+   }
+
+   public Term withTerm(String token, Object... terms)
+   {
+      withTerm(term(this, token, terms));
       return this;
    }
 
@@ -231,6 +239,9 @@ public class Term
 
    public static Term term(Term parent, String token, Object... terms)
    {
+      if (terms != null && terms.length == 1 && Arrays.isArray(terms[0]))
+         terms = (Object[]) terms[0];
+
       Term newTerm = new Term(parent, token);
       for (int i = 0; terms != null && i < terms.length; i++)
       {
@@ -246,6 +257,49 @@ public class Term
       }
 
       return newTerm;
+   }
+
+   public Term val(String value)
+   {
+      withTerm(term(this, value));
+      return this;
+   }
+
+   public Term pop()
+   {
+      return getParent();
+   }
+
+   public Term and()
+   {
+      Term or = term(this, "and");
+      return or;
+   }
+
+   public Term or()
+   {
+      Term or = term(this, "or");
+      return or;
+   }
+
+   public Term ge(String field, String value)
+   {
+      return withTerm("ge", field, value);
+   }
+
+   public Term lt(String field, String value)
+   {
+      return withTerm("lt", field, value);
+   }
+
+   public Term pageSize(int pageSize)
+   {
+      return withTerm("pageSize", pageSize);
+   }
+
+   public Term order(String... order)
+   {
+      return withTerm("order", (Object[]) order);
    }
 
 }

@@ -27,6 +27,26 @@ public class Collection
 
    boolean      exclude = false;
 
+   public Collection()
+   {
+
+   }
+
+   public Collection(Table table)
+   {
+      withTable(table);
+   }
+
+   public Collection withTable(Table table)
+   {
+      entity = new Entity(table);
+      if (name == null)
+      {
+         name = table.getName();
+      }
+      return this;
+   }
+
    public boolean isExclude()
    {
       return exclude || entity.isExclude();
@@ -80,7 +100,7 @@ public class Collection
       if (api != null && this.api != api)
       {
          this.api = api;
-         api.addCollection(this);
+         api.withCollection(this);
       }
    }
 

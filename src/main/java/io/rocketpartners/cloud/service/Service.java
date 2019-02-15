@@ -33,10 +33,10 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.rql.RequestBuilder;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Url;
-import io.rocketpartners.cloud.utils.UrlBuilder;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
@@ -88,6 +88,46 @@ public class Service
 
    }
 
+   public RequestBuilder get(String url)
+   {
+      return new RequestBuilder(this, "GET", url, (String) null);
+   }
+
+   public RequestBuilder put(String url, Object body)
+   {
+      return new RequestBuilder(this, "PUT", url, (body != null ? body.toString() : null));
+   }
+
+   public RequestBuilder post(String url, Object body)
+   {
+      return new RequestBuilder(this, "POST", url, (body != null ? body.toString() : null));
+   }
+
+   public RequestBuilder put(String url, JSObject body)
+   {
+      return new RequestBuilder(this, "PUT", url, body);
+   }
+
+   public RequestBuilder post(String url, JSObject body)
+   {
+      return new RequestBuilder(this, "POST", url, body);
+   }
+
+   public RequestBuilder put(String url, String body)
+   {
+      return new RequestBuilder(this, "PUT", url, body);
+   }
+
+   public RequestBuilder post(String url, String body)
+   {
+      return new RequestBuilder(this, "POST", url, body);
+   }
+
+   public RequestBuilder delete(String url)
+   {
+      return new RequestBuilder(this, "DELETE", url, (String) null);
+   }
+
    public Response service(String method, String url)
    {
       return service(method, url, null);
@@ -105,6 +145,9 @@ public class Service
 
    public Chain service(Request req, Response res)
    {
+      if (!inited)
+         init();
+
       Chain chain = null;
       String method = req.getMethod();
 
@@ -517,22 +560,22 @@ public class Service
             halfPath = "/" + Utils.implode("/", servletMapping, halfPath) + "/";
          }
 
-//         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-//               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-//               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
-//               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && )) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
-         if(path.startsWith(halfPath))
+         //         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+         //               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+         //               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+         //               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && )) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
+         if (path.startsWith(halfPath))
          {
 
             //TODO: WB 2/13/19 api will only init itself once but
             //not sure if this is the most elegant place for this
             a.init();
 
-//            if (path.startsWith(fullPath))
-//            {
-//               path = fullPath;
-//            }
-//            else
+            //            if (path.startsWith(fullPath))
+            //            {
+            //               path = fullPath;
+            //            }
+            //            else
             {
                path = halfPath;
             }
