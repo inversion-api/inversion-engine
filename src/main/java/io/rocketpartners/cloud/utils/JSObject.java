@@ -22,9 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,12 +31,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
-public class JSObject
+public class JSObject implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
 
@@ -50,7 +48,7 @@ public class JSObject
    {
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
-         if (i == 0 && nvPairs[i] instanceof Map)
+         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JSObject)))
             throw new RuntimeException("Incorrect constructor called.  Should have called JSObject(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
@@ -83,9 +81,12 @@ public class JSObject
       return null;
    }
 
-   public Object get(String name)
+   public Object get(Object name)
    {
-      Property p = getProperty(name);
+      if(name == null)
+         return null;
+      
+      Property p = getProperty(name.toString());
       if (p != null)
          return p.getValue();
 
@@ -112,20 +113,16 @@ public class JSObject
       return prop;
    }
 
-   public void putAll(Map<String, Object> nvpairs)
-   {
-      for (String name : nvpairs.keySet())
-         put(name, nvpairs.get(name));
-   }
-
    public boolean hasProperty(String name)
    {
       return properties.containsKey(name);
    }
 
-   public boolean containsKey(String name)
+   public boolean containsKey(Object name)
    {
-      return properties.containsKey(name);
+      if(name == null)
+         return false;
+      return properties.containsKey(name.toString());
    }
 
    Property putProperty(Property prop)
@@ -144,9 +141,12 @@ public class JSObject
       return prop;
    }
 
-   public Object remove(String name)
+   public Object remove(Object name)
    {
-      Property old = removeProperty(name);
+      if(name == null)
+         return null;
+      
+      Property old = removeProperty(name.toString());
       return old != null ? old.getValue() : old;
    }
 
@@ -396,6 +396,79 @@ public class JSObject
          }
       }
       json.writeEndObject();
+   }
+
+   @Override
+   public int size()
+   {
+      return properties.size();
+   }
+
+   @Override
+   public boolean isEmpty()
+   {
+      return properties.isEmpty();
+   }
+
+   @Override
+   public boolean containsValue(Object value)
+   {
+      if (value == null)
+         return false;
+
+      for (Property prop : properties.values())
+         if (value.equals(prop.getValue()))
+            return true;
+
+      return false;
+   }
+
+   @Override
+   public void clear()
+   {
+      properties.clear();
+   }
+
+   @Override
+   public Collection values()
+   {
+      return asMap().values();
+   }
+
+   @Override
+   public Set entrySet()
+   {
+      return asMap().entrySet();
+   }
+
+   //   @Override
+   //   public boolean containsKey(Object key)
+   //   {
+   //      // TODO Auto-generated method stub
+   //      return false;
+   //   }
+   //
+   //   @Override
+   //   public Object get(Object key)
+   //   {
+   //      // TODO Auto-generated method stub
+   //      return null;
+   //   }
+   //
+   //   @Override
+   //   public Object remove(Object key)
+   //   {
+   //      // TODO Auto-generated method stub
+   //      return null;
+   //   }
+
+   @Override
+   public void putAll(Map map)
+   {
+      for (Object key : map.keySet())
+      {
+         put(key.toString(), map.get(key.toString()));
+      }
    }
 
 }

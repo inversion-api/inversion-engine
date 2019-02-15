@@ -259,47 +259,4 @@ public class Term
       return newTerm;
    }
 
-   public Term val(String value)
-   {
-      withTerm(term(this, value));
-      return this;
-   }
-
-   public Term pop()
-   {
-      return getParent();
-   }
-
-   public Term and()
-   {
-      Term or = term(this, "and");
-      return or;
-   }
-
-   public Term or()
-   {
-      Term or = term(this, "or");
-      return or;
-   }
-
-   public Term ge(String field, String value)
-   {
-      return withTerm("ge", field, value);
-   }
-
-   public Term lt(String field, String value)
-   {
-      return withTerm("lt", field, value);
-   }
-
-   public Term pageSize(int pageSize)
-   {
-      return withTerm("pageSize", pageSize);
-   }
-
-   public Term order(String... order)
-   {
-      return withTerm("order", (Object[]) order);
-   }
-
 }

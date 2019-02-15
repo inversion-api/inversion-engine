@@ -16,6 +16,7 @@
 package io.rocketpartners.cloud.service;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,8 +26,8 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Service.ApiMatch;
-import io.rocketpartners.cloud.utils.CaseInsensitiveLookupMap;
 import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
@@ -35,59 +36,121 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
 {
-   Url                      url              = null;
-   //HttpServletRequest       request          = null;
+   Service         service          = null;
 
-   String                   apiUrl           = null;
-   Api                      api              = null;
-   Endpoint                 endpoint         = null;
+   Url             url              = null;
 
-   String                   apiCode          = null;
-   String                   tenantCode       = null;
+   String          apiUrl           = null;
+   Api             api              = null;
+   Endpoint        endpoint         = null;
 
-   User                     user             = null;
+   String          apiCode          = null;
+   String          tenantCode       = null;
 
-   String                   referrer         = null;
+   User            user             = null;
 
-   String                   method           = null;
+   String          referrer         = null;
 
-   String                   path             = null;
+   String          method           = null;
 
-   String                   remoteAddr       = null;
+   String          path             = null;
+
+   String          remoteAddr       = null;
 
    /**
     * The path minus any Endpoint.path prefix
     */
-   String                   subpath          = null;
+   String          subpath          = null;
 
-   String                   collectionKey    = null;
-   String                   entityKey        = null;
-   String                   subCollectionKey = null;
+   String          collectionKey    = null;
+   String          entityKey        = null;
+   String          subCollectionKey = null;
 
-   CaseInsensitiveLookupMap headers          = new CaseInsensitiveLookupMap();
-   CaseInsensitiveLookupMap params           = new CaseInsensitiveLookupMap();
-   String                   body             = null;
-   JSObject                 json             = null;
+   JSObject        headers          = new JSObject();
+   JSObject        params           = new JSObject();
+   String          body             = null;
+   JSObject        json             = null;
 
-   boolean                  browse           = false;
+   boolean         browse           = false;
 
-   boolean                  explain          = false;
+   boolean         explain          = false;
 
-   public Uploader          uploader         = null;
+   public Uploader uploader         = null;
 
    public Request(ApiMatch match)
    {
-      setUrl(match.reqUrl);
-      setApiMatch(match);
+      withUrl(match.reqUrl);
+      withApi(match);
+   }
+
+   public Request(String method, String url, String body)
+   {
+      withMethod(method);
+      withUrl(url);
+      withBody(body);
+   }
+
+   public Request(Service service, String method, String url, Object body)
+   {
+      withService(service);
+      withMethod(method);
+      withUrl(url);
+      withBody(body.toString());
    }
 
    public Request(Url url, String method, Map headers, Map params, String body)
    {
-      setMethod(method);
-      setUrl(url);
-      addParams(params);
-      addHeaders(headers);
-      setBody(body);
+      withMethod(method);
+      withUrl(url);
+      withParams(params);
+      withHeaders(headers);
+      withBody(body);
+   }
+
+   public Response go()
+   {
+      String url = this.url.toString();
+      if (url.indexOf("?") < 0)
+         url += "?";
+      else if (!url.endsWith("&"))
+         url += "&";
+
+      //TODO: replace this with UrlBuilder
+      List<String> keys = new ArrayList(params.keySet());
+      for (int i = 0; i < keys.size(); i++)
+      {
+         String key = keys.get(i);
+         String value = params.getString(key);
+
+         url += key;
+
+         if (!Utils.empty(value))
+            url += "=" + value;
+
+         if (i < keys.size() - 1)
+            url += "&";
+      }
+
+      if (service != null)
+      {
+         return service.service(method, url, body);
+      }
+      else
+      {
+         //Web.rest()
+         return null;
+      }
+   }
+
+   public Service getService()
+   {
+      return service;
+   }
+
+   public Request withService(Service service)
+   {
+      this.service = service;
+      return this;
    }
 
    public Collection getCollection()
@@ -98,7 +161,13 @@ public class Request
       return null;
    }
 
-   public void setUrl(Url url)
+   public Request withUrl(String url)
+   {
+      this.url = new Url(url);
+      return this;
+   }
+
+   public Request withUrl(Url url)
    {
       this.url = url;
       String query = url.getQuery();
@@ -106,27 +175,49 @@ public class Request
       {
          this.params.putAll(Url.parseQuery(query));
       }
+      return this;
    }
 
-   public void setMethod(String method)
+   public Request withMethod(String method)
    {
       this.method = method;
+      return this;
    }
 
-   public void addHeaders(Map<String, String> headers)
+   public Request withHeaders(String key, String value)
+   {
+      this.headers.put(key, value);
+      return this;
+   }
+
+   public Request withHeaders(Map<String, String> headers)
    {
       this.headers.putAll(headers);
+      return this;
    }
 
-   public void addParams(Map params)
+   public Request withParams(Map<String, String> params)
    {
-      this.params.putAll(params);
+      //      this.params.putAll(params);
+      //
+      //      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
+      //      this.explain = this.explain || explain;
+      //      return this;
 
-      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
-      this.explain = this.explain || explain;
+      for (String key : params.keySet())
+      {
+         withParam(key, params.get(key));
+      }
+      return this;
    }
 
-   public void setApiMatch(ApiMatch match)
+   public Request withParam(String key, String value)
+   {
+      this.params.put(key, value);
+      return this;
+   }
+
+   public Request withApi(ApiMatch match)
    {
       this.api = match.api;
       this.endpoint = match.endpoint;
@@ -236,6 +327,7 @@ public class Request
                subCollectionKey = parts.get(idx++);
          }
       }
+      return this;
    }
 
    public boolean isDebug()
@@ -259,9 +351,10 @@ public class Request
       return body;
    }
 
-   public void setBody(String body)
+   public Request withBody(String body)
    {
       this.body = body;
+      return this;
    }
 
    public JSObject getJson() throws ApiException
@@ -286,50 +379,6 @@ public class Request
       return json;
    }
 
-   /**
-    * Removes all empty objects from the tree
-    */
-   boolean prune(Object parent)
-   {
-      if (parent instanceof JSArray)
-      {
-         JSArray arr = ((JSArray) parent);
-         for (int i = 0; i < arr.length(); i++)
-         {
-            if (prune(arr.get(i)))
-            {
-               arr.remove(i);
-               i--;
-            }
-         }
-         return arr.length() == 0;
-      }
-      else if (parent instanceof JSObject)
-      {
-         boolean prune = true;
-         JSObject js = (JSObject) parent;
-         for (String key : js.keySet())
-         {
-            Object child = js.get(key);
-            prune &= prune(child);
-         }
-
-         if (prune)
-         {
-            for (String key : js.keySet())
-            {
-               js.remove(key);
-            }
-         }
-
-         return prune;
-      }
-      else
-      {
-         return parent == null;
-      }
-   }
-
    public void putParam(String name, String value)
    {
       params.put(name, value);
@@ -337,7 +386,7 @@ public class Request
 
    public Map<String, String> getParams()
    {
-      return new CaseInsensitiveLookupMap(params);
+      return (Map<String, String>)params.asMap();
    }
 
    public String removeParam(String param)
@@ -440,14 +489,16 @@ public class Request
       return entityKey;
    }
 
-   public void setCollectionKey(String collectionKey)
+   public Request withCollectionKey(String collectionKey)
    {
       this.collectionKey = collectionKey;
+      return this;
    }
 
-   public void setEntityKey(String entityKey)
+   public Request withEntityKey(String entityKey)
    {
       this.entityKey = entityKey;
+      return this;
    }
 
    public String getApiUrl()
@@ -455,9 +506,10 @@ public class Request
       return apiUrl;
    }
 
-   public void setApiUrl(String apiUrl)
+   public Request withApiUrl(String apiUrl)
    {
       this.apiUrl = apiUrl;
+      return this;
    }
 
    public User getUser()
@@ -465,9 +517,10 @@ public class Request
       return user;
    }
 
-   public void setUser(User user)
+   public Request withUser(User user)
    {
       this.user = user;
+      return this;
    }
 
    public String getApiCode()
@@ -475,9 +528,10 @@ public class Request
       return apiCode;
    }
 
-   public void setApiCode(String apiCode)
+   public Request withApiCode(String apiCode)
    {
       this.apiCode = apiCode;
+      return this;
    }
 
    public String getTenantCode()
@@ -485,9 +539,10 @@ public class Request
       return tenantCode;
    }
 
-   public void setTenantCode(String tenantCode)
+   public Request withTenantCode(String tenantCode)
    {
       this.tenantCode = tenantCode;
+      return this;
    }
 
    public String getSubCollectionKey()
@@ -495,9 +550,10 @@ public class Request
       return subCollectionKey;
    }
 
-   public void setSubCollectionKey(String subCollectionKey)
+   public Request withSubCollectionKey(String subCollectionKey)
    {
       this.subCollectionKey = subCollectionKey;
+      return this;
    }
 
    public String getSubpath()
@@ -505,9 +561,10 @@ public class Request
       return subpath;
    }
 
-   public void setSubpath(String subpath)
+   public Request withSubpath(String subpath)
    {
       this.subpath = subpath;
+      return this;
    }
 
    public String getRemoteAddr()
@@ -537,9 +594,10 @@ public class Request
       return remoteAddr;
    }
 
-   public void setRemoteAddr(String remoteAddr)
+   public Request withRemoteAddr(String remoteAddr)
    {
       this.remoteAddr = remoteAddr;
+      return this;
    }
 
    public Uploader getUploader()
@@ -547,9 +605,10 @@ public class Request
       return uploader;
    }
 
-   public void setUploader(Uploader uploader)
+   public Request withUploader(Uploader uploader)
    {
       this.uploader = uploader;
+      return this;
    }
 
    public static interface Uploader
@@ -620,4 +679,195 @@ public class Request
       return uploader.getUploads();
    }
 
+   /**
+    * Removes all empty objects from the tree
+    */
+   boolean prune(Object parent)
+   {
+      if (parent instanceof JSArray)
+      {
+         JSArray arr = ((JSArray) parent);
+         for (int i = 0; i < arr.length(); i++)
+         {
+            if (prune(arr.get(i)))
+            {
+               arr.remove(i);
+               i--;
+            }
+         }
+         return arr.length() == 0;
+      }
+      else if (parent instanceof JSObject)
+      {
+         boolean prune = true;
+         JSObject js = (JSObject) parent;
+         for (String key : js.keySet())
+         {
+            Object child = js.get(key);
+            prune &= prune(child);
+         }
+
+         if (prune)
+         {
+            for (String key : js.keySet())
+            {
+               js.remove(key);
+            }
+         }
+
+         return prune;
+      }
+      else
+      {
+         return parent == null;
+      }
+   }
+
+   public Request withTerm(String token, Object... terms)
+   {
+      withParam(Term.term(null, token, terms).toString(), null);
+      return this;
+   }
+
+   //   public RequestBuilder pop()
+   //   {
+   //      return getParent();
+   //   }
+   //   public RequestBuilder if()
+   //   {
+   //      Term or = term(this, "if");
+   //      return or;
+   //   }
+   //
+   //   public RequestBuilder and()
+   //   {
+   //      Term or = term(this, "and");
+   //      return or;
+   //   }
+   //
+   //   public RequestBuilder or()
+   //   {
+   //      Term or = term(this, "or");
+   //      return or;
+   //   }
+
+   public Request val(String value)
+   {
+      return withTerm(value);
+   }
+
+   public Request offset(int offset)
+   {
+      return withTerm("offset", offset);
+   }
+
+   public Request limit(int limit)
+   {
+      return withTerm("limit", limit);
+   }
+
+   public Request page(int page)
+   {
+      return withTerm("page", page);
+   }
+
+   public Request pageNum(int pageNum)
+   {
+      return withTerm("pageNum", pageNum);
+   }
+
+   public Request pageSize(int pageSize)
+   {
+      return withTerm("pageSize", pageSize);
+   }
+
+   public Request order(String... order)
+   {
+      return withTerm("order", (Object[]) order);
+   }
+
+   public Request eq(String field, String value)
+   {
+      return withTerm("eq", field, value);
+   }
+
+   public Request ne(String field, String value)
+   {
+      return withTerm("ne", field, value);
+   }
+
+   public Request nn(String field)
+   {
+      return withTerm("nn", field);
+   }
+
+   public Request n(String field)
+   {
+      return withTerm("n", field);
+   }
+
+   public Request like(String field, String value)
+   {
+      return withTerm("like", field, value);
+   }
+
+   public Request w(String field, String value)
+   {
+      return withTerm("w", field, value);
+   }
+
+   public Request sw(String field, String value)
+   {
+      return withTerm("sw", field, value);
+   }
+
+   public Request lt(String field, String value)
+   {
+      return withTerm("lt", field, value);
+   }
+
+   public Request le(String field, String value)
+   {
+      return withTerm("le", field, value);
+   }
+
+   public Request gt(String field, String value)
+   {
+      return withTerm("gt", field, value);
+   }
+
+   public Request ge(String field, String value)
+   {
+      return withTerm("ge", field, value);
+   }
+
+   public Request in(String field, String... values)
+   {
+      return withTerm("in", field, values);
+   }
+
+   public Request out(String field, String... values)
+   {
+      return withTerm("out", field, values);
+   }
+
+   public Request w(String field, String... values)
+   {
+      return withTerm("w", field, values);
+   }
+
+   public Request wo(String field, String... values)
+   {
+      return withTerm("wo", field, values);
+   }
+
+   public Request emp(String field, String... values)
+   {
+      return withTerm("emp", field, values);
+   }
+
+   public Request nemp(String field, String... values)
+   {
+      return withTerm("nemp", field, values);
+   }
 }

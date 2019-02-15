@@ -127,7 +127,7 @@ public class AclAction extends Action<AclAction>
 
             if ("entitykey".equals(key1))
             {
-               req.setEntityKey(value);
+               req.withEntityKey(value);
             }
             else
             {

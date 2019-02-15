@@ -110,9 +110,9 @@ public class Servlet extends HttpServlet
          String body = readBody(httpReq);
 
          req = new Request(url, method, headers, params, body);
-         req.setRemoteAddr(httpReq.getRemoteAddr());
+         req.withRemoteAddr(httpReq.getRemoteAddr());
 
-         req.setUploader(new Uploader()
+         req.withUploader(new Uploader()
             {
                @Override
                public List<Upload> getUploads()

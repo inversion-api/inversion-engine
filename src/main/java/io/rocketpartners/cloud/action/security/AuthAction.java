@@ -222,7 +222,7 @@ public class AuthAction extends Action<AuthAction>
       if (user != null)
       {
          user.setRequestAt(now);
-         req.setUser(user);
+         req.withUser(user);
 
          if (sessionReq && req.isPost())
          {
@@ -286,7 +286,7 @@ public class AuthAction extends Action<AuthAction>
             user.setTenantCode(tenantCode);
             user.setTenantId(tenantId);
          }
-         req.setUser(user);
+         req.withUser(user);
       }
 
    }

@@ -33,7 +33,6 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.rql.RequestBuilder;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Url;
@@ -88,44 +87,44 @@ public class Service
 
    }
 
-   public RequestBuilder get(String url)
+   public Request get(String url)
    {
-      return new RequestBuilder(this, "GET", url, (String) null);
+      return new Request(this, "GET", url, (String) null);
    }
 
-   public RequestBuilder put(String url, Object body)
+   public Request put(String url, Object body)
    {
-      return new RequestBuilder(this, "PUT", url, (body != null ? body.toString() : null));
+      return new Request(this, "PUT", url, (body != null ? body.toString() : null));
    }
 
-   public RequestBuilder post(String url, Object body)
+   public Request post(String url, Object body)
    {
-      return new RequestBuilder(this, "POST", url, (body != null ? body.toString() : null));
+      return new Request(this, "POST", url, (body != null ? body.toString() : null));
    }
 
-   public RequestBuilder put(String url, JSObject body)
+   public Request put(String url, JSObject body)
    {
-      return new RequestBuilder(this, "PUT", url, body);
+      return new Request(this, "PUT", url, body);
    }
 
-   public RequestBuilder post(String url, JSObject body)
+   public Request post(String url, JSObject body)
    {
-      return new RequestBuilder(this, "POST", url, body);
+      return new Request(this, "POST", url, body);
    }
 
-   public RequestBuilder put(String url, String body)
+   public Request put(String url, String body)
    {
-      return new RequestBuilder(this, "PUT", url, body);
+      return new Request(this, "PUT", url, body);
    }
 
-   public RequestBuilder post(String url, String body)
+   public Request post(String url, String body)
    {
-      return new RequestBuilder(this, "POST", url, body);
+      return new Request(this, "POST", url, body);
    }
 
-   public RequestBuilder delete(String url)
+   public Request delete(String url)
    {
-      return new RequestBuilder(this, "DELETE", url, (String) null);
+      return new Request(this, "DELETE", url, (String) null);
    }
 
    public Response service(String method, String url)
@@ -207,7 +206,7 @@ public class Service
          {
             api = match.api;
             apiUrl = match.apiUrl;
-            req.setApiMatch(match);
+            req.withApi(match);
          }
 
          if (match == null || match.api.isDebug() || match.reqUrl.getHost().equals("localhost"))
@@ -423,8 +422,8 @@ public class Service
       }
 
       Request req = new Request(match);//method, new Url(url), api, match, apiUrl);
-      req.setUser(parent.getRequest().getUser());
-      req.setBody(body);
+      req.withUser(parent.getRequest().getUser());
+      req.withBody(body);
 
       Response res = new Response();
       Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());

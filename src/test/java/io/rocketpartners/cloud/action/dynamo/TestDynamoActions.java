@@ -167,7 +167,7 @@ public class TestDynamoActions extends TestCase
       Response res = null;
       JSObject json = null;
 
-      res = service.service("GET", "http://localhost/northwind/sql/orders?pageSize=100&order=orderid");
+      res = service.get("northwind/sql/orders?pageSize=100&order=orderid").go();
       json = res.getJson();
       System.out.println(json);
       assertEquals(json.find("meta.pageSize"), 100);
