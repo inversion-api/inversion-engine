@@ -24,7 +24,6 @@ import java.io.OutputStreamWriter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -50,6 +49,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler
 
       }
       catch (Exception ex)
+      
       {
          responseBody.put("error", Utils.getShortCause(ex));
       }

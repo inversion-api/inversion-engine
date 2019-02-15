@@ -61,7 +61,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JS;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
@@ -79,6 +78,7 @@ public class ScriptAction extends Action<ScriptAction>
    Logger                            log                = LoggerFactory.getLogger(ScriptAction.class);
    String                            scriptsCollection  = "scripts";
 
+   
    long                              cacheExpireSeconds = 60 * 30;
    Map<String, JSObject>             CACHE;
 
@@ -214,7 +214,7 @@ public class ScriptAction extends Action<ScriptAction>
                   bindings.putMember("res", res);
                   bindings.putMember("scriptJson", script.getString("script"));
                   bindings.putMember("util", new Util());
-                  bindings.putMember("js", new JS());
+                  //bindings.putMember("js", new JS());
                }
 
                context.getBindings("js").putMember("content", content);
