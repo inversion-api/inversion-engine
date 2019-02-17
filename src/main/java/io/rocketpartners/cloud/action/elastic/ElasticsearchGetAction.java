@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -97,7 +98,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          req.putParam("source", defaultSource);
       }
 
-      ElasticsearchQuery elasticQ = new ElasticsearchQuery(req.getCollection(), req.getParams());
+      Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
+
+      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getParams());
 
       //      Integer wantedPage = null;
       //      if (req.getParam("wantedpage") != null)

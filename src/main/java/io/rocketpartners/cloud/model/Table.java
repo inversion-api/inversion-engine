@@ -195,7 +195,6 @@ public class Table
 
    public Index withIndex(Column column, String name, String type, boolean unique)
    {
-      System.out.println("withIndex(" + getName() + "." + column.getName() + ", " + name + "," + type + "," + unique + ")");
       Index index = new Index(this, column, name, type, unique);
       withIndex(index);
       return index;

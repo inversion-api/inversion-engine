@@ -18,7 +18,6 @@
  */
 package io.rocketpartners.cloud.model;
 
-
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,6 +71,7 @@ public class Url
 
    public Url(String url)
    {
+
       this((Url) null, url);
    }
 
@@ -103,6 +103,9 @@ public class Url
          url = url.replaceAll(":/", "://");
 
       url = url.replace("&amp;", "&");
+
+      if (parent == null && (!url.startsWith("http://") || url.startsWith("https://")))
+         url = "http://localhost" + (!url.startsWith("/") ? "/" : "") + url;
 
       try
       {

@@ -337,7 +337,7 @@ public class SqlDb extends Db
                boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                Column column = table.getColumn(colName);
-               
+
                if (unique)
                {
                   column.setUnique(unique);
@@ -429,26 +429,8 @@ public class SqlDb extends Db
          {
             attr.withName(beautifyAttributeName(attr.getName()));
          }
-
-         //         for (Column col : cols)
-         //         {
-         //            if (col.getPk() == null)
-         //            {
-         //               Attribute attr = entity.withAttribute(col, beautifyAttributeName(col.getName()));
-         //
-         //               System.out.println(attr.getName());
-         //               if (col.isUnique() && entity.getKey() == null)
-         //               {
-         //                  entity.withKey(attr);
-         //               }
-         //            }
-         //         }
-         System.out.println(entity.getAttributes().get(0).getName());
-         System.out.println(collection.getEntity().getAttributes().get(0).getName());
-
-         api.withCollection(collection);
-         collection.withApi(api);
-
+         
+         System.out.println(collection);
       }
 
       //-- Now go back through and create relationships for all foreign keys

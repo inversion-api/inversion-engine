@@ -51,7 +51,7 @@ public class Service
 
    ResourceLoader    resourceLoader = null;
 
-   PropsConfig      configurator   = new PropsConfig();
+   PropsConfig       configurator   = new PropsConfig();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
@@ -88,44 +88,45 @@ public class Service
 
    }
 
-   public Request get(String url)
+   public Response get(String url)
    {
-      return new Request(this, "GET", url, (String) null);
+
+      return service("GET", url, (String) null);
    }
 
-   public Request put(String url, Object body)
+   public Response put(String url, Object body)
    {
-      return new Request(this, "PUT", url, (body != null ? body.toString() : null));
+      return service("PUT", url, (body != null ? body.toString() : null));
    }
 
-   public Request post(String url, Object body)
+   public Response post(String url, Object body)
    {
-      return new Request(this, "POST", url, (body != null ? body.toString() : null));
+      return service("POST", url, (body != null ? body.toString() : null));
    }
 
-   public Request put(String url, JSObject body)
+   public Response put(String url, JSObject body)
    {
-      return new Request(this, "PUT", url, body);
+      return service("PUT", url, body.toString());
    }
 
-   public Request post(String url, JSObject body)
+   public Response post(String url, JSObject body)
    {
-      return new Request(this, "POST", url, body);
+      return service("POST", url, body.toString());
    }
 
-   public Request put(String url, String body)
+   public Response put(String url, String body)
    {
-      return new Request(this, "PUT", url, body);
+      return service("PUT", url, body);
    }
 
-   public Request post(String url, String body)
+   public Response post(String url, String body)
    {
-      return new Request(this, "POST", url, body);
+      return service("POST", url, body);
    }
 
-   public Request delete(String url)
+   public Response delete(String url)
    {
-      return new Request(this, "DELETE", url, (String) null);
+      return service("DELETE", url, (String) null);
    }
 
    public Response service(String method, String url)
@@ -242,7 +243,7 @@ public class Service
          {
             String buff = "";
             for (Endpoint e : api.getEndpoints())
-               buff += e.getMethods() + ": includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+               buff += e.getMethods() + " path: " + e.getPath() +  " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
             throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
          }

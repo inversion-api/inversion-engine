@@ -50,7 +50,7 @@ public class Attribute
 
    public String toString()
    {
-      return getName();//getHint();
+      return getName();
    }
 
    /**
@@ -106,7 +106,6 @@ public class Attribute
     */
    public Attribute withName(String name)
    {
-      System.out.println("Attribute.withName(" + name + ")");
       this.name = name;
       return this;
    }

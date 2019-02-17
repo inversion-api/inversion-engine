@@ -111,7 +111,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
             columns.add(child.getToken());
          }
       }
-      return getColumnNames();
+      return columns;//getColumnNames();
    }
 
    public List<Term> columns()

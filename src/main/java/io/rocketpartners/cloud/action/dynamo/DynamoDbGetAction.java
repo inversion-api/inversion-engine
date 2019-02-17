@@ -60,7 +60,7 @@ public class DynamoDbGetAction extends DynamoDbAction
       //      }
 
       
-      DynamoDbQuery query = new DynamoDbQuery(req.getCollection(), req.getParams());
+      DynamoDbQuery query = new DynamoDbQuery(collection, req.getParams());
       DynamoResult dynamoResult = query.doSelect(dynamoTable);
 
       JSArray returnData = new JSArray();

@@ -25,13 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import io.rocketpartners.cloud.model.Change;
+import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.HttpUtils.ResponseHandler;
 
 public class Response
 {
@@ -48,7 +46,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected JSObject                               json              = new JSObject();
+   protected JSObject                               json              = new JSObject("meta", new JSObject(), "data", new JSArray());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -206,13 +204,33 @@ public class Response
       return this;
    }
 
-   //   /**
-   //    * @return the httpResp
-   //    */
-   //   public HttpServletResponse getHttpResp()
-   //   {
-   //      return httpResp;
-   //   }
+   public JSArray data()
+   {
+      return json.getArray("data");
+   }
+   
+   public Response withData(JSArray data)
+   {
+       json.put("data",  data);
+       return this;
+   }
+
+   public Response withRecord(JSObject record)
+   {
+      data().add(record);
+      return this;
+   }
+
+
+   public JSObject meta()
+   {
+      return json.getObject("meta");
+   }
+
+   public Response withMeta(String key, Object value)
+   {
+      return this;
+   }
 
    /**
     * @return the statusMesg

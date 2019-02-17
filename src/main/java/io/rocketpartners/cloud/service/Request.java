@@ -125,7 +125,8 @@ public class Request
       withService(service);
       withMethod(method);
       withUrl(url);
-      withBody(body.toString());
+      if(body != null)
+         withBody(body.toString());
    }
 
    public Request(Url url, String method, Map headers, Map params, String body)
@@ -182,13 +183,6 @@ public class Request
       return this;
    }
 
-   public Collection getCollection()
-   {
-      if (api != null && collectionKey != null)
-         return api.getCollection(collectionKey);
-
-      return null;
-   }
 
    public Request withUrl(String url)
    {

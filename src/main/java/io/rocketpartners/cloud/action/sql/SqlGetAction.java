@@ -236,7 +236,7 @@ public class SqlGetAction extends SqlAction
       }
       else
       {
-         results = getRows(chain, req, db, conn, includes, excludes, sql, params);
+         results = getRows(chain, req, db, collection, conn, includes, excludes, sql, params);
       }
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
@@ -286,7 +286,7 @@ public class SqlGetAction extends SqlAction
       }
    }
 
-   List getRows(Chain chain, Request req, SqlDb db, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
+   List getRows(Chain chain, Request req, SqlDb db, Collection collection, Connection conn, Set includes, Set excludes, String sql, List params) throws Exception
    {
       List list = new ArrayList();
 
@@ -294,8 +294,6 @@ public class SqlGetAction extends SqlAction
 
       List<Row> rows = selectRows(chain, db, conn, sql, params);
 
-      Collection collection = req.getCollection();
-      
       for (int i = 0; i < rows.size(); i++)
       {
          JSObject o = new JSObject();
