@@ -192,6 +192,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public boolean isMethod(String... methods)
    {
+      if(this.methods.size() == 0)
+         return true;
+      
       for (String method : methods)
       {
          if(method != null && this.methods.contains(method.toLowerCase()))

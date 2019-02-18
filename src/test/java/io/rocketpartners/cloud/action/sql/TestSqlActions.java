@@ -9,6 +9,7 @@ import java.util.Map;
 
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
@@ -54,16 +55,17 @@ public class TestSqlActions extends TestCase
                   Connection conn = db.getConnection();
                   SqlUtils.runDdl(conn, TestSqlActions.class.getResourceAsStream(ddl + ".ddl"));
 
-                  //                  Sql.addSqlListener(new SqlListener()
-                  //                     {
-                  //                        @Override
-                  //                        public void beforeStmt(String method, String sql, Object... vals)
-                  //                        {
-                  //                           sqls.add(method);
-                  //                           while (sqls.size() > 0)
-                  //                              sqls.removeLast();
-                  //                        }
-                  //                     });
+                  SqlUtils.addSqlListener(new SqlListener()
+                     {
+                        @Override
+                        public void beforeStmt(String method, String sql, Object... vals)
+                        {
+                           System.out.println("SQL---> " + sql.replace("\r", "").replace("\n", " ").trim().replaceAll(" +", " "));
+                           sqls.add(method);
+                           while (sqls.size() > 0)
+                              sqls.removeLast();
+                        }
+                     });
 
                   super.init();
                }

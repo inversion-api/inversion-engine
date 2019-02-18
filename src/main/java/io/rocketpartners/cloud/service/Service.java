@@ -138,15 +138,15 @@ public class Service
    {
       Request req = new Request(method, url, body);
       req.withService(this);
-      
+
       return req;
    }
-   
+
    public Response service(String method, String url, String body)
    {
       Request req = new Request(method, url, body);
       req.withService(this);
-      
+
       Response res = new Response();
 
       service(req, res);
@@ -236,7 +236,7 @@ public class Service
                //not sure if this is the most elegant place for this
                a.init();
                req.withApi(a);
-               
+
                if (parts.get(0).equalsIgnoreCase((a.getApiCode())))
                {
                   apiPath.add(parts.remove(0));
@@ -248,13 +248,12 @@ public class Service
                   apiPath.add(tenantCode);
                   req.withTenantCode(tenantCode);
                }
-               
 
-               String remainingPath = Utils.implode("/", parts); //find the endpoint that matches the fewest path segments
+               String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
                for (int i = 0; i <= parts.size(); i++)
                {
-                  String endpointPath = i == 0 ? "" : Utils.implode("/", parts.subList(0, i));
-                  
+                  String endpointPath = i == 0 ? "" : (Utils.implode("/", parts.subList(0, i)) + "/");
+
                   for (Endpoint e : a.getEndpoints())
                   {
                      if (e.matches(req.getMethod(), endpointPath) //
@@ -266,21 +265,34 @@ public class Service
                         if (i < parts.size())
                         {
                            String collectionKey = parts.get(i);
-                           
+
                            req.withCollectionKey(collectionKey);
                            i += 1;
-                           
-                           for(io.rocketpartners.cloud.model.Collection collection : a.getCollections())
+
+                           for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                            {
-                              if(collectionKey.equalsIgnoreCase(collection.getName()))
+                              if (collectionKey.equalsIgnoreCase(collection.getName()))
                               {
-                                 if(collection.matches(req.getMethod(),  endpointPath))
+                                 if (collection.matches(req.getMethod(), endpointPath))
                                  {
                                     req.withCollection(collection);
                                     break;
                                  }
                               }
                            }
+
+                           if (req.getCollection() == null)
+                           {
+                              for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
+                              {
+                                 if (collectionKey.equalsIgnoreCase(collection.getName()) && collection.getIncludePaths().size() == 0 && collection.getExcludePaths().size() == 0)
+                                 {
+                                    req.withCollection(collection);
+                                    break;
+                                 }
+                              }
+                           }
+
                         }
                         if (i < parts.size())
                         {
@@ -356,6 +368,10 @@ public class Service
             if (a.matches(req.getMethod(), req.getPath()))
                actions.add(a);
          }
+
+         if (actions.size() == 0)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
+
          Collections.sort(actions);
 
          chain.withActions(actions).go();
@@ -409,7 +425,6 @@ public class Service
       {
          try
          {
-
             ConnectionLocal.close();
          }
          catch (Throwable t)
@@ -425,6 +440,8 @@ public class Service
          {
             log.error("Error in Service", ex);
          }
+         
+         ChainLocal.pop();
       }
 
       return chain;

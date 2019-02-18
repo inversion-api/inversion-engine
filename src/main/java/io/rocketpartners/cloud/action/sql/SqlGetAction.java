@@ -79,7 +79,7 @@ public class SqlGetAction extends SqlAction
       }
       else
       {
-         db = (SqlDb) ((SqlDb)req.getCollection().getDb()).getConnection();
+         db = (SqlDb) ((SqlDb)req.getCollection().getDb());
       }
 
       conn = db.getConnection();
