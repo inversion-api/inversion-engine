@@ -119,7 +119,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          }
 
          String body = json.getString("body");
-         req = new Request(url, method, headers, params, body);
+         req = new Request(url.toString(), method, headers, params, body);
          res = new Response();
 
          chain = service.service(req, res);

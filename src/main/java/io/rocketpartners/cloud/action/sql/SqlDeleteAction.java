@@ -94,7 +94,7 @@ public class SqlDeleteAction extends SqlAction
 
             for (String url : urls)
             {
-               Response r = chain.getService().include(chain, "DELETE", url, null);
+               Response r = service.delete(url);
                if (r.getStatusCode() != 200)
                {
                   throw new ApiException("Nested delete url: " + url + " failed!");
@@ -154,11 +154,12 @@ public class SqlDeleteAction extends SqlAction
       }
 
       Request req = chain.getRequest();
-      SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
+      Collection collection = req.getCollection();//getApi().getCollection(req.getCollectionKey(), SqlDb.class);
+      Entity entity = collection.getEntity();
+
+      SqlDb db = (SqlDb) req.getCollection().getDb();// chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
       Connection conn = db.getConnection();
 
-      Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
-      Entity entity = collection.getEntity();
       SqlQuery query = new SqlQuery(collection);
 
       String table = query.quoteCol(entity.getTable().getName());
@@ -182,10 +183,10 @@ public class SqlDeleteAction extends SqlAction
    {
       try
       {
-         SqlDb db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
+         SqlDb db = ((SqlDb)req.getCollection().getDb());
          //SqlRql rql = (SqlRql) Rql.getRql(db.getType());
 
-         Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
+         Collection collection = req.getCollection();//getApi().getCollection(req.getCollectionKey(), SqlDb.class);
 
          Entity entity = collection.getEntity();
          String entityKey = req.getEntityKey();

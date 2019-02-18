@@ -29,7 +29,7 @@ public class Endpoint extends Rule<Endpoint>
 
    public boolean matches(String method, String path)
    {
-      if (!methods.contains(method))
+      if (!isMethod(method))
          return false;
 
       if (this.path != null && !path.toLowerCase().startsWith(this.path))
@@ -53,10 +53,11 @@ public class Endpoint extends Rule<Endpoint>
       return this.path != null;
    }
 
-   public void setApi(Api api)
+   public Endpoint withApi(Api api)
    {
       this.api = api;
       api.withEndpoint(this);
+      return this;
    }
 
    public String getPath()
@@ -118,22 +119,26 @@ public class Endpoint extends Rule<Endpoint>
       return filtered;
    }
 
-   public void setActions(List<Action> actions)
+   public Endpoint withActions(List<Action> actions)
    {
       this.actions.clear();
       for (Action action : actions)
-         addAction(action);
+         withAction(action);
+
+      return this;
    }
 
-   public void addAction(Action action)
+   public <T extends Action> T withAction(T action)
    {
       if (!actions.contains(action))
          actions.add(action);
 
       if (action.getApi() != getApi())
-         action.setApi(getApi());
+         action.withApi(getApi());
 
       Collections.sort(actions);
+
+      return action;
    }
 
    public <T extends Action> T withAction(int order, T action)
@@ -142,10 +147,19 @@ public class Endpoint extends Rule<Endpoint>
       return withAction(action);
    }
 
-   public <T extends Action> T withAction(T action)
+   public Endpoint withAction(Action action, String methods, String includePaths)
    {
-      addAction(action);
-      return action;
+      for (String method : Utils.explode(",", methods))
+      {
+         action.withMethods(method);
+      }
+
+      for (String path : Utils.explode(",", includePaths))
+      {
+         action.withIncludePaths(path);
+      }
+      withAction(action);
+      return this;
    }
 
 }

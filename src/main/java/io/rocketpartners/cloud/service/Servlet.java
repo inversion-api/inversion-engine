@@ -87,8 +87,6 @@ public class Servlet extends HttpServlet
             urlstr += "?" + query;
          }
 
-         Url url = new Url(urlstr);
-
          Map headers = new HashMap();
          Enumeration<String> headerEnum = httpReq.getHeaderNames();
          while (headerEnum.hasMoreElements())
@@ -109,7 +107,7 @@ public class Servlet extends HttpServlet
 
          String body = readBody(httpReq);
 
-         req = new Request(url, method, headers, params, body);
+         req = new Request(urlstr, method, headers, params, body);
          req.withRemoteAddr(httpReq.getRemoteAddr());
 
          req.withUploader(new Uploader()

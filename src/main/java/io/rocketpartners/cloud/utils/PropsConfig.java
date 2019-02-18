@@ -447,7 +447,7 @@ public class PropsConfig
          else if (o instanceof Collection)
          {
             Collection col = (Collection) o;
-            name = col.getApi().getName() + ".collections." + col.getEntity().getTable().getDb().getName() + "_" + col.getName();
+            name = col.getApi().getName() + ".collections." + col.getDb().getName() + "_" + col.getName();
          }
          else if (o instanceof Entity)
          {

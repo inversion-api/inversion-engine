@@ -90,77 +90,27 @@ public class HttpUtils
 
    public static FutureResponse get(String url)
    {
-      return rest(new Request("GET", url));
-   }
-
-   public static FutureResponse get(String url, List<String> headers)
-   {
-      return rest(new Request("GET", url, null, headers));
-   }
-
-   public static FutureResponse get(String url, List<String> headers, int retryAttempts)
-   {
-      return rest(new Request("GET", url, null, headers, retryAttempts));
-   }
-
-   public static FutureResponse get(String url, int retryAttempts)
-   {
-      return rest(new Request("GET", url, null, null, retryAttempts));
+      return rest("GET", url, null, null, -1);
    }
 
    public static FutureResponse put(String url, String body)
    {
-      return rest(new Request("PUT", url, body, null));
-   }
-
-   public static FutureResponse put(String url, String body, List<String> headers)
-   {
-      return rest(new Request("PUT", url, body, headers));
-   }
-
-   public static FutureResponse put(String url, String body, List<String> headers, int retryAttempts)
-   {
-      return rest(new Request("PUT", url, body, headers, retryAttempts));
+      return rest("PUT", url, body, null, -1);
    }
 
    public static FutureResponse post(String url, String body)
    {
-      return rest(new Request("POST", url, body, null));
-   }
-
-   public static FutureResponse post(String url, String body, List<String> headers)
-   {
-      return rest(new Request("POST", url, body, headers));
-   }
-
-   public static FutureResponse post(String url, String body, List<String> headers, int retryAttempts)
-   {
-      return rest(new Request("POST", url, body, headers, retryAttempts));
+      return rest("POST", url, body, null, -1);
    }
 
    public static FutureResponse delete(String url)
    {
-      return rest(new Request("DELETE", url));
+      return rest("DELETE", url, null, null, -1);
    }
 
-   public static FutureResponse delete(String url, List<String> headers)
+   public static FutureResponse rest(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
    {
-      return rest(new Request("DELETE", url, null, headers));
-   }
-
-   public static FutureResponse delete(String url, String body, List<String> headers)
-   {
-      return rest(new Request("DELETE", url, body, headers));
-   }
-
-   public static FutureResponse delete(String url, String body, List<String> headers, int retryAttempts)
-   {
-      return rest(new Request("DELETE", url, body, headers, retryAttempts));
-   }
-
-   public static FutureResponse delete(String url, int retryAttempts)
-   {
-      return rest(new Request("DELETE", url, null, null, retryAttempts));
+      return rest(new Request(method, url, body, headers, retryAttempts));
    }
 
    public static FutureResponse rest(final Request request)

@@ -116,6 +116,12 @@ public class JSArray extends JSObject implements Iterable
       return objects.contains(object);
    }
 
+   @Override
+   public int size()
+   {
+      return objects.size();
+   }
+   
    public int length()
    {
       return objects.size();

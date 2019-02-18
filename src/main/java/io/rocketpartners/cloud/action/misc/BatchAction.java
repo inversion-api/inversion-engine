@@ -41,7 +41,7 @@ public class BatchAction<T extends BatchAction> extends Action<T>
             JSObject json = arr.getObject(i);
             
             //TODO use streaming parsers to avoid extra encoding/decoding of the json bodies
-            Response batchResponse = service.include(chain, json.getString("method"), json.getString("url"), json.getString("body"));
+            Response batchResponse = service.service(json.getString("method"), json.getString("url"), json.getString("body"));
             if(batchResponse.getStatusCode() > 299)
             {
                res.withStatus(batchResponse.getStatus());

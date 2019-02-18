@@ -1,4 +1,4 @@
-
+get rid of request.params in favor of url.params
 
 Put meta & data objects into response as first class citizens
 

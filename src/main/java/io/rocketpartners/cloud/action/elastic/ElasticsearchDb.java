@@ -58,7 +58,7 @@ public class ElasticsearchDb extends Db
       }
 
       // 'GET _all' returns all indices/aliases/mappings
-      Response allResp = HttpUtils.get(url + "/_all", 0).get(maxRequestDuration, TimeUnit.SECONDS);
+      Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {

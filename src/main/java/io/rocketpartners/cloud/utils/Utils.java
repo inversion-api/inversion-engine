@@ -45,9 +45,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -176,8 +178,7 @@ public class Utils
 
       return exploded;
    }
-   
-   
+
    public static JSArray parseJsonArray(String json)
    {
       return ((JSArray) parseJson(json));
@@ -273,7 +274,7 @@ public class Utils
 
       throw new RuntimeException("unparsable json:" + json);
    }
-   
+
    public static int roundUp(int num, int divisor)
    {
       int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
@@ -283,11 +284,28 @@ public class Utils
    /**
     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
     */
-   public static int atoi(String str)
+   public static boolean atob(Object str)
    {
       try
       {
-         return Integer.parseInt(str.trim());
+         String bool = str + "";
+         return !("0".equals(bool) || "false".equals(bool));
+      }
+      catch (Exception ex)
+      {
+         //ignore
+      }
+      return false;
+   }
+
+   /**
+    * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
+    */
+   public static int atoi(Object str)
+   {
+      try
+      {
+         return Integer.parseInt(str.toString().trim());
       }
       catch (Exception ex)
       {
@@ -299,11 +317,11 @@ public class Utils
    /**
     * Faster and null safe way to call Long.parseLong(str.trim()) that swallows exceptions.
     */
-   public static long atol(String str)
+   public static long atol(Object str)
    {
       try
       {
-         return Long.parseLong(str.trim());
+         return Long.parseLong(str.toString().trim());
       }
       catch (Exception ex)
       {
@@ -315,11 +333,11 @@ public class Utils
    /**
     * Faster and null safe way to call Float.parseFloat(str.trim()) that swallows exceptions.
     */
-   public static float atof(String str)
+   public static float atof(Object str)
    {
       try
       {
-         return Float.parseFloat(str.trim());
+         return Float.parseFloat(str.toString().trim());
       }
       catch (Exception ex)
       {
@@ -331,11 +349,11 @@ public class Utils
    /**
     * Faster and null safe way to call Double.parseDouble(str.trim()) that swallows exceptions.
     */
-   public static double atod(String str)
+   public static double atod(Object str)
    {
       try
       {
-         return Double.parseDouble(str.trim());
+         return Double.parseDouble(str.toString().trim());
       }
       catch (Exception ex)
       {
@@ -429,7 +447,7 @@ public class Utils
    //      return df.format(date);
    //   }
 
-   public static Date parseIso8601(String date)throws ParseException
+   public static Date parseIso8601(String date) throws ParseException
    {
       return ISO8601Utils.parse(date, new ParsePosition(0));
    }
@@ -1573,6 +1591,9 @@ public class Utils
     */
    public static boolean wildcardMatch(String wildcard, String string)
    {
+      if(wildcard.equals("*"))
+         return true;
+      
       if (empty(wildcard) || empty(string))
          return false;
 
@@ -1642,6 +1663,42 @@ public class Utils
       }
       s.append('$');
       return (s.toString());
+   }
+
+   public static Map<String, String> parseQueryString(String query)
+   {
+      Map params = new HashMap();
+      try
+      {
+         while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
+         {
+            query = query.substring(1);
+         }
+
+         if (query.length() > 0)
+         {
+            String[] pairs = query.split("&");
+            for (String pair : pairs)
+            {
+               int idx = pair.indexOf("=");
+               if (idx > 0)
+               {
+                  String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
+                  String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+                  params.put(key, value);
+               }
+               else
+               {
+                  params.put(URLDecoder.decode(pair, "UTF-8"), null);
+               }
+            }
+         }
+      }
+      catch (Exception ex)
+      {
+         rethrow(ex);
+      }
+      return params;
    }
 
 }

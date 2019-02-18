@@ -208,11 +208,11 @@ public class Response
    {
       return json.getArray("data");
    }
-   
+
    public Response withData(JSArray data)
    {
-       json.put("data",  data);
-       return this;
+      json.put("data", data);
+      return this;
    }
 
    public Response withRecord(JSObject record)
@@ -220,7 +220,6 @@ public class Response
       data().add(record);
       return this;
    }
-
 
    public JSObject meta()
    {
@@ -230,6 +229,20 @@ public class Response
    public Response withMeta(String key, Object value)
    {
       return this;
+   }
+
+   public int getPageSize()
+   {
+      int pageSize = json.findInt("meta.pageSize");
+      if (pageSize < 0)
+      {
+         Object arr = json.find("data");
+         if (arr instanceof JSArray)
+         {
+            pageSize = ((JSArray) arr).size();
+         }
+      }
+      return pageSize;
    }
 
    /**

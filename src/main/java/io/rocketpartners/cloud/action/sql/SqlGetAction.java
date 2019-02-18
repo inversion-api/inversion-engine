@@ -79,7 +79,7 @@ public class SqlGetAction extends SqlAction
       }
       else
       {
-         db = (SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class);
+         db = (SqlDb) ((SqlDb)req.getCollection().getDb()).getConnection();
       }
 
       conn = db.getConnection();
@@ -90,7 +90,7 @@ public class SqlGetAction extends SqlAction
          // need to try catch this because getCollection throws an exception if the collection isn't found
          // but not having a collection isn't always an error in this handler because a previous handler 
          // like the SqlSuggestHandler or ScriptHandler may have set the "sql" chain param. 
-         collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey(), SqlDb.class) : null;
+         collection = req.getCollection();//getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey(), SqlDb.class) : null;
       }
       catch (ApiException e)
       {
@@ -155,7 +155,7 @@ public class SqlGetAction extends SqlAction
                   newUrl += "?" + queryStr;
                }
 
-               Response included = service.include(chain, "GET", newUrl, null);
+               Response included = service.get(newUrl);
 
                res.withStatus(included.getStatus());
                res.withJson(included.getJson());
@@ -449,7 +449,7 @@ public class SqlGetAction extends SqlAction
          }
       }
 
-      Response res = chain.getService().include(chain, "GET", url, null);
+      Response res = chain.getService().get(url);
       int sc = res.getStatusCode();
       if (sc == 401 || sc == 403)//unauthorized || forbidden
          return null;

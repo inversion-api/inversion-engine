@@ -81,6 +81,24 @@ public class JSObject implements Map<String, Object>
       return null;
    }
 
+   public int findInt(String path)
+   {
+      Object found = find(path);
+      if (found != null)
+         return Utils.atoi(found);
+
+      return -1;
+   }
+
+   public Object findBoolean(String path)
+   {
+      Object found = find(path);
+      if (found != null)
+         return Utils.atob(found);
+
+      return null;
+   }
+
    public Object find(String path)
    {
       List<String> props = Utils.explode("\\.", path);

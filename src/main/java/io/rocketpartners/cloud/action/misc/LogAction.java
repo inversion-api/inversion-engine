@@ -89,7 +89,7 @@ public class LogAction extends Action<LogAction>
 
                if (changes.size() > 0)
                {
-                  Connection conn = ((SqlDb) service.getDb(req.getApi(), req.getCollectionKey(), SqlDb.class)).getConnection();
+                  Connection conn = ((SqlDb)req.getCollection().getDb()).getConnection();
                   Map<String, Object> logParams = new HashMap<>();
                   logParams.put("method", req.getMethod());
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());

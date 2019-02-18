@@ -41,10 +41,14 @@ public class Action<A extends Action> extends Rule<A>
    }
 
    @Override
-   public void setApi(Api api)
+   public A withApi(Api api)
    {
-      this.api = api;
-      api.addAction(this);
+      if (this.api != api)
+      {
+         this.api = api;
+         api.addAction(this);
+      }
+      return (A)this;
    }
 
    public String getComment()
@@ -80,7 +84,7 @@ public class Action<A extends Action> extends Rule<A>
    {
       if (parent instanceof JSArray)
       {
-         for (Object child : (JSArray)parent)
+         for (Object child : (JSArray) parent)
          {
             if (child instanceof JSObject)
                find(child, found, targetPath, currentPath);

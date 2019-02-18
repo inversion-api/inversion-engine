@@ -18,60 +18,24 @@
  */
 package io.rocketpartners.cloud.model;
 
-import java.net.URLDecoder;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Url
 {
-   public static Map<String, String> parseQuery(String query)
-   {
-      Map params = new HashMap();
-      try
-      {
-         while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
-         {
-            query = query.substring(1);
-         }
-
-         if (query.length() > 0)
-         {
-            String[] pairs = query.split("&");
-            for (String pair : pairs)
-            {
-               int idx = pair.indexOf("=");
-               if (idx > 0)
-               {
-                  String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-                  String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-                  params.put(key, value);
-               }
-               else
-               {
-                  params.put(URLDecoder.decode(pair, "UTF-8"), null);
-               }
-            }
-         }
-      }
-      catch (Exception ex)
-      {
-         Utils.rethrow(ex);
-      }
-      return params;
-   }
-
-   protected String              protocol = "http";
-   protected String              host     = null;
-   protected int                 port     = 0;
-   protected String              path     = null;
-   protected String              query    = null;
-   protected Map<String, String> params   = new HashMap();
+   protected String   protocol = "http";
+   protected String   host     = null;
+   protected int      port     = 0;
+   protected String   path     = null;
+   protected String   query    = null;
+   protected JSObject params   = new JSObject();
 
    public Url(String url)
    {
-
       this((Url) null, url);
    }
 
@@ -87,14 +51,11 @@ public class Url
 
    public Url(String protocol, String host, int port, String path, String query)
    {
-      super();
-      this.protocol = protocol;
-      this.host = host;
-      this.port = port;
-      this.path = path;
-      this.query = query;
-      if (!Utils.empty(query))
-         this.params = parseQuery(query);
+      withProtocol(protocol);
+      withHost(host);
+      withPort(port);
+      withPath(path);
+      withQuery(query);
    }
 
    protected void parse(Url parent, String url)
@@ -115,7 +76,7 @@ public class Url
             query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
 
-            this.params = parseQuery(query);
+            this.params = new JSObject(Utils.parseQueryString(query));
          }
 
          //replace slashes after stripping off query to leave query as it was found
@@ -250,11 +211,21 @@ public class Url
          url += path;
       }
 
-      if (!Utils.empty(query))
+      if (params.size() > 0)
       {
-         if (!query.startsWith("?"))
-            url += "?";
-         url += query;
+         List<String> keys = new ArrayList(params.keySet());
+         for (int i = 0; i < keys.size(); i++)
+         {
+            String key = keys.get(i);
+            String value = params.getString(key);
+
+            if (i == 0)
+               url += "?";
+            else
+               url += "&";
+
+            url += key + "=" + value;
+         }
       }
 
       return url;
@@ -293,9 +264,10 @@ public class Url
       return host;
    }
 
-   public void setHost(String host)
+   public Url withHost(String host)
    {
       this.host = host;
+      return this;
    }
 
    public int getPort()
@@ -310,9 +282,10 @@ public class Url
       return port;
    }
 
-   public void setPort(int port)
+   public Url withPort(int port)
    {
       this.port = port;
+      return this;
    }
 
    public String getProtocol()
@@ -320,9 +293,10 @@ public class Url
       return protocol;
    }
 
-   public void setProtocol(String protocol)
+   public Url withProtocol(String protocol)
    {
       this.protocol = protocol;
+      return this;
    }
 
    public String getQuery()
@@ -330,9 +304,14 @@ public class Url
       return query;
    }
 
-   public void setQuery(String query)
+   public void withQuery(String query)
    {
       this.query = query;
+      params = new JSObject();
+      if (query != null)
+      {
+         params.putAll(Utils.parseQueryString(query));
+      }
    }
 
    public String getPath()
@@ -340,7 +319,7 @@ public class Url
       return path;
    }
 
-   public void setPath(String path)
+   public void withPath(String path)
    {
       this.path = path;
    }
@@ -358,14 +337,35 @@ public class Url
       return null;
    }
 
-   public Map<String, String> getParams()
+   public Url withParam(String name, String value)
    {
-      return params;
+      params.put(name, value);
+      return this;
+   }
+   
+   public String getParam(String param)
+   {
+      return (String) params.get(param);
    }
 
-   public void setParams(Map<String, String> params)
+   public Map<String, String> getParams()
    {
-      this.params = params;
+      return params.asMap();
+   }
+
+   public String removeParam(String param)
+   {
+      return (String) params.remove(param);
+   }
+
+   public void putParam(String name, String value)
+   {
+      params.put(name, value);
+   }
+
+   public void clearParams()
+   {
+      params.clear();
    }
 
 }

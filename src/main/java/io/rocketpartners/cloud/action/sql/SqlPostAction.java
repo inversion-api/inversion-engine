@@ -63,14 +63,14 @@ public class SqlPostAction extends SqlAction
             throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
       }
 
+      Collection collection = req.getCollection();//getApi().getCollection(req.getCollectionKey(), SqlDb.class);
+      Entity entity = collection.getEntity();
+
       List<Change> changes = new ArrayList();
 
-      Connection conn = ((SqlDb) chain.getService().getDb(req.getApi(), req.getCollectionKey(), SqlDb.class)).getConnection();
+      Connection conn = ((SqlDb) collection.getDb()).getConnection();
 
       List<String> hrefs = new ArrayList();
-
-      Collection collection = req.getApi().getCollection(req.getCollectionKey(), SqlDb.class);
-      Entity entity = collection.getEntity();
 
       JSObject obj = req.getJson();
 
@@ -129,7 +129,7 @@ public class SqlPostAction extends SqlAction
             boolean added = false;
             if (expandResponse)
             {
-               Response resp = service.include(chain, "GET", href, null);
+               Response resp = service.get(href);
                if (resp != null)
                {
                   JSObject js = resp.getJson();

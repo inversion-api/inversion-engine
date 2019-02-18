@@ -66,7 +66,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
 
       String collectionKey = req.getCollectionKey();
-      Collection col = api.getCollection(collectionKey, FirehoseDb.class);
+      Collection col = req.getCollection();//api.getCollection(collectionKey, FirehoseDb.class);
       Table table = col.getEntity().getTable();
       String streamName = table.getName();
 

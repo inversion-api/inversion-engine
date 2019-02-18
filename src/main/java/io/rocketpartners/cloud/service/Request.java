@@ -16,7 +16,6 @@
 package io.rocketpartners.cloud.service;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,45 +29,43 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.rql.Term;
-import io.rocketpartners.cloud.service.Service.ApiMatch;
+import io.rocketpartners.cloud.utils.HttpUtils;
 import io.rocketpartners.cloud.utils.JSArray;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
 {
-   Service                                service                = null;
+   String                                 referrer               = null;
+   String                                 remoteAddr             = null;
+   ArrayListValuedHashMap<String, String> headers                = new ArrayListValuedHashMap();
 
    Url                                    url                    = null;
+   String                                 method                 = null;
+   String                                 path                   = null;
 
-   String                                 apiUrl                 = null;
+   Service                                service                = null;
    Api                                    api                    = null;
-   Endpoint                               endpoint               = null;
-
+   String                                 apiPath                = null;
    String                                 apiCode                = null;
    String                                 tenantCode             = null;
 
+   String                                 endpointPath           = null;
+   Endpoint                               endpoint               = null;
+
    User                                   user                   = null;
-
-   String                                 referrer               = null;
-
-   String                                 method                 = null;
-
-   String                                 path                   = null;
-
-   String                                 remoteAddr             = null;
 
    /**
     * The path minus any Endpoint.path prefix
     */
    String                                 subpath                = null;
 
+   Collection                             collection             = null;
    String                                 collectionKey          = null;
    String                                 entityKey              = null;
    String                                 subCollectionKey       = null;
 
-   ArrayListValuedHashMap<String, String> headers                = new ArrayListValuedHashMap();
-   JSObject                               params                 = new JSObject();
+   //JSObject                               params                 = new JSObject();
 
    String                                 body                   = null;
    JSObject                               json                   = null;
@@ -79,38 +76,12 @@ public class Request
 
    public Uploader                        uploader               = null;
 
-   int                                    retryAttempts;
-   static final int                       DEFAULT_RETRY_ATTEMPTS = 5;
+   static final int                       DEFAULT_RETRY_ATTEMPTS = 1;
+   int                                    retryAttempts          = DEFAULT_RETRY_ATTEMPTS;
 
    public Request(String method, String url)
    {
-      this(method, url, null, null);
-   }
-
-   public Request(String method, String url, String body, List<String> headers)
-   {
-      this(method, url, body, headers, DEFAULT_RETRY_ATTEMPTS);
-   }
-
-   public Request(String method, String url, String body, List<String> headers, int retryAttempts)
-   {
-
-   }
-
-   public int getRetryAttempts()
-   {
-      return retryAttempts;
-   }
-
-   public void setRetryAttempts(int retryAttempts)
-   {
-      this.retryAttempts = retryAttempts;
-   }
-
-   public Request(ApiMatch match)
-   {
-      withUrl(match.reqUrl);
-      withApi(match);
+      this(method, url, null, null, -1);
    }
 
    public Request(String method, String url, String body)
@@ -125,51 +96,80 @@ public class Request
       withService(service);
       withMethod(method);
       withUrl(url);
-      if(body != null)
+      if (body != null)
          withBody(body.toString());
    }
 
-   public Request(Url url, String method, Map headers, Map params, String body)
+   public Request(String url, String method, Map<String, String> headers, Map<String, String> params, String body)
    {
       withMethod(method);
       withUrl(url);
-      withParams(params);
-      withHeaders(headers);
       withBody(body);
+
+      if (headers != null)
+      {
+         for (String key : headers.keySet())
+            withHeader(key, headers.get(key));
+      }
+
+      if (params != null)
+      {
+         for (String key : params.keySet())
+            this.url.withParam(key, params.get(key));
+      }
+   }
+
+   public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
+   {
+      withMethod(method);
+      withUrl(url);
+      withBody(body);
+      this.headers = headers;
+      if (retryAttempts > 0)
+         this.retryAttempts = retryAttempts;
    }
 
    public Response go()
    {
-      String url = this.url.toString();
-      if (url.indexOf("?") < 0)
-         url += "?";
-      else if (!url.endsWith("&"))
-         url += "&";
-
-      List<String> keys = new ArrayList(params.keySet());
-      for (int i = 0; i < keys.size(); i++)
-      {
-         String key = keys.get(i);
-         String value = params.getString(key);
-
-         url += key;
-
-         if (!Utils.empty(value))
-            url += "=" + value;
-
-         if (i < keys.size() - 1)
-            url += "&";
-      }
-
       if (service != null)
       {
-         return service.service(method, url, body);
+         return service.service(this, new Response()).getResponse();
       }
       else
       {
-         //Web.rest()
-         return null;
+         return HttpUtils.rest(getMethod(), getUrl().toString(), getBody(), headers, -1).get();
       }
+
+      //      String url = this.url.toString();
+      //      if (url.indexOf("?") < 0)
+      //         url += "?";
+      //      else if (!url.endsWith("&"))
+      //         url += "&";
+      //
+      //      List<String> keys = new ArrayList(params.keySet());
+      //      for (int i = 0; i < keys.size(); i++)
+      //      {
+      //         String key = keys.get(i);
+      //         String value = params.getString(key);
+      //
+      //         url += key;
+      //
+      //         if (!Utils.empty(value))
+      //            url += "=" + value;
+      //
+      //         if (i < keys.size() - 1)
+      //            url += "&";
+      //      }
+      //
+      //      if (service != null)
+      //      {
+      //         return service.service(method, url, body);
+      //      }
+      //      else
+      //      {
+      //         //Web.rest()
+      //         return null;
+      //      }
    }
 
    public Service getService()
@@ -183,23 +183,22 @@ public class Request
       return this;
    }
 
-
    public Request withUrl(String url)
    {
       this.url = new Url(url);
       return this;
    }
-
-   public Request withUrl(Url url)
-   {
-      this.url = url;
-      String query = url.getQuery();
-      if (!Utils.empty(query))
-      {
-         this.params.putAll(Url.parseQuery(query));
-      }
-      return this;
-   }
+   //
+   //   public Request withUrl(Url url)
+   //   {
+   //      this.url = url;
+   //      String query = url.getQuery();
+   //      if (!Utils.empty(query))
+   //      {
+   //         this.params.putAll(Utils.parseQueryString(query));
+   //      }
+   //      return this;
+   //   }
 
    public Request withMethod(String method)
    {
@@ -219,137 +218,48 @@ public class Request
       return this;
    }
 
-   public Request withParams(Map<String, String> params)
-   {
-      //      this.params.putAll(params);
-      //
-      //      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
-      //      this.explain = this.explain || explain;
-      //      return this;
+   //   public Request withParams(Map<String, String> params)
+   //   {
+   //      //      this.params.putAll(params);
+   //      //
+   //      //      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
+   //      //      this.explain = this.explain || explain;
+   //      //      return this;
+   //
+   //      
+   //      
+   //      for (String key : params.keySet())
+   //      {
+   //         withParam(key, params.get(key));
+   //      }
+   //      return this;
+   //   }
+   //
+   //   public Request withParam(String key, String value)
+   //   {
+   //      this.params.put(key, value);
+   //      return this;
+   //   }
 
-      for (String key : params.keySet())
-      {
-         withParam(key, params.get(key));
-      }
+   public Collection getCollection()
+   {
+      return collection;
+   }
+
+   public Request withCollection(Collection collection)
+   {
+      this.collection = collection;
       return this;
    }
 
-   public Request withParam(String key, String value)
+   public Endpoint getEndpoint()
    {
-      this.params.put(key, value);
-      return this;
+      return endpoint;
    }
 
-   public Request withApi(ApiMatch match)
+   public Request withEndpoint(Endpoint endpoint)
    {
-      this.api = match.api;
-      this.endpoint = match.endpoint;
-      this.method = match.method;
-      this.url = match.reqUrl;
-      this.apiUrl = match.apiUrl;
-      this.path = match.apiPath;
-      this.subpath = match.apiPath;
-
-      this.apiCode = api.getApiCode();
-
-      if (this.path.indexOf("?") > 0)
-         this.path = this.path.substring(0, this.path.indexOf("?"));
-
-      if (this.subpath.indexOf("?") > 0)
-         this.subpath = this.subpath.substring(0, this.subpath.indexOf("?"));
-
-      if (apiUrl != null)
-      {
-         if (api.isMultiTenant())
-         {
-            List<String> p = Utils.explode("/", apiUrl);
-            tenantCode = p.get(p.size() - 1);
-         }
-
-         String urlStr = url.toString();
-         if (urlStr.indexOf("?") > 0)
-            urlStr = urlStr.substring(0, urlStr.indexOf("?"));
-
-         //         path = urlStr.substring(apiUrl.length(), urlStr.length());
-         //         while (path.startsWith("/"))
-         //            path = path.substring(1, path.length());
-
-         List<String> parts = Utils.explode("/", path);//path.split("/");
-
-         //         if (!path.endsWith("/"))
-         //            path = path + "/";
-
-         if (endpoint != null)
-         {
-            String endpointPath = endpoint.getPath();
-            if (endpointPath != null)
-            {
-               List<String> epPath = Utils.explode("/", endpointPath);
-               for (int i = 0; i < epPath.size(); i++)
-               {
-                  if (parts.get(0).equalsIgnoreCase(epPath.get(i)))
-                  {
-                     parts.remove(0);
-                  }
-                  else
-                  {
-                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The endpoint.path is not match the start of apiPath but it should have");
-                  }
-               }
-            }
-
-            for (String wildcard : endpoint.getIncludePaths())
-            {
-               if (Endpoint.pathMatches(wildcard, path))
-               {
-                  List<String> matchParts = Utils.explode("/", wildcard);
-                  List<String> pathParts = Utils.explode("/", path);
-                  for (int i = 0; i < matchParts.size(); i++)
-                  {
-                     if (i >= pathParts.size())
-                        break;
-
-                     String matchPart = matchParts.get(i);
-
-                     while (matchPart.startsWith("[") && matchPart.endsWith("]"))
-                     {
-                        matchPart = matchPart.substring(1, matchPart.length() - 1);
-                     }
-
-                     if (matchPart.startsWith("{") && matchPart.endsWith("}"))
-                     {
-                        int end = matchPart.indexOf(":");
-                        end = end > 0 ? end : matchPart.lastIndexOf("}");
-                        if (end < 0)
-                           end = matchPart.length() - 1;
-
-                        String key = matchPart.substring(1, end).trim();
-                        if (key.length() > 0)
-                        {
-                           String value = pathParts.get(i);
-                           params.put(key, value);
-                        }
-                     }
-                  }
-               }
-            }
-
-            subpath = Utils.implode("/", parts) + "/";
-
-            int idx = 0;
-            if (parts.size() > idx)
-               collectionKey = parts.get(idx++);
-
-            if (collectionKey == null)
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Your request is missing a collection key");
-
-            if (parts.size() > idx)
-               entityKey = parts.get(idx++);
-
-            if (parts.size() > idx)
-               subCollectionKey = parts.get(idx++);
-         }
-      }
+      this.endpoint = endpoint;
       return this;
    }
 
@@ -402,24 +312,29 @@ public class Request
       return json;
    }
 
+   public String getParam(String name)
+   {
+      return url.getParam(name);
+   }
+
    public void putParam(String name, String value)
    {
-      params.put(name, value);
+      url.putParam(name, value);
    }
 
    public Map<String, String> getParams()
    {
-      return (Map<String, String>) params.asMap();
+      return url.getParams();
    }
 
    public String removeParam(String param)
    {
-      return (String) params.remove(param);
+      return url.removeParam(param);
    }
 
    public void clearParams()
    {
-      params.clear();
+      url.clearParams();
    }
 
    /**
@@ -487,12 +402,6 @@ public class Request
          headers.put(key, value);
    }
 
-   public String getParam(String key)
-   {
-      String val = (String) params.get(key);
-      return val;
-   }
-
    public Api getApi()
    {
       return api;
@@ -506,6 +415,12 @@ public class Request
    public String getPath()
    {
       return path;
+   }
+
+   public Request withPath(String path)
+   {
+      this.path = path;
+      return this;
    }
 
    public String getQuery()
@@ -541,14 +456,37 @@ public class Request
       return this;
    }
 
+   public Request withApi(Api api)
+   {
+      this.api = api;
+      return this;
+   }
+
+   public String getApiPath()
+   {
+      return apiPath;
+   }
+
    public String getApiUrl()
    {
+      String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? url.getPort() : "") + "/" + apiPath;
       return apiUrl;
    }
 
-   public Request withApiUrl(String apiUrl)
+   public Request withApiPath(String apiUrl)
    {
-      this.apiUrl = apiUrl;
+      this.apiPath = apiUrl;
+      return this;
+   }
+
+   public String getEndpointPath()
+   {
+      return endpointPath;
+   }
+
+   public Request withEndpointPath(String endpointPath)
+   {
+      this.endpointPath = endpointPath;
       return this;
    }
 
@@ -565,13 +503,7 @@ public class Request
 
    public String getApiCode()
    {
-      return apiCode;
-   }
-
-   public Request withApiCode(String apiCode)
-   {
-      this.apiCode = apiCode;
-      return this;
+      return api.getApiCode();
    }
 
    public String getTenantCode()
@@ -605,6 +537,16 @@ public class Request
    {
       this.subpath = subpath;
       return this;
+   }
+
+   public int getRetryAttempts()
+   {
+      return retryAttempts;
+   }
+
+   public void setRetryAttempts(int retryAttempts)
+   {
+      this.retryAttempts = retryAttempts;
    }
 
    public String getRemoteAddr()
@@ -765,7 +707,7 @@ public class Request
 
    public Request withTerm(String token, Object... terms)
    {
-      withParam(Term.term(null, token, terms).toString(), null);
+      url.withParam(Term.term(null, token, terms).toString(), null);
       return this;
    }
 

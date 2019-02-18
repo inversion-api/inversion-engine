@@ -98,7 +98,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          req.putParam("source", defaultSource);
       }
 
-      Collection collection = req.getCollectionKey() != null ? req.getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
+      Collection collection = req.getCollectionKey() != null ? req.getCollection() : null;//getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
 
       ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getParams());
 
@@ -153,7 +153,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url, json, headers);
 
-      Response r = HttpUtils.post(url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = null;//HttpUtils.service("post", url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -278,7 +278,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       res.debug(url + "?pretty", payload.toString(), headers);
 
-      Response r = HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      Response r = null;//HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
 
       if (r.isSuccess())
       {
@@ -527,14 +527,14 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
    private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
-      Collection collection = api.getCollection(req.getCollectionKey(), ElasticsearchDb.class);
+      Collection collection = req.getCollection();//api.getCollection(req.getCollectionKey(), ElasticsearchDb.class);
 
       if (collection == null)
       {
          throw new ApiException(SC.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
       }
 
-      if (!(collection.getEntity().getTable().getDb() instanceof ElasticsearchDb))
+      if (!(collection.getDb() instanceof ElasticsearchDb))
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
       }

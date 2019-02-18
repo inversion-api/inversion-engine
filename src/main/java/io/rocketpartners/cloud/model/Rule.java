@@ -50,7 +50,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return System.identityHashCode(this) + " - " + name;
    }
 
-   public abstract void setApi(Api api);
+   public abstract R withApi(Api api);
    //   {
    //      this.api = api;
    //      api.addEndpoint(this);
@@ -156,7 +156,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       boolean included = false;
       boolean excluded = false;
 
-      if (methods.size() == 0 || methods.contains(method))
+      if (isMethod(method))
       {
          if (includePaths.size() == 0)
          {
@@ -190,6 +190,16 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    }
 
+   public boolean isMethod(String... methods)
+   {
+      for (String method : methods)
+      {
+         if(method != null && this.methods.contains(method.toLowerCase()))
+            return true;
+      }
+      return false;
+   }
+   
    public List<String> getMethods()
    {
       return new ArrayList(methods);
@@ -209,6 +219,10 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public void addMethod(String method)
    {
+      if(method == null)
+         return;
+      
+      method = method.toLowerCase();
       if (!methods.contains(method))
          methods.add(method);
    }
@@ -284,7 +298,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       try
       {
          config.clear();
-         config.putAll(Url.parseQuery(queryString));
+         config.putAll(Utils.parseQueryString(queryString));
          //config.load(new ByteArrayInputStream(propertiesString.getBytes()));
       }
       catch (Exception ex)

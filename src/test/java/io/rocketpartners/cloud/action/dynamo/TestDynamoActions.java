@@ -170,15 +170,19 @@ public class TestDynamoActions extends TestCase
       res = service.service("GET", "northwind/sql/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
       json = res.getJson();
       System.out.println(json);
-      
-//      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
-//      json = res.getJson();
-//      System.out.println(json);
+
+      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
+      //      json = res.getJson();
+      //      System.out.println(json);
       assertEquals(json.find("meta.pageSize"), 100);
-            assertEquals(json.find("meta.rowCount"), 7);
-            assertEquals(json.find("data.0.orderid"), 10501);
+      assertEquals(json.find("meta.rowCount"), 7);
+      assertEquals(json.find("data.0.orderid"), 10501);
 
       json.getArray("data").stream().forEach(e -> service.post("northwind/dynamodb/orders", e));
+
+      res = service.service("GET", "northwind/dynamo/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
+      json = res.getJson();
+      System.out.println(json);
 
    }
 

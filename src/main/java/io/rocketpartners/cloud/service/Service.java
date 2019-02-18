@@ -30,10 +30,10 @@ import io.rocketpartners.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
+import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.PropsConfig;
@@ -134,10 +134,19 @@ public class Service
       return service(method, url, null);
    }
 
+   public Request request(String method, String url, String body)
+   {
+      Request req = new Request(method, url, body);
+      req.withService(this);
+      
+      return req;
+   }
+   
    public Response service(String method, String url, String body)
    {
-      Url u = new Url(url);
-      Request req = new Request(u, method, new HashMap(), u.getParams(), body);
+      Request req = new Request(method, url, body);
+      req.withService(this);
+      
       Response res = new Response();
 
       service(req, res);
@@ -149,8 +158,8 @@ public class Service
       if (!inited)
          init();
 
-      Chain chain = null;
-      String method = req.getMethod();
+      Chain chain = ChainLocal.push(this, req, res);
+      res.withChain(chain);
 
       //--
       //-- CORS header setup
@@ -174,7 +183,7 @@ public class Service
       //--
       //-- End CORS Header Setup
 
-      if (method.equalsIgnoreCase("options"))
+      if (req.isMethod("options"))
       {
          //this is a CORS preflight request. All of hte work was done bove
          res.withStatus(SC.SC_200_OK);
@@ -187,31 +196,114 @@ public class Service
          return chain;
       }
 
-      Api api = null;
+      String xfp = req.getHeader("X-Forwarded-Proto");
+      String xfh = req.getHeader("X-Forwarded-Host");
+      if (xfp != null || xfh != null)
+      {
+         if (xfp != null)
+            req.getUrl().withProtocol(xfp);
+
+         if (xfh != null)
+            req.getUrl().withHost(xfh);
+      }
 
       try
       {
-         String xfp = req.getHeader("X-Forwarded-Proto");
-         String xfh = req.getHeader("X-Forwarded-Host");
-         if (xfp != null || xfh != null)
-         {
-            if (xfp != null)
-               req.getUrl().setProtocol(xfp);
+         Url url = req.getUrl();
 
-            if (xfh != null)
-               req.getUrl().setHost(xfh);
+         String urlPath = url.getPath();
+         List<String> parts = Utils.explode("/", urlPath);
+
+         List<String> apiPath = new ArrayList();
+
+         if (!Utils.empty(servletMapping))
+         {
+            for (String servletPath : Utils.explode("/", servletMapping))
+            {
+               apiPath.add(servletPath);
+               parts.remove(0);
+            }
          }
 
-         String apiUrl = null;
-         ApiMatch match = findApi(method, req.getUrl());
-         if (match != null)
+         if (parts.size() > 0)
          {
-            api = match.api;
-            apiUrl = match.apiUrl;
-            req.withApi(match);
+            for (Api a : apis)
+            {
+               if (!((apis.size() == 1 && a.getApiCode() == null) || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
+                  continue;
+
+               //TODO: WB 2/13/19 api will only init itself once but
+               //not sure if this is the most elegant place for this
+               a.init();
+               req.withApi(a);
+               
+               if (parts.get(0).equalsIgnoreCase((a.getApiCode())))
+               {
+                  apiPath.add(parts.remove(0));
+               }
+
+               if (a.isMultiTenant() && parts.size() > 0)
+               {
+                  String tenantCode = parts.remove(0);
+                  apiPath.add(tenantCode);
+                  req.withTenantCode(tenantCode);
+               }
+               
+
+               String remainingPath = Utils.implode("/", parts); //find the endpoint that matches the fewest path segments
+               for (int i = 0; i <= parts.size(); i++)
+               {
+                  String endpointPath = i == 0 ? "" : Utils.implode("/", parts.subList(0, i));
+                  
+                  for (Endpoint e : a.getEndpoints())
+                  {
+                     if (e.matches(req.getMethod(), endpointPath) //
+                           && e.matches(req.getMethod(), remainingPath))
+                     {
+                        req.withEndpointPath(endpointPath);
+                        req.withEndpoint(e);
+
+                        if (i < parts.size())
+                        {
+                           String collectionKey = parts.get(i);
+                           
+                           req.withCollectionKey(collectionKey);
+                           i += 1;
+                           
+                           for(io.rocketpartners.cloud.model.Collection collection : a.getCollections())
+                           {
+                              if(collectionKey.equalsIgnoreCase(collection.getName()))
+                              {
+                                 if(collection.matches(req.getMethod(),  endpointPath))
+                                 {
+                                    req.withCollection(collection);
+                                    break;
+                                 }
+                              }
+                           }
+                        }
+                        if (i < parts.size())
+                        {
+                           req.withEntityKey(parts.get(i));
+                           i += 1;
+                        }
+                        if (i < parts.size())
+                        {
+                           req.withSubCollectionKey(parts.get(i));
+                        }
+                        break;
+                     }
+                  }
+
+                  if (req.getEndpoint() != null)
+                     break;
+               }
+            }
          }
 
-         if (match == null || match.api.isDebug() || match.reqUrl.getHost().equals("localhost"))
+         //---------------------------------
+
+         if (req.getEndpoint() == null || req.getUrl().getHost().equals("localhost"))
          {
             res.debug("");
             res.debug("");
@@ -226,12 +318,12 @@ public class Service
             //            }
          }
 
-         if (match == null)
+         if (req.getApi() == null)
          {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "No API found matching URL: \"" + req.getUrl() + "\"");
+            throw new ApiException(SC.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
          }
 
-         if (match.endpoint == null)
+         if (req.getEndpoint() == null)
          {
             //check to see if a non plural version of the collection endpoint 
             //was passed in, if it was redirect to the plural version
@@ -239,11 +331,11 @@ public class Service
                return chain;
          }
 
-         if (match.endpoint == null)
+         if (req.getEndpoint() == null)
          {
             String buff = "";
-            for (Endpoint e : api.getEndpoints())
-               buff += e.getMethods() + " path: " + e.getPath() +  " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+            for (Endpoint e : req.getApi().getEndpoints())
+               buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
             throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
          }
@@ -253,8 +345,24 @@ public class Service
             throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
          }
 
-         chain = doService(this, null, match, req, res);
+         //this will get all actions specifically configured on the endpoint
+         List<Action> actions = req.getEndpoint().getActions(req);
+
+         //this matches for actions that can run across multiple endpoints.
+         //this might be something like an authorization or logging action
+         //that acts like a filter
+         for (Action a : req.getApi().getActions())
+         {
+            if (a.matches(req.getMethod(), req.getPath()))
+               actions.add(a);
+         }
+         Collections.sort(actions);
+
+         chain.withActions(actions).go();
+
          ConnectionLocal.commit();
+
+         return chain;
       }
       catch (Throwable ex)
       {
@@ -301,6 +409,7 @@ public class Service
       {
          try
          {
+
             ConnectionLocal.close();
          }
          catch (Throwable t)
@@ -391,110 +500,6 @@ public class Service
       }
    }
 
-   /**
-    * This method is designed to be called by handlers who want to "go back through the front door"
-    * for additional functionality.
-    */
-   public Response include(Chain parent, String method, String url, String body) throws Exception
-   {
-      if (!url.startsWith("http:") && !url.startsWith("https:"))
-      {
-         String apiUrl = parent.getRequest().getApiUrl();
-         if (!apiUrl.endsWith("/"))
-            apiUrl += "/";
-
-         while (url.startsWith("/"))
-            url = url.substring(1, url.length());
-
-         url = apiUrl + url;
-      }
-
-      Api api = null;
-      String apiUrl = null;
-      ApiMatch match = findApi(method, new Url(url));
-      if (match != null)
-      {
-         api = match.api;
-         apiUrl = match.apiUrl;
-      }
-
-      if (match == null)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No api found matching " + method + " " + url);
-      }
-
-      Request req = new Request(match);//method, new Url(url), api, match, apiUrl);
-      req.withUser(parent.getRequest().getUser());
-      req.withBody(body);
-
-      Response res = new Response();
-      Endpoint endpoint = findEndpoint(api, req.getMethod(), req.getPath());
-
-      if (endpoint == null)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "No endpoint found matching " + method + " " + url);
-      }
-
-      try
-      {
-         doService(this, parent, match, req, res);
-      }
-      catch (Throwable ex)
-      {
-         String status = SC.SC_500_INTERNAL_SERVER_ERROR;
-
-         if (ex instanceof ApiException)
-         {
-            log.error("Error in Service", ex);
-            status = ((ApiException) ex).getStatus();
-         }
-         else
-         {
-            log.error("Error in Service", ex);
-         }
-
-         res.withStatus(status);
-         JSObject response = new JSObject("message", ex.getMessage());
-         if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
-            response.put("error", Utils.getShortCause(ex));
-
-         res.withJson(response);
-      }
-      finally
-      {
-         parent.getResponse().withChanges(res.getChanges());
-      }
-
-      return res;
-   }
-
-   protected Chain doService(Service service, Chain parent, ApiMatch match, Request req, Response res) throws Exception
-   {
-      //this will get all actions specifically configured on the endpoint
-      List<Action> actions = match.endpoint.getActions(req);
-
-      //this matches for actions that can run across multiple endpoints.
-      //this might be something like an authorization or logging action
-      //that acts like a filter
-      for (Action a : match.api.getActions())
-      {
-         if (a.matches(req.getMethod(), req.getPath()))
-            actions.add(a);
-      }
-      Collections.sort(actions);
-
-      //TODO: filter all request params for security -- "restrict" && "require"
-
-      Chain chain = new Chain(this, match.api, match.endpoint, actions, req, res);
-      if (res.getChain() == null)
-         res.withChain(chain);
-
-      chain.setParent(parent);
-      chain.go();
-
-      return chain;
-   }
-
    boolean redirectPlural(Request req, Response res)
    {
       String collection = req.getCollectionKey();
@@ -520,118 +525,6 @@ public class Service
       return false;
    }
 
-   public static class ApiMatch
-   {
-      public Api      api      = null;
-      public Endpoint endpoint = null;
-      public String   method   = null;
-      public Url      reqUrl   = null;
-      public String   apiUrl   = null;
-      public String   apiPath  = null;
-
-      public ApiMatch(Api api, Endpoint endpoint, String method, Url reqUrl, String apiUrl, String apiPath)
-      {
-         this.api = api;
-         this.endpoint = endpoint;
-         this.method = method;
-         this.reqUrl = reqUrl;
-         this.apiUrl = apiUrl;
-         this.apiPath = apiPath;
-      }
-   }
-
-   ApiMatch findApi(String method, Url url) throws Exception
-   {
-      String path = url.getPath() + "";
-
-      String host = url.getHost();
-      //      if (host.indexOf(".") != host.lastIndexOf("."))//if this is a three part host name hostKey.domain.com
-      //      {
-      //         accountCode = host.substring(0, host.indexOf("."));
-      //      }
-
-      for (Api a : apis)
-      {
-         //String fullPath = "/" + a.getAccountCode() + "/" + a.getApiCode() + "/";
-         String halfPath = "/" + a.getApiCode() + "/";
-
-         if (!Utils.empty(servletMapping))
-         {
-            //fullPath = "/" + J.implode("/", servletMapping, fullPath) + "/";
-            halfPath = "/" + Utils.implode("/", servletMapping, halfPath) + "/";
-         }
-
-         //         if ((accountCode == null && path.startsWith(fullPath)) || //  form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-         //               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(fullPath)) || //form: https://host.com/[${servletPath}]/${accountCode}/${apiCode}/
-         //               (accountCode != null && accountCode.equals(a.getAccountCode()) && path.startsWith(halfPath)) || //https://${accountCode}.host.com/[${servletPath}]/${apiCode}/
-         //               (a.getAccountCode().equalsIgnoreCase(a.getApiCode()) && )) //http/host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing
-         if (path.startsWith(halfPath))
-         {
-
-            //TODO: WB 2/13/19 api will only init itself once but
-            //not sure if this is the most elegant place for this
-            a.init();
-
-            //            if (path.startsWith(fullPath))
-            //            {
-            //               path = fullPath;
-            //            }
-            //            else
-            {
-               path = halfPath;
-            }
-
-            String apiUrl = url.toString();
-            int idx = apiUrl.indexOf(path);
-            apiUrl = apiUrl.substring(0, idx + path.length());
-
-            if (a.isMultiTenant())
-            {
-               String u = url.toString();
-               int start = apiUrl.length();
-               int end = u.indexOf('/', start);
-               if (end < 0)
-                  end = u.length();
-               String tenantId = u.substring(start, end);
-
-               if (!apiUrl.endsWith("/"))
-                  apiUrl += "/";
-               apiUrl += tenantId;
-            }
-
-            if (!apiUrl.endsWith("/"))
-               apiUrl += "/";
-
-            String reqUrl = url.toString();
-
-            if (reqUrl.indexOf("?") > 0)
-               reqUrl = reqUrl.substring(0, reqUrl.indexOf("?"));
-
-            path = reqUrl.substring(apiUrl.length(), reqUrl.length());
-            while (path.startsWith("/"))
-               path = path.substring(1, path.length());
-
-            if (!path.endsWith("/"))
-               path = path + "/";
-
-            Endpoint endpoint = null;
-            for (Endpoint e : a.getEndpoints())
-            {
-               if (e.matches(method, path))
-               {
-                  endpoint = e;
-                  break;
-               }
-            }
-
-            return new ApiMatch(a, endpoint, method, url, apiUrl, path);
-         }
-      }
-
-      return null;
-
-   }
-
    Endpoint findEndpoint(Api api, String method, String path)
    {
       for (Endpoint endpoint : api.getEndpoints())
@@ -640,25 +533,6 @@ public class Service
             return endpoint;
       }
       return null;
-   }
-
-   public Db getDb(Api api, String collectionKey, Class dbClass) throws ApiException
-   {
-      Db db = null;
-
-      if (collectionKey != null)
-      {
-         db = api.findDb(collectionKey, dbClass);
-      }
-
-      if (db == null)
-      {
-         if (api.getDbs() == null || api.getDbs().size() == 0)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There are no database connections configured for this API.");
-         db = api.getDbs().get(0);
-      }
-
-      return db;
    }
 
    public List<Api> getApis()
@@ -732,7 +606,7 @@ public class Service
 
    public static String buildLink(Request req, String collectionKey, Object entityKey, String subCollectionKey)
    {
-      String url = req.getApiUrl();
+      String url = req.getApiPath();
 
       if (!Utils.empty(collectionKey))
       {

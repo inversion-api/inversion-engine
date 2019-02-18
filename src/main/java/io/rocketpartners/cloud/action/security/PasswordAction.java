@@ -72,7 +72,7 @@ public class PasswordAction extends Action<PasswordAction>
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
                JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
-               service.include(chain, "PUT", url, body.toString());
+               service.put(url, body.toString());
             }
          }
       }

@@ -80,10 +80,14 @@ public class AclRule extends Rule
    }
 
    @Override
-   public void setApi(Api api)
+   public AclRule withApi(Api api)
    {
-      this.api = api;
-      api.addAclRule(this);
+      if (this.api != api)
+      {
+         this.api = api;
+         api.addAclRule(this);
+      }
+      return this;
    }
 
    public ArrayList<Permission> getPermissions()

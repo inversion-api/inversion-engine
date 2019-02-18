@@ -82,11 +82,11 @@ public class SqlSuggestAction extends SqlAction
       String firstProp = propertyList.get(0);
       String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
 
-      Collection collection = req.getApi().getCollection(collectionKey, SqlDb.class);
+      Collection collection = req.getCollection();//getApi().getCollection(collectionKey, SqlDb.class);
       if (collection == null)
          throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
-      SqlDb db = (SqlDb) collection.getEntity().getTable().getDb();
+      SqlDb db = (SqlDb) collection.getDb();
 
       SqlQuery query = new SqlQuery(collection, req.getParams());
 
@@ -102,7 +102,7 @@ public class SqlSuggestAction extends SqlAction
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 
-         String tableName = SqlUtils.check(api.getCollection(collectionKey, SqlDb.class).getEntity().getTable().getName());
+         String tableName = SqlUtils.check(req.getCollection().getEntity().getTable().getName());
          String column = SqlUtils.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
          sql += " \r\nSELECT DISTINCT " + query.asCol(column) + " AS " + searchProp + " FROM " + query.asCol(tableName) + " WHERE " + query.asCol(column) + " LIKE '%" + SqlUtils.check(value) + "%' AND " + query.asCol(column) + " != ''";

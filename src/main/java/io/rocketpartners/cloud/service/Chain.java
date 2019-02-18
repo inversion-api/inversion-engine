@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
@@ -29,9 +30,55 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Chain
 {
+   public static class ChainLocal
+   {
+      static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
+
+      protected static Stack<Chain> get()
+      {
+         Stack stack = chainLocal.get();
+         if (stack == null)
+         {
+            stack = new Stack();
+            chainLocal.set(stack);
+         }
+         return stack;
+      }
+
+      public static Chain peek()
+      {
+         Stack<Chain> stack = get();
+         if (!stack.empty())
+            return stack.peek();
+         return null;
+
+      }
+
+      public static Chain push(Service service, Request req, Response res)
+      {
+         Chain child = new Chain(service, req, res);
+
+         Chain parent = peek();
+         if (parent != null)
+            child.setParent(parent);
+
+         get().push(child);
+
+         return child;
+      }
+
+      public static Chain pop()
+      {
+         return get().pop();
+      }
+
+      public static int size()
+      {
+         return get().size();
+      }
+   }
+
    Service            service  = null;
-   Api                api      = null;
-   Endpoint           endpoint = null;
    List<Action>       actions  = new ArrayList();
    Request            request  = null;
    Response           response = null;
@@ -43,12 +90,9 @@ public class Chain
 
    Chain              parent   = null;
 
-   public Chain(Service service, Api api, Endpoint endpoint, List<Action> actions, Request req, Response res)
+   private Chain(Service service, Request req, Response res)
    {
       this.service = service;
-      this.api = api;
-      this.endpoint = endpoint;
-      setActions(actions);
       this.request = req;
       this.response = res;
    }
@@ -114,7 +158,7 @@ public class Chain
    {
       LinkedHashSet values = new LinkedHashSet();
 
-      String value = endpoint.getConfig(key);
+      String value = request.getEndpoint().getConfig(key);
       if (value != null)
       {
          values.addAll(Utils.explode(",", value));
@@ -144,7 +188,7 @@ public class Chain
 
    public String getConfig(String key, String defaultValue)
    {
-      String value = endpoint.getConfig(key);
+      String value = request.getEndpoint().getConfig(key);
       if (!Utils.empty(value))
       {
          return value;
@@ -173,7 +217,7 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
-         action.run(service, api, endpoint, this, request, response);
+         action.run(service, request.getApi(), request.getEndpoint(), this, request, response);
          return true;
       }
       return false;
@@ -196,12 +240,12 @@ public class Chain
 
    public Api getApi()
    {
-      return api;
+      return request.getApi();
    }
 
    public Endpoint getEndpoint()
    {
-      return endpoint;
+      return request.getEndpoint();
    }
 
    public List<Action> getActions()
@@ -209,19 +253,22 @@ public class Chain
       return new ArrayList(actions);
    }
 
-   public void setActions(List<Action> actions)
+   public Chain withActions(List<Action> actions)
    {
       this.actions.clear();
       for (Action action : actions)
       {
-         addAction(action);
+         withAction(action);
       }
+      return this;
    }
 
-   public void addAction(Action action)
+   public Chain withAction(Action action)
    {
       if (action != null && !actions.contains(action))
          actions.add(action);
+
+      return this;
    }
 
    public Request getRequest()

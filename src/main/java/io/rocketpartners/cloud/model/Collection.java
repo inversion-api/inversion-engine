@@ -18,9 +18,8 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Collection
+public class Collection extends Rule
 {
-   protected Api          api     = null;
    protected Entity       entity  = null;
    protected String       name    = null;
    protected List<String> aliases = new ArrayList();
@@ -41,6 +40,19 @@ public class Collection
    public Collection(Table table)
    {
       withTable(table);
+   }
+
+   public boolean isMethod(String... methods)
+   {
+      return this.methods.size() == 0 || super.isMethod(methods);
+   }
+
+   public boolean matches(String method, String path)
+   {
+      if(exclude)
+         return false;
+      
+      return super.matches(method, path);
    }
 
    public Collection withTable(Table table)
@@ -102,13 +114,14 @@ public class Collection
     * the entity and it's table have been set. 
     * @param api the api to set
     */
-   public void withApi(Api api)
+   public Collection withApi(Api api)
    {
       if (api != null && this.api != api)
       {
          this.api = api;
          api.withCollection(this);
       }
+      return this;
    }
 
    /**
@@ -117,6 +130,11 @@ public class Collection
    public Entity getEntity()
    {
       return entity;
+   }
+
+   public Db getDb()
+   {
+      return getEntity().getTable().getDb();
    }
 
    public Entity withEntity(Table table)

@@ -21,6 +21,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Api
 {
@@ -150,54 +151,61 @@ public class Api
       return null;
    }
 
-   public Db findDb(String collection, Class dbClass)
+   public <D extends Db> D findDb(String collectionName, Class<D> dbClass)
    {
-      Collection c = getCollection(collection, dbClass);
-      if (c != null)
-         return c.getEntity().getTable().getDb();
-
-      return null;
-   }
-
-   public Collection getCollection(String name)
-   {
-      return getCollection(name, null);
-   }
-
-   public Collection getCollection(String name, Class dbClass) throws ApiException
-   {
-      for (Collection collection : collections)
+      for (Collection collection : getCollections())
       {
-         if (collection.getName().equalsIgnoreCase(name))
+         if (collectionName.equalsIgnoreCase(collection.getName()))
          {
-            if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
-               return collection;
-         }
-      }
-
-      for (Collection collection : collections)
-      {
-         // This loop is done separately from the one above to allow 
-         // collections to have precedence over aliases
-         for (String alias : collection.getAliases())
-         {
-            if (name.equalsIgnoreCase(alias))
+            if (dbClass.isAssignableFrom(collection.getDb().getClass()))
             {
-               if (dbClass == null || dbClass.isAssignableFrom(collection.getEntity().getTable().getDb().getClass()))
-                  return collection;
+               return (D) collection.getDb();
             }
          }
       }
 
-      if (dbClass != null)
-      {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
-      }
-      else
-      {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
-      }
+      return null;
    }
+
+   //   public Collection getCollection(String name)
+   //   {
+   //      return getCollection(name, null);
+   //   }
+   //
+   ////   public Collection getCollection(String name, Class dbClass) throws ApiException
+   //   {
+   //      for (Collection collection : collections)
+   //      {
+   //         if (collection.getName().equalsIgnoreCase(name))
+   //         {
+   //            if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
+   //               return collection;
+   //         }
+   //      }
+   //
+   //      for (Collection collection : collections)
+   //      {
+   //         // This loop is done separately from the one above to allow 
+   //         // collections to have precedence over aliases
+   //         for (String alias : collection.getAliases())
+   //         {
+   //            if (name.equalsIgnoreCase(alias))
+   //            {
+   //               if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
+   //                  return collection;
+   //            }
+   //         }
+   //      }
+   //
+   //      if (dbClass != null)
+   //      {
+   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
+   //      }
+   //      else
+   //      {
+   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
+   //      }
+   //   }
 
    public Collection getCollection(Table tbl)
    {
@@ -370,7 +378,7 @@ public class Api
          endpoints.add(endpoint);
 
       if (endpoint.getApi() != this)
-         endpoint.setApi(this);
+         endpoint.withApi(this);
 
       return this;
    }
@@ -389,6 +397,20 @@ public class Api
 
    public <T extends Action> T withAction(T action)
    {
+      return withAction(action, null, null);
+   }
+   
+   public <T extends Action> T withAction(T action, String methods, String includePaths)
+   {
+      for(String method :Utils.explode(",",  methods))
+      {
+         action.withMethods(method);
+      }
+      
+      for(String path :Utils.explode(",",  includePaths))
+      {
+         action.withIncludePaths(path);
+      }
       addAction(action);
       return action;
    }
@@ -411,7 +433,7 @@ public class Api
          actions.add(action);
 
       if (action.getApi() != this)
-         action.setApi(this);
+         action.withApi(this);
    }
 
    public void addAclRule(AclRule acl)
@@ -423,7 +445,7 @@ public class Api
       }
 
       if (acl.getApi() != this)
-         acl.setApi(this);
+         acl.withApi(this);
    }
 
    public void setAclRules(List<AclRule> acls)

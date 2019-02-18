@@ -436,7 +436,7 @@ public class ScriptAction extends Action<ScriptAction>
       if (script == null && !Utils.empty(scriptsCollection))
       {
          String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
-         Response r = chain.getService().include(chain, "GET", url, null);
+         Response r = chain.getService().get(url);
          if (r.getStatusCode() == 200)
          {
             JSArray dataArr = r.getJson().getArray("data");
