@@ -49,7 +49,7 @@ public class Controller implements InitializingBean
    @Autowired
    protected Environment    environment;
 
-   @Autowired
+   @Autowired(required = false)
    protected Service        service = null;
 
    protected Servlet        servlet = new Servlet();
@@ -79,10 +79,10 @@ public class Controller implements InitializingBean
    {
       try
       {
-         if (service != null)
-         {
-            servlet.setService(service);
-         }
+         if(service == null)
+            service = new Service();
+         
+         servlet.setService(service);
 
          String[] activeProfiles = environment.getActiveProfiles();
          String profile = null;
