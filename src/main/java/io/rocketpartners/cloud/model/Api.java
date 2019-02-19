@@ -219,7 +219,7 @@ public class Api
    {
       for (Collection collection : collections)
       {
-         if (collection.getEntity().getTable() == tbl)
+         if (collection.getTable() == tbl)
             return collection;
       }
       return null;
@@ -239,7 +239,7 @@ public class Api
    {
       for (Collection collection : collections)
       {
-         if (collection.getEntity().getTable() == table)
+         if (collection.getTable() == table)
             return collection.getEntity();
       }
 

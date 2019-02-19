@@ -248,7 +248,7 @@ public class DynamoDb extends Db<DynamoDb>
 
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Collection collection)
    {
-      return getDynamoTable(collection.getEntity().getTable().getName());
+      return getDynamoTable(collection.getTable().getName());
    }
 
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)

@@ -63,7 +63,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    {
 
       Collection collection = findCollectionOrThrow404(api, chain, req);
-      Table table = collection.getEntity().getTable();
+      Table table = collection.getTable();
       ElasticsearchDb db = (ElasticsearchDb) table.getDb();
 
       // examples...

@@ -202,7 +202,7 @@ public class SqlGetAction extends SqlAction
 
       Map rqlParams = req.getParams();
 
-      //Stmt stmt = rql.createStmt(sql, collection != null ? collection.getEntity().getTable() : null, rqlParams, replacer);
+      //Stmt stmt = rql.createStmt(sql, collection != null ? collection.getTable() : null, rqlParams, replacer);
       //stmt.setMaxRows(chain.getConfig("maxRows", maxRows)); //this is a default value
 
       query.withSelectSql(sql);
@@ -579,7 +579,7 @@ public class SqlGetAction extends SqlAction
             }
             else if (rel.isManyToOne()) //MANY_TO_ONE - Location.id <- Player.locationId
             {
-               String relTbl = childCollection.getEntity().getTable().getName();
+               String relTbl = childCollection.getTable().getName();
 
                String parentPkCol = rel.getFkCol1().getPk().getName();
                String childFkCol = rel.getFkCol1().getName();

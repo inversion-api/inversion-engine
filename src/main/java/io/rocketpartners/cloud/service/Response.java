@@ -215,7 +215,7 @@ public class Response
       return this;
    }
 
-   public Response withRecord(JSObject record)
+   public Response withRecord(Object record)
    {
       data().add(record);
       return this;
@@ -228,6 +228,30 @@ public class Response
 
    public Response withMeta(String key, Object value)
    {
+      return this;
+   }
+
+   public Response withRowCount(int rowCount)
+   {
+      json.getObject("meta").put("rowCount", rowCount);
+      return this;
+   }
+
+   public Response withPageSize(int pageSize)
+   {
+      json.getObject("meta").put("pageSize", pageSize);
+      return this;
+   }
+
+   public Response withPageNum(int pageNum)
+   {
+      json.getObject("meta").put("pageNum", pageNum);
+      return this;
+   }
+
+   public Response withPageCount(int pageCount)
+   {
+      json.getObject("meta").put("pageCount", pageCount);
       return this;
    }
 

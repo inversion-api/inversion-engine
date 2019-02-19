@@ -24,58 +24,26 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.Rows.Row;
 
-/**
- * @author tc-rocket
- *
- * Endpoint/Action Config
- *  - appendTenantIdToPk :        Enables appending the tenant id to the primary key
- *                                FORMAT: collection name (comma separated)
- *
- */
 public class DynamoDbGetAction extends DynamoDbAction
 {
-
-   protected String nextKeyDelimeter = "~";
-
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      Collection collection = req.getCollection();//api.getCollection(req.getCollectionKey(), DynamoDb.class);
-      Table table = collection.getEntity().getTable();
+      Collection collection = req.getCollection();
+      Table table = collection.getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
-
-      //      String tenantIdOrCode = null;
-      //      if (req.getApi().isMultiTenant())
-      //      {
-      //         tenantIdOrCode = req.removeParam("tenantId");
-      //         if (tenantIdOrCode == null)
-      //         {
-      //            tenantIdOrCode = req.getTenantCode();
-      //         }
-      //      }
 
       DynamoDbQuery query = new DynamoDbQuery(collection, req.getParams());
       DynamoResult dynamoResult = query.doSelect(dynamoTable);
 
-      JSArray returnData = new JSArray();
+      res.withPageSize(query.page().getPageSize())//
+         .withPageNum(query.page().getPageNum());
 
       for (Object js : dynamoResult.rows)
       {
-         returnData.add((JSObject) js);
+         res.withRecord(js);
       }
-
-      JSObject meta = new JSObject("pageSize", query.page().getPageSize(), "results", returnData.size());
-      //      if (returnNext != null)
-      //      {
-      //         meta.put("next", returnNext);
-      //      }
-      JSObject wrapper = new JSObject("meta", meta, "data", returnData);
-      res.withJson(wrapper);
-
    }
 }

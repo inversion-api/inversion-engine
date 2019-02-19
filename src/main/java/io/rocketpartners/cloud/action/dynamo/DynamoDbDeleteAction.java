@@ -47,7 +47,7 @@ public class DynamoDbDeleteAction extends DynamoDbAction
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Collection collection = req.getCollection();//api.getCollection(req.getCollectionKey(), DynamoDb.class);
-      Table table = collection.getEntity().getTable();
+      Table table = collection.getTable();
       DynamoDb db = (DynamoDb) table.getDb();
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
       DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);

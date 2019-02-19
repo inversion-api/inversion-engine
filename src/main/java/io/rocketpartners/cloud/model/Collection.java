@@ -136,6 +136,11 @@ public class Collection extends Rule
    {
       return getEntity().getTable().getDb();
    }
+   
+   public Table getTable()
+   {
+      return getEntity().getTable();
+   }
 
    public Entity withEntity(Table table)
    {

@@ -121,7 +121,7 @@ public class TestDynamoActions extends TestCase
             public void onInit(Service service)
             {
                dynamoDb.bootstrapApi();
-               
+
                //Api api = service.getApi(apiCode).withDb(dynamoDb).getApi();
                //      Db dynamoDb = .withTable(dynamoTbl)//
                //                                           .withColumn("hk", "S")//
@@ -193,19 +193,18 @@ public class TestDynamoActions extends TestCase
       assertEquals(json.find("meta.rowCount"), 25);
       assertEquals(json.find("data.0.orderid"), 11058);
 
-      for(Object o : json.getArray("data"))
+      for (Object o : json.getArray("data"))
       {
-         JSObject js = (JSObject)o;
+         JSObject js = (JSObject) o;
          js.put("type", "ORDER");
-         if(service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
+         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
             fail();
       }
 
       res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
       json = res.getJson();
       System.out.println(json);
-      assertEquals(json.find("meta.rowCount"), 7);
-      
+      assertEquals(json.getArray("data").length(), 7);
 
    }
 

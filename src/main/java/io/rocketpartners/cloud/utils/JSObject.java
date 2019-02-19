@@ -99,6 +99,16 @@ public class JSObject implements Map<String, Object>
       return null;
    }
 
+   public JSObject findObject(String path)
+   {
+      return (JSObject) find(path);
+   }
+
+   public JSArray findArray(String path)
+   {
+      return (JSArray) find(path);
+   }
+
    public Object find(String path)
    {
       List<String> props = Utils.explode("\\.", path);
