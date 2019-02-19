@@ -17,7 +17,7 @@ import junit.framework.TestCase;
 public class TestSqlActions extends TestCase
 {
    public static final int     TABLE_ORDERS_ROWS = 830;
-   public static final int     DEFAULT_MAX_ROWS  = 10;
+   public static final int     DEFAULT_MAX_ROWS  = 100;
 
    static boolean              initedDb          = false;
 

@@ -31,6 +31,8 @@ package io.rocketpartners.cloud.rql;
  */
 public class Page<T extends Page, P extends Query> extends Builder<T, P>
 {
+   public static final int DEFAULT_LIMIT = 100;
+
    public Page(P query)
    {
       super(query);
@@ -72,6 +74,9 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
 
       if (limit < 0)
          limit = findInt("page", 1, -1);
+
+      if (limit < 0)
+         limit = DEFAULT_LIMIT;
 
       return limit;
    }

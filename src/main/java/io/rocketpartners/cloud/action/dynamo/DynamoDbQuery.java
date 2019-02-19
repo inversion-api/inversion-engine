@@ -32,6 +32,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
+import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -247,7 +248,14 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String sortKeyCol = getColumnName(sortKey.getToken(0));
          Object sortKeyVal = cast(sortKeyCol, sortKey.getToken(1));
 
+         ChainLocal.debug("DynamoDb GetItemSpec -> partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
+
          return new GetItemSpec().withPrimaryKey(partKeyCol, partKeyVal, sortKeyCol, sortKeyVal);
+      }
+
+      if (partKey != null)
+      {
+         toString(keyExpr, partKey, valueMap);
       }
 
       if (sortKey != null)
@@ -270,48 +278,77 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
       if (partKey != null && partKey.getTerm(1).isLeaf())
       {
+         String debug = "DynamoDb QuerySpec -> maxPageSize=" + pageSize + " scanIndexForward=" + order().isAsc(0);
+
          QuerySpec querySpec = new QuerySpec();//
          querySpec.withMaxPageSize(pageSize);
          querySpec.withMaxResultSize(pageSize); //todo are these aliases or actually have different function?
-
          querySpec.withScanIndexForward(order().isAsc(0));
 
          List columns = select().getColumnNames();
          if (columns.size() > 0)
-            querySpec.withProjectionExpression(Utils.implode(",", columns));
+         {
+            String projectionExpression = Utils.implode(",", columns);
+            querySpec.withProjectionExpression(projectionExpression);
+
+            debug += " projectionExpression=" + projectionExpression;
+         }
 
          if (filterExpr.length() > 0)
          {
             querySpec.withFilterExpression(filterExpr.toString());
+
+            debug += " filterExpression=" + filterExpr;
          }
 
          if (valueMap.size() > 0)
+         {
             querySpec.withValueMap(valueMap);
+
+            debug += " valueMap=" + valueMap;
+         }
 
          if (keyExpr.length() > 0)
          {
             querySpec.withKeyConditionExpression(keyExpr.toString());
+
+            debug += " keyConditionExpression=" + keyExpr;
          }
 
+         ChainLocal.debug(debug);
          return querySpec;
       }
       else
       {
+         String debug = "DynamoDb QuerySpec -> maxPageSize=" + pageSize;
+
          ScanSpec scanSpec = new ScanSpec();
          scanSpec.withMaxPageSize(pageSize);
          scanSpec.withMaxResultSize(pageSize);
 
          List columns = select().getColumnNames();
          if (columns.size() > 0)
-            scanSpec.withProjectionExpression(Utils.implode(",", columns));
+         {
+            String projectionExpression = Utils.implode(",", columns);
+            scanSpec.withProjectionExpression(projectionExpression);
+
+            debug += " projectionExpression=" + projectionExpression;
+         }
 
          if (filterExpr.length() > 0)
          {
             scanSpec.withFilterExpression(filterExpr.toString());
+
+            debug += " filterExpression=" + filterExpr;
          }
          if (valueMap.size() > 0)
+         {
             scanSpec.withValueMap(valueMap);
 
+            debug += " valueMap=" + valueMap;
+         }
+
+         ChainLocal.debug(debug);
          return scanSpec;
       }
    }
@@ -329,7 +366,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          {
             toString(buff, term.getTerm(i), valueMap);
             if (i < term.getNumTerms() - 1)
-               buff.append(" ").append(toString(buff, term.getTerm(i), valueMap)).append(" ");
+            {
+               space(buff).append(toString(buff, term.getTerm(i), valueMap)).append(" ");
+            }
          }
          buff.append(")");
       }
@@ -339,7 +378,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
 
          if (buff.length() > 0)
-            buff.append(" and ");
+         {
+            space(buff).append("and ");
+         }
 
          buff.append(col).append(" ").append(op).append(" ").append(expr);
       }
@@ -353,10 +394,18 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String key = ":" + attr;
          valueMap.put(key, value);
 
-         buff.append(" ").append(key);
+         space(buff).append(key);
       }
 
       return buff.toString();
+   }
+   
+   StringBuffer space(StringBuffer buff)
+   {
+      if(buff.length() > 0 && buff.charAt(buff.length()-1) != ' ')
+         buff.append(' ');
+      
+      return buff;
    }
 
    public Object cast(String colName, Object value)

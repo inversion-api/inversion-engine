@@ -76,6 +76,11 @@ public class Chain
       {
          return get().size();
       }
+
+      public static void debug(Object... msgs)
+      {
+         peek().getResponse().debug(msgs);
+      }
    }
 
    Service            service  = null;

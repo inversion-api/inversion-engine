@@ -93,11 +93,11 @@ import junit.framework.TestCase;
 public class TestDynamoActions extends TestCase
 {
 
-   public static void main(String[] args) throws Exception
-   {
-      TestDynamoActions tests = new TestDynamoActions();
-      tests.test1();
-   }
+   //   public static void main(String[] args) throws Exception
+   //   {
+   //      TestDynamoActions tests = new TestDynamoActions();
+   //      tests.test1();
+   //   }
 
    static Map<String, Service> services = new HashMap();
 
@@ -166,6 +166,29 @@ public class TestDynamoActions extends TestCase
                api.withCollection(orders);
                api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
 
+               //      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+               //      json = res.getJson();
+               //      System.out.println(json);
+               //
+               //      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
+               //      //      json = res.getJson();
+               //      //      System.out.println(json);
+               //      assertEquals(json.find("meta.pageSize"), 100);
+               //      assertEquals(json.find("meta.rowCount"), 25);
+               //      assertEquals(json.find("data.0.orderid"), 11058);
+               //
+               //      for (Object o : json.getArray("data"))
+               //      {
+               //         Node js = (Node) o;
+               //         js.put("type", "ORDER");
+               //         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
+               //            fail();
+               //      }
+
+               //      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
+               //      json = res.getJson();
+               //      System.out.println(json);
+               //      assertEquals(json.getArray("data").length(), 7);
             }
 
          });
@@ -176,42 +199,40 @@ public class TestDynamoActions extends TestCase
    }
 
    @Test
-   public void test1() throws Exception
+   public void testC() throws Exception
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
       Node json = null;
 
-//      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-//      json = res.getJson();
-//      System.out.println(json);
-//
-//      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
-//      //      json = res.getJson();
-//      //      System.out.println(json);
-//      assertEquals(json.find("meta.pageSize"), 100);
-//      assertEquals(json.find("meta.rowCount"), 25);
-//      assertEquals(json.find("data.0.orderid"), 11058);
-//
-//      for (Object o : json.getArray("data"))
-//      {
-//         Node js = (Node) o;
-//         js.put("type", "ORDER");
-//         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
-//            fail();
-//      }
-
-//      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
-//      json = res.getJson();
-//      System.out.println(json);
-//      assertEquals(json.getArray("data").length(), 7);
-//      
-      
-      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058&type=ORDER");
+      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
       json = res.getJson();
-      System.out.println(json);
-      assertEquals(json.getArray("data").length(), 7);
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "QuerySpec", "valueMap={:orderid=11058}", "keyConditionExpression=hk = :orderid");
 
    }
 
+   @Test
+   public void testD() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058&type=ORDER");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "GetItemSpec", "partKeyCol=hk", "partKeyVal=11058", "sortKeyCol=sk", "sortKeyVal=ORDER");
+   }
+
+   void assertDebug(Response resp, String... matches)
+   {
+      for (String match : matches)
+         if (resp.getDebug().indexOf(match) < 0)
+            fail("missing debug match: " + match);
+   }
 }
