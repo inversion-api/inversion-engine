@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.rocketpartners.cloud.action.firehose;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -5,19 +20,12 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
 
-import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
-import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class FirehoseDb extends Db
 {
-   protected String      awsAccessKey   = null;
-   protected String      awsSecretKey   = null;
-   protected String      awsRegion      = null;
-
    /**
     * A CSV of pipe delimited collection name to table name pairs.
     * 
@@ -27,21 +35,25 @@ public class FirehoseDb extends Db
     * 
     * Example: firehosedb.includeStreams=liftck-player9-impression
     */
-   protected String      includeStreams;
+   protected String                includeStreams = null;
 
-   AmazonKinesisFirehose firehoseClient = null;
+   protected String                awsAccessKey   = null;
+   protected String                awsSecretKey   = null;
+   protected String                awsRegion      = null;
+
+   protected AmazonKinesisFirehose firehoseClient = null;
+
+   public FirehoseDb()
+   {
+      this.withType("firehose");
+   }
 
    @Override
    public void bootstrapApi() throws Exception
    {
-      AmazonKinesisFirehose firehoseClient = getFirehoseClient();
-
-      this.withType("firehose");
-
       if (!Utils.empty(includeStreams))
       {
-         String[] parts = includeStreams.split(",");
-         for (String part : parts)
+         for (String part : Utils.explode(",", includeStreams))
          {
             String[] arr = part.split("\\|");
             String collectionName = arr[0];
@@ -54,20 +66,10 @@ public class FirehoseDb extends Db
             Table table = new Table(this, streamName);
             withTable(table);
 
-            Collection collection = new Collection();
-            if (!collectionName.endsWith("s"))
-               collectionName = English.plural(collectionName);
+            if (arr.length == 1)//a specific collection name was not supplied by the config
+               collectionName = beautifyCollectionName(collectionName);
 
-            collection.withName(collectionName);
-
-            Entity entity = new Entity();
-            entity.withTable(table);
-            entity.withHint(table.getName());
-            entity.withCollection(collection);
-
-            collection.withEntity(entity);
-
-            api.withCollection(collection);
+            api.withCollection(table, collectionName);
          }
       }
       else
@@ -85,6 +87,7 @@ public class FirehoseDb extends Db
             if (this.firehoseClient == null)
             {
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
+
                if (!Utils.empty(awsRegion))
                   builder.withRegion(awsRegion);
 
@@ -100,6 +103,30 @@ public class FirehoseDb extends Db
       }
 
       return firehoseClient;
+   }
+
+   public FirehoseDb withAwsRegion(String awsRegion)
+   {
+      this.awsRegion = awsRegion;
+      return this;
+   }
+
+   public FirehoseDb withAwsAccessKey(String awsAccessKey)
+   {
+      this.awsAccessKey = awsAccessKey;
+      return this;
+   }
+
+   public FirehoseDb withAwsSecretKey(String awsSecretKey)
+   {
+      this.awsSecretKey = awsSecretKey;
+      return this;
+   }
+
+   public FirehoseDb withIncludeStreams(String includeStreams)
+   {
+      this.includeStreams = includeStreams;
+      return this;
    }
 
 }

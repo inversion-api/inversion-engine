@@ -44,7 +44,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    @Override
    public void bootstrapApi() throws Exception
    {
-      this.withType("ElasticsearchDb");
+      this.withType("elasticsearch");
 
       reflectDb();
       configApi();

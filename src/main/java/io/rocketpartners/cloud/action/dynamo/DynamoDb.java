@@ -77,11 +77,12 @@ public class DynamoDb extends Db<DynamoDb>
 
    public DynamoDb()
    {
-
+      this.withType("dynamodb");
    }
 
    public DynamoDb(String name, String includeTables)
    {
+      this();
       this.name = name;
       this.includeTables = includeTables;
    }
@@ -89,10 +90,6 @@ public class DynamoDb extends Db<DynamoDb>
    @Override
    public void bootstrapApi()
    {
-      this.dynamoClient = getDynamoClient();
-
-      this.withType("dynamodb");
-
       if (includeTables != null)
       {
          Map<String, String[]> blueprintRowMap = new HashMap<>();
@@ -122,10 +119,9 @@ public class DynamoDb extends Db<DynamoDb>
                collectionName = beautifyCollectionName(collectionName);
             }
 
-            
-            Table table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
+            Table table = buildTable(tableName, blueprintRowMap.get(collectionName));
             withTable(table);
-            
+
             Collection collection = buildCollection(collectionName, table);
             api.withCollection(collection);
          }
@@ -138,8 +134,9 @@ public class DynamoDb extends Db<DynamoDb>
 
    }
 
-   Table buildTable(String tableName, String[] bluePrintArr, AmazonDynamoDB dynamoClient)
+   Table buildTable(String tableName, String[] bluePrintArr)
    {
+      AmazonDynamoDB dynamoClient = getDynamoClient();
 
       Table table = new Table(this, tableName);
 
@@ -230,17 +227,23 @@ public class DynamoDb extends Db<DynamoDb>
    {
       if (this.dynamoClient == null)
       {
-         AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
-         if (!Utils.empty(awsRegion))
+         synchronized (this)
          {
-            builder.withRegion(awsRegion);
+            if (this.dynamoClient == null)
+            {
+               AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
+               if (!Utils.empty(awsRegion))
+               {
+                  builder.withRegion(awsRegion);
+               }
+               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
+               {
+                  BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+                  builder.withCredentials(new AWSStaticCredentialsProvider(creds));
+               }
+               this.dynamoClient = builder.build();
+            }
          }
-         if (!Utils.empty(awsAccessKey))
-         {
-            BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
-            builder.withCredentials(new AWSStaticCredentialsProvider(creds));
-         }
-         this.dynamoClient = builder.build();
       }
 
       return dynamoClient;

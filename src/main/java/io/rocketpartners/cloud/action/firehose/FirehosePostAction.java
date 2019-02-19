@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.rocketpartners.cloud.action.firehose;
 
 import java.nio.ByteBuffer;
@@ -11,6 +26,7 @@ import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
@@ -65,13 +81,6 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       if (!req.isMethod("PUT", "POST"))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
 
-      String collectionKey = req.getCollectionKey();
-      Collection col = req.getCollection();//api.getCollection(collectionKey, FirehoseDb.class);
-      Table table = col.getEntity().getTable();
-      String streamName = table.getName();
-
-      AmazonKinesisFirehose firehose = ((FirehoseDb) table.getDb()).getFirehoseClient();
-
       JSObject body = req.getJson();
 
       if (body == null)
@@ -82,11 +91,43 @@ public class FirehosePostAction extends Action<FirehosePostAction>
 
       JSArray array = (JSArray) body;
 
-      List<Record> batch = new ArrayList();
+      Collection collection = req.getCollection();
+      Table table = collection.getTable();
 
+      String streamName = table.getName();
+      AmazonKinesisFirehose firehose = ((FirehoseDb) table.getDb()).getFirehoseClient();
+
+      List<Record> batch = new ArrayList();
       for (int i = 0; i < array.length(); i++)
       {
          Object data = array.get(i);
+
+         if (data instanceof JSObject)
+         {
+            //remap from attribute to column names if this db has been configured with them
+            //this db/action can be used without collection attribute definitions and the 
+            //json will just be thrown into the stream as is
+
+            List<Attribute> attrs = collection.getEntity().getAttributes();
+            if (attrs.size() > 0)
+            {
+               JSObject newJson = new JSObject();
+               JSObject oldJson = (JSObject) data;
+
+               for (Attribute attr : attrs)
+               {
+                  //reorder the properties with their column names
+                  Object value = oldJson.remove(attr.getName());
+                  newJson.put(attr.getColumn().getName(), value);
+               }
+               for (String key : oldJson.keySet())
+               {
+                  //add any remaining unmapped attributes
+                  newJson.put(key, oldJson.get(key));
+               }
+               data = newJson;
+            }
+         }
 
          if (data == null)
             continue;
@@ -112,4 +153,29 @@ public class FirehosePostAction extends Action<FirehosePostAction>
 
       res.withStatus(SC.SC_201_CREATED);
    }
+
+   public FirehosePostAction withBatchMax(int batchMax)
+   {
+      this.batchMax = batchMax;
+      return this;
+   }
+
+   public FirehosePostAction withJsonSeparator(String jsonSeparator)
+   {
+      this.jsonSeparator = jsonSeparator;
+      return this;
+   }
+
+   public FirehosePostAction withJsonPrettyPrint(boolean jsonPrettyPrint)
+   {
+      this.jsonPrettyPrint = jsonPrettyPrint;
+      return this;
+   }
+
+   public FirehosePostAction withJsonLowercaseNames(boolean jsonLowercaseNames)
+   {
+      this.jsonLowercaseNames = jsonLowercaseNames;
+      return this;
+   }
+
 }
