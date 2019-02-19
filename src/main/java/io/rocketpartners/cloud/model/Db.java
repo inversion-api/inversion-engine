@@ -24,12 +24,12 @@ import org.slf4j.LoggerFactory;
 
 import io.rocketpartners.cloud.utils.English;
 
-public class Db
+public class Db<T extends Db>
 {
    protected Api              api       = null;
 
    protected Logger           log       = LoggerFactory.getLogger(getClass());
-   boolean                    bootstrap = true;
+   protected boolean          bootstrap = true;
 
    protected String           name      = null;
    protected String           type      = null;
@@ -58,34 +58,6 @@ public class Db
    {
    }
 
-   public boolean isType(String... types)
-   {
-      if (this.type == null)
-         return false;
-
-      for (String type : types)
-      {
-         if (this.type.equalsIgnoreCase(type))
-            return true;
-      }
-      return false;
-   }
-
-   public Table getTable(String tableName)
-   {
-      for (Table t : tables)
-      {
-         if (t.getName().equalsIgnoreCase(tableName))
-            return t;
-      }
-      return null;
-   }
-
-   public void removeTable(Table table)
-   {
-      tables.remove(table);
-   }
-
    public Column getColumn(String table, String col)
    {
       for (Table t : tables)
@@ -106,6 +78,21 @@ public class Db
       return null;
    }
 
+   public Table getTable(String tableName)
+   {
+      for (Table t : tables)
+      {
+         if (t.getName().equalsIgnoreCase(tableName))
+            return t;
+      }
+      return null;
+   }
+
+   public void removeTable(Table table)
+   {
+      tables.remove(table);
+   }
+
    /**
     * @return the tables
     */
@@ -114,29 +101,32 @@ public class Db
       return tables;
    }
 
+   public Table withTable(String name)
+   {
+      Table table = new Table(this, name);
+      withTable(table);
+      return table;
+   }
+
    /**
     * @param tables the tables to set
     */
-   public void setTables(List<Table> tbls)
+   public T withTables(List<Table> tbls)
    {
-      this.tables.clear();
       for (Table table : tbls)
-         addTable(table);
+         withTable(table);
+
+      return (T) this;
    }
 
-   public void addTable(Table tbl)
+   public T withTable(Table tbl)
    {
       if (tbl != null && !tables.contains(tbl))
       {
          tables.add(tbl);
+         tbl.withDb(this);
       }
-   }
-
-   public Table withTable(String name)
-   {
-      Table table = new Table(this, name);
-      addTable(table);
-      return table;
+      return (T) this;
    }
 
    /**
@@ -150,9 +140,23 @@ public class Db
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public T withName(String name)
    {
       this.name = name;
+      return (T) this;
+   }
+
+   public boolean isType(String... types)
+   {
+      if (this.type == null)
+         return false;
+
+      for (String type : types)
+      {
+         if (this.type.equalsIgnoreCase(type))
+            return true;
+      }
+      return false;
    }
 
    public String getType()
@@ -160,9 +164,59 @@ public class Db
       return type;
    }
 
-   public void setType(String type)
+   public T withType(String type)
    {
       this.type = type;
+      return (T) this;
+   }
+
+   public T withApi(Api api)
+   {
+      if (this.api != api)
+      {
+         this.api = api;
+         api.addDb(this);
+      }
+      return (T) this;
+   }
+
+   public Api getApi()
+   {
+      return api;
+   }
+
+   public boolean isBootstrap()
+   {
+      return bootstrap;
+   }
+
+   public T withBootstrap(boolean bootstrap)
+   {
+      this.bootstrap = bootstrap;
+      return (T) this;
+   }
+
+   protected String beautifyCollectionName(String inName)
+   {
+      String collectionName = inName;
+
+      if (collectionName.toUpperCase().equals(collectionName))//crappy oracle style all uppercase name
+         collectionName = collectionName.toLowerCase();
+
+      collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
+
+      if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
+         collectionName = English.plural(collectionName);
+
+      return collectionName;
+   }
+
+   protected String beautifyAttributeName(String inName)
+   {
+      if (inName.toUpperCase().equals(inName))
+         inName = inName.toLowerCase();
+
+      return inName;
    }
 
    protected String makeRelationshipName(Relationship rel)
@@ -195,34 +249,4 @@ public class Db
       return name;
    }
 
-   protected String lowercaseAndPluralizeString(String collectionName)
-   {
-      collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-
-      if (!collectionName.endsWith("s"))
-         collectionName = English.plural(collectionName);
-
-      return collectionName;
-   }
-
-   public void setApi(Api api)
-   {
-      this.api = api;
-      api.addDb(this);
-   }
-
-   public Api getApi()
-   {
-      return api;
-   }
-
-   public boolean isBootstrap()
-   {
-      return bootstrap;
-   }
-
-   public void setBootstrap(boolean bootstrap)
-   {
-      this.bootstrap = bootstrap;
-   }
 }

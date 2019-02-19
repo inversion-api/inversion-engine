@@ -32,9 +32,9 @@ public class Column implements Comparable<Column>
    protected boolean nullable = false;
    protected boolean unique   = false;
 
-   String            hint     = null;
+   protected String  hint     = null;
 
-   boolean           exclude  = false;
+   protected boolean exclude  = false;
 
    public Column()
    {
@@ -80,9 +80,10 @@ public class Column implements Comparable<Column>
    /**
     * @param primaryKey the primaryKey to set
     */
-   public void setPk(Column pk)
+   public Column withPk(Column pk)
    {
       this.pk = pk;
+      return this;
    }
 
    public boolean isFk()
@@ -101,9 +102,10 @@ public class Column implements Comparable<Column>
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public Column withName(String name)
    {
       this.name = name;
+      return this;
    }
 
    /**
@@ -117,9 +119,10 @@ public class Column implements Comparable<Column>
    /**
     * @param type the type to set
     */
-   public void setType(String type)
+   public Column withType(String type)
    {
       this.type = type;
+      return this;
    }
 
    /**
@@ -133,9 +136,14 @@ public class Column implements Comparable<Column>
    /**
     * @param tbl the tbl to set
     */
-   public void setTable(Table tbl)
+   public Column withTable(Table table)
    {
-      this.table = tbl;
+      if (this.table != table)
+      {
+         this.table = table;
+         table.withColumn(this);
+      }
+      return this;
    }
 
    /**
@@ -149,9 +157,10 @@ public class Column implements Comparable<Column>
    /**
     * @param hint the hint to set
     */
-   public void setHint(String hint)
+   public Column withHint(String hint)
    {
       this.hint = hint;
+      return this;
    }
 
    /**
@@ -165,9 +174,10 @@ public class Column implements Comparable<Column>
    /**
     * @param unique the unique to set
     */
-   public void setUnique(boolean unique)
+   public Column withUnique(boolean unique)
    {
       this.unique = unique;
+      return this;
    }
 
    public boolean isNullable()
@@ -175,9 +185,10 @@ public class Column implements Comparable<Column>
       return nullable;
    }
 
-   public void setNullable(boolean nullable)
+   public Column withNullable(boolean nullable)
    {
       this.nullable = nullable;
+      return this;
    }
 
    public boolean isExclude()
@@ -185,9 +196,10 @@ public class Column implements Comparable<Column>
       return exclude;
    }
 
-   public void setExclude(boolean exclude)
+   public Column withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
 }

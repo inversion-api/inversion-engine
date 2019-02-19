@@ -27,17 +27,17 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   Api          api          = null;
+   protected Api          api          = null;
 
-   String       name         = null;
-   int          order        = 1000;
+   protected String       name         = null;
+   protected int          order        = 1000;
 
-   Set<String>  methods      = new HashSet();
+   protected Set<String>  methods      = new HashSet();
 
-   List<String> excludePaths = new ArrayList();
-   List<String> includePaths = new ArrayList();
+   protected List<String> excludePaths = new ArrayList();
+   protected List<String> includePaths = new ArrayList();
 
-   Properties   config       = new Properties();
+   protected Properties   config       = new Properties();
 
    @Override
    public int compareTo(Rule a)
@@ -192,42 +192,54 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public boolean isMethod(String... methods)
    {
-      if(this.methods.size() == 0)
+      if (this.methods.size() == 0)
          return true;
-      
+
       for (String method : methods)
       {
-         if(method != null && this.methods.contains(method.toLowerCase()))
+         if (method != null && this.methods.contains(method.toLowerCase()))
             return true;
       }
       return false;
    }
-   
+
    public List<String> getMethods()
    {
       return new ArrayList(methods);
    }
 
-   public void setMethods(String methods)
+   public R withMethods(String methods)
    {
-      setMethods(Utils.explode(",", methods));
+      return withMethod(methods);
    }
 
-   public void setMethods(List<String> methods)
+   public R withMethods(List<String> methods)
    {
-      this.methods.clear();
       for (String method : methods)
-         addMethod(method);
+         withMethod(method);
+      return (R) this;
    }
 
-   public void addMethod(String method)
+   public R withMethods(String... methods)
    {
-      if(method == null)
-         return;
-      
-      method = method.toLowerCase();
-      if (!methods.contains(method))
-         methods.add(method);
+      for (String method : Utils.explode(",", methods))
+         withMethod(method);
+
+      return (R) this;
+   }
+
+   public R withMethod(String methods)
+   {
+      if (methods == null)
+         return (R) this;
+
+      for (String method : Utils.explode(",", methods))
+      {
+         method = method.toLowerCase();
+         if (!this.methods.contains(method))
+            this.methods.add(method);
+      }
+      return (R) this;
    }
 
    public List<String> getIncludePaths()
@@ -235,17 +247,19 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(includePaths);
    }
 
-   public void setIncludePaths(List<String> includePaths)
+   public R withIncludePaths(List<String> includePaths)
    {
       this.includePaths.clear();
       for (String includePath : includePaths)
-         addIncludePath(includePath);
+         withIncludePath(includePath);
+      return (R) this;
    }
 
-   public void addIncludePath(String includePath)
+   public R withIncludePath(String includePath)
    {
       if (!includePaths.contains(includePath))
          includePaths.add(includePath);
+      return (R) this;
    }
 
    public List<String> getExcludePaths()
@@ -253,17 +267,19 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(excludePaths);
    }
 
-   public void setExcludePaths(List<String> excludePaths)
+   public R withExcludePaths(List<String> excludePaths)
    {
       this.excludePaths.clear();
       for (String excludePath : excludePaths)
-         addExcludePath(excludePath);
+         withExcludePath(excludePath);
+      return (R) this;
    }
 
-   public void addExcludePath(String excludePath)
+   public R withExcludePath(String excludePath)
    {
       if (!excludePaths.contains(excludePath))
          excludePaths.add(excludePath);
+      return (R) this;
    }
 
    public String getName()
@@ -271,19 +287,15 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return name;
    }
 
-   public void setName(String name)
+   public R withName(String name)
    {
       this.name = name;
+      return (R) this;
    }
 
    public int getOrder()
    {
       return order;
-   }
-
-   public void setOrder(int order)
-   {
-      this.order = order;
    }
 
    public String getConfig(String key)
@@ -296,7 +308,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return config.getProperty(key, defaultValue);
    }
 
-   public void setConfig(String queryString)
+   public R withConfig(String queryString)
    {
       try
       {
@@ -308,12 +320,13 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          ex.printStackTrace();
       }
+      return (R) this;
    }
 
    public R withExcludePaths(String... paths)
    {
       for (String path : Utils.explode(",", paths))
-         addIncludePath(path);
+         withIncludePath(path);
 
       return (R) this;
    }
@@ -321,22 +334,14 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    public R withIncludePaths(String... paths)
    {
       for (String path : Utils.explode(",", paths))
-         addIncludePath(path);
-
-      return (R) this;
-   }
-
-   public R withMethods(String... methods)
-   {
-      for (String method : Utils.explode(",", methods))
-         addMethod(method);
+         withIncludePath(path);
 
       return (R) this;
    }
 
    public R withOrder(int order)
    {
-      setOrder(order);
+      this.order = order;
       return (R) this;
    }
 }

@@ -29,10 +29,10 @@ public class Relationship
    protected Column           fkCol1           = null;
    protected Column           fkCol2           = null;
 
-   Entity                     entity           = null;
-   Entity                     related          = null;
+   protected Entity           entity           = null;
+   protected Entity           related          = null;
 
-   boolean                    exclude          = false;
+   protected boolean          exclude          = false;
 
    public boolean isExcluded()
    {
@@ -59,9 +59,10 @@ public class Relationship
       return exclude;
    }
 
-   public void setExclude(boolean exclude)
+   public Relationship withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
    /**
@@ -75,9 +76,10 @@ public class Relationship
    /**
     * @param entity the entity to set
     */
-   public void setEntity(Entity entity)
+   public Relationship withEntity(Entity entity)
    {
       this.entity = entity;
+      return this;
    }
 
    /**
@@ -91,9 +93,10 @@ public class Relationship
    /**
     * @param related the related to set
     */
-   public void setRelated(Entity related)
+   public Relationship withRelated(Entity related)
    {
       this.related = related;
+      return this;
    }
 
    public boolean isManyToMany()
@@ -122,9 +125,10 @@ public class Relationship
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public Relationship withName(String name)
    {
       this.name = name;
+      return this;
    }
 
    /**
@@ -135,17 +139,18 @@ public class Relationship
       return hint;
    }
 
-   public String toString()
-   {
-      return getName() + " : " + getHint();
-   }
-
    /**
     * @param hint the hint to set
     */
-   public void setHint(String hint)
+   public Relationship withHint(String hint)
    {
       this.hint = hint;
+      return this;
+   }
+
+   public String toString()
+   {
+      return getName() + " : " + getHint();
    }
 
    /**
@@ -159,9 +164,10 @@ public class Relationship
    /**
     * @param type the type to set
     */
-   public void setType(String type)
+   public Relationship withType(String type)
    {
       this.type = type;
+      return this;
    }
 
    /**
@@ -175,9 +181,10 @@ public class Relationship
    /**
     * @param fkCol1 the fkCol1 to set
     */
-   public void setFkCol1(Column fkCol1)
+   public Relationship withFkCol1(Column fkCol1)
    {
       this.fkCol1 = fkCol1;
+      return this;
    }
 
    /**
@@ -191,9 +198,10 @@ public class Relationship
    /**
     * @param fkCol2 the fkCol2 to set
     */
-   public void setFkCol2(Column fkCol2)
+   public Relationship withFkCol2(Column fkCol2)
    {
       this.fkCol2 = fkCol2;
+      return this;
    }
 
 }

@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.action.sql.SqlDb;
+import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
@@ -121,17 +122,23 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       for (int i = 0; i < result.rows.size(); i++)
       {
          Map map = (Map)result.rows.get(i);
-         JSObject json = new JSObject(map);
-         result.rows.set(i, json);
+         JSObject json = new JSObject();
+         
+         result.rows.set(i,  json);
 
-         for (String key : json.keySet())
+         //this preservers attribute order
+         for(Attribute attr : collection.getEntity().getAttributes())
          {
-            String attrName = collection.getAttributeName(key);
-            if (attrName != null && !attrName.equals(key))
-            {
-               Object value = json.remove(key);
-               json.put(attrName, value);
-            }
+            String colName = attr.getColumn().getName();
+            Object value = map.remove(colName);
+            json.put(attr.getName(),  value);
+         }
+         
+         //copy remaining columns that were in result set but not defined in the entity
+         //TODO...do we really want to do this?
+         for(Object key : map.keySet())
+         {
+            json.put(key.toString(),  map.get(key));
          }
       }
 

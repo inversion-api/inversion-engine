@@ -319,7 +319,7 @@ public class Request
 
    public void putParam(String name, String value)
    {
-      url.putParam(name, value);
+      url.withParam(name, value);
    }
 
    public Map<String, String> getParams()

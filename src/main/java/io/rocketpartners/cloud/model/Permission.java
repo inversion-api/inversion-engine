@@ -17,7 +17,7 @@ package io.rocketpartners.cloud.model;
 
 public class Permission
 {
-   String name = null;
+   protected String name = null;
 
    public Permission()
    {
@@ -26,7 +26,7 @@ public class Permission
 
    public Permission(String name)
    {
-      setName(name);
+      withName(name);
    }
 
    public String getName()
@@ -44,9 +44,10 @@ public class Permission
       return name != null ? name.hashCode() : Permission.class.hashCode();
    }
 
-   public void setName(String permission)
+   public Permission withName(String permission)
    {
       this.name = permission.toLowerCase();
+      return this;
    }
 
    public boolean equals(Object o)

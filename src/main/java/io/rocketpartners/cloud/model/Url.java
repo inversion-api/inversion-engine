@@ -342,7 +342,7 @@ public class Url
       params.put(name, value);
       return this;
    }
-   
+
    public String getParam(String param)
    {
       return (String) params.get(param);
@@ -356,11 +356,6 @@ public class Url
    public String removeParam(String param)
    {
       return (String) params.remove(param);
-   }
-
-   public void putParam(String name, String value)
-   {
-      params.put(name, value);
    }
 
    public void clearParams()

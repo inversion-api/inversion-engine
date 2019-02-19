@@ -17,9 +17,9 @@ package io.rocketpartners.cloud.model;
 
 public class Change
 {
-   String method        = null;
-   String collectionKey = null;
-   Object entityKey     = null;
+   protected String method        = null;
+   protected String collectionKey = null;
+   protected Object entityKey     = null;
 
    public Change(String method, String collectionKey, Object entityKey)
    {
@@ -34,9 +34,10 @@ public class Change
       return method;
    }
 
-   public void setMethod(String method)
+   public Change withMethod(String method)
    {
       this.method = method;
+      return this;
    }
 
    public String getCollectionKey()
@@ -44,9 +45,10 @@ public class Change
       return collectionKey;
    }
 
-   public void setCollectionKey(String collectionKey)
+   public Change withCollectionKey(String collectionKey)
    {
       this.collectionKey = collectionKey;
+      return this;
    }
 
    public Object getEntityKey()
@@ -54,9 +56,10 @@ public class Change
       return entityKey;
    }
 
-   public void setEntityKey(Object entityKey)
+   public Change withEntityKey(Object entityKey)
    {
       this.entityKey = entityKey;
+      return this;
    }
 
 }

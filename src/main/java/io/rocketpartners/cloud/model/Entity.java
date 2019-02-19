@@ -20,14 +20,14 @@ import java.util.List;
 
 public class Entity
 {
-   Table                   table         = null;
-   Collection              collection    = null;
-   ArrayList<Attribute>    keys          = new ArrayList();
-   ArrayList<Attribute>    attributes    = new ArrayList();
-   ArrayList<Relationship> relationships = new ArrayList();
-   String                  hint          = null;
+   protected Table                   table         = null;
+   protected Collection              collection    = null;
+   protected ArrayList<Attribute>    keys          = new ArrayList();
+   protected ArrayList<Attribute>    attributes    = new ArrayList();
+   protected ArrayList<Relationship> relationships = new ArrayList();
+   protected String                  hint          = null;
 
-   boolean                 exclude       = false;
+   protected boolean                 exclude       = false;
 
    public Entity()
    {
@@ -149,17 +149,18 @@ public class Entity
    /**
     * @param relationships the relationships to set
     */
-   public void setRelationships(List<Relationship> relationships)
+   public Entity withRelationships(List<Relationship> relationships)
    {
-      this.relationships.clear();
       for (Relationship rel : relationships)
-         addRelationship(rel);
+         withRelationship(rel);
+      return this;
    }
 
-   public void addRelationship(Relationship relationship)
+   public Entity withRelationship(Relationship relationship)
    {
       if (relationship != null && !relationships.contains(relationship))
          relationships.add(relationship);
+      return this;
    }
 
    public void removeRelationship(Relationship relationship)
@@ -207,29 +208,30 @@ public class Entity
    /**
     * @param hint the hint to set
     */
-   public void setHint(String hint)
+   public Entity withHint(String hint)
    {
       this.hint = hint;
+      return this;
    }
 
    public Attribute getKey()
    {
-//      Table table = getTable();
-//      if (table != null)
-//      {
-//         for (Index index : table.getIndexes())
-//         {
-//            if (index.isUnique() && index.getColumns().size() == 1)
-//            {
-//               Column col = index.getColumns().get(0);
-//               for (Attribute attr : getAttributes())
-//               {
-//                  if (attr.getColumn() == col)
-//                     return attr;
-//               }
-//            }
-//         }
-//      }
+      //      Table table = getTable();
+      //      if (table != null)
+      //      {
+      //         for (Index index : table.getIndexes())
+      //         {
+      //            if (index.isUnique() && index.getColumns().size() == 1)
+      //            {
+      //               Column col = index.getColumns().get(0);
+      //               for (Attribute attr : getAttributes())
+      //               {
+      //                  if (attr.getColumn() == col)
+      //                     return attr;
+      //               }
+      //            }
+      //         }
+      //      }
       return null;
    }
 

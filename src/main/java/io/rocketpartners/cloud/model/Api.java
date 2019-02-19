@@ -25,30 +25,30 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Api
 {
-   protected transient Service service     = null;
+   protected transient Service   service     = null;
 
-   protected String            name        = null;
-   boolean                     debug       = false;
+   protected String              name        = null;
+   protected boolean             debug       = false;
 
-   protected int               id          = 0;
+   protected int                 id          = 0;
 
-   protected String            apiCode     = null;
-   protected boolean           multiTenant = false;
-   protected String            url         = null;
+   protected String              apiCode     = null;
+   protected boolean             multiTenant = false;
+   protected String              url         = null;
 
-   protected List<Db>          dbs         = new ArrayList();
-   protected List<Endpoint>    endpoints   = new ArrayList();
-   protected List<Action>      actions     = new ArrayList();
-   protected List<AclRule>     aclRules    = new ArrayList();
+   protected List<Db>            dbs         = new ArrayList();
+   protected List<Endpoint>      endpoints   = new ArrayList();
+   protected List<Action>        actions     = new ArrayList();
+   protected List<AclRule>       aclRules    = new ArrayList();
 
-   protected List<Collection>  collections = new ArrayList();
+   protected List<Collection>    collections = new ArrayList();
 
-   transient long              loadTime    = 0;
-   protected String            hash        = null;
+   protected transient long      loadTime    = 0;
+   protected String              hash        = null;
 
-   transient Hashtable         cache       = new Hashtable();
+   protected transient Hashtable cache       = new Hashtable();
 
-   transient boolean           inited      = false;
+   protected transient boolean   inited      = false;
 
    public Api()
    {
@@ -325,7 +325,7 @@ public class Api
          dbs.add(db);
 
       if (db.getApi() != this)
-         db.setApi(this);
+         db.withApi(this);
    }
 
    public <T extends Db> T withDb(T db)

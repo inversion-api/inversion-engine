@@ -22,8 +22,8 @@ public class Role
    //   public static String ADMIN  = "admin";
    //   public static String OWNER  = "owner";
 
-   String name  = null;
-   int    level = -1;
+   protected String name  = null;
+   protected int    level = -1;
 
    public Role()
    {
@@ -40,9 +40,10 @@ public class Role
       return name;
    }
 
-   public void setName(String role)
+   public Role withName(String role)
    {
       this.name = role.toLowerCase();
+      return this;
    }
 
    public int getLevel()
@@ -50,9 +51,10 @@ public class Role
       return level;
    }
 
-   public void setLevel(int level)
+   public Role withLevel(int level)
    {
       this.level = level;
+      return this;
    }
 
    public int hashCode()

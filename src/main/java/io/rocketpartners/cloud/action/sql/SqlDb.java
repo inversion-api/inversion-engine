@@ -41,7 +41,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.utils.English;
 
-public class SqlDb extends Db
+public class SqlDb extends Db<SqlDb>
 {
    static Map<String, DataSource> pools                    = new HashMap();
 
@@ -302,7 +302,7 @@ public class SqlDb extends Db
             //System.out.println(tableName);
 
             Table table = new Table(this, tableName);
-            addTable(table);
+            withTable(table);
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
@@ -317,7 +317,7 @@ public class SqlDb extends Db
                boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
 
                Column column = new Column(table, columnNumber, colName, colType, nullable);
-               table.addColumn(column);
+               table.withColumn(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
                //               {
@@ -340,7 +340,7 @@ public class SqlDb extends Db
 
                if (unique)
                {
-                  column.setUnique(unique);
+                  column.withUnique(unique);
                }
 
                table.withIndex(column, idxName, idxType, unique);
@@ -372,7 +372,7 @@ public class SqlDb extends Db
 
             Column fk = getColumn(fkTableName, fkColumnName);
             Column pk = getColumn(pkTableName, pkColumnName);
-            fk.setPk(pk);
+            fk.withPk(pk);
 
             //log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
          }
@@ -387,33 +387,12 @@ public class SqlDb extends Db
          List<Column> cols = table.getColumns();
          if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
          {
-            table.setLinkTbl(true);
+            table.withLinkTbl(true);
          }
       }
    }
 
-   protected String beautifyCollectionName(String inName)
-   {
-      String collectionName = inName;
 
-      if (collectionName.toUpperCase().equals(collectionName))//crappy oracle style all uppercase name
-         collectionName = collectionName.toLowerCase();
-
-      collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-
-      if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
-         collectionName = English.plural(collectionName);
-
-      return collectionName;
-   }
-
-   protected String beautifyAttributeName(String inName)
-   {
-      if (inName.toUpperCase().equals(inName))
-         inName = inName.toLowerCase();
-
-      return inName;
-   }
 
    public void configApi() throws Exception
    {
@@ -451,34 +430,34 @@ public class SqlDb extends Db
             {
                Entity pkEntity = api.getEntity(fkCol1.getPk().getTable());
                Relationship r = new Relationship();
-               pkEntity.addRelationship(r);
-               r.setEntity(pkEntity);
+               pkEntity.withRelationship(r);
+               r.withEntity(pkEntity);
                Entity related = api.getEntity(fkCol2.getPk().getTable());
-               r.setRelated(related);
+               r.withRelated(related);
 
                String hint = "MANY_TO_MANY - ";
                hint += fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
                hint += " <- " + fkCol1.getTable().getName() + "." + fkCol1.getName() + ":" + fkCol2.getName();
                hint += " -> " + fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
 
-               r.setHint(hint);
-               r.setType(Relationship.REL_MANY_TO_MANY);
-               r.setFkCol1(fkCol1);
-               r.setFkCol2(fkCol2);
+               r.withHint(hint);
+               r.withType(Relationship.REL_MANY_TO_MANY);
+               r.withFkCol1(fkCol1);
+               r.withFkCol2(fkCol2);
 
                //Collection related = api.getCollection(fkCol2.getTbl());
-               r.setName(makeRelationshipName(r));
+               r.withName(makeRelationshipName(r));
             }
 
             //MANY_TO_MANY the other way
             {
                Entity pkEntity = api.getEntity(fkCol2.getPk().getTable());
                Relationship r = new Relationship();
-               pkEntity.addRelationship(r);
-               r.setEntity(pkEntity);
+               pkEntity.withRelationship(r);
+               r.withEntity(pkEntity);
 
                Entity related = api.getEntity(fkCol1.getPk().getTable());
-               r.setRelated(related);
+               r.withRelated(related);
 
                //r.setRelated(api.getEntity(fkCol1.getTable()));
 
@@ -487,12 +466,12 @@ public class SqlDb extends Db
                hint += " <- " + fkCol2.getTable().getName() + "." + fkCol2.getName() + ":" + fkCol1.getName();
                hint += " -> " + fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
 
-               r.setHint(hint);
-               r.setType(Relationship.REL_MANY_TO_MANY);
-               r.setFkCol1(fkCol2);
-               r.setFkCol2(fkCol1);
+               r.withHint(hint);
+               r.withType(Relationship.REL_MANY_TO_MANY);
+               r.withFkCol1(fkCol2);
+               r.withFkCol2(fkCol1);
 
-               r.setName(makeRelationshipName(r));
+               r.withName(makeRelationshipName(r));
             }
          }
          else
@@ -522,25 +501,25 @@ public class SqlDb extends Db
                      //TODO:this name may not be specific enough or certain types
                      //of relationships. For example where an entity is related
                      //to another entity twice
-                     r.setHint("MANY_TO_ONE - " + pkTbl.getName() + "." + pkCol.getName() + " <- " + fkTbl.getName() + "." + fkCol.getName());
-                     r.setType(Relationship.REL_MANY_TO_ONE);
-                     r.setFkCol1(fkCol);
-                     r.setEntity(pkEntity);
-                     r.setRelated(fkEntity);
-                     r.setName(makeRelationshipName(r));
-                     pkEntity.addRelationship(r);
+                     r.withHint("MANY_TO_ONE - " + pkTbl.getName() + "." + pkCol.getName() + " <- " + fkTbl.getName() + "." + fkCol.getName());
+                     r.withType(Relationship.REL_MANY_TO_ONE);
+                     r.withFkCol1(fkCol);
+                     r.withEntity(pkEntity);
+                     r.withRelated(fkEntity);
+                     r.withName(makeRelationshipName(r));
+                     pkEntity.withRelationship(r);
                   }
 
                   //MANY_TO_ONE
                   {
                      Relationship r = new Relationship();
-                     r.setHint("ONE_TO_MANY - " + fkTbl.getName() + "." + fkCol.getName() + " -> " + pkTbl.getName() + "." + pkCol.getName());
-                     r.setType(Relationship.REL_ONE_TO_MANY);
-                     r.setFkCol1(fkCol);
-                     r.setEntity(fkEntity);
-                     r.setRelated(pkEntity);
-                     r.setName(makeRelationshipName(r));
-                     fkEntity.addRelationship(r);
+                     r.withHint("ONE_TO_MANY - " + fkTbl.getName() + "." + fkCol.getName() + " -> " + pkTbl.getName() + "." + pkCol.getName());
+                     r.withType(Relationship.REL_ONE_TO_MANY);
+                     r.withFkCol1(fkCol);
+                     r.withEntity(fkEntity);
+                     r.withRelated(pkEntity);
+                     r.withName(makeRelationshipName(r));
+                     fkEntity.withRelationship(r);
                   }
                }
             }

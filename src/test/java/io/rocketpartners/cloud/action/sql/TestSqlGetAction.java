@@ -22,7 +22,7 @@ public class TestSqlGetAction extends TestSqlActions
 
       res = service.service("GET", "http://localhost/northwind/sql/orders");
       json = res.getJson();
-      //System.out.println(json);
+      System.out.println(json);
       assertEquals(res.getStatusCode(), 200);
       assertEquals(json.find("meta.rowCount"), TABLE_ORDERS_ROWS);
       assertEquals(json.find("meta.pageSize"), DEFAULT_MAX_ROWS);

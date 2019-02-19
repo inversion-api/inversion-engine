@@ -47,9 +47,9 @@ public class Action<A extends Action> extends Rule<A>
       {
          this.api = api;
          //intentionally not bidirectional 
-        // api.withAction(this);
+         // api.withAction(this);
       }
-      return (A)this;
+      return (A) this;
    }
 
    public String getComment()
@@ -57,14 +57,9 @@ public class Action<A extends Action> extends Rule<A>
       return comment;
    }
 
-   public void setComment(String comment)
-   {
-      this.comment = comment;
-   }
-
    public A withComment(String comment)
    {
-      setComment(comment);
+      this.comment = comment;
       return (A) this;
    }
 

@@ -125,19 +125,21 @@ public class Index
       return new ArrayList(columns);
    }
 
-   public void setColumns(List<Column> columns)
+   public Index withColumns(List<Column> columns)
    {
-      this.columns.clear();
       for (Column column : columns)
       {
          withColumn(column);
       }
+      return this;
    }
 
    public Index withColumn(Column column)
    {
       if (column != null && !columns.contains(column))
+      {
          columns.add(column);
+      }
 
       return this;
    }

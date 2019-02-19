@@ -185,9 +185,9 @@ public class AuthAction extends Action<AuthAction>
 
                if (authorized)
                {
-                  tempUser.setRequestAt(now);
-                  tempUser.setRoles(getRoles(conn, req.getApi(), tempUser));
-                  tempUser.setPermissions(getPermissions(conn, req.getApi(), tempUser));
+                  tempUser.withRequestAt(now);
+                  tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
+                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
                   if (!Utils.empty(authenticatedPerm))
                   {
                      tempUser.getPermissions().add(new Permission(authenticatedPerm));
@@ -221,7 +221,7 @@ public class AuthAction extends Action<AuthAction>
 
       if (user != null)
       {
-         user.setRequestAt(now);
+         user.withRequestAt(now);
          req.withUser(user);
 
          if (sessionReq && req.isPost())
@@ -263,8 +263,8 @@ public class AuthAction extends Action<AuthAction>
       if (user == null && !sessionReq)
       {
          user = new User();
-         user.setUsername("Anonymous");
-         user.setRoles(Arrays.asList(new Role("guest")));
+         user.withUsername("Anonymous");
+         user.withRoles(Arrays.asList(new Role("guest")));
 
          if (api.isMultiTenant())
          {
@@ -283,8 +283,8 @@ public class AuthAction extends Action<AuthAction>
                api.putCache("TENANT_ID_" + tenantCode, tenantId);
             }
 
-            user.setTenantCode(tenantCode);
-            user.setTenantId(tenantId);
+            user.withTenantCode(tenantCode);
+            user.withTenantId(tenantId);
          }
          req.withUser(user);
       }

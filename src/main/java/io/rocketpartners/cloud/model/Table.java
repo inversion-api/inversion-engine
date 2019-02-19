@@ -27,7 +27,7 @@ public class Table
    protected ArrayList<Column> columns = new ArrayList();
    protected ArrayList<Index>  indexes = new ArrayList();
 
-   boolean                     exclude = false;
+   protected boolean           exclude = false;
 
    /**
     * Set to true if this is a two column
@@ -35,7 +35,7 @@ public class Table
     * keys.  Means this is the link table
     * in a MANY_TO_MANY relationship
     */
-   boolean                     linkTbl = false;
+   protected boolean           linkTbl = false;
 
    public Table()
    {
@@ -60,9 +60,10 @@ public class Table
    /**
     * @param linkTbl the linkTbl to set
     */
-   public void setLinkTbl(boolean linkTbl)
+   public Table withLinkTbl(boolean linkTbl)
    {
       this.linkTbl = linkTbl;
+      return this;
    }
 
    public Column getColumn(String name)
@@ -91,9 +92,10 @@ public class Table
    /**
     * @param db the db to set
     */
-   public void setDb(Db db)
+   public Table withDb(Db db)
    {
       this.db = db;
+      return this;
    }
 
    /**
@@ -107,9 +109,10 @@ public class Table
    /**
     * @param name the name to set
     */
-   public void setName(String name)
+   public Table withName(String name)
    {
       this.name = name;
+      return this;
    }
 
    /**
@@ -125,24 +128,27 @@ public class Table
    /**
     * @param columns the columns to set
     */
-   public void setColumns(List<Column> cols)
+   public Table withColumns(List<Column> cols)
    {
-      this.columns.clear();
       for (Column col : cols)
-         addColumn(col);
+         withColumn(col);
+      return this;
    }
 
-   public void addColumn(Column column)
+   public Table withColumn(Column column)
    {
       if (column != null && !columns.contains(column))
+      {
          columns.add(column);
-
+         column.withTable(this);
+      }
+      return this;
    }
 
    public Table withColumn(String name, String type)
    {
       Column column = new Column(this, getColumns().size() + 1, name, type, true);
-      addColumn(column);
+      withColumn(column);
       return this;
    }
 
@@ -210,9 +216,10 @@ public class Table
       return exclude;
    }
 
-   public void setExclude(boolean exclude)
+   public Table withExclude(boolean exclude)
    {
       this.exclude = exclude;
+      return this;
    }
 
 }

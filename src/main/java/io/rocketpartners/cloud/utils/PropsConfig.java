@@ -334,7 +334,7 @@ public class PropsConfig
 
       for (Db db : api.getDbs())
       {
-         for (Table table : db.getTables())
+         for (Table table : (List<Table>)db.getTables())
          {
             if (table.isExclude())
             {

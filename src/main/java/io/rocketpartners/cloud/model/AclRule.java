@@ -23,14 +23,14 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class AclRule extends Rule
 {
-   boolean          allow       = true;
-   boolean          info        = false;
+   protected boolean          allow       = true;
+   protected boolean          info        = false;
 
-   List<Permission> permissions = new ArrayList();
-   List<Role>       roles       = new ArrayList();
+   protected List<Permission> permissions = new ArrayList();
+   protected List<Role>       roles       = new ArrayList();
 
-   List<String>     restricts   = new ArrayList();
-   List<String>     requires    = new ArrayList();
+   protected List<String>     restricts   = new ArrayList();
+   protected List<String>     requires    = new ArrayList();
 
    public boolean ruleMatches(Request req)
    {
@@ -102,22 +102,27 @@ public class AclRule extends Rule
    //         addPermission(permission);
    //   }
 
-   public void setPermissions(String permissions)
+   public AclRule withPermissions(String permissions)
    {
       this.permissions.clear();
       for (String permission : Utils.explode(",", permissions))
-         addPermission(permission);
+         withPermission(permission);
+
+      return this;
    }
 
-   public void addPermission(Permission permission)
+   public AclRule withPermission(Permission permission)
    {
       if (!permissions.contains(permission))
          permissions.add(permission);
+
+      return this;
    }
 
-   public void addPermission(String permission)
+   public AclRule withPermission(String permission)
    {
-      addPermission(new Permission(permission));
+      withPermission(new Permission(permission));
+      return this;
    }
 
    public ArrayList<Role> getRoles()
@@ -125,44 +130,53 @@ public class AclRule extends Rule
       return new ArrayList(roles);
    }
 
-   public void setRoles(List<Role> roles)
+   public AclRule withRoles(List<Role> roles)
    {
-      this.roles.clear();
       for (Role role : roles)
-         addRole(role);
+         withRole(role);
+
+      return this;
    }
 
-   public void addRole(Role role)
+   public AclRule withRole(Role role)
    {
       if (!roles.contains(role))
          roles.add(role);
+
+      return this;
    }
 
-   public void setRestricts(List<String> restricts)
+   public AclRule withRestricts(List<String> restricts)
    {
-      this.restricts.clear();
       for (String restrict : restricts)
-         addRestrict(restrict);
+         withRestrict(restrict);
+
+      return this;
    }
 
-   public void addRestrict(String restrict)
+   public AclRule withRestrict(String restrict)
    {
       if (!restricts.contains(restrict))
          restricts.add(restrict);
+
+      return this;
    }
 
-   public void setRequires(List<String> requires)
+   public AclRule withRequires(List<String> requires)
    {
       this.requires.clear();
       for (String require : requires)
       {
-         addRequire(require);
+         withRequire(require);
       }
+      return this;
    }
 
-   public void addRequire(String require)
+   public AclRule withRequire(String require)
    {
       requires.add(require);
+
+      return this;
    }
 
    public List<String> getRestricts()
@@ -180,9 +194,10 @@ public class AclRule extends Rule
       return allow;
    }
 
-   public void setAllow(boolean allow)
+   public AclRule withAllow(boolean allow)
    {
       this.allow = allow;
+      return this;
    }
 
    public boolean isInfo()
@@ -190,9 +205,10 @@ public class AclRule extends Rule
       return info;
    }
 
-   public void setInfo(boolean info)
+   public AclRule withInfo(boolean info)
    {
       this.info = info;
+      return this;
    }
 
 }

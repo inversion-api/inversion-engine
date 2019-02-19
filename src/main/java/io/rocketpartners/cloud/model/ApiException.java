@@ -17,7 +17,7 @@ package io.rocketpartners.cloud.model;
 
 public class ApiException extends RuntimeException
 {
-   String status = SC.SC_500_INTERNAL_SERVER_ERROR;
+   protected String status = SC.SC_500_INTERNAL_SERVER_ERROR;
 
 //   public static void main(String[] args)
 //   {
@@ -28,19 +28,19 @@ public class ApiException extends RuntimeException
    {
       super(status);
       if (status.matches("\\d\\d\\d .*"))
-         setStatus(status);
+         withStatus(status);
    }
 
    public ApiException(String status, String message)
    {
       super(message);
-      setStatus(status);
+      withStatus(status);
    }
 
    public ApiException(String status, String message, Throwable t)
    {
       super(message, t);
-      setStatus(status);
+      withStatus(status);
    }
 
    public String getStatus()
@@ -48,9 +48,10 @@ public class ApiException extends RuntimeException
       return status;
    }
 
-   public void setStatus(String status)
+   public ApiException withStatus(String status)
    {
       this.status = status;
+      return this;
    }
 
 }

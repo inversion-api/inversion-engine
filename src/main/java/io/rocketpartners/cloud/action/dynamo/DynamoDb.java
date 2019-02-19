@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -34,6 +36,7 @@ import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
@@ -45,9 +48,11 @@ import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class DynamoDb extends Db
+public class DynamoDb extends Db<DynamoDb>
 {
 
+   protected String       awsAccessKey = null;
+   protected String       awsSecretKey = null;
    protected String       awsRegion    = "us-east-1";
 
    /**
@@ -86,7 +91,7 @@ public class DynamoDb extends Db
    {
       this.dynamoClient = getDynamoClient();
 
-      this.setType("dynamodb");
+      this.withType("dynamodb");
 
       if (includeTables != null)
       {
@@ -112,13 +117,17 @@ public class DynamoDb extends Db
             {
                tableName = arr[1];
             }
+            else
+            {
+               collectionName = beautifyCollectionName(collectionName);
+            }
 
+            
             Table table = buildTable(tableName, blueprintRowMap.get(collectionName), dynamoClient);
-            Entity entity = buildEntity(collectionName, table);
-
-            addTable(table);
-            api.withCollection(entity.getCollection());
-
+            withTable(table);
+            
+            Collection collection = buildCollection(collectionName, table);
+            api.withCollection(collection);
          }
 
       }
@@ -142,9 +151,6 @@ public class DynamoDb extends Db
       {
          table.withColumn(attr.getAttributeName(), attr.getAttributeType());
       }
-
-      String pk = null;
-      String sk = null;
 
       DynamoDbIndex index = new DynamoDbIndex(table, DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
 
@@ -177,90 +183,26 @@ public class DynamoDb extends Db
          }
       }
 
-      // Lookup the blueprint row (the row to use to determine all the columns)
-
-      //      Map<String, Object> bluePrintMap = null;
-      //
-      //      if (bluePrintArr != null && bluePrintArr.length > 0)
-      //      {
-      //         String bluePrintPK = bluePrintArr[0];
-      //
-      //         QuerySpec querySpec = new QuerySpec()//
-      //                                              .withHashKey(pk, bluePrintPK)//
-      //                                              .withMaxPageSize(1)//
-      //                                              .withMaxResultSize(1);
-      //         if (sk != null && bluePrintArr.length > 1)
-      //         {
-      //            String bluePrintSK = bluePrintArr[1];
-      //            querySpec = querySpec.withRangeKeyCondition(new RangeKeyCondition(sk).eq(bluePrintSK));
-      //         }
-      //
-      //         ItemCollection<QueryOutcome> queryResults = dynamoTable.query(querySpec);
-      //
-      //         for (Item item : queryResults)
-      //         {
-      //            bluePrintMap = item.asMap();
-      //         }
-      //
-      //      }
-      //      else
-      //      {
-      //         ScanSpec scanSpec = new ScanSpec()//
-      //                                           .withMaxPageSize(1)//
-      //                                           .withMaxResultSize(1);
-      //
-      //         ItemCollection<ScanOutcome> scanResults = dynamoTable.scan(scanSpec);
-      //         for (Item item : scanResults)
-      //         {
-      //            bluePrintMap = item.asMap();
-      //         }
-      //      }
-
-      //      DynamoDbIndex primaryIndex = new DynamoDbIndex(table, DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
-      //      primaryIndex.addColumn(column);
-
-      //      if (bluePrintMap != null)
-      //      {
-      //         DynamoDbIndex index = new DynamoDbIndex(table, DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
-      //
-      //         int columnNumber = 0;
-      //         for (String k : bluePrintMap.keySet())
-      //         {
-      //            columnNumber += 1;
-      //            Object obj = bluePrintMap.get(k);
-      //            boolean nullable = true;
-      //            if (pk.equals(k) || (sk != null && sk.equals(k)))
-      //            {
-      //               nullable = false; // keys are not nullable
-      //            }
-      //
-      //            Column column = new Column(table, columnNumber, k, getTypeStringFromObject(obj), nullable);
-      //
-      //            if (pk.equals(k))
-      //            {
-      //               // pk column
-      //               index.setPartitionKey(pk);
-      //               index.withColumn(column);
-      //
-      //            }
-      //            if (sk != null && sk.equals(k))
-      //            {
-      //               // sk column
-      //               index.setSortKey(sk);
-      //               index.withColumn(column);
-      //            }
-      //
-      //            table.addColumn(column);
-      //         }
-      //
-      //         table.addIndex(index);
-      //      }
-
       return table;
-
    }
 
-   private void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
+   protected Collection buildCollection(String collectionName, Table table)
+   {
+      Entity entity = new Entity();
+      entity.withTable(table);
+
+      Collection collection = new Collection();
+      collection.withEntity(entity);
+      collection.withName(beautifyCollectionName(collectionName));
+
+      for (Column col : table.getColumns())
+      {
+         entity.getAttribute(col.getName()).withName(beautifyAttributeName(col.getName()));
+      }
+      return collection;
+   }
+
+   protected void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
    {
       DynamoDbIndex index = new DynamoDbIndex(table, indexName, type);
 
@@ -284,51 +226,21 @@ public class DynamoDb extends Db
       table.withIndex(index);
    }
 
-   Entity buildEntity(String collectionName, Table table)
-   {
-      Entity entity = new Entity();
-      Collection collection = new Collection();
-
-      entity.withTable(table);
-      entity.setHint(table.getName());
-      entity.withCollection(collection);
-
-      collection.withEntity(entity);
-
-      if (!collectionName.endsWith("s"))
-         collectionName = English.plural(collectionName);
-
-      collection.withName(collectionName);
-
-      DynamoDbIndex index = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
-
-      for (Column col : table.getColumns())
-      {
-         Attribute attr = new Attribute();
-         attr.withEntity(entity);
-         attr.withName(col.getName());
-         attr.withColumn(col);
-         attr.withHint(col.getTable().getName() + "." + col.getName());
-         attr.withType(col.getType());
-
-         //         if (col == index.getPartitionKey() || col == index.getSortKey())
-         //            entity.withKey(attr);
-      }
-      return entity;
-   }
-
    public AmazonDynamoDB getDynamoClient()
    {
       if (this.dynamoClient == null)
       {
-         if (Utils.empty(awsRegion))
+         AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
+         if (!Utils.empty(awsRegion))
          {
-            this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+            builder.withRegion(awsRegion);
          }
-         else
+         if (!Utils.empty(awsAccessKey))
          {
-            this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+            BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+            builder.withCredentials(new AWSStaticCredentialsProvider(creds));
          }
+         this.dynamoClient = builder.build();
       }
 
       return dynamoClient;
@@ -338,71 +250,21 @@ public class DynamoDb extends Db
    {
       return getDynamoTable(collection.getEntity().getTable().getName());
    }
-   
+
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)
    {
       return new DynamoDB(getDynamoClient()).getTable(tableName);
    }
 
-   public static DynamoDbIndex findIndexByName(Table table, String name)
-   {
-      if (table != null && table.getIndexes() != null)
-      {
-         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
-         {
-            if (index.getName().equals(name))
-            {
-               return index;
-            }
-         }
-      }
-      return null;
-   }
-
-   /*
-    * These match the string that dynamo uses for these types.
-    * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
-    */
-   public static String getTypeStringFromObject(Object obj)
-   {
-      if (obj instanceof Number)
-      {
-         return "N";
-      }
-      else if (obj instanceof Boolean)
-      {
-         return "BOOL";
-      }
-      else
-      {
-         return "S";
-      }
-   }
-   
-   public static Object cast(Object value, String type)
-   {
-      if (value == null)
-         return null;
-
-      if (type == null)
-         return value.toString();
-
-      switch (type)
-      {
-         case "N":
-            return Long.parseLong(value.toString());
-
-         case "BOOL":
-            return Boolean.parseBoolean(value.toString());
-
-         default :
-            return value.toString();
-      }
-   }
-
    public DynamoDb withIncludeTables(String includeTables)
    {
       this.includeTables = includeTables;
+      return this;
+   }
+
+   public DynamoDb withBlueprintRow(String blueprintRow)
+   {
+      this.blueprintRow = blueprintRow;
       return this;
    }
 
@@ -412,9 +274,15 @@ public class DynamoDb extends Db
       return this;
    }
 
-   public DynamoDb withBlueprintRow(String blueprintRow)
+   public DynamoDb withAwsAccessKey(String awsAccessKey)
    {
-      this.blueprintRow = blueprintRow;
+      this.awsAccessKey = awsAccessKey;
+      return this;
+   }
+
+   public DynamoDb withAwsSecretKey(String awsSecretKey)
+   {
+      this.awsSecretKey = awsSecretKey;
       return this;
    }
 
@@ -498,6 +366,62 @@ public class DynamoDb extends Db
          return null;
       }
 
+   }
+
+   public static DynamoDbIndex findIndexByName(Table table, String name)
+   {
+      if (table != null && table.getIndexes() != null)
+      {
+         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
+         {
+            if (index.getName().equals(name))
+            {
+               return index;
+            }
+         }
+      }
+      return null;
+   }
+
+   /*
+    * These match the string that dynamo uses for these types.
+    * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
+    */
+   public static String getTypeStringFromObject(Object obj)
+   {
+      if (obj instanceof Number)
+      {
+         return "N";
+      }
+      else if (obj instanceof Boolean)
+      {
+         return "BOOL";
+      }
+      else
+      {
+         return "S";
+      }
+   }
+
+   public static Object cast(Object value, String type)
+   {
+      if (value == null)
+         return null;
+
+      if (type == null)
+         return value.toString();
+
+      switch (type)
+      {
+         case "N":
+            return Long.parseLong(value.toString());
+
+         case "BOOL":
+            return Boolean.parseBoolean(value.toString());
+
+         default :
+            return value.toString();
+      }
    }
 
 }

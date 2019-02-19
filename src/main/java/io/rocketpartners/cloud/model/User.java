@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rocketpartners.cloud.model;
 
@@ -20,34 +20,34 @@ import java.util.List;
 
 public class User
 {
-   int              id          = 0;
-   String           username    = null;
-   String           password    = null;
-   
-   String           displayName    = null;
+   protected int              id          = 0;
+   protected String           username    = null;
+   protected String           password    = null;
 
-   List<Permission> permissions = new ArrayList();
-   List<Role>       roles       = new ArrayList();
+   protected String           displayName = null;
 
-   String           accessKey   = null;
-   String           secretKey   = null;
+   protected List<Permission> permissions = new ArrayList();
+   protected List<Role>       roles       = new ArrayList();
 
-   int              tenantId    = 0;
-   String           tenantCode  = null;
+   protected String           accessKey   = null;
+   protected String           secretKey   = null;
+
+   protected int              tenantId    = 0;
+   protected String           tenantCode  = null;
 
    /**
     * the time of the last request
     */
-   long             requestAt   = -1;
+   protected long             requestAt   = -1;
    /**
     * the remote host of the last request
     */
-   String           remoteAddr  = null;
+   protected String           remoteAddr  = null;
 
    /**
     * the number of consecutive failed logins
     */
-   int              failedNum   = 0;
+   protected int              failedNum   = 0;
 
    public User()
    {
@@ -57,8 +57,8 @@ public class User
    public User(String username, java.util.Collection<Role> roles, java.util.Collection<Permission> perms)
    {
       this.username = username;
-      setRoles(roles);
-      setPermissions(permissions);
+      withRoles(roles);
+      withPermissions(permissions);
    }
 
    public String getUsername()
@@ -66,9 +66,10 @@ public class User
       return username;
    }
 
-   public void setUsername(String username)
+   public User withUsername(String username)
    {
       this.username = username;
+      return this;
    }
 
    public int getId()
@@ -76,9 +77,10 @@ public class User
       return id;
    }
 
-   public void setId(int id)
+   public User withId(int id)
    {
       this.id = id;
+      return this;
    }
 
    public long getRequestAt()
@@ -86,9 +88,10 @@ public class User
       return requestAt;
    }
 
-   public void setRequestAt(long requestAt)
+   public User withRequestAt(long requestAt)
    {
       this.requestAt = requestAt;
+      return this;
    }
 
    public String getRemoteAddr()
@@ -96,9 +99,10 @@ public class User
       return remoteAddr;
    }
 
-   public void setRemoteAddr(String remoteAddr)
+   public User withRemoteAddr(String remoteAddr)
    {
       this.remoteAddr = remoteAddr;
+      return this;
    }
 
    public int getFailedNum()
@@ -106,9 +110,10 @@ public class User
       return failedNum;
    }
 
-   public void setFailedNum(int failedNum)
+   public User withFailedNum(int failedNum)
    {
       this.failedNum = failedNum;
+      return this;
    }
 
    public String getAccessKey()
@@ -116,9 +121,10 @@ public class User
       return accessKey;
    }
 
-   public void setAccessKey(String accessKey)
+   public User withAccessKey(String accessKey)
    {
       this.accessKey = accessKey;
+      return this;
    }
 
    public String getSecretKey()
@@ -126,9 +132,10 @@ public class User
       return secretKey;
    }
 
-   public void setSecretKey(String secretKey)
+   public User withSecretKey(String secretKey)
    {
       this.secretKey = secretKey;
+      return this;
    }
 
    public String getPassword()
@@ -136,9 +143,10 @@ public class User
       return password;
    }
 
-   public void setPassword(String password)
+   public User withPassword(String password)
    {
       this.password = password;
+      return this;
    }
 
    public int getTenantId()
@@ -146,9 +154,10 @@ public class User
       return tenantId;
    }
 
-   public void setTenantId(int tenantId)
+   public User withTenantId(int tenantId)
    {
       this.tenantId = tenantId;
+      return this;
    }
 
    public List<Permission> getPermissions()
@@ -156,11 +165,12 @@ public class User
       return permissions;
    }
 
-   public void setPermissions(java.util.Collection<Permission> permissions)
+   public User withPermissions(java.util.Collection<Permission> permissions)
    {
       this.permissions.clear();
       if (permissions != null)
          this.permissions.addAll(permissions);
+      return this;
    }
 
    public List<Role> getRoles()
@@ -168,11 +178,12 @@ public class User
       return roles;
    }
 
-   public void setRoles(java.util.Collection<Role> roles)
+   public User withRoles(java.util.Collection<Role> roles)
    {
       this.roles.clear();
       if (roles != null)
          this.roles.addAll(roles);
+      return this;
    }
 
    public String getTenantCode()
@@ -180,9 +191,10 @@ public class User
       return tenantCode;
    }
 
-   public void setTenantCode(String tenantCode)
+   public User withTenantCode(String tenantCode)
    {
       this.tenantCode = tenantCode;
+      return this;
    }
 
    public String getDisplayName()
@@ -190,11 +202,10 @@ public class User
       return displayName;
    }
 
-   public void setDisplayName(String displayName)
+   public User withDisplayName(String displayName)
    {
       this.displayName = displayName;
+      return this;
    }
-   
-   
 
 }

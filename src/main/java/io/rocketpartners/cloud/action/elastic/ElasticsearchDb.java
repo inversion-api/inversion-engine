@@ -33,7 +33,7 @@ import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.HttpUtils;
 
-public class ElasticsearchDb extends Db
+public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
    protected static String      url                      = null;
 
@@ -44,7 +44,7 @@ public class ElasticsearchDb extends Db
    @Override
    public void bootstrapApi() throws Exception
    {
-      this.setType("elastic");
+      this.withType("ElasticsearchDb");
 
       reflectDb();
       configApi();
@@ -91,11 +91,11 @@ public class ElasticsearchDb extends Db
          List<Column> cols = t.getColumns();
          Collection collection = new Collection();
 
-         collection.withName(lowercaseAndPluralizeString(t.getName()));
+         collection.withName(beautifyCollectionName(t.getName()));
 
          Entity entity = new Entity();
          entity.withTable(t);
-         entity.setHint(t.getName());
+         entity.withHint(t.getName());
          entity.withCollection(collection);
 
          collection.withEntity(entity);
@@ -150,7 +150,7 @@ public class ElasticsearchDb extends Db
             tableMap.put(aliasName, table);
          }
 
-         addTable(table);
+         withTable(table);
 
          // use the mapping to add columns to the table.
          addColumns(table, false, jsMappingsDocProps, "");
@@ -178,7 +178,7 @@ public class ElasticsearchDb extends Db
          if (propValue.containsKey("type"))
          {
             column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
-            table.addColumn(column);
+            table.withColumn(column);
          }
       }
    }

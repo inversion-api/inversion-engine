@@ -146,7 +146,7 @@ public class Endpoint extends Rule<Endpoint>
 
    public <T extends Action> T withAction(int order, T action)
    {
-      action.setOrder(order);
+      action.withOrder(order);
       return withAction(action);
    }
 

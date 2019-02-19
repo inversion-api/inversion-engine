@@ -36,7 +36,7 @@ public class FirehoseDb extends Db
    {
       AmazonKinesisFirehose firehoseClient = getFirehoseClient();
 
-      this.setType("firehose");
+      this.withType("firehose");
 
       if (!Utils.empty(includeStreams))
       {
@@ -52,7 +52,7 @@ public class FirehoseDb extends Db
             }
 
             Table table = new Table(this, streamName);
-            addTable(table);
+            withTable(table);
 
             Collection collection = new Collection();
             if (!collectionName.endsWith("s"))
@@ -62,7 +62,7 @@ public class FirehoseDb extends Db
 
             Entity entity = new Entity();
             entity.withTable(table);
-            entity.setHint(table.getName());
+            entity.withHint(table.getName());
             entity.withCollection(collection);
 
             collection.withEntity(entity);
