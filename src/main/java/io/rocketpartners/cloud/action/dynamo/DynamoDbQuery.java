@@ -24,6 +24,7 @@ import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Builder;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
 import io.rocketpartners.cloud.rql.Page;
@@ -121,24 +122,24 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
       for (int i = 0; i < result.rows.size(); i++)
       {
-         Map map = (Map)result.rows.get(i);
+         Map map = (Map) result.rows.get(i);
          Node json = new Node();
-         
-         result.rows.set(i,  json);
+
+         result.rows.set(i, json);
 
          //this preservers attribute order
-         for(Attribute attr : collection.getEntity().getAttributes())
+         for (Attribute attr : collection.getEntity().getAttributes())
          {
             String colName = attr.getColumn().getName();
             Object value = map.remove(colName);
-            json.put(attr.getName(),  value);
+            json.put(attr.getName(), value);
          }
-         
+
          //copy remaining columns that were in result set but not defined in the entity
          //TODO...do we really want to do this?
-         for(Object key : map.keySet())
+         for (Object key : map.keySet())
          {
-            json.put(key.toString(),  map.get(key));
+            json.put(key.toString(), map.get(key));
          }
       }
 
@@ -165,8 +166,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             if (index.isLocalIndex())
                continue;
 
-            String partAttr = collection.getAttributeName(index.getPartitionKey().getName()); 
-            
+            String partAttr = collection.getAttributeName(index.getPartitionKey().getName());
+
             Term partKey = findTerm(partAttr, "eq");
             if (partKey != null)
             {
@@ -175,8 +176,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
                if (index.getSortKey() != null)
                {
-                  String sortAttr = collection.getAttributeName(index.getPartitionKey().getName()); 
-                  
+                  String sortAttr = collection.getAttributeName(index.getSortKey().getName());
+
                   Term sortKey = findTerm(sortAttr, "eq");
                   if (sortKey != null)
                   {
@@ -198,25 +199,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          }
       }
       return index;
-   }
-
-   Term findTerm(String column, String... tokens)
-   {
-      for (Term term : getTerms())
-      {
-         if ((tokens == null || term.hasToken(tokens)) && term.isLeaf(0))
-         {
-            String attr = term.getToken(0);
-
-            String colName = getColumnName(attr);
-            if (column.equalsIgnoreCase(colName))
-               return term;
-         }
-      }
-      
-      
-      
-      return null;
    }
 
    /**
@@ -250,7 +232,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
    public Object getSelectSpec()
    {
       Term partKey = getPartKey();
-      Term sortKey = getPartKey();
+      Term sortKey = getSortKey();
 
       Map valueMap = new HashMap();
 

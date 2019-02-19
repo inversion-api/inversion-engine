@@ -24,16 +24,16 @@ import java.util.Set;
 
 public class Builder<T, P extends Builder>
 {
-   protected Parser        parser   = null;
-   protected P             parent   = null;
-   protected List<Builder> builders = new ArrayList();
-   protected List<Term>    terms    = new ArrayList();
-   protected T             r        = null;
+   protected Parser        parser    = null;
+   protected P             parent    = null;
+   protected List<Builder> builders  = new ArrayList();
+   protected List<Term>    terms     = new ArrayList();
+   protected T             r         = null;
 
    /**
     * Term tokens this builder is willing to accept
     */
-   protected Set<String>   functions   = new HashSet();
+   protected Set<String>   functions = new HashSet();
 
    public Builder(P parent)
    {
@@ -369,6 +369,30 @@ public class Builder<T, P extends Builder>
          if (term != null)
             return term;
       }
+      return null;
+   }
+
+   public Term findTerm(String childToken, String... parentFunctions)
+   {
+      for (Term term : getTerms())
+      {
+         if (term.hasToken(parentFunctions))
+         {
+            for (Term child : term.getTerms())
+            {
+               if (child.hasToken(childToken) && child.isLeaf())
+                  return term;
+            }
+         }
+      }
+
+      for (Builder builder : builders)
+      {
+         Term t = builder.findTerm(childToken, parentFunctions);
+         if (t != null)
+            return t;
+      }
+
       return null;
    }
 
