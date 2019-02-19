@@ -8,10 +8,9 @@ import org.junit.Test;
 import io.rocketpartners.cloud.action.sql.TestSqlActions;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.service.Service.ServiceListener;
 import io.rocketpartners.cloud.utils.JSObject;
 import junit.framework.TestCase;
 
@@ -69,10 +68,10 @@ import junit.framework.TestCase;
  * LS1 - ShipCity
  * 
  * ORDERS
- * Find an order by id                  HK: OrderID        SK: type       ----  12345   | 'ORDER'
- * Find all orders for a given customer HK: CustomerID     SK: OrderDate  ----  99999   | '2013-01-08'
- * UNUSED - List orders by date -                HK: type           SK: OrderDate  ----  'ORDER' | '2013-01-08'
- * UNUSED - List orders by employee              HK: employeeId     SK: 
+ * Find an order by id                           HK: OrderID           SK: type       ----  12345   | 'ORDER'
+ * Find all orders for a given customer       GS1HK: CustomerID     GS1SK: OrderDate  ----  99999   | '2013-01-08'
+ * UNUSED - List orders by date -                HK: type              SK: OrderDate  ----  'ORDER' | '2013-01-08'
+ * UNUSED - List orders by employee              HK: employeeId        SK: 
  * 
  * SCENARIO
  *   A - eq(ShipPostalCode, 30305) 
@@ -104,58 +103,74 @@ public class TestDynamoActions extends TestCase
 
    // public static void
    //
-   public static synchronized Service service(String apiName, String ddl, String dynamoTbl)
+   public static synchronized Service service(String apiCode, String ddl, String dynamoTbl)
    {
-      Service service = services.get(apiName);
+      Service service = services.get(apiCode);
       if (service != null)
          return service;
 
-      Db dynamoDb = new DynamoDb(dynamoTbl).withTable(dynamoTbl)//
-                                           .withColumn("hk", "S")//
-                                           .withColumn("sk", "S")//
+      service = TestSqlActions.service(apiCode, ddl);
 
-                                           .withColumn("gs1hk", "N")//
-                                           .withColumn("gs1sk", "N")//
-                                           .withColumn("gs2hk", "N")//
-                                           .withColumn("gs2sk", "S")//
-                                           .withColumn("ls1", "S")//
-                                           .withColumn("ls2", "N")//
-                                           .withColumn("ls3", "B")//
-                                           .withColumn("field1", "S")//
-                                           .withColumn("field2", "S")//
-                                           .withColumn("field3", "S")//
-                                           .withColumn("field4", "S")//
-                                           .withColumn("field5", "S")//
-                                           .withColumn("field6", "S")//
-                                           .getDb();
-
-      Collection orders = new Collection(dynamoDb.getTable(dynamoTbl));
-      orders.withName("orders");
-
-      orders.getAttribute("hk").withName("orderId"); //get orders by id 
-      orders.getAttribute("sk").withName("type");
-
-      orders.getAttribute("gs1hk").withName("customerId"); //get orders by customer sorted by date
-      orders.getAttribute("gs1sk").withName("orderDate");
-
-      //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
-      //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
-
-      orders.getAttribute("field1").withName("shipName");
-      orders.getAttribute("field2").withName("shipAddress");
-      orders.getAttribute("ls1").withName("shipCity");
-      orders.getAttribute("field4").withName("shipRegion");
-      orders.getAttribute("field5").withName("shipPostalCode");
-      orders.getAttribute("field6").withName("shipCountry");
-
-      service = TestSqlActions.service(apiName, ddl);
-
-      Api api = service.getApi(apiName);
+      final Api api = service.getApi(apiCode);
+      final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       api.withDb(dynamoDb);
-      api.withCollection(orders);
-      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
 
-      services.put(apiName, service);
+      service.withListener(new ServiceListener()
+         {
+            @Override
+            public void onInit(Service service)
+            {
+               dynamoDb.bootstrapApi();
+               
+               //Api api = service.getApi(apiCode).withDb(dynamoDb).getApi();
+               //      Db dynamoDb = .withTable(dynamoTbl)//
+               //                                           .withColumn("hk", "S")//
+               //                                           .withColumn("sk", "S")//
+               //
+               //                                           .withColumn("gs1hk", "N")//
+               //                                           .withColumn("gs1sk", "N")//
+               //                                           .withColumn("gs2hk", "N")//
+               //                                           .withColumn("gs2sk", "S")//
+               //                                           .withColumn("ls1", "S")//
+               //                                           .withColumn("ls2", "N")//
+               //                                           .withColumn("ls3", "B")//
+               //                                           .withColumn("field1", "S")//
+               //                                           .withColumn("field2", "S")//
+               //                                           .withColumn("field3", "S")//
+               //                                           .withColumn("field4", "S")//
+               //                                           .withColumn("field5", "S")//
+               //                                           .withColumn("field6", "S")//
+               //                                           .getDb();
+
+               Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
+               orders.withName("orders");
+
+               orders.getAttribute("hk").withName("orderId"); //get orders by id 
+               orders.getAttribute("sk").withName("type");
+
+               orders.getAttribute("gs1hk").withName("employeeId"); //get orders by customer sorted by date
+               orders.getAttribute("gs1sk").withName("orderDate");
+
+               //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
+               //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
+
+               //      orders.getAttribute("field1").withName("shipName");
+               //      orders.getAttribute("field2").withName("shipAddress");
+               //      orders.getAttribute("ls1").withName("shipCity");
+               //      orders.getAttribute("field4").withName("shipRegion");
+               //      orders.getAttribute("field5").withName("shipPostalCode");
+               //      orders.getAttribute("field6").withName("shipCountry");
+
+               orders.withIncludePaths("dynamodb/*");
+
+               api.withCollection(orders);
+               api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
+
+            }
+
+         });
+
+      services.put(apiCode, service);
 
       return service;
    }
@@ -178,9 +193,15 @@ public class TestDynamoActions extends TestCase
       assertEquals(json.find("meta.rowCount"), 7);
       assertEquals(json.find("data.0.orderid"), 10501);
 
-      json.getArray("data").stream().forEach(e -> service.post("northwind/dynamodb/orders", e));
+      for(Object o : json.getArray("data"))
+      {
+         JSObject js = (JSObject)o;
+         js.put("type", "ORDER");
+         if(service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
+            fail();
+      }
 
-      res = service.service("GET", "northwind/dynamo/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
+      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
       json = res.getJson();
       System.out.println(json);
 

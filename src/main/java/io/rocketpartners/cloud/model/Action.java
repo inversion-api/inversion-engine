@@ -46,7 +46,8 @@ public class Action<A extends Action> extends Rule<A>
       if (this.api != api)
       {
          this.api = api;
-         api.addAction(this);
+         //intentionally not bidirectional 
+        // api.withAction(this);
       }
       return (A)this;
    }

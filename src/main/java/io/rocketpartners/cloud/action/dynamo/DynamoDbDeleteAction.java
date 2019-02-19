@@ -69,21 +69,21 @@ public class DynamoDbDeleteAction extends DynamoDbAction
          }
       }
 
-      // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
-      Object payloadObj = jsonStringToObject(req.getBody());
-
-      if (payloadObj instanceof List)
-      {
-         List l = (List) payloadObj;
-         for (Object obj : l)
-         {
-            deleteMapFromDynamo((Map) obj, dynamoTable, pk, sk, tenantIdOrCode, api.isMultiTenant(), appendTenantIdToPk);
-         }
-      }
-      else if (payloadObj instanceof Map)
-      {
-         deleteMapFromDynamo((Map) payloadObj, dynamoTable, pk, sk, tenantIdOrCode, api.isMultiTenant(), appendTenantIdToPk);
-      }
+//      // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
+//      JSObject json = req.getBody();
+//
+//      if (payloadObj instanceof List)
+//      {
+//         List l = (List) payloadObj;
+//         for (Object obj : l)
+//         {
+//            deleteMapFromDynamo((Map) obj, dynamoTable, pk, sk, tenantIdOrCode, api.isMultiTenant(), appendTenantIdToPk);
+//         }
+//      }
+//      else if (payloadObj instanceof Map)
+//      {
+//         deleteMapFromDynamo((Map) payloadObj, dynamoTable, pk, sk, tenantIdOrCode, api.isMultiTenant(), appendTenantIdToPk);
+//      }
 
       res.withStatus(SC.SC_200_OK);
 

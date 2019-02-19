@@ -5,7 +5,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.utils.JSObject;
 
-public class MockAction extends Action<Action>
+public class MockActionA extends Action<Action>
 {
 
    @Override
@@ -13,7 +13,7 @@ public class MockAction extends Action<Action>
    {
       if (req.isMethod("get"))
       {
-         res.withRecord(new JSObject("primaryKey", 1, "firstName", "tester1"));
+         res.withRecord(new JSObject("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
       }
       else if (req.isMethod("put", "post"))
       {
@@ -23,6 +23,11 @@ public class MockAction extends Action<Action>
       {
 
       }
+   }
+
+   public String toString()
+   {
+      return getClass().getSimpleName();
    }
 
 }

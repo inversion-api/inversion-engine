@@ -55,8 +55,11 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint withApi(Api api)
    {
-      this.api = api;
-      api.withEndpoint(this);
+      if (this.api != api)
+      {
+         this.api = api;
+         api.withEndpoint(this);
+      }
       return this;
    }
 

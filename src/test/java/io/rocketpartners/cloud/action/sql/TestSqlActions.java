@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Service.ServiceListener;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
@@ -36,9 +37,11 @@ public class TestSqlActions extends TestCase
       db.withUser("sa");
       db.withPass("");
 
-      service = new Service()
+      service = new Service();
+
+      service.withListener(new ServiceListener()
          {
-            public void init()
+            public void onInit(Service service)
             {
                try
                {
@@ -66,8 +69,6 @@ public class TestSqlActions extends TestCase
                               sqls.removeLast();
                         }
                      });
-
-                  super.init();
                }
                catch (Exception ex)
                {
@@ -75,7 +76,7 @@ public class TestSqlActions extends TestCase
                   Utils.rethrow(ex);
                }
             }
-         };
+         });
 
       //
       service.withApi(apiName)//

@@ -3,6 +3,7 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -75,7 +76,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
    DynamoResult doSelect(com.amazonaws.services.dynamodbv2.document.Table dynamoTable)
    {
       Index dynamoIndex = null;
-      DynamoResult rows = new DynamoResult();
+      DynamoResult result = new DynamoResult();
 
       DynamoDbIndex index = getIndex();
       if (index != null && !index.isPrimaryIndex())
@@ -90,7 +91,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          Item item = dynamoTable.getItem(gis);
          if (item != null)
          {
-            rows.addRow(item.asMap());
+            result.rows.add(item.asMap());
          }
       }
       else if (spec instanceof QuerySpec)
@@ -99,10 +100,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          ItemCollection<QueryOutcome> queryResult = dynamoIndex != null ? dynamoIndex.query(qs) : dynamoTable.query(qs);
          for (Item item : queryResult)
          {
-            rows.addRow(item.asMap());
+            result.rows.add(item.asMap());
          }
 
-         rows.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
+         result.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
       }
       else if (spec instanceof ScanSpec)
       {
@@ -110,13 +111,31 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          ItemCollection<ScanOutcome> scanResult = dynamoIndex != null ? dynamoIndex.scan(ss) : dynamoTable.scan(ss);
          for (Item item : scanResult)
          {
-            rows.addRow(item.asMap());
+            Map m = item.asMap();
+            result.rows.add(m);
          }
 
-         rows.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
+         result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
       }
 
-      return rows;
+      for (int i = 0; i < result.rows.size(); i++)
+      {
+         Map map = (Map)result.rows.get(i);
+         JSObject json = new JSObject(map);
+         result.rows.set(i, json);
+
+         for (String key : json.keySet())
+         {
+            String attrName = collection.getAttributeName(key);
+            if (attrName != null && !attrName.equals(key))
+            {
+               Object value = json.remove(key);
+               json.put(attrName, value);
+            }
+         }
+      }
+
+      return result;
    }
 
    /**
@@ -303,6 +322,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
    String toString(StringBuffer buff, Term term, Map valueMap)
    {
+      if (buff.length() > 0 && buff.charAt(buff.length() - 1) != ' ')
+         buff.append(' ');
+
       String op = OPERATOR_MAP.get(term.getToken().toLowerCase());
       if (term.hasToken("and", "or"))
       {
@@ -318,12 +340,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (op != null)
       {
          String col = getColumnName(term.getToken(0));
-         String expr = toString(buff, term.getTerm(1), valueMap);
+         String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
 
          if (buff.length() > 0)
-            buff.append(" and");
+            buff.append(" and ");
 
-         buff.append(col).append(" ").append(" ").append(expr);
+         buff.append(col).append(" ").append(op).append(" ").append(expr);
       }
       else if (term.isLeaf())
       {
@@ -341,28 +363,22 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       return buff.toString();
    }
 
-   public Object cast(String colName, String value)
+   public Object cast(String colName, Object value)
    {
+      if (value == null)
+         return null;
+
       io.rocketpartners.cloud.model.Column col = table().getColumn(colName);
 
-      if (col != null)
-      {
-         switch (col.getType())
-         {
-            case "N":
-               return Long.parseLong(value);
+      String type = col != null ? col.getType() : "S";
 
-            case "BOOL":
-               return Boolean.parseBoolean(value);
-
-         }
-      }
-
-      return value;
+      return DynamoDb.cast(value, type);
    }
 
-   public static class DynamoResult extends Rows
+   public static class DynamoResult
    {
+      List                        rows = new ArrayList();
+
       Map<String, AttributeValue> lastKey;
 
       public Map<String, AttributeValue> getLastKey()

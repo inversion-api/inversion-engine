@@ -59,15 +59,14 @@ public class DynamoDbGetAction extends DynamoDbAction
       //         }
       //      }
 
-      
       DynamoDbQuery query = new DynamoDbQuery(collection, req.getParams());
       DynamoResult dynamoResult = query.doSelect(dynamoTable);
 
       JSArray returnData = new JSArray();
 
-      for (Row row : dynamoResult)
+      for (Object js : dynamoResult.rows)
       {
-         returnData.add(new JSObject(row));
+         returnData.add((JSObject) js);
       }
 
       JSObject meta = new JSObject("pageSize", query.page().getPageSize(), "results", returnData.size());

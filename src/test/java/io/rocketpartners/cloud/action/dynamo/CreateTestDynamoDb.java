@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
@@ -20,20 +21,28 @@ public class CreateTestDynamoDb
 {
    public static void main(String[] args) throws Exception
    {
-      createTable("test-northwind");
+      //deleteTable("test-northwind");
+      //createTable("test-northwind");
+   }
+   
+   public static void deleteTable(String tableName) throws Exception
+   {
+      AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+      DeleteTableRequest dtr = new DeleteTableRequest().withTableName(tableName);
+      client.deleteTable(dtr);
    }
 
    public static void createTable(String tableName) throws Exception
    {
       List<AttributeDefinition> attrs = new ArrayList<>();
 
-      attrs.add(new AttributeDefinition().withAttributeName("hk").withAttributeType("S"));
+      attrs.add(new AttributeDefinition().withAttributeName("hk").withAttributeType("N"));
       attrs.add(new AttributeDefinition().withAttributeName("sk").withAttributeType("S"));
 
-      //attrs.add(new AttributeDefinition().withAttributeName("gs1hk").withAttributeType("N"));
-      //attrs.add(new AttributeDefinition().withAttributeName("gs1sk").withAttributeType("N"));
+      attrs.add(new AttributeDefinition().withAttributeName("gs1hk").withAttributeType("N"));
+      attrs.add(new AttributeDefinition().withAttributeName("gs1sk").withAttributeType("S"));
 
-      attrs.add(new AttributeDefinition().withAttributeName("gs2hk").withAttributeType("N"));
+      attrs.add(new AttributeDefinition().withAttributeName("gs2hk").withAttributeType("S"));
       attrs.add(new AttributeDefinition().withAttributeName("gs2sk").withAttributeType("S"));
 
       attrs.add(new AttributeDefinition().withAttributeName("ls1").withAttributeType("S"));
@@ -55,7 +64,7 @@ public class CreateTestDynamoDb
             , new KeySchemaElement().withAttributeName("ls3").withKeyType(KeyType.RANGE)));
 
       List<GlobalSecondaryIndex> gsxs = new ArrayList();
-      gsxs.add(new GlobalSecondaryIndex().withIndexName("gs1").withKeySchema(new KeySchemaElement().withAttributeName("sk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.RANGE)));
+      gsxs.add(new GlobalSecondaryIndex().withIndexName("gs1").withKeySchema(new KeySchemaElement().withAttributeName("gs1hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("gs1sk").withKeyType(KeyType.RANGE)));
       gsxs.add(new GlobalSecondaryIndex().withIndexName("gs2").withKeySchema(new KeySchemaElement().withAttributeName("gs2hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("gs2sk").withKeyType(KeyType.RANGE)));
 
       for (LocalSecondaryIndex lsx : lsxs)

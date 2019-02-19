@@ -75,17 +75,18 @@ public class DynamoDb extends Db
 
    }
 
-   public DynamoDb(String includeTables)
+   public DynamoDb(String name, String includeTables)
    {
+      this.name = name;
       this.includeTables = includeTables;
    }
 
    @Override
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
       this.dynamoClient = getDynamoClient();
 
-      this.setType("dynamo");
+      this.setType("dynamodb");
 
       if (includeTables != null)
       {
@@ -152,11 +153,27 @@ public class DynamoDb extends Db
       {
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
          {
-            index.withPartitionKey(table.getColumn(keyInfo.getKeyType()));
+            index.withPartitionKey(table.getColumn(keyInfo.getAttributeName()));
          }
          else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
          {
             index.withSortKey(table.getColumn(keyInfo.getAttributeName()));
+         }
+      }
+
+      if (tableDescription.getGlobalSecondaryIndexes() != null)
+      {
+         for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
+         {
+            addTableIndex(DynamoDbIndex.GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
+         }
+      }
+
+      if (tableDescription.getLocalSecondaryIndexes() != null)
+      {
+         for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
+         {
+            addTableIndex(DynamoDbIndex.LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
          }
       }
 
@@ -239,22 +256,6 @@ public class DynamoDb extends Db
       //         table.addIndex(index);
       //      }
 
-      if (tableDescription.getGlobalSecondaryIndexes() != null)
-      {
-         for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
-         {
-            addTableIndex(DynamoDbIndex.GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
-         }
-      }
-
-      if (tableDescription.getLocalSecondaryIndexes() != null)
-      {
-         for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
-         {
-            addTableIndex(DynamoDbIndex.LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
-         }
-      }
-
       return table;
 
    }
@@ -310,8 +311,8 @@ public class DynamoDb extends Db
          attr.withHint(col.getTable().getName() + "." + col.getName());
          attr.withType(col.getType());
 
-//         if (col == index.getPartitionKey() || col == index.getSortKey())
-//            entity.withKey(attr);
+         //         if (col == index.getPartitionKey() || col == index.getSortKey())
+         //            entity.withKey(attr);
       }
       return entity;
    }
@@ -333,6 +334,11 @@ public class DynamoDb extends Db
       return dynamoClient;
    }
 
+   public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Collection collection)
+   {
+      return getDynamoTable(collection.getEntity().getTable().getName());
+   }
+   
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)
    {
       return new DynamoDB(getDynamoClient()).getTable(tableName);
@@ -344,7 +350,6 @@ public class DynamoDb extends Db
       {
          for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
          {
-            System.out.println(index.getName());
             if (index.getName().equals(name))
             {
                return index;
@@ -371,6 +376,27 @@ public class DynamoDb extends Db
       else
       {
          return "S";
+      }
+   }
+   
+   public static Object cast(Object value, String type)
+   {
+      if (value == null)
+         return null;
+
+      if (type == null)
+         return value.toString();
+
+      switch (type)
+      {
+         case "N":
+            return Long.parseLong(value.toString());
+
+         case "BOOL":
+            return Boolean.parseBoolean(value.toString());
+
+         default :
+            return value.toString();
       }
    }
 

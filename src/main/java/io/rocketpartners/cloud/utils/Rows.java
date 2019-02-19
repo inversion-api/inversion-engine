@@ -73,7 +73,7 @@ public class Rows extends ArrayList<Rows.Row>
 
    public Row addRow(Map map)
    {
-      if (keys == null)
+      if (keys == null || keys.size() == 0)
       {
          keys = new RowKeys(new ArrayList(map.keySet()));
       }

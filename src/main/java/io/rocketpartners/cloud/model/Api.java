@@ -151,19 +151,16 @@ public class Api
       return null;
    }
 
-   public <D extends Db> D findDb(String collectionName, Class<D> dbClass)
+   public Db findDb(String name)
    {
-      for (Collection collection : getCollections())
-      {
-         if (collectionName.equalsIgnoreCase(collection.getName()))
-         {
-            if (dbClass.isAssignableFrom(collection.getDb().getClass()))
-            {
-               return (D) collection.getDb();
-            }
-         }
-      }
+      if (name == null)
+         return null;
 
+      for (Db db : dbs)
+      {
+         if (name.equals(db.getName()))
+            return db;
+      }
       return null;
    }
 
@@ -206,6 +203,17 @@ public class Api
    //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
    //      }
    //   }
+
+   public Collection getCollection(String name)
+   {
+      if (name == null)
+         return null;
+
+      for (Collection collection : collections)
+         if (name.equalsIgnoreCase(collection.getName()))
+            return collection;
+      return null;
+   }
 
    public Collection getCollection(Table tbl)
    {
@@ -399,19 +407,25 @@ public class Api
    {
       return withAction(action, null, null);
    }
-   
+
    public <T extends Action> T withAction(T action, String methods, String includePaths)
    {
-      for(String method :Utils.explode(",",  methods))
+      for (String method : Utils.explode(",", methods))
       {
          action.withMethods(method);
       }
-      
-      for(String path :Utils.explode(",",  includePaths))
+
+      for (String path : Utils.explode(",", includePaths))
       {
          action.withIncludePaths(path);
       }
-      addAction(action);
+
+      if (!actions.contains(action))
+         actions.add(action);
+
+      if (action.getApi() != this)
+         action.withApi(this);
+
       return action;
    }
 
@@ -424,16 +438,7 @@ public class Api
    {
       this.actions.clear();
       for (Action action : actions)
-         addAction(action);
-   }
-
-   public void addAction(Action action)
-   {
-      if (!actions.contains(action))
-         actions.add(action);
-
-      if (action.getApi() != this)
-         action.withApi(this);
+         withAction(action);
    }
 
    public void addAclRule(AclRule acl)

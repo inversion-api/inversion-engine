@@ -80,11 +80,6 @@ public abstract class DynamoDbAction<A extends DynamoDbAction> extends Action<A>
       return l;
    }
 
-   static Object jsonStringToObject(String jsonStr) throws JsonParseException, JsonMappingException, IOException
-   {
-      return mapper.readValue(jsonStr, Object.class);
-   }
-
    public void setTenantIdDelimiter(String tenantIdDelimiter)
    {
       this.tenantIdDelimiter = tenantIdDelimiter;

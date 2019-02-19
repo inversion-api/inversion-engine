@@ -16,7 +16,6 @@
 package io.rocketpartners.cloud.action.dynamo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +26,7 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.SC;
@@ -35,6 +35,8 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.JSArray;
+import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * @author tc-rocket
@@ -53,84 +55,102 @@ public class DynamoDbPostAction extends DynamoDbAction
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Collection collection = req.getCollection();//api.getCollection(req.getCollectionKey(), DynamoDb.class);
-      Table table = collection.getEntity().getTable();
-      DynamoDb db = (DynamoDb) table.getDb();
-      com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
-      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
-      String pk = dynamoIdx.getPartitionKey().getName();
-      boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
-      ConditionalWriteConf conditionalWriteConf = getConditionalWriteConf(collection, chain);
+//      Table table = collection.getEntity().getTable();
+//      DynamoDb db = (DynamoDb) table.getDb();
 
-      Object tenantIdOrCode = null;
-      if (req.getApi().isMultiTenant())
-      {
-         tenantIdOrCode = req.removeParam("tenantId");
-         if (tenantIdOrCode != null)
-         {
-            tenantIdOrCode = Integer.parseInt((String) tenantIdOrCode);
-         }
-         else
-         {
-            tenantIdOrCode = req.getTenantCode();
-         }
-      }
+      ///com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
+
+//      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
+//      String pk = dynamoIdx.getPartitionKey().getName();
+
+      //      boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
+      //      
+      //      ConditionalWriteConf conditionalWriteConf = getConditionalWriteConf(collection, chain);
+      //
+      //      Object tenantIdOrCode = null;
+      //      if (req.getApi().isMultiTenant())
+      //      {
+      //         tenantIdOrCode = req.removeParam("tenantId");
+      //         if (tenantIdOrCode != null)
+      //         {
+      //            tenantIdOrCode = Integer.parseInt((String) tenantIdOrCode);
+      //         }
+      //         else
+      //         {
+      //            tenantIdOrCode = req.getTenantCode();
+      //         }
+      //      }
 
       // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
-      Object payloadObj = jsonStringToObject(req.getBody());
+      JSObject json = req.getJson();
 
-      if (payloadObj instanceof List)
+      if (json instanceof JSArray)
       {
-         List l = (List) payloadObj;
-         for (Object obj : l)
-         {
-            putMapToDynamo((Map) obj, dynamoTable, pk, tenantIdOrCode, req.getApi().isMultiTenant(), appendTenantIdToPk, conditionalWriteConf);
-         }
+         ((JSArray) json).stream().forEach(e -> put(collection, (JSObject) e));
       }
-      else if (payloadObj instanceof Map)
+      else
       {
-         putMapToDynamo((Map) payloadObj, dynamoTable, pk, tenantIdOrCode, req.getApi().isMultiTenant(), appendTenantIdToPk, conditionalWriteConf);
+         put(collection, json);
       }
 
       res.withStatus(SC.SC_200_OK);
 
    }
 
-   void putMapToDynamo(Map json, com.amazonaws.services.dynamodbv2.document.Table dynamoTable, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
+   void put(Collection collection, JSObject json)//, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
    {
       try
       {
-
-         Map m = new HashMap<>(json);
-
-         if (isMultiTenant && tenantIdOrCode != null)
+         for (String key : json.keySet())
          {
-            m.put("tenantid", tenantIdOrCode);
-            if (appendTenantIdToPk)
+            Attribute attr = collection.getAttribute(key);
+            if (attr != null)
             {
-               // add the tenantCode to the primary key
-               String pkVal = (String) m.get(pk);
-               m.put(pk, addTenantIdToKey(tenantIdOrCode, pkVal));
+               String colName = attr.getColumn().getName();
+               if (!colName.equals(key))
+               {
+                  Object value = json.remove(key);
+                  if (!json.containsKey(colName))
+                  {
+                     value = DynamoDb.cast(value, attr.getColumn().getType());
+                     json.put(colName, value);
+                  }
+               }
             }
          }
+         
+         DynamoDb db = (DynamoDb) collection.getDb();
+         com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(collection);
 
-         Item item = Item.fromMap(m);
+         //         if (isMultiTenant && tenantIdOrCode != null)
+         //         {
+         //            m.put("tenantid", tenantIdOrCode);
+         //            if (appendTenantIdToPk)
+         //            {
+         //               // add the tenantCode to the primary key
+         //               String pkVal = (String) m.get(pk);
+         //               m.put(pk, addTenantIdToKey(tenantIdOrCode, pkVal));
+         //            }
+         //         }
+
+         Item item = Item.fromMap(json);
 
          PutItemSpec putItemSpec = new PutItemSpec().withItem(item);
 
-         if (conditionalWriteConf != null)
-         {
-            putItemSpec = putItemSpec.withConditionExpression(conditionalWriteConf.expression);
-            if (!conditionalWriteConf.fields.isEmpty())
-            {
-               Map<String, Object> valueMap = new HashMap<>();
-               for (String field : conditionalWriteConf.fields)
-               {
-                  valueMap.put(":" + field, m.get(field));
-               }
-
-               putItemSpec = putItemSpec.withValueMap(valueMap);
-            }
-         }
+         //         if (conditionalWriteConf != null)
+         //         {
+         //            putItemSpec = putItemSpec.withConditionExpression(conditionalWriteConf.expression);
+         //            if (!conditionalWriteConf.fields.isEmpty())
+         //            {
+         //               Map<String, Object> valueMap = new HashMap<>();
+         //               for (String field : conditionalWriteConf.fields)
+         //               {
+         //                  valueMap.put(":" + field, m.get(field));
+         //               }
+         //
+         //               putItemSpec = putItemSpec.withValueMap(valueMap);
+         //            }
+         //         }
 
          dynamoTable.putItem(putItemSpec);
       }
@@ -139,6 +159,10 @@ public class DynamoDbPostAction extends DynamoDbAction
          // catch this and do nothing.
          // this just means the that conditional write wasn't satisfied
          // so the record was not written
+      }
+      catch(Exception ex)
+      {
+         System.out.println(json);
       }
    }
 

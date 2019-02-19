@@ -41,38 +41,46 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
 {
-   boolean           inited         = false;
-   volatile boolean  destroyed      = false;
+   boolean                         inited         = false;
+   volatile boolean                destroyed      = false;
 
-   Logger            log            = LoggerFactory.getLogger(getClass());
-   Logger            requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   Logger                          log            = LoggerFactory.getLogger(getClass());
+   Logger                          requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   List<Api>         apis           = new Vector();
+   List<Api>                       apis           = new Vector();
 
-   ResourceLoader    resourceLoader = null;
+   ResourceLoader                  resourceLoader = null;
 
-   PropsConfig       configurator   = new PropsConfig();
+   PropsConfig                     configurator   = new PropsConfig();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected String  servletMapping = null;
+   protected String                servletMapping = null;
 
-   protected String  profile        = null;
+   protected String                profile        = null;
 
-   protected String  configPath     = "";
-   protected int     configTimeout  = 10000;
-   protected boolean configFast     = false;
-   protected boolean configDebug    = false;
-   protected String  configOut      = null;
+   protected String                configPath     = "";
+   protected int                   configTimeout  = 10000;
+   protected boolean               configFast     = false;
+   protected boolean               configDebug    = false;
+   protected String                configOut      = null;
+
+   protected List<ServiceListener> listeners      = new ArrayList();
 
    /**
     * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String  allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String                allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+
+   public static interface ServiceListener
+   {
+      public void onInit(Service service);
+
+   }
 
    public void destroy()
    {
@@ -86,6 +94,24 @@ public class Service
       inited = true;
       configurator.loadConfg(this);
 
+      for (ServiceListener listener : listeners)
+      {
+         try
+         {
+            listener.onInit(Service.this);
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error notifying listener init()", ex);
+         }
+      }
+   }
+
+   public Service withListener(ServiceListener listener)
+   {
+      if (!listeners.contains(listener))
+         listeners.add(listener);
+      return this;
    }
 
    public Response get(String url)
@@ -440,7 +466,7 @@ public class Service
          {
             log.error("Error in Service", ex);
          }
-         
+
          ChainLocal.pop();
       }
 
