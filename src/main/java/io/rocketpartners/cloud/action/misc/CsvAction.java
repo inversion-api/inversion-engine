@@ -23,13 +23,13 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * Converts a JSON object/array response value into CSV format.  
@@ -52,13 +52,13 @@ public class CsvAction extends BatchAction<CsvAction>
       if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(chain.getConfig("format", null)))
          return;
 
-      JSObject arr = res.getJson();
-      if (!(arr instanceof JSArray))
+      Node arr = res.getJson();
+      if (!(arr instanceof ArrayNode))
       {
-         arr = new JSArray(arr);
+         arr = new ArrayNode(arr);
       }
 
-      byte[] bytes = toCsv((JSArray) arr).getBytes();
+      byte[] bytes = toCsv((ArrayNode) arr).getBytes();
 
       res.withHeader("Content-Length", bytes.length + "");
       res.debug("Content-Length " + bytes.length + "");
@@ -68,7 +68,7 @@ public class CsvAction extends BatchAction<CsvAction>
       res.withJson(null);
    }
 
-   public String toCsv(JSArray arr) throws Exception
+   public String toCsv(ArrayNode arr) throws Exception
    {
       StringBuffer buff = new StringBuffer();
 
@@ -76,13 +76,13 @@ public class CsvAction extends BatchAction<CsvAction>
 
       for (int i = 0; i < arr.length(); i++)
       {
-         JSObject obj = (JSObject) arr.get(i);
+         Node obj = (Node) arr.get(i);
          if (obj != null)
          {
             for (String key : obj.keySet())
             {
                Object val = obj.get(key);
-               if (!(val instanceof JSArray) && !(val instanceof JSObject))
+               if (!(val instanceof ArrayNode) && !(val instanceof Node))
                   keys.add(key);
             }
          }
@@ -101,7 +101,7 @@ public class CsvAction extends BatchAction<CsvAction>
       {
          for (String key : keysList)
          {
-            Object val = ((JSObject) arr.get(i)).get(key);
+            Object val = ((Node) arr.get(i)).get(key);
             if (val != null)
             {
                printer.print(val);

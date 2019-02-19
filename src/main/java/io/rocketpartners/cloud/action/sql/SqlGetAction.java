@@ -32,11 +32,13 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
@@ -44,8 +46,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
@@ -228,7 +228,7 @@ public class SqlGetAction extends SqlAction
       //--
       //--
 
-      List<JSObject> results = null;
+      List<Node> results = null;
 
       if (collection != null && collection.getEntity().getKey() != null)
       {
@@ -246,10 +246,10 @@ public class SqlGetAction extends SqlAction
       }
       else
       {
-         JSObject meta = new JSObject();
-         JSArray data = new JSArray();
+         Node meta = new Node();
+         ArrayNode data = new ArrayNode();
 
-         JSObject wrapper = new JSObject("meta", meta, "data", data);
+         Node wrapper = new Node("meta", meta, "data", data);
          res.withJson(wrapper);
 
          int rowCount = 1;
@@ -279,7 +279,7 @@ public class SqlGetAction extends SqlAction
 
          meta.put("created", Utils.formatIso8601(new Date()));
 
-         for (JSObject js : results)
+         for (Node js : results)
          {
             data.add(js);
          }
@@ -296,7 +296,7 @@ public class SqlGetAction extends SqlAction
 
       for (int i = 0; i < rows.size(); i++)
       {
-         JSObject o = new JSObject();
+         Node o = new Node();
          list.add(o);
 
          Row row = rows.get(i);
@@ -356,9 +356,9 @@ public class SqlGetAction extends SqlAction
       return rows;
    }
 
-   List<JSObject> queryObjects(SqlQuery query, Service service, Chain chain, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
+   List<Node> queryObjects(SqlQuery query, Service service, Chain chain, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
    {
-      List<JSObject> results = new ArrayList();
+      List<Node> results = new ArrayList();
 
       if (collection.getEntity().getKey() == null)
       {
@@ -378,7 +378,7 @@ public class SqlGetAction extends SqlAction
       {
          Object key = row.get(keyCol);
 
-         JSObject js = new JSObject();
+         Node js = new Node();
          results.add(js);
 
          pkCache.put(collection, key, js);
@@ -418,7 +418,7 @@ public class SqlGetAction extends SqlAction
       return results;
    }
 
-   protected List<JSObject> fetchObjects(Chain chain, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
+   protected List<Node> fetchObjects(Chain chain, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
    {
       if (ids.size() == 0)
          return Collections.EMPTY_LIST;
@@ -465,10 +465,10 @@ public class SqlGetAction extends SqlAction
       if (sc == 200)
       {
          Object arr = res.getJson().get("data");
-         if (arr instanceof JSArray)
+         if (arr instanceof ArrayNode)
          {
-            List<JSObject> objs = ((JSArray) arr).asList();
-            for (JSObject obj : objs)
+            List<Node> objs = ((ArrayNode) arr).asList();
+            for (Node obj : objs)
             {
                for (String key : (Set<String>) obj.asMap().keySet())
                {
@@ -484,7 +484,7 @@ public class SqlGetAction extends SqlAction
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
-   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<JSObject> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
+   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<Node> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;
@@ -502,7 +502,7 @@ public class SqlGetAction extends SqlAction
 
          if (!expand(expands, path, rel))
          {
-            for (JSObject js : parentObjs)
+            for (Node js : parentObjs)
             {
                if (js.getProperty(rel.getName()) != null)
                   continue;
@@ -516,7 +516,7 @@ public class SqlGetAction extends SqlAction
                   if (fk != null)
                   {
                      String href = Service.buildLink(chain.getRequest(), childCollection.getName(), fk, null);
-                     js.put(rel.getName(), new JSObject("href", href));
+                     js.put(rel.getName(), new Node("href", href));
                   }
                   else
                   {
@@ -527,7 +527,7 @@ public class SqlGetAction extends SqlAction
                {
                   Object key = js.get(keyProp);
                   String href = Service.buildLink(chain.getRequest(), chain.getRequest().getCollectionKey(), key, rel.getName());
-                  js.put(rel.getName(), new JSObject("href", href));
+                  js.put(rel.getName(), new Node("href", href));
                }
             }
          }
@@ -540,7 +540,7 @@ public class SqlGetAction extends SqlAction
 
                //find all the fks you need to query for
                List childIds = new ArrayList();
-               for (JSObject parentObj : parentObjs)
+               for (Node parentObj : parentObjs)
                {
                   //TODO
                   Object childId = parentObj.get(parentFkCol);
@@ -549,10 +549,10 @@ public class SqlGetAction extends SqlAction
                }
 
                //now get them
-               List<JSObject> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               List<Node> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
                if (childObjs != null)
                {
-                  for (JSObject childObj : childObjs)
+                  for (Node childObj : childObjs)
                   {
                      Object childId = childObj.get(childPkCol);
                      if (!pkCache.containsKey(childCollection, childId))
@@ -560,13 +560,13 @@ public class SqlGetAction extends SqlAction
                   }
 
                   //now hook the new fk objects back in
-                  for (JSObject parentObj : parentObjs)
+                  for (Node parentObj : parentObjs)
                   {
                      //TODO
                      Object childId = parentObj.get(parentFkCol);
                      if (childId != null)
                      {
-                        JSObject childObj = (JSObject) pkCache.get(childCollection, childId);
+                        Node childObj = (Node) pkCache.get(childCollection, childId);
                         if (childObj != null)
                         {
                            parentObj.put(rel.getName(), childObj);
@@ -586,11 +586,11 @@ public class SqlGetAction extends SqlAction
                String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
 
                List parentIds = new ArrayList();
-               for (JSObject parentObj : parentObjs)
+               for (Node parentObj : parentObjs)
                {
                   parentIds.add(parentObj.get(parentPkCol));
-                  if (!(parentObj.get(rel.getName()) instanceof JSArray))
-                     parentObj.put(rel.getName(), new JSArray());
+                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+                     parentObj.put(rel.getName(), new ArrayNode());
                }
 
                String sql = "";
@@ -608,11 +608,11 @@ public class SqlGetAction extends SqlAction
 
                List thoseIds = SqlUtils.selectList(conn, sql, parentIds);
 
-               List<JSObject> childObjs = fetchObjects(chain, childCollection, thoseIds, includes, excludes, expandPath(path, rel.getName()));
+               List<Node> childObjs = fetchObjects(chain, childCollection, thoseIds, includes, excludes, expandPath(path, rel.getName()));
 
                if (childObjs != null)
                {
-                  for (JSObject childObj : childObjs)
+                  for (Node childObj : childObjs)
                   {
                      Object childId = childObj.get(childPkCol);
                      if (!pkCache.containsKey(childCollection, childId))
@@ -621,10 +621,10 @@ public class SqlGetAction extends SqlAction
                      Object childFkVal = childObj.get(childFkCol);
                      if (childFkVal != null)
                      {
-                        JSObject parentObj = (JSObject) pkCache.get(collection, childFkVal);
+                        Node parentObj = (Node) pkCache.get(collection, childFkVal);
                         if (parentObj != null)
                         {
-                           JSArray array = (JSArray) parentObj.get(rel.getName());
+                           ArrayNode array = (ArrayNode) parentObj.get(rel.getName());
                            array.add(childObj);
                         }
                      }
@@ -644,12 +644,12 @@ public class SqlGetAction extends SqlAction
                String childPkCol = rel.getFkCol2().getPk().getName();
 
                List parentIds = new ArrayList();
-               for (JSObject parentObj : parentObjs)
+               for (Node parentObj : parentObjs)
                {
                   parentIds.add(parentObj.get(parentPkCol));
 
-                  if (!(parentObj.get(rel.getName()) instanceof JSArray))
-                     parentObj.put(rel.getName(), new JSArray());
+                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+                     parentObj.put(rel.getName(), new ArrayNode());
                }
 
                String sql = " SELECT " + query.asCol(linkTblParentFkCol) + ", " + query.asCol(linkTblChildFkCol) + //
@@ -680,8 +680,8 @@ public class SqlGetAction extends SqlAction
                      childIds.add(childPk);
                }
 
-               List<JSObject> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
-               for (JSObject childObj : childObjs)
+               List<Node> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               for (Node childObj : childObjs)
                {
                   Object childId = childObj.get(childPkCol);
                   if (!pkCache.containsKey(childCollection, childId))
@@ -690,10 +690,10 @@ public class SqlGetAction extends SqlAction
 
                for (Row childRow : childRows)
                {
-                  JSObject parentObj = (JSObject) pkCache.get(collection, childRow.get(linkTblParentFkCol));
-                  JSObject childObj = (JSObject) pkCache.get(childCollection, childRow.get(linkTblChildFkCol));
+                  Node parentObj = (Node) pkCache.get(collection, childRow.get(linkTblParentFkCol));
+                  Node childObj = (Node) pkCache.get(childCollection, childRow.get(linkTblChildFkCol));
 
-                  JSArray array = (JSArray) parentObj.get(parentListProp);
+                  ArrayNode array = (ArrayNode) parentObj.get(parentListProp);
                   array.add(childObj);
                }
 
@@ -708,7 +708,7 @@ public class SqlGetAction extends SqlAction
          {
             if (rel.isOneToMany())
             {
-               for (JSObject parentObj : parentObjs)
+               for (Node parentObj : parentObjs)
                {
                   String key = rel.getFkCol1().getName();
                   parentObj.remove(key);

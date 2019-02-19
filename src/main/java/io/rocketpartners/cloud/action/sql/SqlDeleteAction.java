@@ -24,16 +24,16 @@ import org.apache.commons.collections4.KeyValue;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -66,15 +66,15 @@ public class SqlDeleteAction extends SqlAction
             if (!Utils.empty(entityKey))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to an entity key in the url and also include a JSON body.");
 
-            JSObject obj = req.getJson();
-            if (!(obj instanceof JSArray))
+            Node obj = req.getJson();
+            if (!(obj instanceof ArrayNode))
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
             }
 
             List<String> urls = new ArrayList();
 
-            for (Object o : (JSArray) obj)
+            for (Object o : (ArrayNode) obj)
             {
                if (!(o instanceof String))
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");

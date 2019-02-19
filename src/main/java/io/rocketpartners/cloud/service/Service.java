@@ -31,11 +31,11 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.utils.English;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.PropsConfig;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -130,12 +130,12 @@ public class Service
       return service("POST", url, (body != null ? body.toString() : null));
    }
 
-   public Response put(String url, JSObject body)
+   public Response put(String url, Node body)
    {
       return service("PUT", url, body.toString());
    }
 
-   public Response post(String url, JSObject body)
+   public Response post(String url, Node body)
    {
       return service("POST", url, body.toString());
    }
@@ -441,7 +441,7 @@ public class Service
          }
 
          res.withStatus(status);
-         JSObject response = new JSObject("message", ex.getMessage());
+         Node response = new Node("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
@@ -513,7 +513,7 @@ public class Service
                res.withContentType("application/json");
          }
 
-         JSObject headers = new JSObject();
+         Node headers = new Node();
          for (String key : res.getHeaders().keySet())
          {
             List values = res.getHeaders().get(key);

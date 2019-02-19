@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.cloud.utils;
+package io.rocketpartners.cloud.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -29,11 +29,13 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
-public class JSArray extends JSObject implements Iterable
+import io.rocketpartners.cloud.utils.Utils;
+
+public class ArrayNode extends Node implements Iterable
 {
    List objects = new ArrayList();
 
-   public JSArray(Object... objects)
+   public ArrayNode(Object... objects)
    {
       if (objects != null && objects.length == 1 && objects[0].getClass().isArray())
       {
@@ -96,9 +98,9 @@ public class JSArray extends JSObject implements Iterable
       return (String) get(index);
    }
 
-   public JSObject getObject(int index)
+   public Node getObject(int index)
    {
-      return (JSObject) get(index);
+      return (Node) get(index);
    }
 
    public void setObject(int index, Object o)
@@ -106,9 +108,9 @@ public class JSArray extends JSObject implements Iterable
       objects.set(index, o);
    }
 
-   public JSArray getArray(int index)
+   public ArrayNode getArray(int index)
    {
-      return (JSArray) get(index);
+      return (ArrayNode) get(index);
    }
 
    public boolean contains(Object object)
@@ -127,66 +129,12 @@ public class JSArray extends JSObject implements Iterable
       return objects.size();
    }
 
-   @Override
-   void write(JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
-   {
-      json.writeStartArray();
-      for (Object obj : objects)
-      {
-         if (obj == null)
-         {
-            json.writeNull();
-         }
-         else if (obj instanceof JSObject)
-         {
-            ((JSObject) obj).write(json, visited, lowercaseNames);
-         }
-         else if (obj instanceof BigDecimal)
-         {
-            json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof Double)
-         {
-            json.writeNumber((Double) obj);
-         }
-         else if (obj instanceof Float)
-         {
-            json.writeNumber((Float) obj);
-         }
-         else if (obj instanceof Integer)
-         {
-            json.writeNumber((Integer) obj);
-         }
-         else if (obj instanceof Long)
-         {
-            json.writeNumber((Long) obj);
-         }
-         else if (obj instanceof BigDecimal)
-         {
-            json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof BigDecimal)
-         {
-            json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof Boolean)
-         {
-            json.writeBoolean((Boolean) obj);
-         }
-         else
-         {
-            json.writeString(Utils.encodeJson(obj + ""));
-         }
-      }
-      json.writeEndArray();
-   }
-
    public void sort(final String key)
    {
-      Collections.sort(objects, new Comparator<JSObject>()
+      Collections.sort(objects, new Comparator<Node>()
          {
             @Override
-            public int compare(JSObject o1, JSObject o2)
+            public int compare(Node o1, Node o2)
             {
                Object val1 = o1.get(key);
                Object val2 = o2.get(key);

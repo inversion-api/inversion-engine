@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -29,7 +30,6 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * @author kfrankic
@@ -66,25 +66,25 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
       return new ElasticsearchPage(this);
    }
 
-   protected void push(List<JSObject> stack, JSObject child)
+   protected void push(List<Node> stack, Node child)
    {
 
    }
 
-   public JSObject getJson()
+   public Node getJson()
    {
-      JSObject root = new JSObject();
+      Node root = new Node();
       for (Term term : getTerms())
       {
-         JSObject child = toJson(null, term);
+         Node child = toJson(null, term);
       }
 
       return root;
    }
 
-   public JSObject toJson(Term parent, Term child)
+   public Node toJson(Term parent, Term child)
    {
-      JSObject query = null;
+      Node query = null;
 
       String token = child.getToken().toLowerCase();
       String field = child.getToken(0);
@@ -103,7 +103,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
             //                "lte" : 20,
             //            }
             //        }
-            query = new JSObject("range", new JSObject(field, new JSObject(token, value)));
+            query = new Node("range", new Node(field, new Node(token, value)));
             break;
          case "eq": // equal
          case "ne": // not equal
@@ -114,7 +114,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                      "wildcard" : { "user" : "ki*y" }
                //                  }
                //              }               
-               query = new JSObject("wildcard", new JSObject(field, value));
+               query = new Node("wildcard", new Node(field, value));
             }
             else
             {
@@ -123,7 +123,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                    "term" : { "user" : "Kimchy" } 
                //                  }
                //                }
-               query = new JSObject("term", new JSObject(field, value));
+               query = new Node("term", new Node(field, value));
             }
 
             if ("ne".equals(token))
@@ -135,7 +135,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                    }
                //                  }
                //                }
-               query = new JSObject("bool", new JSObject("must_not", query));
+               query = new Node("bool", new Node("must_not", query));
             }
             break;
          //         case "and":
@@ -149,13 +149,13 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
          //               ((BoolQuery) elastic).addShould(eq);
          //            break;
          case "sw":
-            query = new JSObject("wildcard", new JSObject(field, value + "*"));
+            query = new Node("wildcard", new Node(field, value + "*"));
             break;
          case "ew":
-            query = new JSObject("wildcard", new JSObject(field, "*" + value));
+            query = new Node("wildcard", new Node(field, "*" + value));
             break;
          case "w":
-            query = new JSObject("wildcard", new JSObject(field, "*" + value + "*"));
+            query = new Node("wildcard", new Node(field, "*" + value + "*"));
             break;
          case "wo":
 
@@ -208,7 +208,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
             //            "query": {
             //               "fuzzy" : { "user" : "ki" }
             //            }
-            query = new JSObject("fuzzy", new JSObject(field, value));
+            query = new Node("fuzzy", new Node(field, value));
             break;
          default :
             throw new RuntimeException("unexpected rql token: " + token);

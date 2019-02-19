@@ -17,13 +17,13 @@ package io.rocketpartners.cloud.action.security;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 
 public class PasswordAction extends Action<PasswordAction>
 {
@@ -39,12 +39,12 @@ public class PasswordAction extends Action<PasswordAction>
          return;
       }
 
-      JSObject json = req.getJson();
+      Node json = req.getJson();
 
       if (json == null)
          return;
 
-      if (json instanceof JSArray)
+      if (json instanceof ArrayNode)
          return;
 
       String password = (String) json.remove(passwordField);
@@ -63,14 +63,14 @@ public class PasswordAction extends Action<PasswordAction>
       }
       finally
       {
-         JSObject js = res.getJson().getObject("data");
-         if (js instanceof JSArray && ((JSArray) js).length() == 1)
+         Node js = res.getJson().getNode("data");
+         if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
          {
-            JSObject user = (JSObject) ((JSArray) js).get(0);
+            Node user = (Node) ((ArrayNode) js).get(0);
             if (user.get("id") != null)
             {
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
-               JSObject body = new JSObject(passwordField, encryptedPassword, "href", user.getString("href"));
+               Node body = new Node(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
                service.put(url, body.toString());
             }

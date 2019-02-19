@@ -26,23 +26,22 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
+import io.rocketpartners.cloud.model.Node.Property;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
-import io.rocketpartners.cloud.utils.JSObject.Property;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -72,7 +71,7 @@ public class SqlPostAction extends SqlAction
 
       List<String> hrefs = new ArrayList();
 
-      JSObject obj = req.getJson();
+      Node obj = req.getJson();
 
       if (obj == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
@@ -89,12 +88,12 @@ public class SqlPostAction extends SqlAction
 
       try
       {
-         if (obj instanceof JSArray)
+         if (obj instanceof ArrayNode)
          {
             if (!Utils.empty(req.getEntityKey()))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
 
-            for (JSObject child : (List<JSObject>) ((JSArray) obj))
+            for (Node child : (List<Node>) ((ArrayNode) obj))
             {
                String href = store(chain, conn, changes, entity, child);
                hrefs.add(href);
@@ -117,7 +116,7 @@ public class SqlPostAction extends SqlAction
          //-- take all of the hrefs and combine into a 
          //-- single href for the "Location" header
 
-         JSArray array = new JSArray();
+         ArrayNode array = new ArrayNode();
          res.getJson().put("data", array);
 
          res.withStatus(SC.SC_201_CREATED);
@@ -132,13 +131,13 @@ public class SqlPostAction extends SqlAction
                Response resp = service.get(href);
                if (resp != null)
                {
-                  JSObject js = resp.getJson();
+                  Node js = resp.getJson();
                   if (js != null)
                   {
-                     js = js.getObject("data");
-                     if (js instanceof JSArray && ((JSArray) js).length() == 1)
+                     js = js.getNode("data");
+                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
                      {
-                        array.add(((JSArray) js).get(0));
+                        array.add(((ArrayNode) js).get(0));
                         added = true;
                      }
                   }
@@ -155,7 +154,7 @@ public class SqlPostAction extends SqlAction
 
             if (!added)
             {
-               array.add(new JSObject("href", href));
+               array.add(new Node("href", href));
             }
 
             String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
@@ -172,7 +171,7 @@ public class SqlPostAction extends SqlAction
 
    }
 
-   String store(Chain chain, Connection conn, List<Change> changes, Entity entity, JSObject parent) throws Exception
+   String store(Chain chain, Connection conn, List<Change> changes, Entity entity, Node parent) throws Exception
    {
       String href = parent.getString("href");
       if (href != null && parent.keySet().size() == 1)
@@ -188,7 +187,7 @@ public class SqlPostAction extends SqlAction
       return href;
    }
 
-   String storeEntity(Chain chain, Connection conn, List<Change> changes, Entity entity, JSObject parent) throws Exception
+   String storeEntity(Chain chain, Connection conn, List<Change> changes, Entity entity, Node parent) throws Exception
    {
       Api api = entity.getCollection().getApi();
 
@@ -243,9 +242,9 @@ public class SqlPostAction extends SqlAction
                else
                   continue;
 
-               if (value instanceof JSObject)
+               if (value instanceof Node)
                {
-                  JSObject child = (JSObject) value;
+                  Node child = (Node) value;
                   Collection fkCollection = api.getCollection(rel.getFkCol1().getPk().getTable());
                   String href = child.getString("href");
 
@@ -298,7 +297,7 @@ public class SqlPostAction extends SqlAction
       return id;
    }
 
-   void storeManyTo(Chain chain, Connection conn, List<Change> changes, Object parentId, Entity entity, JSObject parent) throws Exception
+   void storeManyTo(Chain chain, Connection conn, List<Change> changes, Object parentId, Entity entity, Node parent) throws Exception
    {
       ArrayListValuedHashMap<Relationship, String> relateds = new ArrayListValuedHashMap();
 
@@ -316,16 +315,16 @@ public class SqlPostAction extends SqlAction
             if (arrayObj == null)
                continue;
 
-            if (!(arrayObj instanceof JSArray))
+            if (!(arrayObj instanceof ArrayNode))
             {
-               if (arrayObj instanceof JSObject)
+               if (arrayObj instanceof Node)
                {
                   //this is the child collection "placeholder" that is used to bookmark
                   //non expanded child collections by GetHandler...ex:
                   //..., "children" : { "href" : "http://host.com/apicode/collection/entityKey/someChildCollection"}, ....
                   //thils shoudlbe ignored
 
-                  JSObject js = (JSObject) arrayObj;
+                  Node js = (Node) arrayObj;
                   if (js.keySet().size() == 1 && js.containsKey("href"))
                      continue;
                }
@@ -333,7 +332,7 @@ public class SqlPostAction extends SqlAction
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Was expecting an array for relationship " + rel);
             }
 
-            JSArray children = (JSArray) arrayObj;
+            ArrayNode children = (ArrayNode) arrayObj;
 
             if (children.length() > 0)
             {
@@ -342,10 +341,10 @@ public class SqlPostAction extends SqlAction
                   if (childObj == null)
                      continue;
 
-                  if (!(childObj instanceof JSObject))
+                  if (!(childObj instanceof Node))
                      throw new ApiException(SC.SC_400_BAD_REQUEST, "Child objects for relationships " + rel + " must be objects not arrays or primitives");
 
-                  JSObject child = (JSObject) childObj;
+                  Node child = (Node) childObj;
 
                   child.put(rel.getFkCol1().getName(), parentId);
                   String href = store(chain, conn, changes, childEntity, child);
@@ -478,7 +477,7 @@ public class SqlPostAction extends SqlAction
     * a client does not want to scrub their json model before posting changes to
     * the parent document back to the parent collection.
     */
-   public static void collapse(JSObject parent, boolean collapseAll, Set collapses, String path)
+   public static void collapse(Node parent, boolean collapseAll, Set collapses, String path)
    {
       for (String key : (List<String>) new ArrayList(parent.keySet()))
       {
@@ -486,9 +485,9 @@ public class SqlPostAction extends SqlAction
 
          if (collapseAll || collapses.contains(nextPath(path, key)))
          {
-            if (value instanceof JSArray)
+            if (value instanceof ArrayNode)
             {
-               JSArray children = (JSArray) value;
+               ArrayNode children = (ArrayNode) value;
                if (children.length() == 0)
                   parent.remove(key);
 
@@ -501,14 +500,14 @@ public class SqlPostAction extends SqlAction
                      continue;
                   }
 
-                  if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSObject))
+                  if (children.get(i) instanceof ArrayNode || !(children.get(i) instanceof Node))
                   {
                      children.remove(i);
                      i--;
                      continue;
                   }
 
-                  JSObject child = children.getObject(i);
+                  Node child = children.getObject(i);
                   for (String key2 : (List<String>) new ArrayList(child.keySet()))
                   {
                      if (!key2.equalsIgnoreCase("href"))
@@ -529,9 +528,9 @@ public class SqlPostAction extends SqlAction
                   parent.remove(key);
 
             }
-            else if (value instanceof JSObject)
+            else if (value instanceof Node)
             {
-               JSObject child = (JSObject) value;
+               Node child = (Node) value;
                for (String key2 : (List<String>) new ArrayList(child.keySet()))
                {
                   if (!key2.equalsIgnoreCase("href"))
@@ -543,20 +542,20 @@ public class SqlPostAction extends SqlAction
                   parent.remove(key);
             }
          }
-         else if (value instanceof JSArray)
+         else if (value instanceof ArrayNode)
          {
-            JSArray children = (JSArray) value;
+            ArrayNode children = (ArrayNode) value;
             for (int i = 0; i < children.length(); i++)
             {
-               if (children.get(i) instanceof JSObject && !(children.get(i) instanceof JSArray))
+               if (children.get(i) instanceof Node && !(children.get(i) instanceof ArrayNode))
                {
                   collapse(children.getObject(i), collapseAll, collapses, nextPath(path, key));
                }
             }
          }
-         else if (value instanceof JSObject)
+         else if (value instanceof Node)
          {
-            collapse((JSObject) value, collapseAll, collapses, nextPath(path, key));
+            collapse((Node) value, collapseAll, collapses, nextPath(path, key));
          }
 
       }

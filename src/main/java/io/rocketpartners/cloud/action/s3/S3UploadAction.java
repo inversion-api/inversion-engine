@@ -36,11 +36,11 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Request.Upload;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -129,7 +129,7 @@ public class S3UploadAction extends Action<S3UploadAction>
 
          responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
          responseContent.put("fileSizeBytes", fileSize);
-         res.withJson(new JSObject(responseContent));
+         res.withJson(new Node(responseContent));
       }
       finally
       {
@@ -149,7 +149,7 @@ public class S3UploadAction extends Action<S3UploadAction>
       Map<String, String> content = new HashMap<>();
       content.put("message", message);
       content.put("error", "Bad Request Exception");
-      res.withJson(new JSObject(content));
+      res.withJson(new Node(content));
 
    }
 

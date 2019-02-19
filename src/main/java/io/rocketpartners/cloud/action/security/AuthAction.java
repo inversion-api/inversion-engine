@@ -31,7 +31,9 @@ import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Permission;
 import io.rocketpartners.cloud.model.Role;
 import io.rocketpartners.cloud.model.SC;
@@ -40,8 +42,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -230,26 +230,26 @@ public class AuthAction extends Action<AuthAction>
             sessionCache.put(sessionKey, user);
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
-            JSObject obj = new JSObject();
+            Node obj = new Node();
             obj.put("id", user.getId());
             obj.put("username", username);
             obj.put("displayname", user.getDisplayName());
 
-            JSArray perms = new JSArray();
+            ArrayNode perms = new ArrayNode();
             for (Permission perm : user.getPermissions())
             {
                perms.add(perm.getName());
             }
             obj.put("perms", perms);
 
-            JSArray roles = new JSArray();
+            ArrayNode roles = new ArrayNode();
             for (Role role : user.getRoles())
             {
                roles.add(role.getName());
             }
             obj.put("roles", roles);
 
-            resp.withJson(new JSObject("data", obj));
+            resp.withJson(new Node("data", obj));
          }
       }
 

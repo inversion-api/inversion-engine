@@ -29,14 +29,14 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
 public class LogAction extends Action<LogAction>
@@ -95,7 +95,7 @@ public class LogAction extends Action<LogAction>
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
                   logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
 
-                  JSObject bodyJson = maskFields(req.getJson(), logMask);
+                  Node bodyJson = maskFields(req.getJson(), logMask);
                   if (bodyJson != null)
                   {
                      logParams.put("body", bodyJson.toString());
@@ -138,17 +138,17 @@ public class LogAction extends Action<LogAction>
       }
    }
 
-   JSObject maskFields(JSObject json, String mask)
+   Node maskFields(Node json, String mask)
    {
       if (json != null)
       {
-         if (json instanceof JSArray)
+         if (json instanceof ArrayNode)
          {
-            for (Object o : (JSArray) json)
+            for (Object o : (ArrayNode) json)
             {
-               if (o instanceof JSObject)
+               if (o instanceof Node)
                {
-                  maskFields((JSObject) o, mask);
+                  maskFields((Node) o, mask);
                }
             }
          }

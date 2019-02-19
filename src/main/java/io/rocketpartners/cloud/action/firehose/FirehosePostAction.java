@@ -26,17 +26,17 @@ import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * Posts records to a mapped AWS Kinesis Firehose stream. 
@@ -81,15 +81,15 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       if (!req.isMethod("PUT", "POST"))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
 
-      JSObject body = req.getJson();
+      Node body = req.getJson();
 
       if (body == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Attempting to post an empty body to a Firehose stream");
 
-      if (!(body instanceof JSArray))
-         body = new JSArray(body);
+      if (!(body instanceof ArrayNode))
+         body = new ArrayNode(body);
 
-      JSArray array = (JSArray) body;
+      ArrayNode array = (ArrayNode) body;
 
       Collection collection = req.getCollection();
       Table table = collection.getTable();
@@ -102,7 +102,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       {
          Object data = array.get(i);
 
-         if (data instanceof JSObject)
+         if (data instanceof Node)
          {
             //remap from attribute to column names if this db has been configured with them
             //this db/action can be used without collection attribute definitions and the 
@@ -111,8 +111,8 @@ public class FirehosePostAction extends Action<FirehosePostAction>
             List<Attribute> attrs = collection.getEntity().getAttributes();
             if (attrs.size() > 0)
             {
-               JSObject newJson = new JSObject();
-               JSObject oldJson = (JSObject) data;
+               Node newJson = new Node();
+               Node oldJson = (Node) data;
 
                for (Attribute attr : attrs)
                {
@@ -132,7 +132,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
          if (data == null)
             continue;
 
-         String string = data instanceof JSObject ? ((JSObject) data).toString(jsonPrettyPrint, jsonLowercaseNames) : data.toString();
+         String string = data instanceof Node ? ((Node) data).toString(jsonPrettyPrint, jsonLowercaseNames) : data.toString();
 
          if (jsonSeparator != null && !string.endsWith(jsonSeparator))
             string += jsonSeparator;

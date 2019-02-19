@@ -29,14 +29,14 @@ import io.rocketpartners.cloud.model.AclRule;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class AclAction extends Action<AclAction>
@@ -96,15 +96,15 @@ public class AclAction extends Action<AclAction>
       }
       finally
       {
-         JSObject json = resp.getJson();
+         Node json = resp.getJson();
          if (json != null)
          {
-            List toClean = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
+            List toClean = json instanceof ArrayNode ? ((ArrayNode) json).asList() : Arrays.asList(json);
             for (Object parent : toClean)
             {
-               if (parent instanceof JSObject)
+               if (parent instanceof Node)
                {
-                  cleanJson(chain, (JSObject) parent, restricts, Collections.EMPTY_SET, true);
+                  cleanJson(chain, (Node) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
@@ -200,15 +200,15 @@ public class AclAction extends Action<AclAction>
       }
    }
 
-   void cleanJson(Chain chain, JSObject json, Set<String> restricts, Set<String> requires, boolean silent)
+   void cleanJson(Chain chain, Node json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
-         List objs = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
+         List objs = json instanceof ArrayNode ? ((ArrayNode) json).asList() : Arrays.asList(json);
 
          for (String path : restricts)
          {
-            List<JSObject> found = new ArrayList();
+            List<Node> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -225,7 +225,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (JSObject target : found)
+            for (Node target : found)
             {
                target.remove(targetProp);
                if (!silent)
@@ -238,7 +238,7 @@ public class AclAction extends Action<AclAction>
 
          for (String path : requires)
          {
-            List<JSObject> found = new ArrayList();
+            List<Node> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -255,7 +255,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (JSObject target : found)
+            for (Node target : found)
             {
                if (target.keySet().size() == 1 && target.containsKey("href"))
                {

@@ -8,10 +8,10 @@ import org.junit.Test;
 import io.rocketpartners.cloud.action.sql.TestSqlActions;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.Service.ServiceListener;
-import io.rocketpartners.cloud.utils.JSObject;
 import junit.framework.TestCase;
 
 /**
@@ -180,7 +180,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      JSObject json = null;
+      Node json = null;
 
       res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
       json = res.getJson();
@@ -195,7 +195,7 @@ public class TestDynamoActions extends TestCase
 
       for (Object o : json.getArray("data"))
       {
-         JSObject js = (JSObject) o;
+         Node js = (Node) o;
          js.put("type", "ORDER");
          if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
             fail();

@@ -27,13 +27,12 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -54,13 +53,13 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       String input = Utils.read(new BufferedInputStream(inputStream));
 
-      JSObject responseBody = new JSObject();
-      JSObject config = null;
+      Node responseBody = new Node();
+      Node config = null;
       Exception ex = null;
 
       try
       {
-         JSObject json = Utils.parseJsonObject(input);
+         Node json = Utils.parseJsonObject(input);
 
          String method = json.getString("httpMethod");
          String host = (String) json.find("headers.Host"); 
@@ -82,7 +81,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
          }
 
-         config = new JSObject("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
+         config = new Node("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
          if (service == null)
          {
@@ -107,12 +106,12 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          Request req = null;
 
          Map headers = new HashMap();
-         JSObject jsonHeaders = json.getObject("headers");
+         Node jsonHeaders = json.getNode("headers");
          if (jsonHeaders != null)
             headers = jsonHeaders.asMap();
 
          Map params = new HashMap();
-         JSObject jsonParams = json.getObject("queryStringParameters");
+         Node jsonParams = json.getNode("queryStringParameters");
          if (jsonParams != null)
          {
             params = jsonParams.asMap();
@@ -145,10 +144,10 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("request", Utils.parseJsonObject(input));
 
-            JSObject responseJson = new JSObject();
+            Node responseJson = new Node();
             responseJson.put("isBase64Encoded", false);
             responseJson.put("statusCode", "500");
-            responseJson.put("headers", new JSObject("Access-Control-Allow-Origin", "*"));
+            responseJson.put("headers", new Node("Access-Control-Allow-Origin", "*"));
 
             responseJson.put("body", responseBody.toString());
             OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
@@ -162,12 +161,12 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
    {
-      JSObject responseJson = new JSObject();
+      Node responseJson = new Node();
 
       responseJson.put("isBase64Encoded", false);
       responseJson.put("statusCode", res.getStatusCode());
       //responseJson.put("headers", new JSObject("Access-Control-Allow-Origin", "*"));
-      JSObject headers = new JSObject();
+      Node headers = new Node();
       responseJson.put("headers", headers);
 
       for (String key : res.getHeaders().keySet())

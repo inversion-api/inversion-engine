@@ -23,15 +23,15 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.HttpUtils;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
@@ -68,7 +68,7 @@ public class Request
    //JSObject                               params                 = new JSObject();
 
    String                                 body                   = null;
-   JSObject                               json                   = null;
+   Node                               json                   = null;
 
    boolean                                browse                 = false;
 
@@ -290,7 +290,7 @@ public class Request
       return this;
    }
 
-   public JSObject getJson() throws ApiException
+   public Node getJson() throws ApiException
    {
       if (json != null)
          return json;
@@ -666,9 +666,9 @@ public class Request
     */
    boolean prune(Object parent)
    {
-      if (parent instanceof JSArray)
+      if (parent instanceof ArrayNode)
       {
-         JSArray arr = ((JSArray) parent);
+         ArrayNode arr = ((ArrayNode) parent);
          for (int i = 0; i < arr.length(); i++)
          {
             if (prune(arr.get(i)))
@@ -679,10 +679,10 @@ public class Request
          }
          return arr.length() == 0;
       }
-      else if (parent instanceof JSObject)
+      else if (parent instanceof Node)
       {
          boolean prune = true;
-         JSObject js = (JSObject) parent;
+         Node js = (Node) parent;
          for (String key : js.keySet())
          {
             Object child = js.get(key);

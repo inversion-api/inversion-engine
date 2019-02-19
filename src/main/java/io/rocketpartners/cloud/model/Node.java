@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rocketpartners.cloud.utils;
+package io.rocketpartners.cloud.model;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,27 +34,29 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
-public class JSObject implements Map<String, Object>
+import io.rocketpartners.cloud.utils.Utils;
+
+public class Node implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
 
-   public JSObject()
+   public Node()
    {
 
    }
 
-   public JSObject(Object... nvPairs)
+   public Node(Object... nvPairs)
    {
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
-         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JSObject)))
+         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof Node)))
             throw new RuntimeException("Incorrect constructor called.  Should have called JSObject(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
       }
    }
 
-   public JSObject(Map map)
+   public Node(Map map)
    {
       for (Object key : map.keySet())
       {
@@ -63,14 +64,14 @@ public class JSObject implements Map<String, Object>
       }
    }
 
-   public JSObject getObject(String name)
+   public Node getNode(String name)
    {
-      return (JSObject) get(name);
+      return (Node) get(name);
    }
 
-   public JSArray getArray(String name)
+   public ArrayNode getArray(String name)
    {
-      return (JSArray) get(name);
+      return (ArrayNode) get(name);
    }
 
    public String getString(String name)
@@ -99,14 +100,14 @@ public class JSObject implements Map<String, Object>
       return null;
    }
 
-   public JSObject findObject(String path)
+   public Node findNode(String path)
    {
-      return (JSObject) find(path);
+      return (Node) find(path);
    }
 
-   public JSArray findArray(String path)
+   public ArrayNode findArray(String path)
    {
-      return (JSArray) find(path);
+      return (ArrayNode) find(path);
    }
 
    public Object find(String path)
@@ -118,7 +119,7 @@ public class JSObject implements Map<String, Object>
       {
          if (obj == null)
             break;
-         obj = ((JSObject) obj).get(prop);
+         obj = ((Node) obj).get(prop);
       }
       return obj;
    }
@@ -252,9 +253,9 @@ public class JSObject implements Map<String, Object>
          String name = p.name;
          Object value = p.value;
 
-         if (value instanceof JSArray)
+         if (value instanceof ArrayNode)
          {
-            map.put(name, ((JSArray) p.getValue()).asList());
+            map.put(name, ((ArrayNode) p.getValue()).asList());
          }
          else
          {
@@ -268,125 +269,17 @@ public class JSObject implements Map<String, Object>
    @Override
    public String toString()
    {
-      return toString(true);
+      return Utils.toJson((Node) this);
    }
 
    public String toString(boolean pretty)
    {
-      return toString(pretty, false);
+      return Utils.toJson((Node) this, pretty, false);
    }
 
-   public String toString(boolean pretty, boolean lowercaseNames)
+   public String toString(boolean pretty, boolean tolowercase)
    {
-      try
-      {
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         JsonGenerator json = new JsonFactory().createGenerator(baos);
-         if (pretty)
-            json.useDefaultPrettyPrinter();
-         write(json, new HashSet(), lowercaseNames);
-         json.flush();
-         baos.flush();
-
-         return new String(baos.toByteArray());
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException(ex);
-      }
-   }
-
-   void write(JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
-   {
-      Property href = getProperty("href");
-
-      if (visited.contains(this))
-      {
-         json.writeStartObject();
-         if (href != null)
-         {
-            json.writeStringField("@link", href.getValue() + "");
-         }
-
-         json.writeEndObject();
-         return;
-      }
-      visited.add(this);
-
-      json.writeStartObject();
-
-      if (href != null)
-         json.writeStringField("href", href.getValue() + "");
-
-      for (String key : properties.keySet())
-      {
-         Property p = properties.get(key);
-         if (p == href)
-            continue;
-
-         if (p.value == null)
-         {
-            json.writeNullField(p.name);
-         }
-         else if (p.value instanceof JSObject)
-         {
-            if (!lowercaseNames)
-               json.writeFieldName(p.name);
-            else
-               json.writeFieldName(p.name.toLowerCase());
-            ((JSObject) p.value).write(json, visited, lowercaseNames);
-         }
-         else if (p.value instanceof Date)
-         {
-            json.writeStringField(p.name, Utils.formatDate((Date) p.value, "yyyy-MM-dd'T'HH:mmZ"));
-         }
-         else if (p.value instanceof BigDecimal)
-         {
-            json.writeNumberField(p.name, (BigDecimal) p.value);
-         }
-         else if (p.value instanceof Double)
-         {
-            json.writeNumberField(p.name, (Double) p.value);
-         }
-         else if (p.value instanceof Float)
-         {
-            json.writeNumberField(p.name, (Float) p.value);
-         }
-         else if (p.value instanceof Integer)
-         {
-            json.writeNumberField(p.name, (Integer) p.value);
-         }
-         else if (p.value instanceof Long)
-         {
-            json.writeNumberField(p.name, (Long) p.value);
-         }
-         else if (p.value instanceof BigDecimal)
-         {
-            json.writeNumberField(p.name, (BigDecimal) p.value);
-         }
-         else if (p.value instanceof BigInteger)
-         {
-            json.writeNumberField(p.name, ((BigInteger) p.value).intValue());
-         }
-         else if (p.value instanceof Boolean)
-         {
-            json.writeBooleanField(p.name, (Boolean) p.value);
-         }
-         else
-         {
-            String strVal = p.value + "";
-            if ("null".equals(strVal))
-            {
-               json.writeNullField(p.name);
-            }
-            else
-            {
-               strVal = Utils.encodeJson(strVal);
-               json.writeStringField(p.name, strVal);
-            }
-         }
-      }
-      json.writeEndObject();
+      return Utils.toJson((Node) this, pretty, tolowercase);
    }
 
    @Override

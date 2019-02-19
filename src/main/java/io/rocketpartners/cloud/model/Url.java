@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Url
@@ -32,7 +31,7 @@ public class Url
    protected int      port     = 0;
    protected String   path     = null;
    protected String   query    = null;
-   protected JSObject params   = new JSObject();
+   protected Node params   = new Node();
 
    public Url(String url)
    {
@@ -76,7 +75,7 @@ public class Url
             query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
 
-            this.params = new JSObject(Utils.parseQueryString(query));
+            this.params = new Node(Utils.parseQueryString(query));
          }
 
          //replace slashes after stripping off query to leave query as it was found
@@ -307,7 +306,7 @@ public class Url
    public void withQuery(String query)
    {
       this.query = query;
-      params = new JSObject();
+      params = new Node();
       if (query != null)
       {
          params.putAll(Utils.parseQueryString(query));

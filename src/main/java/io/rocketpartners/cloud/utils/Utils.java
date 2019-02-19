@@ -34,6 +34,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
@@ -56,10 +58,16 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
+
+import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.Node.Property;
 
 /**
  * Collection of utility methods designed to make
@@ -83,6 +91,188 @@ public class Utils
    protected static final String   NEW_LINE           = System.getProperty("line.separator");
 
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+   public static String toJson(Node node)
+   {
+      return toJson(node, true, false);
+   }
+
+   public static String toJson(Node node, boolean pretty, boolean lowercaseNames)
+   {
+      try
+      {
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         JsonGenerator json = new JsonFactory().createGenerator(baos);
+         if (pretty)
+            json.useDefaultPrettyPrinter();
+
+         writeNode(node, json, new HashSet(), lowercaseNames);
+         json.flush();
+         baos.flush();
+
+         return new String(baos.toByteArray());
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException(ex);
+      }
+   }
+
+   static void writeNode(Node node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   {
+      Property href = node.getProperty("href");
+
+      if (visited.contains(node))
+      {
+         json.writeStartObject();
+         if (href != null)
+         {
+            json.writeStringField("@link", href.getValue() + "");
+         }
+
+         json.writeEndObject();
+         return;
+      }
+      visited.add(node);
+      
+      if (node instanceof ArrayNode)
+      {
+         writeArrayNode(((ArrayNode) node), json, visited, lowercaseNames);
+         return;
+      }
+
+      json.writeStartObject();
+
+      if (href != null)
+         json.writeStringField("href", href.getValue() + "");
+
+      for (String key : node.keySet())
+      {
+         Property p = node.getProperty(key);
+         if (p == href)
+            continue;
+
+         String name = p.getName();
+         Object value = p.getValue();
+
+         if (value == null)
+         {
+            json.writeNullField(name);
+         }
+         else if (value instanceof Node)
+         {
+            if (!lowercaseNames)
+               json.writeFieldName(name);
+            else
+               json.writeFieldName(name.toLowerCase());
+
+            writeNode((Node) value, json, visited, lowercaseNames);
+         }
+         else if (value instanceof Date)
+         {
+            json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+         }
+         else if (value instanceof BigDecimal)
+         {
+            json.writeNumberField(name, (BigDecimal) value);
+         }
+         else if (value instanceof Double)
+         {
+            json.writeNumberField(name, (Double) value);
+         }
+         else if (value instanceof Float)
+         {
+            json.writeNumberField(name, (Float) value);
+         }
+         else if (value instanceof Integer)
+         {
+            json.writeNumberField(name, (Integer) value);
+         }
+         else if (value instanceof Long)
+         {
+            json.writeNumberField(name, (Long) value);
+         }
+         else if (value instanceof BigDecimal)
+         {
+            json.writeNumberField(name, (BigDecimal) value);
+         }
+         else if (value instanceof BigInteger)
+         {
+            json.writeNumberField(name, ((BigInteger) value).intValue());
+         }
+         else if (value instanceof Boolean)
+         {
+            json.writeBooleanField(name, (Boolean) value);
+         }
+         else
+         {
+            String strVal = value + "";
+            if ("null".equals(strVal))
+            {
+               json.writeNullField(name);
+            }
+            else
+            {
+               strVal = Utils.encodeJson(strVal);
+               json.writeStringField(name, strVal);
+            }
+         }
+      }
+      json.writeEndObject();
+   }
+
+   static void writeArrayNode(ArrayNode array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   {
+      json.writeStartArray();
+      for (Object obj : array.asList())
+      {
+         if (obj == null)
+         {
+            json.writeNull();
+         }
+         else if (obj instanceof Node)
+         {
+            writeNode((Node) obj, json, visited, lowercaseNames);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof Double)
+         {
+            json.writeNumber((Double) obj);
+         }
+         else if (obj instanceof Float)
+         {
+            json.writeNumber((Float) obj);
+         }
+         else if (obj instanceof Integer)
+         {
+            json.writeNumber((Integer) obj);
+         }
+         else if (obj instanceof Long)
+         {
+            json.writeNumber((Long) obj);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof Boolean)
+         {
+            json.writeBoolean((Boolean) obj);
+         }
+         else
+         {
+            json.writeString(Utils.encodeJson(obj + ""));
+         }
+      }
+      json.writeEndArray();
+   }
 
    /**
     * A null safe loose equality checker.  
@@ -179,14 +369,14 @@ public class Utils
       return exploded;
    }
 
-   public static JSArray parseJsonArray(String json)
+   public static ArrayNode parseJsonArray(String json)
    {
-      return ((JSArray) parseJson(json));
+      return ((ArrayNode) parseJson(json));
    }
 
-   public static JSObject parseJsonObject(String json)
+   public static Node parseJsonObject(String json)
    {
-      return ((JSObject) parseJson(json));
+      return ((Node) parseJson(json));
    }
 
    static Object parseJson(String json)
@@ -247,8 +437,8 @@ public class Utils
 
       if (json.isArray())
       {
-         JSArray retVal = null;
-         retVal = new JSArray();
+         ArrayNode retVal = null;
+         retVal = new ArrayNode();
 
          for (JsonNode child : json)
          {
@@ -259,8 +449,8 @@ public class Utils
       }
       else if (json.isObject())
       {
-         JSObject retVal = null;
-         retVal = new JSObject();
+         Node retVal = null;
+         retVal = new Node();
 
          Iterator<String> it = json.fieldNames();
          while (it.hasNext())
@@ -1591,9 +1781,9 @@ public class Utils
     */
    public static boolean wildcardMatch(String wildcard, String string)
    {
-      if(wildcard.equals("*"))
+      if (wildcard.equals("*"))
          return true;
-      
+
       if (empty(wildcard) || empty(string))
          return false;
 

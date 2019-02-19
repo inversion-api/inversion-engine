@@ -21,12 +21,12 @@ import java.util.Map;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * Provides a blank or client specific request rate limit of <code>limitRequests</code> per 
@@ -77,7 +77,7 @@ public class RateLimitAction extends Action<RateLimitAction>
 
       if (!bucket.hit(clientId))
       {
-         JSObject error = new JSObject("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
+         Node error = new Node("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
          res.withJson(error);
          res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
 

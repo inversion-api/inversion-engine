@@ -24,8 +24,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -63,9 +61,9 @@ public class Action<A extends Action> extends Rule<A>
       return (A) this;
    }
 
-   public static List<JSObject> find(Object parent, String... paths)
+   public static List<Node> find(Object parent, String... paths)
    {
-      List<JSObject> found = new ArrayList();
+      List<Node> found = new ArrayList();
       for (String apath : paths)
       {
          for (String path : (List<String>) Utils.explode(",", apath))
@@ -76,26 +74,26 @@ public class Action<A extends Action> extends Rule<A>
       return found;
    }
 
-   public static void find(Object parent, List<JSObject> found, String targetPath, String currentPath)
+   public static void find(Object parent, List<Node> found, String targetPath, String currentPath)
    {
-      if (parent instanceof JSArray)
+      if (parent instanceof ArrayNode)
       {
-         for (Object child : (JSArray) parent)
+         for (Object child : (ArrayNode) parent)
          {
-            if (child instanceof JSObject)
+            if (child instanceof Node)
                find(child, found, targetPath, currentPath);
          }
       }
-      else if (parent instanceof JSObject)
+      else if (parent instanceof Node)
       {
          if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
          {
-            found.add((JSObject) parent);
+            found.add((Node) parent);
          }
 
-         for (String key : ((JSObject) parent).keySet())
+         for (String key : ((Node) parent).keySet())
          {
-            Object child = ((JSObject) parent).get(key);
+            Object child = ((Node) parent).get(key);
             String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
             find(child, found, targetPath, nextPath);
          }

@@ -27,16 +27,16 @@ import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.HttpUtils;
 
@@ -160,16 +160,16 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         JSObject jsObj = Utils.parseJsonObject(r.getContent());
+         Node jsObj = Utils.parseJsonObject(r.getContent());
 
-         int totalHits = Integer.parseInt(jsObj.getObject("hits").getProperty("total").getValue().toString());
-         JSArray hits = jsObj.getObject("hits").getArray("hits");
+         int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
+         ArrayNode hits = jsObj.getNode("hits").getArray("hits");
 
          //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
          //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
          //
          //         JSArray data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-         JSArray data = new JSArray();
+         ArrayNode data = new ArrayNode();
          //
          //         // if the query contains a wantedPage and it differs from the pagenum 
          //         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
@@ -202,7 +202,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
          //JSObject wrapper = new JSObject("meta", meta, "data", data);
-         JSObject wrapper = new JSObject("meta", new JSObject(), "data", data);
+         Node wrapper = new Node("meta", new Node(), "data", data);
          res.withJson(wrapper);
 
       }
@@ -233,11 +233,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
-      JSObject context = null;
+      Node context = null;
       if (req.getApi().isMultiTenant())
       {
          tenantId = req.removeParam("tenantId");
-         context = new JSObject("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+         context = new Node("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
       }
 
       String field = null;
@@ -249,23 +249,23 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          value = entry.getValue();
       }
 
-      JSObject completion = null;
-      JSObject autoSuggest = null;
-      JSObject payload = null;
+      Node completion = null;
+      Node autoSuggest = null;
+      Node payload = null;
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         completion = new JSObject("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JSObject("prefix", value, "completion", completion);
-         payload = new JSObject("_source", new JSArray(field), "suggest", new JSObject("auto-suggest", autoSuggest));
+         completion = new Node("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new Node("prefix", value, "completion", completion);
+         payload = new Node("_source", new ArrayNode(field), "suggest", new Node("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new JSObject("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JSObject("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new JSObject("_source", new JSArray(field), "suggest", new JSObject("auto-suggest", autoSuggest));
+         completion = new Node("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new Node("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new Node("_source", new ArrayNode(field), "suggest", new Node("auto-suggest", autoSuggest));
       }
 
       if (context != null)
@@ -282,18 +282,18 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         JSObject jsObj = Utils.parseJsonObject(r.getContent());
-         JSObject auto = (JSObject) jsObj.getObject("suggest").getArray("auto-suggest").get(0);
-         JSArray resultArray = new JSArray();
-         for (JSObject obj : (List<JSObject>) auto.getArray("options").asList())
+         Node jsObj = Utils.parseJsonObject(r.getContent());
+         Node auto = (Node) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
+         ArrayNode resultArray = new ArrayNode();
+         for (Node obj : (List<Node>) auto.getArray("options").asList())
          {
             if (context != null)
             {
-               resultArray.add(obj.getObject("_source").getObject(field).get("input"));
+               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
             }
             else
             {
-               resultArray.add(obj.getObject("_source").get(field));
+               resultArray.add(obj.getNode("_source").get(field));
             }
          }
 
@@ -308,9 +308,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          }
          else
          {
-            JSObject data = new JSObject("field", field, "results", resultArray);
-            JSObject meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new JSObject("meta", meta, "data", data));
+            Node data = new Node("field", field, "results", resultArray);
+            Node meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+            res.withJson(new Node("meta", meta, "data", data));
          }
       }
       else
@@ -350,9 +350,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param totalHits
     * @return
     */
-   private JSObject buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
+   private Node buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
    {
-      JSObject meta = new JSObject();
+      Node meta = new Node();
 
       //      pageNum = (pageNum == -1) ? 1 : pageNum;
       //      int prevPageNum = pageNum - 1;
@@ -481,9 +481,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       for (String field : sortList)
       {
-         if (sourceObj instanceof JSObject && ((JSObject) sourceObj).get(field) != null)
+         if (sourceObj instanceof Node && ((Node) sourceObj).get(field) != null)
          {
-            list.add(((JSObject) sourceObj).get(field).toString().toLowerCase());
+            list.add(((Node) sourceObj).get(field).toString().toLowerCase());
          }
          else if (sourceObj instanceof String)
          {
@@ -496,9 +496,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       return String.join(",", list);
    }
 
-   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, ElasticsearchQuery dsl)
+   private ArrayNode createDataJsArray(boolean isAll, boolean isOneSrcArr, ArrayNode hits, ElasticsearchQuery dsl)
    {
-      JSArray data = new JSArray();
+      ArrayNode data = new ArrayNode();
 
       //      for (JSObject obj : (List<JSObject>) hits.asList())
       //      {

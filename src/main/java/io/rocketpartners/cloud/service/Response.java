@@ -26,9 +26,9 @@ import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Change;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Response
@@ -46,7 +46,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected JSObject                               json              = new JSObject("meta", new JSObject(), "data", new JSArray());
+   protected Node                               json              = new Node("meta", new Node(), "data", new ArrayNode());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -187,7 +187,7 @@ public class Response
    /**
     * @return the json
     */
-   public JSObject getJson()
+   public Node getJson()
    {
       return json;
    }
@@ -198,18 +198,18 @@ public class Response
     * 
     * @param json the json to set
     */
-   public Response withJson(JSObject json)
+   public Response withJson(Node json)
    {
       this.json = json;
       return this;
    }
 
-   public JSArray data()
+   public ArrayNode data()
    {
       return json.getArray("data");
    }
 
-   public Response withData(JSArray data)
+   public Response withData(ArrayNode data)
    {
       json.put("data", data);
       return this;
@@ -221,9 +221,9 @@ public class Response
       return this;
    }
 
-   public JSObject meta()
+   public Node meta()
    {
-      return json.getObject("meta");
+      return json.getNode("meta");
    }
 
    public Response withMeta(String key, Object value)
@@ -233,25 +233,25 @@ public class Response
 
    public Response withRowCount(int rowCount)
    {
-      json.getObject("meta").put("rowCount", rowCount);
+      json.getNode("meta").put("rowCount", rowCount);
       return this;
    }
 
    public Response withPageSize(int pageSize)
    {
-      json.getObject("meta").put("pageSize", pageSize);
+      json.getNode("meta").put("pageSize", pageSize);
       return this;
    }
 
    public Response withPageNum(int pageNum)
    {
-      json.getObject("meta").put("pageNum", pageNum);
+      json.getNode("meta").put("pageNum", pageNum);
       return this;
    }
 
    public Response withPageCount(int pageCount)
    {
-      json.getObject("meta").put("pageCount", pageCount);
+      json.getNode("meta").put("pageCount", pageCount);
       return this;
    }
 
@@ -261,9 +261,9 @@ public class Response
       if (pageSize < 0)
       {
          Object arr = json.find("data");
-         if (arr instanceof JSArray)
+         if (arr instanceof ArrayNode)
          {
-            pageSize = ((JSArray) arr).size();
+            pageSize = ((ArrayNode) arr).size();
          }
       }
       return pageSize;

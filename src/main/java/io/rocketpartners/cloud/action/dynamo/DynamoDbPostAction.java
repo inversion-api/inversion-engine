@@ -26,17 +26,17 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Node;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.JSArray;
-import io.rocketpartners.cloud.utils.JSObject;
 
 /**
  * @author tc-rocket
@@ -82,11 +82,11 @@ public class DynamoDbPostAction extends DynamoDbAction
       //      }
 
       // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
-      JSObject json = req.getJson();
+      Node json = req.getJson();
 
-      if (json instanceof JSArray)
+      if (json instanceof ArrayNode)
       {
-         ((JSArray) json).stream().forEach(e -> put(collection, (JSObject) e));
+         ((ArrayNode) json).stream().forEach(e -> put(collection, (Node) e));
       }
       else
       {
@@ -97,7 +97,7 @@ public class DynamoDbPostAction extends DynamoDbAction
 
    }
 
-   void put(Collection collection, JSObject json)//, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
+   void put(Collection collection, Node json)//, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
    {
       try
       {
