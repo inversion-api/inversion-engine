@@ -9,7 +9,7 @@ public class ElasticsearchPage<T extends ElasticsearchPage, P extends Elasticsea
    public ElasticsearchPage(P query)
    {
       super(query);
-      withTokens("start");
+      withFunctions("start");
    }
    
    

@@ -70,8 +70,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
    public DynamoDbQuery(Collection collection, Object terms)
    {
       super(collection, terms);
-      where().clearTokens();
-      where().withTokens("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "and", "or");
+      where().clearFunctions();
+      where().withFunctions("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "and", "or");
    }
 
    DynamoResult doSelect(com.amazonaws.services.dynamodbv2.document.Table dynamoTable)
@@ -165,7 +165,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             if (index.isLocalIndex())
                continue;
 
-            Term partKey = findTerm(index.getPartitionKey().getName(), "eq");
+            String partAttr = collection.getAttributeName(index.getPartitionKey().getName()); 
+            
+            Term partKey = findTerm(partAttr, "eq");
             if (partKey != null)
             {
                this.index = index;
@@ -173,7 +175,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
                if (index.getSortKey() != null)
                {
-                  Term sortKey = findTerm(index.getSortKey().getName(), "eq");
+                  String sortAttr = collection.getAttributeName(index.getPartitionKey().getName()); 
+                  
+                  Term sortKey = findTerm(sortAttr, "eq");
                   if (sortKey != null)
                   {
                      //this index has both values passed in with 'eq' so we are done
@@ -209,6 +213,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
                return term;
          }
       }
+      
+      
+      
       return null;
    }
 

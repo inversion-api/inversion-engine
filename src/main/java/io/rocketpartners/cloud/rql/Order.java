@@ -24,7 +24,7 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P>
    public Order(P query)
    {
       super(query);
-      withTokens("order", "sort");
+      withFunctions("order", "sort");
    }
 
    /**

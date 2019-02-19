@@ -23,7 +23,7 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P>
    public Group(P query)
    {
       super(query);
-      withTokens("group");
+      withFunctions("group");
    }
 
    public List<String> groups()

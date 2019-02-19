@@ -34,7 +34,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
    public Page(P query)
    {
       super(query);
-      withTokens("offset", "limit", "page", "pageNum", "pageSize");
+      withFunctions("offset", "limit", "page", "pageNum", "pageSize");
    }
 
    public int getOffset()

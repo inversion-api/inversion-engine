@@ -182,26 +182,32 @@ public class TestDynamoActions extends TestCase
       Response res = null;
       Node json = null;
 
-      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-      json = res.getJson();
-      System.out.println(json);
+//      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+//      json = res.getJson();
+//      System.out.println(json);
+//
+//      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
+//      //      json = res.getJson();
+//      //      System.out.println(json);
+//      assertEquals(json.find("meta.pageSize"), 100);
+//      assertEquals(json.find("meta.rowCount"), 25);
+//      assertEquals(json.find("data.0.orderid"), 11058);
+//
+//      for (Object o : json.getArray("data"))
+//      {
+//         Node js = (Node) o;
+//         js.put("type", "ORDER");
+//         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
+//            fail();
+//      }
 
-      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
-      //      json = res.getJson();
-      //      System.out.println(json);
-      assertEquals(json.find("meta.pageSize"), 100);
-      assertEquals(json.find("meta.rowCount"), 25);
-      assertEquals(json.find("data.0.orderid"), 11058);
-
-      for (Object o : json.getArray("data"))
-      {
-         Node js = (Node) o;
-         js.put("type", "ORDER");
-         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
-            fail();
-      }
-
-      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
+//      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
+//      json = res.getJson();
+//      System.out.println(json);
+//      assertEquals(json.getArray("data").length(), 7);
+//      
+      
+      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058&type=ORDER");
       json = res.getJson();
       System.out.println(json);
       assertEquals(json.getArray("data").length(), 7);

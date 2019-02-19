@@ -33,13 +33,12 @@ public class Builder<T, P extends Builder>
    /**
     * Term tokens this builder is willing to accept
     */
-   protected Set<String>   tokens   = new HashSet();
+   protected Set<String>   functions   = new HashSet();
 
    public Builder(P parent)
    {
       withParent(parent);
    }
-
 
    /**
     * OVERRIDE ME TO ADD CUSTOM FUNCTIONALITY TO YOUR FLUENT API
@@ -54,7 +53,7 @@ public class Builder<T, P extends Builder>
             return true;
       }
 
-      if (tokens.contains(token))
+      if (functions.contains(token))
       {
          terms.add(term);
          return true;
@@ -62,8 +61,7 @@ public class Builder<T, P extends Builder>
 
       return false;
    }
-   
-   
+
    protected T r()
    {
       if (r != null)
@@ -140,31 +138,45 @@ public class Builder<T, P extends Builder>
       return r();
    }
 
-   public T withTokens(Collection<String> tokens)
+   public T withFunctions(Collection<String> tokens)
    {
       for (String token : tokens)
       {
-         this.tokens.add(token.trim().toLowerCase());
+         this.functions.add(token.trim().toLowerCase());
       }
       return r();
    }
 
-   public T withTokens(String... tokens)
+   public T withFunctions(String... tokens)
    {
       for (String token : tokens)
       {
-         this.tokens.add(token.trim().toLowerCase());
+         this.functions.add(token.trim().toLowerCase());
       }
 
       return r();
    }
 
-   public T clearTokens()
+   public boolean isFunction(String token)
    {
-      this.tokens.clear();
+      token = token.toLowerCase();
+      if (functions.contains(token))
+         return true;
+
+      for (Builder builder : builders)
+      {
+         if (builder.isFunction(token))
+            return true;
+      }
+      return false;
+   }
+
+   public T clearFunctions()
+   {
+      this.functions.clear();
       return r();
    }
-   
+
    public T withTerm(String token, Object... terms)
    {
       withTerm(Term.term(null, token, terms));
@@ -192,9 +204,9 @@ public class Builder<T, P extends Builder>
       {
          //FIX ME this has to happen in two separate recursions.....otherwise where will grab the eq for limit=5 etc. 
 
-         //this param came in in function=arg,arg format not function(arg,arg) format
+         //this param came in in function=arg format not function(col,arg) format
          Term child = term.getTerm(0);
-         if (child != null && !child.isQuoted())
+         if (child != null && !child.isQuoted() && child.isLeaf() && isFunction(child.getToken()))
          {
             String childToken = child.getToken().toLowerCase();
 
@@ -217,7 +229,6 @@ public class Builder<T, P extends Builder>
 
       return r();
    }
-
 
    public List<Term> getTerms()
    {
@@ -249,7 +260,7 @@ public class Builder<T, P extends Builder>
                }
                else
                {
-                  term = key + "=" + value;
+                  term = "eq(" + key + "," + value + ")";
                }
                withTerm((String) term);
             }

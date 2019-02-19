@@ -23,7 +23,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
    public Where(P query)
    {
       super(query);
-      withTokens("and", "or", "not", "eq", "ne", "n", "nn", "like", "w", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+      withFunctions("and", "or", "not", "eq", "ne", "n", "nn", "like", "w", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
    }
 
    public List<Term> filters()

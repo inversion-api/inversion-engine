@@ -23,7 +23,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
    public Select(P query)
    {
       super(query);
-      withTokens("as", "includes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
+      withFunctions("as", "includes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
    }
 
    public boolean isDistinct()
@@ -80,7 +80,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
 
       }
 
-      if (tokens.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct"))
+      if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct"))
       {
          String asName = "$$$ANON";
          if (term.size() > 1 && term.hasToken("count", "sum", "min", "max"))
