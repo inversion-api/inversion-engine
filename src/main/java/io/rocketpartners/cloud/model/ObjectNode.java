@@ -21,8 +21,8 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -165,7 +165,7 @@ public class ObjectNode implements Map<String, Object>
    public Set<String> keySet()
    {
       //properties.getKeySet contains the lower case versions.
-      HashSet keys = new HashSet();
+      LinkedHashSet keys = new LinkedHashSet();
       for (String key : properties.keySet())
       {
          Property p = properties.get(key);
