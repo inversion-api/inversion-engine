@@ -45,6 +45,11 @@ public class Chain
          return stack;
       }
 
+      public static int getDepth()
+      {
+         return get().size();
+      }
+
       public static Chain peek()
       {
          Stack<Chain> stack = get();
