@@ -19,16 +19,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>
 {
-   protected String       path    = null;
-   protected List<Action> actions = new ArrayList();
+   protected String       path     = null;
+   protected List<Action> actions  = new ArrayList();
+   protected boolean      internal = false;
 
    public boolean matches(String method, String path)
    {
+      if (internal && ChainLocal.getDepth() < 2)
+      {
+         return false;
+      }
+
       if (!isMethod(method))
          return false;
 
@@ -85,6 +92,12 @@ public class Endpoint extends Rule<Endpoint>
       }
 
       this.path = path;
+      return this;
+   }
+
+   public Endpoint withInternal(boolean internal)
+   {
+      this.internal = internal;
       return this;
    }
 
