@@ -55,13 +55,13 @@ public class DynamoDbPostAction extends DynamoDbAction
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Collection collection = req.getCollection();//api.getCollection(req.getCollectionKey(), DynamoDb.class);
-//      Table table = collection.getTable();
-//      DynamoDb db = (DynamoDb) table.getDb();
+      //      Table table = collection.getTable();
+      //      DynamoDb db = (DynamoDb) table.getDb();
 
       ///com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
 
-//      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
-//      String pk = dynamoIdx.getPartitionKey().getName();
+      //      DynamoDbIndex dynamoIdx = DynamoDb.findIndexByName(table, DynamoDbIndex.PRIMARY_INDEX);
+      //      String pk = dynamoIdx.getPartitionKey().getName();
 
       //      boolean appendTenantIdToPk = isAppendTenantIdToPk(chain, collection.getName());
       //      
@@ -112,13 +112,13 @@ public class DynamoDbPostAction extends DynamoDbAction
                   Object value = json.remove(key);
                   if (!json.containsKey(colName))
                   {
-                     value = DynamoDb.cast(value, attr.getColumn().getType());
+                     value = DynamoDb.cast(value, attr);
                      json.put(colName, value);
                   }
                }
             }
          }
-         
+
          DynamoDb db = (DynamoDb) collection.getDb();
          com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(collection);
 
@@ -160,9 +160,10 @@ public class DynamoDbPostAction extends DynamoDbAction
          // this just means the that conditional write wasn't satisfied
          // so the record was not written
       }
-      catch(Exception ex)
+      catch (Exception ex)
       {
          System.out.println(json);
+         ex.printStackTrace();
       }
    }
 

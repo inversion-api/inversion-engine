@@ -24,19 +24,11 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
@@ -45,7 +37,6 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
@@ -403,6 +394,19 @@ public class DynamoDb extends Db<DynamoDb>
       else
       {
          return "S";
+      }
+   }
+
+   public static Object cast(Object value, Attribute attr)
+   {
+      String type = attr.getColumn().getType();
+      try
+      {
+         return cast(value, type);
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting " + attr.getName() + "/" + attr.getColumn().getName() + " with type " + type + " with value " + value, ex);
       }
    }
 

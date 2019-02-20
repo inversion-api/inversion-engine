@@ -26,9 +26,11 @@ import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Response
@@ -46,7 +48,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected Node                               json              = new Node("meta", new Node(), "data", new ArrayNode());
+   protected Node                                   json              = new Node("meta", new Node(), "data", new ArrayNode());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -70,6 +72,22 @@ public class Response
    public Response(String url)
    {
       withUrl(url);
+   }
+
+   public Response statusOk()
+   {
+      if (statusCode < 200 || statusCode > 299)
+         throw new ApiException(statusCode + " " + statusError);
+
+      return this;
+   }
+
+   public Response statusEq(int statusCode, String message)
+   {
+      if (this.statusCode != statusCode)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+
+      return this;
    }
 
    public Response withMeta(String key, String value)
@@ -260,7 +278,7 @@ public class Response
       int pageSize = json.findInt("meta.pageSize");
       if (pageSize < 0)
       {
-         Object arr = json.find("data");
+         Object arr = json.find("data.0.name");
          if (arr instanceof ArrayNode)
          {
             pageSize = ((ArrayNode) arr).size();

@@ -22,7 +22,7 @@ public class CreateTestDynamoDb
    public static void main(String[] args) throws Exception
    {
       //deleteTable("test-northwind");
-      //createTable("test-northwind");
+      createTable("test-northwind");
    }
    
    public static void deleteTable(String tableName) throws Exception
@@ -46,8 +46,8 @@ public class CreateTestDynamoDb
       attrs.add(new AttributeDefinition().withAttributeName("gs2sk").withAttributeType("S"));
 
       attrs.add(new AttributeDefinition().withAttributeName("ls1").withAttributeType("S"));
-      attrs.add(new AttributeDefinition().withAttributeName("ls2").withAttributeType("N"));
-      attrs.add(new AttributeDefinition().withAttributeName("ls3").withAttributeType("B"));
+      attrs.add(new AttributeDefinition().withAttributeName("ls2").withAttributeType("S"));
+      attrs.add(new AttributeDefinition().withAttributeName("ls3").withAttributeType("S"));
 
       List<KeySchemaElement> keys = new ArrayList<>();
       keys.add(new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.HASH));
@@ -76,8 +76,8 @@ public class CreateTestDynamoDb
       {
          gsx.setProjection(new Projection().withProjectionType(ProjectionType.ALL));
          gsx.withProvisionedThroughput(new ProvisionedThroughput()//
-                                                                  .withReadCapacityUnits(10L)//
-                                                                  .withWriteCapacityUnits(10L));
+                                                                  .withReadCapacityUnits(5L)//
+                                                                  .withWriteCapacityUnits(5L));
       }
 
       AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();

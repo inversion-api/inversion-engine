@@ -1,4 +1,6 @@
 
+look into json path for Node.find()...maybe make node.get() accept a path
+
 Implement db.startup()/shutdown();
 
 DONE get rid of request.params in favor of url.params

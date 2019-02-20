@@ -374,6 +374,9 @@ public class Builder<T, P extends Builder>
 
    public Term findTerm(String childToken, String... parentFunctions)
    {
+      if(childToken == null)
+         return null;
+      
       for (Term term : getTerms())
       {
          if (term.hasToken(parentFunctions))

@@ -122,26 +122,6 @@ public class TestDynamoActions extends TestCase
             {
                dynamoDb.bootstrapApi();
 
-               //Api api = service.getApi(apiCode).withDb(dynamoDb).getApi();
-               //      Db dynamoDb = .withTable(dynamoTbl)//
-               //                                           .withColumn("hk", "S")//
-               //                                           .withColumn("sk", "S")//
-               //
-               //                                           .withColumn("gs1hk", "N")//
-               //                                           .withColumn("gs1sk", "N")//
-               //                                           .withColumn("gs2hk", "N")//
-               //                                           .withColumn("gs2sk", "S")//
-               //                                           .withColumn("ls1", "S")//
-               //                                           .withColumn("ls2", "N")//
-               //                                           .withColumn("ls3", "B")//
-               //                                           .withColumn("field1", "S")//
-               //                                           .withColumn("field2", "S")//
-               //                                           .withColumn("field3", "S")//
-               //                                           .withColumn("field4", "S")//
-               //                                           .withColumn("field5", "S")//
-               //                                           .withColumn("field6", "S")//
-               //                                           .getDb();
-
                Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
                orders.withName("orders");
 
@@ -151,44 +131,38 @@ public class TestDynamoActions extends TestCase
                orders.getAttribute("gs1hk").withName("employeeId"); //get orders by customer sorted by date
                orders.getAttribute("gs1sk").withName("orderDate");
 
+               orders.getAttribute("ls1").withName("shipCity");
+               orders.getAttribute("ls2").withName("shipName");
+               orders.getAttribute("ls3").withName("requireDate");
+
                //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
                //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
-
-               //      orders.getAttribute("field1").withName("shipName");
-               //      orders.getAttribute("field2").withName("shipAddress");
-               //      orders.getAttribute("ls1").withName("shipCity");
-               //      orders.getAttribute("field4").withName("shipRegion");
-               //      orders.getAttribute("field5").withName("shipPostalCode");
-               //      orders.getAttribute("field6").withName("shipCountry");
 
                orders.withIncludePaths("dynamodb/*");
 
                api.withCollection(orders);
                api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
 
-               //      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-               //      json = res.getJson();
-               //      System.out.println(json);
-               //
-               //      //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
-               //      //      json = res.getJson();
-               //      //      System.out.println(json);
-               //      assertEquals(json.find("meta.pageSize"), 100);
-               //      assertEquals(json.find("meta.rowCount"), 25);
-               //      assertEquals(json.find("data.0.orderid"), 11058);
-               //
-               //      for (Object o : json.getArray("data"))
-               //      {
-               //         Node js = (Node) o;
-               //         js.put("type", "ORDER");
-               //         if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
-               //            fail();
-               //      }
+               //uncomment below to populate db
 
-               //      res = service.service("GET", "northwind/dynamodb/orders?eq(shipname, 'Blauer See Delikatessen')&pageSize=100");
-               //      json = res.getJson();
-               //      System.out.println(json);
-               //      assertEquals(json.getArray("data").length(), 7);
+               //               Response res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+               //               Node json = res.getJson();
+               //               System.out.println(json);
+               //
+               //               //      res = service.get("northwind/sql/orders").pageSize(100).order("orderid").go();
+               //               //      json = res.getJson();
+               //               //      System.out.println(json);
+               //               assertEquals(json.find("meta.pageSize"), 100);
+               //               assertEquals(json.find("meta.rowCount"), 25);
+               //               assertEquals(json.find("data.0.orderid"), 11058);
+               //
+               //               for (Object o : json.getArray("data"))
+               //               {
+               //                  Node js = (Node) o;
+               //                  js.put("type", "ORDER");
+               //                  if (service.post("northwind/dynamodb/orders", js).getStatusCode() != 200)
+               //                     fail();
+               //               }
             }
 
          });
@@ -196,6 +170,22 @@ public class TestDynamoActions extends TestCase
       services.put(apiCode, service);
 
       return service;
+   }
+
+   @Test
+   public void testA() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(7, json.getArray("data").length());
+
+      assertDebug(res, "ScanSpec", "filterExpression=shipname = :shipname", "valueMap={:shipname=Blauer See Delikatessen}");
    }
 
    @Test
@@ -210,7 +200,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "QuerySpec", "valueMap={:orderid=11058}", "keyConditionExpression=hk = :orderid");
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "valueMap={:orderid=11058}", "keyConditionExpression=hk = :orderid");
 
    }
 
@@ -221,12 +211,89 @@ public class TestDynamoActions extends TestCase
       Response res = null;
       Node json = null;
 
-      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058&type=ORDER");
+      res = service.get("northwind/dynamodb/orders?orderid=11058&type=ORDER");
       json = res.getJson();
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "GetItemSpec", "partKeyCol=hk", "partKeyVal=11058", "sortKeyCol=sk", "sortKeyVal=ORDER");
+      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk", "partKeyVal=11058", "sortKeyCol=sk", "sortKeyVal=ORDER");
+   }
+
+   @Test
+   public void testE() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&gt(type, 'AAAAA')");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "valueMap={:type=AAAAA, :OrderId=11058}", "keyConditionExpression=hk = :OrderId and sk > :type");
+   }
+
+   @Test
+   public void testF() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&eq(ShipCity,Atlanta)");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "filterExpression=ls1 = :ShipCity", "valueMap={:ShipCity=Atlanta, :type=AAAAA, :OrderId=12345}", "keyConditionExpression=hk = :OrderId and sk > :type");
+   }
+
+   @Test
+   public void testG() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression=hk = :OrderId and begins_with(sk,:type)", "valueMap={:type=ORD, :OrderId=11058}");
+   }
+
+   @Test
+   public void testH() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(shipcity,Mannheim)");
+      //res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(shipcity,Mannheim)");
+      //res = service.get("northwind/dynamodb/orders?eq(shipcity,Mannheim)");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "Index=ls1", "QuerySpec", "keyConditionExpression=hk = :OrderId and ls1 = :shipcity filterExpression=begins_with(sk,:type) valueMap={:type=ORD, :OrderId=11058, :shipcity=Mannheim}");
+   }
+
+   @Test
+   public void testI() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      Node json = null;
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(EmployeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "Index=gs1", "QuerySpec", "keyConditionExpression=gs1hk = :EmployeeId and gs1sk = :OrderDate filterExpression=begins_with(sk,:type) and hk = :OrderId valueMap={:type=ORD, :EmployeeId=9, :OrderDate=2014-10-29T00:00-0400, :OrderId=11058}");
    }
 
    void assertDebug(Response resp, String... matches)

@@ -161,43 +161,44 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
       if (index == null)
       {
+         DynamoDbIndex foundIndex = null;
+         Term foundPartKey = null;
+         Term foundSortKey = null;
+
          for (io.rocketpartners.cloud.model.Index idx : table().getIndexes())
          {
             DynamoDbIndex index = (DynamoDbIndex) idx;
-            if (index.isLocalIndex())
-               continue;
 
             String partAttr = collection.getAttributeName(index.getPartitionKey().getName());
+            String sortAttr = index.getSortKey() != null ? collection.getAttributeName(index.getSortKey().getName()) : null;
 
             Term partKey = findTerm(partAttr, "eq");
-            if (partKey != null)
+
+            if (partKey == null)
+               continue;
+
+            Term sortKey = findTerm(sortAttr, "eq");
+            if (sortKey == null)
+               sortKey = findTerm(sortAttr, "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
+
+            if (sortKey == null && foundSortKey != null)
+               continue;
+
+            if (foundIndex == null //
+                  || (sortKey != null && foundSortKey == null) //
+                  || (sortKey != null && sortKey.hasToken("eq") && !foundSortKey.hasToken("eq")))
             {
-               this.index = index;
-               this.partKey = partKey;
-
-               if (index.getSortKey() != null)
-               {
-                  String sortAttr = collection.getAttributeName(index.getSortKey().getName());
-
-                  Term sortKey = findTerm(sortAttr, "eq");
-                  if (sortKey != null)
-                  {
-                     //this index has both values passed in with 'eq' so we are done
-                     this.sortKey = sortKey;
-                     return index;
-                  }
-                  else
-                  {
-                     sortKey = findTerm(index.getSortKey().getName(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
-                     if (sortKey != null)
-                     {
-                        this.sortKey = sortKey;
-                        //there could still be a double equality match so keep looking
-                     }
-                  }
-               }
+               foundIndex = index;
+               foundPartKey = partKey;
+               foundSortKey = sortKey;
             }
          }
+
+         this.index = foundIndex;
+         this.partKey = foundPartKey;
+         this.sortKey = foundSortKey;
+
+         ChainLocal.debug("Index=" + (index != null ? index.getName() : "null"));
       }
       return index;
    }
@@ -240,7 +241,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       StringBuffer keyExpr = new StringBuffer("");
       StringBuffer filterExpr = new StringBuffer("");
 
-      if (partKey != null && sortKey != null && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
+      if (index != null && index.isPrimaryIndex() && partKey != null && sortKey != null && sortKey.hasToken("eq") && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
       {
          String partKeyCol = getColumnName(partKey.getToken(0));
          Object partKeyVal = cast(partKeyCol, partKey.getToken(1));
@@ -268,8 +269,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          if (term == partKey || term == sortKey)
             continue;
 
-         if (filterExpr.length() > 0)
-            filterExpr.append(" and ");
+//         if (filterExpr.length() > 0)
+//            filterExpr.append(" and ");
 
          toString(filterExpr, term, valueMap);
       }
@@ -294,6 +295,13 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             debug += " projectionExpression=" + projectionExpression;
          }
 
+         if (keyExpr.length() > 0)
+         {
+            querySpec.withKeyConditionExpression(keyExpr.toString());
+
+            debug += " keyConditionExpression=" + keyExpr;
+         }
+
          if (filterExpr.length() > 0)
          {
             querySpec.withFilterExpression(filterExpr.toString());
@@ -308,19 +316,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             debug += " valueMap=" + valueMap;
          }
 
-         if (keyExpr.length() > 0)
-         {
-            querySpec.withKeyConditionExpression(keyExpr.toString());
-
-            debug += " keyConditionExpression=" + keyExpr;
-         }
-
          ChainLocal.debug(debug);
          return querySpec;
       }
       else
       {
-         String debug = "DynamoDb QuerySpec -> maxPageSize=" + pageSize;
+         String debug = "DynamoDb ScanSpec -> maxPageSize=" + pageSize;
 
          ScanSpec scanSpec = new ScanSpec();
          scanSpec.withMaxPageSize(pageSize);
@@ -355,10 +356,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
    String toString(StringBuffer buff, Term term, Map valueMap)
    {
-      if (buff.length() > 0 && buff.charAt(buff.length() - 1) != ' ')
-         buff.append(' ');
+      space(buff);
 
-      String op = OPERATOR_MAP.get(term.getToken().toLowerCase());
+      String lc = term.getToken().toLowerCase();
+      String op = OPERATOR_MAP.get(lc);
+      String func = FUNCTION_MAP.get(lc);
+
       if (term.hasToken("and", "or"))
       {
          buff.append("(");
@@ -378,11 +381,19 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
 
          if (buff.length() > 0)
-         {
             space(buff).append("and ");
-         }
 
          buff.append(col).append(" ").append(op).append(" ").append(expr);
+      }
+      else if (func != null)
+      {
+         String col = getColumnName(term.getToken(0));
+         String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
+
+         if (buff.length() > 0)
+            space(buff).append("and ");
+
+         space(buff).append(func).append("(").append(col).append(",").append(expr).append(")");
       }
       else if (term.isLeaf())
       {
@@ -399,12 +410,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
       return buff.toString();
    }
-   
+
    StringBuffer space(StringBuffer buff)
    {
-      if(buff.length() > 0 && buff.charAt(buff.length()-1) != ' ')
+      if (buff.length() > 0 && buff.charAt(buff.length() - 1) != ' ')
          buff.append(' ');
-      
+
       return buff;
    }
 
