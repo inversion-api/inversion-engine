@@ -295,6 +295,21 @@ public class TestDynamoActions extends TestCase
       assertEquals(json.getArray("data").length(), 1);
       assertDebug(res, "Index=gs1", "QuerySpec", "keyConditionExpression=gs1hk = :EmployeeId and gs1sk = :OrderDate filterExpression=begins_with(sk,:type) and hk = :OrderId valueMap={:type=ORD, :EmployeeId=9, :OrderDate=2014-10-29T00:00-0400, :OrderId=11058}");
    }
+   
+   @Test
+   public void testK() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get("northwind/dynamodb/orders?gt(OrderId, 1)&eq(type, ORDER)");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      //assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "ScanSpec -> maxPageSize=100 filterExpression=sk = :type and hk > :OrderId valueMap={:type=ORDER, :OrderId=1}");
+   }
 
    void assertDebug(Response resp, String... matches)
    {
