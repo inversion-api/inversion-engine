@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -43,8 +42,9 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
 {
-   boolean                         inited         = false;
-   volatile boolean                destroyed      = false;
+   transient volatile boolean      started        = false;
+   transient volatile boolean      starting       = false;
+   transient volatile boolean      destroyed      = false;
 
    Logger                          log            = LoggerFactory.getLogger(getClass());
    Logger                          requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
@@ -80,7 +80,7 @@ public class Service
 
    public static interface ServiceListener
    {
-      public void onInit(Service service);
+      public void onStartup(Service service);
 
    }
 
@@ -89,24 +89,45 @@ public class Service
       destroyed = true;
    }
 
-   public synchronized void init()
+   public synchronized Service startup()
    {
-      if (inited)
-         return;
-      inited = true;
-      configurator.loadConfg(this);
+      if (started || starting) //initing is an accidental recursion guard
+         return this;
 
-      for (ServiceListener listener : listeners)
+      starting = true;
+      try
       {
-         try
+         configurator.loadConfg(this);
+
+         for (Api api : apis)
          {
-            listener.onInit(Service.this);
+            api.startup();
          }
-         catch (Exception ex)
+
+         for (ServiceListener listener : listeners)
          {
-            log.warn("Error notifying listener init()", ex);
+            try
+            {
+               listener.onStartup(Service.this);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifying listener init()", ex);
+            }
          }
+
+         started = true;
+         return this;
       }
+      finally
+      {
+         starting = false;
+      }
+   }
+
+   public boolean isStarted()
+   {
+      return started;
    }
 
    public Service withListener(ServiceListener listener)
@@ -118,7 +139,6 @@ public class Service
 
    public Response get(String url)
    {
-
       return service("GET", url, (String) null);
    }
 
@@ -183,8 +203,8 @@ public class Service
 
    public Chain service(Request req, Response res)
    {
-      if (!inited)
-         init();
+      if (!started)
+         startup();
 
       Chain chain = ChainLocal.push(this, req, res);
       res.withChain(chain);
@@ -260,9 +280,6 @@ public class Service
                if (!((apis.size() == 1 && a.getApiCode() == null) || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
                   continue;
 
-               //TODO: WB 2/13/19 api will only init itself once but
-               //not sure if this is the most elegant place for this
-               a.init();
                req.withApi(a);
 
                if (parts.get(0).equalsIgnoreCase((a.getApiCode())))
@@ -299,7 +316,7 @@ public class Service
 
                            for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                            {
-                              if (collectionKey.equalsIgnoreCase(collection.getName()))
+                              if (collectionKey.equalsIgnoreCase(collection.getName()) && (collection.getIncludePaths().size() > 0 || collection.getExcludePaths().size() > 0))
                               {
                                  if (collection.matches(req.getMethod(), endpointPath))
                                  {
@@ -617,7 +634,7 @@ public class Service
          newList.add(api);
       }
 
-      if (existingApi != api)
+      if (existingApi != api && isStarted())
          api.startup();
 
       apis = newList;

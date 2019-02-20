@@ -255,8 +255,7 @@ public class PropsConfig
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.setHash(config.hash);
-
-               removeExcludes(api);
+               api.removeExcludes();
                service.addApi(api);
             }
          }
@@ -301,54 +300,6 @@ public class PropsConfig
 
          if (api.getAclRules().size() == 0)
             api.setAclRules(wire.getBeans(AclRule.class));
-      }
-   }
-
-   void removeExcludes(Api api)
-   {
-      for (io.rocketpartners.cloud.model.Collection col : api.getCollections())
-      {
-         if (col.isExclude() || col.getEntity().isExclude())
-         {
-            api.removeCollection(col);
-         }
-         else
-         {
-            for (Attribute attr : col.getEntity().getAttributes())
-            {
-               if (attr.isExclude())
-               {
-                  col.getEntity().removeAttribute(attr);
-               }
-            }
-
-            for (Relationship rel : col.getEntity().getRelationships())
-            {
-               if (rel.isExclude())
-               {
-                  col.getEntity().removeRelationship(rel);
-               }
-            }
-         }
-      }
-
-      for (Db db : api.getDbs())
-      {
-         for (Table table : (List<Table>)db.getTables())
-         {
-            if (table.isExclude())
-            {
-               db.removeTable(table);
-            }
-            else
-            {
-               for (Column col : table.getColumns())
-               {
-                  if (col.isExclude())
-                     table.removeColumn(col);
-               }
-            }
-         }
       }
    }
 

@@ -55,7 +55,7 @@ public class Servlet extends HttpServlet
 
    public void init(ServletConfig config)
    {
-      service.init();
+      service.startup();
    }
 
    public Service getService()

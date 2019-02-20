@@ -42,7 +42,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
    @Override
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
       this.withType("elasticsearch");
 
@@ -50,38 +50,44 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       configApi();
    }
 
-   private void reflectDb() throws Exception
+   private void reflectDb()
    {
       if (!isBootstrap())
       {
          return;
       }
 
-      // 'GET _all' returns all indices/aliases/mappings
-      Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
-
-      if (allResp.isSuccess())
+      try
       {
-         // we now have the indices, aliases for each index, and mappings (and settings if we need them)
+         // 'GET _all' returns all indices/aliases/mappings
+         Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
 
-         ObjectNode jsObj = Utils.parseJsonObject(allResp.getContent());
-
-         Map<String, ObjectNode> jsContentMap = jsObj.asMap();
-
-         // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-         Map<String, Table> tableMap = new HashMap<String, Table>();
-
-         for (Map.Entry<String, ObjectNode> entry : jsContentMap.entrySet())
+         if (allResp.isSuccess())
          {
-            // we now have the index and with it, it's aliases and mappings
-            buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
+            // we now have the indices, aliases for each index, and mappings (and settings if we need them)
+
+            ObjectNode jsObj = Utils.parseJsonObject(allResp.getContent());
+
+            Map<String, ObjectNode> jsContentMap = jsObj.asMap();
+
+            // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
+            Map<String, Table> tableMap = new HashMap<String, Table>();
+
+            for (Map.Entry<String, ObjectNode> entry : jsContentMap.entrySet())
+            {
+               // we now have the index and with it, it's aliases and mappings
+               buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
+            }
+         }
+         else
+         {
+            throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
          }
       }
-      else
+      catch (Exception ex)
       {
-         throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         Utils.rethrow(ex);
       }
-
    }
 
    private void configApi()

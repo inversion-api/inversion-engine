@@ -108,7 +108,7 @@ public class Controller implements InitializingBean
             });
 
          servlet.getService().setProfile(profile);
-         servlet.getService().init();
+         servlet.getService().startup();
 
       }
       catch (Exception e)

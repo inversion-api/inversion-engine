@@ -1,5 +1,10 @@
 
-look into json path for Node.find()...maybe make node.get() accept a path
+
+dynamo
+ - primary key / href linking
+ - continuation token
+ - test for dynamo db 
+
 
 Implement db.startup()/shutdown();
 

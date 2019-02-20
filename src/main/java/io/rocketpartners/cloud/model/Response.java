@@ -85,6 +85,17 @@ public class Response
 
       return this;
    }
+   
+   public boolean hasStatus(int... statusCodes)
+   {
+      for (int statusCode : statusCodes)
+      {
+         if (this.statusCode == statusCode)
+            return true;
+      }
+      return false;
+   }
+   
 
    public Response withMeta(String key, String value)
    {

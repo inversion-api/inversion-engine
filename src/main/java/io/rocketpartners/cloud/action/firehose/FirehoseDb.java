@@ -49,7 +49,7 @@ public class FirehoseDb extends Db
    }
 
    @Override
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
       if (!Utils.empty(includeStreams))
       {

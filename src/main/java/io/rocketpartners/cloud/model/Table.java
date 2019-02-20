@@ -137,6 +137,10 @@ public class Table
 
    public Table withColumn(Column column)
    {
+      Column existing = getColumn(column.getName());
+      if (existing != null)
+         throw new ApiException("you are trying to add a column name that already exists: " + column.getName());
+
       if (column != null && !columns.contains(column))
       {
          columns.add(column);
@@ -147,8 +151,16 @@ public class Table
 
    public Table withColumn(String name, String type)
    {
-      Column column = new Column(this, getColumns().size() + 1, name, type, true);
-      withColumn(column);
+      Column column = getColumn(name);
+
+      if (column == null)
+      {
+         column = new Column();
+         columns.add(column);
+      }
+      column.withName(name);
+      column.withType(type);
+
       return this;
    }
 

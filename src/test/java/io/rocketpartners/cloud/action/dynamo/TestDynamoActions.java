@@ -118,10 +118,8 @@ public class TestDynamoActions extends TestCase
       service.withListener(new ServiceListener()
          {
             @Override
-            public void onInit(Service service)
+            public void onStartup(Service service)
             {
-               dynamoDb.bootstrapApi();
-
                Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
                orders.withName("orders");
 
@@ -185,7 +183,7 @@ public class TestDynamoActions extends TestCase
 
       assertEquals(7, json.getArray("data").length());
 
-      assertDebug(res, "ScanSpec", "filterExpression=shipname = :shipname", "valueMap={:shipname=Blauer See Delikatessen}");
+      assertDebug(res, "ScanSpec", "filterExpression=ls2 = :shipname valueMap={:shipname=Blauer See Delikatessen}");
    }
 
    @Test
@@ -241,12 +239,11 @@ public class TestDynamoActions extends TestCase
       Response res = null;
       ObjectNode json = null;
 
-      res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&eq(ShipCity,Atlanta)");
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,A)");
       json = res.getJson();
       System.out.println(res.getDebug());
-
-      assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "filterExpression=ls1 = :ShipCity", "valueMap={:ShipCity=Atlanta, :type=AAAAA, :OrderId=12345}", "keyConditionExpression=hk = :OrderId and sk > :type");
+     
+      assertDebug(res, "Index=Primary Index", "keyConditionExpression=hk = :OrderId and sk > :type filterExpression=ls1 > :ShipCity valueMap={:ShipCity=A, :type=AAAAA, :OrderId=12345}");
    }
 
    @Test

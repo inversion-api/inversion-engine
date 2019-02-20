@@ -7,7 +7,7 @@ public class MockDb extends Db
 {
 
    @Override
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
       Table users = withTable("users")//
                                       .withColumn("primaryKey", "int")//

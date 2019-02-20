@@ -97,7 +97,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
                   if (!Utils.empty(servletPath))
                      service.setServletMapping(servletPath);
 
-                  service.init();
+                  service.startup();
                }
             }
          }

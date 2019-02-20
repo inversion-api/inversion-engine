@@ -39,7 +39,7 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlDb extends Db<SqlDb>
 {
@@ -257,10 +257,17 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
-      reflectDb();
-      configApi();
+      try
+      {
+         reflectDb();
+         configApi();
+      }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+      }
    }
 
    public void reflectDb() throws Exception
@@ -392,8 +399,6 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-
-
    public void configApi() throws Exception
    {
       for (Table table : getTables())
@@ -408,7 +413,7 @@ public class SqlDb extends Db<SqlDb>
          {
             attr.withName(beautifyAttributeName(attr.getName()));
          }
-         
+
          System.out.println(collection);
       }
 

@@ -25,30 +25,29 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Api
 {
-   protected transient Service   service     = null;
+   transient volatile boolean  started     = false;
+   transient volatile boolean  starting    = false;
+   transient long              loadTime    = 0;
+   transient Hashtable         cache       = new Hashtable();
+   transient protected String  hash        = null;
 
-   protected String              name        = null;
-   protected boolean             debug       = false;
+   protected transient Service service     = null;
 
-   protected int                 id          = 0;
+   protected String            name        = null;
+   protected boolean           debug       = false;
 
-   protected String              apiCode     = null;
-   protected boolean             multiTenant = false;
-   protected String              url         = null;
+   protected int               id          = 0;
 
-   protected List<Db>            dbs         = new ArrayList();
-   protected List<Endpoint>      endpoints   = new ArrayList();
-   protected List<Action>        actions     = new ArrayList();
-   protected List<AclRule>       aclRules    = new ArrayList();
+   protected String            apiCode     = null;
+   protected boolean           multiTenant = false;
+   protected String            url         = null;
 
-   protected List<Collection>    collections = new ArrayList();
+   protected List<Db>          dbs         = new ArrayList();
+   protected List<Endpoint>    endpoints   = new ArrayList();
+   protected List<Action>      actions     = new ArrayList();
+   protected List<AclRule>     aclRules    = new ArrayList();
 
-   protected transient long      loadTime    = 0;
-   protected String              hash        = null;
-
-   protected transient Hashtable cache       = new Hashtable();
-
-   protected transient boolean   inited      = false;
+   protected List<Collection>  collections = new ArrayList();
 
    public Api()
    {
@@ -65,12 +64,33 @@ public class Api
       withApiCode(apiCode);
    }
 
-   public void startup()
+   public synchronized Api startup()
    {
-      for (Db db : dbs)
+      if (started || starting) //starting is an accidental recursion guard
+         return this;
+
+      starting = true;
+      try
       {
-         db.startup();
+         for (Db db : dbs)
+         {
+            db.startup();
+         }
+
+         //removeExcludes();
+         started = true;
+         return this;
       }
+      finally
+      {
+         starting = false;
+      }
+   }
+   
+
+   public boolean isStarted()
+   {
+      return started;
    }
 
    public void shutdown()
@@ -80,19 +100,53 @@ public class Api
          db.shutdown();
       }
    }
-
-   public Api init() throws Exception
+   
+   public void removeExcludes()
    {
-      if (!inited)
+      for (io.rocketpartners.cloud.model.Collection col : getCollections())
       {
-         inited = true;
-
-         for (Db db : getDbs())
+         if (col.isExclude() || col.getEntity().isExclude())
          {
-            db.bootstrapApi();
+            removeCollection(col);
+         }
+         else
+         {
+            for (Attribute attr : col.getEntity().getAttributes())
+            {
+               if (attr.isExclude())
+               {
+                  col.getEntity().removeAttribute(attr);
+               }
+            }
+
+            for (Relationship rel : col.getEntity().getRelationships())
+            {
+               if (rel.isExclude())
+               {
+                  col.getEntity().removeRelationship(rel);
+               }
+            }
          }
       }
-      return this;
+
+      for (Db db : getDbs())
+      {
+         for (Table table : (List<Table>)db.getTables())
+         {
+            if (table.isExclude())
+            {
+               db.removeTable(table);
+            }
+            else
+            {
+               for (Column col : table.getColumns())
+               {
+                  if (col.isExclude())
+                     table.removeColumn(col);
+               }
+            }
+         }
+      }
    }
 
    public void setService(Service service)

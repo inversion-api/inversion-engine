@@ -8,10 +8,10 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rocketpartners.cloud.model;
 
@@ -19,10 +19,10 @@ public class ApiException extends RuntimeException
 {
    protected String status = SC.SC_500_INTERNAL_SERVER_ERROR;
 
-//   public static void main(String[] args)
-//   {
-//      System.out.println("401 Unauthorized".matches("\\d\\d\\d *"));
-//   }
+   //   public static void main(String[] args)
+   //   {
+   //      System.out.println("401 Unauthorized".matches("\\d\\d\\d *"));
+   //   }
 
    public ApiException(String status)
    {
@@ -52,6 +52,16 @@ public class ApiException extends RuntimeException
    {
       this.status = status;
       return this;
+   }
+
+   public boolean hasStatus(int... statusCodes)
+   {
+      for (int statusCode : statusCodes)
+      {
+         if (status.startsWith(statusCode + " "))
+            return true;
+      }
+      return false;
    }
 
 }

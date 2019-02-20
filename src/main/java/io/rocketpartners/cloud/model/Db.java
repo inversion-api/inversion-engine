@@ -22,10 +22,15 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Service.ServiceListener;
 import io.rocketpartners.cloud.utils.English;
 
 public class Db<T extends Db>
 {
+   transient volatile boolean started   = false;
+   transient volatile boolean starting  = false;
+
    protected Api              api       = null;
 
    protected Logger           log       = LoggerFactory.getLogger(getClass());
@@ -45,13 +50,43 @@ public class Db<T extends Db>
       this.name = name;
    }
 
-   public void bootstrapApi() throws Exception
+   public void bootstrapApi()
    {
 
    }
 
-   public void startup()
+   public synchronized Db startup()
    {
+      if (started || starting) //starting is an accidental recursion guard
+         return this;
+
+      starting = true;
+      try
+      {
+         startup0();
+         
+         started = true;
+         return this;
+      }
+      finally
+      {
+         starting = false;
+      }
+   }
+
+   /**
+    * Calls bootstrapApi(), made to be overridden by subclasses 
+    * or anonymous inner classes to do specific init
+    */
+   protected void startup0()
+   {
+      if (isBootstrap())
+         bootstrapApi();
+   }
+
+   public boolean isStarted()
+   {
+      return started;
    }
 
    public void shutdown()

@@ -31,17 +31,9 @@ public class TestSqlActions extends TestCase
       if (service != null)
          return service;
 
-      final SqlDb db = new SqlDb();
-      db.withDriver("org.h2.Driver");
-      db.withUrl("jdbc:h2:./.h2/" + ddl + "-" + Utils.time());
-      db.withUser("sa");
-      db.withPass("");
-
-      service = new Service();
-
-      service.withListener(new ServiceListener()
+      final SqlDb db = new SqlDb()
          {
-            public void onInit(Service service)
+            public void startup0()
             {
                try
                {
@@ -55,7 +47,7 @@ public class TestSqlActions extends TestCase
                         dbfiles[i].delete();
                   }
 
-                  Connection conn = db.getConnection();
+                  Connection conn = getConnection();
                   SqlUtils.runDdl(conn, TestSqlActions.class.getResourceAsStream(ddl + ".ddl"));
 
                   SqlUtils.addSqlListener(new SqlListener()
@@ -69,6 +61,8 @@ public class TestSqlActions extends TestCase
                               sqls.removeLast();
                         }
                      });
+                  
+                  super.startup0();
                }
                catch (Exception ex)
                {
@@ -76,7 +70,13 @@ public class TestSqlActions extends TestCase
                   Utils.rethrow(ex);
                }
             }
-         });
+         };
+      db.withDriver("org.h2.Driver");
+      db.withUrl("jdbc:h2:./.h2/" + ddl + "-" + Utils.time());
+      db.withUser("sa");
+      db.withPass("");
+
+      service = new Service();
 
       //
       service.withApi(apiName)//
