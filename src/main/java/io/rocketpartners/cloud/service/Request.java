@@ -26,7 +26,7 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.model.User;
@@ -68,7 +68,7 @@ public class Request
    //JSObject                               params                 = new JSObject();
 
    String                                 body                   = null;
-   Node                               json                   = null;
+   ObjectNode                               json                   = null;
 
    boolean                                browse                 = false;
 
@@ -290,7 +290,7 @@ public class Request
       return this;
    }
 
-   public Node getJson() throws ApiException
+   public ObjectNode getJson() throws ApiException
    {
       if (json != null)
          return json;
@@ -679,10 +679,10 @@ public class Request
          }
          return arr.length() == 0;
       }
-      else if (parent instanceof Node)
+      else if (parent instanceof ObjectNode)
       {
          boolean prune = true;
-         Node js = (Node) parent;
+         ObjectNode js = (ObjectNode) parent;
          for (String key : js.keySet())
          {
             Object child = js.get(key);

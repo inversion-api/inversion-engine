@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ArrayNode extends Node implements Iterable
+public class ArrayNode extends ObjectNode implements Iterable
 {
    List objects = new ArrayList();
 
@@ -92,9 +92,9 @@ public class ArrayNode extends Node implements Iterable
       return (String) get(index);
    }
 
-   public Node getObject(int index)
+   public ObjectNode getObject(int index)
    {
-      return (Node) get(index);
+      return (ObjectNode) get(index);
    }
 
    public void setObject(int index, Object o)
@@ -125,10 +125,10 @@ public class ArrayNode extends Node implements Iterable
 
    public void sort(final String key)
    {
-      Collections.sort(objects, new Comparator<Node>()
+      Collections.sort(objects, new Comparator<ObjectNode>()
          {
             @Override
-            public int compare(Node o1, Node o2)
+            public int compare(ObjectNode o1, ObjectNode o2)
             {
                Object val1 = o1.get(key);
                Object val2 = o2.get(key);

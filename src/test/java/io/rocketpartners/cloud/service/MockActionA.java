@@ -3,7 +3,7 @@ package io.rocketpartners.cloud.service;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 
 public class MockActionA extends Action<Action>
 {
@@ -13,7 +13,7 @@ public class MockActionA extends Action<Action>
    {
       if (req.isMethod("get"))
       {
-         res.withRecord(new Node("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
+         res.withRecord(new ObjectNode("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
       }
       else if (req.isMethod("put", "post"))
       {

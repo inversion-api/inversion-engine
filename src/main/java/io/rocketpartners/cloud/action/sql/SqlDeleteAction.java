@@ -28,7 +28,7 @@ import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
@@ -66,7 +66,7 @@ public class SqlDeleteAction extends SqlAction
             if (!Utils.empty(entityKey))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to an entity key in the url and also include a JSON body.");
 
-            Node obj = req.getJson();
+            ObjectNode obj = req.getJson();
             if (!(obj instanceof ArrayNode))
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");

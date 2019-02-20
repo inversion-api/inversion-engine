@@ -27,7 +27,7 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 
 import io.rocketpartners.cloud.action.script.ScriptAction;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Service;
 
 public class VelocityResourceLoader extends ResourceLoader
@@ -44,7 +44,7 @@ public class VelocityResourceLoader extends ResourceLoader
    {
       try
       {
-         Node script = ScriptAction.findScript(source);
+         ObjectNode script = ScriptAction.findScript(source);
          if (script != null)
          {
             return new InputStreamReader(new ByteArrayInputStream(script.getString("script").getBytes()));

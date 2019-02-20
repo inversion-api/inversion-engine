@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
@@ -160,7 +160,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         Node jsObj = Utils.parseJsonObject(r.getContent());
+         ObjectNode jsObj = Utils.parseJsonObject(r.getContent());
 
          int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
          ArrayNode hits = jsObj.getNode("hits").getArray("hits");
@@ -202,7 +202,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
          //JSObject wrapper = new JSObject("meta", meta, "data", data);
-         Node wrapper = new Node("meta", new Node(), "data", data);
+         ObjectNode wrapper = new ObjectNode("meta", new ObjectNode(), "data", data);
          res.withJson(wrapper);
 
       }
@@ -233,11 +233,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
-      Node context = null;
+      ObjectNode context = null;
       if (req.getApi().isMultiTenant())
       {
          tenantId = req.removeParam("tenantId");
-         context = new Node("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+         context = new ObjectNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
       }
 
       String field = null;
@@ -249,23 +249,23 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          value = entry.getValue();
       }
 
-      Node completion = null;
-      Node autoSuggest = null;
-      Node payload = null;
+      ObjectNode completion = null;
+      ObjectNode autoSuggest = null;
+      ObjectNode payload = null;
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         completion = new Node("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new Node("prefix", value, "completion", completion);
-         payload = new Node("_source", new ArrayNode(field), "suggest", new Node("auto-suggest", autoSuggest));
+         completion = new ObjectNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new ObjectNode("prefix", value, "completion", completion);
+         payload = new ObjectNode("_source", new ArrayNode(field), "suggest", new ObjectNode("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new Node("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new Node("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new Node("_source", new ArrayNode(field), "suggest", new Node("auto-suggest", autoSuggest));
+         completion = new ObjectNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new ObjectNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new ObjectNode("_source", new ArrayNode(field), "suggest", new ObjectNode("auto-suggest", autoSuggest));
       }
 
       if (context != null)
@@ -282,10 +282,10 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         Node jsObj = Utils.parseJsonObject(r.getContent());
-         Node auto = (Node) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
+         ObjectNode jsObj = Utils.parseJsonObject(r.getContent());
+         ObjectNode auto = (ObjectNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
          ArrayNode resultArray = new ArrayNode();
-         for (Node obj : (List<Node>) auto.getArray("options").asList())
+         for (ObjectNode obj : (List<ObjectNode>) auto.getArray("options").asList())
          {
             if (context != null)
             {
@@ -308,9 +308,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          }
          else
          {
-            Node data = new Node("field", field, "results", resultArray);
-            Node meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new Node("meta", meta, "data", data));
+            ObjectNode data = new ObjectNode("field", field, "results", resultArray);
+            ObjectNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+            res.withJson(new ObjectNode("meta", meta, "data", data));
          }
       }
       else
@@ -350,9 +350,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param totalHits
     * @return
     */
-   private Node buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
+   private ObjectNode buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
    {
-      Node meta = new Node();
+      ObjectNode meta = new ObjectNode();
 
       //      pageNum = (pageNum == -1) ? 1 : pageNum;
       //      int prevPageNum = pageNum - 1;
@@ -481,9 +481,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       for (String field : sortList)
       {
-         if (sourceObj instanceof Node && ((Node) sourceObj).get(field) != null)
+         if (sourceObj instanceof ObjectNode && ((ObjectNode) sourceObj).get(field) != null)
          {
-            list.add(((Node) sourceObj).get(field).toString().toLowerCase());
+            list.add(((ObjectNode) sourceObj).get(field).toString().toLowerCase());
          }
          else if (sourceObj instanceof String)
          {

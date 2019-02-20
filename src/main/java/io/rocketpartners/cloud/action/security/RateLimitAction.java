@@ -21,7 +21,7 @@ import java.util.Map;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
@@ -77,7 +77,7 @@ public class RateLimitAction extends Action<RateLimitAction>
 
       if (!bucket.hit(clientId))
       {
-         Node error = new Node("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
+         ObjectNode error = new ObjectNode("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
          res.withJson(error);
          res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
 

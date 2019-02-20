@@ -19,7 +19,7 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -39,7 +39,7 @@ public class PasswordAction extends Action<PasswordAction>
          return;
       }
 
-      Node json = req.getJson();
+      ObjectNode json = req.getJson();
 
       if (json == null)
          return;
@@ -63,14 +63,14 @@ public class PasswordAction extends Action<PasswordAction>
       }
       finally
       {
-         Node js = res.getJson().getNode("data");
+         ObjectNode js = res.getJson().getNode("data");
          if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
          {
-            Node user = (Node) ((ArrayNode) js).get(0);
+            ObjectNode user = (ObjectNode) ((ArrayNode) js).get(0);
             if (user.get("id") != null)
             {
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
-               Node body = new Node(passwordField, encryptedPassword, "href", user.getString("href"));
+               ObjectNode body = new ObjectNode(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
                service.put(url, body.toString());
             }

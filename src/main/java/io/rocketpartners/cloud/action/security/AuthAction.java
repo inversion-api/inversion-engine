@@ -33,7 +33,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Permission;
 import io.rocketpartners.cloud.model.Role;
 import io.rocketpartners.cloud.model.SC;
@@ -230,7 +230,7 @@ public class AuthAction extends Action<AuthAction>
             sessionCache.put(sessionKey, user);
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
-            Node obj = new Node();
+            ObjectNode obj = new ObjectNode();
             obj.put("id", user.getId());
             obj.put("username", username);
             obj.put("displayname", user.getDisplayName());
@@ -249,7 +249,7 @@ public class AuthAction extends Action<AuthAction>
             }
             obj.put("roles", roles);
 
-            resp.withJson(new Node("data", obj));
+            resp.withJson(new ObjectNode("data", obj));
          }
       }
 

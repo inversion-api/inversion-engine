@@ -24,7 +24,7 @@ import java.io.OutputStreamWriter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -35,16 +35,16 @@ public class EchoRequestStreamHandler implements RequestStreamHandler
 {
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
    {
-      Node responseBody = new Node();
-      Node responseJson = new Node();
+      ObjectNode responseBody = new ObjectNode();
+      ObjectNode responseJson = new ObjectNode();
       responseJson.put("isBase64Encoded", false);
       responseJson.put("statusCode", "200");
-      responseJson.put("headers", new Node("Access-Control-Allow-Origin", "*"));
+      responseJson.put("headers", new ObjectNode("Access-Control-Allow-Origin", "*"));
       try
       {
          String input = Utils.read(new BufferedInputStream(inputStream));
          context.getLogger().log(input);
-         Node request = Utils.parseJsonObject(input);
+         ObjectNode request = Utils.parseJsonObject(input);
          responseBody.put("request", request);
 
       }

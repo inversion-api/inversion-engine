@@ -8,7 +8,7 @@ import org.junit.Test;
 import io.rocketpartners.cloud.action.sql.TestSqlActions;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.Service.ServiceListener;
@@ -177,7 +177,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
       json = res.getJson();
@@ -193,7 +193,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
       json = res.getJson();
@@ -209,7 +209,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?orderid=11058&type=ORDER");
       json = res.getJson();
@@ -224,7 +224,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&gt(type, 'AAAAA')");
       json = res.getJson();
@@ -239,7 +239,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&eq(ShipCity,Atlanta)");
       json = res.getJson();
@@ -254,7 +254,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')");
       json = res.getJson();
@@ -269,7 +269,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(shipcity,Mannheim)");
       //res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(shipcity,Mannheim)");
@@ -286,7 +286,7 @@ public class TestDynamoActions extends TestCase
    {
       Service service = service("northwind", "northwind", "test-northwind");
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(EmployeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')");
       json = res.getJson();

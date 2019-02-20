@@ -25,7 +25,7 @@ import org.apache.commons.csv.CSVPrinter;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -52,7 +52,7 @@ public class CsvAction extends BatchAction<CsvAction>
       if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(chain.getConfig("format", null)))
          return;
 
-      Node arr = res.getJson();
+      ObjectNode arr = res.getJson();
       if (!(arr instanceof ArrayNode))
       {
          arr = new ArrayNode(arr);
@@ -76,13 +76,13 @@ public class CsvAction extends BatchAction<CsvAction>
 
       for (int i = 0; i < arr.length(); i++)
       {
-         Node obj = (Node) arr.get(i);
+         ObjectNode obj = (ObjectNode) arr.get(i);
          if (obj != null)
          {
             for (String key : obj.keySet())
             {
                Object val = obj.get(key);
-               if (!(val instanceof ArrayNode) && !(val instanceof Node))
+               if (!(val instanceof ArrayNode) && !(val instanceof ObjectNode))
                   keys.add(key);
             }
          }
@@ -101,7 +101,7 @@ public class CsvAction extends BatchAction<CsvAction>
       {
          for (String key : keysList)
          {
-            Object val = ((Node) arr.get(i)).get(key);
+            Object val = ((ObjectNode) arr.get(i)).get(key);
             if (val != null)
             {
                printer.print(val);

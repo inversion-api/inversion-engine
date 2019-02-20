@@ -32,7 +32,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.service.Response;
@@ -95,7 +95,7 @@ public class LogAction extends Action<LogAction>
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
                   logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
 
-                  Node bodyJson = maskFields(req.getJson(), logMask);
+                  ObjectNode bodyJson = maskFields(req.getJson(), logMask);
                   if (bodyJson != null)
                   {
                      logParams.put("body", bodyJson.toString());
@@ -138,7 +138,7 @@ public class LogAction extends Action<LogAction>
       }
    }
 
-   Node maskFields(Node json, String mask)
+   ObjectNode maskFields(ObjectNode json, String mask)
    {
       if (json != null)
       {
@@ -146,9 +146,9 @@ public class LogAction extends Action<LogAction>
          {
             for (Object o : (ArrayNode) json)
             {
-               if (o instanceof Node)
+               if (o instanceof ObjectNode)
                {
-                  maskFields((Node) o, mask);
+                  maskFields((ObjectNode) o, mask);
                }
             }
          }

@@ -29,7 +29,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Change;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -48,7 +48,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected Node                                   json              = new Node("meta", new Node(), "data", new ArrayNode());
+   protected ObjectNode                                   json              = new ObjectNode("meta", new ObjectNode(), "data", new ArrayNode());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -205,7 +205,7 @@ public class Response
    /**
     * @return the json
     */
-   public Node getJson()
+   public ObjectNode getJson()
    {
       return json;
    }
@@ -216,7 +216,7 @@ public class Response
     * 
     * @param json the json to set
     */
-   public Response withJson(Node json)
+   public Response withJson(ObjectNode json)
    {
       this.json = json;
       return this;
@@ -239,7 +239,7 @@ public class Response
       return this;
    }
 
-   public Node meta()
+   public ObjectNode meta()
    {
       return json.getNode("meta");
    }

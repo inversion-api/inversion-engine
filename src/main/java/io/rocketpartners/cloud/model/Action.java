@@ -61,9 +61,9 @@ public class Action<A extends Action> extends Rule<A>
       return (A) this;
    }
 
-   public static List<Node> find(Object parent, String... paths)
+   public static List<ObjectNode> find(Object parent, String... paths)
    {
-      List<Node> found = new ArrayList();
+      List<ObjectNode> found = new ArrayList();
       for (String apath : paths)
       {
          for (String path : (List<String>) Utils.explode(",", apath))
@@ -74,26 +74,26 @@ public class Action<A extends Action> extends Rule<A>
       return found;
    }
 
-   public static void find(Object parent, List<Node> found, String targetPath, String currentPath)
+   public static void find(Object parent, List<ObjectNode> found, String targetPath, String currentPath)
    {
       if (parent instanceof ArrayNode)
       {
          for (Object child : (ArrayNode) parent)
          {
-            if (child instanceof Node)
+            if (child instanceof ObjectNode)
                find(child, found, targetPath, currentPath);
          }
       }
-      else if (parent instanceof Node)
+      else if (parent instanceof ObjectNode)
       {
          if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
          {
-            found.add((Node) parent);
+            found.add((ObjectNode) parent);
          }
 
-         for (String key : ((Node) parent).keySet())
+         for (String key : ((ObjectNode) parent).keySet())
          {
-            Object child = ((Node) parent).get(key);
+            Object child = ((ObjectNode) parent).get(key);
             String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
             find(child, found, targetPath, nextPath);
          }

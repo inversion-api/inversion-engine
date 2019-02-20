@@ -3,7 +3,7 @@ package io.rocketpartners.cloud.action.sql;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.service.Chain.ChainLocal;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
@@ -16,7 +16,7 @@ public class TestSqlGetAction extends TestSqlActions
    {
 
       Response res = null;
-      Node json = null;
+      ObjectNode json = null;
 
       Service service = service("northwind", "northwind");
 
@@ -48,7 +48,7 @@ public class TestSqlGetAction extends TestSqlActions
       assertEquals(7, json.find("meta.rowCount"));
       assertEquals(10501, json.find("data.0.orderid"));
 
-      assertTrue(((Node) json.find("data.0")).getProperty("ORDERID").getName().equals("orderid"));//test case insensativity of the JSObject but that the prop is actually lower cased
+      assertTrue(((ObjectNode) json.find("data.0")).getProperty("ORDERID").getName().equals("orderid"));//test case insensativity of the JSObject but that the prop is actually lower cased
 
    }
 

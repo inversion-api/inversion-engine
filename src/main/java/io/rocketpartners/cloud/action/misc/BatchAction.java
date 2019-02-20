@@ -5,7 +5,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
@@ -38,7 +38,7 @@ public class BatchAction<T extends BatchAction> extends Action<T>
          ArrayNode arr = (ArrayNode) req.getJson().getArray("data");
          for (int i = 0; i < arr.length(); i++)
          {
-            Node json = arr.getObject(i);
+            ObjectNode json = arr.getObject(i);
             
             //TODO use streaming parsers to avoid extra encoding/decoding of the json bodies
             Response batchResponse = service.service(json.getString("method"), json.getString("url"), json.getString("body"));

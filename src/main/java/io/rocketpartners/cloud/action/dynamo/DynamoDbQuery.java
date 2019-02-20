@@ -22,7 +22,7 @@ import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Builder;
 import io.rocketpartners.cloud.rql.Group;
@@ -124,7 +124,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       for (int i = 0; i < result.rows.size(); i++)
       {
          Map map = (Map) result.rows.get(i);
-         Node json = new Node();
+         ObjectNode json = new ObjectNode();
 
          result.rows.set(i, json);
 

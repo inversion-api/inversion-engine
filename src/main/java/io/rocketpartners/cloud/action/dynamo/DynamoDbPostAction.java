@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
@@ -82,11 +82,11 @@ public class DynamoDbPostAction extends DynamoDbAction
       //      }
 
       // using this instead of the built in req.getJson(), because JSObject converts everything to strings even if they are sent up as a number
-      Node json = req.getJson();
+      ObjectNode json = req.getJson();
 
       if (json instanceof ArrayNode)
       {
-         ((ArrayNode) json).stream().forEach(e -> put(collection, (Node) e));
+         ((ArrayNode) json).stream().forEach(e -> put(collection, (ObjectNode) e));
       }
       else
       {
@@ -97,7 +97,7 @@ public class DynamoDbPostAction extends DynamoDbAction
 
    }
 
-   void put(Collection collection, Node json)//, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
+   void put(Collection collection, ObjectNode json)//, String pk, Object tenantIdOrCode, boolean isMultiTenant, boolean appendTenantIdToPk, ConditionalWriteConf conditionalWriteConf)
    {
       try
       {

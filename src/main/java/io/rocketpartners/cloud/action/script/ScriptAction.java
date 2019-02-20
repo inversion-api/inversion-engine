@@ -57,7 +57,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
@@ -79,7 +79,7 @@ public class ScriptAction extends Action<ScriptAction>
    String                           scriptsCollection  = "scripts";
 
    long                             cacheExpireSeconds = 60 * 30;
-   Map<String, Node>            CACHE;
+   Map<String, ObjectNode>            CACHE;
 
    boolean                          inited             = false;
 
@@ -166,14 +166,14 @@ public class ScriptAction extends Action<ScriptAction>
          init(service);
       }
 
-      LinkedHashMap<String, Node> scripts = findScripts(service, chain, req);
+      LinkedHashMap<String, ObjectNode> scripts = findScripts(service, chain, req);
       if (scripts.size() > 0)
       {
          runScripts(service, api, endpoint, chain, req, res, scripts);
       }
    }
 
-   void runScripts(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, Node> scripts) throws Exception
+   void runScripts(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, ObjectNode> scripts) throws Exception
    {
       Map<String, Object> contexts = new HashMap();
 
@@ -183,7 +183,7 @@ public class ScriptAction extends Action<ScriptAction>
 
          for (String path : scripts.keySet())
          {
-            Node script = scripts.get(path);
+            ObjectNode script = scripts.get(path);
             String type = script.getString("type");
 
             List<String> parts = Utils.explode("/", path);
@@ -271,7 +271,7 @@ public class ScriptAction extends Action<ScriptAction>
             {
                try
                {
-                  Node obj = Utils.parseJsonObject(content);
+                  ObjectNode obj = Utils.parseJsonObject(content);
                   res.withJson(obj);
                   setText = false;
                }
@@ -297,16 +297,16 @@ public class ScriptAction extends Action<ScriptAction>
       }
    }
 
-   public LinkedHashMap<String, Node> findScripts(Service service, Chain chain, Request req) throws Exception
+   public LinkedHashMap<String, ObjectNode> findScripts(Service service, Chain chain, Request req) throws Exception
    {
-      Map<Node, String> paths = new HashMap();
-      List<Node> scripts = new ArrayList();
+      Map<ObjectNode, String> paths = new HashMap();
+      List<ObjectNode> scripts = new ArrayList();
 
       String subpath = req.getSubpath();
 
       List<String> parts = Utils.explode("/", subpath);
 
-      Node script = null;
+      ObjectNode script = null;
       String path = null;
 
       List<String> guesses = new ArrayList();
@@ -343,7 +343,7 @@ public class ScriptAction extends Action<ScriptAction>
 
          parts = Utils.explode("/", path);
 
-         List<Node> settings = new ArrayList();
+         List<ObjectNode> settings = new ArrayList();
 
          for (int i = 0; i < parts.size(); i++)
          {
@@ -377,7 +377,7 @@ public class ScriptAction extends Action<ScriptAction>
       }
 
       LinkedHashMap ordered = new LinkedHashMap();
-      for (Node aScript : scripts)
+      for (ObjectNode aScript : scripts)
       {
          ordered.put(paths.get(aScript), aScript);
       }
@@ -385,7 +385,7 @@ public class ScriptAction extends Action<ScriptAction>
       return ordered;
    }
 
-   public static Node findScript(final String path) throws Exception
+   public static ObjectNode findScript(final String path) throws Exception
    {
       ScriptAction handler = scriptLocal.get();
       Chain chain = chainLocal.get();
@@ -419,7 +419,7 @@ public class ScriptAction extends Action<ScriptAction>
             paths.add(path + "." + e);
       }
 
-      Node script = null;
+      ObjectNode script = null;
 
       for (String p : paths)
       {
@@ -428,7 +428,7 @@ public class ScriptAction extends Action<ScriptAction>
          InputStream is = chain.getService().getResource(Utils.implode("/", scriptsDir, p));
          if (is != null)
          {
-            script = new Node("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
+            script = new ObjectNode("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
             break;
          }
       }

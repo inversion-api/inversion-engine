@@ -29,27 +29,27 @@ import java.util.Set;
 
 import io.rocketpartners.cloud.utils.Utils;
 
-public class Node implements Map<String, Object>
+public class ObjectNode implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
 
-   public Node()
+   public ObjectNode()
    {
 
    }
 
-   public Node(Object... nvPairs)
+   public ObjectNode(Object... nvPairs)
    {
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
-         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof Node)))
+         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof ObjectNode)))
             throw new RuntimeException("Incorrect constructor called.  Should have called JSObject(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
       }
    }
 
-   public Node(Map map)
+   public ObjectNode(Map map)
    {
       for (Object key : map.keySet())
       {
@@ -57,9 +57,9 @@ public class Node implements Map<String, Object>
       }
    }
 
-   public Node getNode(String name)
+   public ObjectNode getNode(String name)
    {
-      return (Node) get(name);
+      return (ObjectNode) get(name);
    }
 
    public ArrayNode getArray(String name)
@@ -93,9 +93,9 @@ public class Node implements Map<String, Object>
       return null;
    }
 
-   public Node findNode(String path)
+   public ObjectNode findNode(String path)
    {
-      return (Node) find(path);
+      return (ObjectNode) find(path);
    }
 
    public ArrayNode findArray(String path)
@@ -112,7 +112,7 @@ public class Node implements Map<String, Object>
       {
          if (obj == null)
             break;
-         obj = ((Node) obj).get(prop);
+         obj = ((ObjectNode) obj).get(prop);
       }
       return obj;
    }
@@ -262,17 +262,17 @@ public class Node implements Map<String, Object>
    @Override
    public String toString()
    {
-      return Utils.toJson((Node) this);
+      return Utils.toJson((ObjectNode) this);
    }
 
    public String toString(boolean pretty)
    {
-      return Utils.toJson((Node) this, pretty, false);
+      return Utils.toJson((ObjectNode) this, pretty, false);
    }
 
    public String toString(boolean pretty, boolean tolowercase)
    {
-      return Utils.toJson((Node) this, pretty, tolowercase);
+      return Utils.toJson((ObjectNode) this, pretty, tolowercase);
    }
 
    @Override

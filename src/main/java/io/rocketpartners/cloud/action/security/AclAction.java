@@ -31,7 +31,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Request;
@@ -96,15 +96,15 @@ public class AclAction extends Action<AclAction>
       }
       finally
       {
-         Node json = resp.getJson();
+         ObjectNode json = resp.getJson();
          if (json != null)
          {
             List toClean = json instanceof ArrayNode ? ((ArrayNode) json).asList() : Arrays.asList(json);
             for (Object parent : toClean)
             {
-               if (parent instanceof Node)
+               if (parent instanceof ObjectNode)
                {
-                  cleanJson(chain, (Node) parent, restricts, Collections.EMPTY_SET, true);
+                  cleanJson(chain, (ObjectNode) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
@@ -200,7 +200,7 @@ public class AclAction extends Action<AclAction>
       }
    }
 
-   void cleanJson(Chain chain, Node json, Set<String> restricts, Set<String> requires, boolean silent)
+   void cleanJson(Chain chain, ObjectNode json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
@@ -208,7 +208,7 @@ public class AclAction extends Action<AclAction>
 
          for (String path : restricts)
          {
-            List<Node> found = new ArrayList();
+            List<ObjectNode> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -225,7 +225,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (Node target : found)
+            for (ObjectNode target : found)
             {
                target.remove(targetProp);
                if (!silent)
@@ -238,7 +238,7 @@ public class AclAction extends Action<AclAction>
 
          for (String path : requires)
          {
-            List<Node> found = new ArrayList();
+            List<ObjectNode> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -255,7 +255,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (Node target : found)
+            for (ObjectNode target : found)
             {
                if (target.keySet().size() == 1 && target.containsKey("href"))
                {

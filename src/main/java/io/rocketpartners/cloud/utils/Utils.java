@@ -66,8 +66,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 import io.rocketpartners.cloud.model.ArrayNode;
-import io.rocketpartners.cloud.model.Node;
-import io.rocketpartners.cloud.model.Node.Property;
+import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.ObjectNode.Property;
 
 /**
  * Collection of utility methods designed to make
@@ -92,12 +92,12 @@ public class Utils
 
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-   public static String toJson(Node node)
+   public static String toJson(ObjectNode node)
    {
       return toJson(node, true, false);
    }
 
-   public static String toJson(Node node, boolean pretty, boolean lowercaseNames)
+   public static String toJson(ObjectNode node, boolean pretty, boolean lowercaseNames)
    {
       try
       {
@@ -118,7 +118,7 @@ public class Utils
       }
    }
 
-   static void writeNode(Node node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   static void writeNode(ObjectNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
       Property href = node.getProperty("href");
 
@@ -159,14 +159,14 @@ public class Utils
          {
             json.writeNullField(name);
          }
-         else if (value instanceof Node)
+         else if (value instanceof ObjectNode)
          {
             if (!lowercaseNames)
                json.writeFieldName(name);
             else
                json.writeFieldName(name.toLowerCase());
 
-            writeNode((Node) value, json, visited, lowercaseNames);
+            writeNode((ObjectNode) value, json, visited, lowercaseNames);
          }
          else if (value instanceof Date)
          {
@@ -230,9 +230,9 @@ public class Utils
          {
             json.writeNull();
          }
-         else if (obj instanceof Node)
+         else if (obj instanceof ObjectNode)
          {
-            writeNode((Node) obj, json, visited, lowercaseNames);
+            writeNode((ObjectNode) obj, json, visited, lowercaseNames);
          }
          else if (obj instanceof BigDecimal)
          {
@@ -374,9 +374,9 @@ public class Utils
       return ((ArrayNode) parseJson(json));
    }
 
-   public static Node parseJsonObject(String json)
+   public static ObjectNode parseJsonObject(String json)
    {
-      return ((Node) parseJson(json));
+      return ((ObjectNode) parseJson(json));
    }
 
    static Object parseJson(String json)
@@ -449,8 +449,8 @@ public class Utils
       }
       else if (json.isObject())
       {
-         Node retVal = null;
-         retVal = new Node();
+         ObjectNode retVal = null;
+         retVal = new ObjectNode();
 
          Iterator<String> it = json.fieldNames();
          while (it.hasNext())

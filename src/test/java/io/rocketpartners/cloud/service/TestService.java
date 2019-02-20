@@ -2,7 +2,7 @@ package io.rocketpartners.cloud.service;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import junit.framework.TestCase;
 
 public class TestService extends TestCase
@@ -68,7 +68,7 @@ public class TestService extends TestCase
                              .getService();
 
       Response resp = null;
-      Node data = null;
+      ObjectNode data = null;
 
       resp = service.get("/actionA/helloworld");
       data = resp.getJson();

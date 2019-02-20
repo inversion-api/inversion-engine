@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.Node;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
@@ -81,7 +81,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       if (!req.isMethod("PUT", "POST"))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
 
-      Node body = req.getJson();
+      ObjectNode body = req.getJson();
 
       if (body == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Attempting to post an empty body to a Firehose stream");
@@ -102,7 +102,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       {
          Object data = array.get(i);
 
-         if (data instanceof Node)
+         if (data instanceof ObjectNode)
          {
             //remap from attribute to column names if this db has been configured with them
             //this db/action can be used without collection attribute definitions and the 
@@ -111,8 +111,8 @@ public class FirehosePostAction extends Action<FirehosePostAction>
             List<Attribute> attrs = collection.getEntity().getAttributes();
             if (attrs.size() > 0)
             {
-               Node newJson = new Node();
-               Node oldJson = (Node) data;
+               ObjectNode newJson = new ObjectNode();
+               ObjectNode oldJson = (ObjectNode) data;
 
                for (Attribute attr : attrs)
                {
@@ -132,7 +132,7 @@ public class FirehosePostAction extends Action<FirehosePostAction>
          if (data == null)
             continue;
 
-         String string = data instanceof Node ? ((Node) data).toString(jsonPrettyPrint, jsonLowercaseNames) : data.toString();
+         String string = data instanceof ObjectNode ? ((ObjectNode) data).toString(jsonPrettyPrint, jsonLowercaseNames) : data.toString();
 
          if (jsonSeparator != null && !string.endsWith(jsonSeparator))
             string += jsonSeparator;
