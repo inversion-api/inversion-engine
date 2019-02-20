@@ -147,7 +147,7 @@ public class DynamoDb extends Db<DynamoDb>
       {
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
          {
-            index.withPartitionKey(table.getColumn(keyInfo.getAttributeName()));
+            index.witHashKey(table.getColumn(keyInfo.getAttributeName()));
          }
          else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
          {
@@ -202,7 +202,7 @@ public class DynamoDb extends Db<DynamoDb>
 
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
          {
-            index.withPartitionKey(table.getColumn(keyInfo.getAttributeName()));
+            index.witHashKey(table.getColumn(keyInfo.getAttributeName()));
          }
 
          else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
@@ -287,7 +287,7 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    /**
-    * Used to keep track of Partition and Sort keys for a dynamo index.
+    * Used to keep track of Hash and Sort keys for a dynamo index.
     * 
     * @author kfrankic
     *
@@ -300,7 +300,7 @@ public class DynamoDb extends Db<DynamoDb>
       public static final String LOCAL_SECONDARY_TYPE  = "localsecondary";
       public static final String GLOBAL_SECONDARY_TYPE = "globalsecondary";
 
-      protected Column           partitionKey          = null;
+      protected Column           hashKey               = null;
       protected Column           sortKey               = null;
 
       public DynamoDbIndex()
@@ -317,7 +317,7 @@ public class DynamoDb extends Db<DynamoDb>
       {
          super(table, name, type);
 
-         this.partitionKey = pk;
+         this.hashKey = pk;
          this.sortKey = sk;
       }
 
@@ -336,21 +336,31 @@ public class DynamoDb extends Db<DynamoDb>
          return !isLocalIndex() && !isPrimaryIndex();
       }
 
-      public Column getPartitionKey()
+      public Column getHashKey()
       {
-         return partitionKey;
+         return hashKey;
       }
 
-      public DynamoDbIndex withPartitionKey(Column partitionKey)
+      public String getHashKeyName()
       {
-         this.partitionKey = partitionKey;
-         withColumn(partitionKey);
+         return hashKey != null ? hashKey.getName() : null;
+      }
+
+      public DynamoDbIndex witHashKey(Column hashKey)
+      {
+         this.hashKey = hashKey;
+         withColumn(hashKey);
          return this;
       }
 
       public Column getSortKey()
       {
          return sortKey;
+      }
+
+      public String getSortKeyName()
+      {
+         return sortKey != null ? sortKey.getName() : null;
       }
 
       public DynamoDbIndex withSortKey(Column sortKey)
@@ -429,6 +439,53 @@ public class DynamoDb extends Db<DynamoDb>
          default :
             return value.toString();
       }
+   }
+
+   public static String toEntityKey(String hashKey, String sortKey)
+   {
+      String key = hashKey.replace("\\", "\\\\").replace("~", "\\~");
+
+      if (sortKey != null)
+      {
+         sortKey = sortKey.replace("\\", "\\\\").replace("~", "\\~");
+         key += "~" + sortKey;
+      }
+      return key;
+   }
+
+   public static String[] fromEntityKey(String entityKey)
+   {
+      String hashKey = entityKey;
+      String sortKey = null;
+
+      boolean escaped = false;
+      for (int i = 0; i < entityKey.length(); i++)
+      {
+         char c = entityKey.charAt(i);
+         switch (c)
+         {
+            case '\\':
+               escaped = !escaped;
+               continue;
+            case '~':
+               if (!escaped)
+               {
+                  hashKey = entityKey.substring(0, i);
+                  sortKey = entityKey.substring(i + 1, entityKey.length());
+                  break;
+               }
+            default :
+               escaped = false;
+         }
+
+         if (sortKey != null)
+            break;
+      }
+
+      hashKey = hashKey.replace("\\\\", "\\").replace("\\~", "~");
+      sortKey = sortKey != null ? sortKey.replace("\\\\", "\\").replace("\\~", "~") : null;
+
+      return new String[]{hashKey, sortKey};
    }
 
 }

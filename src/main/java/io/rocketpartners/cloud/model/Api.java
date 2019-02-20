@@ -86,7 +86,6 @@ public class Api
          starting = false;
       }
    }
-   
 
    public boolean isStarted()
    {
@@ -100,7 +99,7 @@ public class Api
          db.shutdown();
       }
    }
-   
+
    public void removeExcludes()
    {
       for (io.rocketpartners.cloud.model.Collection col : getCollections())
@@ -131,7 +130,7 @@ public class Api
 
       for (Db db : getDbs())
       {
-         for (Table table : (List<Table>)db.getTables())
+         for (Table table : (List<Table>) db.getTables())
          {
             if (table.isExclude())
             {
@@ -421,6 +420,11 @@ public class Api
    {
       this.loadTime = loadTime;
    }
+
+//   public Endpoint findEndpoint(Collection collection)
+//   {
+//      
+//   }
 
    public List<Endpoint> getEndpoints()
    {

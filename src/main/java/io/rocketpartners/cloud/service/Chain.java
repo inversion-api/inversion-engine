@@ -25,6 +25,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -84,23 +85,85 @@ public class Chain
          return get().size();
       }
 
+      public static Request getRequest()
+      {
+         return peek().getRequest();
+      }
+
+      public static Response getResponse()
+      {
+         return peek().getResponse();
+      }
+
       public static void debug(Object... msgs)
       {
          peek().getResponse().debug(msgs);
       }
+
+      public static String buildLink(Collection collection, Object entityKey, String subCollectionKey)
+      {
+         String collectionKey = collection.getName();
+
+         Request req = getRequest();
+
+         String url = req.getApiPath();
+
+         if (url == null)
+            url = "";
+         
+         if (!url.endsWith("/"))
+            url += "/";
+         
+//         if(collection.getIncludePaths().size() > 0)
+//         {
+//            url += collection.getIncludePaths().get(index)
+//         }
+
+         if (!Utils.empty(collectionKey))
+         {
+            if (!url.endsWith("/"))
+               url += "/";
+
+            url += collectionKey;
+         }
+
+         if (!Utils.empty(entityKey))
+            url += "/" + entityKey;
+
+         if (!Utils.empty(subCollectionKey))
+            url += "/" + subCollectionKey;
+
+         if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
+         {
+            String newUrl = req.getApi().getUrl();
+            while (newUrl.endsWith("/"))
+               newUrl = newUrl.substring(0, newUrl.length() - 1);
+
+            url = newUrl + url.substring(url.indexOf("/", 8));
+         }
+         else
+         {
+            String proto = req.getHeader("x-forwarded-proto");
+            if (!Utils.empty(proto))
+            {
+               url = proto + url.substring(url.indexOf(':'), url.length());
+            }
+         }
+         return url;
+      }
    }
 
-   Service            service  = null;
-   List<Action>       actions  = new ArrayList();
-   Request            request  = null;
-   Response           response = null;
+   protected Service            service  = null;
+   protected List<Action>       actions  = new ArrayList();
+   protected Request            request  = null;
+   protected Response           response = null;
 
-   int                next     = 0;
-   boolean            canceled = false;
+   protected int                next     = 0;
+   protected boolean            canceled = false;
 
-   CaseInsensitiveMap vars     = new CaseInsensitiveMap();
+   protected CaseInsensitiveMap vars     = new CaseInsensitiveMap();
 
-   Chain              parent   = null;
+   protected Chain              parent   = null;
 
    private Chain(Service service, Request req, Response res)
    {

@@ -15,6 +15,7 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
+import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.action.dynamo.DynamoDbQuery.DynamoResult;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
@@ -36,6 +37,28 @@ public class DynamoDbGetAction extends DynamoDbAction
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
 
       DynamoDbQuery query = new DynamoDbQuery(collection, req.getParams());
+
+      String entityKey = req.getEntityKey();
+      if (entityKey != null)
+      {
+         String[] parts = DynamoDb.fromEntityKey(entityKey);
+         String hashKey = parts[0];
+         String sortKey = parts[1];
+         
+         DynamoDbIndex index = (DynamoDbIndex)table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
+         if(index != null)
+         {
+            String hashAttrName = collection.getAttributeName(index.getHashKey().getName());
+            query.withTerm("eq(" + hashAttrName + "," + hashKey + ")");
+            
+            if(sortKey != null)
+            {
+               String sortAttrName = collection.getAttributeName(index.getSortKey().getName());
+               query.withTerm("eq(" + sortAttrName + "," + sortKey + ")");
+            }
+         }
+      }
+
       DynamoResult dynamoResult = query.doSelect(dynamoTable);
 
       res.withPageSize(query.page().getPageSize())//

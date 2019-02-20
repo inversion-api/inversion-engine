@@ -666,45 +666,6 @@ public class Service
       return null;
    }
 
-   public static String buildLink(Request req, String collectionKey, Object entityKey, String subCollectionKey)
-   {
-      String url = req.getApiPath();
-
-      if (!Utils.empty(collectionKey))
-      {
-         if (!url.endsWith("/"))
-            url += "/";
-
-         url += collectionKey;
-      }
-
-      if (!Utils.empty(entityKey))
-         url += "/" + entityKey;
-
-      if (!Utils.empty(subCollectionKey))
-         url += "/" + subCollectionKey;
-
-      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-      {
-         String newUrl = req.getApi().getUrl();
-         while (newUrl.endsWith("/"))
-            newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-         url = newUrl + url.substring(url.indexOf("/", 8));
-      }
-      else
-      {
-         String proto = req.getHeader("x-forwarded-proto");
-         if (!Utils.empty(proto))
-         {
-            url = proto + url.substring(url.indexOf(':'), url.length());
-         }
-      }
-
-      return url;
-
-   }
-
    public String getProfile()
    {
       return profile;

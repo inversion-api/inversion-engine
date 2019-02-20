@@ -1,13 +1,19 @@
 
 
+ChainLocal.makeLink does not know how to work with endpointPath/collectionPath
+
 dynamo
+ - add dynamo 'includes' projections
  - primary key / href linking
  - continuation token
- - test for dynamo db 
+ - subcollection linking 
+ - put excludes and expands into get handler superclass
+ - implement name map to avoid expression keyword conflicts.
+
+make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
 
 
-Implement db.startup()/shutdown();
-
+DONE Implement db.startup()/shutdown();
 DONE get rid of request.params in favor of url.params
 
 Put meta & data objects into response as first class citizens

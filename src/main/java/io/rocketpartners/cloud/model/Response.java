@@ -44,7 +44,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected ObjectNode                                   json              = new ObjectNode("meta", new ObjectNode(), "data", new ArrayNode());
+   protected ObjectNode                             json              = new ObjectNode("meta", new ObjectNode(), "data", new ArrayNode());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -73,7 +73,15 @@ public class Response
    public Response statusOk()
    {
       if (statusCode < 200 || statusCode > 299)
-         throw new ApiException(statusCode + " " + statusError);
+         throw new ApiException(statusCode + "", statusError);
+
+      return this;
+   }
+
+   public Response statusOk(String message)
+   {
+      if (statusCode < 200 || statusCode > 299)
+         throw new ApiException(statusCode + "", message);
 
       return this;
    }
@@ -85,7 +93,7 @@ public class Response
 
       return this;
    }
-   
+
    public boolean hasStatus(int... statusCodes)
    {
       for (int statusCode : statusCodes)
@@ -95,7 +103,6 @@ public class Response
       }
       return false;
    }
-   
 
    public Response withMeta(String key, String value)
    {

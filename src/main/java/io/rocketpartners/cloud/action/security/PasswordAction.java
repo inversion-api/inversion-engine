@@ -23,6 +23,7 @@ import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.service.Service;
 
 public class PasswordAction extends Action<PasswordAction>
@@ -71,7 +72,7 @@ public class PasswordAction extends Action<PasswordAction>
             {
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
                ObjectNode body = new ObjectNode(passwordField, encryptedPassword, "href", user.getString("href"));
-               String url = Service.buildLink(req, req.getCollectionKey(), user.get("id"), null);
+               String url = ChainLocal.buildLink(req.getCollection(), user.get("id"), null);
                service.put(url, body.toString());
             }
          }

@@ -29,7 +29,6 @@ import java.util.Set;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
@@ -45,6 +44,7 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
@@ -147,7 +147,7 @@ public class SqlGetAction extends SqlAction
 
                List ids = SqlUtils.selectList(conn, sql, req.getEntityKey());
 
-               String newUrl = Service.buildLink(req, collection.getName(), Utils.implode(",", ids.toArray()), null);
+               String newUrl = ChainLocal.buildLink(collection, Utils.implode(",", ids.toArray()), null);
 
                String queryStr = req.getQuery();
                if (!Utils.empty(queryStr))
@@ -399,7 +399,7 @@ public class SqlGetAction extends SqlAction
 
             if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
             {
-               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
+               String href = ChainLocal.buildLink(req.getCollection(), value, null);
                if (include("href", includes, excludes, path))
                {
                   js.put("href", href);
@@ -423,7 +423,7 @@ public class SqlGetAction extends SqlAction
       if (ids.size() == 0)
          return Collections.EMPTY_LIST;
 
-      String url = Service.buildLink(chain.getRequest(), collection.getName(), SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
+      String url = ChainLocal.buildLink(collection, SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
 
       //--
       //-- Nested param support
@@ -515,7 +515,7 @@ public class SqlGetAction extends SqlAction
 
                   if (fk != null)
                   {
-                     String href = Service.buildLink(chain.getRequest(), childCollection.getName(), fk, null);
+                     String href = ChainLocal.buildLink(childCollection, fk, null);
                      js.put(rel.getName(), new ObjectNode("href", href));
                   }
                   else
@@ -526,7 +526,7 @@ public class SqlGetAction extends SqlAction
                else
                {
                   Object key = js.get(keyProp);
-                  String href = Service.buildLink(chain.getRequest(), chain.getRequest().getCollectionKey(), key, rel.getName());
+                  String href = ChainLocal.buildLink(chain.getRequest().getCollection(), key, rel.getName());
                   js.put(rel.getName(), new ObjectNode("href", href));
                }
             }

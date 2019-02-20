@@ -24,7 +24,6 @@ import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.rql.Builder;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
 import io.rocketpartners.cloud.rql.Page;
@@ -94,7 +93,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          Item item = dynamoTable.getItem(gis);
          if (item != null)
          {
-            result.rows.add(item.asMap());
+            result.rows.add(new ObjectNode(item.asMap()));
          }
       }
       else if (spec instanceof QuerySpec)
@@ -103,7 +102,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          ItemCollection<QueryOutcome> queryResult = dynamoIndex != null ? dynamoIndex.query(qs) : dynamoTable.query(qs);
          for (Item item : queryResult)
          {
-            result.rows.add(item.asMap());
+            result.rows.add(new ObjectNode(item.asMap()));
          }
 
          result.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
@@ -115,32 +114,44 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          for (Item item : scanResult)
          {
             Map m = item.asMap();
-            result.rows.add(m);
+            result.rows.add(new ObjectNode(m));
          }
 
          result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
       }
 
+      DynamoDbIndex primaryIndex = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
+      String hashKeyName = primaryIndex.getHashKeyName();
+      String sortKeyName = primaryIndex.getSortKeyName();
+
       for (int i = 0; i < result.rows.size(); i++)
       {
-         Map map = (Map) result.rows.get(i);
+         ObjectNode row = (ObjectNode) result.rows.get(i);
          ObjectNode json = new ObjectNode();
 
          result.rows.set(i, json);
+         String hashKey = row.getString(hashKeyName);
+         if (hashKey != null)
+         {
+            String sortKey = sortKeyName != null ? row.getString(sortKeyName) : null;
+            String entityKey = DynamoDb.toEntityKey(hashKey, sortKey);
+            String href = ChainLocal.buildLink(collection, entityKey, null);
+            json.put("href", href);
+         }
 
          //this preservers attribute order
          for (Attribute attr : collection.getEntity().getAttributes())
          {
             String colName = attr.getColumn().getName();
-            Object value = map.remove(colName);
+            Object value = row.remove(colName);
             json.put(attr.getName(), value);
          }
 
          //copy remaining columns that were in result set but not defined in the entity
          //TODO...do we really want to do this?
-         for (Object key : map.keySet())
+         for (Object key : row.keySet())
          {
-            json.put(key.toString(), map.get(key));
+            json.put(key.toString(), row.get(key));
          }
       }
 
@@ -169,7 +180,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          {
             DynamoDbIndex index = (DynamoDbIndex) idx;
 
-            String partAttr = collection.getAttributeName(index.getPartitionKey().getName());
+            String partAttr = collection.getAttributeName(index.getHashKey().getName());
             String sortAttr = index.getSortKey() != null ? collection.getAttributeName(index.getSortKey().getName()) : null;
 
             Term partKey = findTerm(partAttr, "eq");
@@ -236,6 +247,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       Term partKey = getPartKey();
       Term sortKey = getSortKey();
 
+      Map nameMap = new HashMap();
       Map valueMap = new HashMap();
 
       StringBuffer keyExpr = new StringBuffer("");
@@ -256,12 +268,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
       if (partKey != null)
       {
-         toString(keyExpr, partKey, valueMap);
+         toString(keyExpr, partKey, nameMap, valueMap);
       }
 
       if (sortKey != null)
       {
-         toString(keyExpr, sortKey, valueMap);
+         toString(keyExpr, sortKey, nameMap, valueMap);
       }
 
       for (Term term : where().getTerms())
@@ -269,10 +281,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          if (term == partKey || term == sortKey)
             continue;
 
-//         if (filterExpr.length() > 0)
-//            filterExpr.append(" and ");
+         //         if (filterExpr.length() > 0)
+         //            filterExpr.append(" and ");
 
-         toString(filterExpr, term, valueMap);
+         toString(filterExpr, term, nameMap, valueMap);
       }
 
       int pageSize = page().getPageSize();
@@ -292,25 +304,26 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             String projectionExpression = Utils.implode(",", columns);
             querySpec.withProjectionExpression(projectionExpression);
 
-            debug += " projectionExpression=" + projectionExpression;
+            debug += " projectionExpression='" + projectionExpression + "'";
          }
 
          if (keyExpr.length() > 0)
          {
             querySpec.withKeyConditionExpression(keyExpr.toString());
 
-            debug += " keyConditionExpression=" + keyExpr;
+            debug += " keyConditionExpression='" + keyExpr + "'";
          }
 
          if (filterExpr.length() > 0)
          {
             querySpec.withFilterExpression(filterExpr.toString());
 
-            debug += " filterExpression=" + filterExpr;
+            debug += " filterExpression='" + filterExpr + "'";
          }
 
          if (valueMap.size() > 0)
          {
+            //querySpec.withNameMap(nameMap);
             querySpec.withValueMap(valueMap);
 
             debug += " valueMap=" + valueMap;
@@ -333,14 +346,14 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             String projectionExpression = Utils.implode(",", columns);
             scanSpec.withProjectionExpression(projectionExpression);
 
-            debug += " projectionExpression=" + projectionExpression;
+            debug += " projectionExpression='" + projectionExpression + "'";
          }
 
          if (filterExpr.length() > 0)
          {
             scanSpec.withFilterExpression(filterExpr.toString());
 
-            debug += " filterExpression=" + filterExpr;
+            debug += " filterExpression='" + filterExpr + "'";
          }
          if (valueMap.size() > 0)
          {
@@ -354,7 +367,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       }
    }
 
-   String toString(StringBuffer buff, Term term, Map valueMap)
+   String toString(StringBuffer buff, Term term, Map nameMap, Map valueMap)
    {
       space(buff);
 
@@ -367,10 +380,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          buff.append("(");
          for (int i = 0; i < term.getNumTerms(); i++)
          {
-            toString(buff, term.getTerm(i), valueMap);
+            toString(buff, term.getTerm(i), nameMap, valueMap);
             if (i < term.getNumTerms() - 1)
             {
-               space(buff).append(toString(buff, term.getTerm(i), valueMap)).append(" ");
+               space(buff).append(toString(buff, term.getTerm(i), nameMap, valueMap)).append(" ");
             }
          }
          buff.append(")");
@@ -378,7 +391,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (op != null)
       {
          String col = getColumnName(term.getToken(0));
-         String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
+         String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
             space(buff).append("and ");
@@ -388,7 +401,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (func != null)
       {
          String col = getColumnName(term.getToken(0));
-         String expr = toString(new StringBuffer(""), term.getTerm(1), valueMap);
+         String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
             space(buff).append("and ");
@@ -402,10 +415,17 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
          Object value = cast(col, term.getToken());
 
-         String key = ":" + attr;
-         valueMap.put(key, value);
+         //         String key = ":" + attr;
+         //         valueMap.put(key, value);
+         //         space(buff).append(key);
 
+         String key = ":var" + (valueMap.size() + 1);
+         valueMap.put(key, value);
          space(buff).append(key);
+
+         //         String valueKey = "val" + (valueMap.size() + 1);
+         //         valueMap.put(valueKey, value);
+         //         space(buff).append(":").append(valueKey);
       }
 
       return buff.toString();
@@ -433,7 +453,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
    public static class DynamoResult
    {
-      List                        rows = new ArrayList();
+      List<ObjectNode>            rows = new ArrayList();
 
       Map<String, AttributeValue> lastKey;
 
