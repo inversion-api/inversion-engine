@@ -170,37 +170,35 @@ public class TestDynamoActions extends TestCase
       return service;
    }
 
-   @Test
-   public void testA() throws Exception
-   {
-      Service service = service("northwind", "northwind", "test-northwind");
-      Response res = null;
-      ObjectNode json = null;
+//   @Test
+//   public void testA() throws Exception
+//   {
+//      Service service = service("northwind", "northwind", "test-northwind");
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
+//      json = res.getJson();
+//      //System.out.println(res.getDebug());
+//
+//      assertEquals(7, json.getArray("data").length());
+//      assertDebug(res, "ScanSpec", "filterExpression='ls2 = :var1' valueMap={:var1=Blauer See Delikatessen}");
+//   }
 
-      res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
-      json = res.getJson();
-      System.out.println(res.getDebug());
-
-      assertEquals(7, json.getArray("data").length());
-
-      assertDebug(res, "ScanSpec", "filterExpression='ls2 = :var1' valueMap={:var1=Blauer See Delikatessen}");
-   }
-
-   @Test
-   public void testC() throws Exception
-   {
-      Service service = service("northwind", "northwind", "test-northwind");
-      Response res = null;
-      ObjectNode json = null;
-
-      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
-      json = res.getJson();
-      System.out.println(res.getDebug());
-
-      assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "valueMap={:orderid=11058}", "keyConditionExpression=hk = :orderid");
-
-   }
+//   @Test
+//   public void testC() throws Exception
+//   {
+//      Service service = service("northwind", "northwind", "test-northwind");
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
+//      json = res.getJson();
+//      System.out.println(res.getDebug());
+//
+//      assertEquals(json.getArray("data").length(), 1);
+//      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1' valueMap={:var1=11058}");
+//   }
 
    @Test
    public void testD() throws Exception
@@ -214,14 +212,14 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk", "partKeyVal=11058", "sortKeyCol=sk", "sortKeyVal=ORDER");
+      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
 
       res = service.get("northwind/dynamodb/orders/11058~ORDER");
       json = res.getJson();
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk", "partKeyVal=11058", "sortKeyCol=sk", "sortKeyVal=ORDER");
+      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
    }
 
    @Test
@@ -236,7 +234,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "valueMap={:type=AAAAA, :OrderId=11058}", "keyConditionExpression=hk = :OrderId and sk > :type");
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1 and sk > :var2' valueMap={:var1=11058, :var2=AAAAA}");
    }
 
    @Test
@@ -250,7 +248,7 @@ public class TestDynamoActions extends TestCase
       json = res.getJson();
       System.out.println(res.getDebug());
 
-      assertDebug(res, "Index=Primary Index", "keyConditionExpression=hk = :OrderId and sk > :type filterExpression=ls1 > :ShipCity valueMap={:ShipCity=A, :type=AAAAA, :OrderId=12345}");
+      assertDebug(res, "Index=Primary Index", "keyConditionExpression='hk = :var1 and sk > :var2' filterExpression='ls1 > :var3' valueMap={:var1=12345, :var2=AAAAA, :var3=A}");
    }
 
    @Test
@@ -265,7 +263,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression=hk = :OrderId and begins_with(sk,:type)", "valueMap={:type=ORD, :OrderId=11058}");
+      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1 and begins_with(sk,:var2)' valueMap={:var1=11058, :var2=ORD}");
    }
 
    @Test
@@ -282,7 +280,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=ls1", "QuerySpec", "keyConditionExpression=hk = :OrderId and ls1 = :shipcity filterExpression=begins_with(sk,:type) valueMap={:type=ORD, :OrderId=11058, :shipcity=Mannheim}");
+      assertDebug(res, "Index=ls1", "QuerySpec", "keyConditionExpression='hk = :var1 and ls1 = :var2' filterExpression='begins_with(sk,:var3)' valueMap={:var1=11058, :var2=Mannheim, :var3=ORD}");
    }
 
    @Test
@@ -297,7 +295,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=gs1", "QuerySpec", "keyConditionExpression=gs1hk = :EmployeeId and gs1sk = :OrderDate filterExpression=begins_with(sk,:type) and hk = :OrderId valueMap={:type=ORD, :EmployeeId=9, :OrderDate=2014-10-29T00:00-0400, :OrderId=11058}");
+      assertDebug(res, "Index=gs1", "QuerySpec", "keyConditionExpression='gs1hk = :var1 and gs1sk = :var2' filterExpression='begins_with(sk,:var3) and hk = :var4' valueMap={:var1=9, :var2=2014-10-29T00:00-0400, :var3=ORD, :var4=11058}");
    }
 
    @Test
@@ -312,7 +310,7 @@ public class TestDynamoActions extends TestCase
       System.out.println(res.getDebug());
 
       //assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "ScanSpec -> maxPageSize=100 filterExpression=sk = :type and hk > :OrderId valueMap={:type=ORDER, :OrderId=1}");
+      assertDebug(res, "DynamoDb ScanSpec -> maxPageSize=100 filterExpression='sk = :var1 and hk > :var2' valueMap={:var1=ORDER, :var2=1}");
    }
 
    void assertDebug(Response resp, String... matches)
