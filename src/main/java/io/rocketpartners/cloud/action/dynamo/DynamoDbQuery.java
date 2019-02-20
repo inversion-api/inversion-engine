@@ -323,10 +323,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
 
          if (valueMap.size() > 0)
          {
-            //querySpec.withNameMap(nameMap);
+            querySpec.withNameMap(nameMap);
             querySpec.withValueMap(valueMap);
 
-            debug += " valueMap=" + valueMap;
+            debug += " nameMap=" + nameMap + " valueMap=" + valueMap;
          }
 
          ChainLocal.debug(debug);
@@ -357,9 +357,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          }
          if (valueMap.size() > 0)
          {
+            scanSpec.withNameMap(nameMap);
             scanSpec.withValueMap(valueMap);
 
-            debug += " valueMap=" + valueMap;
+            debug += " nameMap=" + nameMap + " valueMap=" + valueMap;
          }
 
          ChainLocal.debug(debug);
@@ -391,12 +392,16 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (op != null)
       {
          String col = getColumnName(term.getToken(0));
+         
+         String nameKey = "#var" + (nameMap.size() + 1);
+         nameMap.put(nameKey,  col);
+         
          String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
             space(buff).append("and ");
 
-         buff.append(col).append(" ").append(op).append(" ").append(expr);
+         buff.append(nameKey).append(" ").append(op).append(" ").append(expr);
       }
       else if (func != null)
       {
@@ -412,20 +417,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       {
          String attr = term.getParent().getToken(0);
          String col = getColumnName(attr);
-
          Object value = cast(col, term.getToken());
 
-         //         String key = ":" + attr;
-         //         valueMap.put(key, value);
-         //         space(buff).append(key);
-
-         String key = ":var" + (valueMap.size() + 1);
+         String key = ":val" + (valueMap.size() + 1);
          valueMap.put(key, value);
-         space(buff).append(key);
 
-         //         String valueKey = "val" + (valueMap.size() + 1);
-         //         valueMap.put(valueKey, value);
-         //         space(buff).append(":").append(valueKey);
+         space(buff).append(key);
       }
 
       return buff.toString();
