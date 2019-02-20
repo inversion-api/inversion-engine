@@ -18,7 +18,6 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class AclRule extends Rule

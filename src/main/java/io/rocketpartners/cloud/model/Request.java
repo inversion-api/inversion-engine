@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.service;
+package io.rocketpartners.cloud.model;
 
 import java.io.InputStream;
 import java.util.List;
@@ -21,16 +21,8 @@ import java.util.Map;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
-import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
-import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.model.Url;
-import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.HttpUtils;
 import io.rocketpartners.cloud.utils.Utils;
 

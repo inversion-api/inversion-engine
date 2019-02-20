@@ -3,6 +3,7 @@ package io.rocketpartners.cloud.service;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Response;
 import junit.framework.TestCase;
 
 public class TestService extends TestCase

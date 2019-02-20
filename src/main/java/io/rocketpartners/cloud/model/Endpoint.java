@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Chain.ChainLocal;
-import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>

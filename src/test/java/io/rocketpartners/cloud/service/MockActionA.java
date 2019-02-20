@@ -4,6 +4,8 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Request;
+import io.rocketpartners.cloud.model.Response;
 
 public class MockActionA extends Action<Action>
 {

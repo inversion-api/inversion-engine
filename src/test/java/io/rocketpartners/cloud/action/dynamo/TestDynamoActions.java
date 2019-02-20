@@ -9,7 +9,7 @@ import io.rocketpartners.cloud.action.sql.TestSqlActions;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.ObjectNode;
-import io.rocketpartners.cloud.service.Response;
+import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.Service.ServiceListener;
 import junit.framework.TestCase;

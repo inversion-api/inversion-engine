@@ -25,9 +25,9 @@ import java.util.regex.Pattern;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Request;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 

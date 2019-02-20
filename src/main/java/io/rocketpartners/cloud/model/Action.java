@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Request;
-import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
 

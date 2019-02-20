@@ -27,9 +27,9 @@ import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.service.Response;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.HttpUtils;
 
