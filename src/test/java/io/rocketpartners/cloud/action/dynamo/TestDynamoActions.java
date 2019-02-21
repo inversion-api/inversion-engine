@@ -1,7 +1,12 @@
 package io.rocketpartners.cloud.action.dynamo;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -170,35 +175,35 @@ public class TestDynamoActions extends TestCase
       return service;
    }
 
-//   @Test
-//   public void testA() throws Exception
-//   {
-//      Service service = service("northwind", "northwind", "test-northwind");
-//      Response res = null;
-//      ObjectNode json = null;
-//
-//      res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
-//      json = res.getJson();
-//      //System.out.println(res.getDebug());
-//
-//      assertEquals(7, json.getArray("data").length());
-//      assertDebug(res, "ScanSpec", "filterExpression='ls2 = :var1' valueMap={:var1=Blauer See Delikatessen}");
-//   }
+   @Test
+   public void testA() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      ObjectNode json = null;
 
-//   @Test
-//   public void testC() throws Exception
-//   {
-//      Service service = service("northwind", "northwind", "test-northwind");
-//      Response res = null;
-//      ObjectNode json = null;
-//
-//      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
-//      json = res.getJson();
-//      System.out.println(res.getDebug());
-//
-//      assertEquals(json.getArray("data").length(), 1);
-//      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1' valueMap={:var1=11058}");
-//   }
+      res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen");
+      json = res.getJson();
+      //System.out.println(res.getDebug());
+
+      assertEquals(7, json.getArray("data").length());
+      assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=ls2} valueMap={:val1=Blauer See Delikatessen} keyConditionExpression='' filterExpression='#var1 = :val1' projectionExpression=''");
+   }
+
+   @Test
+   public void testC() throws Exception
+   {
+      Service service = service("northwind", "northwind", "test-northwind");
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.service("GET", "northwind/dynamodb/orders?orderid=11058");
+      json = res.getJson();
+      System.out.println(res.getDebug());
+
+      assertEquals(json.getArray("data").length(), 1);
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=11058} keyConditionExpression='#var1 = :val1' filterExpression='' projectionExpression=''");
+   }
 
    @Test
    public void testD() throws Exception
@@ -209,17 +214,17 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?orderid=11058&type=ORDER");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
+      assertDebug(res, "DynamoDbQuery: GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
 
       res = service.get("northwind/dynamodb/orders/11058~ORDER");
       json = res.getJson();
       System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "GetItemSpec", "partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
+      assertDebug(res, "DynamoDbQuery: GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
    }
 
    @Test
@@ -231,10 +236,10 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&gt(type, 'AAAAA')");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1 and sk > :var2' valueMap={:var1=11058, :var2=AAAAA}");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=AAAAA} keyConditionExpression='#var1 = :val1 and #var2 > :val2' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -246,9 +251,9 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,A)");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
-      assertDebug(res, "Index=Primary Index", "keyConditionExpression='hk = :var1 and sk > :var2' filterExpression='ls1 > :var3' valueMap={:var1=12345, :var2=AAAAA, :var3=A}");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk, #var3=ls1} valueMap={:val1=12345, :val2=AAAAA, :val3=A} keyConditionExpression='#var1 = :val1 and #var2 > :val2' filterExpression='#var3 > :val3' projectionExpression=''");
    }
 
    @Test
@@ -260,10 +265,10 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=Primary Index", "QuerySpec", "keyConditionExpression='hk = :var1 and begins_with(sk,:var2)' valueMap={:var1=11058, :var2=ORD}");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=11058, :val2=ORD} keyConditionExpression='#var1 = :val1 and begins_with(sk,:val2)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -277,10 +282,10 @@ public class TestDynamoActions extends TestCase
       //res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(shipcity,Mannheim)");
       //res = service.get("northwind/dynamodb/orders?eq(shipcity,Mannheim)");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=ls1", "QuerySpec", "keyConditionExpression='hk = :var1 and ls1 = :var2' filterExpression='begins_with(sk,:var3)' valueMap={:var1=11058, :var2=Mannheim, :var3=ORD}");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='#var1 = :val1 and #var2 = :val2' filterExpression='begins_with(sk,:val3)' projectionExpression=''");
    }
 
    @Test
@@ -292,10 +297,10 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(EmployeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "Index=gs1", "QuerySpec", "keyConditionExpression='gs1hk = :var1 and gs1sk = :var2' filterExpression='begins_with(sk,:var3) and hk = :var4' valueMap={:var1=9, :var2=2014-10-29T00:00-0400, :var3=ORD, :var4=11058}");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var1=gs1hk, #var2=gs1sk, #var3=hk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='#var1 = :val1 and #var2 = :val2' filterExpression='begins_with(sk,:val3) and #var3 = :val4' projectionExpression=''");
    }
 
    @Test
@@ -307,16 +312,64 @@ public class TestDynamoActions extends TestCase
 
       res = service.get("northwind/dynamodb/orders?gt(OrderId, 1)&eq(type, ORDER)");
       json = res.getJson();
-      System.out.println(res.getDebug());
+      //System.out.println(res.getDebug());
 
       //assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDb ScanSpec -> maxPageSize=100 filterExpression='sk = :var1 and hk > :var2' valueMap={:var1=ORDER, :var2=1}");
+      assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=1} keyConditionExpression='' filterExpression='#var1 = :val1 and #var2 > :val2' projectionExpression=''");
    }
 
    void assertDebug(Response resp, String... matches)
    {
+      String debug = resp.getDebug();
+
+      int idx = debug.indexOf("DynamoDbQuery");
+      String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
+
       for (String match : matches)
-         if (resp.getDebug().indexOf(match) < 0)
-            fail("missing debug match: " + match);
+      {
+         List<String> matchTokens = split(match, ' ', '\'', '"', '{', '}');
+         for (String matchToken : matchTokens)
+         {
+            if (debugLine.indexOf(matchToken) < 0)
+               fail("missing debug match: '" + match + "' in debug line: " + debugLine);
+         }
+      }
+
    }
+
+   List<String> split(String string, char splitOn, char... quoteChars)
+   {
+      List<String> strings = new ArrayList();
+      Set quotes = new HashSet();
+      for (char c : quoteChars)
+         quotes.add(c);
+
+      boolean quoted = false;
+      StringBuffer buff = new StringBuffer("");
+      for (int i = 0; i < string.length(); i++)
+      {
+         char c = string.charAt(i);
+
+         if (c == splitOn && !quoted)
+         {
+            if (buff.length() > 0)
+            {
+               strings.add(buff.toString());
+               buff = new StringBuffer("");
+            }
+            continue;
+         }
+         else if (quotes.contains(c))
+         {
+            quoted = !quoted;
+         }
+
+         buff.append(c);
+      }
+      if (buff.length() > 0)
+         strings.add(buff.toString());
+
+      return strings;
+   }
+
 }

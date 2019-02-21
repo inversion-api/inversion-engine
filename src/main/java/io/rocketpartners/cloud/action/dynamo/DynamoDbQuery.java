@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.text.Keymap;
+
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
@@ -208,8 +210,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          this.index = foundIndex;
          this.partKey = foundPartKey;
          this.sortKey = foundSortKey;
-
-         ChainLocal.debug("Index=" + (index != null ? index.getName() : "null"));
       }
       return index;
    }
@@ -261,7 +261,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String sortKeyCol = getColumnName(sortKey.getToken(0));
          Object sortKeyVal = cast(sortKeyCol, sortKey.getToken(1));
 
-         ChainLocal.debug("DynamoDb GetItemSpec -> partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
+         ChainLocal.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
          return new GetItemSpec().withPrimaryKey(partKeyCol, partKeyVal, sortKeyCol, sortKeyVal);
       }
@@ -280,90 +280,91 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       {
          if (term == partKey || term == sortKey)
             continue;
-
-         //         if (filterExpr.length() > 0)
-         //            filterExpr.append(" and ");
-
          toString(filterExpr, term, nameMap, valueMap);
       }
 
+      boolean doQuery = partKey != null && partKey.getTerm(1).isLeaf();
+      
+      StringBuffer debug = new StringBuffer("DynamoDbQuery: ").append(doQuery ? "QuerySpec" : "ScanSpec").append(index != null ? ":'" + index.getName() + "'": "");
+      
       int pageSize = page().getPageSize();
+      debug.append(" maxPageSize=" + pageSize);
 
-      if (partKey != null && partKey.getTerm(1).isLeaf())
+      boolean scanIndexForward = order().isAsc(0);
+      debug.append(" scanIndexForward=" + scanIndexForward);
+
+      debug.append(" nameMap=" + nameMap + " valueMap=" + valueMap);
+      debug.append(" keyConditionExpression='" + keyExpr + "'");
+      debug.append(" filterExpression='" + filterExpr + "'");
+
+      String projectionExpression = null;
+      List columns = select().getColumnNames();
+      if (columns.size() > 0)
+         projectionExpression = Utils.implode(",", columns);
+      
+      debug.append(" projectionExpression='" + (projectionExpression != null ? projectionExpression : "") + "'");
+      
+      ChainLocal.debug(debug);
+
+      if (doQuery)
       {
-         String debug = "DynamoDb QuerySpec -> maxPageSize=" + pageSize + " scanIndexForward=" + order().isAsc(0);
-
          QuerySpec querySpec = new QuerySpec();//
          querySpec.withMaxPageSize(pageSize);
-         querySpec.withMaxResultSize(pageSize); //todo are these aliases or actually have different function?
+         querySpec.withMaxResultSize(pageSize);
          querySpec.withScanIndexForward(order().isAsc(0));
 
-         List columns = select().getColumnNames();
-         if (columns.size() > 0)
+         if (!Utils.empty(projectionExpression))
          {
-            String projectionExpression = Utils.implode(",", columns);
             querySpec.withProjectionExpression(projectionExpression);
-
-            debug += " projectionExpression='" + projectionExpression + "'";
          }
 
          if (keyExpr.length() > 0)
          {
             querySpec.withKeyConditionExpression(keyExpr.toString());
-
-            debug += " keyConditionExpression='" + keyExpr + "'";
          }
 
          if (filterExpr.length() > 0)
          {
             querySpec.withFilterExpression(filterExpr.toString());
+         }
 
-            debug += " filterExpression='" + filterExpr + "'";
+         if (nameMap.size() > 0)
+         {
+            querySpec.withNameMap(nameMap);
          }
 
          if (valueMap.size() > 0)
          {
-            querySpec.withNameMap(nameMap);
             querySpec.withValueMap(valueMap);
-
-            debug += " nameMap=" + nameMap + " valueMap=" + valueMap;
          }
 
-         ChainLocal.debug(debug);
          return querySpec;
       }
       else
       {
-         String debug = "DynamoDb ScanSpec -> maxPageSize=" + pageSize;
-
          ScanSpec scanSpec = new ScanSpec();
          scanSpec.withMaxPageSize(pageSize);
          scanSpec.withMaxResultSize(pageSize);
 
-         List columns = select().getColumnNames();
-         if (columns.size() > 0)
+         if (!Utils.empty(projectionExpression))
          {
-            String projectionExpression = Utils.implode(",", columns);
             scanSpec.withProjectionExpression(projectionExpression);
-
-            debug += " projectionExpression='" + projectionExpression + "'";
          }
 
          if (filterExpr.length() > 0)
          {
             scanSpec.withFilterExpression(filterExpr.toString());
-
-            debug += " filterExpression='" + filterExpr + "'";
          }
-         if (valueMap.size() > 0)
+         if (nameMap.size() > 0)
          {
             scanSpec.withNameMap(nameMap);
-            scanSpec.withValueMap(valueMap);
-
-            debug += " nameMap=" + nameMap + " valueMap=" + valueMap;
          }
 
-         ChainLocal.debug(debug);
+         if (valueMap.size() > 0)
+         {
+            scanSpec.withValueMap(valueMap);
+         }
+
          return scanSpec;
       }
    }
@@ -392,10 +393,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (op != null)
       {
          String col = getColumnName(term.getToken(0));
-         
+
          String nameKey = "#var" + (nameMap.size() + 1);
-         nameMap.put(nameKey,  col);
-         
+         nameMap.put(nameKey, col);
+
          String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
