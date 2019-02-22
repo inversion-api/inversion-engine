@@ -75,6 +75,15 @@ public class ObjectNode implements Map<String, Object>
       return null;
    }
 
+   public String findString(String path)
+   {
+      Object found = find(path);
+      if (found != null)
+         return found.toString();
+
+      return null;
+   }
+
    public int findInt(String path)
    {
       Object found = find(path);

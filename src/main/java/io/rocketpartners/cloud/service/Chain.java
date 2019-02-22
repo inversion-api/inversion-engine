@@ -110,14 +110,34 @@ public class Chain
 
          if (url == null)
             url = "";
-         
+
          if (!url.endsWith("/"))
             url += "/";
-         
-//         if(collection.getIncludePaths().size() > 0)
-//         {
-//            url += collection.getIncludePaths().get(index)
-//         }
+
+         if (collection == req.getCollection())
+         {
+            //going after the same collection...so must be going after the same endpoint
+            //so get the endpoint path from the current request and ame sure it is on the url.
+
+            String ep = req.getEndpointPath();
+
+            url += ep;
+
+            if (!url.endsWith("/"))
+               url += "/";
+         }
+         else if (collection != null && collection.getIncludePaths().size() > 0)
+         {
+            //TODO: need test case here
+
+            String collectionPath = (String) collection.getIncludePaths().get(0);
+            if (collectionPath.indexOf("*") > -1)
+               collectionPath = collectionPath.substring(0, collectionPath.indexOf("*"));
+
+            url += collectionPath;
+            if (!url.endsWith("/"))
+               url += "/";
+         }
 
          if (!Utils.empty(collectionKey))
          {

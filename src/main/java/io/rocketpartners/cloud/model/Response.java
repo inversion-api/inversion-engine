@@ -86,6 +86,43 @@ public class Response
       return this;
    }
 
+   public Response statusEq(int... statusCodes)
+   {
+      boolean matched = false;
+      for (int statusCode : statusCodes)
+      {
+         if (statusCode == this.statusCode)
+         {
+            matched = true;
+            break;
+         }
+      }
+
+      if (!matched)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
+
+      return this;
+   }
+   
+   
+   public Response statusEq(String message, int... statusCodes)
+   {
+      boolean matched = false;
+      for (int statusCode : statusCodes)
+      {
+         if (statusCode == this.statusCode)
+         {
+            matched = true;
+            break;
+         }
+      }
+
+      if (!matched)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+
+      return this;
+   }
+
    public Response statusEq(int statusCode, String message)
    {
       if (this.statusCode != statusCode)

@@ -119,6 +119,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             result.rows.add(new ObjectNode(m));
          }
 
+         
          result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
       }
 

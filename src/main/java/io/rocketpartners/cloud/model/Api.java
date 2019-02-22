@@ -421,6 +421,14 @@ public class Api
       this.loadTime = loadTime;
    }
 
+//   /**
+//    * Tries to find the best match endpoint for this collection
+//    * based on collection.include/excludePaths, endpoint.include/excludePaths
+//    * and endpointPath.
+//    * 
+//    * @param collection
+//    * @return
+//    */
 //   public Endpoint findEndpoint(Collection collection)
 //   {
 //      

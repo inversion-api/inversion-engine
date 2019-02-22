@@ -22,6 +22,7 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
@@ -68,5 +69,8 @@ public class DynamoDbGetAction extends DynamoDbAction
       {
          res.withRecord(js);
       }
+      
+      if(dynamoResult.rows.size() == 0)
+         res.withStatus(SC.SC_404_NOT_FOUND);
    }
 }

@@ -3,12 +3,13 @@
 ChainLocal.makeLink does not know how to work with endpointPath/collectionPath
 
 dynamo
- - add dynamo 'includes' projections
  - primary key / href linking
  - continuation token
- - subcollection linking 
+ - subcollection linking
+ - add dynamo 'includes' projections
  - put excludes and expands into get handler superclass
- - implement name map to avoid expression keyword conflicts.
+ - DONE implement name map to avoid expression keyword conflicts.
+ - parameter to support strongly consistent reads
 
 make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
 
