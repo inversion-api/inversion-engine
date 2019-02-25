@@ -41,6 +41,7 @@ import io.rocketpartners.cloud.utils.Utils;
 public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
    Service service = null;
+   boolean debug   = false;
 
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
    {
@@ -60,6 +61,9 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       try
       {
          ObjectNode json = Utils.parseJsonObject(input);
+
+         debug("Request Event");
+         debug(json.toString(false));
 
          String method = json.getString("httpMethod");
          String host = (String) json.find("headers.Host");
@@ -111,7 +115,14 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          }
 
          String body = json.getString("body");
-         req = new Request(url.toString(), method, headers, params, body);
+
+         if (method.equals("POST") && body != null)
+         {
+            Map<String, String> postParams = Utils.parseQueryString(body);
+            params.putAll(postParams);
+         }
+
+         req = new Request(url.toString(), method, headers, params, body).withPath(path);
          res = new Response();
 
          chain = service.service(req, res);
@@ -199,4 +210,23 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       writer.write(responseJson.toString());
       writer.close();
    }
+
+   public void debug(String msg)
+   {
+      if (isDebug())
+      {
+         System.out.println(msg);
+      }
+   }
+
+   public boolean isDebug()
+   {
+      return debug;
+   }
+
+   public void setDebug(boolean debug)
+   {
+      this.debug = debug;
+   }
+
 }
