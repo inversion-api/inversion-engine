@@ -62,7 +62,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          ObjectNode json = Utils.parseJsonObject(input);
 
          String method = json.getString("httpMethod");
-         String host = (String) json.find("headers.Host"); 
+         String host = (String) json.find("headers.Host");
          String path = (String) json.find("requestContext.path");
          Url url = new Url("http://" + host + path);
 
@@ -89,14 +89,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             {
                if (service == null)
                {
-                  service = new Service();
-
-                  if (!Utils.empty(profile))
-                     service.setProfile(profile);
-
-                  if (!Utils.empty(servletPath))
-                     service.setServletMapping(servletPath);
-
+                  service = buildService(profile, servletPath);
                   service.startup();
                }
             }
@@ -157,6 +150,23 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       }
 
       return chain;
+   }
+
+   /**
+    * This method is here as a hook for sub classes to override.
+    * @return
+    */
+   protected Service buildService(String profile, String servletPath)
+   {
+      Service service = new Service();
+
+      if (!Utils.empty(profile))
+         service.setProfile(profile);
+
+      if (!Utils.empty(servletPath))
+         service.setServletMapping(servletPath);
+
+      return service;
    }
 
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
