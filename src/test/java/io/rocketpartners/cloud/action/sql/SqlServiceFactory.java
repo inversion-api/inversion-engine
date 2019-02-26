@@ -84,17 +84,17 @@ public class SqlServiceFactory
             System.out.println(res.getDebug());
             Utils.assertEq(201, res.getStatusCode());//claims it was created
 
-            conn = partial.getConnection();
-            int count = SqlUtils.selectInt(conn, "SELECT count(*) FROM \"ORDERS\"");
-            Rows tempRows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
-
-
-            Utils.assertEq(inserted, tempRows);
-            Utils.assertEq(inserted, count);
-
+            //            conn = partial.getConnection();
+            //            int count = SqlUtils.selectInt(conn, "SELECT count(*) FROM \"ORDERS\"");
+            //            Rows tempRows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
+            //
+            //            Utils.assertEq(inserted, tempRows);
+            //            Utils.assertEq(inserted, count);
 
             String href = res.findString("data.0.href");
-            Utils.assertEq(href, service.get(href).find("data.0.href"));//check that it actually was created
+            res = service.get(href);
+
+            Utils.assertEq(href, res.find("data.0.href"));//check that it actually was created
          }
 
          res = service.get("northwind/sql/orders");

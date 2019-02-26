@@ -39,6 +39,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -164,10 +165,10 @@ public class SqlPostAction extends RestPostAction
          }
       }
 
+      Object id = vals.get(idCol);
       boolean insert = (strictRest && Chain.getRequest().isMethod("POST")) || !vals.containsKey(idCol);
 
-      String id = null;
-      if (insert)
+      if (!insert)
       {
          Chain.debug("SqlPostHandler -> updateRow: (" + entity.getTable().getName(), "id", vals.get("id"), vals);
          try
@@ -185,14 +186,22 @@ public class SqlPostAction extends RestPostAction
       else
       {
          Chain.debug("Sql.insertMap(" + entity.getTable().getName(), vals);
-         id = SqlUtils.insertMap(conn, entity.getTable().getName(), vals) + "";
+         Object generatedKey = SqlUtils.insertMap(conn, entity.getTable().getName(), vals);
+         if(generatedKey != null)
+            id = generatedKey;
+         
+//         Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
+//         System.out.println(rows);
          //changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
-
+      
+      if(Utils.empty(id))
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine the key column value for the entity");
+      
       String href = Chain.buildLink(entity.getCollection(), id, null);//.getName() + "/" + id;
       parent.put("href", href);
 
-      return id;
+      return id + "";
    }
 
    void storeManyTo(Connection conn, Collection collection, Object parentId, ObjectNode parent) throws Exception
