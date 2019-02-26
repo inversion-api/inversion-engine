@@ -41,6 +41,7 @@ import io.rocketpartners.cloud.utils.Utils;
 public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
    Service service = null;
+   boolean debug   = false;
 
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
    {
@@ -61,8 +62,11 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       {
          ObjectNode json = Utils.parseJsonObject(input);
 
+         debug("Request Event");
+         debug(json.toString(false));
+
          String method = json.getString("httpMethod");
-         String host = (String) json.find("headers.Host"); 
+         String host = (String) json.find("headers.Host");
          String path = (String) json.find("requestContext.path");
          Url url = new Url("http://" + host + path);
 
@@ -89,14 +93,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             {
                if (service == null)
                {
-                  service = new Service();
-
-                  if (!Utils.empty(profile))
-                     service.setProfile(profile);
-
-                  if (!Utils.empty(servletPath))
-                     service.setServletMapping(servletPath);
-
+                  service = buildService(profile, servletPath);
                   service.startup();
                }
             }
@@ -118,7 +115,14 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          }
 
          String body = json.getString("body");
-         req = new Request(url.toString(), method, headers, params, body);
+
+         if (method.equals("POST") && body != null)
+         {
+            Map<String, String> postParams = Utils.parseQueryString(body);
+            params.putAll(postParams);
+         }
+
+         req = new Request(url.toString(), method, headers, params, body).withPath(path);
          res = new Response();
 
          chain = service.service(req, res);
@@ -159,6 +163,23 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       return chain;
    }
 
+   /**
+    * This method is here as a hook for sub classes to override.
+    * @return
+    */
+   protected Service buildService(String profile, String servletPath)
+   {
+      Service service = new Service();
+
+      if (!Utils.empty(profile))
+         service.setProfile(profile);
+
+      if (!Utils.empty(servletPath))
+         service.setServletMapping(servletPath);
+
+      return service;
+   }
+
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
    {
       ObjectNode responseJson = new ObjectNode();
@@ -189,4 +210,23 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       writer.write(responseJson.toString());
       writer.close();
    }
+
+   public void debug(String msg)
+   {
+      if (isDebug())
+      {
+         System.out.println(msg);
+      }
+   }
+
+   public boolean isDebug()
+   {
+      return debug;
+   }
+
+   public void setDebug(boolean debug)
+   {
+      this.debug = debug;
+   }
+
 }
