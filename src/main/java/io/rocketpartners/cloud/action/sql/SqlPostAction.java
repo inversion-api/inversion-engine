@@ -24,200 +24,91 @@ import java.util.Set;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import io.rocketpartners.cloud.action.rest.RestPostAction;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
-import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
-import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.ObjectNode.Property;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
-import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
-import io.rocketpartners.cloud.model.ObjectNode.Property;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class SqlPostAction extends SqlAction
+public class SqlPostAction extends RestPostAction
 {
-   boolean collapseAll    = false;
-   boolean strictRest     = false;
-   boolean expandResponse = true;
-
-   @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   protected String store(Request req, Collection collection, ObjectNode node) throws Exception
    {
-      if (strictRest)
-      {
-         if (req.isPost() && req.getEntityKey() != null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to POST to a specific entity url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
-         if (req.isPut() && req.getEntityKey() == null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
-      }
-
-      Collection collection = req.getCollection();//getApi().getCollection(req.getCollectionKey(), SqlDb.class);
-      Entity entity = collection.getEntity();
-
-      List<Change> changes = new ArrayList();
-
-      Connection conn = ((SqlDb) collection.getDb()).getConnection();
-
-      List<String> hrefs = new ArrayList();
-
-      ObjectNode obj = req.getJson();
-
-      if (obj == null)
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
-
-      boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
-      Set<String> collapses = chain.getConfigSet("collapses");
-      collapses.addAll(splitParam(req, "collapses"));
-
-      if (collapseAll || collapses.size() > 0)
-      {
-         obj = Utils.parseJsonObject(obj.toString());
-         collapse(obj, collapseAll, collapses, "");
-      }
-
-      try
-      {
-         if (obj instanceof ArrayNode)
-         {
-            if (!Utils.empty(req.getEntityKey()))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
-
-            for (ObjectNode child : (List<ObjectNode>) ((ArrayNode) obj))
-            {
-               String href = store(chain, conn, changes, entity, child);
-               hrefs.add(href);
-            }
-         }
-         else
-         {
-            String href = obj.getString("href");
-            if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
-            {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
-            }
-
-            href = store(chain, conn, changes, entity, obj);
-            hrefs.add(href);
-         }
-
-         res.withChanges(changes);
-
-         //-- take all of the hrefs and combine into a 
-         //-- single href for the "Location" header
-
-         ArrayNode array = new ArrayNode();
-         res.getJson().put("data", array);
-
-         res.withStatus(SC.SC_201_CREATED);
-         StringBuffer buff = new StringBuffer(hrefs.get(0));
-         for (int i = 0; i < hrefs.size(); i++)
-         {
-            String href = hrefs.get(i);
-
-            boolean added = false;
-            if (expandResponse)
-            {
-               Response resp = service.get(href);
-               if (resp != null)
-               {
-                  ObjectNode js = resp.getJson();
-                  if (js != null)
-                  {
-                     js = js.getNode("data");
-                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
-                     {
-                        array.add(((ArrayNode) js).get(0));
-                        added = true;
-                     }
-                  }
-                  else
-                  {
-                     System.out.println("what?");
-                  }
-               }
-               else
-               {
-                  System.out.println("what?");
-               }
-            }
-
-            if (!added)
-            {
-               array.add(new ObjectNode("href", href));
-            }
-
-            String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
-            buff.append(",").append(nextId);
-         }
-
-         res.withHeader("Location", buff.toString());
-      }
-      finally
-      {
-         // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
-         //Sql.close(conn);
-      }
-
-   }
-
-   String store(Chain chain, Connection conn, List<Change> changes, Entity entity, ObjectNode parent) throws Exception
-   {
-      String href = parent.getString("href");
-      if (href != null && parent.keySet().size() == 1)
+      String href = node.getString("href");
+      if (href != null && node.keySet().size() == 1)
          return href; //this object is empty except for the href...don't change anything
 
-      String parentId = storeEntity(chain, conn, changes, entity, parent); //this also stores oneToMany relationships
+      Connection conn = ((SqlDb) collection.getDb()).getConnection();
+      return store(conn, collection, node);
+   }
 
-      storeManyTo(chain, conn, changes, parentId, entity, parent);
+   protected String store(Connection conn, Collection collection, ObjectNode parent) throws Exception
+   {
+      String parentId = storeEntity(conn, collection, parent); //this also stores oneToMany relationships
+
+      storeManyTo(conn, collection, parentId, parent);
 
       // use the collection key from the request instead of the entity to support collection aliasing
-      href = chain.getRequest().getApiUrl() + chain.getRequest().getCollectionKey() + "/" + parentId;
+      String href = Chain.buildLink(collection, parentId, null);//chain.getRequest().getApiUrl() + chain.getRequest().getCollectionKey() + "/" + parentId;
 
       return href;
    }
 
-   String storeEntity(Chain chain, Connection conn, List<Change> changes, Entity entity, ObjectNode parent) throws Exception
+   String storeEntity(Connection conn, Collection collection, ObjectNode parent) throws Exception
    {
-      Api api = entity.getCollection().getApi();
+      Api api = collection.getApi();
+      Entity entity = collection.getEntity();
 
       LinkedHashMap vals = new LinkedHashMap();
+
+      String idAttr = "id";
+      String idCol = "id";
+      if (collection.getEntity().getKey() != null)
+      {
+         idAttr = collection.getEntity().getKey().getName();
+         idCol = collection.getEntity().getKey().getColumn().getName();
+      }
 
       for (Attribute attr : entity.getAttributes())
       {
          String key = attr.getName();
 
-         if (key.equals("id"))
-            key = "href";
-
-         String col = attr.getColumn().getName();
-
          Property prop = parent.getProperty(key);
          if (prop != null)
          {
+            String col = attr.getColumn().getName();
             Object value = prop.getValue();
+            value = cast(attr.getColumn(), value);
+
             if ("null".equals((value + "").toLowerCase()))
             {
                value = null;
             }
 
-            if (key.equals("href") && value != null)
+            if (key.equals("href") && value != null && idAttr != null)
             {
-               String id = (String) value;
-               id = id.substring(id.lastIndexOf("/") + 1, id.length());
-               value = id;
+               String id = value.toString();
+               if (id.indexOf("/") > -1)
+               {
+                  id = id.substring(id.lastIndexOf("/") + 1, id.length());
+                  value = id;
+                  col = collection.getEntity().getKey().getColumn().getName();
+               }
             }
-            vals.put(col, cast(attr.getColumn(), value));
+
+            vals.put(col, value);
          }
       }
 
@@ -252,7 +143,7 @@ public class SqlPostAction extends SqlAction
                   {
                      try
                      {
-                        href = store(chain, conn, changes, fkCollection.getEntity(), child);
+                        href = store(conn, fkCollection, child);
                      }
                      catch (Exception ex)
                      {
@@ -273,32 +164,42 @@ public class SqlPostAction extends SqlAction
          }
       }
 
+      boolean insert = (strictRest && Chain.getRequest().isMethod("POST")) || !vals.containsKey(idCol);
+
       String id = null;
-      if (vals.containsKey("id"))
+      if (insert)
       {
-         if (vals.size() > 1)
+         Chain.debug("SqlPostHandler -> updateRow: (" + entity.getTable().getName(), "id", vals.get("id"), vals);
+         try
          {
-            chain.debug("Sql.updateRow(`" + entity.getTable().getName() + "`", "id", vals.get("id"), vals);
-            SqlUtils.updateRow(conn, "`" + entity.getTable().getName() + "`", "id", vals.get("id") + "", vals);
-            changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
+            SqlUtils.updateRow(conn, entity.getTable().getName(), idCol, vals.get(idCol) + "", vals);
          }
-         id = vals.get("id") + "";
+         catch (Exception ex)
+         {
+            ex.printStackTrace();
+         }
+         //changes.add(new Change("PUT", entity.getCollection().getName(), vals.get("id")));
+
+         id = vals.get(idCol) + "";
       }
       else
       {
-         chain.debug("Sql.insertMap(`" + entity.getTable().getName() + "`", vals);
-         id = SqlUtils.insertMap(conn, "`" + entity.getTable().getName() + "`", vals) + "";
-         changes.add(new Change("POST", entity.getCollection().getName(), id));
+         Chain.debug("Sql.insertMap(" + entity.getTable().getName(), vals);
+         id = SqlUtils.insertMap(conn, entity.getTable().getName(), vals) + "";
+         //changes.add(new Change("POST", entity.getCollection().getName(), id));
       }
 
-      String href = chain.getRequest().getApiUrl() + entity.getCollection().getName() + "/" + id;
+      String href = Chain.buildLink(entity.getCollection(), id, null);//.getName() + "/" + id;
       parent.put("href", href);
 
       return id;
    }
 
-   void storeManyTo(Chain chain, Connection conn, List<Change> changes, Object parentId, Entity entity, ObjectNode parent) throws Exception
+   void storeManyTo(Connection conn, Collection collection, Object parentId, ObjectNode parent) throws Exception
    {
+      Api api = collection.getApi();
+      Entity entity = collection.getEntity();
+
       ArrayListValuedHashMap<Relationship, String> relateds = new ArrayListValuedHashMap();
 
       // holds Relationships when an empty array was posted
@@ -347,7 +248,7 @@ public class SqlPostAction extends SqlAction
                   ObjectNode child = (ObjectNode) childObj;
 
                   child.put(rel.getFkCol1().getName(), parentId);
-                  String href = store(chain, conn, changes, childEntity, child);
+                  String href = store(conn, childEntity.getCollection(), child);
 
                   String childId = href.substring(href.lastIndexOf("/") + 1, href.length());
                   relateds.put(rel, childId);
@@ -369,7 +270,7 @@ public class SqlPostAction extends SqlAction
 
          String table = "`" + rel.getFkCol1().getTable().getName() + "`";
          String parentKeyCol = rel.getFkCol1().getName();
-         String childKeyCol = m2m ? rel.getFkCol2().getName() : chain.getRequest().getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
+         String childKeyCol = m2m ? rel.getFkCol2().getName() : collection.getApi().getCollection(rel.getFkCol1().getTable()).getEntity().getKey().getName();
          String qmarks = SqlUtils.getQuestionMarkStr(relateds.get(rel).size());
 
          List args = new ArrayList(relateds.get(rel));
@@ -379,7 +280,7 @@ public class SqlPostAction extends SqlAction
          {
             Column fk = rel.getFkCol1();
 
-            String childPkCol = "`" + chain.getRequest().getApi().getCollection(fk.getTable()).getEntity().getKey().getName() + "`";
+            String childPkCol = "`" + collection.getApi().getCollection(fk.getTable()).getEntity().getKey().getName() + "`";
             String fkCol = fk.getName();
 
             //this first statement assigns or reassigns any 
@@ -389,7 +290,7 @@ public class SqlPostAction extends SqlAction
             sql += " SET " + fkCol + " = ? ";
             sql += " WHERE " + childPkCol + " IN (" + qmarks + ")";
 
-            chain.debug(sql, args);
+            Chain.debug(sql, args);
             SqlUtils.execute(conn, sql, args);
 
             //these next statemets delete now removed relationshiops
@@ -414,7 +315,7 @@ public class SqlPostAction extends SqlAction
                sql += " AND " + childPkCol + " NOT IN (" + qmarks + ")";
             }
 
-            chain.debug(sql, args);
+            //            chain.debug(sql, args);
             SqlUtils.execute(conn, sql, args);
          }
          else
@@ -423,7 +324,7 @@ public class SqlPostAction extends SqlAction
             sql += " INSERT IGNORE INTO " + table + " (" + parentKeyCol + ", " + childKeyCol + ") ";
             sql += " VALUES ( ?, ?)";
 
-            chain.debug(sql, relateds);
+            //chain.debug(sql, relateds);
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             for (String childId : relateds.get(rel))
@@ -437,7 +338,7 @@ public class SqlPostAction extends SqlAction
 
             sql = "";
             sql += "DELETE FROM " + table + " WHERE " + parentKeyCol + " = ? AND " + childKeyCol + " NOT IN (" + qmarks + ")";
-            chain.debug(sql, args);
+            //chain.debug(sql, args);
             SqlUtils.execute(conn, sql, args);
          }
       }
@@ -463,7 +364,7 @@ public class SqlPostAction extends SqlAction
          List args = new ArrayList();
          args.add(parentId);
 
-         chain.debug(sql, args);
+         //chain.debug(sql, args);
          SqlUtils.execute(conn, sql, args);
       }
    }

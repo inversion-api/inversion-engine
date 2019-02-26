@@ -35,7 +35,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +55,6 @@ import io.rocketpartners.cloud.utils.Rows.Row;
  */
 public class SqlUtils
 {
-   static String         QUOTE         = "`";
-
    static final String[] ILLEGALS_REGX = new String[]{"insert", "update", "delete", "drop", "truncate", "exec"};
 
    static Pattern[]      ILLEGALS      = new Pattern[ILLEGALS_REGX.length];
@@ -72,6 +69,15 @@ public class SqlUtils
 
    static List<SqlListener> listeners = new ArrayList();
 
+   public static String quote(Connection conn, Object str)
+   {
+      String connstr = conn.toString().toLowerCase();
+      if (connstr.indexOf("mysql") > -1)
+         return "`" + str + "`";
+
+      return "\"" + str + "\"";
+   }
+
    public static void addSqlListener(SqlListener listener)
    {
       if (!listeners.contains(listener))
@@ -85,14 +91,34 @@ public class SqlUtils
 
    public static interface SqlListener
    {
-      public void beforeStmt(String method, String sql, Object... vals);
+      public void onError(String method, String sql, Object args, Exception ex);
+
+      public void beforeStmt(String method, String sql, Object args);
+
+      public void afterStmt(String method, String sql, Object args, Exception ex, Object result);
    }
 
-   public static void notifyBefore(String method, String sql, Object... vals)
+   public static void notifyBefore(String method, String sql, Object args)
    {
       for (SqlListener listener : listeners)
       {
-         listener.beforeStmt(method, sql, vals);
+         listener.beforeStmt(method, sql, args);
+      }
+   }
+
+   public static void notifyError(String method, String sql, Object args, Exception ex)
+   {
+      for (SqlListener listener : listeners)
+      {
+         listener.onError(method, sql, args, ex);
+      }
+   }
+
+   public static void notifyAfter(String method, String sql, Object args, Exception ex, Object result)
+   {
+      for (SqlListener listener : listeners)
+      {
+         listener.afterStmt(method, sql, args, ex, result);
       }
    }
 
@@ -103,8 +129,11 @@ public class SqlUtils
 
       notifyBefore("execute", sql, vals);
 
+      Exception ex = null;
       Statement stmt = null;
       ResultSet rs = null;
+      Object rtval = null;
+
       try
       {
          if (isSelect(sql))
@@ -124,7 +153,10 @@ public class SqlUtils
                rs = stmt.executeQuery(sql);
             }
             if (rs.next())
-               return rs.getObject(1);
+            {
+               rtval = rs.getObject(1);
+               return rtval;
+            }
          }
          else
          {
@@ -149,10 +181,14 @@ public class SqlUtils
                {
                   rs = stmt.getGeneratedKeys();
                   if (rs.next())
-                     return rs.getObject(1);
+                  {
+                     rtval = rs.getObject(1);
+                     return rtval;
+                  }
                }
-               catch (SQLFeatureNotSupportedException ex)
+               catch (SQLFeatureNotSupportedException e)
                {
+                  notifyError("execute", sql, vals, e);
                   //do nothing
                }
             }
@@ -161,23 +197,27 @@ public class SqlUtils
             {
                try
                {
-                  return stmt.getUpdateCount();
+                  rtval = stmt.getUpdateCount();
+                  return rtval;
                }
-               catch (SQLFeatureNotSupportedException ex)
+               catch (SQLFeatureNotSupportedException e)
                {
+                  notifyError("execute", sql, vals, e);
                   //do nothing
                }
             }
          }
       }
-      catch (Exception ex)
+      catch (Exception e)
       {
-         ex = new Exception(ex.getMessage() + " SQL=" + sql);
+         notifyError("execute", sql, vals, e);
+         ex = new Exception(e.getMessage() + " SQL=" + sql, Utils.getCause(e));
          throw ex;
       }
       finally
       {
          close(rs, stmt);
+         notifyAfter("execute", sql, vals, ex, rtval);
       }
 
       return null;
@@ -201,6 +241,7 @@ public class SqlUtils
 
       notifyBefore("selectRows", sql, vals);
 
+      Exception ex = null;
       Statement stmt = null;
       ResultSet rs = null;
       Rows rows = null;
@@ -242,9 +283,9 @@ public class SqlUtils
                {
                   o = rs.getObject(i + 1);
                }
-               catch (Exception ex)
+               catch (Exception e)
                {
-
+                  notifyError("selectRows", sql, vals, e);
                }
                rows.put(o);
             }
@@ -253,6 +294,7 @@ public class SqlUtils
       finally
       {
          close(stmt, rs);
+         notifyAfter("selectRows", sql, vals, ex, rows);
       }
       return rows;
    }
@@ -379,11 +421,11 @@ public class SqlUtils
       return sql.toLowerCase().trim().startsWith("insert ");
    }
 
-   public static String buildInsertSQL(String tableName, Object[] columnNameArray)
+   public static String buildInsertSQL(Connection conn, String tableName, Object[] columnNameArray)
    {
       StringBuffer sql = new StringBuffer("INSERT INTO ");
-      sql.append(tableName).append(" (");
-      sql.append(getColumnStr(columnNameArray)).append(") VALUES (");
+      sql.append(quote(conn, tableName)).append(" (");
+      sql.append(getColumnStr(conn, columnNameArray)).append(") VALUES (");
       sql.append(getQuestionMarkStr(columnNameArray)).append(")");
 
       return sql.toString();
@@ -398,7 +440,7 @@ public class SqlUtils
          keys.add(key);
          values.add(row.get(key));
       }
-      String sql = buildInsertSQL(tableName, keys.toArray());
+      String sql = buildInsertSQL(conn, tableName, keys.toArray());
       return execute(conn, sql, values.toArray());
    }
 
@@ -412,15 +454,16 @@ public class SqlUtils
       }
 
       List<String> keys = new ArrayList(keySet);
-      String sql = buildInsertSQL(tableName, keys.toArray());
+      String sql = buildInsertSQL(conn, tableName, keys.toArray());
 
+      Exception ex = null;
       PreparedStatement stmt = conn.prepareStatement(sql);
       try
       {
+         notifyBefore("insertMaps", sql, rows);
+
          for (Map row : rows)
          {
-            notifyBefore("insertMaps", sql, row);
-
             for (int i = 0; i < keys.size(); i++)
             {
                Object value = row.get(keys.get(i));
@@ -430,9 +473,15 @@ public class SqlUtils
          }
          stmt.executeBatch();
       }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("insertMaps", sql, rows, ex);
+      }
       finally
       {
          SqlUtils.close(stmt);
+         notifyAfter("insertMap", sql, rows, ex, null);
       }
    }
 
@@ -443,6 +492,7 @@ public class SqlUtils
 
    public static void insert(Connection conn, String table, Object o) throws Exception
    {
+      Exception ex = null;
       PreparedStatement stmt = null;
       StringBuffer sql = null;
       try
@@ -471,7 +521,7 @@ public class SqlUtils
             //if (value != null)
             {
                values.add(value);
-               namesClause.append(QUOTE).append(name).append(QUOTE).append(",");
+               namesClause.append(quote(conn, name)).append(",");
                valuesClause.append("?,");
             }
          }
@@ -508,13 +558,16 @@ public class SqlUtils
             }
          }
       }
-      catch (Exception ex)
+      catch (Exception e)
       {
+         ex = e;
+         notifyError("insertMap", sql.toString(), o, ex);
          throw ex;
       }
       finally
       {
          close(stmt);
+         notifyAfter("insertMap", sql.toString(), o, ex, null);
       }
 
    }
@@ -525,16 +578,16 @@ public class SqlUtils
    +------------------------------------------------------------------------------+
     */
 
-   public static String buildUpdateSQL(String tableName, Object[] setColumnNameArray, Object[] whereColumnNames)
+   public static String buildUpdateSQL(Connection conn, String tableName, Object[] setColumnNameArray, Object[] whereColumnNames)
    {
       // UPDATE tmtuple SET model_id = ? , subj = ? , pred = ? , obj = ? , declared = ?
 
       StringBuffer sql = new StringBuffer("UPDATE ");
-      sql.append(tableName).append(" SET ");
-      sql.append(getWhereColumnStr(setColumnNameArray, ","));
+      sql.append(quote(conn, tableName)).append(" SET ");
+      sql.append(getWhereColumnStr(conn, setColumnNameArray, ","));
       if (whereColumnNames != null && whereColumnNames.length > 0)
       {
-         sql.append(" WHERE " + getWhereColumnStr(whereColumnNames, ","));
+         sql.append(" WHERE " + getWhereColumnStr(conn, whereColumnNames, ","));
       }
       return sql.toString();
    }
@@ -558,7 +611,7 @@ public class SqlUtils
       }
       colValues.add(keyVal);
 
-      String sql = buildUpdateSQL(tableName, colNames.toArray(), new String[]{keyCol});
+      String sql = buildUpdateSQL(conn, tableName, colNames.toArray(), new String[]{keyCol});
 
       return (Integer) execute(conn, sql, colValues.toArray());
    }
@@ -570,11 +623,12 @@ public class SqlUtils
 
    public static void update(Connection conn, String tableName, Object o) throws Exception
    {
+      Exception ex = null;
       PreparedStatement stmt = null;
       StringBuffer sql = null;
       try
       {
-         sql = new StringBuffer("UPDATE ").append(tableName).append(" SET ");
+         sql = new StringBuffer("UPDATE ").append(quote(conn, tableName)).append(" SET ");
 
          Object id = null;
 
@@ -590,7 +644,7 @@ public class SqlUtils
             else
             {
                values.add(f.get(o));
-               sql.append('`').append(f.getName()).append('`').append(" = ?");
+               sql.append(quote(conn, f.getName())).append(" = ?");
                if (i < fields.size() - 1)
                {
                   sql.append(',');
@@ -609,13 +663,15 @@ public class SqlUtils
          stmt.setObject(values.size() + 1, id);
          stmt.execute();
       }
-      catch (Exception ex)
+      catch (Exception e)
       {
+         notifyError("update", sql.toString(), o, ex);
          throw ex;
       }
       finally
       {
          close(stmt);
+         notifyAfter("update", sql.toString(), o, ex, null);
       }
 
    }
@@ -634,7 +690,7 @@ public class SqlUtils
    public static int deleteRow(Connection conn, String table, String keyCol, Object keyVal) throws Exception
    {
       String sql = "";
-      sql += " DELETE FROM " + QUOTE + table + QUOTE;
+      sql += " DELETE FROM " + quote(conn, table);
       sql += " WHERE " + keyCol + " = ?";
       int deletes = (Integer) execute(conn, sql, keyVal);
       return deletes;
@@ -648,11 +704,12 @@ public class SqlUtils
 
    public static void delete(Connection conn, String tableName, Object o) throws Exception
    {
+      Exception ex = null;
       PreparedStatement stmt = null;
       StringBuffer sql = null;
       try
       {
-         sql = new StringBuffer("DELETE FROM ").append(tableName);
+         sql = new StringBuffer("DELETE FROM ").append(quote(conn, tableName));
 
          Object id = null;
 
@@ -674,9 +731,15 @@ public class SqlUtils
          stmt.setObject(1, id);
          stmt.execute();
       }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("delete", sql.toString(), o, ex);
+      }
       finally
       {
          close(stmt);
+         notifyAfter("delete", sql.toString(), o, ex, null);
       }
    }
 
@@ -766,13 +829,13 @@ public class SqlUtils
    +------------------------------------------------------------------------------+
     */
 
-   public static String getWhereColumnStr(Object[] columnNameArray, String sep)
+   public static String getWhereColumnStr(Connection conn, Object[] columnNameArray, String sep)
    {
       StringBuffer sb = new StringBuffer();
 
       for (int i = 0; i < columnNameArray.length; i++)
       {
-         sb.append(QUOTE).append(columnNameArray[i]).append(QUOTE);
+         sb.append(quote(conn, columnNameArray[i]));
          sb.append(" = ? ");
          if (i < columnNameArray.length - 1)
          {
@@ -783,13 +846,13 @@ public class SqlUtils
       return sb.toString();
    }
 
-   public static String getColumnStr(Object[] columnNameArray)
+   public static String getColumnStr(Connection conn, Object[] columnNameArray)
    {
       StringBuffer sb = new StringBuffer();
 
       for (int i = 0; i < columnNameArray.length; i++)
       {
-         sb.append(QUOTE).append(columnNameArray[i]).append(QUOTE);
+         sb.append(quote(conn, columnNameArray[i]));
          if (i < columnNameArray.length - 1)
          {
             sb.append(", ");
@@ -856,13 +919,13 @@ public class SqlUtils
       return sb.toString();
    }
 
-   public static String getColumnStr(List columnNameArray)
+   public static String getColumnStr(Connection conn, List columnNameArray)
    {
       StringBuffer sb = new StringBuffer();
 
       for (int i = 0; i < columnNameArray.size(); i++)
       {
-         sb.append(QUOTE).append(columnNameArray.get(i)).append(QUOTE);
+         sb.append(quote(conn, columnNameArray.get(i)));
          if (i < columnNameArray.size() - 1)
          {
             sb.append(", ");

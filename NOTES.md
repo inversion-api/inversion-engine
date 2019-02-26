@@ -1,4 +1,4 @@
-
+factor get/post handler reuseable parts out of sql classes...like did with delete handler. This includes recursing for "expands".
 
 ChainLocal.makeLink does not know how to work with endpointPath/collectionPath
 

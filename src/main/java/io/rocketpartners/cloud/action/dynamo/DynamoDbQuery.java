@@ -3,12 +3,9 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.text.Keymap;
 
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -18,13 +15,10 @@ import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.action.sql.SqlDb;
-import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -33,7 +27,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
-import io.rocketpartners.cloud.service.Chain.ChainLocal;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -65,10 +59,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       FUNCTION_MAP.put("n", "attribute_not_exists");
    }
 
-   DynamoDbIndex index;
+   com.amazonaws.services.dynamodbv2.document.Table dynamoTable = null;
+   DynamoDbIndex                                    index;
 
-   Term          partKey = null;
-   Term          sortKey = null;
+   Term                                             partKey     = null;
+   Term                                             sortKey     = null;
 
    public DynamoDbQuery(Collection collection, Object terms)
    {
@@ -77,10 +72,21 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       where().withFunctions("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "and", "or");
    }
 
-   DynamoResult doSelect(com.amazonaws.services.dynamodbv2.document.Table dynamoTable)
+   public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable()
+   {
+      return dynamoTable;
+   }
+
+   public DynamoDbQuery withDynamoTable(com.amazonaws.services.dynamodbv2.document.Table dynamoTable)
+   {
+      this.dynamoTable = dynamoTable;
+      return this;
+   }
+
+   protected TableResults doSelect() throws Exception
    {
       Index dynamoIndex = null;
-      DynamoResult result = new DynamoResult();
+      TableResults result = new TableResults();
 
       DynamoDbIndex index = getIndex();
       if (index != null && !index.isPrimaryIndex())
@@ -95,7 +101,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          Item item = dynamoTable.getItem(gis);
          if (item != null)
          {
-            result.rows.add(new ObjectNode(item.asMap()));
+            result.withRow(item.asMap());
          }
       }
       else if (spec instanceof QuerySpec)
@@ -104,10 +110,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          ItemCollection<QueryOutcome> queryResult = dynamoIndex != null ? dynamoIndex.query(qs) : dynamoTable.query(qs);
          for (Item item : queryResult)
          {
-            result.rows.add(new ObjectNode(item.asMap()));
+            result.withRow(item.asMap());
          }
 
-         result.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
+         //result.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
       }
       else if (spec instanceof ScanSpec)
       {
@@ -115,47 +121,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          ItemCollection<ScanOutcome> scanResult = dynamoIndex != null ? dynamoIndex.scan(ss) : dynamoTable.scan(ss);
          for (Item item : scanResult)
          {
-            Map m = item.asMap();
-            result.rows.add(new ObjectNode(m));
+            result.withRow(item.asMap());
          }
 
-         
-         result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
-      }
-
-      DynamoDbIndex primaryIndex = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
-      String hashKeyName = primaryIndex.getHashKeyName();
-      String sortKeyName = primaryIndex.getSortKeyName();
-
-      for (int i = 0; i < result.rows.size(); i++)
-      {
-         ObjectNode row = (ObjectNode) result.rows.get(i);
-         ObjectNode json = new ObjectNode();
-
-         result.rows.set(i, json);
-         String hashKey = row.getString(hashKeyName);
-         if (hashKey != null)
-         {
-            String sortKey = sortKeyName != null ? row.getString(sortKeyName) : null;
-            String entityKey = DynamoDb.toEntityKey(hashKey, sortKey);
-            String href = ChainLocal.buildLink(collection, entityKey, null);
-            json.put("href", href);
-         }
-
-         //this preservers attribute order
-         for (Attribute attr : collection.getEntity().getAttributes())
-         {
-            String colName = attr.getColumn().getName();
-            Object value = row.remove(colName);
-            json.put(attr.getName(), value);
-         }
-
-         //copy remaining columns that were in result set but not defined in the entity
-         //TODO...do we really want to do this?
-         for (Object key : row.keySet())
-         {
-            json.put(key.toString(), row.get(key));
-         }
+         //result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
       }
 
       return result;
@@ -262,7 +231,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          String sortKeyCol = getColumnName(sortKey.getToken(0));
          Object sortKeyVal = cast(sortKeyCol, sortKey.getToken(1));
 
-         ChainLocal.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
+         Chain.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
          return new GetItemSpec().withPrimaryKey(partKeyCol, partKeyVal, sortKeyCol, sortKeyVal);
       }
@@ -285,9 +254,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       }
 
       boolean doQuery = partKey != null && partKey.getTerm(1).isLeaf();
-      
-      StringBuffer debug = new StringBuffer("DynamoDbQuery: ").append(doQuery ? "QuerySpec" : "ScanSpec").append(index != null ? ":'" + index.getName() + "'": "");
-      
+
+      StringBuffer debug = new StringBuffer("DynamoDbQuery: ").append(doQuery ? "QuerySpec" : "ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
+
       int pageSize = page().getPageSize();
       debug.append(" maxPageSize=" + pageSize);
 
@@ -302,10 +271,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       List columns = select().getColumnNames();
       if (columns.size() > 0)
          projectionExpression = Utils.implode(",", columns);
-      
+
       debug.append(" projectionExpression='" + (projectionExpression != null ? projectionExpression : "") + "'");
-      
-      ChainLocal.debug(debug);
+
+      Chain.debug(debug);
 
       if (doQuery)
       {
@@ -436,36 +405,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
          buff.append(' ');
 
       return buff;
-   }
-
-   public Object cast(String colName, Object value)
-   {
-      if (value == null)
-         return null;
-
-      io.rocketpartners.cloud.model.Column col = table().getColumn(colName);
-
-      String type = col != null ? col.getType() : "S";
-
-      return DynamoDb.cast(value, type);
-   }
-
-   public static class DynamoResult
-   {
-      List<ObjectNode>            rows = new ArrayList();
-
-      Map<String, AttributeValue> lastKey;
-
-      public Map<String, AttributeValue> getLastKey()
-      {
-         return lastKey;
-      }
-
-      public void setLastKey(Map<String, AttributeValue> lastKey)
-      {
-         this.lastKey = lastKey;
-      }
-
    }
 
 }

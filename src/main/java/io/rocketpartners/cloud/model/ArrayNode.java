@@ -46,6 +46,8 @@ public class ArrayNode extends ObjectNode implements Iterable
 
    public Object get(int index)
    {
+      if (index >= objects.size())
+         return null;
       return objects.get(index);
    }
 
@@ -117,7 +119,7 @@ public class ArrayNode extends ObjectNode implements Iterable
    {
       return objects.size();
    }
-   
+
    public int length()
    {
       return objects.size();

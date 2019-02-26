@@ -66,8 +66,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.ObjectNode.Property;
+import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.rql.Term;
 
 /**
  * Collection of utility methods designed to make
@@ -134,7 +137,7 @@ public class Utils
          return;
       }
       visited.add(node);
-      
+
       if (node instanceof ArrayNode)
       {
          writeArrayNode(((ArrayNode) node), json, visited, lowercaseNames);
@@ -762,6 +765,72 @@ public class Utils
       }
 
       return t;
+   }
+
+   public static Response assertDebug(Response resp, String... matches)
+   {
+      String debug = resp.getDebug();
+
+      int idx = debug.indexOf("DynamoDbQuery");
+      String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
+
+      for (String match : matches)
+      {
+         List<String> matchTokens = split(match, ' ', '\'', '"', '{', '}');
+         for (String matchToken : matchTokens)
+         {
+            if (debugLine.indexOf(matchToken) < 0)
+               error("missing debug match: '" + match + "' in debug line: " + debugLine);
+         }
+      }
+      return resp;
+   }
+
+   public static List<String> split(String string, char splitOn, char... quoteChars)
+   {
+      List<String> strings = new ArrayList();
+      Set quotes = new HashSet();
+      for (char c : quoteChars)
+         quotes.add(c);
+
+      boolean quoted = false;
+      StringBuffer buff = new StringBuffer("");
+      for (int i = 0; i < string.length(); i++)
+      {
+         char c = string.charAt(i);
+
+         if (c == splitOn && !quoted)
+         {
+            if (buff.length() > 0)
+            {
+               strings.add(buff.toString());
+               buff = new StringBuffer("");
+            }
+            continue;
+         }
+         else if (quotes.contains(c))
+         {
+            quoted = !quoted;
+         }
+
+         buff.append(c);
+      }
+      if (buff.length() > 0)
+         strings.add(buff.toString());
+
+      return strings;
+   }
+
+   public static void assertEq(Object expected, Object found)
+   {
+      if (!equal(expected, found))
+         error("Expected '" + expected + "' but found '" + found + "'");
+   }
+
+   public static void assertEq(Object expected, Object found, String message)
+   {
+      if (!equal(expected, found))
+         error(message);
    }
 
    /**
@@ -1494,6 +1563,20 @@ public class Utils
          }
       }
       return true;
+   }
+
+   public static String replaceGroup(String regex, String source, int groupToReplace, String replacement)
+   {
+      return replaceGroup(regex, source, groupToReplace, 1, replacement);
+   }
+
+   public static String replaceGroup(String regex, String source, int groupToReplace, int groupOccurrence, String replacement)
+   {
+      Matcher m = Pattern.compile(regex).matcher(source);
+      for (int i = 0; i < groupOccurrence; i++)
+         if (!m.find())
+            return source; // pattern not met, may also throw an exception here
+      return new StringBuilder(source).replace(m.start(groupToReplace), m.end(groupToReplace), replacement).toString();
    }
 
    public static String substring(String string, String regex, int group)

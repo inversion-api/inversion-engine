@@ -51,7 +51,10 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
          int limit = getLimit();
          if (limit > 0)
          {
-            int page = findInt("page", 0, findInt("pageNum", 0, -1));
+            int page = findInt("page", 0, -1);
+            if(page < 0)
+               page = findInt("pageNum", 0, -1);
+            
             if (page >= 0)
             {
                offset = Math.max(0, (page - 1)) * limit;
@@ -59,6 +62,9 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
          }
       }
 
+      if(offset < 0) 
+         offset = 0;
+      
       return offset;
    }
 

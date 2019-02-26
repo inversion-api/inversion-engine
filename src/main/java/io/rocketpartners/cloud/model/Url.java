@@ -26,47 +26,66 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Url
 {
-   protected String   protocol = "http";
-   protected String   host     = null;
-   protected int      port     = 0;
-   protected String   path     = null;
-   protected String   query    = null;
+   protected String     original = null;
+   protected String     protocol = "http";
+   protected String     host     = null;
+   protected int        port     = 0;
+   protected String     path     = null;
+   protected String     query    = null;
    protected ObjectNode params   = new ObjectNode();
 
    public Url(String url)
    {
-      this((Url) null, url);
+      this(url, null);
    }
 
-   public Url(Url parent, String url)
+   public Url(String parent, String child)
    {
-      parse(parent, url);
+      if (Utils.empty(parent) && Utils.empty(child))
+         throw new ApiException("Can't construct an empty url");
+
+      if (Utils.empty(child))
+      {
+         parse(parent);
+      }
+      else if (Utils.empty(parent) || (child.startsWith("http://") || child.startsWith("https://")))
+      {
+         parse(child);
+      }
+      else
+      {
+         if (!parent.endsWith("/"))
+         {
+            parent += "/";
+         }
+         while (child.startsWith("/"))
+            child = child.substring(1, child.length());
+
+         parse(parent + child);
+      }
    }
 
-   public Url(String parent, String url)
-   {
-      this(new Url(parent), url);
-   }
+   //   public Url(Url parent, String url)
+   //   {
+   //      parse(parent, url);
+   //   }
+   //
+   //   public Url(String parent, String url)
+   //   {
+   //      this(new Url(parent), url);
+   //   }
 
-   public Url(String protocol, String host, int port, String path, String query)
-   {
-      withProtocol(protocol);
-      withHost(host);
-      withPort(port);
-      withPath(path);
-      withQuery(query);
-   }
-
-   protected void parse(Url parent, String url)
+   protected void parse(String url)
    {
       if (url.indexOf(":/") > 0 && url.indexOf("://") < 0)
          url = url.replaceAll(":/", "://");
 
       url = url.replace("&amp;", "&");
-
-      if (parent == null && (!url.startsWith("http://") || url.startsWith("https://")))
+      if (!(url.startsWith("http://") || url.startsWith("https://")))
          url = "http://localhost" + (!url.startsWith("/") ? "/" : "") + url;
 
+      original = url;
+      
       try
       {
          int queryIndex = url.indexOf('?');
@@ -84,12 +103,12 @@ public class Url
          int potocolEnd = url.indexOf("://");
          if (potocolEnd < 0)
          {
-            if (parent != null)
-            {
-               protocol = parent.protocol;
-               host = parent.host;
-               port = parent.port;
-            }
+            //            if (parent != null)
+            //            {
+            //               protocol = parent.protocol;
+            //               host = parent.host;
+            //               port = parent.port;
+            //            }
 
             if (url.length() == 0 || url.charAt(0) == '/')
             {
@@ -98,33 +117,33 @@ public class Url
             }
             else
             {
-               //-- path relative to parent
-               if (parent != null)
-               {
-                  String parentUri = parent.path;
-                  if (parentUri.charAt(parentUri.length() - 1) != '/')
-                  {
-                     if (parentUri.lastIndexOf('/') >= 0)
-                     {
-                        //chop off the file to make it path
-                        //realtive not file relative
-                        parentUri = parentUri.substring(0, parentUri.lastIndexOf('/') + 1);
-                     }
-                     else
-                     {
-                        parentUri += '/';
-                     }
-                  }
-
-                  if (url.charAt(0) == '/')
-                  {
-                     url = url.substring(1, url.length());
-                  }
-
-                  path = parentUri + url;
-
-               }
-               else
+               //               //-- path relative to parent
+               //               if (parent != null)
+               //               {
+               //                  String parentUri = parent.path;
+               //                  if (parentUri.charAt(parentUri.length() - 1) != '/')
+               //                  {
+               //                     if (parentUri.lastIndexOf('/') >= 0)
+               //                     {
+               //                        //chop off the file to make it path
+               //                        //realtive not file relative
+               //                        parentUri = parentUri.substring(0, parentUri.lastIndexOf('/') + 1);
+               //                     }
+               //                     else
+               //                     {
+               //                        parentUri += '/';
+               //                     }
+               //                  }
+               //
+               //                  if (url.charAt(0) == '/')
+               //                  {
+               //                     url = url.substring(1, url.length());
+               //                  }
+               //
+               //                  path = parentUri + url;
+               //
+               //               }
+               //               else
                {
                   path = url;
                }
@@ -228,14 +247,6 @@ public class Url
       }
 
       return url;
-   }
-
-   /**
-    * @return the url without any querystring
-    */
-   public Url getBase()
-   {
-      return new Url(this.protocol, this.host, this.port, this.path, null);
    }
 
    public boolean equals(Object obj)
@@ -360,6 +371,17 @@ public class Url
    public void clearParams()
    {
       params.clear();
+   }
+
+   public String getOriginal()
+   {
+      return original;
+   }
+
+   public Url withOriginal(String url)
+   {
+      this.original = url;
+      return this;
    }
 
 }

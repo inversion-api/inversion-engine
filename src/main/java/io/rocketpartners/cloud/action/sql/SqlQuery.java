@@ -15,6 +15,7 @@
  */
 package io.rocketpartners.cloud.action.sql;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,13 +31,15 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
+import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.SqlUtils;
 
 public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
-   String         selectSql   = null;
-
    protected char stringQuote = '\'';
    protected char columnQuote = '"';
+
+   String         selectSql   = null;
 
    public SqlQuery(Collection collection)
    {
@@ -52,6 +55,38 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       this(collection, terms);
       withSelectSql(selectSql);
+   }
+
+   protected TableResults doSelect() throws Exception
+   {
+      SqlDb db = getDb();
+      Connection conn = db.getConnection();
+      String sql = getPreparedStmt();
+
+      List values = getColValues();
+      Rows rows = SqlUtils.selectRows(conn, sql, values);
+      //Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM ORDERS");
+      int rowCount = -1;
+
+      if (db.isType("mysql"))
+      {
+         sql = "SELECT FOUND_ROWS()";
+      }
+      else
+      {
+         sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
+         if (sql.indexOf("LIMIT ") > 0)
+            sql = sql.substring(0, sql.indexOf("LIMIT "));
+         
+         if (sql.indexOf("OFFSET ") > 0)
+            sql = sql.substring(0, sql.indexOf("OFFSET "));
+
+         if (sql.indexOf("ORDER BY ") > 0)
+            sql = sql.substring(0, sql.indexOf("ORDER BY "));
+      }
+      rowCount = SqlUtils.selectInt(conn, sql, getColValues());
+
+      return new TableResults(rows, null, rowCount);
    }
 
    @Override
@@ -314,7 +349,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                String val = strings.get(i);
                if (val.charAt(0) != columnQuote)
                {
-                  //val = t.getToken();//go back to the unprinted/quoted version
+                  val = t.getToken();//go back to the unprinted/quoted version
                   strings.set(i, replace(term, t, i, col, val));
                }
             }
@@ -489,7 +524,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          return false;
 
       String token = term.getToken();
-      
+
       if (collection != null && collection.getAttribute(token) != null)
          return true;
 

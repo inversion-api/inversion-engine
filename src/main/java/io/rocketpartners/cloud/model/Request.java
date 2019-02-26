@@ -22,12 +22,15 @@ import java.util.Map;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.HttpUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Request
 {
+   Chain                                  chain                  = null;
+
    String                                 referrer               = null;
    String                                 remoteAddr             = null;
    ArrayListValuedHashMap<String, String> headers                = new ArrayListValuedHashMap();
@@ -60,7 +63,7 @@ public class Request
    //JSObject                               params                 = new JSObject();
 
    String                                 body                   = null;
-   ObjectNode                               json                   = null;
+   ObjectNode                             json                   = null;
 
    boolean                                browse                 = false;
 
@@ -397,6 +400,17 @@ public class Request
    public Api getApi()
    {
       return api;
+   }
+
+   public Chain getChain()
+   {
+      return chain;
+   }
+
+   public Request withChain(Chain chain)
+   {
+      this.chain = chain;
+      return this;
    }
 
    public Url getUrl()

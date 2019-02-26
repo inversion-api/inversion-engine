@@ -15,22 +15,21 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
-import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
-import io.rocketpartners.cloud.action.dynamo.DynamoDbQuery.DynamoResult;
+import io.rocketpartners.cloud.action.rest.RestGetAction;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
-import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Query.QueryResults;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 
-public class DynamoDbGetAction extends DynamoDbAction
+public class DynamoDbGetAction extends RestGetAction<DynamoDbGetAction>
 {
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public QueryResults runQuery(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       Collection collection = req.getCollection();
       Table table = collection.getTable();
@@ -38,39 +37,8 @@ public class DynamoDbGetAction extends DynamoDbAction
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = db.getDynamoTable(table.getName());
 
       DynamoDbQuery query = new DynamoDbQuery(collection, req.getParams());
+      query.withDynamoTable(dynamoTable);
 
-      String entityKey = req.getEntityKey();
-      if (entityKey != null)
-      {
-         String[] parts = DynamoDb.fromEntityKey(entityKey);
-         String hashKey = parts[0];
-         String sortKey = parts[1];
-         
-         DynamoDbIndex index = (DynamoDbIndex)table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
-         if(index != null)
-         {
-            String hashAttrName = collection.getAttributeName(index.getHashKey().getName());
-            query.withTerm("eq(" + hashAttrName + "," + hashKey + ")");
-            
-            if(sortKey != null)
-            {
-               String sortAttrName = collection.getAttributeName(index.getSortKey().getName());
-               query.withTerm("eq(" + sortAttrName + "," + sortKey + ")");
-            }
-         }
-      }
-
-      DynamoResult dynamoResult = query.doSelect(dynamoTable);
-
-      res.withPageSize(query.page().getPageSize())//
-         .withPageNum(query.page().getPageNum());
-
-      for (Object js : dynamoResult.rows)
-      {
-         res.withRecord(js);
-      }
-      
-      if(dynamoResult.rows.size() == 0)
-         res.withStatus(SC.SC_404_NOT_FOUND);
+      return query.runQuery();
    }
 }

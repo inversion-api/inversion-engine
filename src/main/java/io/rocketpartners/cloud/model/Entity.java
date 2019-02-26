@@ -16,7 +16,11 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+
+import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Entity
 {
@@ -216,23 +220,107 @@ public class Entity
 
    public Attribute getKey()
    {
-      //      Table table = getTable();
-      //      if (table != null)
-      //      {
-      //         for (Index index : table.getIndexes())
-      //         {
-      //            if (index.isUnique() && index.getColumns().size() == 1)
-      //            {
-      //               Column col = index.getColumns().get(0);
-      //               for (Attribute attr : getAttributes())
-      //               {
-      //                  if (attr.getColumn() == col)
-      //                     return attr;
-      //               }
-      //            }
-      //         }
-      //      }
+      Table table = getTable();
+      if (table != null)
+      {
+         for (Index index : table.getIndexes())
+         {
+            if (index.isUnique() && index.getColumns().size() == 1)
+            {
+               Column col = index.getColumns().get(0);
+               for (Attribute attr : getAttributes())
+               {
+                  if (attr.getColumn() == col)
+                     return attr;
+               }
+            }
+         }
+      }
       return null;
+   }
+
+   public boolean hasUniqueKey()
+   {
+      return table.getPrimaryIndex() != null;
+   }
+
+   public String encodeKey(ObjectNode node)
+   {
+      Index index = table.getPrimaryIndex();
+      if (index == null)
+         return null;
+
+      StringBuffer key = new StringBuffer("");
+      for (Column col : index.getColumns())
+      {
+         String attr = collection.getAttributeName(col.getName());
+         String val = node.getString(attr);
+         if (Utils.empty(val))
+            throw new ApiException("Unable to encode entity key because column '" + col + "' value is empty or can't be mapped to an attribute");
+
+         val = val.replace("\\", "\\\\").replace("~", "\\~");
+
+         if (key.length() > 0)
+            key.append("~");
+
+         key.append(val);
+      }
+
+      return key.toString();
+   }
+
+   public List<Term> decodeKey(String inKey)
+   {
+      String entityKey = inKey;
+      Index index = table.getPrimaryIndex();
+      if (index == null)
+         throw new ApiException("Table '" + table + "' does not have a unique index");
+
+      List<String> splits = new ArrayList();
+      List<Column> columns = new ArrayList(index.getColumns());
+
+      boolean escaped = false;
+      for (int i = 0; i < entityKey.length(); i++)
+      {
+         char c = entityKey.charAt(i);
+         switch (c)
+         {
+            case '\\':
+               escaped = !escaped;
+               continue;
+            case '~':
+               if (!escaped)
+               {
+                  splits.add(entityKey.substring(0, i));
+                  entityKey = entityKey.substring(i, entityKey.length());
+                  i = 0;
+                  continue;
+               }
+            default :
+               escaped = false;
+         }
+      }
+      if (entityKey.length() > 0)//won't this always happen?
+         splits.add(entityKey);
+
+      if (splits.size() == 0 || splits.size() != columns.size())
+         throw new ApiException("Supplied entity key '" + entityKey + "' has " + splits.size() + "' parts but the primary index for table '" + table + "' has " + columns.size());
+
+      List<Term> terms = new ArrayList();
+
+      for (int i = 0; i < splits.size(); i++)
+      {
+         String value = splits.get(i).replace("\\\\", "\\").replace("\\~", "~");
+         String colName = columns.get(i).getName();
+         String attrName = collection.getAttributeName(colName);
+
+         if (value.length() == 0 || Utils.empty(attrName))
+            throw new ApiException("Error mapping entity key '" + entityKey + "'");
+
+         terms.add(Term.term(null, "eq", attrName, value));
+      }
+
+      return terms;
    }
 
 }

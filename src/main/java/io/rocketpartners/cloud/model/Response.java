@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Response
@@ -44,7 +46,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected ObjectNode                             json              = new ObjectNode("meta", new ObjectNode(), "data", new ArrayNode());
+   protected ObjectNode                             json              = new ObjectNode("meta", new ObjectNode("createdOn", Utils.formatIso8601(new Date())), "data", new ArrayNode());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -103,8 +105,7 @@ public class Response
 
       return this;
    }
-   
-   
+
    public Response statusEq(String message, int... statusCodes)
    {
       boolean matched = false;
@@ -143,6 +144,7 @@ public class Response
 
    public Response withMeta(String key, String value)
    {
+      json.getNode("meta").put(key, value);
       return this;
    }
 
@@ -194,6 +196,11 @@ public class Response
    public Chain getChain()
    {
       return chain;
+   }
+
+   public Service getService()
+   {
+      return chain != null ? chain.getService() : null;
    }
 
    public Response withChain(Chain chain)
@@ -273,6 +280,36 @@ public class Response
       return this;
    }
 
+   public String findString(String path)
+   {
+      return getJson().findString(path);
+   }
+
+   public int findInt(String path)
+   {
+      return getJson().findInt(path);
+   }
+
+   public boolean findBoolean(String path)
+   {
+      return getJson().findBoolean(path);
+   }
+
+   public ObjectNode findNode(String path)
+   {
+      return getJson().findNode(path);
+   }
+
+   public ArrayNode findArray(String path)
+   {
+      return getJson().findArray(path);
+   }
+
+   public Object find(String path)
+   {
+      return getJson().find(path);
+   }
+
    public ArrayNode data()
    {
       return json.getArray("data");
@@ -290,6 +327,13 @@ public class Response
       return this;
    }
 
+   public Response withRecords(List records)
+   {
+      for (Object record : records)
+         data().add(record);
+      return this;
+   }
+
    public ObjectNode meta()
    {
       return json.getNode("meta");
@@ -297,30 +341,31 @@ public class Response
 
    public Response withMeta(String key, Object value)
    {
+      meta().put(key, value);
       return this;
    }
 
    public Response withRowCount(int rowCount)
    {
-      json.getNode("meta").put("rowCount", rowCount);
+      withMeta("rowCount", rowCount);
       return this;
    }
 
    public Response withPageSize(int pageSize)
    {
-      json.getNode("meta").put("pageSize", pageSize);
+      withMeta("pageSize", pageSize);
       return this;
    }
 
    public Response withPageNum(int pageNum)
    {
-      json.getNode("meta").put("pageNum", pageNum);
+      withMeta("pageNum", pageNum);
       return this;
    }
 
    public Response withPageCount(int pageCount)
    {
-      json.getNode("meta").put("pageCount", pageCount);
+      withMeta("pageCount", pageCount);
       return this;
    }
 
@@ -336,6 +381,12 @@ public class Response
          }
       }
       return pageSize;
+   }
+
+   public Response withNext(String nextPageUrl)
+   {
+      withMeta("next", nextPageUrl);
+      return this;
    }
 
    /**

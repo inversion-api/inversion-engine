@@ -169,6 +169,29 @@ public class Table
       columns.remove(column);
    }
 
+   public Index getPrimaryIndex()
+   {
+      Index found = null;
+      for (Index index : indexes)
+      {
+         if (!index.isUnique())
+            continue;
+
+         if (index.getColumns().size() == 0)
+            return index;
+
+         if (found == null)
+         {
+            found = index;
+         }
+         else if (index.getColumns().size() < found.getColumns().size())
+         {
+            found = index;
+         }
+      }
+      return found;
+   }
+
    public Index getIndex(String indexName)
    {
       for (Index index : indexes)

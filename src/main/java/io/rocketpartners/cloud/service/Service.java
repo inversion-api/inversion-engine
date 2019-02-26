@@ -35,48 +35,53 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
-import io.rocketpartners.cloud.service.Chain.ChainLocal;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.PropsConfig;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Service
 {
-   transient volatile boolean      started        = false;
-   transient volatile boolean      starting       = false;
-   transient volatile boolean      destroyed      = false;
+   transient volatile boolean                started        = false;
+   transient volatile boolean                starting       = false;
+   transient volatile boolean                destroyed      = false;
 
-   Logger                          log            = LoggerFactory.getLogger(getClass());
-   Logger                          requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected Logger                          log            = LoggerFactory.getLogger(getClass());
+   protected Logger                          requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   List<Api>                       apis           = new Vector();
+   protected List<Api>                       apis           = new Vector();
 
-   ResourceLoader                  resourceLoader = null;
+   protected ResourceLoader                  resourceLoader = null;
 
-   PropsConfig                     configurator   = new PropsConfig();
+   protected PropsConfig                     configurator   = new PropsConfig();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected String                servletMapping = null;
+   protected String                          servletMapping = null;
 
-   protected String                profile        = null;
+   protected String                          profile        = null;
 
-   protected String                configPath     = "";
-   protected int                   configTimeout  = 10000;
-   protected boolean               configFast     = false;
-   protected boolean               configDebug    = false;
-   protected String                configOut      = null;
+   protected String                          configPath     = "";
+   protected int                             configTimeout  = 10000;
+   protected boolean                         configFast     = false;
+   protected boolean                         configDebug    = false;
+   protected String                          configOut      = null;
 
-   protected List<ServiceListener> listeners      = new ArrayList();
+   /**
+    * The last response returned.  Not that useful in concurrent 
+    * production environments but useful for writing test cases.
+    */
+   protected transient volatile Response     lastResponse   = null;
+
+   protected transient List<ServiceListener> listeners      = new ArrayList();
 
    /**
     * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String                allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String                          allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public static interface ServiceListener
    {
@@ -190,6 +195,14 @@ public class Service
       return req;
    }
 
+   /**
+    * @return the last response serviced by this Service.
+    */
+   public Response response()
+   {
+      return lastResponse;
+   }
+
    public Response service(String method, String url, String body)
    {
       Request req = new Request(method, url, body);
@@ -206,7 +219,8 @@ public class Service
       if (!started)
          startup();
 
-      Chain chain = ChainLocal.push(this, req, res);
+      Chain chain = Chain.push(this, req, res);
+      req.withChain(chain);
       res.withChain(chain);
 
       //--
@@ -293,6 +307,8 @@ public class Service
                   apiPath.add(tenantCode);
                   req.withTenantCode(tenantCode);
                }
+               
+               req.withApiPath(Utils.implode("/",  apiPath) + "/");
 
                String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
                for (int i = 0; i <= parts.size(); i++)
@@ -316,7 +332,9 @@ public class Service
 
                            for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                            {
-                              if (collectionKey.equalsIgnoreCase(collection.getName()) && (collection.getIncludePaths().size() > 0 || collection.getExcludePaths().size() > 0))
+                              if (collectionKey.equalsIgnoreCase(collection.getName())//
+                                    && (collection.getIncludePaths().size() > 0 //
+                                          || collection.getExcludePaths().size() > 0))
                               {
                                  if (collection.matches(req.getMethod(), endpointPath))
                                  {
@@ -330,7 +348,9 @@ public class Service
                            {
                               for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                               {
-                                 if (collectionKey.equalsIgnoreCase(collection.getName()) && collection.getIncludePaths().size() == 0 && collection.getExcludePaths().size() == 0)
+                                 if (collectionKey.equalsIgnoreCase(collection.getName()) //
+                                       && collection.getIncludePaths().size() == 0 //
+                                       && collection.getExcludePaths().size() == 0)
                                  {
                                     req.withCollection(collection);
                                     break;
@@ -486,7 +506,8 @@ public class Service
             log.error("Error in Service", ex);
          }
 
-         ChainLocal.pop();
+         Chain.pop();
+         lastResponse = res;
       }
 
       return chain;

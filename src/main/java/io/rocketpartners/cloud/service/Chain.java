@@ -33,144 +33,149 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Chain
 {
-   public static class ChainLocal
+
+   static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
+
+   protected static Stack<Chain> get()
    {
-      static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
-
-      protected static Stack<Chain> get()
+      Stack stack = chainLocal.get();
+      if (stack == null)
       {
-         Stack stack = chainLocal.get();
-         if (stack == null)
-         {
-            stack = new Stack();
-            chainLocal.set(stack);
-         }
-         return stack;
+         stack = new Stack();
+         chainLocal.set(stack);
       }
+      return stack;
+   }
 
-      public static int getDepth()
+   public static int getDepth()
+   {
+      return get().size();
+   }
+
+   public static Chain peek()
+   {
+      Stack<Chain> stack = get();
+      if (!stack.empty())
+         return stack.peek();
+      return null;
+
+   }
+
+   public static Chain push(Service service, Request req, Response res)
+   {
+      Chain child = new Chain(service, req, res);
+
+      Chain parent = peek();
+      if (parent != null)
+         child.setParent(parent);
+
+      get().push(child);
+
+      return child;
+   }
+
+   public static Chain pop()
+   {
+      return get().pop();
+   }
+
+   public static int size()
+   {
+      return get().size();
+   }
+
+   public static Request getRequest()
+   {
+      return peek().request;
+   }
+
+   public static Response getResponse()
+   {
+      return peek().response;
+   }
+
+   public static void debug(Object... msgs)
+   {
+      Chain chain = peek();
+      if (chain != null)
+         chain.response.debug(msgs);
+   }
+
+   public static String buildLink(Collection collection)
+   {
+      return buildLink(collection, null, null);
+   }
+
+   public static String buildLink(Collection collection, Object entityKey, String subCollectionKey)
+   {
+      String collectionKey = collection.getName();
+
+      Request req = getRequest();
+
+      String url = req.getApiPath();
+
+      if (url == null)
+         url = "";
+
+      if (!url.endsWith("/"))
+         url += "/";
+
+      if (collection == req.getCollection())
       {
-         return get().size();
-      }
+         //going after the same collection...so must be going after the same endpoint
+         //so get the endpoint path from the current request and ame sure it is on the url.
 
-      public static Chain peek()
-      {
-         Stack<Chain> stack = get();
-         if (!stack.empty())
-            return stack.peek();
-         return null;
+         String ep = req.getEndpointPath();
 
-      }
-
-      public static Chain push(Service service, Request req, Response res)
-      {
-         Chain child = new Chain(service, req, res);
-
-         Chain parent = peek();
-         if (parent != null)
-            child.setParent(parent);
-
-         get().push(child);
-
-         return child;
-      }
-
-      public static Chain pop()
-      {
-         return get().pop();
-      }
-
-      public static int size()
-      {
-         return get().size();
-      }
-
-      public static Request getRequest()
-      {
-         return peek().getRequest();
-      }
-
-      public static Response getResponse()
-      {
-         return peek().getResponse();
-      }
-
-      public static void debug(Object... msgs)
-      {
-         peek().getResponse().debug(msgs);
-      }
-
-      public static String buildLink(Collection collection, Object entityKey, String subCollectionKey)
-      {
-         String collectionKey = collection.getName();
-
-         Request req = getRequest();
-
-         String url = req.getApiPath();
-
-         if (url == null)
-            url = "";
+         url += ep;
 
          if (!url.endsWith("/"))
             url += "/";
-
-         if (collection == req.getCollection())
-         {
-            //going after the same collection...so must be going after the same endpoint
-            //so get the endpoint path from the current request and ame sure it is on the url.
-
-            String ep = req.getEndpointPath();
-
-            url += ep;
-
-            if (!url.endsWith("/"))
-               url += "/";
-         }
-         else if (collection != null && collection.getIncludePaths().size() > 0)
-         {
-            //TODO: need test case here
-
-            String collectionPath = (String) collection.getIncludePaths().get(0);
-            if (collectionPath.indexOf("*") > -1)
-               collectionPath = collectionPath.substring(0, collectionPath.indexOf("*"));
-
-            url += collectionPath;
-            if (!url.endsWith("/"))
-               url += "/";
-         }
-
-         if (!Utils.empty(collectionKey))
-         {
-            if (!url.endsWith("/"))
-               url += "/";
-
-            url += collectionKey;
-         }
-
-         if (!Utils.empty(entityKey))
-            url += "/" + entityKey;
-
-         if (!Utils.empty(subCollectionKey))
-            url += "/" + subCollectionKey;
-
-         if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-         {
-            String newUrl = req.getApi().getUrl();
-            while (newUrl.endsWith("/"))
-               newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-            url = newUrl + url.substring(url.indexOf("/", 8));
-         }
-         else
-         {
-            String proto = req.getHeader("x-forwarded-proto");
-            if (!Utils.empty(proto))
-            {
-               url = proto + url.substring(url.indexOf(':'), url.length());
-            }
-         }
-         return url;
       }
+      else if (collection != null && collection.getIncludePaths().size() > 0)
+      {
+         //TODO: need test case here
+
+         String collectionPath = (String) collection.getIncludePaths().get(0);
+         if (collectionPath.indexOf("*") > -1)
+            collectionPath = collectionPath.substring(0, collectionPath.indexOf("*"));
+
+         url += collectionPath;
+         if (!url.endsWith("/"))
+            url += "/";
+      }
+
+      if (!Utils.empty(collectionKey))
+      {
+         if (!url.endsWith("/"))
+            url += "/";
+
+         url += collectionKey;
+      }
+
+      if (!Utils.empty(entityKey))
+         url += "/" + entityKey;
+
+      if (!Utils.empty(subCollectionKey))
+         url += "/" + subCollectionKey;
+
+      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
+      {
+         String newUrl = req.getApi().getUrl();
+         while (newUrl.endsWith("/"))
+            newUrl = newUrl.substring(0, newUrl.length() - 1);
+
+         url = newUrl + url.substring(url.indexOf("/", 8));
+      }
+      else
+      {
+         String proto = req.getHeader("x-forwarded-proto");
+         if (!Utils.empty(proto))
+         {
+            url = proto + url.substring(url.indexOf(':'), url.length());
+         }
+      }
+      return url;
    }
 
    protected Service            service  = null;
@@ -192,10 +197,10 @@ public class Chain
       this.response = res;
    }
 
-   public void debug(Object... msgs)
-   {
-      response.debug(msgs);
-   }
+   //   public void debug(Object... msgs)
+   //   {
+   //      response.debug(msgs);
+   //   }
 
    public Chain getParent()
    {
@@ -366,14 +371,14 @@ public class Chain
       return this;
    }
 
-   public Request getRequest()
-   {
-      return request;
-   }
-
-   public Response getResponse()
-   {
-      return response;
-   }
+   //   public Request getRequest()
+   //   {
+   //      return peek().request;
+   //   }
+   //
+   //   public Response getResponse()
+   //   {
+   //      return response;
+   //   }
 
 }

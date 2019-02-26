@@ -21,6 +21,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,9 @@ import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlDb extends Db<SqlDb>
@@ -61,6 +65,42 @@ public class SqlDb extends Db<SqlDb>
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
    protected boolean              calcRowsFound            = true;
+
+   static
+   {
+      SqlUtils.addSqlListener(new SqlListener()
+         {
+            @Override
+            public void onError(String method, String sql, Object args, Exception ex)
+            {
+               ex.printStackTrace();
+            }
+
+            @Override
+            public void beforeStmt(String method, String sql, Object args)
+            {
+            }
+
+            @Override
+            public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
+            {
+               args = (args != null && args.getClass().isArray() ? Arrays.asList((Object[]) args) : args);
+
+               sql = sql.replaceAll("\r", "");
+               sql = sql.replaceAll("\n", " ");
+               sql = sql.trim().replaceAll(" +", " ");
+               StringBuffer buff = new StringBuffer("");
+               buff.append("\r\nSQL -> stmt   = ").append(sql);
+               buff.append("\r\nSQL -> args   = " + args);
+               buff.append("\r\nSQL -> result = " + result);
+               buff.append("\r\nSQL -> error  = " + (ex != null ? Utils.getShortCause(ex) : ""));
+
+               String msg = buff.toString();
+               System.out.println(msg);
+               Chain.debug(msg);
+            }
+         });
+   }
 
    @Override
    public String getType()
@@ -103,7 +143,9 @@ public class SqlDb extends Db<SqlDb>
          Connection conn = ConnectionLocal.getConnection(this);
          if (conn == null && !shutdown)
          {
-            DataSource pool = pools.get(getName());
+            String dsKey = getName() + getUrl() + getUser() + getPass();
+
+            DataSource pool = pools.get(dsKey);
 
             if (pool == null)
             {
@@ -123,7 +165,7 @@ public class SqlDb extends Db<SqlDb>
                      config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
                      pool = new HikariDataSource(config);
 
-                     pools.put(getName(), pool);
+                     pools.put(dsKey, pool);
                   }
                }
             }
@@ -337,8 +379,20 @@ public class SqlDb extends Db<SqlDb>
             while (indexMd.next())
             {
                String idxName = indexMd.getString("INDEX_NAME");
-               String idxType = indexMd.getString("TYPE");
+               String idxType = "Other";
                String colName = indexMd.getString("COLUMN_NAME");
+
+               switch (indexMd.getInt("TYPE"))
+               {
+                  case DatabaseMetaData.tableIndexClustered:
+                     idxType = "Clustered";
+                  case DatabaseMetaData.tableIndexHashed:
+                     idxType = "Hashed";
+                  case DatabaseMetaData.tableIndexOther:
+                     idxType = "Other";
+                  case DatabaseMetaData.tableIndexStatistic:
+                     idxType = "Statistic";
+               }
 
                Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
@@ -407,6 +461,9 @@ public class SqlDb extends Db<SqlDb>
          String name = beautifyCollectionName(table.getName());
 
          Collection collection = api.withCollection(table, name);
+         if (getCollectionPath() != null)
+            collection.withIncludePath(getCollectionPath());
+
          Entity entity = collection.withEntity(table);
 
          for (Attribute attr : entity.getAttributes())
@@ -414,7 +471,9 @@ public class SqlDb extends Db<SqlDb>
             attr.withName(beautifyAttributeName(attr.getName()));
          }
 
-         System.out.println(collection);
+         String debug = getCollectionPath();
+         debug = (debug == null ? "" : (debug + "/")) + collection;
+         System.out.println("CREATING COLLECTION: " + debug);
       }
 
       //-- Now go back through and create relationships for all foreign keys

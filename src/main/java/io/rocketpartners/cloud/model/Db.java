@@ -22,24 +22,24 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.service.Service.ServiceListener;
 import io.rocketpartners.cloud.utils.English;
 
 public class Db<T extends Db>
 {
-   transient volatile boolean started   = false;
-   transient volatile boolean starting  = false;
+   transient volatile boolean started        = false;
+   transient volatile boolean starting       = false;
 
-   protected Api              api       = null;
+   protected Api              api            = null;
 
-   protected Logger           log       = LoggerFactory.getLogger(getClass());
-   protected boolean          bootstrap = true;
+   protected Logger           log            = LoggerFactory.getLogger(getClass());
+   protected boolean          bootstrap      = true;
 
-   protected String           name      = null;
-   protected String           type      = null;
+   protected String           name           = null;
+   protected String           type           = null;
 
-   protected ArrayList<Table> tables    = new ArrayList();
+   protected String           collectionPath = null;
+
+   protected ArrayList<Table> tables         = new ArrayList();
 
    public Db()
    {
@@ -64,7 +64,7 @@ public class Db<T extends Db>
       try
       {
          startup0();
-         
+
          started = true;
          return this;
       }
@@ -228,6 +228,20 @@ public class Db<T extends Db>
    public T withBootstrap(boolean bootstrap)
    {
       this.bootstrap = bootstrap;
+      return (T) this;
+   }
+
+   public String getCollectionPath()
+   {
+      return collectionPath;
+   }
+
+   public T withCollectionPath(String collectionPath)
+   {
+      if (collectionPath != null && !collectionPath.endsWith("/"))
+         collectionPath += "/";
+
+      this.collectionPath = collectionPath;
       return (T) this;
    }
 

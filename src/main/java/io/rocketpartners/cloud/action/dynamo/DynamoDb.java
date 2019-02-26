@@ -37,6 +37,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
@@ -187,6 +188,10 @@ public class DynamoDb extends Db<DynamoDb>
       {
          entity.getAttribute(col.getName()).withName(beautifyAttributeName(col.getName()));
       }
+
+      if (getCollectionPath() != null)
+         collection.withIncludePath(getCollectionPath());
+
       return collection;
    }
 
@@ -412,80 +417,28 @@ public class DynamoDb extends Db<DynamoDb>
       String type = attr.getColumn().getType();
       try
       {
-         return cast(value, type);
+         if (value == null)
+            return null;
+
+         if (type == null)
+            return value.toString();
+
+         switch (type)
+         {
+            case "N":
+               return Long.parseLong(value.toString());
+
+            case "BOOL":
+               return Boolean.parseBoolean(value.toString());
+
+            default :
+               return value.toString();
+         }
       }
       catch (Exception ex)
       {
          throw new RuntimeException("Error casting " + attr.getName() + "/" + attr.getColumn().getName() + " with type " + type + " with value " + value, ex);
       }
-   }
-
-   public static Object cast(Object value, String type)
-   {
-      if (value == null)
-         return null;
-
-      if (type == null)
-         return value.toString();
-
-      switch (type)
-      {
-         case "N":
-            return Long.parseLong(value.toString());
-
-         case "BOOL":
-            return Boolean.parseBoolean(value.toString());
-
-         default :
-            return value.toString();
-      }
-   }
-
-   public static String toEntityKey(String hashKey, String sortKey)
-   {
-      String key = hashKey.replace("\\", "\\\\").replace("~", "\\~");
-
-      if (sortKey != null)
-      {
-         sortKey = sortKey.replace("\\", "\\\\").replace("~", "\\~");
-         key += "~" + sortKey;
-      }
-      return key;
-   }
-
-   public static String[] fromEntityKey(String entityKey)
-   {
-      String hashKey = entityKey;
-      String sortKey = null;
-
-      boolean escaped = false;
-      for (int i = 0; i < entityKey.length(); i++)
-      {
-         char c = entityKey.charAt(i);
-         switch (c)
-         {
-            case '\\':
-               escaped = !escaped;
-               continue;
-            case '~':
-               if (!escaped)
-               {
-                  hashKey = entityKey.substring(0, i);
-                  sortKey = entityKey.substring(i + 1, entityKey.length());
-                  break;
-               }
-            default :
-               escaped = false;
-         }
-
-         if (sortKey != null)
-            break;
-      }
-
-      hashKey = hashKey.replace("\\\\", "\\").replace("\\~", "~");
-      sortKey = sortKey != null ? sortKey.replace("\\\\", "\\").replace("\\~", "~") : null;
-
-      return new String[]{hashKey, sortKey};
    }
 
 }

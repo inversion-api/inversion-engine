@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.rocketpartners.cloud.service.Chain.ChainLocal;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>
@@ -30,7 +30,7 @@ public class Endpoint extends Rule<Endpoint>
 
    public boolean matches(String method, String path)
    {
-      if (internal && ChainLocal.getDepth() < 2)
+      if (internal && Chain.getDepth() < 2)
       {
          return false;
       }

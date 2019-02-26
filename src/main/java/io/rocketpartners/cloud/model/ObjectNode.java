@@ -93,13 +93,13 @@ public class ObjectNode implements Map<String, Object>
       return -1;
    }
 
-   public Object findBoolean(String path)
+   public boolean findBoolean(String path)
    {
       Object found = find(path);
       if (found != null)
          return Utils.atob(found);
 
-      return null;
+      return false;
    }
 
    public ObjectNode findNode(String path)

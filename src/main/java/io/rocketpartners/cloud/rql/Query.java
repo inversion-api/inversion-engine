@@ -16,18 +16,22 @@
 package io.rocketpartners.cloud.rql;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
+import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.utils.SqlUtils;
 
 /**
  * 
@@ -123,6 +127,83 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
          withTerms(terms);
    }
 
+   public QueryResults runQuery() throws Exception
+   {
+      TableResults tableResults = doSelect();
+      QueryResults queryResutls = transformResults(tableResults);
+      return queryResutls;
+   }
+
+   protected TableResults doSelect() throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You must implement Query.doSelect()");
+   }
+
+   protected QueryResults transformResults(TableResults tableResults) throws Exception
+   {
+      QueryResults queryResults = new QueryResults(this, tableResults.getNext(), tableResults.getRowCount());
+
+      for (Map row : tableResults)
+      {
+         queryResults.withRow(transformRow(row));
+      }
+
+      return queryResults;
+   }
+
+   protected ObjectNode transformRow(Map<String, Object> row)
+   {
+      ObjectNode node = new ObjectNode();
+      if (collection == null)
+         return new ObjectNode(row);
+
+      for (Attribute attr : collection.getEntity().getAttributes())
+      {
+         String attrName = attr.getName();
+         String colName = attr.getColumn().getName();
+         Object val = row.get(colName);
+         node.put(attrName, val);
+      }
+
+      //      
+      //      DynamoDbIndex primaryIndex = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
+      //      String hashKeyName = primaryIndex.getHashKeyName();
+      //      String sortKeyName = primaryIndex.getSortKeyName();
+      //
+      //      for (int i = 0; i < result.rows.size(); i++)
+      //      {
+      //         ObjectNode row = (ObjectNode) result.rows.get(i);
+      //         ObjectNode json = new ObjectNode();
+      //
+      //         result.rows.set(i, json);
+      //         String hashKey = row.getString(hashKeyName);
+      //         if (hashKey != null)
+      //         {
+      //            String sortKey = sortKeyName != null ? row.getString(sortKeyName) : null;
+      //            String entityKey = DynamoDb.toEntityKey(hashKey, sortKey);
+      //            String href = Chain.buildLink(collection, entityKey, null);
+      //            json.put("href", href);
+      //         }
+      //
+      //         //this preservers attribute order
+      //         for (Attribute attr : collection.getEntity().getAttributes())
+      //         {
+      //            String colName = attr.getColumn().getName();
+      //            Object value = row.remove(colName);
+      //            json.put(attr.getName(), value);
+      //         }
+      //
+      //         //copy remaining columns that were in result set but not defined in the entity
+      //         //TODO...do we really want to do this?
+      //         for (Object key : row.keySet())
+      //         {
+      //            json.put(key.toString(), row.get(key));
+      //         }
+      //      }
+
+      return node;
+   }
+
    @Override
    public Parser getParser()
    {
@@ -198,6 +279,11 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
+   public D getDb()
+   {
+      return db;
+   }
+
    public T withTable(E table)
    {
       withDb((D) table.getDb());
@@ -266,9 +352,54 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   protected T withColValue(String attributeName, String value)
+   public Object cast(String column, Object value)
+   {
+      return cast0(collection.getTable().getColumn(column).getType(), value);
+   }
+
+   public Object cast(Attribute attr, Object value)
+   {
+      return cast0(attr.getType(), value);
+   }
+
+   protected Object cast0(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+            return value.toString();
+
+         switch (type)
+         {
+            case "N":
+               return Long.parseLong(value.toString());
+
+            case "BOOL":
+               return Boolean.parseBoolean(value.toString());
+
+            default :
+               return SqlUtils.cast(value, type);
+         }
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
+   }
+
+   protected T withColValue(String attributeName, Object value)
    {
       String columnName = getColumnName(attributeName);
+
+      Attribute attr = collection.getAttribute(attributeName);
+      if (attr != null)
+      {
+         value = cast(attr, value);
+      }
+
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }
@@ -281,8 +412,121 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return keys;
    }
 
+   public List<Object> getColValues()
+   {
+      List keys = new ArrayList();
+      for (KeyValue kv : values)
+         keys.add(kv.getValue());
+      return keys;
+   }
+
    public KeyValue<String, String> getColValue(int index)
    {
       return values.get(index);
    }
+
+   public static class QueryResults extends Results<ObjectNode, QueryResults>
+   {
+      Query query = null;
+
+      public QueryResults(Query query, String next, int rowCount)
+      {
+         super(null, next, rowCount);
+         this.query = query;
+      }
+
+      public Query getQuery()
+      {
+         return query;
+      }
+
+   }
+
+   public static class TableResults extends Results<Map<String, Object>, TableResults>
+   {
+      public TableResults()
+      {
+
+      }
+
+      public TableResults(List rows, String next, int rowCount)
+      {
+         super();
+         this.rows = (List<Map<String, Object>>) rows;
+         this.next = next;
+         this.rowCount = rowCount;
+      }
+   }
+
+   private static class Results<M extends Map, T extends Results> implements Iterable<M>
+   {
+      List<M> rows     = new ArrayList();
+      String  next     = null;
+      int     rowCount = -1;
+
+      public Results()
+      {
+
+      }
+
+      public Results(List<M> rows, String next, int rowCount)
+      {
+         super();
+         this.rows = rows != null ? rows : this.rows;
+         this.next = next;
+         this.rowCount = rowCount;
+      }
+
+      @Override
+      public Iterator<M> iterator()
+      {
+         return rows.iterator();
+      }
+
+      public int size()
+      {
+         return rows.size();
+      }
+
+      public List<M> getRows()
+      {
+         return rows;
+      }
+
+      public T withRows(List<M> rows)
+      {
+         this.rows = rows;
+         return (T) this;
+      }
+
+      public T withRow(M row)
+      {
+         rows.add(row);
+         return (T) this;
+      }
+
+      public String getNext()
+      {
+         return next;
+      }
+
+      public T withNext(String next)
+      {
+         this.next = next;
+         return (T) this;
+      }
+
+      public int getRowCount()
+      {
+         return rowCount;
+      }
+
+      public T withRowCount(int rowCount)
+      {
+         this.rowCount = rowCount;
+         return (T) this;
+      }
+
+   }
+
 }
