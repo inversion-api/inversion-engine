@@ -15,6 +15,8 @@
  */
 package io.rocketpartners.cloud.action.firehose;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,15 +24,52 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
+import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
+import com.amazonaws.services.kinesisfirehose.model.Record;
 
+import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Attribute;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.Utils;
 
+/**
+ * Posts records to a mapped AWS Kinesis Firehose stream. 
+ * 
+ * When you PUT/POST a:
+ * <ul>
+ * <li>a JSON object - it is submitted as a single record
+ * <li>a JSON array - each element in the array is submitted as a single record.
+ * </ul>
+ * 
+ * Unless <code>jsonPrettyPrint</code> is set to <code>true</code> all JSON
+ * records are stringified without return characters.
+ * 
+ * All records are always submitted in batches of up to <code>batchMax</code>.  
+ * You can submit more than <code>batchMax</code> to the handler and it will try to
+ * send as many batches as required. 
+ * 
+ * If <code>jsonSeparator</code> is not null (it is '\n' by default) and the 
+ * stringified record does not end in <code>separator</code>,
+ * <code>separator</code> will be appended to the record.
+ * 
+ * If your firehose is Redshift, you probably want to leave <code>jsonLowercaseNames</code>
+ * at its default which is true.  Redshift only matches to lowercase names on COPY.
+ * 
+ * The underlying Firehose stream is mapped to the collection name through
+ * the FireshoseDb.includeStreams property.
+ * 
+ * 
+ * @author wells
+ *
+ */
 public class FirehoseDb extends Db<FirehoseDb>
 {
    /**
@@ -57,17 +96,18 @@ public class FirehoseDb extends Db<FirehoseDb>
 
    public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
    {
-      return null;
-   }
-
-   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
-   {
-      return null;
+      throw new ApiException(SC.SC_400_BAD_REQUEST, "Reading from a AWS Kinesis Firehose stream is not supported.  This is a configuration error.");
    }
 
    public void delete(Request request, Table table, String entityKey) throws Exception
    {
+      throw new ApiException(SC.SC_400_BAD_REQUEST, "Deleting from a AWS Kinesis Firehose stream is not supported.  This is a configuration error.");
+   }
 
+   //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
+   public String upsert(Request request, Table table, Map<String, Object> rows) throws Exception
+   {
+      throw new ApiException(SC.SC_400_BAD_REQUEST, "The FirehosePostAction should be used to write to an AWS Kinesis Firehose stream.");
    }
 
    @Override
@@ -150,5 +190,4 @@ public class FirehoseDb extends Db<FirehoseDb>
       this.includeStreams = includeStreams;
       return this;
    }
-
 }

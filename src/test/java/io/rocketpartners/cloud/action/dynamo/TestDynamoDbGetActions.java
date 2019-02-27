@@ -40,7 +40,7 @@ import io.rocketpartners.cloud.utils.Utils;
  *   K                gt      =                                                                                       Scan - Primary
  *   L                gt      sw          =                                                                           ????                                             
  * 
- * 
+ * TEST K CHANGED TO USE GS3
  * 
  * Access Patters for Order Table
  * 
@@ -61,11 +61,15 @@ import io.rocketpartners.cloud.utils.Utils;
  * 
  * LS1 - ShipCity
  * 
- * ORDERS
- * Find an order by id                           HK: OrderID           SK: type       ----  12345   | 'ORDER'
- * Find all orders for a given customer       GS1HK: CustomerID     GS1SK: OrderDate  ----  99999   | '2013-01-08'
- * UNUSED - List orders by date -                HK: type              SK: OrderDate  ----  'ORDER' | '2013-01-08'
+ * VIRTUAL TABLE: 'ORDERS'                  INDEX       HK                SK
+ * Find an order by id                      Primary     OrderID           type       ----  12345   | ORDER
+ * Find all orders for a given customer     GS1         CustomerID        OrderDate  ----  99999   | 2013-01-08
+ * Find all order sorted by order id        GS3         type              orderid    ----  ORDER   | 1234
+ * 
+ * 
+ *  * UNUSED - List orders by date -                HK: type              SK: OrderDate  ----  'ORDER' | '2013-01-08'
  * UNUSED - List orders by employee              HK: employeeId        SK: 
+
  * 
  * SCENARIO
  *   A - eq(ShipPostalCode, 30305) 
@@ -99,6 +103,29 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    }
 
    @Test
+   public void testSort01() throws Exception
+   {
+      //      Service service = service();
+      //      Response res = null;
+      //      ObjectNode json = null;
+      //
+      //      String url = url("orders?limit=2&sort=orderid&type=ORDER");
+      //
+      //      res = service.get(url);
+      //      System.out.println(res.getDebug());
+      //      
+      //      assertEquals(2, res.findArray("data").length());
+      //      String href = res.findString("data.0.href");
+      //      assertTrue(href.endsWith("/orders/10257"));
+      //
+      //      res = service.get(url("orders?limit=2&sort=-orderid"));
+      //
+      //      assertEquals(2, res.findArray("data").length());
+      //      href = res.findString("data.0.href");
+      //      assertTrue(href.endsWith("/orders/11058"));
+   }
+
+   @Test
    public void test0() throws Exception
    {
       Service service = service();
@@ -117,35 +144,6 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       assertEquals(25, json.getArray("data").length());
       assertTrue(json.findString("data.0.href").endsWith("/dynamodb/orders/10641~ORDER"));
       assertEquals(1, service.get("northwind/dynamodb/orders/10641~ORDER").getJson().getArray("data").length());
-
-   }
-
-   @Test
-   public void testPagination0() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      int total = 0;
-      int iterations = 0;
-      String next = url("orders?limit=5");
-      do
-      {
-         res = service.get(next);
-         total += res.data().length();
-         iterations += 1;
-         next = res.findString("meta.next");
-
-         System.out.println(res);
-
-         assertEquals(5, res.findArray("data").length());
-         assertEquals(5, res.find("meta.pageSize"));
-         //assertEquals(iterations, res.find("meta.pageNum"));
-      }
-      while (iterations < 20 && next != null);
-
-      assertEquals(5, iterations);
-      assertEquals(25, total);
 
    }
 
@@ -282,14 +280,12 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?gt(OrderId, 1)&eq(type, ORDER)").statusOk();
-      json = res.getJson();
-      //System.out.println(res.getDebug());
+      System.out.println(res.getDebug());
 
       //assertEquals(json.getArray("data").length(), 1);
-      Utils.assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=1} keyConditionExpression='' filterExpression='#var1 = :val1 and #var2 > :val2' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=1} keyConditionExpression='#var1 = :val1 and #var2 > :val2' filterExpression='' projectionExpression=''");
    }
 
    //   @Test

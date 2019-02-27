@@ -170,52 +170,36 @@ public class RestGetAction extends Action<RestGetAction>
          int offest = page.getOffset();
          int limit = page.getLimit();
 
-         if (req.getCollection() != null && req.getEntityKey() == null)
+         if (results.size() > 0)
          {
-            List<Term> nextTerms = results.getNext();
-            if (nextTerms != null && !nextTerms.isEmpty())
+            if (req.getCollection() != null && req.getEntityKey() == null)
             {
-               String next = req.getUrl().getOriginal();
-               for (Term nextTerm : nextTerms)
+               List<Term> nextTerms = results.getNext();
+               if (nextTerms != null && !nextTerms.isEmpty())
                {
-                  next = replaceTerm(next, nextTerm);
+                  String next = req.getUrl().getOriginal();
+                  for (Term nextTerm : nextTerms)
+                  {
+                     next = replaceTerm(next, nextTerm);
+                  }
+                  res.withNext(next);
                }
-               res.withNext(next);
-            }
-            else if (results.size() == limit && (rowCount < 0 || (offest + limit) < rowCount))
-            {
-               int pageNum = page.getPageNum() + 1;
+               else if (results.size() == limit && (rowCount < 0 || (offest + limit) < rowCount))
+               {
+                  String next = req.getUrl().getOriginal();
+                  next = stripTerms(next, "offset", "page", "pageNum");
 
-               String next = req.getUrl().getOriginal();
+                  if (next.indexOf("?") < 0)
+                     next += "?";
+                  if (!next.endsWith("?"))
+                     next += "&";
 
-               next = next.replaceAll("(.*)(offset=\\d*\\&?)(.*)", "$1$3");
-               next = next.replaceAll("(.*)(eq\\(offset\\,\\d*\\))\\&?(.*)", "$1$3");
+                  next += "pageNum=" + (page.getPageNum() + 1);
 
-               next = next.replaceAll("(.*)(page=\\d*\\&?)(.*)", "$1$3");
-               next = next.replaceAll("(.*)(eq\\(page\\,\\d*\\))\\&?(.*)", "$1$3");
-
-               next = next.replaceAll("(.*)(pageNum=\\d*\\&?)(.*)", "$1$3");
-               next = next.replaceAll("(.*)(eq\\(pageNum\\,\\d*\\))\\&?(.*)", "$1$3");
-
-               if (next.indexOf("?") < 0)
-                  next += "?";
-               if (!next.endsWith("?"))
-                  next += "&";
-
-               next += "pageNum=" + pageNum;
-
-               res.withNext(next);
+                  res.withNext(next);
+               }
             }
          }
-
-         //
-         //         //if (db.isCalcRowsFound())
-         //         {
-         //            meta.put("pageNum", query.page().getPageNum());
-         //            int pages = (int) Math.ceil((double) rowCount / (double) query.page().getLimit());
-         //            meta.put("pageCount", pages);
-         //         }
-         //
       }
 
       //TODO: process includes/excludes & expands
@@ -358,18 +342,28 @@ public class RestGetAction extends Action<RestGetAction>
       }
    }
 
+   protected String stripTerms(String url, String... tokens)
+   {
+      for (String token : tokens)
+      {
+         url = url.replaceAll("(.*)(" + token + "=[^\\&]*\\&?)(.*)", "$1$3");
+         url = url.replaceAll("(.*)(" + token + "\\([^\\&]*\\)\\&?)(.*)", "$1$3");
+         url = url.replaceAll("(.*)(eq\\(" + token + "\\,[^\\&]*\\)\\&?)(.*)", "$1$3");
+      }
+      url = url.replace("&&", "&");
+      return url;
+   }
+
    protected String replaceTerm(String url, Term term)
    {
       String op = term.hasToken("eq") ? term.getToken(0) : term.getToken();
 
-      url = url.replaceAll("(.*)(" + op + "=[^\\&]*\\&?)(.*)", "$1$3");
-      url = url.replaceAll("(.*)(eq\\(" + op + "\\,[^\\&]*\\)\\&?)(.*)", "$1$3");
-
-      url = url.replace("&&", "&");
+      url = stripTerms(url, op);
 
       if (url.indexOf("?") < 0)
          url += "?";
-      if (!url.endsWith("?"))
+
+      if (!url.endsWith("?") && !url.endsWith("&"))
          url += "&";
 
       url += term.toString();

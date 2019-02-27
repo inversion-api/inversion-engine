@@ -63,17 +63,18 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       ObjectNode json = null;
 
-      res = service.get(url("orders?limit=2&sort=orderid"));
-      json = res.getJson();
+      String url = url("orders?limit=2&sort=orderid&type=ORDER");
 
-      assertEquals(2, json.getArray("data").length());
-      String href = json.findString("data.0.href");
+      res = service.get(url);
+      System.out.println(res.getDebug());
+      
+      assertEquals(2, res.findArray("data").length());
+      String href = res.findString("data.0.href");
       assertTrue(href.endsWith("/orders/10257"));
 
       res = service.get(url("orders?limit=2&sort=-orderid"));
-      json = res.getJson();
 
-      assertEquals(2, json.getArray("data").length());
+      assertEquals(2, res.findArray("data").length());
       href = res.findString("data.0.href");
       assertTrue(href.endsWith("/orders/11058"));
    }
@@ -83,33 +84,31 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
 
-      json = service.get(url("orders?limit=5")).getJson();
-      int total = json.getArray("data").length();;
-      int iterations = 1;
-
-      int i = 0;
-      String next = null;
-      while (i < 20 && (next = json.findString("meta.next")) != null)
+      int total = 0;
+      int pages = 0;
+      String next = url("orders?limit=5");
+      do
       {
-         i++;
-         System.out.println(json.get("meta"));
-
-         assertEquals(5, json.getArray("data").length());
-         assertEquals(5, json.find("meta.pageSize"));
-         assertEquals(iterations, json.find("meta.pageNum"));
-
          res = service.get(next);
-         json = res.getJson();
+         
+         System.out.println(res.meta());
+         
+         if(res.data().size() == 0)
+            break;
+         
+         total += res.data().length();
+         pages += 1;
 
-         total += json.getArray("data").length();
-         iterations += 1;
+         next = res.findString("meta.next");
+
+         assertEquals(5, res.findArray("data").length());
+         assertEquals(5, res.find("meta.pageSize"));
       }
+      while (pages < 20 && next != null);
 
-      assertEquals(5, iterations);
+      assertEquals(5, pages);
       assertEquals(25, total);
-
    }
 
    //   @Test
