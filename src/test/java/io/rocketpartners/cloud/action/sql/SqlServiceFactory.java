@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
+import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -54,9 +55,9 @@ public class SqlServiceFactory
 
          //
          service.withApi("northwind")//
-                .withEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new SqlRestAction()).getApi()//
+                .withEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
                 .withDb(source).getApi()//
-                .withEndpoint("GET,PUT,POST,DELETE", "sql/", "*").withAction(new SqlRestAction()).getApi()//
+                .withEndpoint("GET,PUT,POST,DELETE", "sql/", "*").withAction(new RestAction()).getApi()//
                 .withDb(partial).getApi()//
                 .getService();
 

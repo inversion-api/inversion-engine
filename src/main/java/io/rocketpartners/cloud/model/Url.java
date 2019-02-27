@@ -85,7 +85,7 @@ public class Url
          url = "http://localhost" + (!url.startsWith("/") ? "/" : "") + url;
 
       original = url;
-      
+
       try
       {
          int queryIndex = url.indexOf('?');

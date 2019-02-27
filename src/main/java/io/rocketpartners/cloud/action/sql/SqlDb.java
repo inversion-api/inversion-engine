@@ -38,8 +38,11 @@ import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Relationship;
+import io.rocketpartners.cloud.model.Request;
+import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
@@ -134,6 +137,87 @@ public class SqlDb extends Db<SqlDb>
       {
          //pool.close();
       }
+   }
+
+   @Override
+   public Results<Map<String, Object>> select(Request req, Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      Collection collection = null;
+      try
+      {
+         collection = req.getCollection();
+      }
+      catch (ApiException e)
+      {
+         // need to try catch this because getCollection throws an exception if the collection isn't found
+         // but not having a collection isn't always an error in this handler because a previous handler 
+         // like the SqlSuggestHandler or ScriptHandler may have set the "sql" chain param. 
+      }
+
+      String dbname = (String) req.getChain().get("db");
+      SqlDb db = (SqlDb) (collection != null ? collection.getDb() : api.getDb(dbname));
+      if (db == null)
+      {
+         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
+      }
+
+      Entity entity = collection != null ? collection.getEntity() : null;
+      Table tbl = entity != null ? entity.getTable() : null;
+
+      String sql = (String) req.getChain().remove("select");
+      if (Utils.empty(sql))
+         sql = " SELECT * FROM " + tbl.getName();
+
+      SqlQuery query = new SqlQuery(table, columnMappedTerms);
+      query.withSelectSql(sql);
+      query.withDb(db);
+
+      return query.doSelect();
+
+   }
+
+   @Override
+   public String upsert(Request request, Table table, Map<String, Object> row) throws Exception
+   {
+      if (isType("mysql"))
+      {
+         return mysqlUpsert(request, table, row);
+      }
+      else if (isType("h2"))
+      {
+         return h2Upsert(request, table, row);
+      }
+      else
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
+      }
+   }
+
+   public String mysqlUpsert(Request request, Table table, Map<String, Object> row) throws Exception
+   {
+      return null;
+   }
+
+   public String h2Upsert(Request request, Table table, Map<String, Object> row) throws Exception
+   {
+      String keyCol = table.getKeyName();
+      Object key = row.get(keyCol);
+
+      SqlUtils.upsert(getConnection(), table.getName(), keyCol, row);
+      Object scopeIdentity = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
+
+      key = key == null && scopeIdentity != null ? scopeIdentity : key;
+
+      return key != null ? key.toString() : null;
+   }
+
+   public void delete(Request request, Table table, String entityKey) throws Exception
+   {
+      String key = table.getKeyName();
+      if (key == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "TODO: add support for multi part key deletions.");
+
+      SqlUtils.deleteRow(getConnection(), table.getName(), key, entityKey);
    }
 
    public Connection getConnection() throws ApiException

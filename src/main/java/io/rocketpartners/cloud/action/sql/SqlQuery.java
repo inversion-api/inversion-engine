@@ -18,10 +18,12 @@ package io.rocketpartners.cloud.action.sql;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -41,23 +43,12 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    String         selectSql   = null;
 
-   public SqlQuery(Collection collection)
+   public SqlQuery(Table table, List<Term> terms)
    {
-      super(collection);
+      super(table, terms);
    }
 
-   public SqlQuery(Collection collection, Object terms)
-   {
-      super(collection, terms);
-   }
-
-   public SqlQuery(Collection collection, Object terms, String selectSql)
-   {
-      this(collection, terms);
-      withSelectSql(selectSql);
-   }
-
-   protected TableResults doSelect() throws Exception
+   protected Results<Map<String, Object>> doSelect() throws Exception
    {
       SqlDb db = getDb();
       Connection conn = db.getConnection();
@@ -77,7 +68,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
          if (sql.indexOf("LIMIT ") > 0)
             sql = sql.substring(0, sql.indexOf("LIMIT "));
-         
+
          if (sql.indexOf("OFFSET ") > 0)
             sql = sql.substring(0, sql.indexOf("OFFSET "));
 
@@ -86,7 +77,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
       rowCount = SqlUtils.selectInt(conn, sql, getColValues());
 
-      return new TableResults(rows, rowCount);
+      return new Results(this, rowCount, rows);
    }
 
    @Override
@@ -523,9 +514,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (isNum(term))
          return false;
 
-      String token = term.getToken();
-
-      if (collection != null && collection.getAttribute(token) != null)
+      if (table.getColumn(term.getToken()) != null)
          return true;
 
       if (term.getParent() != null && term.getParent().indexOf(term) == 0)
@@ -539,14 +528,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return columnQuote + str + columnQuote;
    }
 
-   public String asCol(String attributeName)
+   public String asCol(String columnName)
    {
-      //      if (colNames.containsKey(col.toLowerCase()))
-      //         col = colNames.get(col.toLowerCase());
-
-      String columnName = getColumnName(attributeName);
-      columnName = columnName != null ? columnName : attributeName;
-
       return quoteCol(columnName);
    }
 

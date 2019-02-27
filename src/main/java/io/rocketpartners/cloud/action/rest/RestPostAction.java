@@ -16,13 +16,16 @@
 package io.rocketpartners.cloud.action.rest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
@@ -36,13 +39,28 @@ import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
-public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
+public class RestPostAction extends Action<RestPostAction>
 {
    protected boolean collapseAll    = false;
    protected boolean strictRest     = true;
    protected boolean expandResponse = true;
 
-   protected abstract String store(Request req, Collection collection, ObjectNode parent) throws Exception;
+   protected String upsert(Request req, Collection collection, ObjectNode node) throws Exception
+   {
+      Map<String, Object> mapped = new HashMap();
+      for (Attribute attr : collection.getEntity().getAttributes())
+      {
+         String attrName = attr.getName();
+         String colName = attr.getColumn().getName();
+         if (node.containsKey(attrName))
+         {
+            Object colValue = collection.getDb().cast(attr, node.get(attrName));
+            mapped.put(colName, colValue);
+         }
+      }
+
+      return collection.getDb().upsert(req, collection.getTable(), mapped);
+   }
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -57,7 +75,7 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
 
       Collection collection = req.getCollection();
       List<Change> changes = new ArrayList();
-      List<String> hrefs = new ArrayList();
+      List<String> entityKeys = new ArrayList();
       ObjectNode obj = req.getJson();
 
       if (obj == null)
@@ -82,8 +100,8 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
 
             for (ObjectNode child : (List<ObjectNode>) ((ArrayNode) obj))
             {
-               String href = store(req, collection, child);
-               hrefs.add(href);
+               String href = upsert(req, collection, child);
+               entityKeys.add(href);
             }
          }
          else
@@ -94,8 +112,8 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
             }
 
-            href = store(req, collection, obj);
-            hrefs.add(href);
+            href = upsert(req, collection, obj);
+            entityKeys.add(href);
          }
 
          res.withChanges(changes);
@@ -107,37 +125,39 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
          res.getJson().put("data", array);
 
          res.withStatus(SC.SC_201_CREATED);
-         StringBuffer buff = new StringBuffer(hrefs.get(0));
-         for (int i = 0; i < hrefs.size(); i++)
+         StringBuffer buff = new StringBuffer("");
+         for (int i = 0; i < entityKeys.size(); i++)
          {
-            String href = hrefs.get(i);
+            String entityKey = entityKeys.get(i);
+            
+            String href = Chain.buildLink(collection, entityKey, null);
 
             boolean added = false;
-            if (expandResponse)
-            {
-               Response resp = service.get(href);
-               if (resp != null)
-               {
-                  ObjectNode js = resp.getJson();
-                  if (js != null)
-                  {
-                     js = js.getNode("data");
-                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
-                     {
-                        array.add(((ArrayNode) js).get(0));
-                        added = true;
-                     }
-                  }
-                  else
-                  {
-                     System.out.println("what?");
-                  }
-               }
-               else
-               {
-                  System.out.println("what?");
-               }
-            }
+//            if (expandResponse)
+//            {
+//               Response resp = service.get(href);
+//               if (resp != null)
+//               {
+//                  ObjectNode js = resp.getJson();
+//                  if (js != null)
+//                  {
+//                     js = js.getNode("data");
+//                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
+//                     {
+//                        array.add(((ArrayNode) js).get(0));
+//                        added = true;
+//                     }
+//                  }
+//                  else
+//                  {
+//                     System.out.println("what?");
+//                  }
+//               }
+//               else
+//               {
+//                  System.out.println("what?");
+//               }
+//            }
 
             if (!added)
             {
@@ -281,10 +301,10 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
       return collapseAll;
    }
 
-   public T withCollapseAll(boolean collapseAll)
+   public RestPostAction withCollapseAll(boolean collapseAll)
    {
       this.collapseAll = collapseAll;
-      return (T) this;
+      return this;
    }
 
    public boolean isStrictRest()
@@ -292,10 +312,10 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
       return strictRest;
    }
 
-   public T withStrictRest(boolean strictRest)
+   public RestPostAction withStrictRest(boolean strictRest)
    {
       this.strictRest = strictRest;
-      return (T) this;
+      return this;
    }
 
    public boolean isExpandResponse()
@@ -303,10 +323,10 @@ public abstract class RestPostAction<T extends RestPostAction> extends Action<T>
       return expandResponse;
    }
 
-   public T withExpandResponse(boolean expandResponse)
+   public RestPostAction withExpandResponse(boolean expandResponse)
    {
       this.expandResponse = expandResponse;
-      return (T) this;
+      return this;
    }
 
 }

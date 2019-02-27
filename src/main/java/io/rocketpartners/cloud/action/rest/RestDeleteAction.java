@@ -17,7 +17,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
 
-public abstract class RestDeleteAction extends Action
+public class RestDeleteAction extends Action<RestDeleteAction>
 {
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -27,14 +27,14 @@ public abstract class RestDeleteAction extends Action
       String subcollectionKey = req.getSubCollectionKey();
       ObjectNode json = req.getJson();
 
+      if (!Utils.empty(req.getQuery()))
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "Query strings are not supported for delete operations at this time.");
+
       if ((Utils.empty(entityKey) && json == null) || (!Utils.empty(entityKey) && json != null))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "DELETE expects an entity url or a JSON array of entity urls but not both at the same time");
 
       if (!Utils.empty(subcollectionKey))
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A subcollection key is not valid for a DELETE request");
-
-      if (!Utils.empty(entityKey) && !Utils.empty(req.getQuery()))
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Query strings are not supported for delete operations at this time.");
 
       if (req.getJson() != null)
       {
@@ -54,7 +54,9 @@ public abstract class RestDeleteAction extends Action
 
             String path = req.getUrl().toString();
             if (path.indexOf("?") > 0)
+            {
                path = path.substring(0, path.indexOf("?") - 1);
+            }
 
             if (!url.toLowerCase().startsWith(path.toLowerCase()))
             {
@@ -66,7 +68,7 @@ public abstract class RestDeleteAction extends Action
          for (String url : urls)
          {
             Response r = service.delete(url);
-            if (r.getStatusCode() != 200)
+            if (r.getStatusCode() != 204)
             {
                throw new ApiException("Nested delete url: " + url + " failed!");
             }
@@ -74,11 +76,11 @@ public abstract class RestDeleteAction extends Action
       }
       else
       {
-         deleteEntity(req, req.getCollection(), req.getEntityKey());
+         Collection col = req.getCollection();
+         col.getDb().delete(req, col.getTable(), req.getEntityKey());
+
          res.withStatus(SC.SC_204_NO_CONTENT);
       }
    }
-
-   protected abstract void deleteEntity(Request request, Collection collection, String entityKey) throws Exception;
 
 }

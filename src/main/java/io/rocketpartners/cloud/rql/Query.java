@@ -16,22 +16,14 @@
 package io.rocketpartners.cloud.rql;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
-import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
-import io.rocketpartners.cloud.model.Entity;
-import io.rocketpartners.cloud.model.ObjectNode;
-import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.SqlUtils;
 
 /**
  * 
@@ -46,18 +38,17 @@ import io.rocketpartners.cloud.utils.SqlUtils;
  */
 public class Query<T extends Query, D extends Db, E extends Table, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
-   protected D              db         = null;
-   protected Collection     collection = null;
-   protected E              table      = null;
+   protected D              db     = null;
+   protected E              table  = null;
 
-   protected S              select     = null;
-   protected W              where      = null;
-   protected R              group      = null;
-   protected O              order      = null;
-   protected G              page       = null;
+   protected S              select = null;
+   protected W              where  = null;
+   protected R              group  = null;
+   protected O              order  = null;
+   protected G              page   = null;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KeyValue> values     = new ArrayList();
+   protected List<KeyValue> values = new ArrayList();
 
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
@@ -100,21 +91,16 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    //------------------------------------------------------------------
    //------------------------------------------------------------------
 
-   public Query(Collection collection)
-   {
-      this(collection, null);
-   }
-
-   public Query(Collection collection, Object terms)
+   public Query(E table)
    {
       super(null);
+      withTable(table);
+   }
 
-      if (collection != null)
-      {
-         withCollection(collection);
-      }
-
-      //      this.table = table;
+   public Query(E table, Object terms)
+   {
+      super(null);
+      withTable(table);
 
       //order matters when multiple clauses can accept the same term 
       where();
@@ -127,46 +113,46 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
          withTerms(terms);
    }
 
-   public QueryResults runQuery() throws Exception
-   {
-      TableResults tableResults = doSelect();
-      QueryResults queryResutls = transformResults(tableResults);
-      return queryResutls;
-   }
-
-   protected TableResults doSelect() throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You must implement Query.doSelect()");
-   }
-
-   protected QueryResults transformResults(TableResults tableResults) throws Exception
-   {
-      QueryResults queryResults = new QueryResults(this, tableResults.getRowCount());
-
-      for (Map row : tableResults)
-      {
-         queryResults.withRow(transformRow(row));
-      }
-
-      return queryResults;
-   }
-
-   protected ObjectNode transformRow(Map<String, Object> row)
-   {
-      ObjectNode node = new ObjectNode();
-      if (collection == null)
-         return new ObjectNode(row);
-
-      for (Attribute attr : collection.getEntity().getAttributes())
-      {
-         String attrName = attr.getName();
-         String colName = attr.getColumn().getName();
-         Object val = row.get(colName);
-         node.put(attrName, val);
-      }
-
-      return node;
-   }
+   //   public QueryResults runQuery() throws Exception
+   //   {
+   //      TableResults tableResults = doSelect();
+   //      QueryResults queryResutls = transformResults(tableResults);
+   //      return queryResutls;
+   //   }
+   //
+   //   protected TableResults doSelect() throws Exception
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You must implement Query.doSelect()");
+   //   }
+   //
+   //   protected QueryResults transformResults(TableResults tableResults) throws Exception
+   //   {
+   //      QueryResults queryResults = new QueryResults(this, tableResults.getRowCount());
+   //
+   //      for (Map row : tableResults)
+   //      {
+   //         queryResults.withRow(transformRow(row));
+   //      }
+   //
+   //      return queryResults;
+   //   }
+   //
+   //   protected ObjectNode transformRow(Map<String, Object> row)
+   //   {
+   //      ObjectNode node = new ObjectNode();
+   //      if (collection == null)
+   //         return new ObjectNode(row);
+   //
+   //      for (Attribute attr : collection.getEntity().getAttributes())
+   //      {
+   //         String attrName = attr.getName();
+   //         String colName = attr.getColumn().getName();
+   //         Object val = row.get(colName);
+   //         node.put(attrName, val);
+   //      }
+   //
+   //      return node;
+   //   }
 
    @Override
    public Parser getParser()
@@ -255,55 +241,55 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   public Collection collection()
-   {
-      return collection;
-   }
-
-   public T withCollection(Collection collection)
-   {
-      this.collection = collection;
-
-      if (collection != null)
-      {
-         Entity entity = collection.getEntity();
-         if (entity != null)
-         {
-            Table table = entity.getTable();
-            withTable((E) table);
-         }
-      }
-
-      return r();
-   }
-
-   public String getColumnName(String attributeName)
-   {
-      String name = attributeName;
-      if (collection != null)
-      {
-         Attribute attr = collection.getAttribute(attributeName);
-         if (attr != null)
-            name = attr.getColumn().getName();
-      }
-
-      if (name == null)
-         name = attributeName;
-
-      return name;
-   }
-
-   public String getAttributeName(String columnName)
-   {
-      String name = columnName;
-      if (collection != null)
-         name = collection.getAttributeName(columnName);
-
-      if (name == null)
-         name = columnName;
-
-      return name;
-   }
+   //   public Collection collection()
+   //   {
+   //      return collection;
+   //   }
+   //
+   //   public T withCollection(Collection collection)
+   //   {
+   //      this.collection = collection;
+   //
+   //      if (collection != null)
+   //      {
+   //         Entity entity = collection.getEntity();
+   //         if (entity != null)
+   //         {
+   //            Table table = entity.getTable();
+   //            withTable((E) table);
+   //         }
+   //      }
+   //
+   //      return r();
+   //   }
+   //
+   //   public String getColumnName(String attributeName)
+   //   {
+   //      String name = attributeName;
+   //      if (collection != null)
+   //      {
+   //         Attribute attr = collection.getAttribute(attributeName);
+   //         if (attr != null)
+   //            name = attr.getColumn().getName();
+   //      }
+   //
+   //      if (name == null)
+   //         name = attributeName;
+   //
+   //      return name;
+   //   }
+   //
+   //   public String getAttributeName(String columnName)
+   //   {
+   //      String name = columnName;
+   //      if (collection != null)
+   //         name = collection.getAttributeName(columnName);
+   //
+   //      if (name == null)
+   //         name = columnName;
+   //
+   //      return name;
+   //   }
 
    public int getNumValues()
    {
@@ -316,57 +302,9 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   public Object cast(String column, Object value)
+   protected T withColValue(String columnName, Object value)
    {
-      return cast0(collection.getTable().getColumn(column).getType(), value);
-   }
-
-   public Object cast(Attribute attr, Object value)
-   {
-      return cast0(attr.getType(), value);
-   }
-
-   protected Object cast0(String type, Object value)
-   {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-            return value.toString();
-
-         switch (type)
-         {
-            case "S":
-               return value.toString();
-
-            case "N":
-               return Long.parseLong(value.toString());
-
-            case "BOOL":
-               return Boolean.parseBoolean(value.toString());
-
-            default :
-               return SqlUtils.cast(value, type);
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-      }
-   }
-
-   protected T withColValue(String attributeName, Object value)
-   {
-      String columnName = getColumnName(attributeName);
-
-      Attribute attr = collection.getAttribute(attributeName);
-      if (attr != null)
-      {
-         value = db.cast(attr, value);
-      }
-
+      value = db.cast(table.getColumn(columnName), value);
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }
@@ -390,108 +328,6 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    public KeyValue<String, String> getColValue(int index)
    {
       return values.get(index);
-   }
-
-   public static class QueryResults extends Results<ObjectNode, QueryResults>
-   {
-      Query query = null;
-
-      public QueryResults(Query query, int rowCount)
-      {
-         this.query = query;
-         this.rowCount = rowCount;
-      }
-
-      public Query getQuery()
-      {
-         return query;
-      }
-
-   }
-
-   public static class TableResults extends Results<Map<String, Object>, TableResults>
-   {
-      public TableResults()
-      {
-
-      }
-
-      public TableResults(List rows, int rowCount)
-      {
-         super();
-         this.rows = (List<Map<String, Object>>) rows;
-         this.rowCount = rowCount;
-      }
-   }
-
-   private static class Results<M extends Map, T extends Results> implements Iterable<M>
-   {
-      List<M>    rows     = new ArrayList();
-      List<Term> next     = new ArrayList();
-      int        rowCount = -1;
-
-      public Results()
-      {
-
-      }
-
-      @Override
-      public Iterator<M> iterator()
-      {
-         return rows.iterator();
-      }
-
-      public int size()
-      {
-         return rows.size();
-      }
-
-      public List<M> getRows()
-      {
-         return rows;
-      }
-
-      public T withRows(List<M> rows)
-      {
-         this.rows = rows;
-         return (T) this;
-      }
-
-      public T withRow(M row)
-      {
-         rows.add(row);
-         return (T) this;
-      }
-
-      public List<Term> getNext()
-      {
-         return new ArrayList(next);
-      }
-
-      public T withNext(Term next)
-      {
-         this.next.add(next);
-         return (T) this;
-      }
-
-      public T withNext(List<Term> next)
-      {
-         if (next != null)
-            this.next.addAll(next);
-         return (T) this;
-      }
-
-      public int getRowCount()
-      {
-         return rowCount;
-      }
-
-      public T withRowCount(int rowCount)
-      {
-         this.rowCount = rowCount;
-         return (T) this;
-      }
-
    }
 
 }

@@ -3,7 +3,8 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Column;
+import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
@@ -68,9 +70,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
    Term                                             partKey     = null;
    Term                                             sortKey     = null;
 
-   public DynamoDbQuery(Collection collection, Object terms)
+   public DynamoDbQuery(Table table, List<Term> terms)
    {
-      super(collection, terms);
+      super(table, terms);
       where().clearFunctions();
       where().withFunctions("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "and", "or");
    }
@@ -86,10 +88,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       return this;
    }
 
-   protected TableResults doSelect() throws Exception
+   protected Results<Map<String, Object>> doSelect() throws Exception
    {
       Index dynamoIndex = null;
-      TableResults result = new TableResults();
+      Results result = new Results(this);
 
       DynamoDbIndex index = getIndex();
       if (index != null && !index.isPrimaryIndex())
@@ -116,7 +118,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             result.withRow(item.asMap());
          }
 
-         result.withNext(asTerms(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
+         result.withNext(after(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
       }
       else if (spec instanceof ScanSpec)
       {
@@ -127,23 +129,24 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             result.withRow(item.asMap());
          }
 
-         result.withNext(asTerms(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey()));
+         result.withNext(after(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey()));
       }
 
       return result;
    }
 
-   protected List<Term> asTerms(java.util.Map<String, AttributeValue> attrs)
+   protected List<Term> after(java.util.Map<String, AttributeValue> attrs)
    {
-      List terms = new ArrayList();
-      if (attrs != null)
+      if (attrs == null)
+         return Collections.EMPTY_LIST;
+
+      Term after = Term.term(null, "after");
+      for (String key : attrs.keySet())
       {
-         for (String key : attrs.keySet())
-         {
-            terms.add(Term.term(null, "eq", key, getValue(attrs.get(key))));
-         }
+         after.withTerm(Term.term(after, key));
+         after.withTerm(Term.term(after, getValue(attrs.get(key)).toString()));
       }
-      return terms;
+      return Arrays.asList(after);
    }
 
    protected Object getValue(AttributeValue v)
@@ -194,17 +197,17 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          {
             DynamoDbIndex index = (DynamoDbIndex) idx;
 
-            String partAttr = collection.getAttributeName(index.getHashKey().getName());
-            String sortAttr = index.getSortKey() != null ? collection.getAttributeName(index.getSortKey().getName()) : null;
+            String partCol = index.getHashKey().getName();
+            String sortCol = index.getSortKey() != null ? index.getSortKey().getName() : null;
 
-            Term partKey = findTerm(partAttr, "eq");
+            Term partKey = findTerm(partCol, "eq");
 
             if (partKey == null)
                continue;
 
-            Term sortKey = findTerm(sortAttr, "eq");
+            Term sortKey = findTerm(sortCol, "eq");
             if (sortKey == null)
-               sortKey = findTerm(sortAttr, "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
+               sortKey = findTerm(sortCol, "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
 
             if (sortKey == null && foundSortKey != null)
                continue;
@@ -267,11 +270,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
       if (index != null && index.isPrimaryIndex() && partKey != null && sortKey != null && sortKey.hasToken("eq") && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
       {
-         String partKeyCol = getColumnName(partKey.getToken(0));
+         String partKeyCol = partKey.getToken(0);
          String type = table.getColumn(partKeyCol).getType();
          Object partKeyVal = db().cast(type, partKey.getToken(1));
 
-         String sortKeyCol = getColumnName(sortKey.getToken(0));
+         String sortKeyCol = sortKey.getToken(0);
          Object sortKeyVal = db.cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
 
          Chain.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
@@ -326,6 +329,29 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          querySpec.withMaxResultSize(pageSize);
          querySpec.withScanIndexForward(order().isAsc(0));
 
+         Term after = page().getAfter();
+         if (after != null)
+         {
+            DynamoDbIndex index = (DynamoDbIndex) table().getPrimaryIndex();
+            Column afterHashKeyCol = table().getColumn(after.getToken(0));
+            Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+
+            if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+
+            Object hashValue = db.cast(afterHashKeyCol, after.getToken(0));
+            Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(1)) : null;
+
+            if (afterSortKeyCol != null)
+            {
+               querySpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue, afterSortKeyCol.getName(), sortValue);
+            }
+            else
+            {
+               querySpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue);
+            }
+         }
+
          if (!Utils.empty(projectionExpression))
          {
             querySpec.withProjectionExpression(projectionExpression);
@@ -358,6 +384,29 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          ScanSpec scanSpec = new ScanSpec();
          scanSpec.withMaxPageSize(pageSize);
          scanSpec.withMaxResultSize(pageSize);
+
+         Term after = page().getAfter();
+         if (after != null)
+         {
+            DynamoDbIndex index = (DynamoDbIndex) table().getPrimaryIndex();
+            Column afterHashKeyCol = table().getColumn(after.getToken(0));
+            Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+
+            if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+
+            Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
+            Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
+
+            if (afterSortKeyCol != null)
+            {
+               scanSpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue, afterSortKeyCol.getName(), sortValue);
+            }
+            else
+            {
+               scanSpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue);
+            }
+         }
 
          if (!Utils.empty(projectionExpression))
          {
@@ -405,7 +454,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       }
       else if (op != null)
       {
-         String col = getColumnName(term.getToken(0));
+         String col = term.getToken(0);
 
          String nameKey = "#var" + (nameMap.size() + 1);
          nameMap.put(nameKey, col);
@@ -419,7 +468,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       }
       else if (func != null)
       {
-         String col = getColumnName(term.getToken(0));
+         String col = term.getToken(0);
          String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
@@ -429,8 +478,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       }
       else if (term.isLeaf())
       {
-         String attr = term.getParent().getToken(0);
-         String colName = getColumnName(attr);
+         String colName = term.getParent().getToken(0);
          String type = table.getColumn(colName).getType();
          Object value = db.cast(type, term.getToken());
 

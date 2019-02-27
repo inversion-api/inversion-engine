@@ -57,7 +57,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
 
    public ElasticsearchQuery(Collection collection, Object terms)
    {
-      super(collection);
+      super(null, terms);
       withTerms(terms);
    }
 

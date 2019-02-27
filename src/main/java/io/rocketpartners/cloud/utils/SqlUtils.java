@@ -192,8 +192,7 @@ public class SqlUtils
                   //do nothing
                }
             }
-
-            if (isUpdate(sql))
+            else if (isUpdate(sql))
             {
                try
                {
@@ -418,7 +417,8 @@ public class SqlUtils
 
    public static boolean isInsert(String sql)
    {
-      return sql.toLowerCase().trim().startsWith("insert ");
+      String lc = sql.toLowerCase().trim();
+      return lc.startsWith("insert ") || lc.startsWith("merge ");
    }
 
    public static String buildInsertSQL(Connection conn, String tableName, Object[] columnNameArray)
@@ -673,6 +673,30 @@ public class SqlUtils
          close(stmt);
          notifyAfter("update", sql.toString(), o, ex, null);
       }
+
+   }
+
+   /*
+   +------------------------------------------------------------------------------+
+   | UPSERT UTILS
+   +------------------------------------------------------------------------------+
+    */
+
+   public static Object upsert(Connection conn, String tableName, String keyCol, Map<String, Object> row) throws Exception
+   {
+      String sql = "";
+
+      List cols = new ArrayList();
+      List vals = new ArrayList();
+      for (String col : row.keySet())
+      {
+         cols.add(col);
+         vals.add(row.get(col));
+      }
+
+      sql += " MERGE INTO " + quote(conn, tableName) + " (" + SqlUtils.getColumnStr(conn, cols) + ")  KEY(" + keyCol + ") VALUES (" + getQuestionMarkStr(vals.size()) + ")";
+
+      return execute(conn, sql, vals);
 
    }
 

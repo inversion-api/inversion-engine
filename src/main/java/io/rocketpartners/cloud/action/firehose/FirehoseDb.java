@@ -15,16 +15,23 @@
  */
 package io.rocketpartners.cloud.action.firehose;
 
+import java.util.List;
+import java.util.Map;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
 
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.Request;
+import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Query;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class FirehoseDb extends Db
+public class FirehoseDb extends Db<FirehoseDb>
 {
    /**
     * A CSV of pipe delimited collection name to table name pairs.
@@ -46,6 +53,21 @@ public class FirehoseDb extends Db
    public FirehoseDb()
    {
       this.withType("firehose");
+   }
+
+   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      return null;
+   }
+
+   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
+   {
+      return null;
+   }
+
+   public void delete(Request request, Table table, String entityKey) throws Exception
+   {
+
    }
 
    @Override

@@ -27,9 +27,12 @@ import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.HttpUtils;
 
@@ -48,6 +51,21 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
       reflectDb();
       configApi();
+   }
+
+   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      return null;
+   }
+
+   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
+   {
+      return null;
+   }
+
+   public void delete(Request request, Table table, String entityKey) throws Exception
+   {
+
    }
 
    private void reflectDb()
@@ -92,35 +110,35 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    private void configApi()
    {
-//      for (Table t : getTables())
-//      {
-//         List<Column> cols = t.getColumns();
-//         Collection collection = new Collection();
-//
-//         collection.withName(beautifyCollectionName(t.getName()));
-//
-//         Entity entity = new Entity();
-//         entity.withTable(t);
-//         entity.withHint(t.getName());
-//         entity.withCollection(collection);
-//
-//         collection.withEntity(entity);
-//
-//         for (Column col : cols)
-//         {
-//            Attribute attr = new Attribute();
-//            attr.withEntity(entity);
-//            attr.withName(col.getName());
-//            attr.withColumn(col);
-//            attr.withHint(col.getTable().getName() + "." + col.getName());
-//            attr.withType(col.getType());
-//
-//            entity.withAttribute(attr);
-//         }
-//
-//         api.withCollection(collection);
-//         collection.withApi(api);
-//      }
+      //      for (Table t : getTables())
+      //      {
+      //         List<Column> cols = t.getColumns();
+      //         Collection collection = new Collection();
+      //
+      //         collection.withName(beautifyCollectionName(t.getName()));
+      //
+      //         Entity entity = new Entity();
+      //         entity.withTable(t);
+      //         entity.withHint(t.getName());
+      //         entity.withCollection(collection);
+      //
+      //         collection.withEntity(entity);
+      //
+      //         for (Column col : cols)
+      //         {
+      //            Attribute attr = new Attribute();
+      //            attr.withEntity(entity);
+      //            attr.withName(col.getName());
+      //            attr.withColumn(col);
+      //            attr.withHint(col.getTable().getName() + "." + col.getName());
+      //            attr.withType(col.getType());
+      //
+      //            entity.withAttribute(attr);
+      //         }
+      //
+      //         api.withCollection(collection);
+      //         collection.withApi(api);
+      //      }
    }
 
    /**

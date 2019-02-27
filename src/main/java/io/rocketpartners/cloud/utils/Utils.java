@@ -1953,6 +1953,9 @@ public class Utils
             String[] pairs = query.split("&");
             for (String pair : pairs)
             {
+               if(pair.length() == 0)
+                  continue;
+               
                int idx = pair.indexOf("=");
                if (idx > 0)
                {

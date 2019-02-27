@@ -33,14 +33,13 @@ public class Entity
 
    protected boolean                 exclude       = false;
 
-//   public Entity()
-//   {
-//      System.out.println("Entity()");
-//   }
+   //   public Entity()
+   //   {
+   //      System.out.println("Entity()");
+   //   }
 
    protected Entity(Collection collection, Table table)
    {
-      System.out.println("Entity(" + collection.getName() + ", " + table.getName() + ")");
       withCollection(collection);
       withTable(table);
    }
@@ -98,8 +97,6 @@ public class Entity
     */
    public Entity withCollection(Collection collection)
    {
-      if(collection == null)
-         System.out.println("adfasdf");
       this.collection = collection;
       return this;
    }
@@ -240,87 +237,6 @@ public class Entity
    public boolean hasUniqueKey()
    {
       return table.getPrimaryIndex() != null;
-   }
-
-   public String encodeKey(ObjectNode node)
-   {
-      Index index = table.getPrimaryIndex();
-      if (index == null)
-         return null;
-
-      StringBuffer key = new StringBuffer("");
-      for (Column col : index.getColumns())
-      {
-         if(collection == null || col == null)
-            System.out.println("adfasdf");
-         String attr = collection.getAttributeName(col.getName());
-         String val = node.getString(attr);
-         if (Utils.empty(val))
-            throw new ApiException("Unable to encode entity key because column '" + col + "' value is empty or can't be mapped to an attribute");
-
-         val = val.replace("\\", "\\\\").replace("~", "\\~");
-
-         if (key.length() > 0)
-            key.append("~");
-
-         key.append(val);
-      }
-
-      return key.toString();
-   }
-
-   public List<Term> decodeKey(String inKey)
-   {
-      String entityKey = inKey;
-      Index index = table.getPrimaryIndex();
-      if (index == null)
-         throw new ApiException("Table '" + table + "' does not have a unique index");
-
-      List<String> splits = new ArrayList();
-      List<Column> columns = new ArrayList(index.getColumns());
-
-      boolean escaped = false;
-      for (int i = 0; i < entityKey.length(); i++)
-      {
-         char c = entityKey.charAt(i);
-         switch (c)
-         {
-            case '\\':
-               escaped = !escaped;
-               continue;
-            case '~':
-               if (!escaped)
-               {
-                  splits.add(entityKey.substring(0, i));
-                  entityKey = entityKey.substring(i+1, entityKey.length());
-                  i = 0;
-                  continue;
-               }
-            default :
-               escaped = false;
-         }
-      }
-      if (entityKey.length() > 0)//won't this always happen?
-         splits.add(entityKey);
-
-      if (splits.size() == 0 || splits.size() != columns.size())
-         throw new ApiException("Supplied entity key '" + entityKey + "' has " + splits.size() + "' parts but the primary index for table '" + table + "' has " + columns.size());
-
-      List<Term> terms = new ArrayList();
-
-      for (int i = 0; i < splits.size(); i++)
-      {
-         String value = splits.get(i).replace("\\\\", "\\").replace("\\~", "~");
-         String colName = columns.get(i).getName();
-         String attrName = collection.getAttributeName(colName);
-
-         if (value.length() == 0 || Utils.empty(attrName))
-            throw new ApiException("Error mapping entity key '" + entityKey + "'");
-
-         terms.add(Term.term(null, "eq", attrName, value));
-      }
-
-      return terms;
    }
 
 }

@@ -19,6 +19,13 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+
+import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Table
 {
@@ -167,6 +174,94 @@ public class Table
    public void removeColumn(Column column)
    {
       columns.remove(column);
+   }
+
+   public String getKeyName()
+   {
+      Index index = getPrimaryIndex();
+      if (index != null && index.getColumns().size() == 1)
+         return index.getColumns().get(0).getName();
+
+      return null;
+   }
+
+   public String encodeKey(Map<String, Object> values)
+   {
+      Index index = getPrimaryIndex();
+      if (index == null)
+         return null;
+
+      StringBuffer key = new StringBuffer("");
+      for (Column col : index.getColumns())
+      {
+         Object val = values.get(col.getName());
+         if (Utils.empty(val))
+            return null;
+
+         val = val.toString().replace("\\", "\\\\").replace("~", "\\~");
+
+         if (key.length() > 0)
+            key.append("~");
+
+         key.append(val);
+      }
+
+      return key.toString();
+   }
+
+   public List<KeyValue<String, Object>> decodeKey(String inKey)
+   {
+      String entityKey = inKey;
+      Index index = getPrimaryIndex();
+      if (index == null)
+         throw new ApiException("Table '" + this.getName() + "' does not have a unique index");
+
+      List<String> splits = new ArrayList();
+      List<Column> columns = new ArrayList(index.getColumns());
+
+      boolean escaped = false;
+      for (int i = 0; i < entityKey.length(); i++)
+      {
+         char c = entityKey.charAt(i);
+         switch (c)
+         {
+            case '\\':
+               escaped = !escaped;
+               continue;
+            case '~':
+               if (!escaped)
+               {
+                  splits.add(entityKey.substring(0, i));
+                  entityKey = entityKey.substring(i + 1, entityKey.length());
+                  i = 0;
+                  continue;
+               }
+            default :
+               escaped = false;
+         }
+      }
+      if (entityKey.length() > 0)//won't this always happen?
+         splits.add(entityKey);
+
+      if (splits.size() == 0 || splits.size() != columns.size())
+         throw new ApiException("Supplied entity key '" + inKey + "' has " + splits.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
+
+      List<KeyValue<String, Object>> terms = new ArrayList();
+
+      for (int i = 0; i < splits.size(); i++)
+      {
+         Column column = columns.get(i);
+         Object value = splits.get(i).replace("\\\\", "\\").replace("\\~", "~");
+
+         if (((String) value).length() == 0)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKey + "'");
+
+         value = getDb().cast(column, value);
+
+         terms.add(new DefaultKeyValue(columns.get(i).getName(), value));
+      }
+
+      return terms;
    }
 
    public Index getPrimaryIndex()

@@ -397,7 +397,7 @@ public class TestSqlQuery extends TestCase
          RqlTest test = tests.get(j);
          try
          {
-            SqlQuery query = new SqlQuery(null, test.rql, test.select);
+            SqlQuery query = null;//new SqlQuery(null, test.rql, test.select);
             query.withColumnQuote('`');
 
             String output = query.getDynamicStmt();

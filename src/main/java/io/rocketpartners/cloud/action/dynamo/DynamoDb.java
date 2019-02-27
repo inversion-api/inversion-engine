@@ -19,25 +19,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.KeyValue;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
-import io.rocketpartners.cloud.model.Attribute;
+import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
+import io.rocketpartners.cloud.model.Request;
+import io.rocketpartners.cloud.model.Results;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
@@ -77,6 +84,44 @@ public class DynamoDb extends Db<DynamoDb>
       this();
       this.name = name;
       this.includeTables = includeTables;
+   }
+
+   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
+      return query.doSelect();
+   }
+
+   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
+   {
+      String key = table.encodeKey(values);
+      if (key == null)
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to upsert because the key can not be found in the value supplied: " + values);
+
+      com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
+      Item item = Item.fromMap(values);
+      PutItemSpec putItemSpec = new PutItemSpec().withItem(item);
+      dynamoTable.putItem(putItemSpec);
+
+      return key;
+   }
+
+   public void delete(Request request, Table table, String entityKey) throws Exception
+   {
+      List<KeyValue<String, Object>> key = table.decodeKey(entityKey);
+
+      if (key.size() == 1)
+      {
+         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue());
+      }
+      else if (key.size() == 2)
+      {
+         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue(), key.get(1).getKey(), key.get(1).getValue());
+      }
+      else
+      {
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + entityKey + "'");
+      }
    }
 
    @Override
@@ -247,6 +292,11 @@ public class DynamoDb extends Db<DynamoDb>
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Collection collection)
    {
       return getDynamoTable(collection.getTable().getName());
+   }
+
+   public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Table table)
+   {
+      return getDynamoTable(table.getName());
    }
 
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)

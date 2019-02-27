@@ -75,7 +75,10 @@ public class Response
    public Response statusOk()
    {
       if (statusCode < 200 || statusCode > 299)
+      {
+         System.err.println(debug);
          throw new ApiException(statusCode + "", statusError);
+      }
 
       return this;
    }

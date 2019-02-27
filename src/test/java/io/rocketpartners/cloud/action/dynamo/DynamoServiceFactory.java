@@ -3,13 +3,13 @@ package io.rocketpartners.cloud.action.dynamo;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.service.Service.ServiceListener;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoServiceFactory
@@ -41,7 +41,7 @@ public class DynamoServiceFactory
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       final Api api = service.getApi(apiCode);
       api.withDb(dynamoDb);
-      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
+      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new RestAction());
 
       dynamoDb.startup();
 
@@ -114,7 +114,7 @@ public class DynamoServiceFactory
       {
          ObjectNode js = (ObjectNode) o;
          js.put("type", "ORDER");
-         Utils.assertEq(200, service.post("northwind/dynamodb/orders", js).getStatusCode());
+         Utils.assertEq(201, service.post("northwind/dynamodb/orders", js).getStatusCode());
       }
       //            }
       //

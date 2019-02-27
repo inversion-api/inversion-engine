@@ -139,7 +139,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
          System.out.println(res);
 
          assertEquals(5, res.findArray("data").length());
-         assertEquals(5, res.findArray("meta.pageSize"));
+         assertEquals(5, res.find("meta.pageSize"));
          //assertEquals(iterations, res.find("meta.pageNum"));
       }
       while (iterations < 20 && next != null);

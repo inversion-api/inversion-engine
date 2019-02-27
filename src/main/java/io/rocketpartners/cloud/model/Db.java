@@ -18,10 +18,12 @@ package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
@@ -65,6 +67,9 @@ public abstract class Db<T extends Db>
 
          switch (type)
          {
+            case "S":
+               return value.toString();
+
             case "N":
                return Long.parseLong(value.toString());
 
@@ -81,13 +86,11 @@ public abstract class Db<T extends Db>
       }
    }
 
-   //   public abstract Q buildQuery(Request request);
-   //
-   //   public abstract TableResults get(Table table, Q query);
-   //
-   //   public abstract TableResults post(Table table, Map<String, Object> values);
-   //
-   //   public abstract void delete(Table table, String href);
+   public abstract Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception;
+
+   public abstract String upsert(Request request, Table table, Map<String, Object> values) throws Exception;
+
+   public abstract void delete(Request request, Table table, String entityKey) throws Exception;
 
    public synchronized Db startup()
    {
@@ -217,12 +220,11 @@ public abstract class Db<T extends Db>
 
    public boolean isType(String... types)
    {
-      if (this.type == null)
-         return false;
+      String type = getType();
 
-      for (String type : types)
+      for (String t : types)
       {
-         if (this.type.equalsIgnoreCase(type))
+         if (type.equalsIgnoreCase(t))
             return true;
       }
       return false;

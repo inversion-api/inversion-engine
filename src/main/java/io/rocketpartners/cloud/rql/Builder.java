@@ -243,6 +243,13 @@ public class Builder<T, P extends Builder>
          {
             withTerm((Term) term);
          }
+         else if (term instanceof Collection)
+         {
+            for (Object t : ((Collection) term))
+            {
+               withTerms(t);
+            }
+         }
          else if (term instanceof Map)
          {
             Map<String, Object> map = (Map) term;
