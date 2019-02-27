@@ -113,8 +113,17 @@ public class DynamoServiceFactory
       for (Object o : json.getArray("data"))
       {
          ObjectNode js = (ObjectNode) o;
+         
+         js.remove("href");
          js.put("type", "ORDER");
-         Utils.assertEq(201, service.post("northwind/dynamodb/orders", js).getStatusCode());
+         res = service.post("northwind/dynamodb/orders", js);
+         Utils.assertEq(201, res.getStatusCode());
+
+         res = service.get(res.findString("data.0.href"));
+
+         System.out.println(js);
+         System.out.println(res.find("data.0"));
+
       }
       //            }
       //

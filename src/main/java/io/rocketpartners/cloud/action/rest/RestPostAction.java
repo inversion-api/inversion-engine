@@ -17,6 +17,7 @@ package io.rocketpartners.cloud.action.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,14 +49,27 @@ public class RestPostAction extends Action<RestPostAction>
    protected String upsert(Request req, Collection collection, ObjectNode node) throws Exception
    {
       Map<String, Object> mapped = new HashMap();
+      Set copied = new HashSet();
+
       for (Attribute attr : collection.getEntity().getAttributes())
       {
          String attrName = attr.getName();
          String colName = attr.getColumn().getName();
          if (node.containsKey(attrName))
          {
+            copied.add(attrName.toLowerCase());
+            copied.add(colName.toLowerCase());
+
             Object colValue = collection.getDb().cast(attr, node.get(attrName));
             mapped.put(colName, colValue);
+         }
+      }
+
+      for (String key : node.keySet())
+      {
+         if (!key.equalsIgnoreCase("href") && !copied.contains(key.toLowerCase()))
+         {
+            mapped.put(key, node.get(key));
          }
       }
 
@@ -129,35 +143,35 @@ public class RestPostAction extends Action<RestPostAction>
          for (int i = 0; i < entityKeys.size(); i++)
          {
             String entityKey = entityKeys.get(i);
-            
+
             String href = Chain.buildLink(collection, entityKey, null);
 
             boolean added = false;
-//            if (expandResponse)
-//            {
-//               Response resp = service.get(href);
-//               if (resp != null)
-//               {
-//                  ObjectNode js = resp.getJson();
-//                  if (js != null)
-//                  {
-//                     js = js.getNode("data");
-//                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
-//                     {
-//                        array.add(((ArrayNode) js).get(0));
-//                        added = true;
-//                     }
-//                  }
-//                  else
-//                  {
-//                     System.out.println("what?");
-//                  }
-//               }
-//               else
-//               {
-//                  System.out.println("what?");
-//               }
-//            }
+            //            if (expandResponse)
+            //            {
+            //               Response resp = service.get(href);
+            //               if (resp != null)
+            //               {
+            //                  ObjectNode js = resp.getJson();
+            //                  if (js != null)
+            //                  {
+            //                     js = js.getNode("data");
+            //                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
+            //                     {
+            //                        array.add(((ArrayNode) js).get(0));
+            //                        added = true;
+            //                     }
+            //                  }
+            //                  else
+            //                  {
+            //                     System.out.println("what?");
+            //                  }
+            //               }
+            //               else
+            //               {
+            //                  System.out.println("what?");
+            //               }
+            //            }
 
             if (!added)
             {

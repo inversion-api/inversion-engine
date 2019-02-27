@@ -246,7 +246,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       for (int i = 0; i < results.size(); i++)
       {
-         Map row = results.getRow(i);
+         Map<String, Object> row = results.getRow(i);
 
          ObjectNode node = new ObjectNode(row);
          if (collection == null)
@@ -255,20 +255,28 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else
          {
+            String entityKey = req.getCollection().getTable().encodeKey(row);
+            if (Utils.empty(entityKey))
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+
             node = new ObjectNode();
             for (Attribute attr : collection.getEntity().getAttributes())
             {
                String attrName = attr.getName();
                String colName = attr.getColumn().getName();
-               Object val = row.get(colName);
+               Object val = row.remove(colName);
                node.put(attrName, val);
             }
+
+            for (String key : row.keySet())
+            {
+               if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
+                  node.put(key, row.get(key));
+            }
+
             String href = node.getString("href");
             if (Utils.empty(href))
             {
-               String entityKey = req.getCollection().getTable().encodeKey(row);
-               if (Utils.empty(entityKey))
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
                href = Chain.buildLink(collection, entityKey, null);
                node.put("href", href);
             }
