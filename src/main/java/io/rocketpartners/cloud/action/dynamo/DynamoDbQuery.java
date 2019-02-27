@@ -479,8 +479,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       else if (term.isLeaf())
       {
          String colName = term.getParent().getToken(0);
-         String type = table.getColumn(colName).getType();
-         Object value = db.cast(type, term.getToken());
+
+         Object value = term.getToken();
+         Column col = table.getColumn(colName);
+         if(col != null)
+            value = db.cast(col,  term.getToken());
 
          String key = ":val" + (valueMap.size() + 1);
          valueMap.put(key, value);
