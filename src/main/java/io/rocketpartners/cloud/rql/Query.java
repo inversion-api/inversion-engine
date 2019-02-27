@@ -374,6 +374,9 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
          switch (type)
          {
+            case "S":
+               return value.toString();
+            
             case "N":
                return Long.parseLong(value.toString());
 
