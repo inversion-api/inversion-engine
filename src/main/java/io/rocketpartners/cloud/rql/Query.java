@@ -316,43 +316,46 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   //   public Object cast(String column, Object value)
-   //   {
-   //      return cast0(collection.getTable().getColumn(column).getType(), value);
-   //   }
-   //
-   //   public Object cast(Attribute attr, Object value)
-   //   {
-   //      return cast0(attr.getType(), value);
-   //   }
-   //
-   //   protected Object cast0(String type, Object value)
-   //   {
-   //      try
-   //      {
-   //         if (value == null)
-   //            return null;
-   //
-   //         if (type == null)
-   //            return value.toString();
-   //
-   //         switch (type)
-   //         {
-   //            case "N":
-   //               return Long.parseLong(value.toString());
-   //
-   //            case "BOOL":
-   //               return Boolean.parseBoolean(value.toString());
-   //
-   //            default :
-   //               return SqlUtils.cast(value, type);
-   //         }
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-   //      }
-   //   }
+   public Object cast(String column, Object value)
+   {
+      return cast0(collection.getTable().getColumn(column).getType(), value);
+   }
+
+   public Object cast(Attribute attr, Object value)
+   {
+      return cast0(attr.getType(), value);
+   }
+
+   protected Object cast0(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+            return value.toString();
+
+         switch (type)
+         {
+            case "S":
+               return value.toString();
+
+            case "N":
+               return Long.parseLong(value.toString());
+
+            case "BOOL":
+               return Boolean.parseBoolean(value.toString());
+
+            default :
+               return SqlUtils.cast(value, type);
+         }
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
+   }
 
    protected T withColValue(String attributeName, Object value)
    {
