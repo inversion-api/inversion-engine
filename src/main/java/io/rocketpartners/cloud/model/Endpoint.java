@@ -28,6 +28,11 @@ public class Endpoint extends Rule<Endpoint>
    protected List<Action> actions  = new ArrayList();
    protected boolean      internal = false;
 
+   public String toString()
+   {
+      return "Endpoint: " + methods + " - '" + (path != null ? path : "/") + "' " + includePaths + " - " + excludePaths;
+   }
+
    public boolean matches(String method, String path)
    {
       if (internal && Chain.getDepth() < 2)

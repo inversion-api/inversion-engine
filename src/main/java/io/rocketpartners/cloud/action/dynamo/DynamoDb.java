@@ -177,12 +177,11 @@ public class DynamoDb extends Db<DynamoDb>
 
    protected Collection buildCollection(String collectionName, Table table)
    {
-      Entity entity = new Entity();
-      entity.withTable(table);
-
       Collection collection = new Collection();
-      collection.withEntity(entity);
       collection.withName(beautifyCollectionName(collectionName));
+      collection.withTable(table);
+
+      Entity entity = collection.getEntity();
 
       for (Column col : table.getColumns())
       {
@@ -396,7 +395,7 @@ public class DynamoDb extends Db<DynamoDb>
     * These match the string that dynamo uses for these types.
     * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
     */
-   public static String getTypeStringFromObject(Object obj)
+   protected static String getTypeStringFromObject(Object obj)
    {
       if (obj instanceof Number)
       {
@@ -412,9 +411,9 @@ public class DynamoDb extends Db<DynamoDb>
       }
    }
 
-   public static Object cast(Object value, Attribute attr)
+   @Override
+   public Object cast(String type, Object value)
    {
-      String type = attr.getColumn().getType();
       try
       {
          if (value == null)
@@ -437,7 +436,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
       catch (Exception ex)
       {
-         throw new RuntimeException("Error casting " + attr.getName() + "/" + attr.getColumn().getName() + " with type " + type + " with value " + value, ex);
+         throw new RuntimeException("Error casting '" + value + "' to type '" + type + "'", ex);
       }
    }
 

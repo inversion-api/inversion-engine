@@ -42,11 +42,14 @@ public abstract class RestGetAction<T extends RestGetAction> extends Action<T>
 
    public static void main(String[] args)
    {
-      String[] tests = {"http://asdf?offset=5&AAA=BBB&offset = 5&notOffest=123&eq(offset,22)&CCC=DDD&OFFSET=345", "page", "pageNum"};
+      String[] tests = {"http://asdf?offset=5&AAA=BBB&offset = 5&notOffest=123&eq(offset,asdf)&CCC=DDD&OFFSET=345", "page", "pageNum"};
       for (String test : tests)
       {
-         test = test.replaceAll("(.*)(offset=\\d*\\&?)(.*)", "$1$3");
-         test = test.replaceAll("(.*)(eq\\(offset\\,\\d*\\))\\&?(.*)", "$1$3");
+         test = test.replaceAll("(.*)(offset=[^\\&]*\\&?)(.*)", "$1$3");
+         test = test.replaceAll("(.*)(eq\\(offset\\,[^\\&]*\\)\\&?)(.*)", "$1$3");
+
+         //         test = test.replaceAll("(.*)(offset=\\d*\\&?)(.*)", "$1$3");
+         //         test = test.replaceAll("(.*)(eq\\(offset\\,\\d*\\))\\&?(.*)", "$1$3");
          //test = test.replaceAll("(.*[\\?\\&])(eq\\(offset\\,\\d+\\\\)&?)(.*)", "$1$3");
 
          System.out.println(test);
@@ -178,16 +181,21 @@ public abstract class RestGetAction<T extends RestGetAction> extends Action<T>
 
          if (req.getCollection() != null && req.getEntityKey() == null)
          {
-            String next = results.getNext();
-            if (next != null)
+            List<Term> nextTerms = results.getNext();
+            if (nextTerms != null && !nextTerms.isEmpty())
             {
-
+               String next = req.getUrl().getOriginal();
+               for (Term nextTerm : nextTerms)
+               {
+                  next = replaceTerm(next,  nextTerm);
+               }
+               res.withNext(next);
             }
             else if (results.size() == limit && (rowCount < 0 || (offest + limit) < rowCount))
             {
                int pageNum = page.getPageNum() + 1;
 
-               next = req.getUrl().getOriginal();
+               String next = req.getUrl().getOriginal();
 
                next = next.replaceAll("(.*)(offset=\\d*\\&?)(.*)", "$1$3");
                next = next.replaceAll("(.*)(eq\\(offset\\,\\d*\\))\\&?(.*)", "$1$3");
@@ -230,6 +238,23 @@ public abstract class RestGetAction<T extends RestGetAction> extends Action<T>
       //      Set<String> expands = chain.getConfigSet("expands");
       //      expands.addAll(splitParam(req, "expands"));
 
+   }
+
+   String replaceTerm(String url, Term term)
+   {
+      String op = term.hasToken("eq") ? term.getToken(0) : term.getToken();
+
+      url = url.replaceAll("(.*)(" + op + "=[^\\&]*\\&?)(.*)", "$1$3");
+      url = url.replaceAll("(.*)(eq\\(" + op + "\\,[^\\&]*\\)\\&?)(.*)", "$1$3");
+
+      if (url.indexOf("?") < 0)
+         url += "?";
+      if (!url.endsWith("?"))
+         url += "&";
+
+      url += term.toString();
+
+      return url;
    }
 
    protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception

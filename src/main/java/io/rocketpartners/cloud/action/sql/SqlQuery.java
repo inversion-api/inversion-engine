@@ -86,7 +86,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
       rowCount = SqlUtils.selectInt(conn, sql, getColValues());
 
-      return new TableResults(rows, null, rowCount);
+      return new TableResults(rows, rowCount);
    }
 
    @Override

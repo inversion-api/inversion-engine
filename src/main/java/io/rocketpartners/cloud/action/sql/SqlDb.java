@@ -464,7 +464,7 @@ public class SqlDb extends Db<SqlDb>
          if (getCollectionPath() != null)
             collection.withIncludePath(getCollectionPath());
 
-         Entity entity = collection.withEntity(table);
+         Entity entity = collection.getEntity();
 
          for (Attribute attr : entity.getAttributes())
          {

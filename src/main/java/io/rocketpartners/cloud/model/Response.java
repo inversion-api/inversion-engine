@@ -759,7 +759,7 @@ public class Response
    @Override
    public String toString()
    {
-      return "Response [url=" + url + ", status=" + getStatus() + "]";
+      return debug.toString();
    }
 
    @Override

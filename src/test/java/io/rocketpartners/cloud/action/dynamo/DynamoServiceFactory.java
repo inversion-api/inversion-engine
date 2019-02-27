@@ -38,68 +38,87 @@ public class DynamoServiceFactory
    {
       Service service = SqlServiceFactory.service();
 
-      final Api api = service.getApi(apiCode);
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
+      final Api api = service.getApi(apiCode);
       api.withDb(dynamoDb);
+      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
 
-      service.withListener(new ServiceListener()
+      dynamoDb.startup();
+
+      //      service.withListener(new ServiceListener()
+      //         {
+      //            @Override
+      //            public void onStartup(Service service)
+      //            {
+      Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
+      orders.withName("orders");
+
+      orders.getAttribute("hk").withName("orderId"); //get orders by id 
+      orders.getAttribute("sk").withName("type");
+
+      orders.getAttribute("gs1hk").withName("employeeId"); //get orders by customer sorted by date
+      orders.getAttribute("gs1sk").withName("orderDate");
+
+      orders.getAttribute("ls1").withName("shipCity");
+      orders.getAttribute("ls2").withName("shipName");
+      orders.getAttribute("ls3").withName("requireDate");
+
+      //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
+      //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
+
+      orders.withIncludePaths("dynamodb/*");
+
+      //delete everything from dynamo
+      Response res = null;
+
+      String next = "northwind/dynamodb/orders?limit=3";
+      do
+      {
+         res = service.get(next);
+         System.out.println(res);
+         res.statusOk();
+         next = res.findString("meta.next");
+
+         for (Object obj : res.getJson().getArray("data"))
          {
-            @Override
-            public void onStartup(Service service)
-            {
-               Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
-               orders.withName("orders");
+            String href = ((ObjectNode) obj).getString("href");
+            System.out.println(href);
+            res = service.get(href);
+            res.statusOk();
+            System.out.println(res);
+            Utils.assertEq(1, res.data().length());
+            res = service.delete(href);
+            res.statusEq(204);
+            res = service.get(href);
+            res.statusEq(404);
+         }
+      }
+      while (next != null);
 
-               orders.getAttribute("hk").withName("orderId"); //get orders by id 
-               orders.getAttribute("sk").withName("type");
+      res = service.get("northwind/dynamodb/orders");
+      res.statusOk();
+      Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
-               orders.getAttribute("gs1hk").withName("employeeId"); //get orders by customer sorted by date
-               orders.getAttribute("gs1sk").withName("orderDate");
+      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+      ObjectNode json = res.getJson();
+      System.out.println(json);
 
-               orders.getAttribute("ls1").withName("shipCity");
-               orders.getAttribute("ls2").withName("shipName");
-               orders.getAttribute("ls3").withName("requireDate");
+      //               res = service.request("GET", "northwind/sql/orders", null).pageSize(100).order("orderid").go();
+      //               json = res.getJson();
+      //               System.out.println(json);
+      Utils.assertEq(json.find("meta.pageSize"), 100);
+      Utils.assertEq(json.find("meta.rowCount"), 25);
+      Utils.assertEq(json.find("data.0.orderid"), 11058);
 
-               //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
-               //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
-
-               orders.withIncludePaths("dynamodb/*");
-
-               api.withCollection(orders);
-               api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new DynamoDbRestAction<>());
-
-               //uncomment below to populate db
-
-               //delete everything from dynamo
-               Response res = service.get("northwind/dynamodb/orders");
-               for (Object obj : res.getJson().getArray("data"))
-               {
-                  ObjectNode node = (ObjectNode) obj;
-                  String href = node.getString("href");
-                  service.delete(href).statusOk();
-               }
-               service.get("northwind/dynamodb/orders").statusEq(404);//confirm nothing in dynamo
-
-               res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-               ObjectNode json = res.getJson();
-               System.out.println(json);
-
-               //               res = service.request("GET", "northwind/sql/orders", null).pageSize(100).order("orderid").go();
-               //               json = res.getJson();
-               //               System.out.println(json);
-               Utils.assertEq(json.find("meta.pageSize"), 100);
-               Utils.assertEq(json.find("meta.rowCount"), 25);
-               Utils.assertEq(json.find("data.0.orderid"), 11058);
-
-               for (Object o : json.getArray("data"))
-               {
-                  ObjectNode js = (ObjectNode) o;
-                  js.put("type", "ORDER");
-                  Utils.assertEq(200, service.post("northwind/dynamodb/orders", js).getStatusCode());
-               }
-            }
-
-         });
+      for (Object o : json.getArray("data"))
+      {
+         ObjectNode js = (ObjectNode) o;
+         js.put("type", "ORDER");
+         Utils.assertEq(200, service.post("northwind/dynamodb/orders", js).getStatusCode());
+      }
+      //            }
+      //
+      //         });
       return service;
    }
 }

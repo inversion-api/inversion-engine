@@ -32,9 +32,9 @@ public class Collection extends Rule
 
    public Collection(Api api, Table table, String name)
    {
+      withName(name);
       withApi(api);
       withTable(table);
-      withName(name);
    }
 
    public Collection(Table table)
@@ -49,15 +49,15 @@ public class Collection extends Rule
 
    public boolean matches(String method, String path)
    {
-      if(exclude)
+      if (exclude)
          return false;
-      
+
       return super.matches(method, path);
    }
 
    public Collection withTable(Table table)
    {
-      entity = new Entity(table);
+      entity = new Entity(this, table);
       if (name == null)
       {
          name = table.getName();
@@ -136,7 +136,7 @@ public class Collection extends Rule
    {
       return getEntity().getTable().getDb();
    }
-   
+
    public Table getTable()
    {
       return getEntity().getTable();
@@ -144,6 +144,13 @@ public class Collection extends Rule
 
    public Entity withEntity(Table table)
    {
+      if (entity != null)
+      {
+         if (entity.getTable() != table)
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error.  You are trying to set an entity on collection that already has one.");
+
+         return null;
+      }
       entity = new Entity(this, table);
       return entity;
    }

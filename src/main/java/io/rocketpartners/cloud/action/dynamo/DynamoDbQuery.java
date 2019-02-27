@@ -3,6 +3,7 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +16,12 @@ import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.rocketpartners.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
-import io.rocketpartners.cloud.action.sql.SqlDb;
+import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -39,7 +42,7 @@ import io.rocketpartners.cloud.utils.Utils;
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
  * 
  */
-public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
+public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
 {
 
    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
@@ -113,7 +116,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             result.withRow(item.asMap());
          }
 
-         //result.setLastKey(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey());
+         result.withNext(asTerms(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
       }
       else if (spec instanceof ScanSpec)
       {
@@ -124,10 +127,49 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
             result.withRow(item.asMap());
          }
 
-         //result.setLastKey(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey());
+         result.withNext(asTerms(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey()));
       }
 
       return result;
+   }
+
+   protected List<Term> asTerms(java.util.Map<String, AttributeValue> attrs)
+   {
+      List terms = new ArrayList();
+      if (attrs != null)
+      {
+         for (String key : attrs.keySet())
+         {
+            terms.add(Term.term(null, "eq", key, getValue(attrs.get(key))));
+         }
+      }
+      return terms;
+   }
+
+   protected Object getValue(AttributeValue v)
+   {
+      if (v.getS() != null)
+         return v.getS();
+      if (v.getN() != null)
+         return v.getN();
+      if (v.getB() != null)
+         return v.getB();
+      if (v.getSS() != null)
+         return v.getSS();
+      if (v.getNS() != null)
+         return v.getNS();
+      if (v.getBS() != null)
+         return v.getBS();
+      if (v.getM() != null)
+         return v.getM();
+      if (v.getL() != null)
+         return v.getL();
+      if (v.getNULL() != null)
+         return v.getNULL();
+      if (v.getBOOL() != null)
+         return v.getBOOL();
+
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get value from AttributeValue: " + v);
    }
 
    /**
@@ -226,10 +268,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       if (index != null && index.isPrimaryIndex() && partKey != null && sortKey != null && sortKey.hasToken("eq") && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
       {
          String partKeyCol = getColumnName(partKey.getToken(0));
-         Object partKeyVal = cast(partKeyCol, partKey.getToken(1));
+         String type = table.getColumn(partKeyCol).getType();
+         Object partKeyVal = db().cast(type, partKey.getToken(1));
 
          String sortKeyCol = getColumnName(sortKey.getToken(0));
-         Object sortKeyVal = cast(sortKeyCol, sortKey.getToken(1));
+         Object sortKeyVal = db.cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
 
          Chain.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
@@ -387,8 +430,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, SqlDb, Table, Select<Sel
       else if (term.isLeaf())
       {
          String attr = term.getParent().getToken(0);
-         String col = getColumnName(attr);
-         Object value = cast(col, term.getToken());
+         String colName = getColumnName(attr);
+         String type = table.getColumn(colName).getType();
+         Object value = db.cast(type, term.getToken());
 
          String key = ":val" + (valueMap.size() + 1);
          valueMap.put(key, value);

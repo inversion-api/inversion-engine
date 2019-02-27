@@ -75,6 +75,7 @@ public abstract class RestDeleteAction extends Action
       else
       {
          deleteEntity(req, req.getCollection(), req.getEntityKey());
+         res.withStatus(SC.SC_204_NO_CONTENT);
       }
    }
 

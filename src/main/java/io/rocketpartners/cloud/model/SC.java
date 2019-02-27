@@ -26,6 +26,7 @@ public class SC
 
    public static final String         SC_200_OK                    = "200 OK";
    public static final String         SC_201_CREATED               = "201 Created";
+   public static final String         SC_204_NO_CONTENT            = "204 No Content";
    public static final String         SC_302_FOUND                 = "302 Found";
    public static final String         SC_400_BAD_REQUEST           = "400 Bad Request";
    public static final String         SC_401_UNAUTHORIZED          = "401 Unauthorized";

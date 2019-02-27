@@ -33,18 +33,14 @@ public class Entity
 
    protected boolean                 exclude       = false;
 
-   public Entity()
-   {
+//   public Entity()
+//   {
+//      System.out.println("Entity()");
+//   }
 
-   }
-
-   public Entity(Table table)
+   protected Entity(Collection collection, Table table)
    {
-      withTable(table);
-   }
-
-   public Entity(Collection collection, Table table)
-   {
+      System.out.println("Entity(" + collection.getName() + ", " + table.getName() + ")");
       withCollection(collection);
       withTable(table);
    }
@@ -102,6 +98,8 @@ public class Entity
     */
    public Entity withCollection(Collection collection)
    {
+      if(collection == null)
+         System.out.println("adfasdf");
       this.collection = collection;
       return this;
    }
@@ -253,6 +251,8 @@ public class Entity
       StringBuffer key = new StringBuffer("");
       for (Column col : index.getColumns())
       {
+         if(collection == null || col == null)
+            System.out.println("adfasdf");
          String attr = collection.getAttributeName(col.getName());
          String val = node.getString(attr);
          if (Utils.empty(val))
@@ -292,7 +292,7 @@ public class Entity
                if (!escaped)
                {
                   splits.add(entityKey.substring(0, i));
-                  entityKey = entityKey.substring(i, entityKey.length());
+                  entityKey = entityKey.substring(i+1, entityKey.length());
                   i = 0;
                   continue;
                }

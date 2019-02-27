@@ -65,14 +65,14 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("orders?limit=2&sort=orderid"));
       json = res.getJson();
-      
+
       assertEquals(2, json.getArray("data").length());
       String href = json.findString("data.0.href");
       assertTrue(href.endsWith("/orders/10257"));
-      
+
       res = service.get(url("orders?limit=2&sort=-orderid"));
       json = res.getJson();
-      
+
       assertEquals(2, json.getArray("data").length());
       href = res.findString("data.0.href");
       assertTrue(href.endsWith("/orders/11058"));
@@ -89,9 +89,11 @@ public abstract class TestRestGetActions extends TestCase
       int total = json.getArray("data").length();;
       int iterations = 1;
 
+      int i = 0;
       String next = null;
-      while ((next = json.findString("meta.next")) != null)
+      while (i < 20 && (next = json.findString("meta.next")) != null)
       {
+         i++;
          System.out.println(json.get("meta"));
 
          assertEquals(5, json.getArray("data").length());

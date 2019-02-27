@@ -92,35 +92,35 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    private void configApi()
    {
-      for (Table t : getTables())
-      {
-         List<Column> cols = t.getColumns();
-         Collection collection = new Collection();
-
-         collection.withName(beautifyCollectionName(t.getName()));
-
-         Entity entity = new Entity();
-         entity.withTable(t);
-         entity.withHint(t.getName());
-         entity.withCollection(collection);
-
-         collection.withEntity(entity);
-
-         for (Column col : cols)
-         {
-            Attribute attr = new Attribute();
-            attr.withEntity(entity);
-            attr.withName(col.getName());
-            attr.withColumn(col);
-            attr.withHint(col.getTable().getName() + "." + col.getName());
-            attr.withType(col.getType());
-
-            entity.withAttribute(attr);
-         }
-
-         api.withCollection(collection);
-         collection.withApi(api);
-      }
+//      for (Table t : getTables())
+//      {
+//         List<Column> cols = t.getColumns();
+//         Collection collection = new Collection();
+//
+//         collection.withName(beautifyCollectionName(t.getName()));
+//
+//         Entity entity = new Entity();
+//         entity.withTable(t);
+//         entity.withHint(t.getName());
+//         entity.withCollection(collection);
+//
+//         collection.withEntity(entity);
+//
+//         for (Column col : cols)
+//         {
+//            Attribute attr = new Attribute();
+//            attr.withEntity(entity);
+//            attr.withName(col.getName());
+//            attr.withColumn(col);
+//            attr.withHint(col.getTable().getName() + "." + col.getName());
+//            attr.withType(col.getType());
+//
+//            entity.withAttribute(attr);
+//         }
+//
+//         api.withCollection(collection);
+//         collection.withApi(api);
+//      }
    }
 
    /**

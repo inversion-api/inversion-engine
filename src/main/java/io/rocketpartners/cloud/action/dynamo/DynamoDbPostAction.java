@@ -112,7 +112,7 @@ public class DynamoDbPostAction extends DynamoDbAction
                   Object value = json.remove(key);
                   if (!json.containsKey(colName))
                   {
-                     value = DynamoDb.cast(value, attr);
+                     value = collection.getDb().cast(attr, value);
                      json.put(colName, value);
                   }
                }

@@ -23,8 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.SqlUtils;
 
-public class Db<T extends Db>
+public abstract class Db<T extends Db>
 {
    transient volatile boolean started        = false;
    transient volatile boolean starting       = false;
@@ -50,10 +51,43 @@ public class Db<T extends Db>
       this.name = name;
    }
 
-   public void bootstrapApi()
-   {
+   public abstract void bootstrapApi();
 
+   protected Object cast(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+            return value.toString();
+
+         switch (type)
+         {
+            case "N":
+               return Long.parseLong(value.toString());
+
+            case "BOOL":
+               return Boolean.parseBoolean(value.toString());
+
+            default :
+               return SqlUtils.cast(value, type);
+         }
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
    }
+
+   //   public abstract Q buildQuery(Request request);
+   //
+   //   public abstract TableResults get(Table table, Q query);
+   //
+   //   public abstract TableResults post(Table table, Map<String, Object> values);
+   //
+   //   public abstract void delete(Table table, String href);
 
    public synchronized Db startup()
    {
@@ -297,5 +331,54 @@ public class Db<T extends Db>
 
       return name;
    }
+
+   public Object cast(Column column, Object value)
+   {
+      return cast(column.getType(), value);
+   }
+
+   public Object cast(Attribute attr, Object value)
+   {
+      return cast(attr.getType(), value);
+   }
+   //
+   //   public Object cast(String type, Object value)
+   //   {
+   //      return cast0(type, value);
+   //   }
+   //
+   //   protected Object cast0(String type, Object value)
+   //   {
+   //      try
+   //      {
+   //         return SqlUtils.cast(value, type);
+   //      }
+   //      catch (Exception ex)
+   //      {
+   //         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+   //      }
+   //   }
+
+   //   protected Map transformIn(ObjectNode node)
+   //   {
+   //      return null;
+   //   }
+   //
+   //   protected ObjectNode transformOut(Map<String, Object> row)
+   //   {
+   //      ObjectNode node = new ObjectNode();
+   //      if (collection == null)
+   //         return new ObjectNode(row);
+   //
+   //      for (Attribute attr : collection.getEntity().getAttributes())
+   //      {
+   //         String attrName = attr.getName();
+   //         String colName = attr.getColumn().getName();
+   //         Object val = row.get(colName);
+   //         node.put(attrName, val);
+   //      }
+   //
+   //      m return node;
+   //   }
 
 }

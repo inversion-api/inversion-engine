@@ -141,7 +141,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected QueryResults transformResults(TableResults tableResults) throws Exception
    {
-      QueryResults queryResults = new QueryResults(this, tableResults.getNext(), tableResults.getRowCount());
+      QueryResults queryResults = new QueryResults(this, tableResults.getRowCount());
 
       for (Map row : tableResults)
       {
@@ -164,42 +164,6 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
          Object val = row.get(colName);
          node.put(attrName, val);
       }
-
-      //      
-      //      DynamoDbIndex primaryIndex = (DynamoDbIndex) table.getIndex(DynamoDbIndex.PRIMARY_INDEX);
-      //      String hashKeyName = primaryIndex.getHashKeyName();
-      //      String sortKeyName = primaryIndex.getSortKeyName();
-      //
-      //      for (int i = 0; i < result.rows.size(); i++)
-      //      {
-      //         ObjectNode row = (ObjectNode) result.rows.get(i);
-      //         ObjectNode json = new ObjectNode();
-      //
-      //         result.rows.set(i, json);
-      //         String hashKey = row.getString(hashKeyName);
-      //         if (hashKey != null)
-      //         {
-      //            String sortKey = sortKeyName != null ? row.getString(sortKeyName) : null;
-      //            String entityKey = DynamoDb.toEntityKey(hashKey, sortKey);
-      //            String href = Chain.buildLink(collection, entityKey, null);
-      //            json.put("href", href);
-      //         }
-      //
-      //         //this preservers attribute order
-      //         for (Attribute attr : collection.getEntity().getAttributes())
-      //         {
-      //            String colName = attr.getColumn().getName();
-      //            Object value = row.remove(colName);
-      //            json.put(attr.getName(), value);
-      //         }
-      //
-      //         //copy remaining columns that were in result set but not defined in the entity
-      //         //TODO...do we really want to do this?
-      //         for (Object key : row.keySet())
-      //         {
-      //            json.put(key.toString(), row.get(key));
-      //         }
-      //      }
 
       return node;
    }
@@ -352,43 +316,43 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   public Object cast(String column, Object value)
-   {
-      return cast0(collection.getTable().getColumn(column).getType(), value);
-   }
-
-   public Object cast(Attribute attr, Object value)
-   {
-      return cast0(attr.getType(), value);
-   }
-
-   protected Object cast0(String type, Object value)
-   {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-            return value.toString();
-
-         switch (type)
-         {
-            case "N":
-               return Long.parseLong(value.toString());
-
-            case "BOOL":
-               return Boolean.parseBoolean(value.toString());
-
-            default :
-               return SqlUtils.cast(value, type);
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-      }
-   }
+   //   public Object cast(String column, Object value)
+   //   {
+   //      return cast0(collection.getTable().getColumn(column).getType(), value);
+   //   }
+   //
+   //   public Object cast(Attribute attr, Object value)
+   //   {
+   //      return cast0(attr.getType(), value);
+   //   }
+   //
+   //   protected Object cast0(String type, Object value)
+   //   {
+   //      try
+   //      {
+   //         if (value == null)
+   //            return null;
+   //
+   //         if (type == null)
+   //            return value.toString();
+   //
+   //         switch (type)
+   //         {
+   //            case "N":
+   //               return Long.parseLong(value.toString());
+   //
+   //            case "BOOL":
+   //               return Boolean.parseBoolean(value.toString());
+   //
+   //            default :
+   //               return SqlUtils.cast(value, type);
+   //         }
+   //      }
+   //      catch (Exception ex)
+   //      {
+   //         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+   //      }
+   //   }
 
    protected T withColValue(String attributeName, Object value)
    {
@@ -397,7 +361,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       Attribute attr = collection.getAttribute(attributeName);
       if (attr != null)
       {
-         value = cast(attr, value);
+         value = db.cast(attr, value);
       }
 
       values.add(new DefaultKeyValue(columnName, value));
@@ -429,10 +393,10 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    {
       Query query = null;
 
-      public QueryResults(Query query, String next, int rowCount)
+      public QueryResults(Query query, int rowCount)
       {
-         super(null, next, rowCount);
          this.query = query;
+         this.rowCount = rowCount;
       }
 
       public Query getQuery()
@@ -449,32 +413,23 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
       }
 
-      public TableResults(List rows, String next, int rowCount)
+      public TableResults(List rows, int rowCount)
       {
          super();
          this.rows = (List<Map<String, Object>>) rows;
-         this.next = next;
          this.rowCount = rowCount;
       }
    }
 
    private static class Results<M extends Map, T extends Results> implements Iterable<M>
    {
-      List<M> rows     = new ArrayList();
-      String  next     = null;
-      int     rowCount = -1;
+      List<M>    rows     = new ArrayList();
+      List<Term> next     = new ArrayList();
+      int        rowCount = -1;
 
       public Results()
       {
 
-      }
-
-      public Results(List<M> rows, String next, int rowCount)
-      {
-         super();
-         this.rows = rows != null ? rows : this.rows;
-         this.next = next;
-         this.rowCount = rowCount;
       }
 
       @Override
@@ -505,14 +460,21 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
          return (T) this;
       }
 
-      public String getNext()
+      public List<Term> getNext()
       {
-         return next;
+         return new ArrayList(next);
       }
 
-      public T withNext(String next)
+      public T withNext(Term next)
       {
-         this.next = next;
+         this.next.add(next);
+         return (T) this;
+      }
+
+      public T withNext(List<Term> next)
+      {
+         if (next != null)
+            this.next.addAll(next);
          return (T) this;
       }
 
