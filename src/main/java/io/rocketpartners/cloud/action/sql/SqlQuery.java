@@ -48,6 +48,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       super(table, terms);
    }
 
+   protected boolean addTerm(String token, Term term)
+   {
+      if (term.hasToken("eq"))
+      {
+         //ignore extraneous name=value pairs if 'name' is not a column
+         if (table.getColumn(term.getToken(0)) == null)
+            return true;
+      }
+      return super.addTerm(token, term);
+   }
+
    protected Results<Map<String, Object>> doSelect() throws Exception
    {
       SqlDb db = getDb();
