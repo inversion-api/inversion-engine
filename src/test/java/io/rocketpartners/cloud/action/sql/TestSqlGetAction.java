@@ -1,6 +1,8 @@
 package io.rocketpartners.cloud.action.sql;
 
 import io.rocketpartners.cloud.action.rest.TestRestGetActions;
+import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
 
 public class TestSqlGetAction extends TestRestGetActions
@@ -15,6 +17,17 @@ public class TestSqlGetAction extends TestRestGetActions
    protected Service service() throws Exception
    {
       return SqlServiceFactory.service();
+   }
+
+   public void testRelationships1() throws Exception
+   {
+      Response res = null;
+      ObjectNode json = null;
+
+      Service service = service();
+
+      res = service.get("http://localhost/northwind/source/orders?limit=5");
+      System.out.println(res.getDebug());
    }
 
    //   @Test
@@ -57,8 +70,5 @@ public class TestSqlGetAction extends TestRestGetActions
    //      assertTrue(((ObjectNode) json.find("data.0")).getProperty("ORDERID").getName().equals("orderid"));//test case insensativity of the JSObject but that the prop is actually lower cased
    //
    //   }
-   
-   
-   
 
 }

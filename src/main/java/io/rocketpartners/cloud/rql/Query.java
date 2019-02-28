@@ -21,8 +21,10 @@ import java.util.List;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
-import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 
 /**
@@ -304,7 +306,10 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
-      value = db.cast(table.getColumn(columnName), value);
+      Column col = table.getColumn(columnName);
+      if (col == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+      value = db.cast(col, value);
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }

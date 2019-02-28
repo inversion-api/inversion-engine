@@ -421,10 +421,13 @@ public class SqlDb extends Db<SqlDb>
       //-- have to do the fk loop second becuase the reference pk
       //-- object needs to exist so that it can be set on the fk Col
       ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
-
-      if (!rs.next())
+      boolean hasNext = rs.next();
+      if (!hasNext)
+      {
          rs = dbmd.getTables(null, null, "%", new String[]{"TABLE", "VIEW"});
-      if (rs.next())
+         hasNext = rs.next();
+      }
+      if (hasNext)
          do
          {
             String tableCat = rs.getString("TABLE_CAT");
@@ -503,26 +506,35 @@ public class SqlDb extends Db<SqlDb>
       //-- created first and are there to
       //-- be connected
       rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE"});
-      while (rs.next())
+      hasNext = rs.next();
+      if (!hasNext)
       {
-         String tableName = rs.getString("TABLE_NAME");
-
-         ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
-         while (keyMd.next())
-         {
-            String fkTableName = keyMd.getString("FKTABLE_NAME");
-            String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-            String pkTableName = keyMd.getString("PKTABLE_NAME");
-            String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-            Column fk = getColumn(fkTableName, fkColumnName);
-            Column pk = getColumn(pkTableName, pkColumnName);
-            fk.withPk(pk);
-
-            //log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-         }
-         keyMd.close();
+         rs = dbmd.getTables(null, null, "%", new String[]{"TABLE"});
+         hasNext = rs.next();
       }
+      if (hasNext)
+         do
+         {
+            String tableName = rs.getString("TABLE_NAME");
+
+            ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
+            while (keyMd.next())
+            {
+               String fkTableName = keyMd.getString("FKTABLE_NAME");
+               String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
+               String pkTableName = keyMd.getString("PKTABLE_NAME");
+               String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
+
+               Column fk = getColumn(fkTableName, fkColumnName);
+               Column pk = getColumn(pkTableName, pkColumnName);
+               fk.withPk(pk);
+
+               log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+            }
+            keyMd.close();
+         }
+         while (rs.next());
+
       rs.close();
 
       //-- if a table has two columns and both are foreign keys

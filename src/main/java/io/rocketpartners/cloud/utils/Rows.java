@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,6 +119,7 @@ public class Rows extends ArrayList<Rows.Row>
    {
       RowKeys      keys   = null;
       List<Object> values = null;
+      boolean      cloned = false;
 
       public Row()
       {
@@ -343,8 +345,15 @@ public class Rows extends ArrayList<Rows.Row>
          int idx = keys.indexOf((String) key);
          if (idx >= 0)
          {
+            if(!cloned)
+            {
+               //copy on write
+               cloned = true;
+               keys = keys.clone();
+            }
             Object value = values.get(idx);
-            values.set(idx, null);
+            keys.removeKey((String) key);
+            values.remove(idx);
             return value;
          }
          return null;
@@ -444,6 +453,14 @@ public class Rows extends ArrayList<Rows.Row>
          setKeys(keys);
       }
 
+      public RowKeys clone()
+      {
+         RowKeys clone = new RowKeys();
+         clone.keys = new LinkedList(keys);
+         clone.lc = new HashMap(lc);
+         return clone;
+      }
+
       int addKey(String key)
       {
          keySet = null;
@@ -452,17 +469,32 @@ public class Rows extends ArrayList<Rows.Row>
             return -1;
 
          String lc = key.toLowerCase();
-         int i = 1;
-         while (keys.contains(lc))
-         {
-            lc = key.toLowerCase() + "_" + i;
-            i++;
-         }
 
          this.keys.add(key);
          this.lc.put(lc, this.keys.size() - 1);
 
          return this.keys.size();
+      }
+
+      int removeKey(String key)
+      {
+         keySet = null;
+
+         key = key.toLowerCase();
+         Integer idx = lc.get(key);
+         if (idx != null)
+         {
+            for (int i = idx; i < keys.size(); i++)
+               lc.remove(keys.get(i).toLowerCase());
+
+            this.keys.remove(idx.intValue());
+
+            for (int i = idx; i < keys.size(); i++)
+               lc.put(keys.get(i).toLowerCase(), i);
+
+            return idx.intValue();
+         }
+         return -1;
       }
 
       void setKeys(List<String> keys)

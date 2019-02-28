@@ -32,6 +32,7 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -54,21 +55,71 @@ public class RestPostAction extends Action<RestPostAction>
       for (Attribute attr : collection.getEntity().getAttributes())
       {
          String attrName = attr.getName();
+         
+         if(collection.getEntity().getRelationship(attrName) != null)
+            continue;
+         
          String colName = attr.getColumn().getName();
          if (node.containsKey(attrName))
          {
             copied.add(attrName.toLowerCase());
             copied.add(colName.toLowerCase());
 
-            Object colValue = collection.getDb().cast(attr, node.get(attrName));
+            Object attrValue = node.get(attrName);
+            Object colValue = collection.getDb().cast(attr, attrValue);
             mapped.put(colName, colValue);
+         }
+      }
+
+      for (Relationship rel : collection.getEntity().getRelationships())
+      {
+         //TODO recursively upsert children first and collapse nested objects back into just an href
+      }
+
+      for (Relationship rel : collection.getEntity().getRelationships())
+      {
+         String attrName = rel.getName();
+         copied.add(attrName.toLowerCase());
+
+         if (!node.containsKey(attrName))
+            continue;
+
+         if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
+         {
+            Object attrValue = node.remove(attrName);
+
+            if (attrValue instanceof String)
+            {
+               String attrStr = (String) attrValue;
+               if (attrStr.indexOf("/") > 0 && !attrStr.endsWith("/"))
+                  attrStr = attrStr.substring(attrStr.lastIndexOf("/") + 1, attrStr.length());
+
+               attrValue = attrStr;
+            }
+            else if (attrValue != null)
+            {
+               throw new ApiException("implementation error");
+            }
+
+            Column fkCol = rel.getFkCol1();
+            String fkColName = fkCol.getName();
+            copied.add(fkColName.toLowerCase());
+
+            Object colValue = attrValue == null ? null : collection.getDb().cast(fkCol.getType(), attrValue);
+            mapped.put(fkColName, colValue);
+         }
+         else
+         {
+            //TODO
          }
       }
 
       for (String key : node.keySet())
       {
-         if (!key.equalsIgnoreCase("href") && !copied.contains(key.toLowerCase()))
+         if (!copied.contains(key.toLowerCase()) && !key.equalsIgnoreCase("href"))
          {
+            //these fields were posted and may map to table columns but they are not defined as attributes.
+            //this is ok for some dynamic backends like dynamo but will cause a problem for others like sql rdbmss.
             mapped.put(key, node.get(key));
          }
       }

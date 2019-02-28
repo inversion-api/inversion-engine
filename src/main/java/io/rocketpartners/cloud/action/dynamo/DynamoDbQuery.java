@@ -36,12 +36,18 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
- * @author tc-rocket
+ * @author tc-rocket, wells
+ * 
+ * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
+ * 
  * @see https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html
  * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryingJavaDocumentAPI.html
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#FilteringResults
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
+ * 
+ * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.KeyConditions.html
+ * 
  * 
  */
 public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>

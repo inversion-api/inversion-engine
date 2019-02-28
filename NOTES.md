@@ -8,6 +8,11 @@
 * create cross collection foreign key test case
 * Update/Fix - Elastic/Redis/S3
 * Look into cloudwatch support
+* RestGetAction url term replacement needs to be case insensative
+* Add Utils.findSysEnvProp to Sql/S3
+* Consider changing Term.token to an Object so that the actions can do the casting before passing to the DB and the Db/Query don't have to cast
+
+test comman separtaed entitykeys and comman separated compound entitykeys
 
 ## Dynamo
  * DONE continuation token
@@ -17,14 +22,14 @@
  * add dynamo 'includes' projections
  * parameter to support strongly consistent reads
  * add back conditional write support
- * test w/ projections
  * need to test against a table that does not have a primary sort key
  * add support for compounding keys automatically w/ configuration
- * add support for automatically appending tenantcode to every primary/gsi hask key
+   * add support for automatically appending tenantcode to every primary/gsi hask key
+   * auto append table space name to different columns to create table namespace???? or make it column have that value alone
  * key values in a global secondary do not need to be unique. create a test case for that
    * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
  * can a gsi share an attribute with a lsi? if so...need to test that  
- * auto append table space name to different columns to create table namespace???? or make it column have that value alone
+ 
 
 
 DONE - ChainLocal.makeLink does not know how to work with endpointPath/collectionPath

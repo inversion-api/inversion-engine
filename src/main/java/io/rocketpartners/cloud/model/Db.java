@@ -55,7 +55,7 @@ public abstract class Db<T extends Db>
 
    public abstract void bootstrapApi();
 
-   protected Object cast(String type, Object value)
+   public Object cast(String type, Object value)
    {
       try
       {
@@ -85,6 +85,10 @@ public abstract class Db<T extends Db>
          throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
       }
    }
+
+   //public List Results<Map<String, Object>> select(Request request, Table table, List<String> entityKeys) throws Exception;
+
+   //public List<KeyValue> select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception;
 
    public abstract Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception;
 
@@ -329,7 +333,14 @@ public abstract class Db<T extends Db>
             name = English.plural(name);
       }
 
-      name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
+      if (name.toUpperCase().equals(name))
+      {
+         name = name.toLowerCase();
+      }
+      else
+      {
+         name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
+      }
 
       return name;
    }
