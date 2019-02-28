@@ -444,11 +444,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          buff.append("(");
          for (int i = 0; i < term.getNumTerms(); i++)
          {
-            toString(buff, term.getTerm(i), nameMap, valueMap);
+            buff.append(toString(new StringBuffer(""), term.getTerm(i), nameMap, valueMap));
             if (i < term.getNumTerms() - 1)
-            {
-               space(buff).append(toString(buff, term.getTerm(i), nameMap, valueMap)).append(" ");
-            }
+               space(buff).append(term.getToken()).append(" ");
          }
          buff.append(")");
       }
@@ -464,7 +462,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          if (buff.length() > 0)
             space(buff).append("and ");
 
-         buff.append(nameKey).append(" ").append(op).append(" ").append(expr);
+         buff.append("(").append(nameKey).append(" ").append(op).append(" ").append(expr).append(")");
       }
       else if (func != null)
       {
@@ -491,6 +489,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          space(buff).append(key);
       }
 
+      
+      System.out.println("TOSTRING: " + term + " -> '" + buff + "'" + " - " + nameMap + " - " + valueMap);
       return buff.toString();
    }
 

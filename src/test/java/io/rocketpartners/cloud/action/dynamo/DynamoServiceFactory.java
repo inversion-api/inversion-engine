@@ -14,6 +14,7 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoServiceFactory
 {
+   public static final boolean RELOAD_DYNAMO = false;
    protected static Map<String, Service> services = new HashMap();
 
    public static synchronized Service service() throws Exception
@@ -68,62 +69,66 @@ public class DynamoServiceFactory
 
       orders.withIncludePaths("dynamodb/*");
 
-      //delete everything from dynamo
       Response res = null;
-
-      String next = "northwind/dynamodb/orders?limit=3";
-      do
-      {
-         res = service.get(next);
-         System.out.println(res);
-         res.statusOk();
-         next = res.findString("meta.next");
-
-         for (Object obj : res.getJson().getArray("data"))
-         {
-            String href = ((ObjectNode) obj).getString("href");
-            System.out.println(href);
-            res = service.get(href);
-            res.statusOk();
-            System.out.println(res);
-            Utils.assertEq(1, res.data().length());
-            res = service.delete(href);
-            res.statusEq(204);
-            res = service.get(href);
-            res.statusEq(404);
-         }
-      }
-      while (next != null);
-
-      res = service.get("northwind/dynamodb/orders");
+      res = service.get("northwind/dynamodb/orders?limit=3");
       res.statusOk();
-      Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
-      res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-      ObjectNode json = res.getJson();
-      System.out.println(json);
-
-      //               res = service.request("GET", "northwind/sql/orders", null).pageSize(100).order("orderid").go();
-      //               json = res.getJson();
-      //               System.out.println(json);
-      Utils.assertEq(json.find("meta.pageSize"), 100);
-      Utils.assertEq(json.find("meta.rowCount"), 25);
-      Utils.assertEq(json.find("data.0.orderid"), 11058);
-
-      for (Object o : json.getArray("data"))
+      if (RELOAD_DYNAMO)
       {
-         ObjectNode js = (ObjectNode) o;
-         
-         js.remove("href");
-         js.put("type", "ORDER");
-         res = service.post("northwind/dynamodb/orders", js);
-         Utils.assertEq(201, res.getStatusCode());
+         String next = "northwind/dynamodb/orders?limit=3";
+         do
+         {
+            res = service.get(next);
+            System.out.println(res);
+            res.statusOk();
+            next = res.findString("meta.next");
 
-         res = service.get(res.findString("data.0.href"));
+            for (Object obj : res.getJson().getArray("data"))
+            {
+               String href = ((ObjectNode) obj).getString("href");
+               System.out.println(href);
+               res = service.get(href);
+               res.statusOk();
+               System.out.println(res);
+               Utils.assertEq(1, res.data().length());
+               res = service.delete(href);
+               res.statusEq(204);
+               res = service.get(href);
+               res.statusEq(404);
+            }
+         }
+         while (next != null);
 
-         System.out.println(js);
-         System.out.println(res.find("data.0"));
+         res = service.get("northwind/dynamodb/orders");
+         res.statusOk();
+         Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
+         res = service.service("GET", "northwind/sql/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+         ObjectNode json = res.getJson();
+         System.out.println(json);
+
+         //               res = service.request("GET", "northwind/sql/orders", null).pageSize(100).order("orderid").go();
+         //               json = res.getJson();
+         //               System.out.println(json);
+         Utils.assertEq(json.find("meta.pageSize"), 100);
+         Utils.assertEq(json.find("meta.rowCount"), 25);
+         Utils.assertEq(json.find("data.0.orderid"), 11058);
+
+         for (Object o : json.getArray("data"))
+         {
+            ObjectNode js = (ObjectNode) o;
+
+            js.remove("href");
+            js.put("type", "ORDER");
+            res = service.post("northwind/dynamodb/orders", js);
+            Utils.assertEq(201, res.getStatusCode());
+
+            res = service.get(res.findString("data.0.href"));
+
+            System.out.println(js);
+            System.out.println(res.find("data.0"));
+
+         }
       }
       //            }
       //

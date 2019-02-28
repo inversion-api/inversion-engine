@@ -49,7 +49,6 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
 {
-
    protected String       awsAccessKey = null;
    protected String       awsSecretKey = null;
    protected String       awsRegion    = "us-east-1";
@@ -263,32 +262,6 @@ public class DynamoDb extends Db<DynamoDb>
       table.withIndex(index);
    }
 
-   public AmazonDynamoDB getDynamoClient()
-   {
-      if (this.dynamoClient == null)
-      {
-         synchronized (this)
-         {
-            if (this.dynamoClient == null)
-            {
-               AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
-               if (!Utils.empty(awsRegion))
-               {
-                  builder.withRegion(awsRegion);
-               }
-               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
-               {
-                  BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
-                  builder.withCredentials(new AWSStaticCredentialsProvider(creds));
-               }
-               this.dynamoClient = builder.build();
-            }
-         }
-      }
-
-      return dynamoClient;
-   }
-
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Collection collection)
    {
       return getDynamoTable(collection.getTable().getName());
@@ -488,6 +461,48 @@ public class DynamoDb extends Db<DynamoDb>
       {
          throw new RuntimeException("Error casting '" + value + "' to type '" + type + "'", ex);
       }
+   }
+
+   public AmazonDynamoDB getDynamoClient()
+   {
+      if (this.dynamoClient == null)
+      {
+         synchronized (this)
+         {
+            if (this.dynamoClient == null)
+            {
+               this.dynamoClient = buildDynamoClient(name + ".", awsRegion, awsAccessKey, awsSecretKey);
+            }
+         }
+      }
+
+      return dynamoClient;
+   }
+
+   public static AmazonDynamoDB buildDynamoClient(String prefix)
+   {
+      return buildDynamoClient(prefix, null, null, null);
+   }
+   
+   public static AmazonDynamoDB buildDynamoClient(String prefix, String awsRegion, String awsAccessKey, String awsSecretKey)
+   {
+      awsRegion = Utils.findSysEnvProp(prefix + "awsRegion", awsRegion);
+      awsAccessKey = Utils.findSysEnvProp(prefix + "awsAccessKey", awsAccessKey);
+      awsSecretKey = Utils.findSysEnvProp(prefix + "awsSecretKey", awsSecretKey);
+
+      AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
+      if (!Utils.empty(awsRegion))
+      {
+         builder.withRegion(awsRegion);
+      }
+      if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
+      {
+         BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+         builder.withCredentials(new AWSStaticCredentialsProvider(creds));
+      }
+      AmazonDynamoDB dynamoClient = builder.build();
+
+      return dynamoClient;
    }
 
 }

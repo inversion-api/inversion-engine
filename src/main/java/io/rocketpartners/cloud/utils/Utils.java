@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,11 +67,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 import io.rocketpartners.cloud.model.ArrayNode;
-import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.ObjectNode.Property;
 import io.rocketpartners.cloud.model.Response;
-import io.rocketpartners.cloud.rql.Term;
 
 /**
  * Collection of utility methods designed to make
@@ -1953,9 +1952,9 @@ public class Utils
             String[] pairs = query.split("&");
             for (String pair : pairs)
             {
-               if(pair.length() == 0)
+               if (pair.length() == 0)
                   continue;
-               
+
                int idx = pair.indexOf("=");
                if (idx > 0)
                {
@@ -1975,6 +1974,40 @@ public class Utils
          rethrow(ex);
       }
       return params;
+   }
+
+   /**
+    * @param name - name to look for in sysprops and envprops if 'value' is null;
+    * @param value - will be returned if not null
+    * @return first not null of 'value' || sysprop(name) || envprop(name)
+    */
+   public static String findSysEnvProp(String name, String value)
+   {
+      if (Utils.empty(value))
+         value = System.getProperty(name);
+      if (Utils.empty(value))
+         value = System.getenv(name);
+
+      if (value == null)
+      {
+         InputStream stream = Utils.findInputStream(".env");
+         if (stream != null)
+         {
+            Properties p = new Properties();
+            try
+            {
+               p.load(stream);
+               Utils.close(stream);
+               value = p.getProperty(name);
+            }
+            catch (Exception ex)
+            {
+               Utils.rethrow(ex);
+            }
+         }
+      }
+
+      return value;
    }
 
 }

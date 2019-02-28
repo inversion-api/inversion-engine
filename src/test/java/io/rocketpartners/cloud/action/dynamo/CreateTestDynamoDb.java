@@ -27,7 +27,7 @@ public class CreateTestDynamoDb
 
    public static void deleteTable(String tableName) throws Exception
    {
-      AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind.");
       DeleteTableRequest dtr = new DeleteTableRequest().withTableName(tableName);
       client.deleteTable(dtr);
    }
@@ -43,7 +43,7 @@ public class CreateTestDynamoDb
       attrs.add(new AttributeDefinition().withAttributeName("gs1sk").withAttributeType("S"));
 
       attrs.add(new AttributeDefinition().withAttributeName("gs2hk").withAttributeType("S"));
-      attrs.add(new AttributeDefinition().withAttributeName("gs2sk").withAttributeType("S"));
+      //attrs.add(new AttributeDefinition().withAttributeName("gs2sk").withAttributeType("S"));
 
       attrs.add(new AttributeDefinition().withAttributeName("ls1").withAttributeType("S"));
       attrs.add(new AttributeDefinition().withAttributeName("ls2").withAttributeType("S"));
@@ -65,7 +65,7 @@ public class CreateTestDynamoDb
 
       List<GlobalSecondaryIndex> gsxs = new ArrayList();
       gsxs.add(new GlobalSecondaryIndex().withIndexName("gs1").withKeySchema(new KeySchemaElement().withAttributeName("gs1hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("gs1sk").withKeyType(KeyType.RANGE)));
-      gsxs.add(new GlobalSecondaryIndex().withIndexName("gs2").withKeySchema(new KeySchemaElement().withAttributeName("gs2hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("gs2sk").withKeyType(KeyType.RANGE)));
+      gsxs.add(new GlobalSecondaryIndex().withIndexName("gs2").withKeySchema(new KeySchemaElement().withAttributeName("gs2hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("ls3").withKeyType(KeyType.RANGE)));
       gsxs.add(new GlobalSecondaryIndex().withIndexName("gs3").withKeySchema(new KeySchemaElement().withAttributeName("sk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.RANGE)));
 
       for (LocalSecondaryIndex lsx : lsxs)
@@ -81,7 +81,7 @@ public class CreateTestDynamoDb
                                                                   .withWriteCapacityUnits(5L));
       }
 
-      AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind.");
       DynamoDB dynamoDB = new DynamoDB(client);
 
       CreateTableRequest request = new CreateTableRequest()//
@@ -90,8 +90,8 @@ public class CreateTestDynamoDb
                                                            .withKeySchema(keys)//
                                                            .withAttributeDefinitions(attrs)//
                                                            .withProvisionedThroughput(new ProvisionedThroughput()//
-                                                                                                                 .withReadCapacityUnits(100L)//
-                                                                                                                 .withWriteCapacityUnits(100L));
+                                                                                                                 .withReadCapacityUnits(5L)//
+                                                                                                                 .withWriteCapacityUnits(5L));
 
       com.amazonaws.services.dynamodbv2.document.Table table = dynamoDB.createTable(request);
 
