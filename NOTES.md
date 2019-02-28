@@ -1,28 +1,41 @@
-factor get/post handler reuseable parts out of sql classes...like did with delete handler. This includes recursing for "expands".
 
-ChainLocal.makeLink does not know how to work with endpointPath/collectionPath
+# TODO
 
-dynamo
- - primary key / href linking
- - continuation token
- - subcollection linking
- - add dynamo 'includes' projections
- - put excludes and expands into get handler superclass
- - DONE implement name map to avoid expression keyword conflicts.
- - parameter to support strongly consistent reads
+* make interator or lambda stream to loop over all results including pagination
+* put excludes and expands into restgetaction
+* add put handler colapse support back
+* make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
+* create cross collection foreign key test case
+* Update/Fix - Elastic/Redis/S3
+* Look into cloudwatch support
 
-make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
+## Dynamo
+ * DONE continuation token
+ * DONE implement name map to avoid expression keyword conflicts.
+ * DONE primary key / href linking
+ * subcollection linking
+ * add dynamo 'includes' projections
+ * parameter to support strongly consistent reads
+ * add back conditional write support
+ * test w/ projections
+ * need to test against a table that does not have a primary sort key
+ * add support for compounding keys automatically w/ configuration
+ * add support for automatically appending tenantcode to every primary/gsi hask key
+ * key values in a global secondary do not need to be unique. create a test case for that
+   * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
+ * can a gsi share an attribute with a lsi? if so...need to test that  
+ * auto append table space name to different columns to create table namespace???? or make it column have that value alone
 
 
+DONE - ChainLocal.makeLink does not know how to work with endpointPath/collectionPath
 DONE Implement db.startup()/shutdown();
 DONE get rid of request.params in favor of url.params
+DONE Put meta & data objects into response as first class citizens
+DONE Make superclass "beautify" method for collection names and attribute names
 
-Put meta & data objects into response as first class citizens
 
-Make superclass "beautify" method for collection names and attribute names
 
-Pull "expands" out of SqlGetHandler and put it into a superclass that can work with Dynamo/Elastic etc.
-
+# Misc Notes
 
 SQL functions supported by big query
 https://cloud.google.com/bigquery/docs/reference/legacy-sql

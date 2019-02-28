@@ -1,14 +1,3 @@
-# TODO
-
-* test w/ projections
-* need to test against a table that does not have a primary sort key
-* add support for compounding keys automatically w/ configuration
-* add support for automatically appending tenantcode to every primary/gsi hask key
-* key values in a global secondary do not need to be unique. create a test case for that
-  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
-* can a gsi share an attribute with a lsi? if so...need to test that  
-* auto append table space name to different columns to create table namespace???? or make it column have that value alone
-
 # DynamodDb Test Cases #
 
 ## Schema Design
