@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -51,79 +50,76 @@ public class RestGetAction extends Action<RestGetAction>
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      if (req.getCollection() != null && req.getEntityKey() != null)
+      if (req.getSubCollectionKey() != null)
       {
-         if (req.getSubCollectionKey() == null)
-         {
-            List<KeyValue<String, Object>> terms = req.getCollection().getTable().decodeKey(req.getEntityKey());
+         String entityKey = req.getEntityKey();
+         Collection collection = req.getCollection();
+         Entity entity = collection.getEntity();
+         Relationship rel = entity.getRelationship(req.getSubCollectionKey());
 
-            for (KeyValue<String, Object> term : terms)
+         if (rel == null)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
+
+         String newHref = null;
+
+         if (rel.isManyToOne())
+         {
+            collection = req.getApi().getCollection(rel.getRelated());
+            String fkColName = rel.getFkCol1().getName();
+            String fkAttrName = collection.getAttributeName(fkColName);
+            newHref = Chain.buildLink(collection, null, null) + "?" + fkAttrName + "=" + req.getEntityKey();
+         }
+         else if (rel.isManyToMany())
+         {
+            Column toMatch = rel.getFkCol1();
+            Column toRetrieve = rel.getFkCol2();
+            Rows rows = collection.getDb().select(req, toMatch.getTable(), toMatch, toRetrieve, Arrays.asList(entityKey));
+            if (rows.size() > 0)
             {
-               String attrName = req.getCollection().getAttributeName(term.getKey());
-               req.getUrl().withParam(attrName, term.getValue().toString());
+               List foreignKeys = new ArrayList();
+               for (Row row : rows)
+                  foreignKeys.add(row.get(toRetrieve.getName()));
+
+               Collection relatedCollection = req.getApi().getCollection(rel.getFkCol2().getPk().getTable());
+               String entityKeys = Utils.implode(",", foreignKeys.toArray());
+               newHref = Chain.buildLink(relatedCollection, entityKeys, null);
+            }
+            else
+            {
+               return;
             }
          }
          else
          {
-            Collection collection = req.getCollection();
-            Entity entity = collection.getEntity();
-            Relationship rel = entity.getRelationship(req.getSubCollectionKey());
-
-            if (rel == null)
-               throw new ApiException(SC.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
-
-            if (rel.isManyToOne())
-            {
-               collection = req.getApi().getCollection(rel.getRelated());
-
-               String fkColName = rel.getFkCol1().getName();
-               String fkAttrName = collection.getAttributeName(fkColName);
-
-               String query = req.getUrl().getQuery();
-               if (Utils.empty(query))
-                  query = "?";
-               else
-                  query += "&";
-
-               String link = Chain.buildLink(collection, null, null);
-               link += query + fkAttrName + "=" + req.getEntityKey();
-
-               service.service(req.getMethod(), link);
-               return;
-            }
-            else if (rel.isManyToMany())
-            {
-               //               collection = req.getApi().getCollection(rel.getFkCol2().getPk().getTable());
-               //
-               //               String linkTblKey = query.quoteCol(rel.getFkCol1().getName());
-               //               String linkTblFk = query.quoteCol(rel.getFkCol2().getName());
-               //               String linkTbl = query.quoteCol(rel.getFkCol1().getTable().getName());
-               //
-               //               String pkCol = linkTbl + "." + linkTblKey;
-               //               String fkCol = linkTbl + "." + linkTblFk;
-               //
-               //               sql += "\r\n SELECT " + fkCol;
-               //               sql += "\r\n FROM " + linkTbl;
-               //               sql += "\r\n WHERE " + fkCol + " IS NOT NULL AND " + pkCol + " =  ? ";
-               //
-               //               List ids = SqlUtils.selectList(conn, sql, req.getEntityKey());
-               //
-               //               String newUrl = Chain.buildLink(collection, Utils.implode(",", ids.toArray()), null);
-               //
-               //               String queryStr = req.getQuery();
-               //               if (!Utils.empty(queryStr))
-               //               {
-               //                  newUrl += "?" + queryStr;
-               //               }
-               //
-               //               Response included = service.get(newUrl);
-               //
-               //               res.withStatus(included.getStatus());
-               //               res.withJson(included.getJson());
-            }
-
-            return;
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Implementation logic error.");
          }
+
+         String query = req.getUrl().getQuery();
+
+         if (query != null)
+         {
+            if (newHref.indexOf("?") < 0)
+               newHref += "?";
+            else
+               newHref += "&";
+
+            newHref += query;
+         }
+
+         Response included = service.get(newHref);
+         res.withStatus(included.getStatus());
+         res.withJson(included.getJson());
+         return;
+      }
+      else if (req.getEntityKey() != null)
+      {
+         Attribute keyAttr = req.getCollection().getEntity().getKey();
+
+         List<String> entityKeys = Utils.explode(",", req.getEntityKey());
+         entityKeys.add(0, keyAttr.getName());
+
+         Term term = Term.term(null, (entityKeys.size() == 2 ? "eq" : "in"), entityKeys.toArray());
+         req.getUrl().withParam(term.toString(), null);
       }
 
       //todo process
@@ -213,7 +209,18 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      Db db = req.getCollection().getDb();
+      if (collection == null)
+      {
+         System.out.println("NULL COLLECTION WTF: " + req.getUrl());
+      }
+
+      Db db = collection.getDb();
+
+      if (db == null)
+      {
+         System.out.println("NULL DB WTF: " + req.getUrl());
+      }
+
       Results results = db.select(req, collection.getTable(), terms);
 
       //TODO: process includes/excludes & expands
@@ -258,7 +265,7 @@ public class RestGetAction extends Action<RestGetAction>
                if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
                {
                   Object fkval = node.remove(rel.getFkCol1().getName());
-                  if(fkval != null)
+                  if (fkval != null)
                   {
                      String link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
                      node.put(rel.getName(), link);

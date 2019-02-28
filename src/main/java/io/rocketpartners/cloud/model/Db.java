@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.English;
+import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
 public abstract class Db<T extends Db>
@@ -86,9 +87,15 @@ public abstract class Db<T extends Db>
       }
    }
 
-   //public List Results<Map<String, Object>> select(Request request, Table table, List<String> entityKeys) throws Exception;
+//   public List Results<Map<String,Object>>select(Request request, Table table, List<String> entityKeys) throws Exception
+//   {
+//      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
+//   }
 
-   //public List<KeyValue> select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception;
+   public Rows select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
+   }
 
    public abstract Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception;
 
@@ -312,6 +319,7 @@ public abstract class Db<T extends Db>
    {
       String name = null;
       String type = rel.getType();
+      boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
          name = rel.getFkCol1().getName();
@@ -323,14 +331,12 @@ public abstract class Db<T extends Db>
       else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
          name = rel.getRelated().getCollection().getName();//.getTbl().getName();
-         if (!name.endsWith("s"))
-            name = English.plural(name);
+         pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
          name = rel.getFkCol2().getPk().getTable().getName();
-         if (!name.endsWith("s"))
-            name = English.plural(name);
+         pluralize = true;
       }
 
       if (name.toUpperCase().equals(name))
@@ -340,6 +346,11 @@ public abstract class Db<T extends Db>
       else
       {
          name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
+      }
+
+      if (pluralize)
+      {
+         name = English.plural(name);
       }
 
       return name;

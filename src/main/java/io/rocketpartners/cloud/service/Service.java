@@ -213,6 +213,17 @@ public class Service
       service(req, res);
       return res;
    }
+   
+   public Response forward(String method, String url)
+   {
+      Request req = new Request(method, url, null);
+      req.withService(this);
+
+      Response res = Chain.getResponse();
+
+      service(req, res);
+      return res;
+   }
 
    public Chain service(Request req, Response res)
    {

@@ -127,6 +127,8 @@ public class Relationship
     */
    public Relationship withName(String name)
    {
+      if("cUSTOMERDEMOGRAPHICses".equals(name))
+         System.out.println(name);
       this.name = name;
       return this;
    }

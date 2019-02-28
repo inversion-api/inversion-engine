@@ -44,12 +44,16 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlDb extends Db<SqlDb>
 {
+   protected char                 stringQuote              = '\'';
+   protected char                 columnQuote              = '"';
+
    static Map<String, DataSource> pools                    = new HashMap();
 
    public static final int        MIN_POOL_SIZE            = 3;
@@ -137,6 +141,16 @@ public class SqlDb extends Db<SqlDb>
       {
          //pool.close();
       }
+   }
+
+   public Rows select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
+   {
+      String sql = "";
+      sql += " SELECT " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
+      sql += " FROM " + quoteCol(table.getName());
+      sql += " WHERE " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
+      return SqlUtils.selectRows(getConnection(), sql, matchValues);
+      //      return SqlUtils.selectRows(getConnection(), sql);
    }
 
    @Override
@@ -606,7 +620,8 @@ public class SqlDb extends Db<SqlDb>
                r.withFkCol2(fkCol2);
 
                //Collection related = api.getCollection(fkCol2.getTbl());
-               r.withName(makeRelationshipName(r));
+               String name = makeRelationshipName(r);
+               r.withName(name);
             }
 
             //MANY_TO_MANY the other way
@@ -631,7 +646,8 @@ public class SqlDb extends Db<SqlDb>
                r.withFkCol1(fkCol2);
                r.withFkCol2(fkCol1);
 
-               r.withName(makeRelationshipName(r));
+               String name = makeRelationshipName(r);
+               r.withName(name);
             }
          }
          else
@@ -685,6 +701,14 @@ public class SqlDb extends Db<SqlDb>
             }
          }
       }
+   }
+
+   public SqlDb withType(String type)
+   {
+      if ("mysql".equals(type))
+         withStringQuote('`');
+
+      return super.withType(type);
    }
 
    public String getDriver()
@@ -768,6 +792,26 @@ public class SqlDb extends Db<SqlDb>
    public void setIdleConnectionTestPeriod(int idleConnectionTestPeriod)
    {
       this.idleConnectionTestPeriod = idleConnectionTestPeriod;
+   }
+
+   public void withStringQuote(char stringQuote)
+   {
+      this.stringQuote = stringQuote;
+   }
+
+   public void withColumnQuote(char columnQuote)
+   {
+      this.columnQuote = columnQuote;
+   }
+
+   public String quoteCol(String columnName)
+   {
+      return columnQuote + columnName + columnQuote;
+   }
+
+   public String quoteStr(String string)
+   {
+      return stringQuote + string + stringQuote;
    }
 
 }

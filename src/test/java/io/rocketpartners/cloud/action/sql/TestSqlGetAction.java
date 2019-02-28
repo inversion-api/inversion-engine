@@ -26,8 +26,29 @@ public class TestSqlGetAction extends TestRestGetActions
 
       Service service = service();
 
-      res = service.get("http://localhost/northwind/source/orders?limit=5");
+      res = service.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       System.out.println(res.getDebug());
+      assertEquals(5, res.data().size());
+      assertTrue(res.findString("data.0.customer").endsWith("northwind/source/customers/VINET"));
+      assertTrue(res.findString("data.0.orderdetails").endsWith("northwind/source/orders/10248/orderdetails"));
+      assertTrue(res.findString("data.0.employee").endsWith("northwind/source/employees/5"));
+
+      res = service.get("http://localhost/northwind/source/customers/SUPRD/customerdemographics?limit=5");
+      System.out.println(res.getDebug());
+
+      res = service.get("http://localhost/northwind/source/employees?limit=5");
+      System.out.println(res.getDebug());
+
+      res = service.get("http://localhost/northwind/source/employees/1/territories?limit=5&order=-territoryid");
+      System.out.println(res.getDebug());
+      assertEquals(2, res.data().size());
+      assertTrue(res.findString("data.0.href").endsWith("northwind/source/territories/19713"));
+      assertTrue(res.findString("data.0.employees").endsWith("northwind/source/territories/19713/employees"));
+      
+
+      //      res = service.get("http://localhost/northwind/source/orders/10252/orderdetails?limit=5");
+      //      System.out.println(res.getDebug());
+
    }
 
    //   @Test

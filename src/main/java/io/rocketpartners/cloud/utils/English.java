@@ -238,10 +238,11 @@ public class English// extends TwoFormInflector
     */
    public static String plural(String word)
    {
-      if (word.endsWith("s"))
+      if (word.endsWith("s") || word.endsWith("S"))
          return word;
 
-      return inflector.getPlural(word);
+      word = inflector.getPlural(word);
+      return word;
    }
 
    /**
