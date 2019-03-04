@@ -87,14 +87,19 @@ public abstract class Db<T extends Db>
       }
    }
 
-//   public List Results<Map<String,Object>>select(Request request, Table table, List<String> entityKeys) throws Exception
-//   {
-//      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
-//   }
+   //   public List Results<Map<String,Object>>select(Request request, Table table, List<String> entityKeys) throws Exception
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
+   //   }
+
+   public Rows selectRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Override Db.selectRelatedEntityKeys to implement");
+   }
 
    public Rows select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
    {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Override Db.select to implement");
    }
 
    public abstract Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception;

@@ -475,7 +475,7 @@ public class Request
 
    public String getApiUrl()
    {
-      String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? url.getPort() : "") + "/" + apiPath;
+      String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
       return apiUrl;
    }
 

@@ -1,7 +1,6 @@
 package io.rocketpartners.cloud.action.rest;
 
 import java.net.URLEncoder;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,7 +12,6 @@ import java.util.Set;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.rocketpartners.cloud.action.sql.SqlQuery;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -223,17 +221,16 @@ public class RestGetAction extends Action<RestGetAction>
 
       Results results = db.select(req, collection.getTable(), terms);
 
-      //TODO: process includes/excludes & expands
-      //
-      //      Set<String> includes = chain.getConfigSet("includes");
-      //      includes.addAll(splitParam(req, "includes"));
-      //
-      //      Set<String> expands = chain.getConfigSet("expands");
-      //      expands.addAll(splitParam(req, "expands"));
+      Set<String> includes = req.getChain().getConfigSet("includes");
+      includes.addAll(splitParam(req, "includes"));
 
-      //      Set<String> excludes = Chain.peek().getConfigSet("excludes");
-      //      excludes.addAll(splitParam(req, "excludes"));
-      //
+      Set<String> expands = req.getChain().getConfigSet("expands");
+      expands.addAll(splitParam(req, "expands"));
+
+      Set<String> excludes = req.getChain().getConfigSet("excludes");
+      excludes.addAll(splitParam(req, "excludes"));
+
+      MultiKeyMap pkCache = new MultiKeyMap<>();
 
       for (int i = 0; i < results.size(); i++)
       {
@@ -251,6 +248,32 @@ public class RestGetAction extends Action<RestGetAction>
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
 
             node = new ObjectNode();
+
+            pkCache.put(collection, entityKey, node);
+
+            //         for (String colName : (Set<String>) row.keySet())
+            //         //for (Attribute attr : collection.getEntity().getAttributes())
+            //         {
+            //            //String attrName = attr.getName();
+            //            //String colName = attr.getColumn().getName();
+            //            //Object value = row.get(colName);
+            //            Object value = row.get(colName);
+            //            String attrName = colName;
+            //
+            //            if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
+            //            {
+            //               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
+            //               if (include("href", includes, excludes, path))
+            //               {
+            //                  js.put("href", href);
+            //               }
+            //            }
+            //
+            //            if (include(attrName, includes, excludes, path))
+            //            {
+            //               js.put(attrName, value);
+            //            }
+            //         }
 
             for (Attribute attr : collection.getEntity().getAttributes())
             {
@@ -298,8 +321,10 @@ public class RestGetAction extends Action<RestGetAction>
          results.setRow(i, node);
       }
 
-      expand(req, results);
-      exclude(req, results);
+      for (int i = 0; i < results.size(); i++)
+      {
+         expand(collection, "", results.getRows(), includes, excludes, expands, pkCache);
+      }
 
       for (Term term : ((List<Term>) results.getNext()))
       {
@@ -309,83 +334,64 @@ public class RestGetAction extends Action<RestGetAction>
       return results;
    }
 
-   protected void expand(Request req, Results results)
-   {
+   //   List<JSObject> queryObjects(Rql rql, Service service, Chain chain, Action action, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
+   //   {
+   //      List<JSObject> results = new ArrayList();
+   //
+   //      if (collection.getEntity().getKey() == null)
+   //      {
+   //         return results;
+   //      }
+   //
+   //      String keyCol = collection.getEntity().getKey().getColumn().getName();
+   //
+   //      List<Row> rows = params != null && params.size() > 0 ? selectRows(chain, db, conn, inSql, params.toArray()) : selectRows(chain, db, conn, inSql);
+   //
+   //      Attribute keyAttr = collection.getEntity().getKey();
+   //      //Entity entity = collection.getEntity();
+   //
+   //      DoubleKeyMap pkCache = new DoubleKeyMap();
+   //
+   //      for (Row row : rows)
+   //      {
+   //         Object key = row.get(keyCol);
+   //
+   //         JSObject js = new JSObject();
+   //         results.add(js);
+   //
+   //         pkCache.put(collection, key, js);
+   //
+   //         for (String colName : (Set<String>) row.keySet())
+   //         //for (Attribute attr : collection.getEntity().getAttributes())
+   //         {
+   //            //String attrName = attr.getName();
+   //            //String colName = attr.getColumn().getName();
+   //            //Object value = row.get(colName);
+   //            Object value = row.get(colName);
+   //            String attrName = colName;
+   //
+   //            if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
+   //            {
+   //               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
+   //               if (include("href", includes, excludes, path))
+   //               {
+   //                  js.put("href", href);
+   //               }
+   //            }
+   //
+   //            if (include(attrName, includes, excludes, path))
+   //            {
+   //               js.put(attrName, value);
+   //            }
+   //         }
+   //      }
+   //
+   //      expand(rql, chain, conn, req.getApi(), collection, path, results, includes, excludes, expands, pkCache);
+   //
+   //      return results;
+   //   }
 
-   }
-
-   protected void exclude(Request req, Results results)
-   {
-
-   }
-
-   protected List<ObjectNode> fetchObjects(Chain chain, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
-   {
-      if (ids.size() == 0)
-         return Collections.EMPTY_LIST;
-
-      String url = Chain.buildLink(collection, SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
-
-      //--
-      //-- Nested param support
-      Map<String, String> params = chain.getRequest().getParams();
-      String lcPath = path.toLowerCase();
-      for (String key : params.keySet())
-      {
-         String lcKey = key.toLowerCase();
-
-         if (reservedParams.contains(lcKey))
-            continue;
-
-         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
-         {
-            String value = params.get(key);
-            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
-
-            if (url.indexOf("?") < 0)
-               url += "?";
-            url += URLEncoder.encode(lcKey, "UTF-8");
-            if (!Utils.empty(value))
-               url += "=" + URLEncoder.encode(value, "UTF-8");
-         }
-      }
-
-      Response res = chain.getService().get(url);
-      int sc = res.getStatusCode();
-      if (sc == 401 || sc == 403)//unauthorized || forbidden
-         return null;
-
-      if (sc == 404)
-         return Collections.EMPTY_LIST;
-
-      if (sc == 500)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
-      }
-
-      if (sc == 200)
-      {
-         Object arr = res.getJson().get("data");
-         if (arr instanceof ArrayNode)
-         {
-            List<ObjectNode> objs = ((ArrayNode) arr).asList();
-            for (ObjectNode obj : objs)
-            {
-               for (String key : (Set<String>) obj.asMap().keySet())
-               {
-                  if (!include(key, includes, excludes, path))
-                     obj.remove(key);
-               }
-            }
-
-            return objs;
-         }
-      }
-
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
-   }
-
-   protected void expand(SqlQuery query, Chain chain, Connection conn, Api api, Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
+   protected void expand(Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;
@@ -427,7 +433,7 @@ public class RestGetAction extends Action<RestGetAction>
                else
                {
                   Object key = js.get(keyProp);
-                  String href = Chain.buildLink(chain.getRequest().getCollection(), key, rel.getName());
+                  String href = Chain.buildLink(Chain.getRequest().getCollection(), key, rel.getName());
                   js.put(rel.getName(), new ObjectNode("href", href));
                }
             }
@@ -450,7 +456,7 @@ public class RestGetAction extends Action<RestGetAction>
                }
 
                //now get them
-               List<ObjectNode> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               List<ObjectNode> childObjs = fetchObjects(childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
                if (childObjs != null)
                {
                   for (ObjectNode childObj : childObjs)
@@ -475,44 +481,23 @@ public class RestGetAction extends Action<RestGetAction>
                      }
                   }
 
-                  expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+                  expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
                }
             }
             else if (rel.isManyToOne()) //MANY_TO_ONE - Location.id <- Player.locationId
             {
-               String relTbl = childCollection.getTable().getName();
+               Rows relatedEntityKeys = collection.getDb().selectRelatedEntityKeys(rel, parentObjs);
 
-               String parentPkCol = rel.getFkCol1().getPk().getName();
-               String childFkCol = rel.getFkCol1().getName();
-               String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
+               List relatedPks = new ArrayList();
+               relatedEntityKeys.forEach(e -> relatedPks.add(e));
 
-               List parentIds = new ArrayList();
-               for (ObjectNode parentObj : parentObjs)
+               List<ObjectNode> childObjs = fetchObjects(childCollection, relatedPks, includes, excludes, expandPath(path, rel.getName()));
+
+               if (childObjs.size() > 0)
                {
-                  parentIds.add(parentObj.get(parentPkCol));
-                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-                     parentObj.put(rel.getName(), new ArrayNode());
-               }
+                  String childFkCol = rel.getFkCol1().getName();
+                  String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
 
-               String sql = "";
-               sql += " SELECT " + query.asCol(childPkCol) + " FROM " + query.asCol(relTbl);
-               sql += " WHERE " + query.asCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
-
-               if (chain.getRequest().isDebug())
-               {
-                  chain.getResponse().debug(sql);
-                  if (parentIds.size() > 0)
-                  {
-                     chain.getResponse().debug(parentIds);
-                  }
-               }
-
-               List thoseIds = SqlUtils.selectList(conn, sql, parentIds);
-
-               List<ObjectNode> childObjs = fetchObjects(chain, childCollection, thoseIds, includes, excludes, expandPath(path, rel.getName()));
-
-               if (childObjs != null)
-               {
                   for (ObjectNode childObj : childObjs)
                   {
                      Object childId = childObj.get(childPkCol);
@@ -530,13 +515,11 @@ public class RestGetAction extends Action<RestGetAction>
                         }
                      }
                   }
-                  expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+                  expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
                }
             }
-            else //many-to-many
+            else //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
             {
-               //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-
                String parentListProp = rel.getName();
                String parentPkCol = rel.getFkCol1().getPk().getName();
                String linkTbl = rel.getFkCol1().getTable().getName();
@@ -544,30 +527,7 @@ public class RestGetAction extends Action<RestGetAction>
                String linkTblChildFkCol = rel.getFkCol2().getName();
                String childPkCol = rel.getFkCol2().getPk().getName();
 
-               List parentIds = new ArrayList();
-               for (ObjectNode parentObj : parentObjs)
-               {
-                  parentIds.add(parentObj.get(parentPkCol));
-
-                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-                     parentObj.put(rel.getName(), new ArrayNode());
-               }
-
-               String sql = " SELECT " + query.asCol(linkTblParentFkCol) + ", " + query.asCol(linkTblChildFkCol) + //
-                     " FROM " + query.asCol(linkTbl) + //
-                     " WHERE " + query.asCol(linkTblChildFkCol) + " IS NOT NULL " + //
-                     " AND " + query.asCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
-
-               if (chain.getRequest().isDebug())
-               {
-                  chain.getResponse().debug(sql);
-                  if (parentIds.size() > 0)
-                  {
-                     chain.getResponse().debug(parentIds);
-                  }
-               }
-
-               Rows childRows = SqlUtils.selectRows(conn, sql, parentIds);
+               Rows childRows = collection.getDb().selectRelatedEntityKeys(rel, parentObjs);
 
                ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
                Set childIds = new HashSet();
@@ -581,7 +541,7 @@ public class RestGetAction extends Action<RestGetAction>
                      childIds.add(childPk);
                }
 
-               List<ObjectNode> childObjs = fetchObjects(chain, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+               List<ObjectNode> childObjs = fetchObjects(childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
                for (ObjectNode childObj : childObjs)
                {
                   Object childId = childObj.get(childPkCol);
@@ -598,12 +558,13 @@ public class RestGetAction extends Action<RestGetAction>
                   array.add(childObj);
                }
 
-               expand(query, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+               expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
             }
          }
       }
 
-      if (chain.getParent() == null)
+      //TODO...why is this here...figure it out and comment it
+      if (Chain.peek().getParent() == null)
       {
          for (Relationship rel : collection.getEntity().getRelationships())
          {
@@ -617,6 +578,72 @@ public class RestGetAction extends Action<RestGetAction>
             }
          }
       }
+   }
+
+   protected List<ObjectNode> fetchObjects(Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
+   {
+      if (ids.size() == 0)
+         return Collections.EMPTY_LIST;
+
+      String url = Chain.buildLink(collection, SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
+
+      //--
+      //-- Nested param support
+      Map<String, String> params = Chain.getRequest().getParams();
+      String lcPath = path.toLowerCase();
+      for (String key : params.keySet())
+      {
+         String lcKey = key.toLowerCase();
+
+         if (reservedParams.contains(lcKey))
+            continue;
+
+         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
+         {
+            String value = params.get(key);
+            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
+
+            if (url.indexOf("?") < 0)
+               url += "?";
+            url += URLEncoder.encode(lcKey, "UTF-8");
+            if (!Utils.empty(value))
+               url += "=" + URLEncoder.encode(value, "UTF-8");
+         }
+      }
+
+      Response res = Chain.peek().getService().get(url);
+      int sc = res.getStatusCode();
+      if (sc == 401 || sc == 403)//unauthorized || forbidden
+         return null;
+
+      if (sc == 404)
+         return Collections.EMPTY_LIST;
+
+      if (sc == 500)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+      }
+
+      if (sc == 200)
+      {
+         Object arr = res.getJson().get("data");
+         if (arr instanceof ArrayNode)
+         {
+            List<ObjectNode> objs = ((ArrayNode) arr).asList();
+            for (ObjectNode obj : objs)
+            {
+               for (String key : (Set<String>) obj.asMap().keySet())
+               {
+                  if (!include(key, includes, excludes, path))
+                     obj.remove(key);
+               }
+            }
+
+            return objs;
+         }
+      }
+
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
    public int getMaxRows()

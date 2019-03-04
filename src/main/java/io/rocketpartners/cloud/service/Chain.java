@@ -112,7 +112,7 @@ public class Chain
 
       Request req = getRequest();
 
-      String url = req.getApiPath();
+      String url = req.getApiUrl();//req.getApiPath();
 
       if (url == null)
          url = "";

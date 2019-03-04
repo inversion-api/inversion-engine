@@ -31,12 +31,15 @@ import javax.sql.DataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import ch.qos.logback.classic.Level;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
@@ -75,6 +78,11 @@ public class SqlDb extends Db<SqlDb>
 
    static
    {
+      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
+      logger.setLevel(Level.WARN);
+      //      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari.pool.PoolBase");
+      //      logger.setLevel(Level.INFO);
+
       SqlUtils.addSqlListener(new SqlListener()
          {
             @Override
@@ -97,13 +105,8 @@ public class SqlDb extends Db<SqlDb>
                sql = sql.replaceAll("\n", " ");
                sql = sql.trim().replaceAll(" +", " ");
                StringBuffer buff = new StringBuffer("");
-               buff.append("\r\nSQL -> stmt   = ").append(sql);
-               buff.append("\r\nSQL -> args   = " + args);
-               buff.append("\r\nSQL -> result = " + result);
-               buff.append("\r\nSQL -> error  = " + (ex != null ? Utils.getShortCause(ex) : ""));
-
+               buff.append("SQL -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                String msg = buff.toString();
-               System.out.println(msg);
                Chain.debug(msg);
             }
          });
@@ -141,6 +144,95 @@ public class SqlDb extends Db<SqlDb>
       {
          //pool.close();
       }
+   }
+
+   public Rows selectRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   {
+      if (rel.isManyToOne())
+      {
+         return selectManyToOneRelatedEntityKeys(rel, parentObjs);
+      }
+      else if (rel.isManyToMany())
+      {
+         return selectManyToManyRelatedEntityKeys(rel, parentObjs);
+      }
+      else
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There is no reason to call this method with a ONE_TO_MANY relationship, you already have the keys of the related entities.");
+      }
+   }
+
+   //MANY_TO_ONE - Location.id <- Player.locationId
+   protected Rows selectManyToOneRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   {
+      Collection childCollection = api.getCollection(rel.getRelated().getTable());
+      if (rel.isManyToMany())
+         childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
+
+      String relTbl = childCollection.getTable().getName();
+
+      String parentPkCol = rel.getFkCol1().getPk().getName();
+      String childFkCol = rel.getFkCol1().getName();
+      String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
+
+      List parentIds = new ArrayList();
+      for (ObjectNode parentObj : parentObjs)
+      {
+         parentIds.add(parentObj.get(parentPkCol));
+         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+            parentObj.put(rel.getName(), new ArrayNode());
+      }
+
+      String sql = "";
+      sql += " SELECT " + quoteCol(childFkCol) + ", " + quoteCol(childPkCol) + " FROM " + quoteCol(relTbl);
+      sql += " WHERE " + quoteCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
+
+      if (Chain.getRequest().isDebug())
+      {
+         Chain.getResponse().debug(sql);
+         if (parentIds.size() > 0)
+         {
+            Chain.getResponse().debug(parentIds);
+         }
+      }
+
+      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
+      return relatedEntityKeys;
+   }
+
+   protected Rows selectManyToManyRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   {
+      //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
+      String parentPkCol = rel.getFkCol1().getPk().getName();
+      String linkTbl = rel.getFkCol1().getTable().getName();
+      String linkTblParentFkCol = rel.getFkCol1().getName();
+      String linkTblChildFkCol = rel.getFkCol2().getName();
+
+      List parentIds = new ArrayList();
+      for (ObjectNode parentObj : parentObjs)
+      {
+         parentIds.add(parentObj.get(parentPkCol));
+
+         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+            parentObj.put(rel.getName(), new ArrayNode());
+      }
+
+      String sql = " SELECT " + quoteCol(linkTblParentFkCol) + ", " + quoteCol(linkTblChildFkCol) + //
+            " FROM " + quoteCol(linkTbl) + //
+            " WHERE " + quoteCol(linkTblChildFkCol) + " IS NOT NULL " + //
+            " AND " + quoteCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
+
+      if (Chain.getRequest().isDebug())
+      {
+         Chain.getResponse().debug(sql);
+         if (parentIds.size() > 0)
+         {
+            Chain.getResponse().debug(parentIds);
+         }
+      }
+
+      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
+      return relatedEntityKeys;
    }
 
    public Rows select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception

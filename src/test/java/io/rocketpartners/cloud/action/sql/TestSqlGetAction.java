@@ -29,7 +29,7 @@ public class TestSqlGetAction extends TestRestGetActions
       res = service.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       System.out.println(res.getDebug());
       assertEquals(5, res.data().size());
-      assertTrue(res.findString("data.0.customer").endsWith("northwind/source/customers/VINET"));
+      assertTrue(res.findString("data.0.customer").endsWith("http://localhost/northwind/source/customers/VINET"));
       assertTrue(res.findString("data.0.orderdetails").endsWith("northwind/source/orders/10248/orderdetails"));
       assertTrue(res.findString("data.0.employee").endsWith("northwind/source/employees/5"));
 

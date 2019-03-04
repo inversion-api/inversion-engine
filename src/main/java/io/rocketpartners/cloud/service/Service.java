@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -213,7 +214,7 @@ public class Service
       service(req, res);
       return res;
    }
-   
+
    public Response forward(String method, String url)
    {
       Request req = new Request(method, url, null);
@@ -318,8 +319,8 @@ public class Service
                   apiPath.add(tenantCode);
                   req.withTenantCode(tenantCode);
                }
-               
-               req.withApiPath(Utils.implode("/",  apiPath) + "/");
+
+               req.withApiPath(Utils.implode("/", apiPath) + "/");
 
                String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
                for (int i = 0; i <= parts.size(); i++)
@@ -396,14 +397,14 @@ public class Service
             res.debug("");
             res.debug("");
             res.debug(">> request --------------");
-            //            res.debug(method + ": " + url);
-            //            
-            //            while (e.hasMoreElements())
-            //            {
-            //               String name = e.nextElement();
-            //               String value = req.getHeader(name);
-            //               res.debug(name + " - " + value);
-            //            }
+            res.debug(req.getMethod() + ": " + url);
+
+            ArrayListValuedHashMap<String, String> headers = req.getHeaders();
+            for(String key : headers.keys())
+            {
+               res.debug(key + " " + Utils.implode(",", headers.get(key)));
+            }
+            res.debug("");
          }
 
          if (req.getApi() == null)

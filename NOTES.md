@@ -11,6 +11,7 @@
 * RestGetAction url term replacement needs to be case insensative
 * Add Utils.findSysEnvProp to Sql/S3
 * Consider changing Term.token to an Object so that the actions can do the casting before passing to the DB and the Db/Query don't have to cast
+* fixup service.forward
 
 test comman separtaed entitykeys and comman separated compound entitykeys
 

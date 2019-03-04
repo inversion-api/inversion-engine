@@ -282,13 +282,13 @@ public class Url
 
    public int getPort()
    {
-      if (port == 0)
-      {
-         if ("http".equalsIgnoreCase(protocol))
-            return 80;
-         if ("https".equalsIgnoreCase(protocol))
-            return 443;
-      }
+//      if (port == 0)
+//      {
+//         if ("http".equalsIgnoreCase(protocol))
+//            return 80;
+//         if ("https".equalsIgnoreCase(protocol))
+//            return 443;
+//      }
       return port;
    }
 
