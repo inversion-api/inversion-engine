@@ -146,103 +146,92 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public Rows selectRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   //   //MANY_TO_ONE - Location.id <- Player.locationId
+   //   protected Rows selectManyToOneRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   //   {
+   //      Collection childCollection = api.getCollection(rel.getRelated().getTable());
+   //      if (rel.isManyToMany())
+   //         childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
+   //
+   //      String relTbl = childCollection.getTable().getName();
+   //
+   //      String parentPkCol = rel.getFkCol1().getPk().getName();
+   //      String childFkCol = rel.getFkCol1().getName();
+   //      String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
+   //
+   //      List parentIds = new ArrayList();
+   //      for (ObjectNode parentObj : parentObjs)
+   //      {
+   //         parentIds.add(parentObj.get(parentPkCol));
+   //         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+   //            parentObj.put(rel.getName(), new ArrayNode());
+   //      }
+   //
+   //      String sql = "";
+   //      sql += " SELECT " + quoteCol(childFkCol) + ", " + quoteCol(childPkCol) + " FROM " + quoteCol(relTbl);
+   //      sql += " WHERE " + quoteCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
+   //
+   //      if (Chain.getRequest().isDebug())
+   //      {
+   //         Chain.getResponse().debug(sql);
+   //         if (parentIds.size() > 0)
+   //         {
+   //            Chain.getResponse().debug(parentIds);
+   //         }
+   //      }
+   //
+   //      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
+   //      return relatedEntityKeys;
+   //   }
+   //
+   //   protected Rows selectManyToManyRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
+   //   {
+   //      //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
+   //      String parentPkCol = rel.getFkCol1().getPk().getName();
+   //      String linkTbl = rel.getFkCol1().getTable().getName();
+   //      String linkTblParentFkCol = rel.getFkCol1().getName();
+   //      String linkTblChildFkCol = rel.getFkCol2().getName();
+   //
+   //      List parentIds = new ArrayList();
+   //      for (ObjectNode parentObj : parentObjs)
+   //      {
+   //         parentIds.add(parentObj.get(parentPkCol));
+   //
+   //         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+   //            parentObj.put(rel.getName(), new ArrayNode());
+   //      }
+   //
+   //      String sql = " SELECT " + quoteCol(linkTblParentFkCol) + ", " + quoteCol(linkTblChildFkCol) + //
+   //            " FROM " + quoteCol(linkTbl) + //
+   //            " WHERE " + quoteCol(linkTblChildFkCol) + " IS NOT NULL " + //
+   //            " AND " + quoteCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
+   //
+   //      if (Chain.getRequest().isDebug())
+   //      {
+   //         Chain.getResponse().debug(sql);
+   //         if (parentIds.size() > 0)
+   //         {
+   //            Chain.getResponse().debug(parentIds);
+   //         }
+   //      }
+   //
+   //      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
+   //      return relatedEntityKeys;
+   //   }
+
+   public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
    {
-      if (rel.isManyToOne())
-      {
-         return selectManyToOneRelatedEntityKeys(rel, parentObjs);
-      }
-      else if (rel.isManyToMany())
-      {
-         return selectManyToManyRelatedEntityKeys(rel, parentObjs);
-      }
-      else
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "There is no reason to call this method with a ONE_TO_MANY relationship, you already have the keys of the related entities.");
-      }
-   }
+      if (toMatch.getTable() != table || toRetrieve.getTable() != table)
+         throw new ApiException("Supplied columns do not belong to the target table.");
 
-   //MANY_TO_ONE - Location.id <- Player.locationId
-   protected Rows selectManyToOneRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
-   {
-      Collection childCollection = api.getCollection(rel.getRelated().getTable());
-      if (rel.isManyToMany())
-         childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
-
-      String relTbl = childCollection.getTable().getName();
-
-      String parentPkCol = rel.getFkCol1().getPk().getName();
-      String childFkCol = rel.getFkCol1().getName();
-      String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
-
-      List parentIds = new ArrayList();
-      for (ObjectNode parentObj : parentObjs)
-      {
-         parentIds.add(parentObj.get(parentPkCol));
-         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-            parentObj.put(rel.getName(), new ArrayNode());
-      }
-
-      String sql = "";
-      sql += " SELECT " + quoteCol(childFkCol) + ", " + quoteCol(childPkCol) + " FROM " + quoteCol(relTbl);
-      sql += " WHERE " + quoteCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
-
-      if (Chain.getRequest().isDebug())
-      {
-         Chain.getResponse().debug(sql);
-         if (parentIds.size() > 0)
-         {
-            Chain.getResponse().debug(parentIds);
-         }
-      }
-
-      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
-      return relatedEntityKeys;
-   }
-
-   protected Rows selectManyToManyRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
-   {
-      //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-      String parentPkCol = rel.getFkCol1().getPk().getName();
-      String linkTbl = rel.getFkCol1().getTable().getName();
-      String linkTblParentFkCol = rel.getFkCol1().getName();
-      String linkTblChildFkCol = rel.getFkCol2().getName();
-
-      List parentIds = new ArrayList();
-      for (ObjectNode parentObj : parentObjs)
-      {
-         parentIds.add(parentObj.get(parentPkCol));
-
-         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-            parentObj.put(rel.getName(), new ArrayNode());
-      }
-
-      String sql = " SELECT " + quoteCol(linkTblParentFkCol) + ", " + quoteCol(linkTblChildFkCol) + //
-            " FROM " + quoteCol(linkTbl) + //
-            " WHERE " + quoteCol(linkTblChildFkCol) + " IS NOT NULL " + //
-            " AND " + quoteCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
-
-      if (Chain.getRequest().isDebug())
-      {
-         Chain.getResponse().debug(sql);
-         if (parentIds.size() > 0)
-         {
-            Chain.getResponse().debug(parentIds);
-         }
-      }
-
-      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
-      return relatedEntityKeys;
-   }
-
-   public Rows select(Request request, Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
-   {
       String sql = "";
       sql += " SELECT " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
-      sql += " FROM " + quoteCol(table.getName());
-      sql += " WHERE " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
-      return SqlUtils.selectRows(getConnection(), sql, matchValues);
-      //      return SqlUtils.selectRows(getConnection(), sql);
+      sql += " FROM   " + quoteCol(table.getName());
+      sql += " WHERE  " + quoteCol(toRetrieve.getName()) + " IS NOT NULL ";
+      sql += " AND    " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
+
+      Rows rows = SqlUtils.selectRows(getConnection(), sql, matchValues);
+      return rows;
    }
 
    @Override

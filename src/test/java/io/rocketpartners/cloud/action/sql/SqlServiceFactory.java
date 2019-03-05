@@ -100,6 +100,11 @@ public class SqlServiceFactory
 
          res = service.get("northwind/sql/orders");
          Utils.assertEq(25, res.find("meta.rowCount"));
+         
+//         res = service.get("http://localhost/northwind/sql/orders/10395/orderdetails");
+//         System.out.println(res.getJson());
+         
+         
       }
       catch (Exception ex)
       {

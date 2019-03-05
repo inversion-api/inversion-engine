@@ -67,7 +67,7 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url);
       System.out.println(res.getDebug());
-      
+
       assertEquals(2, res.findArray("data").length());
       String href = res.findString("data.0.href");
       assertTrue(href.endsWith("/orders/10257"));
@@ -91,12 +91,12 @@ public abstract class TestRestGetActions extends TestCase
       do
       {
          res = service.get(next);
-         
+
          System.out.println(res.meta());
-         
-         if(res.data().size() == 0)
+
+         if (res.data().size() == 0)
             break;
-         
+
          total += res.data().length();
          pages += 1;
 
@@ -110,6 +110,56 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(5, pages);
       assertEquals(25, total);
    }
+
+   public void testExpandsOneToMany01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
+      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
+      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
+      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+      System.out.println(res.getJson());
+      System.out.println(res.getJson());
+   }
+   
+
+   public void testExpandsManyToOne01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get("http://localhost/northwind/source/employees/5?expands=employees");
+      System.out.println(res.getJson());
+      
+      assertEquals(3, res.findArray("data.0.employees").length());
+      assertNotNull(res.find("data.0.employees.0.lastname"));
+   }
+   
+   public void testExpandsManyToMany01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get("http://localhost/northwind/sql/employees/6?expands=territories");
+      System.out.println(res.getJson());
+      
+      assertEquals(5, res.findArray("data.0.territories").length());
+      assertNotNull(res.find("data.0.territories.0.territorydescription"));
+   }
+   
+   
+
+   //   public void testExpandsManyToOne01() throws Exception
+   //   {
+   //      Service service = service();
+   //      Response res = null;
+   //
+   //
+   //      //res = service.get("http://localhost/northwind/source/employees/1?expands=territories");
+   //      System.out.println(res.getJson());
+   //   }
 
    //   @Test
    //   public void test0A() throws Exception

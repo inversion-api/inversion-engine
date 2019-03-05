@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
@@ -62,6 +61,9 @@ public class RestGetAction extends Action<RestGetAction>
 
          if (rel.isManyToOne())
          {
+            //CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
+            //TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
+
             collection = req.getApi().getCollection(rel.getRelated());
             String fkColName = rel.getFkCol1().getName();
             String fkAttrName = collection.getAttributeName(fkColName);
@@ -69,9 +71,13 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else if (rel.isManyToMany())
          {
+            //CONVERTS: http://localhost/northwind/source/employees/1/territories
+            //TO THIS : http://localhost/northwind/source/territories/06897,19713
+
             Column toMatch = rel.getFkCol1();
             Column toRetrieve = rel.getFkCol2();
-            Rows rows = collection.getDb().select(req, toMatch.getTable(), toMatch, toRetrieve, Arrays.asList(entityKey));
+
+            Rows rows = toMatch.getTable().getDb().select(toMatch.getTable(), toMatch, toRetrieve, Arrays.asList(entityKey));
             if (rows.size() > 0)
             {
                List foreignKeys = new ArrayList();
@@ -298,7 +304,7 @@ public class RestGetAction extends Action<RestGetAction>
                      node.put(rel.getName(), null);
                   }
                }
-               else //MANY_TO_ONE - Location.id <- Player.locationId OR MANY_TO_MANY
+               else
                {
                   String link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
                   node.put(rel.getName(), link);
@@ -321,7 +327,7 @@ public class RestGetAction extends Action<RestGetAction>
          results.setRow(i, node);
       }
 
-      for (int i = 0; i < results.size(); i++)
+      if (expands.size() > 0)
       {
          expand(collection, "", results.getRows(), includes, excludes, expands, pkCache);
       }
@@ -334,63 +340,14 @@ public class RestGetAction extends Action<RestGetAction>
       return results;
    }
 
-   //   List<JSObject> queryObjects(Rql rql, Service service, Chain chain, Action action, Request req, Response res, SqlDb db, Connection conn, Set includes, Set excludes, Set expands, String path, Collection collection, String inSql, List params) throws Exception
-   //   {
-   //      List<JSObject> results = new ArrayList();
-   //
-   //      if (collection.getEntity().getKey() == null)
-   //      {
-   //         return results;
-   //      }
-   //
-   //      String keyCol = collection.getEntity().getKey().getColumn().getName();
-   //
-   //      List<Row> rows = params != null && params.size() > 0 ? selectRows(chain, db, conn, inSql, params.toArray()) : selectRows(chain, db, conn, inSql);
-   //
-   //      Attribute keyAttr = collection.getEntity().getKey();
-   //      //Entity entity = collection.getEntity();
-   //
-   //      DoubleKeyMap pkCache = new DoubleKeyMap();
-   //
-   //      for (Row row : rows)
-   //      {
-   //         Object key = row.get(keyCol);
-   //
-   //         JSObject js = new JSObject();
-   //         results.add(js);
-   //
-   //         pkCache.put(collection, key, js);
-   //
-   //         for (String colName : (Set<String>) row.keySet())
-   //         //for (Attribute attr : collection.getEntity().getAttributes())
-   //         {
-   //            //String attrName = attr.getName();
-   //            //String colName = attr.getColumn().getName();
-   //            //Object value = row.get(colName);
-   //            Object value = row.get(colName);
-   //            String attrName = colName;
-   //
-   //            if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
-   //            {
-   //               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
-   //               if (include("href", includes, excludes, path))
-   //               {
-   //                  js.put("href", href);
-   //               }
-   //            }
-   //
-   //            if (include(attrName, includes, excludes, path))
-   //            {
-   //               js.put(attrName, value);
-   //            }
-   //         }
-   //      }
-   //
-   //      expand(rql, chain, conn, req.getApi(), collection, path, results, includes, excludes, expands, pkCache);
-   //
-   //      return results;
-   //   }
-
+   /**
+    * This is more complicated that it seems like it would need to be because 
+    * it attempts to retrieve all values of a relationship at a time for the whole 
+    * document.  It does not run a recursive query for each entity and each relationship
+    * which could mean hundreds and hundreds of queries per document.  This should
+    * result in number of queries proportional to the number of expands terms that does
+    * not increase with the number of results at any level of the expansion.
+    */
    protected void expand(Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
@@ -398,11 +355,9 @@ public class RestGetAction extends Action<RestGetAction>
 
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         Collection childCollection = api.getCollection(rel.getRelated().getTable());
+         Collection childCollection = Chain.peek().getApi().getCollection(rel.getRelated().getTable());
          if (rel.isManyToMany())
-            childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
-
-         Column c = rel.getFkCol1();
+            childCollection = Chain.peek().getApi().getCollection(rel.getFkCol2().getPk().getTable());
 
          if (!include(rel.getName(), includes, excludes, path))
             continue;
@@ -446,141 +401,180 @@ public class RestGetAction extends Action<RestGetAction>
                String childPkCol = rel.getFkCol1().getPk().getName();
 
                //find all the fks you need to query for
-               List childIds = new ArrayList();
+               List remainingChildKeys = new ArrayList();
                for (ObjectNode parentObj : parentObjs)
                {
                   //TODO
-                  Object childId = parentObj.get(parentFkCol);
-                  if (childId != null && !pkCache.containsKey(childCollection, childId))
-                     childIds.add(childId);
+                  Object childEntityKey = parentObj.get(rel.getName());
+                  childEntityKey = getEntityKey(childEntityKey);
+                  if (childEntityKey != null // 
+                        && !pkCache.containsKey(childCollection, childEntityKey))//this pervents requerying for entities you have already pulled..TODO need test case here
+                     remainingChildKeys.add(childEntityKey);
                }
 
                //now get them
-               List<ObjectNode> childObjs = fetchObjects(childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
-               if (childObjs != null)
-               {
-                  for (ObjectNode childObj : childObjs)
-                  {
-                     Object childId = childObj.get(childPkCol);
-                     if (!pkCache.containsKey(childCollection, childId))
-                        pkCache.put(childCollection, childId, childObj);
-                  }
+               getNestedObjects(pkCache, childCollection, remainingChildKeys, includes, excludes, expandPath(path, rel.getName()));
+               //now hook the new fk objects back in
 
-                  //now hook the new fk objects back in
-                  for (ObjectNode parentObj : parentObjs)
+               List<ObjectNode> related = new ArrayList();
+               for (ObjectNode parentObj : parentObjs)
+               {
+                  //TODO
+                  Object childId = parentObj.get(rel.getName());
+                  if (childId != null)
                   {
-                     //TODO
-                     Object childId = parentObj.get(parentFkCol);
-                     if (childId != null)
+                     childId = getEntityKey(childId);
+
+                     ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childId);
+                     if (childObj != null)
                      {
-                        ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childId);
-                        if (childObj != null)
-                        {
-                           parentObj.put(rel.getName(), childObj);
-                        }
+                        System.out.println("hooking up " + rel);
+                        parentObj.put(rel.getName(), childObj);
+                        related.add(childObj);
                      }
                   }
 
-                  expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+                  expand(childCollection, expandPath(path, rel.getName()), related, includes, excludes, expands, pkCache);
                }
             }
-            else if (rel.isManyToOne()) //MANY_TO_ONE - Location.id <- Player.locationId
+            else //MANY_TO_ONE - Location.id <- Player.locationId  //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
             {
-               Rows relatedEntityKeys = collection.getDb().selectRelatedEntityKeys(rel, parentObjs);
+               Collection relatedCollection = rel.getRelated().getCollection();
+               Column toMatch = rel.getFkCol1();
+               Column toRetrieve = childCollection.getEntity().getKey().getColumn();
 
-               List relatedPks = new ArrayList();
-               relatedEntityKeys.forEach(e -> relatedPks.add(e));
-
-               List<ObjectNode> childObjs = fetchObjects(childCollection, relatedPks, includes, excludes, expandPath(path, rel.getName()));
-
-               if (childObjs.size() > 0)
+               if (rel.isManyToMany())
                {
-                  String childFkCol = rel.getFkCol1().getName();
-                  String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
+                  toMatch = rel.getFkCol1();
+                  toRetrieve = rel.getFkCol2();
+               }
 
-                  for (ObjectNode childObj : childObjs)
+               List parentEks = new ArrayList();
+               for (ObjectNode parentObj : parentObjs)
+               {
+                  String parentEk = getEntityKey(parentObj);
+                  if (!parentEks.contains(parentEk))
                   {
-                     Object childId = childObj.get(childPkCol);
-                     if (!pkCache.containsKey(childCollection, childId))
-                        pkCache.put(childCollection, childId, childObj);
+                     parentEks.add(parentEk);
+                     if (parentObj.get(rel.getName()) instanceof ArrayNode)
+                        throw new ApiException("Implementation error");
 
-                     Object childFkVal = childObj.get(childFkCol);
-                     if (childFkVal != null)
-                     {
-                        ObjectNode parentObj = (ObjectNode) pkCache.get(collection, childFkVal);
-                        if (parentObj != null)
-                        {
-                           ArrayNode array = (ArrayNode) parentObj.get(rel.getName());
-                           array.add(childObj);
-                        }
-                     }
+                     parentObj.put(rel.getName(), new ArrayNode());
                   }
-                  expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
-               }
-            }
-            else //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-            {
-               String parentListProp = rel.getName();
-               String parentPkCol = rel.getFkCol1().getPk().getName();
-               String linkTbl = rel.getFkCol1().getTable().getName();
-               String linkTblParentFkCol = rel.getFkCol1().getName();
-               String linkTblChildFkCol = rel.getFkCol2().getName();
-               String childPkCol = rel.getFkCol2().getPk().getName();
-
-               Rows childRows = collection.getDb().selectRelatedEntityKeys(rel, parentObjs);
-
-               ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
-               Set childIds = new HashSet();
-               for (Row row : childRows)
-               {
-                  Object parentPk = row.get(linkTblParentFkCol);
-                  Object childPk = row.get(linkTblChildFkCol);
-
-                  parentLists.put(parentPk, childPk);
-                  if (!pkCache.containsKey(childCollection, childPk))
-                     childIds.add(childPk);
                }
 
-               List<ObjectNode> childObjs = fetchObjects(childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
-               for (ObjectNode childObj : childObjs)
+               List childEks = new ArrayList();
+               Rows rows = childCollection.getDb().select(toRetrieve.getTable(), toMatch, toRetrieve, parentEks);
+               for (Row row : rows)
                {
-                  Object childId = childObj.get(childPkCol);
-                  if (!pkCache.containsKey(childCollection, childId))
-                     pkCache.put(childCollection, childId, childObj);
+                  String relatedEk = row.get(toRetrieve.getName()).toString();
+                  if (!pkCache.containsKey(relatedCollection, relatedEk))
+                  {
+                     childEks.add(relatedEk);
+                  }
+                  else
+                  {
+                     System.out.println("TODO: write a test case here!!!! the previously existing object is being expanded in some other part of the graph traversal");
+                  }
                }
 
-               for (Row childRow : childRows)
-               {
-                  ObjectNode parentObj = (ObjectNode) pkCache.get(collection, childRow.get(linkTblParentFkCol));
-                  ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childRow.get(linkTblChildFkCol));
+               List<ObjectNode> childObjs = getNestedObjects(pkCache, relatedCollection, childEks, includes, excludes, expandPath(path, rel.getName()));
 
-                  ArrayNode array = (ArrayNode) parentObj.get(parentListProp);
-                  array.add(childObj);
+               for (Row row : rows)
+               {
+                  String toMatchStr = row.getString(toMatch.getName()).toString();
+                  String toRetrieveStr = row.getString(toRetrieve.getName()).toString();
+
+                  ObjectNode parentObj = (ObjectNode) pkCache.get(collection, toMatchStr);
+                  ObjectNode childObj = (ObjectNode) pkCache.get(relatedCollection, toRetrieveStr);
+
+                  parentObj.getArray(rel.getName()).add(childObj);
                }
 
                expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+
             }
+            //            else //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
+            //            {
+            //               String parentPkCol = rel.getFkCol1().getPk().getName();
+            //               String linkTbl = rel.getFkCol1().getTable().getName();
+            //               Column linkTblParentFkCol = rel.getFkCol1();
+            //               Column linkTblChildFkCol = rel.getFkCol2();
+            //
+            //               List parentIds = new ArrayList();
+            //               for (ObjectNode parentObj : parentObjs)
+            //               {
+            //                  parentIds.add(parentObj.get(parentPkCol));
+            //
+            //                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
+            //                     parentObj.put(rel.getName(), new ArrayNode());
+            //               }
+            //
+            //               String parentListProp = rel.getName();
+            //               String childPkCol = rel.getFkCol2().getPk().getName();
+            //
+            //               Table linkTable = rel.getFkCol1().getTable();
+            //               Rows childRows = linkTable.getDb().select(linkTable, linkTblParentFkCol, linkTblChildFkCol, parentIds);
+            //
+            //               ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
+            //               Set childIds = new HashSet();
+            //               for (Row row : childRows)
+            //               {
+            //                  Object parentPk = row.get(linkTblParentFkCol.getName());
+            //                  Object childPk = row.get(linkTblChildFkCol.getName());
+            //
+            //                  parentLists.put(parentPk, childPk);
+            //                  if (!pkCache.containsKey(childCollection, childPk))
+            //                     childIds.add(childPk);
+            //               }
+            //
+            //               List<ObjectNode> childObjs = getNestedObjects(pkCache, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
+            //
+            //               for (Row childRow : childRows)
+            //               {
+            //                  ObjectNode parentObj = (ObjectNode) pkCache.get(collection, childRow.get(linkTblParentFkCol.getName()));
+            //                  ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childRow.get(linkTblChildFkCol.getName()));
+            //
+            //                  ArrayNode array = (ArrayNode) parentObj.get(parentListProp);
+            //                  array.add(childObj);
+            //               }
+            //
+            //               expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
+            //            }
          }
       }
 
       //TODO...why is this here...figure it out and comment it
-      if (Chain.peek().getParent() == null)
-      {
-         for (Relationship rel : collection.getEntity().getRelationships())
-         {
-            if (rel.isOneToMany())
-            {
-               for (ObjectNode parentObj : parentObjs)
-               {
-                  String key = rel.getFkCol1().getName();
-                  parentObj.remove(key);
-               }
-            }
-         }
-      }
+      //      if (Chain.peek().getParent() == null)
+      //      {
+      //         for (Relationship rel : collection.getEntity().getRelationships())
+      //         {
+      //            if (rel.isOneToMany())
+      //            {
+      //               for (ObjectNode parentObj : parentObjs)
+      //               {
+      //                  String key = rel.getFkCol1().getName();
+      //                  parentObj.remove(key);
+      //               }
+      //            }
+      //         }
+      //      }
    }
 
-   protected List<ObjectNode> fetchObjects(Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
+   protected String getEntityKey(Object obj)
+   {
+      if (obj instanceof ObjectNode)
+         obj = ((ObjectNode) obj).get("href");
+
+      String str = (String) obj;
+      int idx = str.lastIndexOf('/');
+      if (idx > 0)
+         str = str.substring(idx + 1, str.length());
+      return str;
+
+   }
+
+   protected List<ObjectNode> getNestedObjects(MultiKeyMap pkCache, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
    {
       if (ids.size() == 0)
          return Collections.EMPTY_LIST;
@@ -626,21 +620,14 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (sc == 200)
       {
-         Object arr = res.getJson().get("data");
-         if (arr instanceof ArrayNode)
+         for (Object obj : res.data().asList())
          {
-            List<ObjectNode> objs = ((ArrayNode) arr).asList();
-            for (ObjectNode obj : objs)
-            {
-               for (String key : (Set<String>) obj.asMap().keySet())
-               {
-                  if (!include(key, includes, excludes, path))
-                     obj.remove(key);
-               }
-            }
-
-            return objs;
+            Object entityKey = getEntityKey((ObjectNode) obj);
+            if (pkCache.containsKey(entityKey))
+               System.out.println("why is this already here???");
+            pkCache.put(collection, entityKey, obj);
          }
+         return res.data().asList();
       }
 
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
