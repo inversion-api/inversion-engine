@@ -350,6 +350,8 @@ public class RestGetAction extends Action<RestGetAction>
     */
    protected void expand(Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
    {
+      System.out.println(path);
+
       if (parentObjs.size() == 0)
          return;
 
@@ -412,10 +414,6 @@ public class RestGetAction extends Action<RestGetAction>
                if (!pkCache.containsKey(relatedCollection, relatedEk))
                {
                   newChildEks.add(relatedEk);
-               }
-               else
-               {
-                  System.out.println("TODO: write a test case here!!!! the previously existing object is being expanded in some other part of the graph traversal");
                }
             }
 
@@ -635,6 +633,8 @@ public class RestGetAction extends Action<RestGetAction>
             break;
          }
       }
+
+      //System.out.println("expand(" + path + ") -> " + expand);
 
       return expand;
    }

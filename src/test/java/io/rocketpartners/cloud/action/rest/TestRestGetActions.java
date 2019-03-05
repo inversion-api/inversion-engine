@@ -43,110 +43,125 @@ public abstract class TestRestGetActions extends TestCase
       return cp + path;
    }
 
-   @Test
-   public void testLimit0() throws Exception
+//   @Test
+//   public void testLimit0() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      res = service.get(url("orders?limit=5"));
+//      json = res.getJson();
+//      assertEquals(5, json.find("meta.pageSize"));
+//      assertEquals(5, json.getArray("data").length());
+//   }
+//
+//   @Test
+//   public void testSort01() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      String url = url("orders?limit=2&sort=orderid&type=ORDER");
+//
+//      res = service.get(url);
+//      System.out.println(res.getDebug());
+//
+//      assertEquals(2, res.findArray("data").length());
+//      String href = res.findString("data.0.href");
+//      assertTrue(href.endsWith("/orders/10257"));
+//
+//      res = service.get(url("orders?limit=2&sort=-orderid"));
+//
+//      assertEquals(2, res.findArray("data").length());
+//      href = res.findString("data.0.href");
+//      assertTrue(href.endsWith("/orders/11058"));
+//   }
+//
+//   @Test
+//   public void testPagination0() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//
+//      int total = 0;
+//      int pages = 0;
+//      String next = url("orders?limit=5");
+//      do
+//      {
+//         res = service.get(next);
+//
+//         System.out.println(res.meta());
+//
+//         if (res.data().size() == 0)
+//            break;
+//
+//         total += res.data().length();
+//         pages += 1;
+//
+//         next = res.findString("meta.next");
+//
+//         assertEquals(5, res.findArray("data").length());
+//         assertEquals(5, res.find("meta.pageSize"));
+//      }
+//      while (pages < 20 && next != null);
+//
+//      assertEquals(5, pages);
+//      assertEquals(25, total);
+//   }
+//
+//   public void testExpandsOneToMany01() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//
+//      res = service.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
+//      System.out.println(res.getJson());
+//      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
+//      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
+//      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+//   }
+   
+   public void testExpandsOneToMany02() throws Exception
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
 
-      res = service.get(url("orders?limit=5"));
-      json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
-   }
-
-   @Test
-   public void testSort01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-      ObjectNode json = null;
-
-      String url = url("orders?limit=2&sort=orderid&type=ORDER");
-
-      res = service.get(url);
-      System.out.println(res.getDebug());
-
-      assertEquals(2, res.findArray("data").length());
-      String href = res.findString("data.0.href");
-      assertTrue(href.endsWith("/orders/10257"));
-
-      res = service.get(url("orders?limit=2&sort=-orderid"));
-
-      assertEquals(2, res.findArray("data").length());
-      href = res.findString("data.0.href");
-      assertTrue(href.endsWith("/orders/11058"));
-   }
-
-   @Test
-   public void testPagination0() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      int total = 0;
-      int pages = 0;
-      String next = url("orders?limit=5");
-      do
-      {
-         res = service.get(next);
-
-         System.out.println(res.meta());
-
-         if (res.data().size() == 0)
-            break;
-
-         total += res.data().length();
-         pages += 1;
-
-         next = res.findString("meta.next");
-
-         assertEquals(5, res.findArray("data").length());
-         assertEquals(5, res.find("meta.pageSize"));
-      }
-      while (pages < 20 && next != null);
-
-      assertEquals(5, pages);
-      assertEquals(25, total);
-   }
-
-   public void testExpandsOneToMany01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
+      res = service.get(url("orders/10395?expands=employee.reportsto.employees"));
       System.out.println(res.getJson());
-      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
+      
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
       assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.employee.reportsto.employees.0.href").endsWith("/employees/6"));
+      
+      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"http://localhost/northwind/sql/employees/6\"") > 0);
    }
    
 
-   public void testExpandsManyToOne01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get("http://localhost/northwind/source/employees/5?expands=employees");
-      System.out.println(res.getJson());
-      
-      assertEquals(3, res.findArray("data.0.employees").length());
-      assertNotNull(res.find("data.0.employees.0.lastname"));
-   }
-   
-   public void testExpandsManyToMany01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get("http://localhost/northwind/sql/employees/6?expands=territories");
-      System.out.println(res.getJson());
-      
-      assertEquals(5, res.findArray("data.0.territories").length());
-      assertNotNull(res.find("data.0.territories.0.territorydescription"));
-   }
+//   public void testExpandsManyToOne01() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//
+//      res = service.get("http://localhost/northwind/source/employees/5?expands=employees");
+//      System.out.println(res.getJson());
+//      
+//      assertEquals(3, res.findArray("data.0.employees").length());
+//      assertNotNull(res.find("data.0.employees.0.lastname"));
+//   }
+//   
+//   public void testExpandsManyToMany01() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//
+//      res = service.get("http://localhost/northwind/sql/employees/6?expands=territories");
+//      System.out.println(res.getJson());
+//      
+//      assertEquals(5, res.findArray("data.0.territories").length());
+//      assertNotNull(res.find("data.0.territories.0.territorydescription"));
+//   }
    
    
 
