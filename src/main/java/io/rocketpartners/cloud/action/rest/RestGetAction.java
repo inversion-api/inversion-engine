@@ -355,214 +355,102 @@ public class RestGetAction extends Action<RestGetAction>
 
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         Collection childCollection = Chain.peek().getApi().getCollection(rel.getRelated().getTable());
-         if (rel.isManyToMany())
-            childCollection = Chain.peek().getApi().getCollection(rel.getFkCol2().getPk().getTable());
-
-         if (!include(rel.getName(), includes, excludes, path))
-            continue;
-
-         if (!expand(expands, path, rel))
+         if (expand(expands, path, rel))
          {
-            for (ObjectNode js : parentObjs)
+            //ONE_TO_MANY - Player.locationId -> Location.id
+            //MANY_TO_ONE - Location.id <- Player.locationId  
+            //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
+
+            final Collection relatedCollection = rel.getRelated().getCollection();
+            Column toMatchCol = null;
+            Column toRetrieveCol = null;
+
+            if (rel.isOneToMany())
             {
-               if (js.getProperty(rel.getName()) != null)
-                  continue;
+               //TODO: WE ACTUALLY DON'T NEED TO DO THIS DB ROUNDTRIP.  WE HAVE ALL OF THE IDS ALREAD
+               toMatchCol = collection.getEntity().getKey().getColumn();
+               toRetrieveCol = rel.getFkCol1();
+            }
+            else if (rel.isManyToOne())
+            {
+               toMatchCol = rel.getFkCol1();
+               toRetrieveCol = rel.getEntity().getKey().getColumn();
+            }
+            else if (rel.isManyToMany())
+            {
+               toMatchCol = rel.getFkCol1();
+               toRetrieveCol = rel.getFkCol2();
+            }
 
-               String keyProp = collection.getEntity().getKey().getName();
-
-               if (rel.isOneToMany())
+            List toMatchEks = new ArrayList();
+            for (ObjectNode parentObj : parentObjs)
+            {
+               String parentEk = getEntityKey(parentObj);
+               if (!toMatchEks.contains(parentEk))
                {
-                  Object fk = js.get(rel.getFkCol1().getName());
+                  if (parentObj.get(rel.getName()) instanceof ArrayNode)
+                     throw new ApiException("Implementation error");
 
-                  if (fk != null)
+                  toMatchEks.add(parentEk);
+
+                  if (rel.isOneToMany())
                   {
-                     String href = Chain.buildLink(childCollection, fk, null);
-                     js.put(rel.getName(), new ObjectNode("href", href));
+                     parentObj.remove(rel.getName());
                   }
                   else
                   {
-                     js.put(rel.getName(), null);
-                  }
-               }
-               else
-               {
-                  Object key = js.get(keyProp);
-                  String href = Chain.buildLink(Chain.getRequest().getCollection(), key, rel.getName());
-                  js.put(rel.getName(), new ObjectNode("href", href));
-               }
-            }
-         }
-         else
-         {
-            if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
-            {
-               String parentFkCol = rel.getFkCol1().getName();
-               String childPkCol = rel.getFkCol1().getPk().getName();
-
-               //find all the fks you need to query for
-               List remainingChildKeys = new ArrayList();
-               for (ObjectNode parentObj : parentObjs)
-               {
-                  //TODO
-                  Object childEntityKey = parentObj.get(rel.getName());
-                  childEntityKey = getEntityKey(childEntityKey);
-                  if (childEntityKey != null // 
-                        && !pkCache.containsKey(childCollection, childEntityKey))//this pervents requerying for entities you have already pulled..TODO need test case here
-                     remainingChildKeys.add(childEntityKey);
-               }
-
-               //now get them
-               getNestedObjects(pkCache, childCollection, remainingChildKeys, includes, excludes, expandPath(path, rel.getName()));
-               //now hook the new fk objects back in
-
-               List<ObjectNode> related = new ArrayList();
-               for (ObjectNode parentObj : parentObjs)
-               {
-                  //TODO
-                  Object childId = parentObj.get(rel.getName());
-                  if (childId != null)
-                  {
-                     childId = getEntityKey(childId);
-
-                     ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childId);
-                     if (childObj != null)
-                     {
-                        System.out.println("hooking up " + rel);
-                        parentObj.put(rel.getName(), childObj);
-                        related.add(childObj);
-                     }
-                  }
-
-                  expand(childCollection, expandPath(path, rel.getName()), related, includes, excludes, expands, pkCache);
-               }
-            }
-            else //MANY_TO_ONE - Location.id <- Player.locationId  //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-            {
-               Collection relatedCollection = rel.getRelated().getCollection();
-               Column toMatch = rel.getFkCol1();
-               Column toRetrieve = childCollection.getEntity().getKey().getColumn();
-
-               if (rel.isManyToMany())
-               {
-                  toMatch = rel.getFkCol1();
-                  toRetrieve = rel.getFkCol2();
-               }
-
-               List parentEks = new ArrayList();
-               for (ObjectNode parentObj : parentObjs)
-               {
-                  String parentEk = getEntityKey(parentObj);
-                  if (!parentEks.contains(parentEk))
-                  {
-                     parentEks.add(parentEk);
-                     if (parentObj.get(rel.getName()) instanceof ArrayNode)
-                        throw new ApiException("Implementation error");
-
                      parentObj.put(rel.getName(), new ArrayNode());
                   }
                }
+            }
 
-               List childEks = new ArrayList();
-               Rows rows = childCollection.getDb().select(toRetrieve.getTable(), toMatch, toRetrieve, parentEks);
-               for (Row row : rows)
+            List newChildEks = new ArrayList();
+            Rows allChildEks = relatedCollection.getDb().select(toRetrieveCol.getTable(), toMatchCol, toRetrieveCol, toMatchEks);
+            for (Row row : allChildEks)
+            {
+               String relatedEk = row.get(toRetrieveCol.getName()).toString();
+               if (!pkCache.containsKey(relatedCollection, relatedEk))
                {
-                  String relatedEk = row.get(toRetrieve.getName()).toString();
-                  if (!pkCache.containsKey(relatedCollection, relatedEk))
-                  {
-                     childEks.add(relatedEk);
-                  }
-                  else
-                  {
-                     System.out.println("TODO: write a test case here!!!! the previously existing object is being expanded in some other part of the graph traversal");
-                  }
+                  newChildEks.add(relatedEk);
                }
-
-               List<ObjectNode> childObjs = getNestedObjects(pkCache, relatedCollection, childEks, includes, excludes, expandPath(path, rel.getName()));
-
-               for (Row row : rows)
+               else
                {
-                  String toMatchStr = row.getString(toMatch.getName()).toString();
-                  String toRetrieveStr = row.getString(toRetrieve.getName()).toString();
+                  System.out.println("TODO: write a test case here!!!! the previously existing object is being expanded in some other part of the graph traversal");
+               }
+            }
 
-                  ObjectNode parentObj = (ObjectNode) pkCache.get(collection, toMatchStr);
-                  ObjectNode childObj = (ObjectNode) pkCache.get(relatedCollection, toRetrieveStr);
+            //this recursive call populates the pkCache
+            List<ObjectNode> newChildObjs = getNestedObjects(pkCache, relatedCollection, newChildEks, includes, excludes, expandPath(path, rel.getName()));
 
+            for (Row row : allChildEks)
+            {
+               String toMatchStr = row.getString(toMatchCol.getName()).toString();
+               String toRetrieveStr = row.getString(toRetrieveCol.getName()).toString();
+
+               ObjectNode parentObj = (ObjectNode) pkCache.get(collection, toMatchStr);
+               ObjectNode childObj = (ObjectNode) pkCache.get(relatedCollection, toRetrieveStr);
+
+               if (rel.isOneToMany())
+               {
+                  parentObj.put(rel.getName(), childObj);
+               }
+               else
+               {
                   parentObj.getArray(rel.getName()).add(childObj);
                }
-
-               expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
-
             }
-            //            else //many-to-many, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-            //            {
-            //               String parentPkCol = rel.getFkCol1().getPk().getName();
-            //               String linkTbl = rel.getFkCol1().getTable().getName();
-            //               Column linkTblParentFkCol = rel.getFkCol1();
-            //               Column linkTblChildFkCol = rel.getFkCol2();
-            //
-            //               List parentIds = new ArrayList();
-            //               for (ObjectNode parentObj : parentObjs)
-            //               {
-            //                  parentIds.add(parentObj.get(parentPkCol));
-            //
-            //                  if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-            //                     parentObj.put(rel.getName(), new ArrayNode());
-            //               }
-            //
-            //               String parentListProp = rel.getName();
-            //               String childPkCol = rel.getFkCol2().getPk().getName();
-            //
-            //               Table linkTable = rel.getFkCol1().getTable();
-            //               Rows childRows = linkTable.getDb().select(linkTable, linkTblParentFkCol, linkTblChildFkCol, parentIds);
-            //
-            //               ArrayListValuedHashMap parentLists = new ArrayListValuedHashMap();
-            //               Set childIds = new HashSet();
-            //               for (Row row : childRows)
-            //               {
-            //                  Object parentPk = row.get(linkTblParentFkCol.getName());
-            //                  Object childPk = row.get(linkTblChildFkCol.getName());
-            //
-            //                  parentLists.put(parentPk, childPk);
-            //                  if (!pkCache.containsKey(childCollection, childPk))
-            //                     childIds.add(childPk);
-            //               }
-            //
-            //               List<ObjectNode> childObjs = getNestedObjects(pkCache, childCollection, childIds, includes, excludes, expandPath(path, rel.getName()));
-            //
-            //               for (Row childRow : childRows)
-            //               {
-            //                  ObjectNode parentObj = (ObjectNode) pkCache.get(collection, childRow.get(linkTblParentFkCol.getName()));
-            //                  ObjectNode childObj = (ObjectNode) pkCache.get(childCollection, childRow.get(linkTblChildFkCol.getName()));
-            //
-            //                  ArrayNode array = (ArrayNode) parentObj.get(parentListProp);
-            //                  array.add(childObj);
-            //               }
-            //
-            //               expand(childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
-            //            }
+
+            expand(relatedCollection, expandPath(path, rel.getName()), newChildObjs, includes, excludes, expands, pkCache);
+
          }
       }
-
-      //TODO...why is this here...figure it out and comment it
-      //      if (Chain.peek().getParent() == null)
-      //      {
-      //         for (Relationship rel : collection.getEntity().getRelationships())
-      //         {
-      //            if (rel.isOneToMany())
-      //            {
-      //               for (ObjectNode parentObj : parentObjs)
-      //               {
-      //                  String key = rel.getFkCol1().getName();
-      //                  parentObj.remove(key);
-      //               }
-      //            }
-      //         }
-      //      }
    }
 
    protected String getEntityKey(Object obj)
    {
+      if (obj == null)
+         return null;
+
       if (obj instanceof ObjectNode)
          obj = ((ObjectNode) obj).get("href");
 

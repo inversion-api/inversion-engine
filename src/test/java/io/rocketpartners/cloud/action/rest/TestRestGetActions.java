@@ -117,11 +117,10 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
 
       res = service.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
+      System.out.println(res.getJson());
       assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
       assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
-      System.out.println(res.getJson());
-      System.out.println(res.getJson());
    }
    
 

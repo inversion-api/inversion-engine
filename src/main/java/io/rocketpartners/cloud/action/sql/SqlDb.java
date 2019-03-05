@@ -76,6 +76,8 @@ public class SqlDb extends Db<SqlDb>
    // Only impacts 'mysql' types
    protected boolean              calcRowsFound            = true;
 
+   protected int                  relatedMax               = 500;
+
    static
    {
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
@@ -146,91 +148,32 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   //   //MANY_TO_ONE - Location.id <- Player.locationId
-   //   protected Rows selectManyToOneRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
-   //   {
-   //      Collection childCollection = api.getCollection(rel.getRelated().getTable());
-   //      if (rel.isManyToMany())
-   //         childCollection = api.getCollection(rel.getFkCol2().getPk().getTable());
-   //
-   //      String relTbl = childCollection.getTable().getName();
-   //
-   //      String parentPkCol = rel.getFkCol1().getPk().getName();
-   //      String childFkCol = rel.getFkCol1().getName();
-   //      String childPkCol = childCollection.getEntity().getKey().getColumn().getName();
-   //
-   //      List parentIds = new ArrayList();
-   //      for (ObjectNode parentObj : parentObjs)
-   //      {
-   //         parentIds.add(parentObj.get(parentPkCol));
-   //         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-   //            parentObj.put(rel.getName(), new ArrayNode());
-   //      }
-   //
-   //      String sql = "";
-   //      sql += " SELECT " + quoteCol(childFkCol) + ", " + quoteCol(childPkCol) + " FROM " + quoteCol(relTbl);
-   //      sql += " WHERE " + quoteCol(childFkCol) + " IN (" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ")";
-   //
-   //      if (Chain.getRequest().isDebug())
-   //      {
-   //         Chain.getResponse().debug(sql);
-   //         if (parentIds.size() > 0)
-   //         {
-   //            Chain.getResponse().debug(parentIds);
-   //         }
-   //      }
-   //
-   //      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
-   //      return relatedEntityKeys;
-   //   }
-   //
-   //   protected Rows selectManyToManyRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
-   //   {
-   //      //ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
-   //      String parentPkCol = rel.getFkCol1().getPk().getName();
-   //      String linkTbl = rel.getFkCol1().getTable().getName();
-   //      String linkTblParentFkCol = rel.getFkCol1().getName();
-   //      String linkTblChildFkCol = rel.getFkCol2().getName();
-   //
-   //      List parentIds = new ArrayList();
-   //      for (ObjectNode parentObj : parentObjs)
-   //      {
-   //         parentIds.add(parentObj.get(parentPkCol));
-   //
-   //         if (!(parentObj.get(rel.getName()) instanceof ArrayNode))
-   //            parentObj.put(rel.getName(), new ArrayNode());
-   //      }
-   //
-   //      String sql = " SELECT " + quoteCol(linkTblParentFkCol) + ", " + quoteCol(linkTblChildFkCol) + //
-   //            " FROM " + quoteCol(linkTbl) + //
-   //            " WHERE " + quoteCol(linkTblChildFkCol) + " IS NOT NULL " + //
-   //            " AND " + quoteCol(linkTblParentFkCol) + " IN(" + SqlUtils.getQuestionMarkStr(parentIds.size()) + ") ";
-   //
-   //      if (Chain.getRequest().isDebug())
-   //      {
-   //         Chain.getResponse().debug(sql);
-   //         if (parentIds.size() > 0)
-   //         {
-   //            Chain.getResponse().debug(parentIds);
-   //         }
-   //      }
-   //
-   //      Rows relatedEntityKeys = SqlUtils.selectRows(getConnection(), sql, parentIds);
-   //      return relatedEntityKeys;
-   //   }
-
+   @Override
    public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
    {
       if (toMatch.getTable() != table || toRetrieve.getTable() != table)
          throw new ApiException("Supplied columns do not belong to the target table.");
 
       String sql = "";
-      sql += " SELECT " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
-      sql += " FROM   " + quoteCol(table.getName());
-      sql += " WHERE  " + quoteCol(toRetrieve.getName()) + " IS NOT NULL ";
-      sql += " AND    " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
+      sql += " SELECT   " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
+      sql += " FROM     " + quoteCol(table.getName());
+      sql += " WHERE    " + quoteCol(toRetrieve.getName()) + " IS NOT NULL ";
+      sql += " AND      " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
+      sql += " ORDER BY " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
+      sql += " LIMIT " + (relatedMax + 1); //select 1 more on purpose so we can see if more than relatedMax exist
 
       Rows rows = SqlUtils.selectRows(getConnection(), sql, matchValues);
+
+      if (rows.size() > relatedMax)
+      {
+         //TODO:add test case for this 
+         String msg = "";
+         msg += "You are trying to retrieve more related entities than can be retrieved in a single document.";
+         msg += " Try lowing your pageSize parameter or pruning your expands list to something more approperiate.";
+         msg += " See SqlDb.withRelatedMax(int)";
+         throw new ApiException(SC.SC_400_BAD_REQUEST, msg);
+      }
+
       return rows;
    }
 
@@ -893,6 +836,17 @@ public class SqlDb extends Db<SqlDb>
    public String quoteStr(String string)
    {
       return stringQuote + string + stringQuote;
+   }
+
+   public int getRelatedMax()
+   {
+      return relatedMax;
+   }
+
+   public SqlDb withRelatedMax(int relatedMax)
+   {
+      this.relatedMax = relatedMax;
+      return this;
    }
 
 }
