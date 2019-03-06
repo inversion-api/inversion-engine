@@ -273,16 +273,19 @@ public class Chain
     * This for example, allows you to add to but not remove from
     * a configured "excludes" parameter
     * 
+    * All returned values are lower case
+    * 
     * @param key
     * @return
     */
-   public Set<String> getMeredConfigParams(String key)
+   public Set<String> mergeEndpointActionParamsConfig(String key)
    {
       LinkedHashSet values = new LinkedHashSet();
 
       String value = request.getEndpoint().getConfig(key);
       if (value != null)
       {
+         value = value.toLowerCase();
          values.addAll(Utils.explode(",", value));
       }
 
@@ -291,14 +294,16 @@ public class Chain
          value = actions.get(i).getConfig(key);
          if (value != null)
          {
+            value = value.toLowerCase();
             values.addAll(Utils.explode(",", value));
          }
       }
 
-      String param = request.getParam(key);
-      if (!Utils.empty(param))
+      value = request.getParam(key);
+      if (value != null)
       {
-         for (String lcParam : Utils.explode(",", param.toLowerCase()))
+         value = value.toLowerCase();
+         for (String lcParam : Utils.explode(",", value))
             values.add(lcParam);
       }
 

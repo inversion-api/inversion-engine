@@ -206,6 +206,8 @@ public class S3UploadAction extends Action<S3UploadAction>
 
    private AmazonS3 buildS3Client(Chain chain)
    {
+      //TODO make this work like dynamo client config as art of db
+      
       String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
       String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
       String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);

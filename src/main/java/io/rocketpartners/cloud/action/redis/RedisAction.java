@@ -15,7 +15,6 @@
  */
 package io.rocketpartners.cloud.action.redis;
 
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -33,8 +32,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * The service builds a key from the request url & parameters.  If the key does not exist within Redis,
@@ -60,27 +57,7 @@ import redis.clients.jedis.JedisPoolConfig;
  */
 public class RedisAction extends Action<RedisAction>
 {
-   Logger                       log                                = LoggerFactory.getLogger(getClass());
-
-   // configurable snooze.props 
-   protected String             redisHost                          = null;
-   protected int                redisPort                          = 6379;
-
-   protected int                redisPoolMin                       = 16;
-   protected int                redisPoolMax                       = 128;
-   protected boolean            redisTestOnBorrow                  = true;
-   protected boolean            redisTestOnReturn                  = true;
-   protected boolean            redisTestWhileIdle                 = true;
-   protected int                redisMinEvictableIdleTimeMillis    = 60000;
-   protected int                redisTimeBetweenEvictionRunsMillis = 30000;
-   protected int                redisNumTestsPerEvictionRun        = 3;
-   protected boolean            redisBlockWhenExhausted            = true;
-
-   protected String             redisNocacheParam                  = "nocache";
-   protected int                redisReadSocketTimeout             = 2500;                               // time in milliseconds
-   protected int                redisTtl                           = 15552000;                           // time to live 15,552,000s == 180 days
-
-   Hashtable<String, JedisPool> pools                              = new Hashtable();
+   protected transient Logger log = LoggerFactory.getLogger(getClass());
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -93,7 +70,9 @@ public class RedisAction extends Action<RedisAction>
       if (chain.getParent() != null)
          return;
 
-      String nocacheParam = chain.getConfig("redisNocacheParam", this.redisNocacheParam);
+      RedisDb db = (RedisDb) req.getCollection().getDb();
+
+      String nocacheParam = chain.getConfig("redisNocacheParam", db.getNocacheParam());
 
       // remove this param before creating the key, so this param is not included in the key
       boolean skipCache = (req.removeParam(nocacheParam) != null);
@@ -116,7 +95,7 @@ public class RedisAction extends Action<RedisAction>
             String value = null;
             try
             {
-               jedis = getPool(chain).getResource();
+               jedis = db.getRedisClient();
                value = jedis.get(key);
             }
             catch (Exception ex)
@@ -143,7 +122,7 @@ public class RedisAction extends Action<RedisAction>
 
                // see class header for explanation on setex()  
                // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
-               
+
                ObjectNode json = res.getJson();
 
                if (res.getStatusCode() == 200 && json != null && json.getProperties().size() > 0)
@@ -151,7 +130,7 @@ public class RedisAction extends Action<RedisAction>
                   // will NOT store empty JSON responses
                   try
                   {
-                     int ttl = chain.getConfig("redisTtl", this.redisTtl);
+                     int ttl = chain.getConfig("redisTtl", db.getTtl());
                      jedis.setex(key, ttl, json.toString());
                   }
                   catch (Exception ex)
@@ -216,42 +195,6 @@ public class RedisAction extends Action<RedisAction>
       key += sortedParams;
 
       return key;
-   }
-
-   JedisPool getPool(Chain chain)
-   {
-      String host = chain.getConfig("redisHost", this.redisHost);
-      int port = chain.getConfig("redisPort", this.redisPort);
-
-      String poolKey = chain.getConfig("redisPoolKey", host + ":" + port);
-
-      JedisPool jedis = pools.get(poolKey);
-      if (jedis == null)
-      {
-         synchronized (this)
-         {
-            jedis = pools.get(poolKey);
-            if (jedis == null)
-            {
-               JedisPoolConfig poolConfig = new JedisPoolConfig();
-               poolConfig.setMaxTotal(chain.getConfig("redisPoolMax", this.redisPoolMax));
-               poolConfig.setMaxIdle(chain.getConfig("redisPoolMax", this.redisPoolMax));
-               poolConfig.setMinIdle(chain.getConfig("redisPoolMin", this.redisPoolMin));
-               poolConfig.setTestOnBorrow(chain.getConfig("redisTestOnBorrow", this.redisTestOnBorrow));
-               poolConfig.setTestOnReturn(chain.getConfig("redisTestOnReturn", this.redisTestOnReturn));
-               poolConfig.setTestWhileIdle(chain.getConfig("redisTestWhileIdle", this.redisTestWhileIdle));
-               poolConfig.setMinEvictableIdleTimeMillis(chain.getConfig("redisMinEvictableIdleTimeMillis", this.redisMinEvictableIdleTimeMillis));
-               poolConfig.setTimeBetweenEvictionRunsMillis(chain.getConfig("redisTimeBetweenEvictionRunsMillis", this.redisTimeBetweenEvictionRunsMillis));
-               poolConfig.setNumTestsPerEvictionRun(chain.getConfig("redisNumTestsPerEvictionRun", this.redisNumTestsPerEvictionRun));
-               poolConfig.setBlockWhenExhausted(chain.getConfig("redisBlockWhenExhausted", this.redisBlockWhenExhausted));
-
-               jedis = new JedisPool(poolConfig, host, port, chain.getConfig("redisReadSocketTimeout", this.redisReadSocketTimeout));
-               pools.put(poolKey, jedis);
-            }
-         }
-      }
-
-      return jedis;
    }
 
 }

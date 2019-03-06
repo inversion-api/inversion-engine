@@ -94,22 +94,6 @@ public class FirehoseDb extends Db<FirehoseDb>
       this.withType("firehose");
    }
 
-   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
-   {
-      throw new ApiException(SC.SC_400_BAD_REQUEST, "Reading from a AWS Kinesis Firehose stream is not supported.  This is a configuration error.");
-   }
-
-   public void delete(Request request, Table table, String entityKey) throws Exception
-   {
-      throw new ApiException(SC.SC_400_BAD_REQUEST, "Deleting from a AWS Kinesis Firehose stream is not supported.  This is a configuration error.");
-   }
-
-   //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
-   public String upsert(Request request, Table table, Map<String, Object> rows) throws Exception
-   {
-      throw new ApiException(SC.SC_400_BAD_REQUEST, "The FirehosePostAction should be used to write to an AWS Kinesis Firehose stream.");
-   }
-
    @Override
    public void bootstrapApi()
    {
@@ -136,11 +120,16 @@ public class FirehoseDb extends Db<FirehoseDb>
       }
       else
       {
-         log.warn("FirehoseDb must have 'includeStreams' configured to be used");
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
       }
    }
 
    public AmazonKinesisFirehose getFirehoseClient()
+   {
+      return getFirehoseClient(awsRegion, awsAccessKey, awsSecretKey);
+   }
+
+   public AmazonKinesisFirehose getFirehoseClient(String awsRegion, String awsAccessKey, String awsSecretKey)
    {
       if (this.firehoseClient == null)
       {
@@ -148,6 +137,10 @@ public class FirehoseDb extends Db<FirehoseDb>
          {
             if (this.firehoseClient == null)
             {
+               awsRegion = Utils.findSysEnvPropStr(getName() + ".awsRegion", awsRegion);
+               awsAccessKey = Utils.findSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
+               awsSecretKey = Utils.findSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
+
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
 
                if (!Utils.empty(awsRegion))

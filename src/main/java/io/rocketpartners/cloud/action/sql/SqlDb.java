@@ -28,6 +28,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -735,11 +736,6 @@ public class SqlDb extends Db<SqlDb>
       return super.withType(type);
    }
 
-   public String getDriver()
-   {
-      return driver;
-   }
-
    public SqlDb withConfig(String driver, String url, String user, String pass)
    {
       withDriver(driver);
@@ -747,6 +743,11 @@ public class SqlDb extends Db<SqlDb>
       withUser(user);
       withPass(pass);
       return this;
+   }
+
+   public String getDriver()
+   {
+      return Utils.findSysEnvPropStr(getName() + ".driver", driver);
    }
 
    public SqlDb withDriver(String driver)
@@ -757,7 +758,7 @@ public class SqlDb extends Db<SqlDb>
 
    public String getUrl()
    {
-      return url;
+      return Utils.findSysEnvPropStr(getName() + ".url", url);
    }
 
    public SqlDb withUrl(String url)
@@ -768,7 +769,7 @@ public class SqlDb extends Db<SqlDb>
 
    public String getUser()
    {
-      return user;
+      return Utils.findSysEnvPropStr(getName() + ".user", user);
    }
 
    public SqlDb withUser(String user)
@@ -779,7 +780,7 @@ public class SqlDb extends Db<SqlDb>
 
    public String getPass()
    {
-      return pass;
+      return Utils.findSysEnvPropStr(getName() + ".pass", pass);
    }
 
    public SqlDb withPass(String pass)

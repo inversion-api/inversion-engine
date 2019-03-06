@@ -483,12 +483,12 @@ public class DynamoDb extends Db<DynamoDb>
    {
       return buildDynamoClient(prefix, null, null, null);
    }
-   
+
    public static AmazonDynamoDB buildDynamoClient(String prefix, String awsRegion, String awsAccessKey, String awsSecretKey)
    {
-      awsRegion = Utils.findSysEnvProp(prefix + "awsRegion", awsRegion);
-      awsAccessKey = Utils.findSysEnvProp(prefix + "awsAccessKey", awsAccessKey);
-      awsSecretKey = Utils.findSysEnvProp(prefix + "awsSecretKey", awsSecretKey);
+      awsRegion = Utils.findSysEnvPropStr(prefix + ".awsRegion", awsRegion);
+      awsAccessKey = Utils.findSysEnvPropStr(prefix + ".awsAccessKey", awsAccessKey);
+      awsSecretKey = Utils.findSysEnvPropStr(prefix + ".awsSecretKey", awsSecretKey);
 
       AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
       if (!Utils.empty(awsRegion))

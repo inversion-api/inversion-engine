@@ -27,7 +27,7 @@ public class CreateTestDynamoDb
 
    public static void deleteTable(String tableName) throws Exception
    {
-      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind.");
+      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind");
       DeleteTableRequest dtr = new DeleteTableRequest().withTableName(tableName);
       client.deleteTable(dtr);
    }
@@ -81,7 +81,7 @@ public class CreateTestDynamoDb
                                                                   .withWriteCapacityUnits(5L));
       }
 
-      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind.");
+      AmazonDynamoDB client = DynamoDb.buildDynamoClient("northwind");
       DynamoDB dynamoDB = new DynamoDB(client);
 
       CreateTableRequest request = new CreateTableRequest()//

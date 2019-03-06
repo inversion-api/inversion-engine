@@ -113,19 +113,7 @@ public abstract class TestRestGetActions extends TestCase
 
 
    
-   public void testIncludes01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
 
-      //res = service.get(url("orders/10395?expands=employee.reportsto.employees&includes=shipname"));
-      //res = service.get(url("orders/10395?includes=shipname"));
-      res = service.get("http://localhost/northwind/source/orders/10395?includes=shipname");
-      System.out.println(res.getDebug());
-
-      assertEquals("HILARION-Abastos", res.findString("data.0.shipname"));
-      assertEquals(1, res.findNode("data.0").size());
-   }
 
    //   @Test
    //   public void test0A() throws Exception

@@ -381,7 +381,7 @@ public class Utils
       return ((ObjectNode) parseJson(json));
    }
 
-   static Object parseJson(String json)
+   public static Object parseJson(String json)
    {
       try
       {
@@ -1976,15 +1976,42 @@ public class Utils
       return params;
    }
 
+   public static String findSysEnvPropStr(String name, Object overrideValue)
+   {
+      Object obj = findSysEnvProp(name, overrideValue);
+      if (obj != null)
+         return obj.toString();
+      return null;
+   }
+
+   public static int findSysEnvPropInt(String name, Object overrideValue)
+   {
+      Object obj = findSysEnvProp(name, overrideValue);
+      if (obj != null)
+         return Integer.parseInt(obj.toString());
+      return -1;
+   }
+
+   public static boolean findSysEnvPropBool(String name, Object overrideValue)
+   {
+      Object obj = findSysEnvProp(name, overrideValue);
+      if (obj != null)
+         return "true".equalsIgnoreCase(obj.toString());
+      return false;
+   }
+
    /**
     * @param name - name to look for in sysprops and envprops if 'value' is null;
     * @param value - will be returned if not null
     * @return first not null of 'value' || sysprop(name) || envprop(name)
     */
-   public static String findSysEnvProp(String name, String value)
+   public static Object findSysEnvProp(String name, Object overrideValue)
    {
-      if (Utils.empty(value))
-         value = System.getProperty(name);
+      if (!Utils.empty(overrideValue))
+         return overrideValue;
+
+      String value = System.getProperty(name);
+
       if (Utils.empty(value))
          value = System.getenv(name);
 

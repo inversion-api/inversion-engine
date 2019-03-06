@@ -56,6 +56,27 @@ public abstract class Db<T extends Db>
 
    public abstract void bootstrapApi();
 
+   public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
+   }
+
+   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
+   }
+
+   public void delete(Request request, Table table, String entityKey) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
+   }
+
+   //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
+   public String upsert(Request request, Table table, Map<String, Object> rows) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert() to implement");
+   }
+
    public Object cast(String type, Object value)
    {
       try
@@ -86,27 +107,6 @@ public abstract class Db<T extends Db>
          throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
       }
    }
-
-   //   public List Results<Map<String,Object>>select(Request request, Table table, List<String> entityKeys) throws Exception
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation");
-   //   }
-   //
-   //   public Rows selectRelatedEntityKeys(Relationship rel, List<ObjectNode> parentObjs) throws Exception
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Override Db.selectRelatedEntityKeys to implement");
-   //   }
-
-   public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Override Db.select to implement");
-   }
-
-   public abstract Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception;
-
-   public abstract String upsert(Request request, Table table, Map<String, Object> values) throws Exception;
-
-   public abstract void delete(Request request, Table table, String entityKey) throws Exception;
 
    public synchronized Db startup()
    {

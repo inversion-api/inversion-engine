@@ -139,7 +139,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                cols.append(" AS " + asString(colName));
             }
          }
-         else
+         else if(term.getToken().indexOf(".") < 0)
          {
             cols.append(" " + asCol(term.getToken()));
          }

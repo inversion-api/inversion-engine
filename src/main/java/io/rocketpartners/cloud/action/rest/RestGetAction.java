@@ -312,8 +312,8 @@ public class RestGetAction extends Action<RestGetAction>
 
    public void exclude(List<ObjectNode> nodes)
    {
-      Set includes = Chain.peek().getMeredConfigParams("includes");
-      Set excludes = Chain.peek().getMeredConfigParams("excludes");
+      Set includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
+      Set excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
 
       if (includes.size() > 0 || excludes.size() > 0)
       {
@@ -371,7 +371,7 @@ public class RestGetAction extends Action<RestGetAction>
          return;
 
       if (expands == null)
-         expands = Chain.peek().getMeredConfigParams("expands");
+         expands = Chain.peek().mergeEndpointActionParamsConfig("expands");
 
       if (expandsPath == null)
          expandsPath = "";
@@ -706,41 +706,48 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static boolean include(String path, Set<String> includes, Set<String> excludes)
    {
+      if ("employee".equals(path))
+         System.out.println("asdfasdf");
+
+      boolean include = true;
+
       if (includes.size() == 0 && excludes.size() == 0)
-         return true;
-
-      path = path.toLowerCase();
-
-      if (includes != null && includes.size() > 0)
       {
-         return find(includes, path);
+         include = true;
+      }
+      else
+      {
+         path = path.toLowerCase();
+
+         if (includes != null && includes.size() > 0)
+         {
+            include = false;
+            include = find(includes, path);
+         }
+
+         if (excludes != null && excludes.size() > 0 && find(excludes, path))
+         {
+            include = false;
+         }
       }
 
-      if (excludes != null && excludes.size() > 0 && find(excludes, path))
-      {
-         return false;
-      }
+      System.out.println("include(" + path + ") -> " + include);
 
-      return true;
+      return include;
    }
 
-   protected static boolean find(java.util.Collection<String> haystack, String needle)
+   protected static boolean find(java.util.Collection<String> params, String path)
    {
-      //      if(needle.equalsIgnoreCase("adcompleters.ad"))
-      //         System.out.println("asdf");
-      String lc = needle.toLowerCase();
-      if (haystack.contains(needle) || haystack.contains(lc))
+      if (params.contains(path))
          return true;
 
-      for (String pattern : haystack)
+      for (String param : params)
       {
-         pattern = pattern.toLowerCase();
-         if (Utils.wildcardMatch(pattern, lc))
+         if (param.startsWith(path + "."))
             return true;
 
-         if (pattern.startsWith("*") || pattern.startsWith("."))
-            if (Utils.wildcardMatch(pattern, "." + lc))
-               return true;
+         if (Utils.wildcardMatch(param, path))
+            return true;
       }
       return false;
 

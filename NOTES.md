@@ -1,17 +1,22 @@
 
 # TODO
 
+* TODO: fix elastic search
+* TODO: fix firehose
+* TODO: fix s3
+* TODO: fix redis
+
 * TODO: link to another table with a compound key ...orderdetails was it?
 * TODO: add back support for non collection selects
 * TODO: make interator or lambda stream to loop over all results including pagination
-* TODO: put excludes and expands into restgetaction
+* DONE: put excludes and expands into restgetaction
 * TODO: add put handler colapse support back
 * TODO: make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
 * TODO: create cross collection foreign key test case
 * TODO: Update/Fix - Elastic/Redis/S3
 * TODO: Look into cloudwatch support
 * TODO: RestGetAction url term replacement needs to be case insensative
-* TODO: Add Utils.findSysEnvProp to Sql/S3
+* DONE: Add Utils.findSysEnvProp to Sql/S3
 * TODO: Consider changing Term.token to an Object so that the actions can do the casting before passing to the DB and the Db/Query don't have to cast
 * TODO: fixup service.forward
 
