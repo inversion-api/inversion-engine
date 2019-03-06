@@ -8,6 +8,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
@@ -28,6 +30,9 @@ import io.rcktapp.rql.s3.S3Rql;
 /**
  * Bucket ~= Table
  * Bucket Object field key value ~= Column
+ * Only mapping the key field since it is the only way to query anything within S3,
+ * since, as of now, you can't request files by size, or content-type, or some 
+ * custom header.
  * 
  * @author kfrankic
  *
@@ -169,7 +174,7 @@ public class S3Db extends Db
     * @param startFile - the starting point in which the list begins after.
     * @return
     */
-   public ObjectListing getCoreMetaData(S3Request s3Req, String marker)
+   public ObjectListing getCoreMetaData(S3Request s3Req)
    {
       String prefix = s3Req.getPrefix();
       String key = s3Req.getKey();
@@ -188,10 +193,30 @@ public class S3Db extends Db
       req.setBucketName(s3Req.getBucket());
       req.setMaxKeys(s3Req.getSize());
       req.setDelimiter("/");
-      req.setMarker(marker);
+      req.setMarker(s3Req.getMarker());
       req.setPrefix(prefix);
 
       return client.listObjects(req);
+   }
+
+   public CopyObjectResult updateObject(String bucket, String key, String newBucket, String newKey, ObjectMetadata meta)
+   {
+      client = getS3Client();
+      
+      CopyObjectRequest copyReq = null;
+
+      if (meta != null)
+      {
+         copyReq = new CopyObjectRequest(bucket, key, newBucket, newKey).withNewObjectMetadata(meta);
+      }
+      else
+      {
+         // rename or move request
+         copyReq = new CopyObjectRequest(bucket, key, newBucket, newKey);
+      }
+
+      // TODO if the key and newKey are not equal, (or the bucket and newBucket) delete the old key file
+      return client.copyObject(copyReq);
    }
 
 }

@@ -27,9 +27,11 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.forty11.web.js.JS;
+import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
 import io.rcktapp.api.Action;
 import io.rcktapp.api.Api;
@@ -46,7 +48,6 @@ import io.rcktapp.api.Table;
 import io.rcktapp.api.service.Service;
 import io.rcktapp.rql.Rql;
 import io.rcktapp.rql.s3.S3Rql;
-import io.rcktapp.utils.CaseInsensitiveLookupMap;
 
 /**
  * Accepts RQL parameters and responds with json or files to the client.
@@ -67,15 +68,18 @@ import io.rcktapp.utils.CaseInsensitiveLookupMap;
  * Missing parent for map compression: s3db.tables.files.liftck.com
  * Missing parent for map compression: s3db.tables.static-pages.liftck.com
  * 
+ * Mar 6, 2019 - If a json body is received, it is expected that a meta update should
+ * occur.  If a multipart form is received, it is expected that a binary file
+ * was sent and possibly json (not in the body of course, because that's impossible)
+ * 
  * @author kfrankic
  *
  */
 public class S3DbRestHandler implements Handler
 {
-   Logger log          = LoggerFactory.getLogger(S3DbRestHandler.class);
+   Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
 
-   int    maxRows      = 100;
-   String headerPrefix = null;
+   int    maxRows = 100;
 
    @Override
    public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
@@ -85,9 +89,13 @@ public class S3DbRestHandler implements Handler
       {
          doGet(service, api, endpoint, action, chain, req, res);
       }
-      else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
+      else if ("POST".equalsIgnoreCase(method))
       {
          doPost(service, api, endpoint, action, chain, req, res);
+      }
+      else if ("PUT".equalsIgnoreCase(method))
+      {
+         doPut(service, api, endpoint, action, chain, req, res);
       }
       else
       {
@@ -123,15 +131,12 @@ public class S3DbRestHandler implements Handler
 
       Integer pageSize = req.getParam("pageSize") != null ? Integer.parseInt(req.removeParam("pageSize")) : maxRows;
 
-      boolean isDownloadRequest = req.removeParam("download") != null ? true : false;
-      String marker = req.removeParam("marker");
-
       S3Rql rql = (S3Rql) Rql.getRql(db.getType());
-      S3Request s3Req = rql.buildS3Request(req.getParams(), table, pageSize);
+      S3Request s3Req = rql.buildS3Request(req, table, pageSize);
 
       ObjectMapper mapper = new ObjectMapper();
 
-      if (isDownloadRequest)
+      if (s3Req.isDownload())
       {
          // path == /s3/bucketName?eq(key,filename)&download
 
@@ -146,57 +151,107 @@ public class S3DbRestHandler implements Handler
          res.addHeader("Content-Length", Long.toString(s3File.getObjectMetadata().getContentLength()));
 
       }
-      else if (!isDownloadRequest && s3Req.getKey() != null)
+      else if (s3Req.getKey() != null)
       {
+         // Attempt to retrieve the extended meta for the key.
+         // If that does not exist, attempt to get a list of objects using the key as a prefix.
+
          // path == /s3/bucketName?eq(key,filename)
+         // path == /s3/bucketName/key
          // retrieve the extended meta data of a file.
 
-         ObjectMetadata meta = db.getExtendedMetaData(s3Req);
+         JSObject json = null;
 
-         JSObject json = new JSObject();
+         try
+         {
+            ObjectMetadata meta = db.getExtendedMetaData(s3Req);
 
-         json.put("meta", new JSObject());
-         json.put("data", JS.toJSObject(mapper.writeValueAsString(meta)));
+            json = new JSObject();
 
-         res.setJson(json);
+            json.put("meta", new JSObject());
+            json.put("data", JS.toJSObject(mapper.writeValueAsString(meta)));
+
+            res.setJson(json);
+         }
+         catch (Exception e)
+         {
+            log.warn("Attempting to retrieve as list after failing to obtain extended meta for key: " + s3Req.getKey());
+         }
+
+         if (json == null)
+         {
+            // TODO is there a way to prevent the req from adding the '/' onto it's path?
+
+            // The key does not exist.  Perhaps the request was intended to be for an objects listing...
+            // FYI: below, a '/' is added to the prefix for two reasons:
+            // 1) by default, Inversion adds a '/' to the end of the path which is then removed during stmt creation,
+            // so we dont know if the '/' is intended or not.
+            // 2) if a '/' is NOT tacked onto the prefix, then 'this' directory will be returned as a prefix along with all files
+            // that start with this prefix...meaning, NO inner directories or files will be returned.
+            // To work around this limitation, if the user wants to specify a directory & file prefix, the 'sw' function should 
+            // be used.  ex: sw(key,media/c) will return all files/directories that are within the media folder and start with 'c'
+            getObjectsList(req, res, new S3Request(s3Req.getBucket(), s3Req.getKey() + "/", null, s3Req.getSize(), false, s3Req.getMarker()), db, mapper);
+         }
+
       }
       else
       {
-         // path == /s3/bucketName with no params
-         // retrieve as much meta data as possible about the files in the bucket
-
-         ObjectListing listing = db.getCoreMetaData(s3Req, marker);
-
-         JSObject json = new JSObject();
-
-         // standard Inversion meta includes:
-         // "rowCount": x, - there is currently no way of knowing this.
-         // "pageNum": x, - can't know.
-         // "pageSize": x, - know.
-         // "pageCount": x, - can't know.
-         // "prev": null, - could know, if passed as req param.
-         // "next": "http://localhost:8080/api/lift/us/elastic/ads?&pageSize=100&sort=id&source=id,json.id,json.modifiedat&pageNum=2"
-         JSObject jsMeta = new JSObject();
-         jsMeta.put("pageSize", listing.getMaxKeys());
-         jsMeta.put("prev", null);
-         String nextMarker = "";
-         if (listing.isTruncated())
-         {
-            String query = req.getUrl().getQuery();
-            nextMarker = (query.length() == 0 ? ("?marker=" + listing.getNextMarker()) : ("&marker=" + listing.getNextMarker()));
-         }
-         jsMeta.put("next", listing.isTruncated() ? req.getUrl().toString() + nextMarker : null);
-         json.put("meta", jsMeta);
-
-         JSObject jsData = new JSObject();
-         jsData.put("directories", JS.toJSObject(mapper.writeValueAsString(listing.getCommonPrefixes())));
-         jsData.put("files", JS.toJSObject(mapper.writeValueAsString(listing.getObjectSummaries())));
-         json.put("data", jsData);
-
-         res.setJson(json);
+         getObjectsList(req, res, s3Req, db, mapper);
       }
 
       res.setStatus(SC.SC_200_OK);
+   }
+
+   private void getObjectsList(Request req, Response res, S3Request s3Req, S3Db db, ObjectMapper mapper) throws Exception
+   {
+      // path == /s3/bucketName
+      // path == /s3/bucketName/inner/folder
+      // retrieve as much meta data as possible about the files in the bucket
+
+      ObjectListing listing = db.getCoreMetaData(s3Req);
+
+      JSObject json = new JSObject();
+
+      // TODO add an href value to each object being returned.  replacing 'bucketName' and 'key'
+
+      // standard Inversion meta includes:
+      // "rowCount": x, - there is currently no way of knowing this.
+      // "pageNum": x, - can't know.
+      // "pageSize": x, - know.
+      // "pageCount": x, - can't know.
+      // "prev": null, - could know, if passed as req param.
+      // "next": "http://localhost:8080/api/lift/us/elastic/ads?&pageSize=100&sort=id&source=id,json.id,json.modifiedat&pageNum=2"
+      JSObject jsMeta = new JSObject();
+      jsMeta.put("pageSize", listing.getMaxKeys());
+      jsMeta.put("prev", null);
+      String nextMarker = "";
+      if (listing.isTruncated())
+      {
+         String query = req.getUrl().getQuery();
+         nextMarker = (query.length() == 0 ? ("?marker=" + listing.getNextMarker()) : ("&marker=" + listing.getNextMarker()));
+      }
+      jsMeta.put("next", listing.isTruncated() ? req.getUrl().toString() + nextMarker : null);
+      json.put("meta", jsMeta);
+
+      JSObject jsData = new JSObject();
+      jsData.put("directories", JS.toJSObject(mapper.writeValueAsString(listing.getCommonPrefixes())));
+
+      JSArray files = new JSArray();
+      for (S3ObjectSummary sum : listing.getObjectSummaries())
+      {
+         JSObject jsObj = new JSObject();
+         jsObj.put("href", req.getApiUrl() + req.getPath() + sum.getKey());
+         jsObj.put("lastModified", sum.getLastModified());
+         jsObj.put("size", sum.getSize());
+         files.add(jsObj);
+      }
+
+      jsData.put("files", files);
+      //jsData.put("files", JS.toJSObject(mapper.writeValueAsString(listing.getObjectSummaries())));
+      json.put("data", jsData);
+
+      res.setJson(json);
+
    }
 
    /**
@@ -209,7 +264,11 @@ public class S3DbRestHandler implements Handler
     * this class.  All headers sent by the client that use this prefix will be applied to the s3 object's
     * custom metadata.
     * 
-    * **NOTE**: A 'header prefix' AND custom Content-Type header MUST be applied if you want the correct
+    * **Note** That user-metadata for an object is limited by the HTTP requestheader limit. All HTTP 
+    * headers included in a request (including usermetadata headers and other standard HTTP headers) must 
+    * be less than 8KB
+    * 
+    * **NOTE** A 'header prefix' AND custom Content-Type header MUST be applied if you want the correct
     * content-type applied to the s3 object.  ex: headerPrefix = "s3-";  The request header would include:
     * s3-Content-Type=application/json if you wanted an object stored with a json content type.
     */
@@ -221,48 +280,44 @@ public class S3DbRestHandler implements Handler
       S3Db db = (S3Db) table.getDb();
 
       S3Rql rql = (S3Rql) Rql.getRql(db.getType());
-      S3Request s3Req = rql.buildS3Request(req.getParams(), table, null);
+      S3Request s3Req = rql.buildS3Request(req, table, null);
 
-      String prefix = s3Req.getPrefix();
       String key = s3Req.getKey();
-
-      if (!prefix.endsWith("/"))
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "S3 RQL 'sw' value should end with a '/' when attempting to save a file.");
 
       List<Upload> uploads = req.getUploads();
 
-      String fileName = null;
-      DigestInputStream uploadStream = null;
-
       if (uploads.size() > 0)
       {
+         DigestInputStream uploadStream = null;
          Upload upload = uploads.get(0);
 
          uploadStream = new DigestInputStream(upload.getInputStream(), MessageDigest.getInstance("MD5"));
-         if (key != null)
-            fileName = prefix != null ? prefix + key : key;
-         else
-            fileName = prefix != null ? prefix + upload.getFileName() : upload.getFileName();
 
          ObjectMetadata meta = new ObjectMetadata();
 
+         String metaParam = req.getParam("meta");
+
          // set custom metadata for the file
-         if (headerPrefix != null)
+         if (metaParam != null)
          {
-            CaseInsensitiveLookupMap<String, String> reqHeadersMap = req.getPrefixedHeaders(headerPrefix);
-            int prefixEnd = headerPrefix.length();
-            for (Map.Entry<String, String> entry : reqHeadersMap.entrySet())
+            JSObject metaJs = JS.toJSObject(metaParam);
+            Map<String, String> metaMap = metaJs.asMap();
+
+            for (Map.Entry<String, String> entry : metaMap.entrySet())
             {
+               String metaKey = entry.getKey();
 
-               String header = entry.getKey().substring(prefixEnd);
-
-               if (header.equalsIgnoreCase("Content-Type"))
+               if (metaKey.equalsIgnoreCase("content-type"))
                {
                   meta.setContentType(entry.getValue());
                }
+               else if (metaKey.equalsIgnoreCase("name"))
+               {
+                  key = entry.getValue();
+               }
                else
                {
-                  meta.addUserMetadata(header, entry.getValue());
+                  meta.addUserMetadata(metaKey, entry.getValue());
                }
             }
 
@@ -270,15 +325,44 @@ public class S3DbRestHandler implements Handler
 
          meta.setContentLength(upload.getFileSize());
 
-         PutObjectResult result = db.saveFile(uploadStream, s3Req.getBucket(), fileName, meta);
+         PutObjectResult result = db.saveFile(uploadStream, s3Req.getBucket(), key, meta);
          if (result == null)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Failed to POST/PUT file to s3: " + fileName);
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Failed to POST/PUT file to s3: " + key);
       }
+
+      // TODO respond with usual Inversion type results
 
       res.setStatus(SC.SC_200_OK);
    }
 
+   private void doPut(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+   {
+      Collection collection = findCollectionOrThrow404(api, chain, req);
+      Table table = collection.getEntity().getTable();
+      S3Db db = (S3Db) table.getDb();
 
+      // Only be updating the meta of a file at this time.  Renaming or moving a file 
+      // should also be handled by db.updateObject() but neither are currently implemented.
+
+      JSObject metaJson = req.getJson();
+
+      String key = null;
+      try
+      {
+         key = metaJson.getString("name");
+      }
+      catch (Exception e)
+      {
+         throw new ApiException("When updating metadata, a 'name' must be specified");
+      }
+
+      // All previous metadata will be wiped out.
+      ObjectMetadata meta = buildMetadata(metaJson);
+
+      db.updateObject(table.getName(), key, table.getName(), key, meta);
+
+      // TODO respond with usual Inversion type results
+   }
 
    private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
    {
@@ -294,10 +378,39 @@ public class S3DbRestHandler implements Handler
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the s3 handler, but this collection is not related to a s3db");
       }
 
-      if (req.getSubpath().split("/").length > 1)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "S3 RQL will not interpret the subpath after the specified collection key: " + req.getCollectionKey());
-
       return collection;
+   }
+
+   private ObjectMetadata buildMetadata(JSObject metaJs)
+   {
+      ObjectMetadata meta = null;
+
+      if (metaJs != null)
+      {
+         // All previous metadata will be wiped out.
+         meta = new ObjectMetadata();
+
+         Map<String, String> metaMap = metaJs.asMap();
+
+         for (Map.Entry<String, String> entry : metaMap.entrySet())
+         {
+            String metaKey = entry.getKey();
+
+            switch (metaKey.toLowerCase())
+            {
+               case "content-type":
+                  meta.setContentType(entry.getValue());
+                  break;
+               case "name":
+               case "tenantid":
+                  break;
+               default :
+                  meta.addUserMetadata(metaKey, entry.getValue());
+            }
+         }
+      }
+
+      return meta;
    }
 
 }

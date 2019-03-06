@@ -1,8 +1,7 @@
 package io.rcktapp.rql.s3;
 
-import java.util.Map;
-
 import io.rcktapp.api.ApiException;
+import io.rcktapp.api.Request;
 import io.rcktapp.api.SC;
 import io.rcktapp.api.Table;
 import io.rcktapp.api.handler.s3.S3Request;
@@ -32,23 +31,56 @@ public class S3Rql extends Rql
 
    // examples...
    // api/lift/us/s3/bucketName - retrieves all core meta
-   // api/lift/us/s3/bucketName?w(key,wells) - retrieves core meta
+   // api/lift/us/s3/bucketName/inner/folder  
+   // TODO api/lift/us/s3/bucketName?w(key,wells) 
 
    // api/lift/us/s3/bucketname?download&eq(key,blerp.json) - downloads 'blerp.json' 
    // api/lift/us/s3/bucketname?download&sw(key,blerp) - zips & downloads all files starting with 'blerp'
 
-   // api/lift/us/s3/bucketName?w(key,wells)&expand - gets core & extended metadata
-   // api/lift/us/s3/bucketName?w(key,wells)&exclude(x,y) - retrieves core & extended meta, but excludes 'x & y' in the response
-   // api/lift/us/s3/bucketName?w(key,wells)&include(x,y) - retrieves core & extended meta, but only includes 'x & y' in the response
+   // api/lift/us/s3/bucketName/key
+   // api/lift/us/s3/bucketName?eq(key,filename)
+   // TODO api/lift/us/s3/bucketName?w(key,wells)&expand - gets core & extended metadata
+   // TODO api/lift/us/s3/bucketName?w(key,wells)&exclude(x,y) - retrieves core & extended meta, but excludes 'x & y' in the response
+   // TODO api/lift/us/s3/bucketName?w(key,wells)&include(x,y) - retrieves core & extended meta, but only includes 'x & y' in the response
 
-   public S3Request buildS3Request(Map<String, String> requestParams, Table table, Integer pageSize) throws Exception
+   public S3Request buildS3Request(Request req, Table table, Integer pageSize) throws Exception
    {
-      Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, requestParams, null);
-      stmt.setMaxRows(pageSize);
-      return decipherStmt(stmt);
+      S3Request s3Req = null;
+
+      boolean isDownloadRequest = req.removeParam("download") != null ? true : false;
+      String marker = req.removeParam("marker");
+
+      // POST request - use the binary file name as the key.  If meta was sent with the request, 
+      // it will be processed later when the MetaRequest is built 
+      if (req.getUploads().size() > 0)
+      {
+         // TODO check for a prefix to add to the key if it exists.
+         String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());
+         String key = prefix == null ? req.getUploads().get(0).getFileName() : prefix + "/" + req.getUploads().get(0).getFileName();
+         s3Req = new S3Request(table.getName(), null, key, null, false, null);
+      }
+
+      if (s3Req == null)
+      {
+         Stmt stmt = buildStmt(new Stmt(this, null, null, table), null, req.getParams(), null);
+         if (pageSize != null)
+            stmt.setMaxRows(pageSize);
+
+         // GET request - If no queries exist manually build the s3 request
+         if (req.getParams().size() == 1 && req.getParam("tenantid") != null)
+         {
+            String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());
+            s3Req = new S3Request(stmt.table.getName(), null, prefix, stmt.pagesize, isDownloadRequest, marker);
+         }
+         else
+         {
+            s3Req = decipherStmt(stmt, isDownloadRequest, marker);
+         }
+      }
+      return s3Req;
    }
 
-   private S3Request decipherStmt(Stmt stmt)
+   private S3Request decipherStmt(Stmt stmt, boolean isDownload, String marker)
    {
       String prefix = null;
       String key = null;
@@ -84,7 +116,20 @@ public class S3Rql extends Rql
          }
       }
 
-      return new S3Request(stmt.table.getName(), prefix, key, stmt.maxRows);
+      return new S3Request(stmt.table.getName(), prefix, key, stmt.maxRows, isDownload, marker);
+   }
+
+   private String determinePrefixFromPath(String tableName, String path)
+   {
+      String prefix = path.substring(tableName.length());
+      if (prefix.startsWith("/"))
+         prefix = prefix.substring(1);
+      if (prefix.endsWith("/"))
+         prefix = prefix.substring(0, prefix.length() - 1);
+      if (prefix.equals(""))
+         prefix = null;
+
+      return prefix;
    }
 
 }
