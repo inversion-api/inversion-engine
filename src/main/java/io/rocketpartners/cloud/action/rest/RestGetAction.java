@@ -18,7 +18,6 @@ import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
-import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
@@ -34,7 +33,6 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
-import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class RestGetAction extends Action<RestGetAction>
@@ -47,6 +45,9 @@ public class RestGetAction extends Action<RestGetAction>
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
+      Chain.debug("");
+      Chain.debug("RestGetAction -> " + req.getUrl());
+
       if (req.getSubCollectionKey() != null)
       {
          String entityKey = req.getEntityKey();
@@ -95,7 +96,8 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Implementation logic error.");
+            //ONE_TO_MANY links are not written out referencing the linking entity
+            throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
          }
 
          String query = req.getUrl().getQuery();
@@ -110,6 +112,7 @@ public class RestGetAction extends Action<RestGetAction>
             newHref += query;
          }
 
+         //TODO: forward better symentec here?
          Response included = service.get(newHref);
          res.withStatus(included.getStatus());
          res.withJson(included.getJson());
@@ -126,8 +129,6 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParam(term.toString(), null);
       }
 
-      //todo process
-
       Results<ObjectNode> results = select(req, req.getCollection(), req.getUrl().getParams());
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
@@ -136,11 +137,11 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else
       {
-         Collection collection = req.getCollection();
-         for (ObjectNode node : results.getRows())
-         {
-            res.withRecord(node);
-         }
+         //copy data into the response
+         res.withRecords(results.getRows());
+
+         //------------------------------------------------
+         //setup all of the meta section
 
          Page page = results.getQuery().page();
          res.withPageSize(page.getPageSize());
@@ -189,11 +190,13 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected Results<ObjectNode> select(Request req, Collection collection, Map<String, String> params) throws Exception
    {
+      //------------------------------------------------
+      // Normalize all of the params and convert attribute
+      // names to column names.
       List<Term> terms = new ArrayList();
       if (params.size() > 0)
       {
          Parser parser = new Parser();
-
          for (String paramName : params.keySet())
          {
             String termStr = null;
@@ -208,136 +211,149 @@ public class RestGetAction extends Action<RestGetAction>
                termStr = "eq(" + paramName + "," + paramValue + ")";
             }
             Term term = parser.parse(termStr);
-            mapToColumns(collection, term);
             terms.add(term);
+            mapToColumns(collection, term);
          }
       }
 
-      if (collection == null)
+      Results results = collection.getDb().select(req, collection.getTable(), terms);
+
+      if (results.size() > 0)
       {
-         System.out.println("NULL COLLECTION WTF: " + req.getUrl());
-      }
 
-      Db db = collection.getDb();
-
-      if (db == null)
-      {
-         System.out.println("NULL DB WTF: " + req.getUrl());
-      }
-
-      Results results = db.select(req, collection.getTable(), terms);
-
-      Set<String> includes = req.getChain().getConfigSet("includes");
-      includes.addAll(splitParam(req, "includes"));
-
-      Set<String> expands = req.getChain().getConfigSet("expands");
-      expands.addAll(splitParam(req, "expands"));
-
-      Set<String> excludes = req.getChain().getConfigSet("excludes");
-      excludes.addAll(splitParam(req, "excludes"));
-
-      MultiKeyMap pkCache = new MultiKeyMap<>();
-
-      for (int i = 0; i < results.size(); i++)
-      {
-         Map<String, Object> row = results.getRow(i);
-
-         ObjectNode node = new ObjectNode(row);
-         if (collection == null)
+         for (int i = 0; i < results.size(); i++)
          {
-            node = new ObjectNode(row);
-         }
-         else
-         {
-            String entityKey = req.getCollection().getTable().encodeKey(row);
-            if (Utils.empty(entityKey))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+            //convert the map into an ObjectNode
+            Map<String, Object> row = results.getRow(i);
 
-            node = new ObjectNode();
-
-            pkCache.put(collection, entityKey, node);
-
-            //         for (String colName : (Set<String>) row.keySet())
-            //         //for (Attribute attr : collection.getEntity().getAttributes())
-            //         {
-            //            //String attrName = attr.getName();
-            //            //String colName = attr.getColumn().getName();
-            //            //Object value = row.get(colName);
-            //            Object value = row.get(colName);
-            //            String attrName = colName;
-            //
-            //            if (colName.equalsIgnoreCase(keyAttr.getColumn().getName()))
-            //            {
-            //               String href = Service.buildLink(req, req.getCollectionKey(), value, null);
-            //               if (include("href", includes, excludes, path))
-            //               {
-            //                  js.put("href", href);
-            //               }
-            //            }
-            //
-            //            if (include(attrName, includes, excludes, path))
-            //            {
-            //               js.put(attrName, value);
-            //            }
-            //         }
-
-            for (Attribute attr : collection.getEntity().getAttributes())
+            if (collection == null)
             {
-               String attrName = attr.getName();
-               String colName = attr.getColumn().getName();
-               Object val = row.remove(colName);
-               node.put(attrName, val);
+               ObjectNode node = new ObjectNode(row);
+               results.setRow(i, node);
             }
-
-            for (Relationship rel : collection.getEntity().getRelationships())
+            else
             {
-               if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
+               ObjectNode node = new ObjectNode();
+               results.setRow(i, node);
+
+               String entityKey = req.getCollection().getTable().encodeKey(row);
+
+               if (Utils.empty(entityKey))
+                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+
+               //------------------------------------------------
+               //copy over defined attributes first, if the select returned 
+               //extra columns they will be copied over last
+               for (Attribute attr : collection.getEntity().getAttributes())
                {
-                  Object fkval = node.remove(rel.getFkCol1().getName());
-                  if (fkval != null)
+                  String attrName = attr.getName();
+                  String colName = attr.getColumn().getName();
+                  Object val = row.remove(colName);
+                  node.put(attrName, val);
+               }
+
+               //------------------------------------------------
+               //next turn all relationships into links that will 
+               //retrieve the related entities
+               for (Relationship rel : collection.getEntity().getRelationships())
+               {
+                  String link = null;
+                  if (rel.isOneToMany())
                   {
-                     String link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
-                     node.put(rel.getName(), link);
+                     Object fkval = node.remove(rel.getFkCol1().getName());
+                     if (fkval != null)
+                     {
+                        link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
+                     }
                   }
                   else
                   {
-                     node.put(rel.getName(), null);
+                     link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
                   }
-               }
-               else
-               {
-                  String link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
                   node.put(rel.getName(), link);
                }
+
+               //------------------------------------------------
+               // next, if the db returned extra columns that 
+               // are not mapped to attributes, just straight copy them
+               for (String key : row.keySet())
+               {
+                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
+                     node.put(key, row.get(key));
+               }
+
+               //------------------------------------------------
+               // finally make sure the entity key is encoded as
+               // the href
+               String href = node.getString("href");
+               if (Utils.empty(href))
+               {
+                  href = Chain.buildLink(collection, entityKey, null);
+                  node.put("href", href);
+               }
             }
 
-            for (String key : row.keySet())
-            {
-               if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
-                  node.put(key, row.get(key));
-            }
-
-            String href = node.getString("href");
-            if (Utils.empty(href))
-            {
-               href = Chain.buildLink(collection, entityKey, null);
-               node.put("href", href);
-            }
          }
-         results.setRow(i, node);
-      }
+         expand(collection, results.getRows(), null, null, null);
+         exclude(results.getRows());
 
-      if (expands.size() > 0)
-      {
-         expand(collection, "", results.getRows(), includes, excludes, expands, pkCache);
-      }
+      } // end if results.size() > 0
 
+      //------------------------------------------------
+      //the "next" params come from the db encoded with db col names
+      //have to convert them to their attribute equivalents
       for (Term term : ((List<Term>) results.getNext()))
       {
          mapToAttributes(collection, term);
       }
 
       return results;
+   }
+
+   public void exclude(List<ObjectNode> nodes)
+   {
+      Set includes = Chain.peek().getMeredConfigParams("includes");
+      Set excludes = Chain.peek().getMeredConfigParams("excludes");
+
+      if (includes.size() > 0 || excludes.size() > 0)
+      {
+         for (ObjectNode node : nodes)
+         {
+            exclude(node, includes, excludes, null);
+         }
+      }
+   }
+
+   public void exclude(ObjectNode node, Set includes, Set excludes, String path)
+   {
+      for (String key : node.keySet())
+      {
+         String attrPath = path != null ? (path + "." + key) : key;
+         if (!include(attrPath, includes, excludes))
+         {
+            node.remove(key);
+         }
+         else
+         {
+            Object value = node.get(key);
+
+            if (value instanceof ArrayNode)
+            {
+               ArrayNode arr = (ArrayNode) value;
+               for (int i = 0; i < arr.size(); i++)
+               {
+                  if (arr.get(i) instanceof ObjectNode)
+                  {
+                     exclude((ObjectNode) arr.get(i), includes, excludes, attrPath);
+                  }
+               }
+            }
+            else if (value instanceof ObjectNode)
+            {
+               exclude((ObjectNode) value, includes, excludes, attrPath);
+            }
+         }
+      }
    }
 
    /**
@@ -348,16 +364,38 @@ public class RestGetAction extends Action<RestGetAction>
     * result in number of queries proportional to the number of expands terms that does
     * not increase with the number of results at any level of the expansion.
     */
-   protected void expand(Collection collection, String path, List<ObjectNode> parentObjs, Set includes, Set excludes, Set expands, MultiKeyMap pkCache) throws Exception
-   {
-      System.out.println(path);
 
+   protected void expand(Collection collection, List<ObjectNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
+   {
       if (parentObjs.size() == 0)
          return;
 
+      if (expands == null)
+         expands = Chain.peek().getMeredConfigParams("expands");
+
+      if (expandsPath == null)
+         expandsPath = "";
+
+      if (pkCache == null)
+      {
+         //------------------------------------------------
+         // pkCache is used to make nested document expansion efficient
+         //
+         // the pkCache is used to map requested entities back to the right 
+         // objects on the recursion stack and to keep track of entities
+         // so you don't waste time requerying for things you have 
+         // already retrieved.
+         pkCache = new MultiKeyMap<>();
+
+         for (ObjectNode node : parentObjs)
+         {
+            pkCache.put(collection, getEntityKey(node), node);
+         }
+      }
+
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         if (expand(expands, path, rel))
+         if (expand(expands, expandsPath, rel))
          {
             //ONE_TO_MANY - Player.locationId -> Location.id
             //MANY_TO_ONE - Location.id <- Player.locationId  
@@ -391,7 +429,7 @@ public class RestGetAction extends Action<RestGetAction>
                if (!toMatchEks.contains(parentEk))
                {
                   if (parentObj.get(rel.getName()) instanceof ArrayNode)
-                     throw new ApiException("Implementation error");
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error");
 
                   toMatchEks.add(parentEk);
 
@@ -418,7 +456,7 @@ public class RestGetAction extends Action<RestGetAction>
             }
 
             //this recursive call populates the pkCache
-            List<ObjectNode> newChildObjs = getNestedObjects(pkCache, relatedCollection, newChildEks, includes, excludes, expandPath(path, rel.getName()));
+            List<ObjectNode> newChildObjs = recursiveGet(pkCache, relatedCollection, newChildEks, expandPath(expandsPath, rel.getName()));
 
             for (Row row : allChildEks)
             {
@@ -438,39 +476,26 @@ public class RestGetAction extends Action<RestGetAction>
                }
             }
 
-            expand(relatedCollection, expandPath(path, rel.getName()), newChildObjs, includes, excludes, expands, pkCache);
-
+            if (newChildObjs.size() > 0)
+            {
+               expand(relatedCollection, newChildObjs, expands, expandPath(expandsPath, rel.getName()), pkCache);
+            }
          }
       }
    }
 
-   protected String getEntityKey(Object obj)
+   protected List<ObjectNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection entityKeys, String expandsPath) throws Exception
    {
-      if (obj == null)
-         return null;
-
-      if (obj instanceof ObjectNode)
-         obj = ((ObjectNode) obj).get("href");
-
-      String str = (String) obj;
-      int idx = str.lastIndexOf('/');
-      if (idx > 0)
-         str = str.substring(idx + 1, str.length());
-      return str;
-
-   }
-
-   protected List<ObjectNode> getNestedObjects(MultiKeyMap pkCache, Collection collection, java.util.Collection ids, Set includes, Set excludes, String path) throws Exception
-   {
-      if (ids.size() == 0)
+      if (entityKeys.size() == 0)
          return Collections.EMPTY_LIST;
 
-      String url = Chain.buildLink(collection, SqlUtils.getInClauseStr(ids).replaceAll(" ", ""), null);
+      String url = Chain.buildLink(collection, Utils.implode(",", entityKeys), null);
 
       //--
       //-- Nested param support
+      //TODO: don't remember the use case here.  need to find and make a test case
       Map<String, String> params = Chain.getRequest().getParams();
-      String lcPath = path.toLowerCase();
+      String lcPath = expandsPath.toLowerCase();
       for (String key : params.keySet())
       {
          String lcKey = key.toLowerCase();
@@ -497,23 +522,29 @@ public class RestGetAction extends Action<RestGetAction>
          return null;
 
       if (sc == 404)
+      {
          return Collections.EMPTY_LIST;
-
-      if (sc == 500)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
       }
-
-      if (sc == 200)
+      else if (sc == 500)
       {
-         for (Object obj : res.data().asList())
+         if (res.getError() != null)
+            throw res.getError();
+         else
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+      }
+      else if (sc == 200)
+      {
+         List<ObjectNode> nodes = (List<ObjectNode>) res.data().asList();
+
+         for (ObjectNode node : nodes)
          {
-            Object entityKey = getEntityKey((ObjectNode) obj);
-            if (pkCache.containsKey(entityKey))
-               System.out.println("why is this already here???");
-            pkCache.put(collection, entityKey, obj);
+            Object entityKey = getEntityKey((ObjectNode) node);
+            if (pkCache.containsKey(collection, entityKey))
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
+
+            pkCache.put(collection, entityKey, node);
          }
-         return res.data().asList();
+         return nodes;
       }
 
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
@@ -534,6 +565,22 @@ public class RestGetAction extends Action<RestGetAction>
    //-------------------------------------------------------------------------------------
    //-Static Utils -----------------------------------------------------------------------
    //-------------------------------------------------------------------------------------
+
+   protected static String getEntityKey(Object obj)
+   {
+      if (obj == null)
+         return null;
+
+      if (obj instanceof ObjectNode)
+         obj = ((ObjectNode) obj).get("href");
+
+      String str = (String) obj;
+      int idx = str.lastIndexOf('/');
+      if (idx > 0)
+         str = str.substring(idx + 1, str.length());
+      return str;
+
+   }
 
    protected static String replaceTerm(String url, Term term)
    {
@@ -634,29 +681,22 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      //System.out.println("expand(" + path + ") -> " + expand);
-
       return expand;
    }
 
-   protected static boolean include(String attr, Set<String> includes, Set<String> excludes)
-   {
-      return include(attr, includes, excludes, null);
-   }
-
-   protected static boolean include(String attr, Set<String> includes, Set<String> excludes, String path)
+   protected static boolean include(String path, Set<String> includes, Set<String> excludes)
    {
       if (includes.size() == 0 && excludes.size() == 0)
          return true;
 
-      String key = (path != null && path.length() > 0 ? (path + "." + attr) : attr).toLowerCase();
+      path = path.toLowerCase();
 
       if (includes != null && includes.size() > 0)
       {
-         return find(includes, key);
+         return find(includes, path);
       }
 
-      if (excludes != null && excludes.size() > 0 && find(excludes, key))
+      if (excludes != null && excludes.size() > 0 && find(excludes, path))
       {
          return false;
       }

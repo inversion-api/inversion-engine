@@ -140,25 +140,6 @@ public class Action<A extends Action> extends Rule<A>
       return null;
    }
 
-   /**
-    * Lower cases and splits param values on ","
-    * @param req
-    * @param key
-    * @return
-    */
-   public static Set<String> splitParam(Request req, String key)
-   {
-      LinkedHashSet set = new LinkedHashSet();
-      String param = req.getParam(key);
-      if (!Utils.empty(param))
-      {
-         for (String lcParam : Utils.explode(",", param.toLowerCase()))
-            set.add(lcParam);
-      }
-
-      return set;
-   }
-
    public static String nextPath(String path, String next)
    {
       return Utils.empty(path) ? next : path + "." + next;

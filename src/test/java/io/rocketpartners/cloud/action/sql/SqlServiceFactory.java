@@ -85,13 +85,6 @@ public class SqlServiceFactory
             System.out.println(res.getDebug());
             Utils.assertEq(201, res.getStatusCode());//claims it was created
 
-            //            conn = partial.getConnection();
-            //            int count = SqlUtils.selectInt(conn, "SELECT count(*) FROM \"ORDERS\"");
-            //            Rows tempRows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
-            //
-            //            Utils.assertEq(inserted, tempRows);
-            //            Utils.assertEq(inserted, count);
-
             String href = res.findString("data.0.href");
             res = service.get(href);
 
@@ -100,10 +93,6 @@ public class SqlServiceFactory
 
          res = service.get("northwind/sql/orders");
          Utils.assertEq(25, res.find("meta.rowCount"));
-         
-//         res = service.get("http://localhost/northwind/sql/orders/10395/orderdetails");
-//         System.out.println(res.getJson());
-         
          
       }
       catch (Exception ex)

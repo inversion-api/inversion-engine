@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.assertj.core.util.Arrays;
 
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
@@ -153,13 +154,35 @@ public class Response
 
    public void write(StringBuffer buff, Object... msgs)
    {
+      write0(buff, msgs);
+      buff.append("\r\n");
+   }
+
+   protected void write0(StringBuffer buff, Object... msgs)
+   {
+      if (msgs != null && msgs.length == 0)
+         return;
+
+      if (msgs != null && msgs.length == 1 && Arrays.isArray(msgs[0]))
+         msgs = (Object[]) msgs[0];
+
       for (int i = 0; msgs != null && i < msgs.length; i++)
       {
          Object msg = msgs[i];
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
-         buff.append(msg).append("\r\n");
+         if (Arrays.isArray(msg))
+         {
+            write0(buff, (Object[]) msg);
+         }
+         else
+         {
+            if(i > 0)
+               buff.append(" ");
+            buff.append(msg);
+         }
+
       }
    }
 

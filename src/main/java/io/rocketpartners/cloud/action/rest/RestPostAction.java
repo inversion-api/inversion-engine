@@ -147,8 +147,7 @@ public class RestPostAction extends Action<RestPostAction>
          throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
 
       boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
-      Set<String> collapses = chain.getConfigSet("collapses");
-      collapses.addAll(splitParam(req, "collapses"));
+      Set<String> collapses = chain.getMeredConfigParams("collapses");
 
       if (collapseAll || collapses.size() > 0)
       {

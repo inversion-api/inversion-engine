@@ -22,7 +22,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Column;
+import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
@@ -33,6 +34,7 @@ import io.rocketpartners.cloud.rql.Query;
 import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
@@ -70,23 +72,26 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       //Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM ORDERS");
       int rowCount = -1;
 
-      if (db.isType("mysql"))
+      if (Chain.getDepth() == 1)
       {
-         sql = "SELECT FOUND_ROWS()";
-      }
-      else
-      {
-         sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
-         if (sql.indexOf("LIMIT ") > 0)
-            sql = sql.substring(0, sql.indexOf("LIMIT "));
+         if (db.isType("mysql"))
+         {
+            sql = "SELECT FOUND_ROWS()";
+         }
+         else
+         {
+            sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
+            if (sql.indexOf("LIMIT ") > 0)
+               sql = sql.substring(0, sql.indexOf("LIMIT "));
 
-         if (sql.indexOf("OFFSET ") > 0)
-            sql = sql.substring(0, sql.indexOf("OFFSET "));
+            if (sql.indexOf("OFFSET ") > 0)
+               sql = sql.substring(0, sql.indexOf("OFFSET "));
 
-         if (sql.indexOf("ORDER BY ") > 0)
-            sql = sql.substring(0, sql.indexOf("ORDER BY "));
+            if (sql.indexOf("ORDER BY ") > 0)
+               sql = sql.substring(0, sql.indexOf("ORDER BY "));
+         }
+         rowCount = SqlUtils.selectInt(conn, sql, getColValues());
       }
-      rowCount = SqlUtils.selectInt(conn, sql, getColValues());
 
       return new Results(this, rowCount, rows);
    }
@@ -149,6 +154,24 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          int star = parts.select.indexOf(" * ");
          if (restrictCols && star > 0)
          {
+            //force the inclusion of pk cols even if there
+            //were not requested by the caller.  Actions such
+            //as RestGetHandler need the pk values to do 
+            //anything interesting with the results and they
+            //are responsible for filtering out the values
+            //
+            //TODO: maybe this should be put into Select.columns()
+            //so all query subclasses will inherit the behavior???
+            Index primaryIndex = table().getPrimaryIndex();
+            if (primaryIndex != null)
+            {
+               for (Column pkCol : primaryIndex.getColumns())
+               {
+                  if (cols.indexOf(asCol(pkCol.getName())) < 0)
+                     cols.append(", ").append(asCol(pkCol.getName()));
+               }
+            }
+
             parts.select = parts.select.substring(0, star + 1) + cols + parts.select.substring(star + 2, parts.select.length());
          }
          else

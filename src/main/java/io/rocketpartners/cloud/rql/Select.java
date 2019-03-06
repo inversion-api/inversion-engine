@@ -18,6 +18,8 @@ package io.rocketpartners.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.rocketpartners.cloud.model.Index;
+
 public class Select<T extends Select, P extends Query> extends Builder<T, P>
 {
    public Select(P query)
@@ -122,7 +124,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
       {
          columns.addAll(include.getTerms());
       }
-
+      
       boolean hasIncludes = columns.size() > 0;
 
       for (Term as : findAll("as"))

@@ -96,9 +96,21 @@ public class Chain
 
    public static void debug(Object... msgs)
    {
-      Chain chain = peek();
-      if (chain != null)
-         chain.response.debug(msgs);
+      Stack<Chain> stack = get();
+      if (stack.size() < 1)
+      {
+         return;
+      }
+
+      String prefix = "[" + stack.size() + "]: ";
+      for (int i = 1; i < stack.size(); i++)
+         prefix += "   ";
+
+      if (msgs != null && msgs.length == 1 && msgs[0].toString().trim().length() == 0)
+         return;
+
+      Chain root = stack.get(0);
+      root.response.debug(prefix, msgs);
    }
 
    public static String buildLink(Collection collection)
@@ -254,7 +266,17 @@ public class Chain
       return vars.remove(key);
    }
 
-   public Set<String> getConfigSet(String key)
+   /**
+    * Returns the combined list of endpoint/action stack/request params
+    * for the suppled key
+    * 
+    * This for example, allows you to add to but not remove from
+    * a configured "excludes" parameter
+    * 
+    * @param key
+    * @return
+    */
+   public Set<String> getMeredConfigParams(String key)
    {
       LinkedHashSet values = new LinkedHashSet();
 
@@ -271,6 +293,13 @@ public class Chain
          {
             values.addAll(Utils.explode(",", value));
          }
+      }
+
+      String param = request.getParam(key);
+      if (!Utils.empty(param))
+      {
+         for (String lcParam : Utils.explode(",", param.toLowerCase()))
+            values.add(lcParam);
       }
 
       return values;
