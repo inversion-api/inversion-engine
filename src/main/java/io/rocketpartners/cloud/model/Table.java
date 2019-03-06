@@ -331,6 +331,7 @@ public class Table
 
    public Index withIndex(Column column, String name, String type, boolean unique)
    {
+      System.out.println("WITH INDEX: " + name + " - " + column);
       Index index = new Index(this, column, name, type, unique);
       withIndex(index);
       return index;

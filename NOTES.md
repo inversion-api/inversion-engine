@@ -2,18 +2,17 @@
 # TODO
 
 * TODO: fix elastic search
-* TODO: fix firehose
 * TODO: fix s3
-* TODO: fix redis
+* DONE: fix firehose
+* DONE: fix redis
 
 * TODO: link to another table with a compound key ...orderdetails was it?
 * TODO: add back support for non collection selects
-* TODO: make interator or lambda stream to loop over all results including pagination
+* TODO: make iterator or lambda stream to loop over all results including pagination
 * DONE: put excludes and expands into restgetaction
-* TODO: add put handler colapse support back
+* TODO: add put handler collapse support back
 * TODO: make all "with" methods reuse existing items with the name of supplied thing see table.withColumn(name, type)
 * TODO: create cross collection foreign key test case
-* TODO: Update/Fix - Elastic/Redis/S3
 * TODO: Look into cloudwatch support
 * TODO: RestGetAction url term replacement needs to be case insensative
 * DONE: Add Utils.findSysEnvProp to Sql/S3
@@ -23,9 +22,6 @@
 test comman separtaed entitykeys and comman separated compound entitykeys
 
 ## Dynamo
- * DONE continuation token
- * DONE implement name map to avoid expression keyword conflicts.
- * DONE primary key / href linking
  * TODO: subcollection linking
  * TODO: add dynamo 'includes' projections
  * TODO: parameter to support strongly consistent reads
@@ -36,7 +32,10 @@ test comman separtaed entitykeys and comman separated compound entitykeys
    * TODO: auto append table space name to different columns to create table namespace???? or make it column have that value alone
  * TODO: key values in a global secondary do not need to be unique. create a test case for that
    * TODO: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
- * TODO: can a gsi share an attribute with a lsi? if so...need to test that  
+ * DONE: can a gsi share an attribute with a lsi? if so...need to test that  
+ * DONE continuation token
+ * DONE implement name map to avoid expression keyword conflicts.
+ * DONE primary key / href linking
  
 
 

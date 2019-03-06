@@ -331,7 +331,7 @@ public class RestGetAction extends Action<RestGetAction>
       for (String key : node.keySet())
       {
          String attrPath = path != null ? (path + "." + key) : key;
-         if (!include(attrPath, includes, excludes))
+         if (exclude(attrPath, includes, excludes))
          {
             node.remove(key);
          }
@@ -737,6 +737,8 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static boolean expand(Set<String> expands, String path, Relationship rel)
    {
+      System.out.println("expand:" + expands);
+
       boolean expand = false;
       path = path.length() == 0 ? rel.getName() : path + "." + rel.getName();
       path = path.toLowerCase();
@@ -750,52 +752,95 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
+      System.out.println("expand(" + expands + ", " + path + ") -> " + expand);
+
       return expand;
    }
 
-   protected static boolean include(String path, Set<String> includes, Set<String> excludes)
+   protected static boolean exclude(String path, Set<String> includes, Set<String> excludes)
    {
-      boolean include = true;
+      boolean exclude = false;
 
-      if (includes.size() == 0 && excludes.size() == 0)
-      {
-         include = true;
-      }
-      else
+      if (includes.size() > 0 || excludes.size() > 0)
       {
          path = path.toLowerCase();
 
          if (includes != null && includes.size() > 0)
          {
-            include = false;
-            include = find(includes, path);
+            if (!find(includes, path, true))
+               exclude = true;
          }
-
-         if (excludes != null && excludes.size() > 0 && find(excludes, path))
+         
+         if (excludes != null && excludes.size() > 0)
          {
-            include = false;
+            if (find(excludes, path, false))
+               exclude = true;
          }
       }
 
-      //System.out.println("include(" + path + ") -> " + include);
+      System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
 
-      return include;
+      return exclude;
    }
 
-   protected static boolean find(java.util.Collection<String> params, String path)
+   //   protected static boolean include(String path, Set<String> includes, Set<String> excludes)
+   //   {
+   //      boolean include = true;
+   //
+   //      if (includes.size() == 0 && excludes.size() == 0)
+   //      {
+   //         include = true;
+   //      }
+   //      else
+   //      {
+   //         path = path.toLowerCase();
+   //
+   //         if (includes != null && includes.size() > 0)
+   //         {
+   //            include = false;
+   //            include = find(includes, path, true);
+   //         }
+   //
+   //         if (excludes != null && excludes.size() > 0 && find(excludes, path, true))
+   //         {
+   //            include = false;
+   //         }
+   //      }
+   //
+   //      System.out.println("include(" + path + ", " + includes + ", " + excludes + ") -> " + include);
+   //
+   //      return include;
+   //   }
+
+   protected static boolean find(java.util.Collection<String> params, String path, boolean matchStart)
    {
+      boolean rtval = false;
+
       if (params.contains(path))
-         return true;
-
-      for (String param : params)
       {
-         if (param.startsWith(path + "."))
-            return true;
-
-         if (Utils.wildcardMatch(param, path))
-            return true;
+         rtval = true;
       }
-      return false;
+      else
+      {
+         for (String param : params)
+         {
+            if (matchStart)
+            {
+               if (param.startsWith(path + "."))
+               {
+                  rtval = true;
+                  break;
+               }
+            }
+
+            if (Utils.wildcardMatch(param, path))
+               rtval = true;
+         }
+      }
+
+      System.out.println("find(" + params + ", " + path + ", " + matchStart + ") -> " + path);
+
+      return rtval;
 
    }
 

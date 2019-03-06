@@ -303,8 +303,7 @@ public class Chain
       if (value != null)
       {
          value = value.toLowerCase();
-         for (String lcParam : Utils.explode(",", value))
-            values.add(lcParam);
+         values.addAll(Utils.explode(",", value));
       }
 
       return values;
