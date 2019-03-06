@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -108,6 +109,36 @@ public class Rows extends ArrayList<Rows.Row>
    public void put(Object value)
    {
       lastRow.add(value);
+   }
+
+   public void sortBy(final String... keys)
+   {
+      Collections.sort(this, new Comparator<Rows.Row>()
+         {
+            @Override
+            public int compare(Row o1, Row o2)
+            {
+               for (String key : keys)
+               {
+                  Object obj1 = o1.get(key);
+                  Object obj2 = o2.get(key);
+
+                  if (obj1 == null && obj2 == null)
+                     return 0;
+
+                  if (obj1 == null && obj2 != null)
+                     return -1;
+
+                  if (obj1 != null && obj2 == null)
+                     return 1;
+
+                  int strcmp = obj1.toString().compareTo(obj2.toString());
+                  if (strcmp != 0)
+                     return strcmp;
+               }
+               return 0;
+            }
+         });
    }
 
    /**
@@ -345,7 +376,7 @@ public class Rows extends ArrayList<Rows.Row>
          int idx = keys.indexOf((String) key);
          if (idx >= 0)
          {
-            if(!cloned)
+            if (!cloned)
             {
                //copy on write
                cloned = true;

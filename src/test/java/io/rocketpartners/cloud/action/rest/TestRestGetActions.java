@@ -111,56 +111,7 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(25, total);
    }
 
-   public void testExpandsOneToMany01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
 
-      res = service.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
-      System.out.println(res.getDebug());
-      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
-   }
-
-   public void testExpandsOneToMany02() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get(url("orders/10395?expands=employee.reportsto.employees"));
-      System.out.println(res.getDebug());
-
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
-      assertTrue(res.findString("data.0.employee.reportsto.employees.0.href").endsWith("/employees/6"));
-
-      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"http://localhost/northwind/sql/employees/6\"") > 0);
-   }
-
-   public void testExpandsManyToOne01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get("http://localhost/northwind/source/employees/5?expands=employees");
-      System.out.println(res.getDebug());
-
-      assertEquals(3, res.findArray("data.0.employees").length());
-      assertNotNull(res.find("data.0.employees.0.lastname"));
-   }
-
-   public void testExpandsManyToMany01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      res = service.get("http://localhost/northwind/sql/employees/6?expands=territories");
-      System.out.println(res.getDebug());
-
-      assertEquals(5, res.findArray("data.0.territories").length());
-      assertNotNull(res.find("data.0.territories.0.territorydescription"));
-   }
    
    public void testIncludes01() throws Exception
    {

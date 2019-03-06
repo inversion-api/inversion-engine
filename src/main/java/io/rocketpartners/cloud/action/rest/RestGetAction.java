@@ -405,11 +405,31 @@ public class RestGetAction extends Action<RestGetAction>
             Column toMatchCol = null;
             Column toRetrieveCol = null;
 
+            Rows allChildEks = null;
+
             if (rel.isOneToMany())
             {
-               //TODO: WE ACTUALLY DON'T NEED TO DO THIS DB ROUNDTRIP.  WE HAVE ALL OF THE IDS ALREAD
                toMatchCol = collection.getEntity().getKey().getColumn();
                toRetrieveCol = rel.getFkCol1();
+
+               //NOTE: expands() is only getting the paired up related keys.  For a ONE_TO_MANY
+               //relationship that data is already in the parent object you are trying to expand
+               //so we don't need to query the db to find those relationships as we do for the 
+               //MANY_TO relationships.
+               //
+               //However if you were to comment out the following block, the output of the algorithm
+               //would be exactly the same you would just end up running an extra db query
+               allChildEks = new Rows(Arrays.asList(toMatchCol.getName(), toRetrieveCol.getName()));
+               for (ObjectNode parentObj : parentObjs)
+               {
+                  String parentEk = getEntityKey(parentObj);
+                  String childEk = parentObj.getString(rel.getName());
+                  if (childEk != null)
+                  {
+                     childEk = getEntityKey(childEk);
+                     allChildEks.addRow(new Object[]{parentEk, childEk});
+                  }
+               }
             }
             else if (rel.isManyToOne())
             {
@@ -445,7 +465,7 @@ public class RestGetAction extends Action<RestGetAction>
             }
 
             List newChildEks = new ArrayList();
-            Rows allChildEks = relatedCollection.getDb().select(toRetrieveCol.getTable(), toMatchCol, toRetrieveCol, toMatchEks);
+            allChildEks = allChildEks != null ? allChildEks : relatedCollection.getDb().select(toRetrieveCol.getTable(), toMatchCol, toRetrieveCol, toMatchEks);
             for (Row row : allChildEks)
             {
                String relatedEk = row.get(toRetrieveCol.getName()).toString();
