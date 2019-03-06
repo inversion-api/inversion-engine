@@ -1,5 +1,7 @@
 package io.rocketpartners.cloud.action.rest;
 
+import static org.junit.Assert.assertEquals;
+
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -670,12 +672,59 @@ public class RestGetAction extends Action<RestGetAction>
    {
       for (String token : tokens)
       {
-         url = url.replaceAll("(.*)(" + token + "=[^\\&]*\\&?)(.*)", "$1$3");
-         url = url.replaceAll("(.*)(" + token + "\\([^\\&]*\\)\\&?)(.*)", "$1$3");
-         url = url.replaceAll("(.*)(eq\\(" + token + "\\,[^\\&]*\\)\\&?)(.*)", "$1$3");
+         url = stripTerm(url, token + "=", '&');
+         url = stripTerm(url, token + "(", '&');
+         url = stripTerm(url, "eq(" + token + ",", '&');
       }
+      url = url.replace("?&", "?");
       url = url.replace("&&", "&");
+
+      while (url.endsWith("?"))
+         url = url.substring(0, url.length() - 1);
+
+      while (url.endsWith("&"))
+         url = url.substring(0, url.length() - 1);
       return url;
+   }
+
+   protected static String stripTerm(String str, String startToken, char... endingTokens)
+   {
+      Set tokens = new HashSet();
+      for (char c : endingTokens)
+         tokens.add(c);
+
+      while (true)
+      {
+         int start = str.toLowerCase().indexOf(startToken);
+
+         while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
+            start = str.toLowerCase().indexOf(startToken, start + 1);
+
+         if (start > -1)
+         {
+            String beginning = str.substring(0, start);
+
+            int end = start + startToken.length() + 1;
+            while (end < str.length())
+            {
+               char c = str.charAt(end);
+               if (tokens.contains(c))
+                  break;
+               end += 1;
+            }
+
+            if (end == str.length())
+               str = beginning;
+            else
+               str = beginning + str.substring(end + 1, str.length());
+         }
+         else
+         {
+            break;
+         }
+      }
+
+      return str;
    }
 
    protected static String expandPath(String path, Object next)
@@ -706,9 +755,6 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static boolean include(String path, Set<String> includes, Set<String> excludes)
    {
-      if ("employee".equals(path))
-         System.out.println("asdfasdf");
-
       boolean include = true;
 
       if (includes.size() == 0 && excludes.size() == 0)
@@ -731,7 +777,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      System.out.println("include(" + path + ") -> " + include);
+      //System.out.println("include(" + path + ") -> " + include);
 
       return include;
    }
