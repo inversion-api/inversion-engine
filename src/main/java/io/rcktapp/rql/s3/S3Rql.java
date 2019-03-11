@@ -50,9 +50,11 @@ public class S3Rql extends Rql
       boolean isDownloadRequest = req.removeParam("download") != null ? true : false;
       String marker = req.removeParam("marker");
 
+      String contentType = req.getHeader("Content-Type");
+
       // POST request - use the binary file name as the key.  If meta was sent with the request, 
       // it will be processed later when the MetaRequest is built 
-      if (req.getUploads().size() > 0)
+      if (contentType != null && contentType.toLowerCase().startsWith("multipart/") && req.getUploads().size() > 0)
       {
          // TODO check for a prefix to add to the key if it exists.
          String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());

@@ -17,12 +17,14 @@ package io.rcktapp.api.handler.s3;
 
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -70,7 +72,7 @@ import io.rcktapp.rql.s3.S3Rql;
  * 
  * Mar 6, 2019 - If a json body is received, it is expected that a meta update should
  * occur.  If a multipart form is received, it is expected that a binary file
- * was sent and possibly json (not in the body of course, because that's impossible)
+ * was sent and possibly json
  * 
  * @author kfrankic
  *
@@ -166,10 +168,9 @@ public class S3DbRestHandler implements Handler
          {
             ObjectMetadata meta = db.getExtendedMetaData(s3Req);
 
-            json = new JSObject();
-
-            json.put("meta", new JSObject());
-            json.put("data", JS.toJSObject(mapper.writeValueAsString(meta)));
+            json = JS.toJSObject(mapper.writeValueAsString(meta));
+            String pathPrefix = req.getPath().substring(0, req.getPath().indexOf(req.getSubpath()));
+            json.put("href", req.getApiUrl() + pathPrefix + s3Req.getBucket() + "/" + s3Req.getKey());
 
             res.setJson(json);
          }
@@ -212,8 +213,6 @@ public class S3DbRestHandler implements Handler
 
       JSObject json = new JSObject();
 
-      // TODO add an href value to each object being returned.  replacing 'bucketName' and 'key'
-
       // standard Inversion meta includes:
       // "rowCount": x, - there is currently no way of knowing this.
       // "pageNum": x, - can't know.
@@ -233,22 +232,45 @@ public class S3DbRestHandler implements Handler
       jsMeta.put("next", listing.isTruncated() ? req.getUrl().toString() + nextMarker : null);
       json.put("meta", jsMeta);
 
-      JSObject jsData = new JSObject();
-      jsData.put("directories", JS.toJSObject(mapper.writeValueAsString(listing.getCommonPrefixes())));
+      List<String> directoryList = listing.getCommonPrefixes();
+      List<S3ObjectSummary> fileList = listing.getObjectSummaries();
 
-      JSArray files = new JSArray();
-      for (S3ObjectSummary sum : listing.getObjectSummaries())
+      JSArray data = new JSArray();
+
+      // alphabetize the data returned to the client...
+      while (!directoryList.isEmpty())
       {
-         JSObject jsObj = new JSObject();
-         jsObj.put("href", req.getApiUrl() + req.getPath() + sum.getKey());
-         jsObj.put("lastModified", sum.getLastModified());
-         jsObj.put("size", sum.getSize());
-         files.add(jsObj);
+         String directory = directoryList.get(0);
+         if (!fileList.isEmpty())
+         {
+            S3ObjectSummary file = fileList.get(0);
+            if (directory.compareToIgnoreCase(file.getKey()) < 0)
+            {
+               // directory name comes before file name
+               data.add(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
+               directoryList.remove(0);
+            }
+            else
+            {
+               // file name comes before directory
+               data.add(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
+               fileList.remove(0);
+            }
+         }
+         else
+         {
+            data.add(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
+            directoryList.remove(0);
+         }
       }
 
-      jsData.put("files", files);
-      //jsData.put("files", JS.toJSObject(mapper.writeValueAsString(listing.getObjectSummaries())));
-      json.put("data", jsData);
+      while (!fileList.isEmpty())
+      {
+         S3ObjectSummary file = fileList.remove(0);
+         data.add(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
+      }
+
+      json.put("data", data);
 
       res.setJson(json);
 
@@ -328,9 +350,18 @@ public class S3DbRestHandler implements Handler
          PutObjectResult result = db.saveFile(uploadStream, s3Req.getBucket(), key, meta);
          if (result == null)
             throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Failed to POST/PUT file to s3: " + key);
+
+         // not including the result object as it contains confusing/pointless data.
+         // such as a 'content-length' of 0, because it's the content-length of the response, not the 
+         // size of the upload.
+         JSObject json = new JSObject();
+
+         json.put("href", req.getApiUrl() + req.getPath() + key);
+
+         res.setJson(json);
+
       }
 
-      // TODO respond with usual Inversion type results
 
       res.setStatus(SC.SC_200_OK);
    }
@@ -359,9 +390,17 @@ public class S3DbRestHandler implements Handler
       // All previous metadata will be wiped out.
       ObjectMetadata meta = buildMetadata(metaJson);
 
-      db.updateObject(table.getName(), key, table.getName(), key, meta);
+      CopyObjectResult copy = db.updateObject(table.getName(), key, table.getName(), key, meta);
+      ObjectMapper mapper = new ObjectMapper();
 
-      // TODO respond with usual Inversion type results
+      // the copy result doesn't contain much helpful data.
+      JSObject json = JS.toJSObject(mapper.writeValueAsString(copy));
+
+      json.put("href", req.getApiUrl() + req.getPath() + key);
+
+      res.setJson(json);
+      res.setStatus(SC.SC_200_OK);
+
    }
 
    private Collection findCollectionOrThrow404(Api api, Chain chain, Request req) throws Exception
@@ -411,6 +450,25 @@ public class S3DbRestHandler implements Handler
       }
 
       return meta;
+   }
+
+   private JSObject buildListObj(String href, Date lastModified, Long size, boolean isFile)
+   {
+      JSObject jsObj = new JSObject();
+      jsObj.put("href", href);
+      if (lastModified != null)
+         jsObj.put("lastModified", lastModified);
+      if (size != null)
+         jsObj.put("size", size);
+      jsObj.put("isFile", isFile);
+
+      return jsObj;
+   }
+
+   public static void main(String[] args)
+   {
+      System.out.println("hello".compareToIgnoreCase("world")); // -15
+      System.out.println("world".compareToIgnoreCase("hello")); // 15
    }
 
 }

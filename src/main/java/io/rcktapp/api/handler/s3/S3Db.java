@@ -191,7 +191,7 @@ public class S3Db extends Db
 
       ListObjectsRequest req = new ListObjectsRequest();
       req.setBucketName(s3Req.getBucket());
-      req.setMaxKeys(s3Req.getSize());
+      req.setMaxKeys(s3Req.getSize()); // TODO fix pagesize...currently always set to 1000 ... tied to 'size' but not 'pagesize'?
       req.setDelimiter("/");
       req.setMarker(s3Req.getMarker());
       req.setPrefix(prefix);
