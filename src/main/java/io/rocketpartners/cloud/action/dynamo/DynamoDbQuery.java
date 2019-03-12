@@ -473,12 +473,16 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       else if (func != null)
       {
          String col = term.getToken(0);
+         
+         String nameKey = "#var" + (nameMap.size() + 1);
+         nameMap.put(nameKey, col);
+         
          String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
             space(buff).append("and ");
 
-         space(buff).append(func).append("(").append(col).append(",").append(expr).append(")");
+         space(buff).append(func).append("(").append(nameKey).append(",").append(expr).append(")");
       }
       else if (term.isLeaf())
       {
