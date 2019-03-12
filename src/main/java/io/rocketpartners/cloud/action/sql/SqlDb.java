@@ -110,9 +110,6 @@ public class SqlDb extends Db<SqlDb>
                buff.append("SQL -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                String msg = buff.toString();
                Chain.debug(msg);
-
-               if (msg.indexOf("SELECT \"REPORTSTO\", \"EMPLOYEEID\" FROM EMPLOYEES") >= 0)
-                  System.out.println("asdfasdf");
             }
          });
    }
