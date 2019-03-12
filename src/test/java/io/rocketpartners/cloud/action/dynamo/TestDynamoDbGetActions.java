@@ -199,7 +199,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=11058, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(sk,:val2)' filterExpression='' projectionExpression=''");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(#var2,:val2)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -213,7 +213,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(sk,:val3)' projectionExpression=''");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1, #var3=sk} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3)' projectionExpression=''");
    }
 
    @Test
@@ -227,7 +227,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var1=gs1hk, #var2=gs1sk, #var3=hk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(sk,:val3) and (#var3 = :val4)' projectionExpression=''");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var4=hk, #var1=gs1hk, #var2=gs1sk, #var3=sk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3) and (#var4 = :val4)' projectionExpression=''");
    }
 
    @Test
