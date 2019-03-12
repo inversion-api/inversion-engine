@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.English;
-import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
 public abstract class Db<T extends Db>
@@ -56,23 +56,35 @@ public abstract class Db<T extends Db>
 
    public abstract void bootstrapApi();
 
-   public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
+   /**
+    * Finds the entity keys on the other side of the relationship
+    * @param relationship
+    * @param sourceEntityKeys
+    * @return Map<sourceEntityKey, relatedEntityKey>
+    * @throws Exception
+    */
+   //   public Map<String, String> select(Index toMatch, Index toRetrieve, List<String> matchKeys) throws Exception
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
+   //   }
+   //
+   //   public Rows select(Table table, List<Column> toMatch, List<Column> toRetrieve, Rows matchValues) throws Exception
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
+   //   }
+
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
    }
 
-   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
-   }
-
-   public void delete(Request request, Table table, String entityKey) throws Exception
+   public void delete(Table table, String entityKey) throws Exception
    {
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
    }
 
    //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
-   public String upsert(Request request, Table table, Map<String, Object> rows) throws Exception
+   public String upsert(Table table, Map<String, Object> rows) throws Exception
    {
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert() to implement");
    }
@@ -327,7 +339,7 @@ public abstract class Db<T extends Db>
       boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
-         name = rel.getFkCol1().getName();
+         name = rel.getFk1Col1().getName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -340,7 +352,7 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFkCol2().getPk().getTable().getName();
+         name = rel.getFk2Col1().getPk().getTable().getName();
          pluralize = true;
       }
 

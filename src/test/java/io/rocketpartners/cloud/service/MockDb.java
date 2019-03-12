@@ -8,6 +8,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Rows.Row;
 
 public class MockDb extends Db<MockDb>
 {
@@ -24,7 +25,7 @@ public class MockDb extends Db<MockDb>
 
    }
 
-   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
    {
       return null;
    }

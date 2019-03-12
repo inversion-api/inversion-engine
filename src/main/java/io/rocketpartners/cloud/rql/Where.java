@@ -17,18 +17,87 @@ package io.rocketpartners.cloud.rql;
 
 import java.util.List;
 
+import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.Index;
+import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.utils.Rows.Row;
+
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
 {
 
    public Where(P query)
    {
       super(query);
-      withFunctions("and", "or", "not", "eq", "ne", "n", "nn", "like", "w", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+      withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "w", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+   }
+
+   protected boolean addTerm(String token, Term term)
+   {
+      if (term.hasToken("_key"))
+      {
+         if (term.getParent() != null)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Function key() can not be nested within other functions.");
+
+         String indexName = term.getToken(0);
+
+         Index index = getParent().table().getIndex(indexName);
+         if (index == null)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the key() function unless your table has a unique index");
+
+         if (index.getColumns().size() == 1)
+         {
+            Term t = Term.term(null, "in", index.getColumns().get(0).getName());
+            List<Term> children = term.getTerms();
+            for (int i = 1; i < children.size(); i++)
+            {
+               Term child = children.get(i);
+               t.withTerm(child);
+            }
+            if (t.getNumTerms() == 2)
+               t.withToken("eq");
+
+            term = t;
+         }
+         else
+         {
+            //collection/valCol1~valCol2,valCol1~valCol2,valCol1~valCol2
+            //keys(valCol1~valCol2,valCol1~valCol2,valCol1~valCol2)
+
+            //or( and(eq(col1,val),eq(col2,val)), and(eq(col1,val),eq(col2,val)), and(eq(col1val), eq(col2,val)) 
+            Term or = Term.term(null, "or");
+            List<Term> children = term.getTerms();
+            for (int i = 1; i < children.size(); i++)
+            {
+               Term child = children.get(i);
+               if (!child.isLeaf())
+                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
+
+               Row keyParts = getParent().table().decodeKey(child.getToken());
+               Term and = Term.term(or, "and");
+               for (String key : keyParts.keySet())
+               {
+                  and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));
+               }
+            }
+            if (or.getNumTerms() == 1)
+            {
+               or = or.getTerm(0);
+               or.withParent(null);
+            }
+            term = or;
+         }
+      }
+      return super.addTerm(token, term);
    }
 
    public List<Term> filters()
    {
       return getTerms();
+   }
+
+   public T key(Object... terms)
+   {
+      return withTerm("key", terms);
    }
 
    public T and(Object... terms)

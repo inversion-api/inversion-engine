@@ -33,6 +33,7 @@ import io.rocketpartners.cloud.rql.Select;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
 import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -94,7 +95,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       return this;
    }
 
-   protected Results<Map<String, Object>> doSelect() throws Exception
+   protected Results<Row> doSelect() throws Exception
    {
       Index dynamoIndex = null;
       Results result = new Results(this);

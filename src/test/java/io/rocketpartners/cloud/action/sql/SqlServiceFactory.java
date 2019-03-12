@@ -10,11 +10,37 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlServiceFactory
 {
    protected static Service service = null;
+
+   static
+   {
+      SqlUtils.addSqlListener(new SqlListener()
+         {
+
+            @Override
+            public void onError(String method, String sql, Object args, Exception ex)
+            {
+               // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void beforeStmt(String method, String sql, Object args)
+            {
+               //System.out.println("SQL---> " + sql.replace("\r", "").replace("\n", " ").trim().replaceAll(" +", " "));
+            }
+
+            @Override
+            public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
+            {
+            }
+         });
+   }
 
    public static void main(String[] args) throws Exception
    {
@@ -51,7 +77,25 @@ public class SqlServiceFactory
          rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
          Utils.assertEq(0, rows.size());
 
-         service = new Service();
+         service = new Service()
+            {
+               public Response service(String method, String url, String body)
+               {
+                  Response res = super.service(method, url, body);
+
+                  if (!res.isSuccess())
+                  {
+                     System.out.println(res.getDebug());
+                     
+                     if (res.getError() != null)
+                        Utils.rethrow(res.getError());
+
+                     throw new RuntimeException(res.getStatusMesg());
+                  }
+
+                  return res;
+               }
+            };
 
          //
          service.withApi("northwind")//
@@ -68,7 +112,7 @@ public class SqlServiceFactory
          //      Utils.assertEq(0, res.findArray("data").length());
 
          res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-         System.out.println(res.getJson());
+         //System.out.println(res.getJson());
          Utils.assertEq(25, res.findArray("data").length());
          Utils.assertEq(100, res.find("meta.pageSize"));
          Utils.assertEq(25, res.find("meta.rowCount"));
@@ -82,7 +126,7 @@ public class SqlServiceFactory
             res = service.post("northwind/sql/orders", js);
             inserted += 1;
 
-            System.out.println(res.getDebug());
+            //System.out.println(res.getDebug());
             Utils.assertEq(201, res.getStatusCode());//claims it was created
 
             String href = res.findString("data.0.href");
@@ -93,7 +137,7 @@ public class SqlServiceFactory
 
          res = service.get("northwind/sql/orders");
          Utils.assertEq(25, res.find("meta.rowCount"));
-         
+
       }
       catch (Exception ex)
       {
@@ -129,18 +173,6 @@ public class SqlServiceFactory
 
          Connection conn = db.getConnection();
          SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl + ".ddl"));
-
-         //                  SqlUtils.addSqlListener(new SqlListener()
-         //                     {
-         //                        @Override
-         //                        public void beforeStmt(String method, String sql, Object... vals)
-         //                        {
-         //                           System.out.println("SQL---> " + sql.replace("\r", "").replace("\n", " ").trim().replaceAll(" +", " "));
-         //                           sqls.add(method);
-         //                           while (sqls.size() > 0)
-         //                              sqls.removeLast();
-         //                        }
-         //                     });
       }
       catch (Exception ex)
       {

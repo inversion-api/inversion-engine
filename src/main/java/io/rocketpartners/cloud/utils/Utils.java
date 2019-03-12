@@ -223,6 +223,102 @@ public class Utils
       json.writeEndObject();
    }
 
+   public static ArrayNode parseJsonArray(String json)
+   {
+      return ((ArrayNode) parseJson(json));
+   }
+
+   public static ObjectNode parseJsonObject(String json)
+   {
+      return ((ObjectNode) parseJson(json));
+   }
+
+   public static Object parseJson(String json)
+   {
+      try
+      {
+         ObjectMapper mapper = new ObjectMapper();
+         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
+
+         Object parsed = map(rootNode);
+         return parsed;
+      }
+      catch (Exception ex)
+      {
+         String msg = "Error parsing JSON:" + ex.getMessage();
+
+         if (!(ex instanceof JsonParseException))
+         {
+            msg += "\r\nSource:" + json;
+         }
+
+         throw new RuntimeException("400 Bad Request: '" + json + "'");
+      }
+   }
+
+   /**
+    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
+    * @param str
+    * @return
+    */
+   public static String encodeJson(String str)
+   {
+      if (str == null)
+         return null;
+
+      str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
+      return str;
+   }
+
+   static Object map(JsonNode json)
+   {
+      if (json == null)
+         return null;
+
+      if (json.isNull())
+         return null;
+
+      if (json.isValueNode())
+      {
+         if (json.isNumber())
+            return json.numberValue();
+
+         if (json.isBoolean())
+            return json.booleanValue();
+
+         return json.asText();
+      }
+
+      if (json.isArray())
+      {
+         ArrayNode retVal = null;
+         retVal = new ArrayNode();
+
+         for (JsonNode child : json)
+         {
+            retVal.add(map(child));
+         }
+
+         return retVal;
+      }
+      else if (json.isObject())
+      {
+         ObjectNode retVal = null;
+         retVal = new ObjectNode();
+
+         Iterator<String> it = json.fieldNames();
+         while (it.hasNext())
+         {
+            String field = it.next();
+            JsonNode value = json.get(field);
+            retVal.put(field, map(value));
+         }
+         return retVal;
+      }
+
+      throw new RuntimeException("unparsable json:" + json);
+   }
+
    static void writeArrayNode(ArrayNode array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
       json.writeStartArray();
@@ -371,100 +467,31 @@ public class Utils
       return exploded;
    }
 
-   public static ArrayNode parseJsonArray(String json)
+   public static List deconstructed(List found, Object... terms)
    {
-      return ((ArrayNode) parseJson(json));
-   }
+      if (terms.length == 1 && terms[0].getClass().isArray())
+         terms = (Object[]) terms[0];
 
-   public static ObjectNode parseJsonObject(String json)
-   {
-      return ((ObjectNode) parseJson(json));
-   }
-
-   public static Object parseJson(String json)
-   {
-      try
+      for (Object o : terms)
       {
-         ObjectMapper mapper = new ObjectMapper();
-         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
-
-         Object parsed = map(rootNode);
-         return parsed;
-      }
-      catch (Exception ex)
-      {
-         String msg = "Error parsing JSON:" + ex.getMessage();
-
-         if (!(ex instanceof JsonParseException))
+         if (o instanceof Collection)
          {
-            msg += "\r\nSource:" + json;
+            ((Collection) o).forEach(o2 -> deconstructed(found, o2));
          }
-
-         throw new RuntimeException("400 Bad Request: '" + json + "'");
-      }
-   }
-
-   /**
-    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
-    * @param str
-    * @return
-    */
-   public static String encodeJson(String str)
-   {
-      if (str == null)
-         return null;
-
-      str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
-      return str;
-   }
-
-   static Object map(JsonNode json)
-   {
-      if (json == null)
-         return null;
-
-      if (json.isNull())
-         return null;
-
-      if (json.isValueNode())
-      {
-         if (json.isNumber())
-            return json.numberValue();
-
-         if (json.isBoolean())
-            return json.booleanValue();
-
-         return json.asText();
-      }
-
-      if (json.isArray())
-      {
-         ArrayNode retVal = null;
-         retVal = new ArrayNode();
-
-         for (JsonNode child : json)
+         else if (o.getClass().isArray())
          {
-            retVal.add(map(child));
+            Object[] arr = (Object[]) o;
+            for (Object o2 : arr)
+            {
+               deconstructed(found, o2);
+            }
          }
-
-         return retVal;
-      }
-      else if (json.isObject())
-      {
-         ObjectNode retVal = null;
-         retVal = new ObjectNode();
-
-         Iterator<String> it = json.fieldNames();
-         while (it.hasNext())
+         else
          {
-            String field = it.next();
-            JsonNode value = json.get(field);
-            retVal.put(field, map(value));
+            found.add(o);
          }
-         return retVal;
       }
-
-      throw new RuntimeException("unparsable json:" + json);
+      return found;
    }
 
    public static int roundUp(int num, int divisor)

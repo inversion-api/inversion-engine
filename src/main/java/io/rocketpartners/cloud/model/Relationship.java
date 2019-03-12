@@ -23,40 +23,18 @@ public class Relationship
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
 
    protected String           name             = null;
-   protected String           hint             = null;
    protected String           type             = null;
-
-   protected Column           fkCol1           = null;
-   protected Column           fkCol2           = null;
+   protected Index            fkIndex1         = null;
+   protected Index            fkIndex2         = null;
 
    protected Entity           entity           = null;
    protected Entity           related          = null;
 
    protected boolean          exclude          = false;
 
-   public boolean isExcluded()
-   {
-      if (exclude)
-         return true;
-
-      if (entity != null && entity.isExclude())
-         return true;
-
-      if (related != null && related.isExclude())
-         return true;
-
-      if (fkCol1 != null && fkCol1.isExclude())
-         return true;
-
-      if (fkCol2 != null && fkCol2.isExclude())
-         return true;
-
-      return exclude;
-   }
-
    public boolean isExclude()
    {
-      return exclude;
+      return exclude || (fkIndex1 != null && fkIndex1.isExclude()) || (fkIndex2 != null && fkIndex2.isExclude());
    }
 
    public Relationship withExclude(boolean exclude)
@@ -78,7 +56,12 @@ public class Relationship
     */
    public Relationship withEntity(Entity entity)
    {
-      this.entity = entity;
+      if (this.entity != entity)
+      {
+         this.entity = entity;
+         if (entity != null)
+            entity.withRelationship(this);
+      }
       return this;
    }
 
@@ -127,32 +110,40 @@ public class Relationship
     */
    public Relationship withName(String name)
    {
-      if("cUSTOMERDEMOGRAPHICses".equals(name))
-         System.out.println(name);
       this.name = name;
       return this;
    }
 
-   /**
-    * @return the hint
-    */
-   public String getHint()
+   public boolean equals(Object obj)
    {
-      return hint;
+      if (obj == null)
+         return false;
+
+      return toString().equals(obj.toString());
    }
 
-   /**
-    * @param hint the hint to set
-    */
-   public Relationship withHint(String hint)
+   public int hashCode()
    {
-      this.hint = hint;
-      return this;
+      return toString().hashCode();
    }
 
    public String toString()
    {
-      return getName() + " : " + getHint();
+      String str = "Relationship: " + getEntity().getCollection() + "." + getName() + ":" + getType() + " ";
+      if (isOneToMany())
+      {
+         str += getEntity().getTable().getPrimaryIndex() + " -> " + getFkIndex1();
+      }
+      if (isManyToOne())
+      {
+         str += getEntity().getTable().getPrimaryIndex() + " <- " + getFkIndex1();
+      }
+      else
+      {
+         str += getFkIndex1() + " <--> " + getFkIndex2();
+      }
+
+      return str;
    }
 
    /**
@@ -172,38 +163,71 @@ public class Relationship
       return this;
    }
 
+   public Index getFkIndex1()
+   {
+      return fkIndex1;
+   }
+
+   public Relationship withFkIndex1(Index fkIndex1)
+   {
+      this.fkIndex1 = fkIndex1;
+      return this;
+   }
+
+   public Index getFkIndex2()
+   {
+      return fkIndex2;
+   }
+
+   public Relationship withFkIndex2(Index fkIndex2)
+   {
+      this.fkIndex2 = fkIndex2;
+      return this;
+   }
+
+   public Table getPrimaryKeyTable1()
+   {
+      return fkIndex1.getColumns().get(0).getTable();
+   }
+
+   public Table getPrimaryKeyTable2()
+   {
+      return fkIndex2.getColumns().get(0).getTable();
+   }
+
    /**
     * @return the fkCol1
     */
-   public Column getFkCol1()
+   public Column getFk1Col1()
    {
-      return fkCol1;
+      return fkIndex1.getColumns().get(0);
    }
 
-   /**
-    * @param fkCol1 the fkCol1 to set
-    */
-   public Relationship withFkCol1(Column fkCol1)
-   {
-      this.fkCol1 = fkCol1;
-      return this;
-   }
-
+   //
+   //   /**
+   //    * @param fkCol1 the fkCol1 to set
+   //    */
+   //   public Relationship withFkCol1(Column fkCol1)
+   //   {
+   //      this.fkCol1 = fkCol1;
+   //      return this;
+   //   }
+   //
    /**
     * @return the fkCol2
     */
-   public Column getFkCol2()
+   public Column getFk2Col1()
    {
-      return fkCol2;
+      return fkIndex2.getColumns().get(0);
    }
-
-   /**
-    * @param fkCol2 the fkCol2 to set
-    */
-   public Relationship withFkCol2(Column fkCol2)
-   {
-      this.fkCol2 = fkCol2;
-      return this;
-   }
+   //
+   //   /**
+   //    * @param fkCol2 the fkCol2 to set
+   //    */
+   //   public Relationship withFkCol2(Column fkCol2)
+   //   {
+   //      this.fkCol2 = fkCol2;
+   //      return this;
+   //   }
 
 }

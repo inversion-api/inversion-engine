@@ -18,7 +18,7 @@ package io.rocketpartners.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.assertj.core.util.Arrays;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class Term
 {
@@ -239,13 +239,10 @@ public class Term
 
    public static Term term(Term parent, String token, Object... terms)
    {
-      if (terms != null && terms.length == 1 && Arrays.isArray(terms[0]))
-         terms = (Object[]) terms[0];
-
       Term newTerm = new Term(parent, token);
-      for (int i = 0; terms != null && i < terms.length; i++)
+      List deconstructed = Utils.deconstructed(new ArrayList(), terms);
+      for (Object aTerm : deconstructed)
       {
-         Object aTerm = terms[i];
          if (aTerm instanceof Term)
          {
             newTerm.withTerm((Term) aTerm);

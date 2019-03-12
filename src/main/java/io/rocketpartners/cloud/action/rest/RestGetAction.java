@@ -1,7 +1,5 @@
 package io.rocketpartners.cloud.action.rest;
 
-import static org.junit.Assert.assertEquals;
-
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.ListValuedMap;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.collections4.map.MultiKeyMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
@@ -19,15 +21,16 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
+import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Page;
 import io.rocketpartners.cloud.rql.Parser;
 import io.rocketpartners.cloud.rql.Term;
@@ -67,27 +70,34 @@ public class RestGetAction extends Action<RestGetAction>
             //CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
             //TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
 
-            collection = req.getApi().getCollection(rel.getRelated());
-            String fkColName = rel.getFkCol1().getName();
-            String fkAttrName = collection.getAttributeName(fkColName);
-            newHref = Chain.buildLink(collection, null, null) + "?" + fkAttrName + "=" + req.getEntityKey();
+            //CONVERTS: http://localhost/northwind/sql/collection/val1~val2/subcollection
+            //TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
+
+            //TODO: need a compound key test case here
+            Collection relatedCollection = rel.getRelated().getCollection();
+
+            newHref = Chain.buildLink(relatedCollection, null, null) + "?";
+
+            Row entityKeyRow = collection.getTable().decodeKey(req.getEntityKey());
+            for (String key : entityKeyRow.keySet())
+            {
+               newHref += key + "=" + entityKeyRow.get(key) + "&";
+            }
+            newHref = newHref.substring(0, newHref.length() - 1);
          }
          else if (rel.isManyToMany())
          {
             //CONVERTS: http://localhost/northwind/source/employees/1/territories
             //TO THIS : http://localhost/northwind/source/territories/06897,19713
 
-            Column toMatch = rel.getFkCol1();
-            Column toRetrieve = rel.getFkCol2();
-
-            Rows rows = toMatch.getTable().getDb().select(toMatch.getTable(), toMatch, toRetrieve, Arrays.asList(entityKey));
+            List<KeyValue> rows = getRelatedKeys(rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
             if (rows.size() > 0)
             {
+               //TODO need to escape values (~',) in this string and add test case
                List foreignKeys = new ArrayList();
-               for (Row row : rows)
-                  foreignKeys.add(row.get(toRetrieve.getName()));
+               rows.forEach(k -> foreignKeys.add(k.getValue()));
 
-               Collection relatedCollection = req.getApi().getCollection(rel.getFkCol2().getPk().getTable());
+               Collection relatedCollection = rel.getRelated().getCollection();
                String entityKeys = Utils.implode(",", foreignKeys.toArray());
                newHref = Chain.buildLink(relatedCollection, entityKeys, null);
             }
@@ -98,7 +108,8 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else
          {
-            //ONE_TO_MANY links are not written out referencing the linking entity
+            //The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
+            //The system would have written out : http://localhost/northwind/source/orders/YYYYY
             throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
          }
 
@@ -122,12 +133,8 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else if (req.getEntityKey() != null)
       {
-         Attribute keyAttr = req.getCollection().getEntity().getKey();
-
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
-         entityKeys.add(0, keyAttr.getName());
-
-         Term term = Term.term(null, (entityKeys.size() == 2 ? "eq" : "in"), entityKeys.toArray());
+         Term term = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName(), entityKeys.toArray());
          req.getUrl().withParam(term.toString(), null);
       }
 
@@ -218,7 +225,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      Results results = collection.getDb().select(req, collection.getTable(), terms);
+      Results results = collection.getDb().select(collection.getTable(), terms);
 
       if (results.size() > 0)
       {
@@ -262,7 +269,7 @@ public class RestGetAction extends Action<RestGetAction>
                   String link = null;
                   if (rel.isOneToMany())
                   {
-                     Object fkval = node.remove(rel.getFkCol1().getName());
+                     Object fkval = node.remove(rel.getFk1Col1().getName());
                      if (fkval != null)
                      {
                         link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
@@ -296,7 +303,7 @@ public class RestGetAction extends Action<RestGetAction>
             }
 
          }
-         expand(collection, results.getRows(), null, null, null);
+         expand(req, collection, results.getRows(), null, null, null);
          exclude(results.getRows());
 
       } // end if results.size() > 0
@@ -367,7 +374,7 @@ public class RestGetAction extends Action<RestGetAction>
     * not increase with the number of results at any level of the expansion.
     */
 
-   protected void expand(Collection collection, List<ObjectNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
+   protected void expand(Request request, Collection collection, List<ObjectNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;
@@ -387,7 +394,22 @@ public class RestGetAction extends Action<RestGetAction>
          // objects on the recursion stack and to keep track of entities
          // so you don't waste time requerying for things you have 
          // already retrieved.
-         pkCache = new MultiKeyMap<>();
+         pkCache = new MultiKeyMap()
+            {
+               //               public Object put(Object key1, Object key2, Object value)
+               //               {
+               //                  System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
+               //                  return super.put(key1, key2, value);
+               //               }
+               //
+               //               public Object get(Object key1, Object key2)
+               //               {
+               //                  Object value =  super.get(key1, key2);
+               //                  String str = (value + "").replace("\r", "").replace("\n", "");
+               //                  System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
+               //                  return value;
+               //               }
+            };
 
          for (ObjectNode node : parentObjs)
          {
@@ -404,15 +426,17 @@ public class RestGetAction extends Action<RestGetAction>
             //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
 
             final Collection relatedCollection = rel.getRelated().getCollection();
-            Column toMatchCol = null;
-            Column toRetrieveCol = null;
+            //            Column toMatchCol = null;
+            //            Column toRetrieveCol = null;
 
-            Rows allChildEks = null;
+            Index idxToMatch = null;
+            Index idxToRetrieve = null;
+            List<KeyValue> relatedEks = null;
 
             if (rel.isOneToMany())
             {
-               toMatchCol = collection.getEntity().getKey().getColumn();
-               toRetrieveCol = rel.getFkCol1();
+               idxToMatch = collection.getEntity().getTable().getPrimaryIndex();
+               idxToRetrieve = rel.getFkIndex1();
 
                //NOTE: expands() is only getting the paired up related keys.  For a ONE_TO_MANY
                //relationship that data is already in the parent object you are trying to expand
@@ -421,7 +445,12 @@ public class RestGetAction extends Action<RestGetAction>
                //
                //However if you were to comment out the following block, the output of the algorithm
                //would be exactly the same you would just end up running an extra db query
-               allChildEks = new Rows(Arrays.asList(toMatchCol.getName(), toRetrieveCol.getName()));
+
+               List cols = new ArrayList();
+               idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
+               idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+
+               relatedEks = new ArrayList();
                for (ObjectNode parentObj : parentObjs)
                {
                   String parentEk = getEntityKey(parentObj);
@@ -429,64 +458,80 @@ public class RestGetAction extends Action<RestGetAction>
                   if (childEk != null)
                   {
                      childEk = getEntityKey(childEk);
-                     allChildEks.addRow(new Object[]{parentEk, childEk});
+                     relatedEks.add(new DefaultKeyValue(parentEk, childEk));
                   }
                }
             }
             else if (rel.isManyToOne())
             {
-               toMatchCol = rel.getFkCol1();
-               toRetrieveCol = rel.getEntity().getKey().getColumn();
+//               idxToMatch = rel.getFkIndex1();
+//               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
+               
+               idxToMatch = rel.getFkIndex1();
+               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();
+               
             }
             else if (rel.isManyToMany())
             {
-               toMatchCol = rel.getFkCol1();
-               toRetrieveCol = rel.getFkCol2();
+               idxToMatch = rel.getFkIndex1();
+               idxToRetrieve = rel.getFkIndex2();
             }
 
-            List toMatchEks = new ArrayList();
-            for (ObjectNode parentObj : parentObjs)
+            if (relatedEks == null)
             {
-               String parentEk = getEntityKey(parentObj);
-               if (!toMatchEks.contains(parentEk))
+               List toMatchEks = new ArrayList();
+               for (ObjectNode parentObj : parentObjs)
                {
-                  if (parentObj.get(rel.getName()) instanceof ArrayNode)
-                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error");
-
-                  toMatchEks.add(parentEk);
-
-                  if (rel.isOneToMany())
+                  String parentEk = getEntityKey(parentObj);
+                  if (!toMatchEks.contains(parentEk))
                   {
-                     parentObj.remove(rel.getName());
-                  }
-                  else
-                  {
-                     parentObj.put(rel.getName(), new ArrayNode());
+                     if (parentObj.get(rel.getName()) instanceof ArrayNode)
+                        throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error");
+
+                     toMatchEks.add(parentEk);
+
+                     if (rel.isOneToMany())
+                     {
+                        parentObj.remove(rel.getName());
+                     }
+                     else
+                     {
+                        parentObj.put(rel.getName(), new ArrayNode());
+                     }
                   }
                }
+               relatedEks = getRelatedKeys(idxToMatch, idxToRetrieve, toMatchEks);
             }
 
-            List newChildEks = new ArrayList();
-            allChildEks = allChildEks != null ? allChildEks : relatedCollection.getDb().select(toRetrieveCol.getTable(), toMatchCol, toRetrieveCol, toMatchEks);
-            for (Row row : allChildEks)
+            List unfetchedChildEks = new ArrayList();
+            ListValuedMap<String, String> fkCache = new ArrayListValuedHashMap<>();
+
+            for (KeyValue<String, String> row : relatedEks)
             {
-               String relatedEk = row.get(toRetrieveCol.getName()).toString();
+               //the values in the many_to_many link table may have different names than the target columns so you have to 
+               //use the index not the name to build the child entity key.
+
+               String parentEk = row.getKey();
+               String relatedEk = row.getValue();
+
+               fkCache.put(relatedEk, parentEk);
+
                if (!pkCache.containsKey(relatedCollection, relatedEk))
                {
-                  newChildEks.add(relatedEk);
+                  unfetchedChildEks.add(relatedEk);
                }
             }
 
             //this recursive call populates the pkCache
-            List<ObjectNode> newChildObjs = recursiveGet(pkCache, relatedCollection, newChildEks, expandPath(expandsPath, rel.getName()));
+            List<ObjectNode> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
 
-            for (Row row : allChildEks)
+            for (KeyValue<String, String> row : relatedEks)
             {
-               String toMatchStr = row.getString(toMatchCol.getName()).toString();
-               String toRetrieveStr = row.getString(toRetrieveCol.getName()).toString();
+               String parentEk = row.getKey();
+               String relatedEk = row.getValue();
 
-               ObjectNode parentObj = (ObjectNode) pkCache.get(collection, toMatchStr);
-               ObjectNode childObj = (ObjectNode) pkCache.get(relatedCollection, toRetrieveStr);
+               ObjectNode parentObj = (ObjectNode) pkCache.get(collection, parentEk);
+               ObjectNode childObj = (ObjectNode) pkCache.get(relatedCollection, relatedEk);
 
                if (rel.isOneToMany())
                {
@@ -494,16 +539,47 @@ public class RestGetAction extends Action<RestGetAction>
                }
                else
                {
-                  parentObj.getArray(rel.getName()).add(childObj);
+                  if (childObj != null)
+                  {
+                     parentObj.getArray(rel.getName()).add(childObj);
+                  }
                }
             }
 
             if (newChildObjs.size() > 0)
             {
-               expand(relatedCollection, newChildObjs, expands, expandPath(expandsPath, rel.getName()), pkCache);
+               expand(request, relatedCollection, newChildObjs, expands, expandPath(expandsPath, rel.getName()), pkCache);
             }
          }
       }
+   }
+
+   protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
+   {
+      if(idxToMatch.getTable() != idxToRetrieve.getTable())
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
+      List<KeyValue> related = new ArrayList<>();
+
+      List columns = new ArrayList();
+      idxToMatch.getColumns().forEach(c -> columns.add(c.getName()));
+      idxToRetrieve.getColumns().forEach(c -> columns.add(c.getName()));
+
+      Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
+      Term includes = Term.term(null, "includes", columns);
+      Term sort = Term.term(null, "sort", columns);
+      Term notNull = Term.term(null, "nn", columns);
+
+      Rows rows = ((Rows) idxToMatch.getColumn(0).getTable().getDb().select(idxToRetrieve.getTable(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
+      for (Row row : rows)
+      {
+         List keyParts = row.asList();
+         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.getColumns().size()));
+         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.getColumns().size(), keyParts.size()));
+
+         related.add(new DefaultKeyValue(parentEk, relatedEk));
+      }
+
+      return related;
    }
 
    protected List<ObjectNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection entityKeys, String expandsPath) throws Exception
@@ -737,8 +813,6 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static boolean expand(Set<String> expands, String path, Relationship rel)
    {
-      System.out.println("expand:" + expands);
-
       boolean expand = false;
       path = path.length() == 0 ? rel.getName() : path + "." + rel.getName();
       path = path.toLowerCase();
@@ -752,7 +826,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      System.out.println("expand(" + expands + ", " + path + ") -> " + expand);
+      //System.out.println("expand(" + expands + ", " + path + ") -> " + expand);
 
       return expand;
    }
@@ -770,7 +844,7 @@ public class RestGetAction extends Action<RestGetAction>
             if (!find(includes, path, true))
                exclude = true;
          }
-         
+
          if (excludes != null && excludes.size() > 0)
          {
             if (find(excludes, path, false))

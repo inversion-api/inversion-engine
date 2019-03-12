@@ -21,11 +21,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Attribute;
-import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
-import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -33,8 +30,9 @@ import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
-import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.HttpUtils;
+import io.rocketpartners.cloud.utils.Rows.Row;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
@@ -53,7 +51,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       configApi();
    }
 
-   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
    {
       return null;
    }

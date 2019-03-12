@@ -101,7 +101,8 @@ public class RestPostAction extends Action<RestPostAction>
                throw new ApiException("implementation error");
             }
 
-            Column fkCol = rel.getFkCol1();
+            //TODO: work on compound key support here, need test case
+            Column fkCol = rel.getFk1Col1();
             String fkColName = fkCol.getName();
             copied.add(fkColName.toLowerCase());
 
@@ -124,7 +125,7 @@ public class RestPostAction extends Action<RestPostAction>
          }
       }
 
-      return collection.getDb().upsert(req, collection.getTable(), mapped);
+      return collection.getDb().upsert(collection.getTable(), mapped);
    }
 
    @Override

@@ -90,11 +90,17 @@ public class Rows extends ArrayList<Rows.Row>
       return lastRow;
    }
 
-   public Row newRow()
-   {
-      return new Row(keys);
-   }
+//   public Row newRow()
+//   {
+//      return new Row(keys);
+//   }
 
+   public void addRow(List values)
+   {
+      lastRow = new Row(keys, values.toArray());
+      add(lastRow);
+   }
+   
    public void addRow(Object[] values)
    {
       lastRow = new Row(keys, values);

@@ -77,7 +77,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       else
       {
          Collection col = req.getCollection();
-         col.getDb().delete(req, col.getTable(), req.getEntityKey());
+         col.getDb().delete(col.getTable(), req.getEntityKey());
 
          res.withStatus(SC.SC_204_NO_CONTENT);
       }

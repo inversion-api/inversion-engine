@@ -18,7 +18,6 @@ package io.rocketpartners.cloud.action.sql;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +35,7 @@ import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.rql.Where;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
 
 public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
@@ -61,7 +61,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return super.addTerm(token, term);
    }
 
-   protected Results<Map<String, Object>> doSelect() throws Exception
+   protected Results<Row> doSelect() throws Exception
    {
       SqlDb db = getDb();
       Connection conn = db.getConnection();
@@ -139,7 +139,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                cols.append(" AS " + asString(colName));
             }
          }
-         else if(term.getToken().indexOf(".") < 0)
+         else if (term.getToken().indexOf(".") < 0)
          {
             cols.append(" " + asCol(term.getToken()));
          }
@@ -431,15 +431,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
       else if ("nn".equalsIgnoreCase(token))
       {
-         String term1 = strings.get(0);
-
-         sql.append(term1).append(" IS NOT NULL ");
+         sql.append(concatAll(" AND ", " IS NOT NULL", strings));
       }
       else if ("n".equalsIgnoreCase(token))
       {
-         String term1 = strings.get(0);
-
-         sql.append(term1).append(" IS NULL ");
+         sql.append(concatAll(" AND ", " IS NULL", strings));
       }
       else if ("lt".equalsIgnoreCase(token))
       {
@@ -511,6 +507,21 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       this.selectSql = selectSql;
       return this;
+   }
+
+   public String concatAll(String connector, String function, List strings)
+   {
+      StringBuffer buff = new StringBuffer((strings.size() > 1 ? "(" : ""));
+      for (int i = 0; i < strings.size(); i++)
+      {
+         buff.append(strings.get(i)).append(function);
+         if (i < strings.size() - 1)
+            buff.append(connector);
+      }
+      if (strings.size() > 1)
+         buff.append(")");
+
+      return buff.toString();
    }
 
    //   public SqlQuery withType(String type)

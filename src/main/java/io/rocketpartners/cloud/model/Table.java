@@ -21,10 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections4.KeyValue;
-import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
-
-import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Table
@@ -35,14 +33,6 @@ public class Table
    protected ArrayList<Index>  indexes = new ArrayList();
 
    protected boolean           exclude = false;
-
-   /**
-    * Set to true if this is a two column
-    * table where both columns are foreign
-    * keys.  Means this is the link table
-    * in a MANY_TO_MANY relationship
-    */
-   protected boolean           linkTbl = false;
 
    public Table()
    {
@@ -61,16 +51,18 @@ public class Table
     */
    public boolean isLinkTbl()
    {
-      return linkTbl;
-   }
+      boolean isLinkTbl = true;
+      for (Column c : columns)
+      {
+         if (!c.isFk())
+         {
+            isLinkTbl = false;
+            break;
+         }
+      }
+      //System.out.println("IS LINK TABLE: " + name + " -> " + isLinkTbl);
 
-   /**
-    * @param linkTbl the linkTbl to set
-    */
-   public Table withLinkTbl(boolean linkTbl)
-   {
-      this.linkTbl = linkTbl;
-      return this;
+      return isLinkTbl;
    }
 
    public Column getColumn(String name)
@@ -198,7 +190,7 @@ public class Table
          if (Utils.empty(val))
             return null;
 
-         val = val.toString().replace("\\", "\\\\").replace("~", "\\~");
+         val = val.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,");
 
          if (key.length() > 0)
             key.append("~");
@@ -209,30 +201,66 @@ public class Table
       return key.toString();
    }
 
-   public List<KeyValue<String, Object>> decodeKey(String inKey)
+   public static String encodeKey(List pieces)
    {
-      String entityKey = inKey;
+      StringBuffer entityKey = new StringBuffer("");
+      for (int i = 0; i < pieces.size(); i++)
+      {
+         Object piece = pieces.get(i);
+         if (piece == null)
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Trying to encode an entity key with a null component: '" + pieces + "'");
+
+         entityKey.append(piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+         if (i < pieces.size() - 1)
+            entityKey.append("~");
+      }
+      return entityKey.toString();
+   }
+
+   public Row decodeKey(String inKey)
+   {
+      return decodeKeys(inKey).iterator().next();
+   }
+
+   //parses val1~val2,val3~val4,val5~valc6
+   public Rows decodeKeys(String inKeys)
+   {
+      String entityKeys = inKeys;
       Index index = getPrimaryIndex();
       if (index == null)
          throw new ApiException("Table '" + this.getName() + "' does not have a unique index");
 
+      List<Column> columns = index.getColumns();
+
+      List colNames = new ArrayList();
+      columns.forEach(c -> colNames.add(c.getName()));
+      Rows rows = new Rows(colNames);
+
       List<String> splits = new ArrayList();
-      List<Column> columns = new ArrayList(index.getColumns());
 
       boolean escaped = false;
-      for (int i = 0; i < entityKey.length(); i++)
+      for (int i = 0; i < entityKeys.length(); i++)
       {
-         char c = entityKey.charAt(i);
+         char c = entityKeys.charAt(i);
          switch (c)
          {
             case '\\':
                escaped = !escaped;
                continue;
+            case ',':
+               if (!escaped)
+               {
+                  rows.addRow(splits);
+                  splits = new ArrayList();
+                  entityKeys = entityKeys.substring(i + 1, entityKeys.length());
+                  i = 0;
+                  continue;
+               }
             case '~':
                if (!escaped)
                {
-                  splits.add(entityKey.substring(0, i));
-                  entityKey = entityKey.substring(i + 1, entityKey.length());
+                  splits.add(entityKeys.substring(0, i));
+                  entityKeys = entityKeys.substring(i + 1, entityKeys.length());
                   i = 0;
                   continue;
                }
@@ -240,28 +268,34 @@ public class Table
                escaped = false;
          }
       }
-      if (entityKey.length() > 0)//won't this always happen?
-         splits.add(entityKey);
-
-      if (splits.size() == 0 || splits.size() != columns.size())
-         throw new ApiException("Supplied entity key '" + inKey + "' has " + splits.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
-
-      List<KeyValue<String, Object>> terms = new ArrayList();
-
-      for (int i = 0; i < splits.size(); i++)
+      if (entityKeys.length() > 0)
       {
-         Column column = columns.get(i);
-         Object value = splits.get(i).replace("\\\\", "\\").replace("\\~", "~");
-
-         if (((String) value).length() == 0)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKey + "'");
-
-         value = getDb().cast(column, value);
-
-         terms.add(new DefaultKeyValue(columns.get(i).getName(), value));
+         splits.add(entityKeys);
       }
 
-      return terms;
+      if (splits.size() > 0)
+      {
+         rows.addRow(splits);
+      }
+
+      for (Row row : rows)
+      {
+         if (row.size() != columns.size())
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
+
+         for (int i = 0; i < columns.size(); i++)
+         {
+            Object value = row.getString(i).replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
+
+            if (((String) value).length() == 0)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
+
+            value = getDb().cast(columns.get(i), value);
+            row.set(i, value);
+         }
+      }
+
+      return rows;
    }
 
    public Index getPrimaryIndex()
@@ -331,9 +365,17 @@ public class Table
 
    public Index withIndex(Column column, String name, String type, boolean unique)
    {
-      System.out.println("WITH INDEX: " + name + " - " + column);
-      Index index = new Index(this, column, name, type, unique);
-      withIndex(index);
+      //System.out.println("WITH INDEX: " + name + " - " + column);
+      Index index = getIndex(name);
+      if (index != null)
+      {
+         index.withColumn(column);
+      }
+      else
+      {
+         index = new Index(this, column, name, type, unique);
+         withIndex(index);
+      }
       return index;
    }
 

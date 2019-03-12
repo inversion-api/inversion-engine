@@ -29,7 +29,6 @@ public class Index
    protected String       name    = null;
    protected String       type    = null;           // primary, partition, sort, localsecondary, etc
    protected boolean      unique  = true;
-
    protected List<Column> columns = new ArrayList();
 
    public Index()
@@ -50,6 +49,32 @@ public class Index
       withName(name);
       withType(type);
       withUnique(unique);
+   }
+
+   public String toString()
+   {
+      //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
+      StringBuffer buff = new StringBuffer(getTable().getName()).append("(");
+      for (int i = 0; i < columns.size(); i++)
+      {
+         buff.append(columns.get(i).getName());
+         if (i < columns.size() - 1)
+            buff.append(", ");
+      }
+      buff.append(")");
+      return buff.toString();
+   }
+
+   public boolean isExclude()
+   {
+      if (table.isExclude())
+         return true;
+
+      for (Column c : columns)
+         if (c.isExclude())
+            return true;
+
+      return false;
    }
 
    public Table getTable()
@@ -120,6 +145,11 @@ public class Index
       return false;
    }
 
+   public Column getColumn(int idx)
+   {
+      return columns.get(idx);
+   }
+
    public List<Column> getColumns()
    {
       return new ArrayList(columns);
@@ -148,10 +178,4 @@ public class Index
    {
       columns.remove(column);
    }
-
-   public String toString()
-   {
-      return name == null ? super.toString() : name + " " + columns;
-   }
-
 }

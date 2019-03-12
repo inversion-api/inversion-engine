@@ -22,25 +22,24 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ch.qos.logback.classic.Level;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
@@ -48,7 +47,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.utils.Rows;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
@@ -111,6 +110,9 @@ public class SqlDb extends Db<SqlDb>
                buff.append("SQL -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                String msg = buff.toString();
                Chain.debug(msg);
+
+               if (msg.indexOf("SELECT \"REPORTSTO\", \"EMPLOYEEID\" FROM EMPLOYEES") >= 0)
+                  System.out.println("asdfasdf");
             }
          });
    }
@@ -149,63 +151,98 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
+   //   @Override
+   //   public Rows select(Table table, List<Column> toMatch, List<Column> toRetrieve, Rows matchValues) throws Exception
+   //   {
+   //      
+   //      
+   //      
+   //      if (toMatch.get(0).getTable() != table || toRetrieve.get(0).getTable() != table)
+   //         throw new ApiException("Supplied columns do not belong to the target table.");
+   //
+   //      List<String> allCols = new ArrayList();
+   //      toMatch.forEach(c -> allCols.add(c.getName()));
+   //      toRetrieve.forEach(c -> allCols.add(c.getName()));
+   //
+   //      StringBuffer sql = new StringBuffer(" SELECT ");
+   //      for (int i = 0; i < allCols.size(); i++)
+   //      {
+   //         sql.append(quoteCol(allCols.get(i)));
+   //         if (i < allCols.size() - 1)
+   //            sql.append(", ");
+   //      }
+   //      sql.append(" FROM ").append(quoteCol(table.getName()));
+   //
+   //      sql.append(" WHERE ");
+   //      for (int i = 0; i < toRetrieve.size(); i++)
+   //      {
+   //         sql.append(quoteCol(toRetrieve.get(i).getName())).append(" IS NOT NULL ");
+   //         if (i < toRetrieve.size() - 1)
+   //            sql.append(" AND ");
+   //      }
+   //
+   //      //need to do an "IN" or (col1=val1 AND col2 = val2) OR
+   //
+   //      sql.append(" ORDER BY ");
+   //      for (int i = 0; i < allCols.size(); i++)
+   //      {
+   //         sql.append(quoteCol(allCols.get(i)));
+   //         if (i < allCols.size() - 1)
+   //            sql.append(", ");
+   //      }
+   //      sql.append(relatedMax + 1);
+   //
+   //      //      String sql = "";
+   //      //      sql += " SELECT   " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
+   //      //      sql += " FROM     " + ;
+   //      //      sql += " WHERE    " + quoteCol(toRetrieve.getName()) + " IS NOT NULL ";
+   //      //      sql += " AND      " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
+   //      //      sql += " ORDER BY " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
+   //      //      sql += " LIMIT " + (relatedMax + 1); //select 1 more on purpose so we can see if more than relatedMax exist
+   //
+   //      Rows rows = SqlUtils.selectRows(getConnection(), sql.toString(), matchValues);
+   //
+   //      if (rows.size() > relatedMax)
+   //      {
+   //         //TODO:add test case for this 
+   //         String msg = "";
+   //         msg += "You are trying to retrieve more related entities than can be retrieved in a single document.";
+   //         msg += " Try lowing your pageSize parameter or pruning your expands list to something more approperiate.";
+   //         msg += " See SqlDb.withRelatedMax(int)";
+   //         throw new ApiException(SC.SC_400_BAD_REQUEST, msg);
+   //      }
+   //
+   //      return rows;
+   //   }
+
    @Override
-   public Rows select(Table table, Column toMatch, Column toRetrieve, List<Object> matchValues) throws Exception
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      if (toMatch.getTable() != table || toRetrieve.getTable() != table)
-         throw new ApiException("Supplied columns do not belong to the target table.");
+      //      Collection collection = null;
+      //      try
+      //      {
+      //         collection = req.getCollection();
+      //      }
+      //      catch (ApiException e)
+      //      {
+      //         // need to try catch this because getCollection throws an exception if the collection isn't found
+      //         // but not having a collection isn't always an error in this handler because a previous handler 
+      //         // like the SqlSuggestHandler or ScriptHandler may have set the "sql" chain param. 
+      //      }
 
-      String sql = "";
-      sql += " SELECT   " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
-      sql += " FROM     " + quoteCol(table.getName());
-      sql += " WHERE    " + quoteCol(toRetrieve.getName()) + " IS NOT NULL ";
-      sql += " AND      " + quoteCol(toMatch.getName()) + " IN (" + SqlUtils.getQuestionMarkStr(matchValues.size()) + ")";
-      sql += " ORDER BY " + quoteCol(toMatch.getName()) + ", " + quoteCol(toRetrieve.getName());
-      sql += " LIMIT " + (relatedMax + 1); //select 1 more on purpose so we can see if more than relatedMax exist
+      //      String dbname = (String) req.getChain().get("db");
+      SqlDb db = (SqlDb) table.getDb();
+      //      if (db == null)
+      //      {
+      //         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
+      //      }
 
-      Rows rows = SqlUtils.selectRows(getConnection(), sql, matchValues);
+      //      Entity entity = collection != null ? collection.getEntity() : null;
+      //      Table tbl = entity != null ? entity.getTable() : null;
 
-      if (rows.size() > relatedMax)
-      {
-         //TODO:add test case for this 
-         String msg = "";
-         msg += "You are trying to retrieve more related entities than can be retrieved in a single document.";
-         msg += " Try lowing your pageSize parameter or pruning your expands list to something more approperiate.";
-         msg += " See SqlDb.withRelatedMax(int)";
-         throw new ApiException(SC.SC_400_BAD_REQUEST, msg);
-      }
-
-      return rows;
-   }
-
-   @Override
-   public Results<Map<String, Object>> select(Request req, Table table, List<Term> columnMappedTerms) throws Exception
-   {
-      Collection collection = null;
-      try
-      {
-         collection = req.getCollection();
-      }
-      catch (ApiException e)
-      {
-         // need to try catch this because getCollection throws an exception if the collection isn't found
-         // but not having a collection isn't always an error in this handler because a previous handler 
-         // like the SqlSuggestHandler or ScriptHandler may have set the "sql" chain param. 
-      }
-
-      String dbname = (String) req.getChain().get("db");
-      SqlDb db = (SqlDb) (collection != null ? collection.getDb() : api.getDb(dbname));
-      if (db == null)
-      {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
-      }
-
-      Entity entity = collection != null ? collection.getEntity() : null;
-      Table tbl = entity != null ? entity.getTable() : null;
-
-      String sql = (String) req.getChain().remove("select");
+      String sql = (String) Chain.peek().remove("select");
       if (Utils.empty(sql))
-         sql = " SELECT * FROM " + tbl.getName();
+         sql = " SELECT * FROM " + table.getName();
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
       query.withSelectSql(sql);
@@ -216,15 +253,15 @@ public class SqlDb extends Db<SqlDb>
    }
 
    @Override
-   public String upsert(Request request, Table table, Map<String, Object> row) throws Exception
+   public String upsert(Table table, Map<String, Object> row) throws Exception
    {
       if (isType("mysql"))
       {
-         return mysqlUpsert(request, table, row);
+         return mysqlUpsert(table, row);
       }
       else if (isType("h2"))
       {
-         return h2Upsert(request, table, row);
+         return h2Upsert(table, row);
       }
       else
       {
@@ -232,12 +269,12 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public String mysqlUpsert(Request request, Table table, Map<String, Object> row) throws Exception
+   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
    {
       return null;
    }
 
-   public String h2Upsert(Request request, Table table, Map<String, Object> row) throws Exception
+   public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
       String keyCol = table.getKeyName();
       Object key = row.get(keyCol);
@@ -555,10 +592,12 @@ public class SqlDb extends Db<SqlDb>
          do
          {
             String tableName = rs.getString("TABLE_NAME");
-
             ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
             while (keyMd.next())
             {
+               String pkName = keyMd.getString("PK_NAME");
+               String fkName = keyMd.getString("FK_NAME");
+
                String fkTableName = keyMd.getString("FKTABLE_NAME");
                String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
                String pkTableName = keyMd.getString("PKTABLE_NAME");
@@ -568,7 +607,9 @@ public class SqlDb extends Db<SqlDb>
                Column pk = getColumn(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               log.info(fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+               getTable(fkTableName).withIndex(fk, fkName, "FOREIGN_KEY", false);
+
+               //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
             keyMd.close();
          }
@@ -576,20 +617,25 @@ public class SqlDb extends Db<SqlDb>
 
       rs.close();
 
-      //-- if a table has two columns and both are foreign keys
-      //-- then it is a relationship table for MANY_TO_MANY relationships
-      for (Table table : getTables())
-      {
-         List<Column> cols = table.getColumns();
-         if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
-         {
-            table.withLinkTbl(true);
-         }
-      }
+      //2019-02-11 WB - moved below code into Table.isLinkTable
+      //      
+      //      -- if a table has two columns and both are foreign keys
+      //      -- then it is a relationship table for MANY_TO_MANY relationships
+      //            for (Table table : getTables())
+      //            {
+      //               List<Column> cols = table.getColumns();
+      //               if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
+      //               {
+      //                  table.withLinkTbl(true);
+      //               }
+      //            }
+
    }
 
    public void configApi() throws Exception
    {
+      List<String> relationshipStrs = new ArrayList();
+
       for (Table table : getTables())
       {
          List<Column> cols = table.getColumns();
@@ -607,8 +653,8 @@ public class SqlDb extends Db<SqlDb>
          }
 
          String debug = getCollectionPath();
-         debug = (debug == null ? "" : (debug + "/")) + collection;
-         System.out.println("CREATING COLLECTION: " + debug);
+         debug = (debug == null ? "" : (debug + collection));
+         //System.out.println("CREATING COLLECTION: " + debug);
       }
 
       //-- Now go back through and create relationships for all foreign keys
@@ -622,110 +668,72 @@ public class SqlDb extends Db<SqlDb>
       {
          if (t.isLinkTbl())
          {
-            Column fkCol1 = t.getColumns().get(0);
-            Column fkCol2 = t.getColumns().get(1);
-
-            //MANY_TO_MANY one way
+            //create reciprocal pairs for of MANY_TO_MANY relationships
+            //for each pair combination in the link table.
+            List<Index> indexes = t.getIndexes();
+            for (int i = 0; i < indexes.size(); i++)
             {
-               Entity pkEntity = api.getEntity(fkCol1.getPk().getTable());
-               Relationship r = new Relationship();
-               pkEntity.withRelationship(r);
-               r.withEntity(pkEntity);
-               Entity related = api.getEntity(fkCol2.getPk().getTable());
-               r.withRelated(related);
+               for (int j = 0; j < indexes.size(); j++)
+               {
+                  Index idx1 = indexes.get(i);
+                  Index idx2 = indexes.get(j);
 
-               String hint = "MANY_TO_MANY - ";
-               hint += fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
-               hint += " <- " + fkCol1.getTable().getName() + "." + fkCol1.getName() + ":" + fkCol2.getName();
-               hint += " -> " + fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
+                  if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
+                     continue;
 
-               r.withHint(hint);
-               r.withType(Relationship.REL_MANY_TO_MANY);
-               r.withFkCol1(fkCol1);
-               r.withFkCol2(fkCol2);
+                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
+                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
 
-               //Collection related = api.getCollection(fkCol2.getTbl());
-               String name = makeRelationshipName(r);
-               r.withName(name);
-            }
-
-            //MANY_TO_MANY the other way
-            {
-               Entity pkEntity = api.getEntity(fkCol2.getPk().getTable());
-               Relationship r = new Relationship();
-               pkEntity.withRelationship(r);
-               r.withEntity(pkEntity);
-
-               Entity related = api.getEntity(fkCol1.getPk().getTable());
-               r.withRelated(related);
-
-               //r.setRelated(api.getEntity(fkCol1.getTable()));
-
-               String hint = "MANY_TO_MANY - ";
-               hint += fkCol2.getPk().getTable().getName() + "." + fkCol2.getPk().getName();
-               hint += " <- " + fkCol2.getTable().getName() + "." + fkCol2.getName() + ":" + fkCol1.getName();
-               hint += " -> " + fkCol1.getPk().getTable().getName() + "." + fkCol1.getPk().getName();
-
-               r.withHint(hint);
-               r.withType(Relationship.REL_MANY_TO_MANY);
-               r.withFkCol1(fkCol2);
-               r.withFkCol2(fkCol1);
-
-               String name = makeRelationshipName(r);
-               r.withName(name);
+                  Relationship r = new Relationship();
+                  r.withType(Relationship.REL_MANY_TO_MANY);
+                  r.withEntity(entity1);
+                  r.withRelated(entity2);
+                  r.withFkIndex1(idx1);
+                  r.withFkIndex2(idx2);
+                  r.withName(makeRelationshipName(r));
+                  relationshipStrs.add(r.toString());
+               }
             }
          }
          else
          {
-            for (Column col : t.getColumns())
+            for (Index fkIdx : t.getIndexes())
             {
-               if (col.isFk())
+               if (!fkIdx.getType().equals("FOREIGN_KEY"))
+                  continue;
+
+               Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
+               Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
+
+               //ONE_TO_MANY
                {
-                  Column fkCol = col;
-                  Table fkTbl = fkCol.getTable();
-                  Entity fkEntity = api.getEntity(fkTbl);
+                  Relationship r = new Relationship();
+                  //TODO:this name may not be specific enough or certain types
+                  //of relationships. For example where an entity is related
+                  //to another entity twice
+                  r.withType(Relationship.REL_MANY_TO_ONE);
+                  r.withFkIndex1(fkIdx);
+                  r.withEntity(pkEntity);
+                  r.withRelated(fkEntity);
+                  r.withName(makeRelationshipName(r));
+                  relationshipStrs.add(r.toString());
+               }
 
-                  Column pkCol = col.getPk();
-                  Table pkTbl = pkCol.getTable();
-                  Entity pkEntity = api.getEntity(pkTbl);
-
-                  if (pkEntity == null)
-                  {
-                     System.err.println("Unknown Entity for table: " + pkTbl);
-                     continue;
-                  }
-
-                  //ONE_TO_MANY
-                  {
-                     Relationship r = new Relationship();
-
-                     //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an entity is related
-                     //to another entity twice
-                     r.withHint("MANY_TO_ONE - " + pkTbl.getName() + "." + pkCol.getName() + " <- " + fkTbl.getName() + "." + fkCol.getName());
-                     r.withType(Relationship.REL_MANY_TO_ONE);
-                     r.withFkCol1(fkCol);
-                     r.withEntity(pkEntity);
-                     r.withRelated(fkEntity);
-                     r.withName(makeRelationshipName(r));
-                     pkEntity.withRelationship(r);
-                  }
-
-                  //MANY_TO_ONE
-                  {
-                     Relationship r = new Relationship();
-                     r.withHint("ONE_TO_MANY - " + fkTbl.getName() + "." + fkCol.getName() + " -> " + pkTbl.getName() + "." + pkCol.getName());
-                     r.withType(Relationship.REL_ONE_TO_MANY);
-                     r.withFkCol1(fkCol);
-                     r.withEntity(fkEntity);
-                     r.withRelated(pkEntity);
-                     r.withName(makeRelationshipName(r));
-                     fkEntity.withRelationship(r);
-                  }
+               //MANY_TO_ONE
+               {
+                  Relationship r = new Relationship();
+                  r.withType(Relationship.REL_ONE_TO_MANY);
+                  r.withFkIndex1(fkIdx);
+                  r.withEntity(fkEntity);
+                  r.withRelated(pkEntity);
+                  r.withName(makeRelationshipName(r));
+                  relationshipStrs.add(r.toString());
                }
             }
          }
       }
+//      Collections.sort(relationshipStrs);
+//      relationshipStrs.forEach(s -> System.out.println("RELATIONSHIP: " + s));
    }
 
    public SqlDb withType(String type)

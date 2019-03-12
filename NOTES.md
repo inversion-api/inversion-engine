@@ -1,6 +1,10 @@
 
-# TODO
+* TODO: add test to make sure that link tables are not created as collections
+* TODO: create a test case for a 3 part link table w/ composite foreign keys
 
+* TODO: add character escaping to Term so that it automatically knows how to escape control characters that might be in the data
+* TODO: get rid of Entity.getKey() because need to always support multi attribute/column keys
+* TODO: add support for expanding multi key column relationships
 * TODO: fix elastic search
 * TODO: fix s3
 * DONE: fix firehose

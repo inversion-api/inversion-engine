@@ -45,6 +45,7 @@ import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
@@ -85,7 +86,7 @@ public class DynamoDb extends Db<DynamoDb>
       this.includeTables = includeTables;
    }
 
-   public Results<Map<String, Object>> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
    {
       DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
       return query.doSelect();
@@ -107,17 +108,18 @@ public class DynamoDb extends Db<DynamoDb>
 
    public void delete(Request request, Table table, String entityKey) throws Exception
    {
-      List<KeyValue<String, Object>> key = table.decodeKey(entityKey);
-
-      if (key.size() == 1)
-      {
-         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue());
-      }
-      else if (key.size() == 2)
-      {
-         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue(), key.get(1).getKey(), key.get(1).getValue());
-      }
-      else
+      //TODO put me back in!!!!
+//      List<KeyValue<String, Object>> key = table.decodeKey(entityKey);
+//
+//      if (key.size() == 1)
+//      {
+//         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue());
+//      }
+//      else if (key.size() == 2)
+//      {
+//         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue(), key.get(1).getKey(), key.get(1).getValue());
+//      }
+//      else
       {
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + entityKey + "'");
       }

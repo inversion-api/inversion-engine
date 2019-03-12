@@ -158,7 +158,10 @@ public class Entity
    public Entity withRelationship(Relationship relationship)
    {
       if (relationship != null && !relationships.contains(relationship))
+      {
          relationships.add(relationship);
+         relationship.withEntity(this);
+      }
       return this;
    }
 
@@ -213,26 +216,26 @@ public class Entity
       return this;
    }
 
-   public Attribute getKey()
-   {
-      Table table = getTable();
-      if (table != null)
-      {
-         for (Index index : table.getIndexes())
-         {
-            if (index.isUnique() && index.getColumns().size() == 1)
-            {
-               Column col = index.getColumns().get(0);
-               for (Attribute attr : getAttributes())
-               {
-                  if (attr.getColumn() == col)
-                     return attr;
-               }
-            }
-         }
-      }
-      return null;
-   }
+   //   public Attribute getKey()
+   //   {
+   //      Table table = getTable();
+   //      if (table != null)
+   //      {
+   //         for (Index index : table.getIndexes())
+   //         {
+   //            if (index.isUnique() && index.getColumns().size() == 1)
+   //            {
+   //               Column col = index.getColumns().get(0);
+   //               for (Attribute attr : getAttributes())
+   //               {
+   //                  if (attr.getColumn() == col)
+   //                     return attr;
+   //               }
+   //            }
+   //         }
+   //      }
+   //      return null;
+   //   }
 
    public boolean hasUniqueKey()
    {
