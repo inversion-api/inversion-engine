@@ -55,7 +55,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (term.hasToken("eq"))
       {
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (table.getColumn(term.getToken(0)) == null)
+         if (table != null && table.getColumn(term.getToken(0)) == null)
             return true;
       }
       return super.addTerm(token, term);
@@ -162,13 +162,16 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             //
             //TODO: maybe this should be put into Select.columns()
             //so all query subclasses will inherit the behavior???
-            Index primaryIndex = table().getPrimaryIndex();
-            if (primaryIndex != null)
+            if (table() != null)
             {
-               for (Column pkCol : primaryIndex.getColumns())
+               Index primaryIndex = table().getPrimaryIndex();
+               if (primaryIndex != null)
                {
-                  if (cols.indexOf(asCol(pkCol.getName())) < 0)
-                     cols.append(", ").append(asCol(pkCol.getName()));
+                  for (Column pkCol : primaryIndex.getColumns())
+                  {
+                     if (cols.indexOf(asCol(pkCol.getName())) < 0)
+                        cols.append(", ").append(asCol(pkCol.getName()));
+                  }
                }
             }
 
@@ -283,7 +286,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          if (db == null || db().isType("mysql"))
          {
             s = "LIMIT ";
-            if (offset >= 0)
+            if (offset > 0)
                s += offset;
 
             if (limit >= 0)
@@ -324,19 +327,51 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return "?";
    }
 
+   public static String dequote(String str)
+   {
+      char[] quoteChars = new char[]{'\'', '"', '`'};
+      if (str == null)
+         return null;
+
+      while (str.length() >= 2 && str.charAt(0) == str.charAt(str.length() - 1))// && (str.charAt(0) == '\'' || str.charAt(0) == '"' || str.charAt(0) == '`'))
+      {
+         boolean changed = false;
+         for (int i = 0; i < quoteChars.length; i++)
+         {
+            if (str.charAt(0) == quoteChars[i])
+            {
+               str = str.substring(1, str.length() - 1);
+               changed = true;
+               break;
+            }
+         }
+         if (!changed)
+            break;
+      }
+
+      return str;
+   }
+
    protected String print(Term term, String col, boolean preparedStmt)
    {
       if (term.isLeaf())
       {
          String token = term.getToken();
 
-         if (isNum(term))
-            return asNum(token);
-
+         String value = null;
          if (isCol(term))
-            return asCol(token);
-
-         return asString(term);
+         {
+            value = asCol(token);
+         }
+         else if (isNum(term))
+         {
+            value = asNum(token);
+         }
+         else
+         {
+            value = asString(term);
+         }
+         return value;
       }
 
       StringBuffer sql = new StringBuffer("");
@@ -374,7 +409,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                String val = strings.get(i);
                if (val.charAt(0) != columnQuote)
                {
-                  val = t.getToken();//go back to the unprinted/quoted version
+                  val = dequote(val);//t.getToken();//go back to the unprinted/quoted version
                   strings.set(i, replace(term, t, i, col, val));
                }
             }
@@ -559,7 +594,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (isNum(term))
          return false;
 
-      if (table.getColumn(term.getToken()) != null)
+      if (table != null && table.getColumn(term.getToken()) != null)
          return true;
 
       if (term.getParent() != null && term.getParent().indexOf(term) == 0)

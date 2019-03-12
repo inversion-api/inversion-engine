@@ -238,8 +238,12 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    public T withTable(E table)
    {
-      withDb((D) table.getDb());
       this.table = table;
+      if (table != null)
+      {
+         withDb((D) table.getDb());
+      }
+
       return r();
    }
 
@@ -306,10 +310,13 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
-      Column col = table.getColumn(columnName);
-      if (col == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
-      value = db.cast(col, value);
+      if (table != null)
+      {
+         Column col = table.getColumn(columnName);
+         if (col == null)
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+         value = db.cast(col, value);
+      }
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }
@@ -333,6 +340,11 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    public KeyValue<String, String> getColValue(int index)
    {
       return values.get(index);
+   }
+
+   public List<KeyValue> getValues()
+   {
+      return values;
    }
 
 }
