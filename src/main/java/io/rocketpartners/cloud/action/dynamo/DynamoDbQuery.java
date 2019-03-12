@@ -187,13 +187,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
     */
    public DynamoDbIndex getIndex()
    {
-      //TODO consider sort
-      //      String sortBy = order.getProperty(0);
-      //      if(sortBy != null)
-      //      {
-      //         sortBy = getColumnName(sortBy);
-      //      }
-
+      //if the users requested a sort, you need to find an index with that sort key
+      String sortBy = order.getProperty(0);
+      
+      //TODO: make sure that use use the index that matches AFTER if AFTER is provided
       if (index == null)
       {
          DynamoDbIndex foundIndex = null;
@@ -207,6 +204,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             String partCol = index.getHashKey().getName();
             String sortCol = index.getSortKey() != null ? index.getSortKey().getName() : null;
 
+            if(sortBy != null && !sortBy.equals(sortCol))
+               continue;
+            
             Term partKey = findTerm(partCol, "eq");
 
             if (partKey == null)
@@ -339,15 +339,14 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          Term after = page().getAfter();
          if (after != null)
          {
-            DynamoDbIndex index = (DynamoDbIndex) table().getPrimaryIndex();
             Column afterHashKeyCol = table().getColumn(after.getToken(0));
             Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
 
-            Object hashValue = db.cast(afterHashKeyCol, after.getToken(0));
-            Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(1)) : null;
+            Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
+            Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
 
             if (afterSortKeyCol != null)
             {
@@ -487,8 +486,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
          Object value = term.getToken();
          Column col = table.getColumn(colName);
-         if(col != null)
-            value = db.cast(col,  term.getToken());
+         if (col != null)
+            value = db.cast(col, term.getToken());
 
          String key = ":val" + (valueMap.size() + 1);
          valueMap.put(key, value);
@@ -496,7 +495,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          space(buff).append(key);
       }
 
-      
       //System.out.println("TOSTRING: " + term + " -> '" + buff + "'" + " - " + nameMap + " - " + valueMap);
       return buff.toString();
    }

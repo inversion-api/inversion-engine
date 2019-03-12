@@ -25,17 +25,20 @@ public class MockDb extends Db<MockDb>
 
    }
 
-   public Results<Row> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   @Override
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
       return null;
    }
 
-   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
+   @Override
+   public String upsert(Table table, Map<String, Object> values) throws Exception
    {
       return null;
    }
 
-   public void delete(Request request, Table table, String entityKey) throws Exception
+   @Override
+   public void delete(Table table, String entityKey) throws Exception
    {
 
    }

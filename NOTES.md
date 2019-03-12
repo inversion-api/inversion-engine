@@ -1,6 +1,9 @@
 
-* TODO: add test to make sure that link tables are not created as collections
-* TODO: create a test case for a 3 part link table w/ composite foreign keys
+* TODO: should we require a sort key to use pagination?
+* TODO: missing recordCount on some outputs
+
+* DONE: add test to make sure that link tables are not created as collections
+* TODO: create a test case for a 3 entity link table w/ composite foreign keys
 
 * TODO: add character escaping to Term so that it automatically knows how to escape control characters that might be in the data
 * TODO: get rid of Entity.getKey() because need to always support multi attribute/column keys

@@ -806,7 +806,17 @@ public class Utils
          for (String matchToken : matchTokens)
          {
             if (debugLine.indexOf(matchToken) < 0)
+            {
+               debug = resp.getDebug();
+               idx = debug.indexOf("<< response -------------");
+               debug = debug.substring(0, idx) + "[E]: " + match + " TEST ERROR CAN'T FIND THIS IN DEBUG LINES\r\n\r\n" + debug.substring(idx, debug.length());
+               
+               System.out.println(debug);
+               
+               //System.exit(0);
                error("missing debug match: '" + match + "' in debug line: " + debugLine);
+
+            }
          }
       }
       return resp;

@@ -9,7 +9,6 @@ import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Rows;
-import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.SqlUtils.SqlListener;
 import io.rocketpartners.cloud.utils.Utils;
@@ -93,6 +92,9 @@ public class SqlServiceFactory
                   if (!res.isSuccess())
                   {
                      System.out.println(res.getDebug());
+                     
+                     if(res.getStatusCode() == 500)
+                        System.exit(1);
                      
                      if (res.getError() != null)
                         Utils.rethrow(res.getError());

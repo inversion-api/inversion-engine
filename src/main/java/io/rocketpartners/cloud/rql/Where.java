@@ -66,7 +66,8 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             //or( and(eq(col1,val),eq(col2,val)), and(eq(col1,val),eq(col2,val)), and(eq(col1val), eq(col2,val)) 
             Term or = Term.term(null, "or");
             List<Term> children = term.getTerms();
-            
+            term = or;
+
             for (int i = 1; i < children.size(); i++)
             {
                Term child = children.get(i);
@@ -82,10 +83,17 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             }
             if (or.getNumTerms() == 1)
             {
-               or = or.getTerm(0);
-               or.withParent(null);
+               //For a single key, unwrap or(and(eq(a,b), eq(c,d))) into individual parts equal to ?eq(a,b)&eq(b,c)
+               Term and = or.getTerm(0);
+               for (Term andCond : and.getTerms())
+               {
+                  andCond.withParent(null);
+                  if(!super.addTerm(andCond.getToken(), andCond))
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm Error");
+               }
+               return true;
             }
-            term = or;
+            
          }
       }
       return super.addTerm(token, term);

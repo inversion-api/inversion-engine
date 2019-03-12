@@ -51,17 +51,17 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       configApi();
    }
 
-   public Results<Row> select(Request request, Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
       return null;
    }
 
-   public String upsert(Request request, Table table, Map<String, Object> values) throws Exception
+   public String upsert(Table table, Map<String, Object> values) throws Exception
    {
       return null;
    }
 
-   public void delete(Request request, Table table, String entityKey) throws Exception
+   public void delete(Table table, String entityKey) throws Exception
    {
 
    }
