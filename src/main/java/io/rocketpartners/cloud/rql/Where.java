@@ -66,13 +66,14 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             //or( and(eq(col1,val),eq(col2,val)), and(eq(col1,val),eq(col2,val)), and(eq(col1val), eq(col2,val)) 
             Term or = Term.term(null, "or");
             List<Term> children = term.getTerms();
+            
             for (int i = 1; i < children.size(); i++)
             {
                Term child = children.get(i);
                if (!child.isLeaf())
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
 
-               Row keyParts = getParent().table().decodeKey(child.getToken());
+               Row keyParts = getParent().table().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");
                for (String key : keyParts.keySet())
                {

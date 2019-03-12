@@ -13,7 +13,6 @@ CREATE TABLE `Categories` (
 CREATE INDEX `CategoryName` ON `Categories` (`CategoryName`);
 
 
-
 CREATE TABLE `CustomerCustomerDemo` (
     `CustomerID` VARCHAR(5) NOT NULL,
     `CustomerTypeID` VARCHAR(10) NOT NULL,
@@ -44,13 +43,9 @@ CREATE TABLE `Customers` (
     `Fax` VARCHAR(24),
     CONSTRAINT `PK_Customers` PRIMARY KEY (`CustomerID`)
 );
-
 CREATE INDEX `City` ON `Customers` (`City`);
-
 CREATE INDEX `CompanyName` ON `Customers` (`CompanyName`);
-
 CREATE INDEX `PostalCodeCustomers` ON `Customers` (`PostalCode`);
-
 CREATE INDEX `Region` ON `Customers` (`Region`);
 
 
@@ -76,9 +71,7 @@ CREATE TABLE `Employees` (
      `Salary` FLOAT,
     CONSTRAINT `PK_Employees` PRIMARY KEY (`EmployeeID`)
 );
-
 CREATE INDEX `LastName` ON `Employees` (`LastName`);
-
 CREATE INDEX `PostalCodeEmpolyees` ON `Employees` (`PostalCode`);
 
 
@@ -101,7 +94,6 @@ CREATE TABLE `OrderDetails` (
 );
 
 
-
 CREATE TABLE `Orders` (
     `OrderID` INTEGER NOT NULL AUTO_INCREMENT,
     `CustomerID` VARCHAR(5),
@@ -119,11 +111,8 @@ CREATE TABLE `Orders` (
     `ShipCountry` VARCHAR(15),
     CONSTRAINT `PK_Orders` PRIMARY KEY (`OrderID`)
 );
-
 CREATE INDEX `OrderDate` ON `Orders` (`OrderDate`);
-
 CREATE INDEX `ShippedDate` ON `Orders` (`ShippedDate`);
-
 CREATE INDEX `ShipPostalCode` ON `Orders` (`ShipPostalCode`);
 
 
@@ -177,9 +166,7 @@ CREATE TABLE `Suppliers` (
     `HomePage` MEDIUMTEXT,
     CONSTRAINT `PK_Suppliers` PRIMARY KEY (`SupplierID`)
 );
-
 CREATE INDEX `SuppliersCompanyName` ON `Suppliers` (`CompanyName`);
-
 CREATE INDEX `SuppliersPostalCode` ON `Suppliers` (`PostalCode`);
 
 
@@ -3924,3 +3911,21 @@ ALTER TABLE `Products` ADD CONSTRAINT `FK_Products_Suppliers`
 
 ALTER TABLE `Territories` ADD CONSTRAINT `FK_Territories_Region` 
     FOREIGN KEY (`RegionID`) REFERENCES `Region` (`RegionID`);
+    
+
+CREATE TABLE `EmployeeOrderDetails` (
+	`EmployeeID` INTEGER NOT NULL,
+	`OrderID` INTEGER NOT NULL,
+	`ProductID` INTEGER NOT NULL,
+	CONSTRAINT `PK_EmployeeOrderDetails` PRIMARY KEY ( `EmployeeID`, `OrderID`, `ProductID`)
+);
+
+ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails1`
+	FOREIGN KEY (`EmployeeID`) REFERENCES `Employees` (`EmployeeID`);
+
+ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails2`
+	FOREIGN KEY (`OrderID`, `ProductID`) REFERENCES `OrderDetails` (`OrderID`, `ProductID`);
+    
+INSERT INTO `EmployeeOrderDetails`  
+SELECT o.EmployeeID, od.OrderId, od.ProductId FROM `Orders` o JOIN `OrderDetails` od ON o.OrderId = od.OrderId; 
+    

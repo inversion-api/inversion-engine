@@ -638,6 +638,9 @@ public class SqlDb extends Db<SqlDb>
 
       for (Table table : getTables())
       {
+         if(table.isLinkTbl())
+            continue;
+         
          List<Column> cols = table.getColumns();
          String name = beautifyCollectionName(table.getName());
 

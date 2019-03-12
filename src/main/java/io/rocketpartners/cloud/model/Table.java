@@ -221,22 +221,59 @@ public class Table
    {
       return decodeKeys(inKey).iterator().next();
    }
+   
+   public Row decodeKey(Index index, String inKey)
+   {
+      return decodeKeys(index, inKey).iterator().next();
+   }
 
    //parses val1~val2,val3~val4,val5~valc6
    public Rows decodeKeys(String inKeys)
    {
-      String entityKeys = inKeys;
       Index index = getPrimaryIndex();
       if (index == null)
          throw new ApiException("Table '" + this.getName() + "' does not have a unique index");
 
+      return decodeKeys(index, inKeys);
+   }
+
+   //parses val1~val2,val3~val4,val5~valc6
+   public Rows decodeKeys(Index index, String inKeys)
+   {
       List<Column> columns = index.getColumns();
 
       List colNames = new ArrayList();
       columns.forEach(c -> colNames.add(c.getName()));
       Rows rows = new Rows(colNames);
 
+      for (List row : parseKeys(inKeys))
+      {
+         if (row.size() != columns.size())
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
+
+         for (int i = 0; i < columns.size(); i++)
+         {
+            Object value = row.get(i).toString().replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
+
+            if (((String) value).length() == 0)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
+
+            value = getDb().cast(columns.get(i), value);
+            row.set(i, value);
+
+            rows.addRow(row);
+         }
+      }
+      return rows;
+   }
+
+   //parses val1~val2,val3~val4,val5~valc6
+   public static List<List<String>> parseKeys(String inKeys)
+   {
+      String entityKeys = inKeys;
       List<String> splits = new ArrayList();
+
+      List<List<String>> rows = new ArrayList();
 
       boolean escaped = false;
       for (int i = 0; i < entityKeys.length(); i++)
@@ -250,7 +287,7 @@ public class Table
             case ',':
                if (!escaped)
                {
-                  rows.addRow(splits);
+                  rows.add(splits);
                   splits = new ArrayList();
                   entityKeys = entityKeys.substring(i + 1, entityKeys.length());
                   i = 0;
@@ -275,22 +312,14 @@ public class Table
 
       if (splits.size() > 0)
       {
-         rows.addRow(splits);
+         rows.add(splits);
       }
 
-      for (Row row : rows)
+      for (List<String> row : rows)
       {
-         if (row.size() != columns.size())
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
-
-         for (int i = 0; i < columns.size(); i++)
+         for (int i = 0; i < row.size(); i++)
          {
-            Object value = row.getString(i).replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-
-            if (((String) value).length() == 0)
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
-
-            value = getDb().cast(columns.get(i), value);
+            String value = row.get(i).replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
             row.set(i, value);
          }
       }
