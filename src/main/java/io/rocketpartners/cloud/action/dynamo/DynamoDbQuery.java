@@ -189,7 +189,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
    {
       //if the users requested a sort, you need to find an index with that sort key
       String sortBy = order.getProperty(0);
-      
+
       //TODO: make sure that use use the index that matches AFTER if AFTER is provided
       if (index == null)
       {
@@ -204,9 +204,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             String partCol = index.getHashKey().getName();
             String sortCol = index.getSortKey() != null ? index.getSortKey().getName() : null;
 
-            if(sortBy != null && !sortBy.equals(sortCol))
+            if (sortBy != null && !sortBy.equals(sortCol))
                continue;
-            
+
             Term partKey = findTerm(partCol, "eq");
 
             if (partKey == null)
@@ -227,6 +227,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
                foundPartKey = partKey;
                foundSortKey = sortKey;
             }
+         }
+
+         if (sortBy != null && index == null)
+         {
+            //TODO: create test case to trigger this exception
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
          }
 
          this.index = foundIndex;
@@ -473,10 +479,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       else if (func != null)
       {
          String col = term.getToken(0);
-         
+
          String nameKey = "#var" + (nameMap.size() + 1);
          nameMap.put(nameKey, col);
-         
+
          String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
 
          if (buff.length() > 0)
