@@ -1,10 +1,10 @@
-# Snooze API as a Service Platform
+# Inversion - API as a Service Platform
 
-Snooze is the fastest way to deliver a REST API.
+Inversion is the fastest way to deliver a REST API.
 
-With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
+With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
 
-Snooze is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
+Inversion is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
 
 
@@ -152,7 +152,7 @@ restEp.handler=restH
 
 ## URL Structure
 
-Snooze is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
+Inversion is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
 with an AccountCode and ApiCode path components.  The AccountCode uniquely identifies the organization that owns the API and is unique to the 
 host server. The ApiCode uniquely identifies the Api within the namespace created by the AccountCode. 
 
@@ -181,7 +181,7 @@ Examples example:
 
 ### Configuration File Loading
 
-Snooze looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
+Inversion looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
 order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
 key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
 that do not have to duplicate config between them.
@@ -192,7 +192,7 @@ bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model 
 
 Configuration and API bootstrapping takes place in the following stages:
 
-1. Snooze servlet wiring - All 'snooze.' bean propertie are set on the Snooze servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
+1. Inversion servlet wiring - All 'snooze.' bean propertie are set on the Inversion servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
 1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
 1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
 1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
@@ -203,7 +203,7 @@ model to match the datasource and then adds Collection,Entity,Attribute,Relation
 
 This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
 of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Snooze logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
+happens in memory at runtime NOT development time.  Inversion logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
 you might want to customize.
 
 
@@ -213,10 +213,10 @@ If you want to keep your database passwords (or any other sensative info) out of
 VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
 to the top of the batch file you use to launch our app or application server.  
 
-### Snooze Servlet Config
+### Inversion Servlet Config
 
 As you may have seen in the [Quickstart](#quickstart) example above 'snooze' is a reserved known bean name in the configuration files. 'snooze' referers to the 
-Snooze servlet itself and you can set any bean properties you want.
+Inversion servlet itself and you can set any bean properties you want.
 
 ### Dbs, Tables, Columns and Indexs
 
@@ -225,7 +225,7 @@ TODO
 
 ### Apis
 
-An Api exposes a set of Endpoints.  Generally, Snooze will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
+An Api exposes a set of Endpoints.  Generally, Inversion will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
    
 
 ### Collections, Entities, Attributes and Relationships
@@ -239,7 +239,7 @@ in a URL or as a JSON property name.
 ### Endpoints, Actions and Handlers
 
 Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose analogy of a an Endpoint 
-acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Snooze is in the implementation 
+acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Inversion is in the implementation 
 of various Handlers.
 
 An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
@@ -527,16 +527,16 @@ An Api is associated with a single Account
 Users have a system level Role relationship with one or more Accounts.  
 
 Roles are not designed to have a functional relationship to an Api being served.  Genarally, Roles should not
-be used by Api designers to provide application level entitlements, they are designed to provide Snooze system level entitlements.
+be used by Api designers to provide application level entitlements, they are designed to provide Inversion system level entitlements.
  
 
 Roles:
- * Owner - The person who can delete a Snooze account.  
+ * Owner - The person who can delete a Inversion account.  
  * Administrator - Someone who can configure an account including changing changing security and managing Users.
    (Owner and Administrator are not designed to be functionally useful for Api clients but there is nothing stopping you from
    requiring Owner or Administrator Roles to access various Api Endpoints, see below)
  * Member - Generally, someone who will be calling the Api.  An admin user of an end application, may only have the 
-   Snooze Member role.
+   Inversion Member role.
  * Guest - Represents an unauthenticated caller.
 
 Roles are hierarchical by privilege.  Ex. having the Owner role gives you Administrator, Member and Guest authority.     
@@ -647,7 +647,7 @@ TODO: add more specific doco here.
 
 ### Javadocs
 
-For all Handler configuration options or to understand how to use Snooze as a framework for a custom application
+For all Handler configuration options or to understand how to use Inversion as a framework for a custom application
 check out the Javadocs.
 
  * 0.3.x - https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/
@@ -655,7 +655,7 @@ check out the Javadocs.
 
 ### Runtime Profiles
 
-As discussed in [Configuration File Loading](#configuration-file-loading) Snooze was designed to support different runtime profiles.  
+As discussed in [Configuration File Loading](#configuration-file-loading) Inversion was designed to support different runtime profiles.  
 You can set a JVM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
 Suppose you had the following config files in WEB-INF directory:
 
@@ -680,7 +680,7 @@ and you custom settings will load last trumping any other keys shared with other
 
 
 ### Logging
- * Snooze uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+ * Inversion uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
 ```
 dependencies {
     ...
@@ -691,7 +691,7 @@ dependencies {
 
 ### Gradle, Maven, etc.
 
-If you want to extend Snooze as part of a custom application, you can use jitpack to pull your preferred branch directly from GitHub into your project.   
+If you want to extend Inversion as part of a custom application, you can use jitpack to pull your preferred branch directly from GitHub into your project.   
 
 ```gradle
 repositories { 
