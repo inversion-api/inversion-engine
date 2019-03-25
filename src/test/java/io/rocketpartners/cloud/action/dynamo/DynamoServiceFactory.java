@@ -111,7 +111,7 @@ public class DynamoServiceFactory
          //               json = res.getJson();
          //               System.out.println(json);
          Utils.assertEq(json.find("meta.pageSize"), 100);
-         Utils.assertEq(json.find("meta.rowCount"), 25);
+         Utils.assertEq(json.find("meta.foundRows"), 25);
          Utils.assertEq(json.find("data.0.orderid"), 11058);
 
          for (Object o : json.getArray("data"))

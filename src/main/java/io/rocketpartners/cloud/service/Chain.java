@@ -404,6 +404,11 @@ public class Chain
       return this;
    }
 
+   public Request request()
+   {
+      return request;
+   }
+   
    //   public Request getRequest()
    //   {
    //      return peek().request;

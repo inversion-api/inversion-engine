@@ -273,15 +273,27 @@ public class SqlDb extends Db<SqlDb>
 
    public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
-      String keyCol = table.getKeyName();
-      Object key = row.get(keyCol);
+      Object key = table.encodeKey(row);
 
-      SqlUtils.upsert(getConnection(), table.getName(), keyCol, row);
-      Object scopeIdentity = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
+      if (key == null)//this must be an insert
+      {
+         SqlUtils.insertMap(getConnection(), table.getName(), row);
+      }
+      else
+      {
+         String keyCol = table.getKeyName();
+         SqlUtils.upsert(getConnection(), table.getName(), keyCol, row);
+      }
 
-      key = key == null && scopeIdentity != null ? scopeIdentity : key;
-
-      return key != null ? key.toString() : null;
+      if (key == null)
+      {
+         key = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
+      }
+      
+      if(key == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
+      
+      return key.toString();
    }
 
    public void delete(Request request, Table table, String entityKey) throws Exception
@@ -635,9 +647,9 @@ public class SqlDb extends Db<SqlDb>
 
       for (Table table : getTables())
       {
-         if(table.isLinkTbl())
+         if (table.isLinkTbl())
             continue;
-         
+
          List<Column> cols = table.getColumns();
          String name = beautifyCollectionName(table.getName());
 
@@ -732,8 +744,8 @@ public class SqlDb extends Db<SqlDb>
             }
          }
       }
-//      Collections.sort(relationshipStrs);
-//      relationshipStrs.forEach(s -> System.out.println("RELATIONSHIP: " + s));
+      //      Collections.sort(relationshipStrs);
+      //      relationshipStrs.forEach(s -> System.out.println("RELATIONSHIP: " + s));
    }
 
    public SqlDb withType(String type)

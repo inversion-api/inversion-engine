@@ -168,6 +168,11 @@ public class Table
       columns.remove(column);
    }
 
+   /**
+    * @depricated all code should really consider compound key cases
+    * 
+    * @return
+    */
    public String getKeyName()
    {
       Index index = getPrimaryIndex();

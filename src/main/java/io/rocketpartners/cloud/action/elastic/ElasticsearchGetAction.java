@@ -360,7 +360,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       //      size = size < 0 ? maxRows : size;
       //
       //      // Converting elastic paging 
-      //      meta.put("rowCount", totalHits);
+      //      meta.put("foundRows", totalHits);
       //
       //      meta.put("pageNum", pageNum);
       //

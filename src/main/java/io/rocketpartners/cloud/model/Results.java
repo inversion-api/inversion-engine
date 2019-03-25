@@ -10,20 +10,20 @@ import io.rocketpartners.cloud.rql.Term;
 
 public class Results<M extends Map> implements Iterable<M>
 {
-   protected Query      query    = null;
-   protected List       rows     = new ArrayList();
-   protected List<Term> next     = new ArrayList();
-   protected int        rowCount = -1;
+   protected Query      query     = null;
+   protected List       rows      = new ArrayList();
+   protected List<Term> next      = new ArrayList();
+   protected int        foundRows = -1;
 
    public Results(Query query)
    {
       this.query = query;
    }
 
-   public Results(Query query, int rowCount, List rows)
+   public Results(Query query, int foundRows, List rows)
    {
       this.query = query;
-      this.rowCount = rowCount;
+      this.foundRows = foundRows;
       this.rows = rows;
    }
 
@@ -95,14 +95,14 @@ public class Results<M extends Map> implements Iterable<M>
       return this;
    }
 
-   public int getRowCount()
+   public int getFoundRows()
    {
-      return rowCount;
+      return foundRows;
    }
 
-   public Results withRowCount(int rowCount)
+   public Results withFoundRows(int foundRows)
    {
-      this.rowCount = rowCount;
+      this.foundRows = foundRows;
       return this;
    }
 

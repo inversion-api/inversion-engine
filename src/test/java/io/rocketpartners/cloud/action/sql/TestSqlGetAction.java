@@ -15,6 +15,7 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class TestSqlGetAction extends TestRestGetActions
 {
+   
    protected String collectionPath()
    {
       return "northwind/sql/";
@@ -53,6 +54,23 @@ public class TestSqlGetAction extends TestRestGetActions
 
    }
 
+   public void testExcludes() throws Exception
+   {
+      Response res = null;
+      Service service = service();
+
+      res = service.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
+      System.out.println(res.getDebug());
+      assertNull(res.find("data.0.href"));
+      assertNull(res.find("data.0.shipname"));
+      assertNull(res.find("data.0.orderdetails"));
+      assertNull(res.find("data.0.customer"));
+      assertNull(res.find("data.0.employee"));
+      assertNull(res.find("data.0.shipvia"));
+   }
+   
+   
+   
    public void testRelationships1() throws Exception
    {
       Response res = null;
@@ -158,6 +176,7 @@ public class TestSqlGetAction extends TestRestGetActions
       assertTrue(res.findString("data.0.order").endsWith("/orders/10395"));
 
       res = service.get(url("http://localhost/northwind/source/orders/10395/orderdetails"));
+      assertTrue(res.find("meta.foundRows") != null);
       assertTrue(res.findString("data.0.href").endsWith("/orderdetails/10395~46"));
       assertTrue(res.findString("data.1.href").endsWith("/orderdetails/10395~53"));
       assertTrue(res.findString("data.2.href").endsWith("/orderdetails/10395~69"));

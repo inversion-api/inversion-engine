@@ -163,7 +163,7 @@ public class RestPostAction extends Action<RestPostAction>
             if (!Utils.empty(req.getEntityKey()))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
 
-            for (ObjectNode child : (List<ObjectNode>) ((ArrayNode) obj))
+            for (ObjectNode child : (List<ObjectNode>) ((ArrayNode) obj).asList())
             {
                String href = upsert(req, collection, child);
                entityKeys.add(href);
@@ -233,7 +233,12 @@ public class RestPostAction extends Action<RestPostAction>
             buff.append(",").append(nextId);
          }
 
-         res.withHeader("Location", buff.toString());
+         if(buff.length() > 0)
+         {
+            String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
+            res.withHeader("Location", location);
+         }
+        
       }
       finally
       {

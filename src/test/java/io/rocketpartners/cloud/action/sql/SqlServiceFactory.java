@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
@@ -70,12 +71,12 @@ public class SqlServiceFactory
          Connection conn = source.getConnection();
          Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\" WHERE (\"SHIPNAME\" = 'Blauer See Delikatessen' OR \"CUSTOMERID\" = 'HILAA') ORDER BY \"ORDERID\" DESC  LIMIT 100");
          Utils.assertEq(25, rows.size());
-         
-//         rows = SqlUtils.selectRows(conn,  "SELECT o.EmployeeID, od.OrderId, od.ProductId FROM \"Order\" o JOIN \"OrderDetails\" od ON o.OrderId = od.OrderId"); 
-//         for(Row row : rows)
-//         {
-//            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
-//         }
+
+         //         rows = SqlUtils.selectRows(conn,  "SELECT o.EmployeeID, od.OrderId, od.ProductId FROM \"Order\" o JOIN \"OrderDetails\" od ON o.OrderId = od.OrderId"); 
+         //         for(Row row : rows)
+         //         {
+         //            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
+         //         }
 
          SqlDb partial = createDb("northwind-empty", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "sql/");
 
@@ -89,17 +90,29 @@ public class SqlServiceFactory
                {
                   Response res = super.service(method, url, body);
 
-                  if (!res.isSuccess())
+                  if (Chain.size() == 1)
                   {
-                     System.out.println(res.getDebug());
-                     
-                     if(res.getStatusCode() == 500)
-                        System.exit(1);
-                     
-                     if (res.getError() != null)
-                        Utils.rethrow(res.getError());
+                     if (res.getChain().request().isGet())
+                     {
+                        if (res.find("meta.foundRows") == null)
+                        {
+                           System.out.println(res.getChain().request().getUrl());
+                           System.out.println(res.meta());
+                        }
+                     }
 
-                     throw new RuntimeException(res.getStatusMesg());
+                     if (!res.isSuccess())
+                     {
+                        System.out.println(res.getDebug());
+
+                        if (res.getStatusCode() == 500)
+                           System.exit(1);
+
+                        if (res.getError() != null)
+                           Utils.rethrow(res.getError());
+
+                        throw new RuntimeException(res.getStatusMesg());
+                     }
                   }
 
                   return res;
@@ -124,7 +137,7 @@ public class SqlServiceFactory
          //System.out.println(res.getJson());
          Utils.assertEq(25, res.findArray("data").length());
          Utils.assertEq(100, res.find("meta.pageSize"));
-         Utils.assertEq(25, res.find("meta.rowCount"));
+         Utils.assertEq(25, res.find("meta.foundRows"));
          Utils.assertEq(11058, res.find("data.0.orderid"));
 
          int inserted = 0;
@@ -145,7 +158,7 @@ public class SqlServiceFactory
          }
 
          res = service.get("northwind/sql/orders");
-         Utils.assertEq(25, res.find("meta.rowCount"));
+         Utils.assertEq(25, res.find("meta.foundRows"));
 
       }
       catch (Exception ex)

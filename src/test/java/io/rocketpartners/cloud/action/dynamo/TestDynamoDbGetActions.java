@@ -105,7 +105,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       assertEquals(5, json.getArray("data").length());
       assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
 
-      res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid");
+      res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid&type=ORDER");
       json = res.getJson();
       assertEquals(25, json.getArray("data").length());
       assertTrue(json.findString("data.0.href").endsWith("/dynamodb/orders/10641~ORDER"));

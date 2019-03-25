@@ -156,9 +156,12 @@ public class RestGetAction extends Action<RestGetAction>
          res.withPageSize(page.getPageSize());
          res.withPageNum(page.getPageNum());
 
-         int rowCount = results.getRowCount();
-         if (rowCount >= 0)
-            res.withRowCount(results.getRowCount());
+         int foundRows = results.getFoundRows();
+         if (foundRows >= 0)
+         {
+            Chain.peek().put("foundRows", foundRows);
+            res.withFoundRows(foundRows);
+         }
 
          int offest = page.getOffset();
          int limit = page.getLimit();
@@ -177,7 +180,7 @@ public class RestGetAction extends Action<RestGetAction>
                   }
                   res.withNext(next);
                }
-               else if (results.size() == limit && (rowCount < 0 || (offest + limit) < rowCount))
+               else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows))
                {
                   String next = req.getUrl().getOriginal();
                   next = stripTerms(next, "offset", "page", "pageNum");
@@ -464,12 +467,12 @@ public class RestGetAction extends Action<RestGetAction>
             }
             else if (rel.isManyToOne())
             {
-//               idxToMatch = rel.getFkIndex1();
-//               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
-               
+               //               idxToMatch = rel.getFkIndex1();
+               //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
+
                idxToMatch = rel.getFkIndex1();
                idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();
-               
+
             }
             else if (rel.isManyToMany())
             {
@@ -556,7 +559,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
-      if(idxToMatch.getTable() != idxToRetrieve.getTable())
+      if (idxToMatch.getTable() != idxToRetrieve.getTable())
          throw new ApiException(SC.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
       List<KeyValue> related = new ArrayList<>();
 

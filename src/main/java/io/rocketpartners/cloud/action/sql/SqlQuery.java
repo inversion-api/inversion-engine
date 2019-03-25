@@ -70,9 +70,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       List values = getColValues();
       Rows rows = SqlUtils.selectRows(conn, sql, values);
       //Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM ORDERS");
-      int rowCount = -1;
+      int foundRows = -1;
 
-      if (Chain.getDepth() == 1)
+      if (Chain.peek().get("foundRows") == null)
       {
          if (db.isType("mysql"))
          {
@@ -90,10 +90,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             if (sql.indexOf("ORDER BY ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
          }
-         rowCount = SqlUtils.selectInt(conn, sql, getColValues());
+         foundRows = SqlUtils.selectInt(conn, sql, getColValues());
       }
 
-      return new Results(this, rowCount, rows);
+      return new Results(this, foundRows, rows);
    }
 
    @Override
