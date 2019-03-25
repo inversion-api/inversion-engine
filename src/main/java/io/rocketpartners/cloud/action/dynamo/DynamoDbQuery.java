@@ -191,6 +191,43 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       String sortBy = order.getProperty(0);
 
       //TODO: make sure that use use the index that matches AFTER if AFTER is provided
+
+      Term after = page().getAfter();
+      if (after != null)
+      {
+         Column afterHashKeyCol = table().getColumn(after.getToken(0));
+         Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+
+         for (io.rocketpartners.cloud.model.Index idx : table.getIndexes())
+         {
+            DynamoDbIndex didx = (DynamoDbIndex) idx;
+            if (didx.getHashKey() == afterHashKeyCol && didx.getSortKey() == afterSortKeyCol)
+            {
+               index = didx;
+
+               partKey = findTerm(afterHashKeyCol.getName(), "eq");
+
+               if (partKey == null)
+                  continue;
+
+               if (afterSortKeyCol != null)
+               {
+                  sortKey = findTerm(afterSortKeyCol.getName(), "eq");
+                  if (sortKey == null)
+                     sortKey = findTerm(afterSortKeyCol.getName(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
+               }
+
+               break;
+            }
+         }
+
+         if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol.getName())))
+         {
+            //TODO make test
+            throw new ApiException("The requested sort key does not match the supplied 'after' continuation token.");
+         }
+      }
+
       if (index == null)
       {
          DynamoDbIndex foundIndex = null;
@@ -272,8 +309,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
    public Object getSelectSpec()
    {
-      Term partKey = getPartKey();
-      Term sortKey = getSortKey();
+      //      Term partKey = getPartKey();
+      //      Term sortKey = getSortKey();
 
       Map nameMap = new HashMap();
       Map valueMap = new HashMap();
