@@ -258,6 +258,11 @@ public class Response
    {
       return out.toString();
    }
+   
+   public void dump()
+   {
+      System.out.println(getDebug());
+   }
 
    public String getDebug()
    {
@@ -371,9 +376,9 @@ public class Response
       return this;
    }
 
-   public Response withRowCount(int rowCount)
+   public Response withFoundRows(int foundRows)
    {
-      withMeta("rowCount", rowCount);
+      withMeta("foundRows", foundRows);
       return this;
    }
 
