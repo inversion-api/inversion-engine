@@ -1,5 +1,17 @@
 
+* TODO: exclude not working?
+
+* TODO: post location header is wrong -> Location ,11059,11060,11061,11062,11063
+
+* TODO: add tests for put/post/delete
+* TODO: add tests for nested document put/post
+* TODO: add tests for nested document put/pust with compound keys
+
+* TODO: sort by primary index if no sort is provided
 * TODO: should we require a sort key to use pagination?
+* TODO: throw error if dynamo continuation token and requested sort don't match
+
+* TODO: update "rowCount" to "foundRows" or something like that
 * TODO: missing recordCount on some outputs
 
 * DONE: add test to make sure that link tables are not created as collections
@@ -77,6 +89,8 @@ https://github.com/Azure/azure-rest-api-specs
 
 Using GitHub gives your project some visibility and, if you want it, gives users the ability to interact with you/the api by filing issue reports etc.  
 
+https://www.moesif.com/blog/technical/api-design/REST-API-Design-Filtering-Sorting-and-Pagination/#
+https://github.com/NationalBankBelgium/REST-API-Design-Guide/wiki/Pagination-Rules-and-metadata
 
 Here are numerous examples of great API docs from "big boys" that are awesome...but major custom efforts:
 https://developer.twitter.com/en/docs.html
