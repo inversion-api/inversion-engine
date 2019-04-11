@@ -1,3 +1,8 @@
+* TODO: does GRPC fit into Inversion?
+* TODO: need transparent/easy log to cloudwatch metrics
+* TODO: add "writable" as a Column/Attribute field 
+
+* TODO: should ObjectNode extend Row?
 
 * TODO: exclude not working?
 

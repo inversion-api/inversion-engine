@@ -62,8 +62,6 @@ public class SqlDb extends Db<SqlDb>
    public static final int        MIN_POOL_SIZE            = 3;
    public static final int        MAX_POOL_SIZE            = 10;
 
-   transient boolean              shutdown                 = false;
-
    protected String               driver                   = null;
    protected String               url                      = null;
    protected String               user                     = null;
@@ -138,14 +136,9 @@ public class SqlDb extends Db<SqlDb>
       return null;
    }
 
-   public void shutdown()
+   protected void shutdown0()
    {
-      shutdown = true;
-
-      synchronized (this)
-      {
-         //pool.close();
-      }
+      //pool.close();
    }
 
    //   @Override
@@ -289,14 +282,15 @@ public class SqlDb extends Db<SqlDb>
       {
          key = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
       }
-      
-      if(key == null)
+
+      if (key == null)
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
-      
+
       return key.toString();
    }
 
-   public void delete(Request request, Table table, String entityKey) throws Exception
+   @Override
+   public void delete(Table table, String entityKey) throws Exception
    {
       String key = table.getKeyName();
       if (key == null)
@@ -310,7 +304,7 @@ public class SqlDb extends Db<SqlDb>
       try
       {
          Connection conn = ConnectionLocal.getConnection(this);
-         if (conn == null && !shutdown)
+         if (conn == null && !isShutdown())
          {
             String dsKey = getName() + getUrl() + getUser() + getPass();
 
@@ -322,7 +316,7 @@ public class SqlDb extends Db<SqlDb>
                {
                   pool = pools.get(getName());
 
-                  if (pool == null && !shutdown)
+                  if (pool == null && !isShutdown())
                   {
                      //pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
 
@@ -468,12 +462,16 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public void bootstrapApi()
+   @Override
+   protected void startup0()
    {
       try
       {
-         reflectDb();
-         configApi();
+         if (isBootstrap())
+         {
+            reflectDb();
+            configApi();
+         }
       }
       catch (Exception ex)
       {
