@@ -76,11 +76,13 @@ public class Configurator
 
       try
       {
+         log.info("Finding config");
          Config config = findConfig();
          AutoWire w = new AutoWire();
          w.putBean("snooze", service);
          w.load(config.props);
 
+         log.info("Loading config");
          loadConfig(config, true, service.isConfigFast());
       }
       catch (Exception e)
@@ -141,6 +143,8 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
+            log.info("Wiring up API: " + api.getApiCode());
+
             if (J.empty(api.getAccountCode()) || J.empty(api.getApiCode()))
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'accountCode' or 'apiCode'.  An Api can not be loaded without ");
 
@@ -151,6 +155,7 @@ public class Configurator
 
                for (Db db : ((Api) api).getDbs())
                {
+                  log.info("Bootstrapping DB: " + db.getName() + " - " + db.getType());
                   db.bootstrapApi();
                }
             }
@@ -185,19 +190,19 @@ public class Configurator
                file.getParentFile().mkdirs();
                BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
-               Properties sorted = new Properties() {
-                 
-                  public Enumeration keys()
+               Properties sorted = new Properties()
                   {
-                     Vector v = new Vector(AutoWire.sort(keySet()));
-                     return v.elements();
-                  }
-               };
-               
+
+                     public Enumeration keys()
+                     {
+                        Vector v = new Vector(AutoWire.sort(keySet()));
+                        return v.elements();
+                     }
+                  };
+
                sorted.putAll(autoProps);
                autoProps = sorted;
-               
-               
+
                autoProps.store(out, "");
 
                //               for (String key : AutoWire.sort(autoProps.keySet()))
