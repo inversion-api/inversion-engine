@@ -70,10 +70,6 @@ import io.rocketpartners.cloud.service.Service;
  */
 public class FirehosePostAction extends Action<FirehosePostAction>
 {
-   protected int     batchMax           = 500;
-   protected String  jsonSeparator      = "\n";
-   protected boolean jsonPrettyPrint    = false;
-   protected boolean jsonLowercaseNames = true;
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -154,28 +150,5 @@ public class FirehosePostAction extends Action<FirehosePostAction>
       res.withStatus(SC.SC_201_CREATED);
    }
 
-   public FirehosePostAction withBatchMax(int batchMax)
-   {
-      this.batchMax = batchMax;
-      return this;
-   }
-
-   public FirehosePostAction withJsonSeparator(String jsonSeparator)
-   {
-      this.jsonSeparator = jsonSeparator;
-      return this;
-   }
-
-   public FirehosePostAction withJsonPrettyPrint(boolean jsonPrettyPrint)
-   {
-      this.jsonPrettyPrint = jsonPrettyPrint;
-      return this;
-   }
-
-   public FirehosePostAction withJsonLowercaseNames(boolean jsonLowercaseNames)
-   {
-      this.jsonLowercaseNames = jsonLowercaseNames;
-      return this;
-   }
 
 }

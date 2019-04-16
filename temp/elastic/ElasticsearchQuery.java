@@ -184,7 +184,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
          //            ((BoolQuery) elastic).addMust(mustBool);
          //            break;
          //         case "nn": // NOT NULL
-         //            query = new JSObject("exists", new JSObject("field", field));
+         //            query = new ObjectNode("exists", new ObjectNode("field", field));
          //            break;
          //         case "n": // NULL
          //            elastic = new BoolQuery();

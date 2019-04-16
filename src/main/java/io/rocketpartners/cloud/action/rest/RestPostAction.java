@@ -243,7 +243,7 @@ public class RestPostAction extends Action<RestPostAction>
       finally
       {
          // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
-         //Sql.close(conn);
+         //SqlUtils.close(conn);
       }
 
    }
@@ -345,7 +345,7 @@ public class RestPostAction extends Action<RestPostAction>
    {
       return SqlUtils.cast(value, col.getType());
       //      
-      //      if (J.empty(value))
+      //      if (Utils.empty(value))
       //         return null;
       //
       //      String type = col.getType().toUpperCase();
@@ -360,7 +360,7 @@ public class RestPostAction extends Action<RestPostAction>
       //      }
       //      if ((type.startsWith("DATE") || type.startsWith("TIME")) && !(value instanceof Date))
       //      {
-      //         value = J.date(value.toString());
+      //         value = Utils.date(value.toString());
       //      }
       //
       //      return value;

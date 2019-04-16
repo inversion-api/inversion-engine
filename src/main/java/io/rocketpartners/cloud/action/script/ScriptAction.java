@@ -463,7 +463,7 @@ public class ScriptAction extends Action<ScriptAction>
       return null;
    }
 
-   //   JSObject findScriptJson(Service service, String scriptName, Chain chain, Request req) throws Exception
+   //   ObjectNode findScriptJson(Service service, String scriptName, Chain chain, Request req) throws Exception
    //   {
    //      String noScriptCache = req.removeParam("noScriptCache");
    //      String clearScriptCache = req.removeParam("clearScriptCache");
@@ -472,10 +472,10 @@ public class ScriptAction extends Action<ScriptAction>
    //         CACHE.clear();
    //      }
    //
-   //      JSObject scriptJson = null;
+   //      ObjectNode scriptJson = null;
    //      if (CACHE != null && noScriptCache == null)
    //      {
-   //         scriptJson = (JSObject) CACHE.get(scriptName);
+   //         scriptJson = (ObjectNode) CACHE.get(scriptName);
    //      }
    //      if (scriptJson == null)
    //      {
@@ -485,7 +485,7 @@ public class ScriptAction extends Action<ScriptAction>
    //            InputStream is = service.getResource(scriptsDir + "/" + scriptName);
    //            if (is != null)
    //            {
-   //               return new JSObject("type", scriptTypes.get(ext), "script", J.read(is));
+   //               return new ObjectNode("type", scriptTypes.get(ext), "script", Utils.read(is));
    //            }
    //         }
    //
@@ -493,7 +493,7 @@ public class ScriptAction extends Action<ScriptAction>
    //         Response r = chain.getService().include(chain, "GET", url, null);
    //         if (r.getStatusCode() == 200)
    //         {
-   //            JSArray dataArr = r.getJson().getArray("data");
+   //            ArrayNode dataArr = r.getJson().getArray("data");
    //            if (!dataArr.asList().isEmpty())
    //            {
    //               scriptJson = dataArr.getObject(0);

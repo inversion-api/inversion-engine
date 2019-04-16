@@ -17,6 +17,7 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -100,8 +101,16 @@ public abstract class Db<T extends Db>
    //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
    //   }
 
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      List list = upsert(table, Arrays.asList(row));
+      if (list.size() > 0)
+         return list.get(0) + "";
+      return null;
+   }
+
    //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
-   public abstract String upsert(Table table, Map<String, Object> rows) throws Exception;
+   public abstract List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception;
    //   {
    //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert() to implement");
    //   }

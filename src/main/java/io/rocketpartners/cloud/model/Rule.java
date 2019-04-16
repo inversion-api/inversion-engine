@@ -134,8 +134,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       }
 
       return false;
-      //      wildcardPath = J.path(wildcardPath.replace('\\', '/'));
-      //      path = J.path(path.replace('\\', '/'));
+      //      wildcardPath = Utils.path(wildcardPath.replace('\\', '/'));
+      //      path = Utils.path(path.replace('\\', '/'));
       //
       //      if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/"))
       //         wildcardPath += "/";

@@ -168,7 +168,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
          //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
          //
-         //         JSArray data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
+         //         ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
          ArrayNode data = new ArrayNode();
          //
          //         // if the query contains a wantedPage and it differs from the pagenum 
@@ -181,7 +181,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         while (wantedPage != null && wantedPage != pageNum)
          //         {
          //            // get the last object
-         //            JSObject lastHit = data.getObject(data.length() - 1);
+         //            ObjectNode lastHit = data.getObject(data.length() - 1);
          //
          //            // get that object's 'sort' values
          //            String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
@@ -191,7 +191,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //            json = mapper.writeValueAsString(dsl.toDslMap());
          //
          //            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
-         //            jsObj = Utils.toJSObject(r.getContent());
+         //            jsObj = Utils.toObjectNode(r.getContent());
          //            hits = jsObj.getObject("hits").getArray("hits");
          //
          //            data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
@@ -199,9 +199,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //            pageNum++;
          //         }
          //
-         //         JSObject meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
+         //         ObjectNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
-         //JSObject wrapper = new JSObject("meta", meta, "data", data);
+         //ObjectNode wrapper = new ObjectNode("meta", meta, "data", data);
          ObjectNode wrapper = new ObjectNode("meta", new ObjectNode(), "data", data);
          res.withJson(wrapper);
 
@@ -447,9 +447,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       //
       //                     if (r.isSuccess())
       //                     {
-      //                        JSObject jsObj = Utils.toJSObject(r.getContent());
-      //                        JSArray hits = jsObj.getObject("hits").getArray("hits");
-      //                        JSObject prevLastHit = hits.getObject(hits.length() - 1);
+      //                        ObjectNode jsObj = Utils.toObjectNode(r.getContent());
+      //                        ArrayNode hits = jsObj.getObject("hits").getArray("hits");
+      //                        ObjectNode prevLastHit = hits.getObject(hits.length() - 1);
       //
       //                        prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getObject("_source"), sortList);
       //
@@ -500,14 +500,14 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    {
       ArrayNode data = new ArrayNode();
 
-      //      for (JSObject obj : (List<JSObject>) hits.asList())
+      //      for (ObjectNode obj : (List<ObjectNode>) hits.asList())
       //      {
-      //         JSObject src = obj.getObject("_source");
+      //         ObjectNode src = obj.getObject("_source");
       //
       //         // for 'all' requests, add the _meta
       //         if (isAll)
       //         {
-      //            JSObject src_meta = new JSObject();
+      //            ObjectNode src_meta = new ObjectNode();
       //            src_meta.put("index", obj.get("_index"));
       //            src_meta.put("type", obj.get("_type"));
       //            src.put("_meta", src_meta);

@@ -113,7 +113,7 @@ public class Endpoint extends Rule<Endpoint>
    //    */
    //   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
    //   {
-   //      for (String name : J.explode(",", classNames))
+   //      for (String name : Utils.explode(",", classNames))
    //      {
    //         addHandler((Handler) Class.forName(name).newInstance());
    //      }

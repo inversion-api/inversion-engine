@@ -43,7 +43,7 @@ public class ObjectNode implements Map<String, Object>
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
          if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof ObjectNode)))
-            throw new RuntimeException("Incorrect constructor called.  Should have called JSObject(Map)");
+            throw new RuntimeException("Incorrect constructor called.  Should have called ObjectNode(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
       }
@@ -181,6 +181,12 @@ public class ObjectNode implements Map<String, Object>
          keys.add(p.getName());
       }
       return keys;
+   }
+
+   public boolean hasProperty(String name)
+   {
+      Property property = properties.get(name.toLowerCase());
+      return property != null;
    }
 
    public List<Property> getProperties()

@@ -60,7 +60,7 @@ public class Request
    String                                 entityKey              = null;
    String                                 subCollectionKey       = null;
 
-   //JSObject                               params                 = new JSObject();
+   //ObjectNode                               params                 = new ObjectNode();
 
    String                                 body                   = null;
    ObjectNode                             json                   = null;
