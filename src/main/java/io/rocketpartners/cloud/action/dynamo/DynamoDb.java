@@ -26,6 +26,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
@@ -123,7 +124,7 @@ public class DynamoDb extends Db<DynamoDb>
             writeRequests.clear();
          }
          //add to the current row to batch 
-         PutRequest put = item(row);
+         PutRequest put = new PutRequest().withItem(ItemUtils.fromSimpleMap(row));
          writeRequests.add(new WriteRequest(put));
       }
 
@@ -136,16 +137,6 @@ public class DynamoDb extends Db<DynamoDb>
       }
 
       return keys;
-   }
-
-   private PutRequest item(Map<String, Object> row)
-   {
-      final HashMap<String, AttributeValue> item = new HashMap<>();    
-      for (Map.Entry<String,Object> entry : row.entrySet()) 
-      { 
-         item.put(entry.getKey(), new AttributeValue(entry.getValue().toString()));
-      }
-      return new PutRequest().withItem(item);
    }
 
    @Override
