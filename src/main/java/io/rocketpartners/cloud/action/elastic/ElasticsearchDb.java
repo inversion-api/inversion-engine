@@ -42,6 +42,16 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
+   public ElasticsearchDb()
+   {
+
+   }
+
+   public ElasticsearchDb(String name)
+   {
+      withName(name);
+   }
+
    @Override
    protected void startup0()
    {

@@ -112,6 +112,16 @@ public class SqlDb extends Db<SqlDb>
          });
    }
 
+   public SqlDb()
+   {
+
+   }
+
+   public SqlDb(String name)
+   {
+      withName(name);
+   }
+
    @Override
    public String getType()
    {
@@ -241,7 +251,6 @@ public class SqlDb extends Db<SqlDb>
       return query.doSelect();
 
    }
-
 
    @Override
    public String upsert(Table table, Map<String, Object> row) throws Exception
