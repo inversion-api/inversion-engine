@@ -1,6 +1,8 @@
 package io.rcktapp.api.handler.s3;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -52,13 +54,18 @@ public class S3Db extends Db
       }
    }
 
-   protected String accessKey = null;
-   protected String secretKey = null;
-   protected String awsRegion = null;
+   protected String  accessKey       = null;
+   protected String  secretKey       = null;
+   protected String  awsRegion       = null;
 
-   protected String bucket    = null;
+   // If you want to limit which buckets are included, set this to a csv of bucket names. 
+   // Leave this null if you want to configure all buckets in the account.
+   protected String  buckets         = null;
 
-   private AmazonS3 client    = null;
+   // Set this to true if you would like the default behavior to download the file instead of returning the files meta data
+   protected boolean defaultDownload = false;
+
+   private AmazonS3  client          = null;
 
    /**
     * @see io.rcktapp.api.Db#bootstrapApi()
@@ -70,12 +77,25 @@ public class S3Db extends Db
 
       setType("s3");
 
-      // get all of the buckets this account has access to.  
-      List<Bucket> bucketList = client.listBuckets();
-
-      for (Bucket bucket : bucketList)
+      List<String> bucketNames = new ArrayList<>();
+      if (buckets != null)
       {
-         Table table = new Table(this, bucket.getName());
+         // use configured buckets only
+         bucketNames.addAll(Arrays.asList(buckets.split(",")));
+      }
+      else
+      {
+         // get all of the buckets this account has access to.  
+         List<Bucket> bucketList = client.listBuckets();
+         for (Bucket bucket : bucketList)
+         {
+            bucketNames.add(bucket.getName());
+         }
+      }
+
+      for (String bucketName : bucketNames)
+      {
+         Table table = new Table(this, bucketName.trim());
 
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
@@ -202,7 +222,7 @@ public class S3Db extends Db
    public CopyObjectResult updateObject(String bucket, String key, String newBucket, String newKey, ObjectMetadata meta)
    {
       client = getS3Client();
-      
+
       CopyObjectRequest copyReq = null;
 
       if (meta != null)
@@ -217,6 +237,26 @@ public class S3Db extends Db
 
       // TODO if the key and newKey are not equal, (or the bucket and newBucket) delete the old key file
       return client.copyObject(copyReq);
+   }
+
+   public String getBuckets()
+   {
+      return buckets;
+   }
+
+   public void setBuckets(String buckets)
+   {
+      this.buckets = buckets;
+   }
+
+   public boolean isDefaultDownload()
+   {
+      return defaultDownload;
+   }
+
+   public void setDefaultDownload(boolean defaultDownload)
+   {
+      this.defaultDownload = defaultDownload;
    }
 
 }

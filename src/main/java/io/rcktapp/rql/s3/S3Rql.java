@@ -48,6 +48,7 @@ public class S3Rql extends Rql
       S3Request s3Req = null;
 
       boolean isDownloadRequest = req.removeParam("download") != null ? true : false;
+      boolean isMetaRequest = req.removeParam("meta") != null ? true : false;
       String marker = req.removeParam("marker");
 
       String contentType = req.getHeader("Content-Type");
@@ -59,7 +60,7 @@ public class S3Rql extends Rql
          // TODO check for a prefix to add to the key if it exists.
          String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());
          String key = prefix == null ? req.getUploads().get(0).getFileName() : prefix + "/" + req.getUploads().get(0).getFileName();
-         s3Req = new S3Request(table.getName(), null, key, null, false, null);
+         s3Req = new S3Request(table.getName(), null, key, null, false, false, null);
       }
 
       if (s3Req == null)
@@ -72,17 +73,17 @@ public class S3Rql extends Rql
          if (req.getParams().size() == 1 && req.getParam("tenantid") != null)
          {
             String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());
-            s3Req = new S3Request(stmt.table.getName(), null, prefix, stmt.pagesize, isDownloadRequest, marker);
+            s3Req = new S3Request(stmt.table.getName(), null, prefix, stmt.pagesize, isDownloadRequest, isMetaRequest, marker);
          }
          else
          {
-            s3Req = decipherStmt(stmt, isDownloadRequest, marker);
+            s3Req = decipherStmt(stmt, isDownloadRequest, isMetaRequest, marker);
          }
       }
       return s3Req;
    }
 
-   private S3Request decipherStmt(Stmt stmt, boolean isDownload, String marker)
+   private S3Request decipherStmt(Stmt stmt, boolean isDownload, boolean isMetaRequest, String marker)
    {
       String prefix = null;
       String key = null;
@@ -118,7 +119,7 @@ public class S3Rql extends Rql
          }
       }
 
-      return new S3Request(stmt.table.getName(), prefix, key, stmt.maxRows, isDownload, marker);
+      return new S3Request(stmt.table.getName(), prefix, key, stmt.maxRows, isDownload, isMetaRequest, marker);
    }
 
    private String determinePrefixFromPath(String tableName, String path)
