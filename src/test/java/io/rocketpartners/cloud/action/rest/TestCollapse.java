@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud;
+package io.rocketpartners.cloud.action.rest;
 
 import org.junit.Test;
 

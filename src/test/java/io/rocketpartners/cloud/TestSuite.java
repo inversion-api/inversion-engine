@@ -6,6 +6,7 @@ import org.junit.runners.Suite;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDb;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbDeleteActions;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbGetActions;
+import io.rocketpartners.cloud.action.rest.TestCollapse;
 import io.rocketpartners.cloud.action.sql.TestSqlGetAction;
 import io.rocketpartners.cloud.action.sql.TestSqlPostAction;
 import io.rocketpartners.cloud.action.sql.TestSqlQuery;
