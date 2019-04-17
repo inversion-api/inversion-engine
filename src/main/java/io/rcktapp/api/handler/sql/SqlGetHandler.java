@@ -678,8 +678,12 @@ public class SqlGetHandler extends SqlHandler
                   JSObject parentObj = (JSObject) pkCache.get(collection, childRow.get(linkTblParentFkCol));
                   JSObject childObj = (JSObject) pkCache.get(childCollection, childRow.get(linkTblChildFkCol));
 
-                  JSArray array = (JSArray) parentObj.get(parentListProp);
-                  array.add(childObj);
+                  // Don't add the child if it is null, this can happen for with multi-tenant data - Example: User related to two groups in two different tenants
+                  if (childObj != null)
+                  {
+                     JSArray array = (JSArray) parentObj.get(parentListProp);
+                     array.add(childObj);
+                  }
                }
 
                expand(rql, chain, conn, api, childCollection, expandPath(path, rel.getName()), childObjs, includes, excludes, expands, pkCache);
