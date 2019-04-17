@@ -17,6 +17,7 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ public abstract class Db<T extends Db>
 {
    transient volatile boolean started        = false;
    transient volatile boolean starting       = false;
+   transient volatile boolean shutdown       = false;
 
    protected Api              api            = null;
 
@@ -54,7 +56,23 @@ public abstract class Db<T extends Db>
       this.name = name;
    }
 
-   public abstract void bootstrapApi();
+   /**
+    * Made to be overridden by subclasses 
+    * or anonymous inner classes to do specific init
+    */
+   protected void startup0()
+   {
+
+   }
+
+   /**
+    * Made to be overridden by subclasses 
+    * or anonymous inner classes to do specific init
+    */
+   protected void shutdown0()
+   {
+
+   }
 
    /**
     * Finds the entity keys on the other side of the relationship
@@ -73,20 +91,26 @@ public abstract class Db<T extends Db>
    //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
    //   }
 
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
-   }
+   public abstract Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception;
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
+   //   }
 
-   public void delete(Table table, String entityKey) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
-   }
+   public abstract void delete(Table table, String entityKey) throws Exception;
+   //   {
+   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
+   //   }
 
-   //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
+   public abstract String upsert(Table table, Map<String, Object> row) throws Exception;
+
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert() to implement");
+      List keys = new ArrayList();
+      for (Map<String, Object> row : rows)
+      {
+         keys.add(upsert(table, rows));
+      }
+      return keys;
    }
 
    public Object cast(String type, Object value)
@@ -139,14 +163,13 @@ public abstract class Db<T extends Db>
       }
    }
 
-   /**
-    * Calls bootstrapApi(), made to be overridden by subclasses 
-    * or anonymous inner classes to do specific init
-    */
-   protected void startup0()
+   public synchronized void shutdown()
    {
-      if (isBootstrap())
-         bootstrapApi();
+      if ((started || starting) && !shutdown)
+      {
+         shutdown = true;
+         shutdown0();
+      }
    }
 
    public boolean isStarted()
@@ -154,8 +177,9 @@ public abstract class Db<T extends Db>
       return started;
    }
 
-   public void shutdown()
+   public boolean isShutdown()
    {
+      return shutdown;
    }
 
    public Column getColumn(String table, String col)

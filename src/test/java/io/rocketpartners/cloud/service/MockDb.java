@@ -14,7 +14,7 @@ public class MockDb extends Db<MockDb>
 {
 
    @Override
-   public void bootstrapApi()
+   protected void startup0()
    {
       Table users = withTable("users")//
                                       .withColumn("primaryKey", "int")//

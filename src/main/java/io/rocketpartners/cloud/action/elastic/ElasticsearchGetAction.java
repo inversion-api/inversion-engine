@@ -18,12 +18,10 @@ package io.rocketpartners.cloud.action.elastic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -38,7 +36,6 @@ import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.utils.HttpUtils;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client

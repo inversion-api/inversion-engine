@@ -186,7 +186,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       responseJson.put("isBase64Encoded", false);
       responseJson.put("statusCode", res.getStatusCode());
-      //responseJson.put("headers", new JSObject("Access-Control-Allow-Origin", "*"));
+      //responseJson.put("headers", new ObjectNode("Access-Control-Allow-Origin", "*"));
       ObjectNode headers = new ObjectNode();
       responseJson.put("headers", headers);
 

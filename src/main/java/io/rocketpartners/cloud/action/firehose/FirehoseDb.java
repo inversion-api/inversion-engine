@@ -17,6 +17,8 @@ package io.rocketpartners.cloud.action.firehose;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -28,16 +30,14 @@ import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
-import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.ObjectNode;
-import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -81,13 +81,18 @@ public class FirehoseDb extends Db<FirehoseDb>
     * 
     * Example: firehosedb.includeStreams=liftck-player9-impression
     */
-   protected String                includeStreams = null;
+   protected String                includeStreams     = null;
 
-   protected String                awsAccessKey   = null;
-   protected String                awsSecretKey   = null;
-   protected String                awsRegion      = null;
+   protected String                awsAccessKey       = null;
+   protected String                awsSecretKey       = null;
+   protected String                awsRegion          = null;
 
-   protected AmazonKinesisFirehose firehoseClient = null;
+   protected AmazonKinesisFirehose firehoseClient     = null;
+
+   protected int                   batchMax           = 500;
+   protected String                jsonSeparator      = "\n";
+   protected boolean               jsonPrettyPrint    = false;
+   protected boolean               jsonLowercaseNames = true;
 
    public FirehoseDb()
    {
@@ -95,7 +100,7 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   public void bootstrapApi()
+   protected void startup0()
    {
       if (!Utils.empty(includeStreams))
       {
@@ -122,6 +127,56 @@ public class FirehoseDb extends Db<FirehoseDb>
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
       }
+   }
+
+   @Override
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+   }
+
+   @Override
+   public void delete(Table table, String entityKey) throws Exception
+   {
+      throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+   }
+
+   @Override
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      List<String> keys = upsert(table, Arrays.asList(row));
+      if (keys != null && keys.size() > 0)
+         return keys.get(0);
+
+      return null;
+   }
+
+   @Override
+   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
+      List<Record> batch = new ArrayList();
+      for (int i = 0; i < rows.size(); i++)
+      {
+         String string = new ObjectNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
+
+         if (jsonSeparator != null && !string.endsWith(jsonSeparator))
+            string += jsonSeparator;
+
+         batch.add(new Record().withData(ByteBuffer.wrap(string.getBytes())));
+
+         if (i > 0 && i % batchMax == 0)
+         {
+            getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getName()).withRecords(batch));
+            batch.clear();
+         }
+      }
+
+      if (batch.size() > 0)
+      {
+         getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getName()).withRecords(batch));
+      }
+
+      return Collections.emptyList();
    }
 
    public AmazonKinesisFirehose getFirehoseClient()
@@ -181,6 +236,30 @@ public class FirehoseDb extends Db<FirehoseDb>
    public FirehoseDb withIncludeStreams(String includeStreams)
    {
       this.includeStreams = includeStreams;
+      return this;
+   }
+
+   public FirehoseDb withBatchMax(int batchMax)
+   {
+      this.batchMax = batchMax;
+      return this;
+   }
+
+   public FirehoseDb withJsonSeparator(String jsonSeparator)
+   {
+      this.jsonSeparator = jsonSeparator;
+      return this;
+   }
+
+   public FirehoseDb withJsonPrettyPrint(boolean jsonPrettyPrint)
+   {
+      this.jsonPrettyPrint = jsonPrettyPrint;
+      return this;
+   }
+
+   public FirehoseDb withJsonLowercaseNames(boolean jsonLowercaseNames)
+   {
+      this.jsonLowercaseNames = jsonLowercaseNames;
       return this;
    }
 }

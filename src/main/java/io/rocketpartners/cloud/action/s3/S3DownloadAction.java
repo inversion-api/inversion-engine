@@ -15,6 +15,38 @@
  */
 package io.rocketpartners.cloud.action.s3;
 
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.LoggerFactory;
+
+import com.amazonaws.services.s3.model.CopyObjectResult;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import ch.qos.logback.classic.Logger;
+import io.rocketpartners.cloud.model.Action;
+import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Request;
+import io.rocketpartners.cloud.model.Request.Upload;
+import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.SC;
+import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.service.Chain;
+import io.rocketpartners.cloud.service.Service;
+
 /**
  * Accepts RQL parameters and responds with json or files to the client.
  * Special request parameters used by the GET handler: 
@@ -41,7 +73,7 @@ package io.rocketpartners.cloud.action.s3;
  * @author kfrankic
  *
  */
-public class S3DbRestHandler
+public class S3DownloadAction extends Action
 {
 //   Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
 //
@@ -126,13 +158,13 @@ public class S3DbRestHandler
 //         // path == /s3/bucketName/key
 //         // retrieve the extended meta data of a file.
 //
-//         JSObject json = null;
+//         ObjectNode json = null;
 //
 //         try
 //         {
 //            ObjectMetadata meta = db.getExtendedMetaData(s3Req);
 //
-//            json = JS.toJSObject(mapper.writeValueAsString(meta));
+//            json = JS.toObjectNode(mapper.writeValueAsString(meta));
 //            String pathPrefix = req.getPath().substring(0, req.getPath().indexOf(req.getSubpath()));
 //            json.put("href", req.getApiUrl() + pathPrefix + s3Req.getBucket() + "/" + s3Req.getKey());
 //
@@ -169,74 +201,7 @@ public class S3DbRestHandler
 //
 //   private void getObjectsList(Request req, Response res, S3Request s3Req, S3Db db, ObjectMapper mapper) throws Exception
 //   {
-//      // path == /s3/bucketName
-//      // path == /s3/bucketName/inner/folder
-//      // retrieve as much meta data as possible about the files in the bucket
 //
-//      ObjectListing listing = db.getCoreMetaData(s3Req);
-//
-//      JSObject json = new JSObject();
-//
-//      // standard Inversion meta includes:
-//      // "rowCount": x, - there is currently no way of knowing this.
-//      // "pageNum": x, - can't know.
-//      // "pageSize": x, - know.
-//      // "pageCount": x, - can't know.
-//      // "prev": null, - could know, if passed as req param.
-//      // "next": "http://localhost:8080/api/lift/us/elastic/ads?&pageSize=100&sort=id&source=id,json.id,json.modifiedat&pageNum=2"
-//      JSObject jsMeta = new JSObject();
-//      jsMeta.put("pageSize", listing.getMaxKeys());
-//      jsMeta.put("prev", null);
-//      String nextMarker = "";
-//      if (listing.isTruncated())
-//      {
-//         String query = req.getUrl().getQuery();
-//         nextMarker = (query.length() == 0 ? ("?marker=" + listing.getNextMarker()) : ("&marker=" + listing.getNextMarker()));
-//      }
-//      jsMeta.put("next", listing.isTruncated() ? req.getUrl().toString() + nextMarker : null);
-//      json.put("meta", jsMeta);
-//
-//      List<String> directoryList = listing.getCommonPrefixes();
-//      List<S3ObjectSummary> fileList = listing.getObjectSummaries();
-//
-//      JSArray data = new JSArray();
-//
-//      // alphabetize the data returned to the client...
-//      while (!directoryList.isEmpty())
-//      {
-//         String directory = directoryList.get(0);
-//         if (!fileList.isEmpty())
-//         {
-//            S3ObjectSummary file = fileList.get(0);
-//            if (directory.compareToIgnoreCase(file.getKey()) < 0)
-//            {
-//               // directory name comes before file name
-//               data.add(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
-//               directoryList.remove(0);
-//            }
-//            else
-//            {
-//               // file name comes before directory
-//               data.add(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
-//               fileList.remove(0);
-//            }
-//         }
-//         else
-//         {
-//            data.add(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
-//            directoryList.remove(0);
-//         }
-//      }
-//
-//      while (!fileList.isEmpty())
-//      {
-//         S3ObjectSummary file = fileList.remove(0);
-//         data.add(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
-//      }
-//
-//      json.put("data", data);
-//
-//      res.setJson(json);
 //
 //   }
 //
@@ -286,7 +251,7 @@ public class S3DbRestHandler
 //         // set custom metadata for the file
 //         if (metaParam != null)
 //         {
-//            JSObject metaJs = JS.toJSObject(metaParam);
+//            ObjectNode metaJs = JS.toObjectNode(metaParam);
 //            Map<String, String> metaMap = metaJs.asMap();
 //
 //            for (Map.Entry<String, String> entry : metaMap.entrySet())
@@ -318,14 +283,13 @@ public class S3DbRestHandler
 //         // not including the result object as it contains confusing/pointless data.
 //         // such as a 'content-length' of 0, because it's the content-length of the response, not the 
 //         // size of the upload.
-//         JSObject json = new JSObject();
+//         ObjectNode json = new ObjectNode();
 //
 //         json.put("href", req.getApiUrl() + req.getPath() + key);
 //
 //         res.setJson(json);
 //
 //      }
-//
 //
 //      res.setStatus(SC.SC_200_OK);
 //   }
@@ -339,7 +303,7 @@ public class S3DbRestHandler
 //      // Only be updating the meta of a file at this time.  Renaming or moving a file 
 //      // should also be handled by db.updateObject() but neither are currently implemented.
 //
-//      JSObject metaJson = req.getJson();
+//      ObjectNode metaJson = req.getJson();
 //
 //      String key = null;
 //      try
@@ -358,7 +322,7 @@ public class S3DbRestHandler
 //      ObjectMapper mapper = new ObjectMapper();
 //
 //      // the copy result doesn't contain much helpful data.
-//      JSObject json = JS.toJSObject(mapper.writeValueAsString(copy));
+//      ObjectNode json = JS.toObjectNode(mapper.writeValueAsString(copy));
 //
 //      json.put("href", req.getApiUrl() + req.getPath() + key);
 //
@@ -384,7 +348,7 @@ public class S3DbRestHandler
 //      return collection;
 //   }
 //
-//   private ObjectMetadata buildMetadata(JSObject metaJs)
+//   private ObjectMetadata buildMetadata(ObjectNode metaJs)
 //   {
 //      ObjectMetadata meta = null;
 //
@@ -416,9 +380,9 @@ public class S3DbRestHandler
 //      return meta;
 //   }
 //
-//   private JSObject buildListObj(String href, Date lastModified, Long size, boolean isFile)
+//   private ObjectNode buildListObj(String href, Date lastModified, Long size, boolean isFile)
 //   {
-//      JSObject jsObj = new JSObject();
+//      ObjectNode jsObj = new ObjectNode();
 //      jsObj.put("href", href);
 //      if (lastModified != null)
 //         jsObj.put("lastModified", lastModified);

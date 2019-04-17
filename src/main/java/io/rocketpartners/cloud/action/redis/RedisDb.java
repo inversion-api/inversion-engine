@@ -1,9 +1,16 @@
 package io.rocketpartners.cloud.action.redis;
 
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.Results;
+import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -34,9 +41,24 @@ public class RedisDb extends Db<RedisDb>
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
    @Override
-   public void bootstrapApi()
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      //noting to do
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   @Override
+   public void delete(Table table, String entityKey) throws Exception
+   {
+      // TODO Auto-generated method stub
+
+   }
+
+   @Override
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      // TODO Auto-generated method stub
+      return null;
    }
 
    protected Jedis getRedisClient()

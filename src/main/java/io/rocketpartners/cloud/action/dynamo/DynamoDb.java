@@ -15,24 +15,27 @@
  */
 package io.rocketpartners.cloud.action.dynamo;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.collections4.KeyValue;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
+import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -40,7 +43,6 @@ import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
-import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
@@ -72,6 +74,8 @@ public class DynamoDb extends Db<DynamoDb>
     */
    protected String       blueprintRow;
 
+   protected int          batchMax     = 25;
+
    private AmazonDynamoDB dynamoClient = null;
 
    public DynamoDb()
@@ -94,42 +98,81 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> values) throws Exception
+   public String upsert(Table table, Map<String, Object> row) throws Exception
    {
-      String key = table.encodeKey(values);
-      if (key == null)
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to upsert because the key can not be found in the value supplied: " + values);
+      List<String> keys = upsert(table, Arrays.asList(row));
+      if (keys != null && keys.size() > 0)
+         return keys.get(0);
 
+      return null;
+   }
+
+   @Override
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
-      Item item = Item.fromMap(values);
-      PutItemSpec putItemSpec = new PutItemSpec().withItem(item);
-      dynamoTable.putItem(putItemSpec);
+      AmazonDynamoDB dynamoClient = getDynamoClient();
+      List keys = new ArrayList();
+      //      List batch = new ArrayList();
+      List<WriteRequest> writeRequests = new LinkedList<WriteRequest>();
+      BatchWriteItemRequest batch = new BatchWriteItemRequest();
+      //            .withReturnConsumedCapacity(returnConsumedCapacity);
+      for (int i = 0; i < rows.size(); i++)
+      {
+         Map<String, Object> row = rows.get(i);
 
-      return key;
+         String key = table.encodeKey(row);
+         keys.add(key);
+
+         if (i > 0 && i % batchMax == 0)
+         {
+            //write a batch to dynamo
+            batch.addRequestItemsEntry(table.getName(), writeRequests);
+            dynamoClient.batchWriteItem(batch);
+            batch.clearRequestItemsEntries();
+            //            batch = new BatchWriteItemRequest();
+            writeRequests.clear();
+         }
+         //add to the current row to batch 
+         PutRequest put = new PutRequest().withItem(ItemUtils.fromSimpleMap(row));
+         writeRequests.add(new WriteRequest(put));
+      }
+
+      if (writeRequests.size() > 0)
+      {
+         batch.addRequestItemsEntry(table.getName(), writeRequests);
+         getDynamoClient().batchWriteItem(batch);
+         batch.clearRequestItemsEntries();
+         writeRequests.clear();
+      }
+
+      return keys;
    }
 
    @Override
    public void delete(Table table, String entityKey) throws Exception
    {
       //TODO put me back in!!!!
-      //      List<KeyValue<String, Object>> key = table.decodeKey(entityKey);
-      //
-      //      if (key.size() == 1)
-      //      {
-      //         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue());
-      //      }
-      //      else if (key.size() == 2)
-      //      {
-      //         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue(), key.get(1).getKey(), key.get(1).getValue());
-      //      }
-      //      else
+      Row key = table.decodeKey(entityKey);
+
+      com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
+
+      if (key.size() == 1)
+      {
+         dynamo.deleteItem(key.getKey(0), key.get(0));
+      }
+      else if (key.size() == 2)
+      {
+         dynamo.deleteItem(key.getKey(0), key.get(0), key.getKey(1), key.get(1));
+      }
+      else
       {
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + entityKey + "'");
       }
    }
 
    @Override
-   public void bootstrapApi()
+   protected void startup0()
    {
       if (includeTables != null)
       {

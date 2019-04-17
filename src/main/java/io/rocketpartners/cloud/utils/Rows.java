@@ -90,17 +90,13 @@ public class Rows extends ArrayList<Rows.Row>
       return lastRow;
    }
 
-//   public Row newRow()
-//   {
-//      return new Row(keys);
-//   }
 
    public void addRow(List values)
    {
       lastRow = new Row(keys, values.toArray());
       add(lastRow);
    }
-   
+
    public void addRow(Object[] values)
    {
       lastRow = new Row(keys, values);
@@ -174,6 +170,11 @@ public class Rows extends ArrayList<Rows.Row>
       {
          this.keys = keys;
          this.values = new ArrayList(Arrays.asList(values));
+      }
+
+      public String getKey(int index)
+      {
+         return keys.getKey(index);
       }
 
       public String getString(int index)

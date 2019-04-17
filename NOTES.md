@@ -1,4 +1,12 @@
 
+* TODO: RestPutHandler nest document put back 
+
+* TODO: does GRPC fit into Inversion?
+* TODO: need transparent/easy log to cloudwatch metrics
+* TODO: add "writable" as a Column/Attribute field 
+
+* TODO: should ObjectNode extend Row?
+
 * TODO: exclude not working?
 
 * TODO: post location header is wrong -> Location ,11059,11060,11061,11062,11063

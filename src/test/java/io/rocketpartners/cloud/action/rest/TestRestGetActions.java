@@ -2,7 +2,6 @@ package io.rocketpartners.cloud.action.rest;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.action.dynamo.TestDynamoDb;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;

@@ -43,7 +43,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
    @Override
-   public void bootstrapApi()
+   protected void startup0()
    {
       this.withType("elasticsearch");
 

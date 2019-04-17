@@ -22,6 +22,7 @@ import java.util.List;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.rql.Tokenizer;
+import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestTokenizer extends TestCase
@@ -85,7 +86,7 @@ public class TestTokenizer extends TestCase
             {
                String token = tokens.get(j);
                String check = test.get(j + 1);
-               assertTrue(TestRql.compare(check, token));
+               assertTrue(Utils.testCompare(check, token));
             }
          }
          catch (Throwable ex)

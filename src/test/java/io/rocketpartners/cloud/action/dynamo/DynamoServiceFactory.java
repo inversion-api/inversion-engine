@@ -14,7 +14,7 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoServiceFactory
 {
-   public static final boolean RELOAD_DYNAMO = false;
+   public static final boolean RELOAD_DYNAMO = true;
    protected static Map<String, Service> services = new HashMap();
 
    public static synchronized Service service() throws Exception

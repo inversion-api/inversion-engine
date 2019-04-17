@@ -197,7 +197,7 @@ public class Builder<T, P extends Builder>
          return r();
 
       //      add in support for special cases here like offset limit etc
-      //      make parse() call this repeatetly..didn't I write that code already. look for J.explode
+      //      make parse() call this repeatetly..didn't I write that code already. look for Utils.explode
 
       String token = term.getToken().toLowerCase();
       if ("eq".equals(token))
