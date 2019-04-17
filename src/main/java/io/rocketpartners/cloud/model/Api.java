@@ -387,30 +387,6 @@ public class Api
       return db;
    }
 
-   // public void addHandler(String name, String clazz)
-   // {
-   //    try
-   //    {
-   //       handlers.put(name.toLowerCase(), clazz);
-   //    }
-   //    catch (Exception ex)
-   //    {
-   //       throw new ApiException("Unable to add handler \"" + clazz + "\". Reason: " + J.getShortCause(ex));
-   //    }
-   // }
-   //
-   // public void setHandlers(String handlers)
-   // {
-   //    if (handlers == null)
-   //       return;
-   //
-   //    String[] parts = handlers.split(",");
-   //    for (int i = 0; i < parts.length - 1; i += 2)
-   //    {
-   //       addHandler(parts[i].trim(), parts[i + 1].trim());
-   //    }
-   // }
-
    public long getLoadTime()
    {
       return loadTime;
