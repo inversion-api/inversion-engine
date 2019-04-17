@@ -28,7 +28,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
@@ -114,7 +113,7 @@ public class DynamoDb extends Db<DynamoDb>
          String key = table.encodeKey(row);
          keys.add(key);
 
-         if (i % batchMax == 0)
+         if (i > 0 && i % batchMax == 0)
          {
             //write a batch to dynamo
             batch.addRequestItemsEntry(table.getName(), writeRequests);
@@ -143,17 +142,19 @@ public class DynamoDb extends Db<DynamoDb>
    public void delete(Table table, String entityKey) throws Exception
    {
       //TODO put me back in!!!!
-      //      List<KeyValue<String, Object>> key = table.decodeKey(entityKey);
-      //
-      //      if (key.size() == 1)
-      //      {
-      //         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue());
-      //      }
-      //      else if (key.size() == 2)
-      //      {
-      //         getDynamoTable(table).deleteItem(key.get(0).getKey(), key.get(0).getValue(), key.get(1).getKey(), key.get(1).getValue());
-      //      }
-      //      else
+      Row key = table.decodeKey(entityKey);
+
+      com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
+      
+      if (key.size() == 1)
+      {
+         dynamo.deleteItem(key.getKey(0), key.get(0));
+      }
+      else if (key.size() == 2)
+      {
+         dynamo.deleteItem(key.getKey(0), key.get(0), key.getKey(1), key.get(1));
+      }
+      else
       {
          throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + entityKey + "'");
       }
