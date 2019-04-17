@@ -13,14 +13,16 @@ public class S3Request
    
    private String  marker   = null;
    private boolean download = false;
+   private boolean meta = false;
 
-   public S3Request(String bucket, String prefix, String key, Integer size, boolean download, String marker)
+   public S3Request(String bucket, String prefix, String key, Integer size, boolean download, boolean meta, String marker)
    {
       this.bucket = bucket;
       this.prefix = prefix;
       this.key = key;
       this.size = size;
       this.download = download;
+      this.meta = meta;
       this.marker = marker;
    }
 
@@ -47,6 +49,11 @@ public class S3Request
    public boolean isDownload()
    {
       return download;
+   }
+
+   public boolean isMeta()
+   {
+      return meta;
    }
 
    public String getMarker()

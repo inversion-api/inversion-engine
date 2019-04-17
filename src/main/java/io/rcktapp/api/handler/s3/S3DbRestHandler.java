@@ -138,7 +138,7 @@ public class S3DbRestHandler implements Handler
 
       ObjectMapper mapper = new ObjectMapper();
 
-      if (s3Req.isDownload())
+      if (s3Req.isDownload() || (!s3Req.isMeta() && db.isDefaultDownload()))
       {
          // path == /s3/bucketName?eq(key,filename)&download
 
@@ -191,7 +191,7 @@ public class S3DbRestHandler implements Handler
             // that start with this prefix...meaning, NO inner directories or files will be returned.
             // To work around this limitation, if the user wants to specify a directory & file prefix, the 'sw' function should 
             // be used.  ex: sw(key,media/c) will return all files/directories that are within the media folder and start with 'c'
-            getObjectsList(req, res, new S3Request(s3Req.getBucket(), s3Req.getKey() + "/", null, s3Req.getSize(), false, s3Req.getMarker()), db, mapper);
+            getObjectsList(req, res, new S3Request(s3Req.getBucket(), s3Req.getKey() + "/", null, s3Req.getSize(), false, s3Req.isMeta(), s3Req.getMarker()), db, mapper);
          }
 
       }
@@ -361,7 +361,6 @@ public class S3DbRestHandler implements Handler
          res.setJson(json);
 
       }
-
 
       res.setStatus(SC.SC_200_OK);
    }
