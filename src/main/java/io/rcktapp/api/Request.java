@@ -16,8 +16,10 @@
 package io.rcktapp.api;
 
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import io.forty11.j.J;
 import io.forty11.web.Url;
@@ -377,6 +379,20 @@ public class Request
    public String getHeader(String header)
    {
       return (String) headers.get(header);
+   }
+
+   public CaseInsensitiveLookupMap<String, String> getPrefixedHeaders(String prefix)
+   {
+      CaseInsensitiveLookupMap<String, String> prefixMap = new CaseInsensitiveLookupMap<String, String>();
+      for (Iterator<Entry<String, String>> i = headers.entrySet().iterator(); i.hasNext();)
+      {
+         Entry<String, String> e = i.next();
+         if (e.getKey().indexOf(prefix) == 0)
+         {
+            prefixMap.put(e.getKey(), e.getValue());
+         }
+      }
+      return prefixMap;
    }
 
    public String getParam(String key)

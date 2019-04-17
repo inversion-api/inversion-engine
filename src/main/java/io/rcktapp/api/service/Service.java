@@ -295,6 +295,10 @@ public class Service
             res.addHeader("Location", res.getRedirect());
             res.setStatus(SC.SC_302_FOUND);
          }
+         else if (res.getInputStream() != null)
+         {
+            // doing nothing...to prevent a different content type from being set.
+         }
          else if (output == null && res.getJson() != null)
          {
             output = res.getJson().toString();
