@@ -30,11 +30,11 @@ import io.rocketpartners.cloud.service.Service;
  * @author kfrankic
  *
  */
-public class ElasticDbRestHandler extends Action
+public class ElasticDbRestAction extends Action
 {
-   ElasticDbGetHandler    get    = new ElasticDbGetHandler();
-//   ElasticDbDeleteHandler delete = new ElasticDbDeleteHandler();
-//   ElasticDbPostHandler   post   = new ElasticDbPostHandler();
+   ElasticDbGetAction get = new ElasticDbGetAction();
+   //   ElasticDbDeleteHandler delete = new ElasticDbDeleteHandler();
+   //   ElasticDbPostHandler   post   = new ElasticDbPostHandler();
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -44,33 +44,33 @@ public class ElasticDbRestHandler extends Action
       {
          get.run(service, api, endpoint, chain, req, res);
       }
-//      else if ("DELETE".equalsIgnoreCase(method))
-//      {
-//         delete.service(service, api, endpoint, action, chain, req, res);
-//      }
-//      else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
-//      {
-//         post.service(service, api, endpoint, action, chain, req, res);
-//      }
+      //      else if ("DELETE".equalsIgnoreCase(method))
+      //      {
+      //         delete.service(service, api, endpoint, action, chain, req, res);
+      //      }
+      //      else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))
+      //      {
+      //         post.service(service, api, endpoint, action, chain, req, res);
+      //      }
       else
       {
          throw new ApiException(SC.SC_400_BAD_REQUEST, "This handler only supports GET requests");
       }
    }
 
-   public void setGet(ElasticDbGetHandler get)
+   public void setGet(ElasticDbGetAction get)
    {
       this.get = get;
    }
 
-//   public void setDelete(ElasticDbDeleteHandler delete)
-//   {
-//      this.delete = delete;
-//   }
-//
-//   public void setPost(ElasticDbPostHandler post)
-//   {
-//      this.post = post;
-//   }
+   //   public void setDelete(ElasticDbDeleteHandler delete)
+   //   {
+   //      this.delete = delete;
+   //   }
+   //
+   //   public void setPost(ElasticDbPostHandler post)
+   //   {
+   //      this.post = post;
+   //   }
 
 }

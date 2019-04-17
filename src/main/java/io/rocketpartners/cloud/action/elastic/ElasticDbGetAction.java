@@ -51,9 +51,9 @@ import io.rocketpartners.cloud.utils.HttpUtils;
  * @author kfrankic
  *
  */
-public class ElasticDbGetHandler extends Action
+public class ElasticDbGetAction extends Action
 {
-   Logger  log           = LoggerFactory.getLogger(ElasticDbGetHandler.class);
+   Logger  log           = LoggerFactory.getLogger(ElasticDbGetAction.class);
 
    // The following properties can be assigned via snooze.properties
    int     maxRows       = 100;
