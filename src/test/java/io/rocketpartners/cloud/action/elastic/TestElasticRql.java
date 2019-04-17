@@ -31,16 +31,16 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.rocketpartners.cloud.action.elastic.dsl.BoolQuery;
-import io.rocketpartners.cloud.action.elastic.dsl.ElasticQuery;
-import io.rocketpartners.cloud.action.elastic.dsl.ElasticRql;
-import io.rocketpartners.cloud.action.elastic.dsl.NestedQuery;
-import io.rocketpartners.cloud.action.elastic.dsl.Order;
-import io.rocketpartners.cloud.action.elastic.dsl.QueryDsl;
-import io.rocketpartners.cloud.action.elastic.dsl.Range;
-import io.rocketpartners.cloud.action.elastic.dsl.Term;
-import io.rocketpartners.cloud.action.elastic.dsl.Wildcard;
-import io.rocketpartners.cloud.action.elastic.rql.Rql;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.BoolQuery;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.ElasticQuery;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.ElasticRql;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.NestedQuery;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.Order;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.QueryDsl;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.Range;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.Term;
+import io.rocketpartners.cloud.action.elastic.v03x.dsl.Wildcard;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Rql;
 
 /**
  * @author kfrankic

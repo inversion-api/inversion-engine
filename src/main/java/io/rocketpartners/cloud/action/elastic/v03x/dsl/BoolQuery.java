@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.action.elastic.dsl;
+package io.rocketpartners.cloud.action.elastic.v03x.dsl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,7 +128,7 @@ public class BoolQuery extends ElasticQuery
             if (nestedList.size() > 1)
             {
                BoolQuery bool = new BoolQuery();
-               
+
                // move the filters from each nest to this nested query
                for (ElasticQuery nest : nestedList)
                {
@@ -205,8 +205,9 @@ public class BoolQuery extends ElasticQuery
          filter = new ArrayList<ElasticQuery>();
 
       filter.add(elastic);
-      
-      if (elastic.getNestedPath() != null) {
+
+      if (elastic.getNestedPath() != null)
+      {
          this.nestedPath = elastic.getNestedPath();
       }
    }
@@ -217,8 +218,9 @@ public class BoolQuery extends ElasticQuery
          must = new ArrayList<ElasticQuery>();
 
       must.add(elastic);
-      
-      if (elastic.getNestedPath() != null) {
+
+      if (elastic.getNestedPath() != null)
+      {
          this.nestedPath = elastic.getNestedPath();
       }
    }
@@ -229,8 +231,9 @@ public class BoolQuery extends ElasticQuery
          must_not = new ArrayList<ElasticQuery>();
 
       must_not.add(elastic);
-      
-      if (elastic.getNestedPath() != null) {
+
+      if (elastic.getNestedPath() != null)
+      {
          this.nestedPath = elastic.getNestedPath();
       }
    }
@@ -241,8 +244,9 @@ public class BoolQuery extends ElasticQuery
          should = new ArrayList<ElasticQuery>();
 
       should.add(elastic);
-      
-      if (elastic.getNestedPath() != null) {
+
+      if (elastic.getNestedPath() != null)
+      {
          this.nestedPath = elastic.getNestedPath();
       }
    }

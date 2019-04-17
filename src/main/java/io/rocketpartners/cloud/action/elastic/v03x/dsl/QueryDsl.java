@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.action.elastic.dsl;
+package io.rocketpartners.cloud.action.elastic.v03x.dsl;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.rocketpartners.cloud.action.elastic.rql.Stmt;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Stmt;
 
 /**
  * @author kfrankic

@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud.action.elastic.dsl;
+package io.rocketpartners.cloud.action.elastic.v03x.dsl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,10 +6,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.rocketpartners.cloud.action.elastic.rql.Parser;
-import io.rocketpartners.cloud.action.elastic.rql.Predicate;
-import io.rocketpartners.cloud.action.elastic.rql.Rql;
-import io.rocketpartners.cloud.action.elastic.rql.Stmt;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Parser;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Predicate;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Rql;
+import io.rocketpartners.cloud.action.elastic.v03x.rql.Stmt;
 
 public class ElasticRql extends Rql
 {
@@ -105,21 +105,21 @@ public class ElasticRql extends Rql
       // after' is required, the remaining 20 results will automatically be skipped
       // because we are starting the search after 'AL'
       Order elasticOrder = null;
-      List<io.rocketpartners.cloud.action.elastic.rql.Order> orderList = stmt.order;
+      List<io.rocketpartners.cloud.action.elastic.v03x.rql.Order> orderList = stmt.order;
       //      if (orderList.size() > 0)
       //      {
       boolean idSortExists = false;
-      for (io.rocketpartners.cloud.action.elastic.rql.Order order : orderList)
+      for (io.rocketpartners.cloud.action.elastic.v03x.rql.Order order : orderList)
       {
          if (Parser.dequote(order.col).equalsIgnoreCase("id"))
             idSortExists = true;
       }
       if (!idSortExists)
-         orderList.add(new io.rocketpartners.cloud.action.elastic.rql.Order("id", "asc"));
+         orderList.add(new io.rocketpartners.cloud.action.elastic.v03x.rql.Order("id", "asc"));
       //      }
       for (int i = 0; i < orderList.size(); i++)
       {
-         io.rocketpartners.cloud.action.elastic.rql.Order order = orderList.get(i);
+         io.rocketpartners.cloud.action.elastic.v03x.rql.Order order = orderList.get(i);
          if (elasticOrder == null)
             elasticOrder = new Order(Parser.dequote(order.col), order.dir);
          else

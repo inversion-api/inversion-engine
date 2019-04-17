@@ -20,14 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.rocketpartners.cloud.action.elastic.dsl.ElasticRql;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.Attribute;
-import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
-import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
@@ -37,22 +34,8 @@ import io.rocketpartners.cloud.utils.HttpUtils;
 import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class ElasticDb extends Db<ElasticDb>
+public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
-
-   static
-   {
-      try
-      {
-         //bootstraps the ElasticRql type
-         Class.forName(ElasticRql.class.getName());
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
-   }
-
    protected static String      url                      = null;
 
    protected static int         maxRequestDuration       = 10;                  // duration in seconds.
@@ -62,97 +45,98 @@ public class ElasticDb extends Db<ElasticDb>
    @Override
    protected void startup0()
    {
-      try
-      {
-         reflectDb();
-         configApi();
-      }
-      catch (Exception ex)
-      {
-         Utils.rethrow(ex);
-      }
+      this.withType("elasticsearch");
 
+      reflectDb();
+      configApi();
    }
 
-   @Override
    public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      // TODO Auto-generated method stub
       return null;
    }
 
-   @Override
+   public String upsert(Table table, Map<String, Object> values) throws Exception
+   {
+      return null;
+   }
+
    public void delete(Table table, String entityKey) throws Exception
    {
-      // TODO Auto-generated method stub
 
    }
 
-   @Override
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   private void reflectDb() throws Exception
+   private void reflectDb()
    {
       if (!isBootstrap())
       {
          return;
       }
 
-      // 'GET _all' returns all indices/aliases/mappings
-
-      Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
-
-      if (allResp.isSuccess())
+      try
       {
-         // we now have the indices, aliases for each index, and mappings (and settings if we need them)
+         // 'GET _all' returns all indices/aliases/mappings
+         Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
 
-         ObjectNode jsObj = allResp.getJson();
-
-         Map<String, ObjectNode> jsContentMap = jsObj.asMap();
-
-         // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-         Map<String, Table> tableMap = new HashMap<String, Table>();
-
-         for (Map.Entry<String, ObjectNode> entry : jsContentMap.entrySet())
+         if (allResp.isSuccess())
          {
-            // we now have the index and with it, it's aliases and mappings
-            buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
+            // we now have the indices, aliases for each index, and mappings (and settings if we need them)
+
+            ObjectNode jsObj = Utils.parseJsonObject(allResp.getContent());
+
+            Map<String, ObjectNode> jsContentMap = jsObj.asMap();
+
+            // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
+            Map<String, Table> tableMap = new HashMap<String, Table>();
+
+            for (Map.Entry<String, ObjectNode> entry : jsContentMap.entrySet())
+            {
+               // we now have the index and with it, it's aliases and mappings
+               buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
+            }
+         }
+         else
+         {
+            throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
          }
       }
-      else
+      catch (Exception ex)
       {
-         throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatus()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         Utils.rethrow(ex);
       }
-
    }
 
    private void configApi()
    {
-      for (Table t : getTables())
-      {
-         List<Column> cols = t.getColumns();
-         Collection collection = new Collection();
-
-         collection.withName(super.beautifyCollectionName(t.getName()));
-         Entity entity = collection.withEntity(t);
-         //
-         //         for (Column col : cols)
-         //         {
-         //            Attribute attr = new Attribute();
-         //            attr.withEntity(entity);
-         //            attr.withName(col.getName());
-         //            attr.withColumn(col);
-         //            attr.withHint(col.getTable().getName() + "." + col.getName());
-         //            attr.withType(col.getType());
-         //            entity.withAttribute(attr);
-         //         }
-
-         api.withCollection(collection);
-      }
+      //      for (Table t : getTables())
+      //      {
+      //         List<Column> cols = t.getColumns();
+      //         Collection collection = new Collection();
+      //
+      //         collection.withName(beautifyCollectionName(t.getName()));
+      //
+      //         Entity entity = new Entity();
+      //         entity.withTable(t);
+      //         entity.withHint(t.getName());
+      //         entity.withCollection(collection);
+      //
+      //         collection.withEntity(entity);
+      //
+      //         for (Column col : cols)
+      //         {
+      //            Attribute attr = new Attribute();
+      //            attr.withEntity(entity);
+      //            attr.withName(col.getName());
+      //            attr.withColumn(col);
+      //            attr.withHint(col.getTable().getName() + "." + col.getName());
+      //            attr.withType(col.getType());
+      //
+      //            entity.withAttribute(attr);
+      //         }
+      //
+      //         api.withCollection(collection);
+      //         collection.withApi(api);
+      //      }
    }
 
    /**
@@ -171,7 +155,7 @@ public class ElasticDb extends Db<ElasticDb>
    {
 
       String aliasName = null;
-      Map<String, ObjectNode> jsMappingsDocProps = jsIndex.findNode("mappings._doc.properties").asMap();
+      Map<String, ObjectNode> jsMappingsDocProps = jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
       Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
       for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
       {
@@ -203,15 +187,20 @@ public class ElasticDb extends Db<ElasticDb>
     */
    private void addColumns(Table table, boolean nullable, Map<String, ObjectNode> jsPropsMap, String parentPrefix)
    {
+      int columnNumber = 0;
       for (Map.Entry<String, ObjectNode> propEntry : jsPropsMap.entrySet())
       {
+         columnNumber += 1;
+
          String colName = parentPrefix + propEntry.getKey();
          ObjectNode propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
-         if (propValue.hasProperty("type"))
+         Column column = null;
+         if (propValue.containsKey("type"))
          {
-            table.withColumn(colName, colName);
+            column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
+            table.withColumn(column);
          }
       }
    }
