@@ -73,7 +73,7 @@ import io.rocketpartners.cloud.service.Service;
  * @author kfrankic
  *
  */
-public class S3DbDownloadAction extends Action
+public class S3DownloadAction extends Action
 {
 //   Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
 //

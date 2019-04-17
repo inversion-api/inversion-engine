@@ -792,6 +792,41 @@ public class Utils
 
       return t;
    }
+   
+   public static boolean testCompare(String str1, String str2)
+   {
+      str1 = str1.replaceAll("\\s+", " ").trim();
+      str2 = str2.replaceAll("\\s+", " ").trim();
+
+      if (!str1.equals(str2))
+      {
+         if (!str1.equals(str2))
+         {
+            System.out.println("\r\n");
+            System.out.println("\r\n");
+            System.out.println(str1);
+            System.out.println(str2);
+
+            for (int i = 0; i < str1.length() && i < str2.length(); i++)
+            {
+               if (str1.charAt(i) == str2.charAt(i))
+               {
+                  System.out.print(" ");
+               }
+               else
+               {
+                  System.out.println("X");
+                  break;
+               }
+            }
+            System.out.println(" ");
+
+            String err = "failed test: " + str1 + " != " + str2;
+            return false;
+         }
+      }
+      return true;
+   }
 
    public static Response assertDebug(Response resp, String... matches)
    {

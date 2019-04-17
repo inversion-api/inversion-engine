@@ -17,6 +17,7 @@ package io.rocketpartners.cloud.action.firehose;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +139,16 @@ public class FirehoseDb extends Db<FirehoseDb>
    public void delete(Table table, String entityKey) throws Exception
    {
       throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+   }
+
+   @Override
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      List<String> keys = upsert(table, Arrays.asList(row));
+      if (keys != null && keys.size() > 0)
+         return keys.get(0);
+
+      return null;
    }
 
    @Override

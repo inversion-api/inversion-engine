@@ -101,19 +101,17 @@ public abstract class Db<T extends Db>
    //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
    //   }
 
-   public String upsert(Table table, Map<String, Object> row) throws Exception
-   {
-      List list = upsert(table, Arrays.asList(row));
-      if (list.size() > 0)
-         return list.get(0) + "";
-      return null;
-   }
+   public abstract String upsert(Table table, Map<String, Object> row) throws Exception;
 
-   //the action is optimized for batch whereas the db interface is optomized for single upsert simplicity
-   public abstract List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception;
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert() to implement");
-   //   }
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
+      List keys = new ArrayList();
+      for (Map<String, Object> row : rows)
+      {
+         keys.add(upsert(table, rows));
+      }
+      return keys;
+   }
 
    public Object cast(String type, Object value)
    {

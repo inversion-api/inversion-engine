@@ -170,7 +170,7 @@ public class PropsConfig
 
                for (Db db : ((Api) api).getDbs())
                {
-                  db.bootstrapApi();
+                  db.startup();
                }
             }
          }

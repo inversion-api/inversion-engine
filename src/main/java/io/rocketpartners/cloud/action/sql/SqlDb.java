@@ -242,6 +242,7 @@ public class SqlDb extends Db<SqlDb>
 
    }
 
+
    @Override
    public String upsert(Table table, Map<String, Object> row) throws Exception
    {

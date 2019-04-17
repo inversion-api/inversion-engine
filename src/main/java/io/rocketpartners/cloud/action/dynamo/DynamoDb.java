@@ -16,6 +16,7 @@
 package io.rocketpartners.cloud.action.dynamo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -97,6 +98,16 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      List<String> keys = upsert(table, Arrays.asList(row));
+      if (keys != null && keys.size() > 0)
+         return keys.get(0);
+
+      return null;
+   }
+
+   @Override
    public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
@@ -145,7 +156,7 @@ public class DynamoDb extends Db<DynamoDb>
       Row key = table.decodeKey(entityKey);
 
       com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
-      
+
       if (key.size() == 1)
       {
          dynamo.deleteItem(key.getKey(0), key.get(0));

@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.rql.Parser;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class TestParser
 {
@@ -83,7 +83,7 @@ public class TestParser
             else
                query = query.toString();
 
-            if (!TestRql.compare(reference, (String) query))
+            if (!Utils.testCompare(reference, (String) query))
                throw new Exception("Test case: " + (i + 1) + "[" + j + "] failed. src = " + reference + " - term = " + query);
          }
       }
