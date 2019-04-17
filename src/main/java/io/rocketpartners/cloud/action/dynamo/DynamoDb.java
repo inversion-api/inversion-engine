@@ -17,6 +17,7 @@ package io.rocketpartners.cloud.action.dynamo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,11 +26,16 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
+import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -95,25 +101,39 @@ public class DynamoDb extends Db<DynamoDb>
    public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
-      
+      AmazonDynamoDB dynamoClient = getDynamoClient();
       List keys = new ArrayList();
-      List batch = new ArrayList();
+      //      List batch = new ArrayList();
+      List<WriteRequest> writeRequests = new LinkedList<WriteRequest>();
+      BatchWriteItemRequest batch = new BatchWriteItemRequest();
+      //            .withReturnConsumedCapacity(returnConsumedCapacity);
       for (int i = 0; i < rows.size(); i++)
       {
          Map<String, Object> row = rows.get(i);
+
          String key = table.encodeKey(row);
          keys.add(key);
+
          if (i % batchMax == 0)
          {
             //write a batch to dynamo
+            batch.addRequestItemsEntry(table.getName(), writeRequests);
+            dynamoClient.batchWriteItem(batch);
+            batch.clearRequestItemsEntries();
+            //            batch = new BatchWriteItemRequest();
+            writeRequests.clear();
          }
-
          //add to the current row to batch 
+         PutRequest put = new PutRequest().withItem(ItemUtils.fromSimpleMap(row));
+         writeRequests.add(new WriteRequest(put));
       }
 
-      if (batch.size() > 0)
+      if (writeRequests.size() > 0)
       {
-         //write batch to dynamo
+         batch.addRequestItemsEntry(table.getName(), writeRequests);
+         getDynamoClient().batchWriteItem(batch);
+         batch.clearRequestItemsEntries();
+         writeRequests.clear();
       }
 
       return keys;
