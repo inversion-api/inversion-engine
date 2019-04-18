@@ -178,7 +178,7 @@ public class Response
          }
          else
          {
-            if(i > 0)
+            if (i > 0)
                buff.append(" ");
             buff.append(msg);
          }
@@ -258,7 +258,7 @@ public class Response
    {
       return out.toString();
    }
-   
+
    public void dump()
    {
       System.out.println(getDebug());
@@ -412,6 +412,11 @@ public class Response
          }
       }
       return pageSize;
+   }
+
+   public String next()
+   {
+      return findString("meta.next");
    }
 
    public Response withNext(String nextPageUrl)

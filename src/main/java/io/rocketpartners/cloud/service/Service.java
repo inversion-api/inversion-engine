@@ -30,6 +30,9 @@ import io.rocketpartners.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
@@ -122,6 +125,22 @@ public class Service
             }
          }
 
+         for (Api api : apis)
+         {
+            System.out.println(api.getApiCode() + "--------------");
+
+            for (Endpoint e : api.getEndpoints())
+            {
+               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
+            }
+
+            for (Collection c : api.getCollections())
+            {
+               System.out.println("  - COLLECTION: " + c.getName());
+            }
+
+         }
+
          started = true;
          return this;
       }
@@ -181,6 +200,11 @@ public class Service
    public Response delete(String url)
    {
       return service("DELETE", url, (String) null);
+   }
+
+   public Response delete(String url, ArrayNode hrefs)
+   {
+      return service("DELETE", url, hrefs.toString());
    }
 
    public Response service(String method, String url)
@@ -400,7 +424,7 @@ public class Service
             res.debug(req.getMethod() + ": " + url);
 
             ArrayListValuedHashMap<String, String> headers = req.getHeaders();
-            for(String key : headers.keys())
+            for (String key : headers.keys())
             {
                res.debug(key + " " + Utils.implode(",", headers.get(key)));
             }

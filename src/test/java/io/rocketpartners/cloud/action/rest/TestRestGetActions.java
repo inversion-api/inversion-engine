@@ -99,7 +99,7 @@ public abstract class TestRestGetActions extends TestCase
          total += res.data().length();
          pages += 1;
 
-         next = res.findString("meta.next");
+         next = res.next();
 
          assertEquals(5, res.findArray("data").length());
          assertEquals(5, res.find("meta.pageSize"));

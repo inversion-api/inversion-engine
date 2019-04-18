@@ -24,7 +24,7 @@ import java.util.Map;
 
 import io.rocketpartners.cloud.utils.Utils;
 
-public class Url
+public class Url implements Cloneable
 {
    protected String     original = null;
    protected String     protocol = "http";
@@ -33,6 +33,26 @@ public class Url
    protected String     path     = null;
    protected String     query    = null;
    protected ObjectNode params   = new ObjectNode();
+
+   public Url copy()
+   {
+      Url u = new Url();
+      u.original = original;
+      u.protocol = protocol;
+      u.host = host;
+      u.port = port;
+      u.path = path;
+      u.query = query;
+      if (params.size() > 0)
+         Utils.parseJsonObject(params.toString());
+
+      return u;
+   }
+
+   private Url()
+   {
+
+   }
 
    public Url(String url)
    {
@@ -239,10 +259,11 @@ public class Url
 
             if (i == 0)
                url += "?";
-            else
+            else if (!key.startsWith("&"))
                url += "&";
 
-            url += key + "=" + value;
+            if (value != null)
+               url += "=" + value;
          }
       }
 
@@ -282,13 +303,13 @@ public class Url
 
    public int getPort()
    {
-//      if (port == 0)
-//      {
-//         if ("http".equalsIgnoreCase(protocol))
-//            return 80;
-//         if ("https".equalsIgnoreCase(protocol))
-//            return 443;
-//      }
+      //      if (port == 0)
+      //      {
+      //         if ("http".equalsIgnoreCase(protocol))
+      //            return 80;
+      //         if ("https".equalsIgnoreCase(protocol))
+      //            return 443;
+      //      }
       return port;
    }
 
@@ -329,9 +350,16 @@ public class Url
       return path;
    }
 
-   public void withPath(String path)
+   public Url withPath(String path)
    {
       this.path = path;
+      return this;
+   }
+
+   public Url addPath(String path)
+   {
+      this.path = Utils.implode("/", this.path, path);
+      return null;
    }
 
    public String getFile()
@@ -347,9 +375,29 @@ public class Url
       return null;
    }
 
+   public Url withParams(Map<String, String> params)
+   {
+      if (params != null)
+         this.params.putAll(params);
+      return this;
+   }
+
    public Url withParam(String name, String value)
    {
       params.put(name, value);
+      return this;
+   }
+
+   public Url withParams(String... nvpairs)
+   {
+      if (nvpairs != null)
+      {
+         for (int i = 0; i < nvpairs.length - 1; i++)
+            params.put(nvpairs[i], nvpairs[i + 1]);
+
+         if (nvpairs.length % 2 == 1)
+            params.put(nvpairs[nvpairs.length - 1], null);
+      }
       return this;
    }
 

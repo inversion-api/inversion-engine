@@ -110,7 +110,7 @@ public class Request
       if (params != null)
       {
          for (String key : params.keySet())
-            this.url.withParam(key, params.get(key));
+            this.url.withParams(key, params.get(key));
       }
    }
 

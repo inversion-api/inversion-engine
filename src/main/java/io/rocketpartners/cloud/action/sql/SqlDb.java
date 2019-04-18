@@ -128,6 +128,7 @@ public class SqlDb extends Db<SqlDb>
       if (type != null)
          return type;
 
+      String driver = getDriver(); 
       if (driver != null)
       {
          if (driver.indexOf("mysql") >= 0)

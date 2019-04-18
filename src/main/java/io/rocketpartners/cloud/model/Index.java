@@ -54,7 +54,7 @@ public class Index
    public String toString()
    {
       //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
-      StringBuffer buff = new StringBuffer(getTable().getName()).append("(");
+      StringBuffer buff = new StringBuffer(getTable().getName()).append(".").append(name).append("(");
       for (int i = 0; i < columns.size(); i++)
       {
          buff.append(columns.get(i).getName());

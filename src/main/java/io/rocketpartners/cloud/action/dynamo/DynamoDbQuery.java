@@ -125,7 +125,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             result.withRow(item.asMap());
          }
 
-         result.withNext(after(queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
+         result.withNext(after(index, queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
       }
       else if (spec instanceof ScanSpec)
       {
@@ -136,22 +136,37 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             result.withRow(item.asMap());
          }
 
-         result.withNext(after(scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey()));
+         result.withNext(after(index, scanResult.getLastLowLevelResult().getScanResult().getLastEvaluatedKey()));
       }
 
       return result;
    }
 
-   protected List<Term> after(java.util.Map<String, AttributeValue> attrs)
+   protected List<Term> after(DynamoDbIndex index, java.util.Map<String, AttributeValue> attrs)
    {
       if (attrs == null)
          return Collections.EMPTY_LIST;
 
       Term after = Term.term(null, "after");
-      for (String key : attrs.keySet())
+
+      if (index != null)
       {
-         after.withTerm(Term.term(after, key));
-         after.withTerm(Term.term(after, getValue(attrs.get(key)).toString()));
+         after.withTerm(Term.term(after, index.getHashKeyName()));
+         after.withTerm(Term.term(after, getValue(attrs.get(index.getHashKeyName())).toString()));
+
+         if (index.getSortKey() != null)
+         {
+            after.withTerm(Term.term(after, index.getSortKeyName()));
+            after.withTerm(Term.term(after, getValue(attrs.get(index.getSortKeyName())).toString()));
+         }
+      }
+      else
+      {
+         for (String key : attrs.keySet())
+         {
+            after.withTerm(Term.term(after, key));
+            after.withTerm(Term.term(after, getValue(attrs.get(key)).toString()));
+         }
       }
       return Arrays.asList(after);
    }
@@ -266,7 +281,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             }
          }
 
-         if (sortBy != null && index == null)
+         if (sortBy != null && foundIndex == null)
          {
             //TODO: create test case to trigger this exception
             throw new ApiException(SC.SC_400_BAD_REQUEST, "The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");

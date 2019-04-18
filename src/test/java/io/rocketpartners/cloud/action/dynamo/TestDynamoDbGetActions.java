@@ -38,8 +38,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       do
       {
          res = service.get(next);
-
-         System.out.println(res.getDebug());
+         res.dump();
 
          assertDebug(res, "QuerySpec:'gs3'");
 
@@ -59,7 +58,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
          total += res.data().length();
          pages += 1;
 
-         next = res.findString("meta.next");
+         next = res.next();
 
          assertEquals(5, res.findArray("data").length());
          assertEquals(5, res.find("meta.pageSize"));
@@ -106,10 +105,14 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
 
       res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid&type=ORDER");
+      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
+
       json = res.getJson();
       assertEquals(25, json.getArray("data").length());
-      assertTrue(json.findString("data.0.href").endsWith("/dynamodb/orders/10641~ORDER"));
-      assertEquals(1, service.get("northwind/dynamodb/orders/10641~ORDER").getJson().getArray("data").length());
+      String first = json.findString("data.0.href");
+      //assertTrue(first.endsWith("/dynamodb/orders/10641~ORDER"));
+      assertTrue(first.endsWith("/dynamodb/orders/10257~ORDER"));
+      assertEquals(1, service.get("northwind/dynamodb/orders/10257~ORDER").getJson().getArray("data").length());
 
    }
 
@@ -207,12 +210,11 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
 
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(shipcity,Mannheim)").statusOk();
-      json = res.getJson();
+      res.dump();
 
-      assertEquals(json.getArray("data").length(), 1);
+      assertEquals(res.data().length(), 1);
       assertDebug(res, "DynamoDbQuery: QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1, #var3=sk} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3)' projectionExpression=''");
    }
 
@@ -223,11 +225,21 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       Response res = null;
       ObjectNode json = null;
 
-      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(EmployeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')").statusOk();
-      json = res.getJson();
+      res = service.get("northwind/source/orders?eq(OrderId, 11058)").statusOk();
+      res.dump();
 
-      assertEquals(json.getArray("data").length(), 1);
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)").statusOk();
+      res.dump();
+
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(employeeId,9)").statusOk();
+      res.dump();
+      
+      res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(employeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')").statusOk();
+      res.dump();
       assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var4=hk, #var1=gs1hk, #var2=gs1sk, #var3=sk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3) and (#var4 = :val4)' projectionExpression=''");
+
+      assertEquals(res.data().length(), 1);
+
    }
 
    @Test

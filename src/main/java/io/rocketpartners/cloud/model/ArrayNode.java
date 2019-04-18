@@ -84,6 +84,11 @@ public class ArrayNode extends ObjectNode implements Iterable
       return remove(Integer.parseInt(index.toString().trim()));
    }
 
+   public void addAll(ArrayNode array)
+   {
+      objects.addAll(array.asList());
+   }
+   
    public void add(Object object)
    {
       objects.add(object);

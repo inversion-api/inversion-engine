@@ -135,7 +135,7 @@ public class RestGetAction extends Action<RestGetAction>
       {
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
          Term term = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName(), entityKeys.toArray());
-         req.getUrl().withParam(term.toString(), null);
+         req.getUrl().withParams(term.toString(), null);
       }
 
       Results<ObjectNode> results = select(req, req.getCollection(), req.getUrl().getParams());

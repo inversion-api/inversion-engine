@@ -14,8 +14,8 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoServiceFactory
 {
-   public static final boolean RELOAD_DYNAMO = true;
-   protected static Map<String, Service> services = new HashMap();
+   public static final boolean           RELOAD_DYNAMO = true;
+   protected static Map<String, Service> services      = new HashMap();
 
    public static synchronized Service service() throws Exception
    {
@@ -81,7 +81,7 @@ public class DynamoServiceFactory
             res = service.get(next);
             System.out.println(res);
             res.statusOk();
-            next = res.findString("meta.next");
+            next = res.next();
 
             for (Object obj : res.getJson().getArray("data"))
             {
@@ -91,6 +91,7 @@ public class DynamoServiceFactory
                res.statusOk();
                System.out.println(res);
                Utils.assertEq(1, res.data().length());
+
                res = service.delete(href);
                res.statusEq(204);
                res = service.get(href);
@@ -120,6 +121,22 @@ public class DynamoServiceFactory
 
             js.remove("href");
             js.put("type", "ORDER");
+
+            for (String key : js.keySet())
+            {
+               String value = js.getString(key);
+               if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
+               {
+                  value = value.substring(value.lastIndexOf("/") + 1, value.length());
+                  js.remove(key);
+
+                  if (!key.toLowerCase().endsWith("id"))
+                     key = key + "Id";
+
+                  js.put(key, value);
+               }
+            }
+
             res = service.post("northwind/dynamodb/orders", js);
             Utils.assertEq(201, res.getStatusCode());
 
