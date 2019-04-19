@@ -74,9 +74,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       if (Chain.peek().get("foundRows") == null)
       {
-         if (db.isType("mysql"))
+         if (rows.size() == 0)
+         {
+            foundRows = 0;
+         }
+         else if (db.isType("mysql"))
          {
             sql = "SELECT FOUND_ROWS()";
+            foundRows = SqlUtils.selectInt(conn, sql);
          }
          else
          {
@@ -89,8 +94,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
             if (sql.indexOf("ORDER BY ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
+
+            foundRows = SqlUtils.selectInt(conn, sql, getColValues());
          }
-         foundRows = SqlUtils.selectInt(conn, sql, getColValues());
+
       }
 
       return new Results(this, foundRows, rows);
@@ -101,7 +108,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       super.withDb(db);
       if (db.isType("mysql"))
-         withStringQuote('`');
+         withColumnQuote('`');
 
       return this;
    }

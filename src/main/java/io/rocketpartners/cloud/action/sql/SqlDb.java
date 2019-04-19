@@ -128,7 +128,7 @@ public class SqlDb extends Db<SqlDb>
       if (type != null)
          return type;
 
-      String driver = getDriver(); 
+      String driver = getDriver();
       if (driver != null)
       {
          if (driver.indexOf("mysql") >= 0)
@@ -720,37 +720,46 @@ public class SqlDb extends Db<SqlDb>
          {
             for (Index fkIdx : t.getIndexes())
             {
-               if (!fkIdx.getType().equals("FOREIGN_KEY"))
-                  continue;
-
-               Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
-               Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
-
-               //ONE_TO_MANY
+               try
                {
-                  Relationship r = new Relationship();
-                  //TODO:this name may not be specific enough or certain types
-                  //of relationships. For example where an entity is related
-                  //to another entity twice
-                  r.withType(Relationship.REL_MANY_TO_ONE);
-                  r.withFkIndex1(fkIdx);
-                  r.withEntity(pkEntity);
-                  r.withRelated(fkEntity);
-                  r.withName(makeRelationshipName(r));
-                  relationshipStrs.add(r.toString());
+                  if (!fkIdx.getType().equals("FOREIGN_KEY"))
+                     continue;
+
+                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
+                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
+
+                  //ONE_TO_MANY
+                  {
+                     Relationship r = new Relationship();
+                     //TODO:this name may not be specific enough or certain types
+                     //of relationships. For example where an entity is related
+                     //to another entity twice
+                     r.withType(Relationship.REL_MANY_TO_ONE);
+                     r.withFkIndex1(fkIdx);
+                     r.withEntity(pkEntity);
+                     r.withRelated(fkEntity);
+                     r.withName(makeRelationshipName(r));
+                     relationshipStrs.add(r.toString());
+                  }
+
+                  //MANY_TO_ONE
+                  {
+                     Relationship r = new Relationship();
+                     r.withType(Relationship.REL_ONE_TO_MANY);
+                     r.withFkIndex1(fkIdx);
+                     r.withEntity(fkEntity);
+                     r.withRelated(pkEntity);
+                     r.withName(makeRelationshipName(r));
+                     relationshipStrs.add(r.toString());
+                  }
                }
-
-               //MANY_TO_ONE
+               catch (Exception ex)
                {
-                  Relationship r = new Relationship();
-                  r.withType(Relationship.REL_ONE_TO_MANY);
-                  r.withFkIndex1(fkIdx);
-                  r.withEntity(fkEntity);
-                  r.withRelated(pkEntity);
-                  r.withName(makeRelationshipName(r));
-                  relationshipStrs.add(r.toString());
+                  System.out.println("Error inspecting index: " + fkIdx);
+                  ex.printStackTrace();
                }
             }
+
          }
       }
       //      Collections.sort(relationshipStrs);

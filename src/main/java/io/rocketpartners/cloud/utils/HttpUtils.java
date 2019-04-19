@@ -122,6 +122,12 @@ public class HttpUtils
                String m = request.getMethod();
                String url = request.getUrl().toString();
                ArrayListValuedHashMap<String, String> headers = request.getHeaders();
+               
+               if (headers == null)
+               {
+                  headers = new ArrayListValuedHashMap();
+               }
+               
                boolean retryable = true;
 
                Response response = new Response(url);
@@ -152,11 +158,6 @@ public class HttpUtils
 
                      if (this.getRetryFile() != null && this.getRetryFile().length() > 0)
                      {
-                        if (headers == null)
-                        {
-                           headers = new ArrayListValuedHashMap();
-                        }
-
                         long range = this.getRetryFile().length();
                         headers.remove("Range");
                         headers.put("Range", "bytes=" + range + "-");

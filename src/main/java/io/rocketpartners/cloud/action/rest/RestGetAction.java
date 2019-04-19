@@ -855,7 +855,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
+      //System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
 
       return exclude;
    }
@@ -915,7 +915,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
-      System.out.println("find(" + params + ", " + path + ", " + matchStart + ") -> " + path);
+      //System.out.println("find(" + params + ", " + path + ", " + matchStart + ") -> " + path);
 
       return rtval;
 

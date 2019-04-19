@@ -262,6 +262,8 @@ public class Url implements Cloneable
             else if (!key.startsWith("&"))
                url += "&";
 
+            url += key;
+            
             if (value != null)
                url += "=" + value;
          }

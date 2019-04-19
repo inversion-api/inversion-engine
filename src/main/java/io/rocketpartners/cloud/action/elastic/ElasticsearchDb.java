@@ -86,6 +86,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       try
       {
          // 'GET _all' returns all indices/aliases/mappings
+         String url = getUrl();
          Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
 
          if (allResp.isSuccess())
@@ -107,6 +108,11 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          }
          else
          {
+            if (allResp.getError() != null)
+            {
+               allResp.getError().printStackTrace();
+               Utils.getCause(allResp.getError()).printStackTrace();
+            }
             throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
          }
       }
@@ -206,18 +212,22 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          ObjectNode propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
-         Column column = null;
-         if (propValue.containsKey("type"))
+         if (propValue.containsKey("type") && table.getColumn(colName) == null)
          {
-            column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
+            Column column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
             table.withColumn(column);
          }
       }
    }
 
-   public static String getURL()
+   public String getUrl()
    {
-      return url;
+      return Utils.findSysEnvPropStr(getName() + ".url", url);
    }
 
+   public ElasticsearchDb withUrl(String url)
+   {
+      this.url = url;
+      return this;
+   }
 }

@@ -571,7 +571,11 @@ public class Response
    {
       try
       {
-         if (isSuccess() && file != null && file.length() > 0)
+         if (json != null)
+         {
+            return json.toString();
+         }
+         else if (file != null && file.length() > 0)
          {
             String string = Utils.read(getInputStream());
             return string;
