@@ -716,7 +716,9 @@ public class SqlUtils
       String sql = "";
       sql += " DELETE FROM " + quote(conn, table);
       sql += " WHERE " + keyCol + " = ?";
-      int deletes = (Integer) execute(conn, sql, keyVal);
+      Integer deletes = (Integer) execute(conn, sql, keyVal);
+      if (deletes == null)
+         deletes = -1;
       return deletes;
 
    }
