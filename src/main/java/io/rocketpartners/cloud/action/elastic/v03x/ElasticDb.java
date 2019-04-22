@@ -59,6 +59,12 @@ public class ElasticDb extends Db<ElasticDb>
 
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
+   public ElasticDb()
+   {
+      super();
+      withType("elastic");
+   }
+
    @Override
    protected void startup0()
    {
@@ -224,9 +230,5 @@ public class ElasticDb extends Db<ElasticDb>
       return Utils.findSysEnvPropStr(getName() + ".url", url);
    }
 
-   public static String getURL()
-   {
-      return url;
-   }
 
 }
