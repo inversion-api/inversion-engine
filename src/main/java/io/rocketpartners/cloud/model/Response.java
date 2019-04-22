@@ -296,7 +296,10 @@ public class Response
     */
    public ObjectNode getJson()
    {
-      return json;
+      if (file != null && file.length() > 0)
+         return Utils.parseJsonObject(getContent());
+      else
+         return json;
    }
 
    /**
@@ -571,14 +574,14 @@ public class Response
    {
       try
       {
-         if (json != null)
-         {
-            return json.toString();
-         }
-         else if (file != null && file.length() > 0)
+         if (file != null && file.length() > 0)
          {
             String string = Utils.read(getInputStream());
             return string;
+         }
+         else if (json != null)
+         {
+            return json.toString();
          }
       }
       catch (Exception ex)

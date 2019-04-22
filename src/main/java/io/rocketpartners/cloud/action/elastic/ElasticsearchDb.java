@@ -21,8 +21,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.rocketpartners.cloud.model.ApiException;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
+import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -124,35 +126,27 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    private void configApi()
    {
-      //      for (Table t : getTables())
-      //      {
-      //         List<Column> cols = t.getColumns();
-      //         Collection collection = new Collection();
-      //
-      //         collection.withName(beautifyCollectionName(t.getName()));
-      //
-      //         Entity entity = new Entity();
-      //         entity.withTable(t);
-      //         entity.withHint(t.getName());
-      //         entity.withCollection(collection);
-      //
-      //         collection.withEntity(entity);
-      //
-      //         for (Column col : cols)
-      //         {
-      //            Attribute attr = new Attribute();
-      //            attr.withEntity(entity);
-      //            attr.withName(col.getName());
-      //            attr.withColumn(col);
-      //            attr.withHint(col.getTable().getName() + "." + col.getName());
-      //            attr.withType(col.getType());
-      //
-      //            entity.withAttribute(attr);
-      //         }
-      //
-      //         api.withCollection(collection);
-      //         collection.withApi(api);
-      //      }
+      for (Table t : getTables())
+      {
+         List<Column> cols = t.getColumns();
+         Collection collection = new Collection();
+
+         collection.withName(super.beautifyCollectionName(t.getName()));
+         Entity entity = collection.withEntity(t);
+         //
+         //         for (Column col : cols)
+         //         {
+         //            Attribute attr = new Attribute();
+         //            attr.withEntity(entity);
+         //            attr.withName(col.getName());
+         //            attr.withColumn(col);
+         //            attr.withHint(col.getTable().getName() + "." + col.getName());
+         //            attr.withType(col.getType());
+         //            entity.withAttribute(attr);
+         //         }
+
+         api.withCollection(collection);
+      }
    }
 
    /**
