@@ -74,7 +74,7 @@ public class DynamoDb extends Db<DynamoDb>
     */
    protected String       blueprintRow;
 
-   protected int          batchMax     = 25;
+   protected int          batchMax     = 20;
 
    private AmazonDynamoDB dynamoClient = null;
 
@@ -113,7 +113,6 @@ public class DynamoDb extends Db<DynamoDb>
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
       AmazonDynamoDB dynamoClient = getDynamoClient();
       List keys = new ArrayList();
-      //      List batch = new ArrayList();
       List<WriteRequest> writeRequests = new LinkedList<WriteRequest>();
       BatchWriteItemRequest batch = new BatchWriteItemRequest();
       //            .withReturnConsumedCapacity(returnConsumedCapacity);
@@ -130,7 +129,6 @@ public class DynamoDb extends Db<DynamoDb>
             batch.addRequestItemsEntry(table.getName(), writeRequests);
             dynamoClient.batchWriteItem(batch);
             batch.clearRequestItemsEntries();
-            //            batch = new BatchWriteItemRequest();
             writeRequests.clear();
          }
          //add to the current row to batch 
