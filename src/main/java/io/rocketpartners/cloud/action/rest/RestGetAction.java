@@ -303,7 +303,8 @@ public class RestGetAction extends Action<RestGetAction>
                   String link = null;
                   if (rel.isOneToMany())
                   {
-                     Object fkval = node.remove(rel.getFk1Col1().getName());
+                     //Object fkval = node.remove(rel.getFk1Col1().getName());
+                     Object fkval = node.get(rel.getFk1Col1().getName());
                      if (fkval != null)
                      {
                         link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
