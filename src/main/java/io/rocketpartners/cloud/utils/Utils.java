@@ -2083,9 +2083,17 @@ public class Utils
          return overrideValue;
 
       String value = System.getProperty(name);
+      
+      if (Utils.empty(value))
+         // try replacing dot for underscores, since Lambda doesn't support dots in env vars
+         value = System.getProperty(name.replace(".", "_"));
 
       if (Utils.empty(value))
          value = System.getenv(name);
+      
+      if (Utils.empty(value))
+         // try replacing dot for underscores, since Lambda doesn't support dots in env vars
+         value = System.getenv(name.replace(".", "_"));
 
       if (value == null)
       {
