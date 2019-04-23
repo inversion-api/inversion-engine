@@ -180,27 +180,31 @@ public class ElasticDb extends Db<ElasticDb>
    {
 
       String aliasName = null;
-      Map<String, ObjectNode> jsMappingsDocProps = jsIndex.findNode("mappings._doc.properties").asMap();
-      Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
-      for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
+      ObjectNode jsMappingsDocPropsNode = jsIndex.findNode("mappings._doc.properties");
+      if (jsMappingsDocPropsNode != null)
       {
-         aliasName = propEntry.getKey();
-
-         Table table = null;
-
-         // use the previously created table if it exists.
-         if (tableMap.containsKey(aliasName))
-            table = tableMap.get(aliasName);
-         else
+         Map<String, ObjectNode> jsMappingsDocProps = jsMappingsDocPropsNode.asMap();
+         Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
+         for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
          {
-            table = new Table(this, aliasName);
-            tableMap.put(aliasName, table);
+            aliasName = propEntry.getKey();
+
+            Table table = null;
+
+            // use the previously created table if it exists.
+            if (tableMap.containsKey(aliasName))
+               table = tableMap.get(aliasName);
+            else
+            {
+               table = new Table(this, aliasName);
+               tableMap.put(aliasName, table);
+            }
+
+            withTable(table);
+
+            // use the mapping to add columns to the table.
+            addColumns(table, false, jsMappingsDocProps, "");
          }
-
-         withTable(table);
-
-         // use the mapping to add columns to the table.
-         addColumns(table, false, jsMappingsDocProps, "");
       }
    }
 
@@ -229,6 +233,5 @@ public class ElasticDb extends Db<ElasticDb>
    {
       return Utils.findSysEnvPropStr(getName() + ".url", url);
    }
-
 
 }
