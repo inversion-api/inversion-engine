@@ -364,7 +364,10 @@ public class Service extends HttpServlet
                //http.setContentType("application/json; charset=utf-8");
                //http.setCharacterEncoding("UTF-8");
                http.setContentType("text/csv");
-
+               out.write(0x00EF);
+               out.write(0x00BB);
+               out.write(0x00BF);
+               
                out.write(bytes);
                res.debug(bytes);
             }
