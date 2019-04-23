@@ -385,6 +385,11 @@ public class Response
       return this;
    }
 
+   public int getFoundRows()
+   {
+      return findInt("meta.foundRows");
+   }
+
    public Response withPageSize(int pageSize)
    {
       withMeta("pageSize", pageSize);

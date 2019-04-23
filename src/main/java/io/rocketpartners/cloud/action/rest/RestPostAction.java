@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ch.qos.logback.classic.net.SyslogAppender;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -52,6 +53,9 @@ public class RestPostAction extends Action<RestPostAction>
       Map<String, Object> mapped = new HashMap();
       Set copied = new HashSet();
 
+      if(collection == null)
+         System.out.println("can't post to a null collection");
+      
       for (Attribute attr : collection.getEntity().getAttributes())
       {
          String attrName = attr.getName();

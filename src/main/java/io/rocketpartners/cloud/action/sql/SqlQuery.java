@@ -85,7 +85,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
          else
          {
-            sql = "SELECT count(*) " + sql.substring(sql.indexOf("FROM "), sql.length());
+            sql = "SELECT * " + sql.substring(sql.indexOf("FROM "), sql.length());
+
             if (sql.indexOf("LIMIT ") > 0)
                sql = sql.substring(0, sql.indexOf("LIMIT "));
 
@@ -94,6 +95,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
             if (sql.indexOf("ORDER BY ") > 0)
                sql = sql.substring(0, sql.indexOf("ORDER BY "));
+
+            sql = "SELECT count(1) FROM ( " + sql + " ) as q";
 
             foundRows = SqlUtils.selectInt(conn, sql, getColValues());
          }
@@ -196,11 +199,16 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
       }
 
-      //      if (isCalcRowsFound() && stmt.pagenum > 0 && stmt.parts.select.toLowerCase().trim().startsWith("select"))
-      //      {
-      //         int idx = stmt.parts.select.toLowerCase().indexOf("select") + 6;
-      //         stmt.parts.select = stmt.parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + stmt.parts.select.substring(idx, stmt.parts.select.length());
-      //      }
+      if (Chain.peek().get("foundRows") == null && db.isType("mysql") && parts.select.toLowerCase().trim().startsWith("select"))
+      {
+         int idx = parts.select.toLowerCase().indexOf("select") + 6;
+         parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
+      }
+
+      //            if (isCalcRowsFound() && stmt.pagenum > 0 && stmt.parts.select.toLowerCase().trim().startsWith("select"))
+      //            {
+      //               
+      //            }
 
       terms = where().filters();
       for (int i = 0; i < terms.size(); i++)

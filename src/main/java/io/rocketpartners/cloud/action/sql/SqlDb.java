@@ -300,6 +300,16 @@ public class SqlDb extends Db<SqlDb>
       return key.toString();
    }
 
+   public void delete(Table table, List<String> entityKeys) throws Exception
+   {
+      String key = table.getKeyName();
+      if (key == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "TODO: add support for multi part key deletions.");
+
+      SqlUtils.deleteRows(getConnection(), table.getName(), key, entityKeys);
+
+   }
+
    @Override
    public void delete(Table table, String entityKey) throws Exception
    {

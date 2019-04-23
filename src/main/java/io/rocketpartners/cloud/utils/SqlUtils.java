@@ -723,6 +723,23 @@ public class SqlUtils
 
    }
 
+   public static int deleteRows(Connection conn, String table, String keyCol, Object... keyVals) throws Exception
+   {
+      if (keyVals != null && keyVals.length == 1 && Collection.class.isAssignableFrom(keyVals[0].getClass()))
+      {
+         keyVals = ((Collection) keyVals[0]).toArray();
+      }
+
+      String sql = "";
+      sql += " DELETE FROM " + quote(conn, table);
+      sql += " WHERE " + keyCol + " in (" + getQuestionMarkStr(keyVals.length) + ")";
+      Integer deletes = (Integer) execute(conn, sql, keyVals);
+      if (deletes == null)
+         deletes = -1;
+      return deletes;
+
+   }
+
    public static void delete(Connection conn, Object o) throws Exception
    {
       delete(conn, o.getClass().getSimpleName(), o);

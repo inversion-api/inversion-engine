@@ -158,7 +158,6 @@ public class ElasticDbGetAction extends Action
       res.debug(url, json, headers);
 
       Response r = HttpUtils.rest("POST", url, json, headers, -1).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
-      r.dump();
       if (r.isSuccess())
       {
 

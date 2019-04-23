@@ -96,14 +96,18 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             Table table = req.getCollection().getEntity().getTable();
 
             ArrayNode deleteArr = getRes.data();
+            List<String> entityKeys = new ArrayList();
+
             for (int j = 0; j < deleteArr.length(); j++)
             {
                ObjectNode deleteObj = deleteArr.getObject(j);
                Url u = new Url(deleteObj.getString("href"));
                List<String> path = Utils.explode("/", u.getPath());
                String key = path.get(path.size() - 1);
-               req.getCollection().getDb().delete(table, key);
+
+               entityKeys.add(key);
             }
+            req.getCollection().getDb().delete(table, entityKeys);
          }
       }
    }
