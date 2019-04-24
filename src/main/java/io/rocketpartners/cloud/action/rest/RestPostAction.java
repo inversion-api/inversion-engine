@@ -47,6 +47,122 @@ public class RestPostAction extends Action<RestPostAction>
    protected boolean strictRest     = true;
    protected boolean expandResponse = true;
 
+   @Override
+   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      if (strictRest)
+      {
+         if (req.isPost() && req.getEntityKey() != null)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to POST to a specific entity url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
+         if (req.isPut() && req.getEntityKey() == null)
+            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
+      }
+
+      Collection collection = req.getCollection();
+      List<Change> changes = new ArrayList();
+      List<String> entityKeys = new ArrayList();
+      ObjectNode obj = req.getJson();
+
+      if (obj == null)
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
+
+      boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
+      Set<String> collapses = chain.mergeEndpointActionParamsConfig("collapses");
+
+      if (collapseAll || collapses.size() > 0)
+      {
+         obj = Utils.parseJsonObject(obj.toString());
+         collapse(obj, collapseAll, collapses, "");
+      }
+
+      try
+      {
+         if (obj instanceof ArrayNode)
+         {
+            if (!Utils.empty(req.getEntityKey()))
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
+            }
+            entityKeys = upsert(req, collection, (ArrayNode) obj);
+         }
+         else
+         {
+            String href = obj.getString("href");
+            if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
+            }
+
+            entityKeys = upsert(req, collection, new ArrayNode(obj));
+         }
+
+         res.withChanges(changes);
+
+         //-- take all of the hrefs and combine into a 
+         //-- single href for the "Location" header
+
+         ArrayNode array = new ArrayNode();
+         res.getJson().put("data", array);
+
+         res.withStatus(SC.SC_201_CREATED);
+         StringBuffer buff = new StringBuffer("");
+         for (int i = 0; i < entityKeys.size(); i++)
+         {
+            String entityKey = entityKeys.get(i);
+
+            String href = Chain.buildLink(collection, entityKey, null);
+
+            boolean added = false;
+            //            if (expandResponse)
+            //            {
+            //               Response resp = service.get(href);
+            //               if (resp != null)
+            //               {
+            //                  ObjectNode js = resp.getJson();
+            //                  if (js != null)
+            //                  {
+            //                     js = js.getNode("data");
+            //                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
+            //                     {
+            //                        array.add(((ArrayNode) js).get(0));
+            //                        added = true;
+            //                     }
+            //                  }
+            //                  else
+            //                  {
+            //                     System.out.println("what?");
+            //                  }
+            //               }
+            //               else
+            //               {
+            //                  System.out.println("what?");
+            //               }
+            //            }
+
+            if (!added)
+            {
+               array.add(new ObjectNode("href", href));
+            }
+
+            String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
+            buff.append(",").append(nextId);
+         }
+
+         if (buff.length() > 0)
+         {
+            String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
+            res.withHeader("Location", location);
+         }
+
+      }
+      finally
+      {
+         // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
+         //SqlUtils.close(conn);
+      }
+
+   }
+
    protected List<String> upsert(Request req, Collection collection, ArrayNode nodes) throws Exception
    {
       Map<String, Object> mapped;
@@ -130,203 +246,6 @@ public class RestPostAction extends Action<RestPostAction>
          maps.add(mapped);
       }
       return collection.getDb().upsert(collection.getTable(), maps);
-   }
-
-   protected String upsert(Request req, Collection collection, ObjectNode node) throws Exception
-   {
-
-      Map<String, Object> mapped = new HashMap();
-      Set copied = new HashSet();
-
-      for (Attribute attr : collection.getEntity().getAttributes())
-      {
-         String attrName = attr.getName();
-
-         if (collection.getEntity().getRelationship(attrName) != null)
-            continue;
-
-         String colName = attr.getColumn().getName();
-         if (node.containsKey(attrName))
-         {
-            copied.add(attrName.toLowerCase());
-            copied.add(colName.toLowerCase());
-
-            Object attrValue = node.get(attrName);
-            Object colValue = collection.getDb().cast(attr, attrValue);
-            mapped.put(colName, colValue);
-         }
-      }
-
-      for (Relationship rel : collection.getEntity().getRelationships())
-      {
-         //TODO recursively upsert children first and collapse nested objects back into just an href
-      }
-
-      for (Relationship rel : collection.getEntity().getRelationships())
-      {
-         String attrName = rel.getName();
-         copied.add(attrName.toLowerCase());
-
-         if (!node.containsKey(attrName))
-            continue;
-
-         if (rel.isOneToMany()) //ONE_TO_MANY - Player.locationId -> Location.id
-         {
-            Object attrValue = node.remove(attrName);
-
-            if (attrValue instanceof String)
-            {
-               String attrStr = (String) attrValue;
-               if (attrStr.indexOf("/") > 0 && !attrStr.endsWith("/"))
-                  attrStr = attrStr.substring(attrStr.lastIndexOf("/") + 1, attrStr.length());
-
-               attrValue = attrStr;
-            }
-            else if (attrValue != null)
-            {
-               throw new ApiException("implementation error");
-            }
-
-            //TODO: work on compound key support here, need test case
-            Column fkCol = rel.getFk1Col1();
-            String fkColName = fkCol.getName();
-            copied.add(fkColName.toLowerCase());
-
-            Object colValue = attrValue == null ? null : collection.getDb().cast(fkCol.getType(), attrValue);
-            mapped.put(fkColName, colValue);
-         }
-         else
-         {
-            //TODO
-         }
-      }
-
-      for (String key : node.keySet())
-      {
-         if (!copied.contains(key.toLowerCase()) && !key.equalsIgnoreCase("href"))
-         {
-            //these fields were posted and may map to table columns but they are not defined as attributes.
-            //this is ok for some dynamic backends like dynamo but will cause a problem for others like sql rdbmss.
-            mapped.put(key, node.get(key));
-         }
-      }
-
-      return collection.getDb().upsert(collection.getTable(), mapped);
-   }
-
-   @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
-   {
-      if (strictRest)
-      {
-         if (req.isPost() && req.getEntityKey() != null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to POST to a specific entity url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
-         if (req.isPut() && req.getEntityKey() == null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false interprent PUT vs POST intention based on presense of 'href' property in passed in JSON");
-      }
-
-      Collection collection = req.getCollection();
-      List<Change> changes = new ArrayList();
-      List<String> entityKeys = new ArrayList();
-      ObjectNode obj = req.getJson();
-
-      if (obj == null)
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
-
-      boolean collapseAll = "true".equalsIgnoreCase(chain.getConfig("collapseAll", this.collapseAll + ""));
-      Set<String> collapses = chain.mergeEndpointActionParamsConfig("collapses");
-
-      if (collapseAll || collapses.size() > 0)
-      {
-         obj = Utils.parseJsonObject(obj.toString());
-         collapse(obj, collapseAll, collapses, "");
-      }
-
-      try
-      {
-         if (obj instanceof ArrayNode)
-         {
-            if (!Utils.empty(req.getEntityKey()))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
-            entityKeys = upsert(req, collection, (ArrayNode) obj);
-         }
-         else
-         {
-            String href = obj.getString("href");
-            if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
-            {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
-            }
-
-            href = upsert(req, collection, obj);
-            entityKeys.add(href);
-         }
-
-         res.withChanges(changes);
-
-         //-- take all of the hrefs and combine into a 
-         //-- single href for the "Location" header
-
-         ArrayNode array = new ArrayNode();
-         res.getJson().put("data", array);
-
-         res.withStatus(SC.SC_201_CREATED);
-         StringBuffer buff = new StringBuffer("");
-         for (int i = 0; i < entityKeys.size(); i++)
-         {
-            String entityKey = entityKeys.get(i);
-
-            String href = Chain.buildLink(collection, entityKey, null);
-
-            boolean added = false;
-            //            if (expandResponse)
-            //            {
-            //               Response resp = service.get(href);
-            //               if (resp != null)
-            //               {
-            //                  ObjectNode js = resp.getJson();
-            //                  if (js != null)
-            //                  {
-            //                     js = js.getNode("data");
-            //                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
-            //                     {
-            //                        array.add(((ArrayNode) js).get(0));
-            //                        added = true;
-            //                     }
-            //                  }
-            //                  else
-            //                  {
-            //                     System.out.println("what?");
-            //                  }
-            //               }
-            //               else
-            //               {
-            //                  System.out.println("what?");
-            //               }
-            //            }
-
-            if (!added)
-            {
-               array.add(new ObjectNode("href", href));
-            }
-
-            String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
-            buff.append(",").append(nextId);
-         }
-
-         if (buff.length() > 0)
-         {
-            String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
-            res.withHeader("Location", location);
-         }
-
-      }
-      finally
-      {
-         // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
-         //SqlUtils.close(conn);
-      }
-
    }
 
    /*
