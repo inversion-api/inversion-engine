@@ -50,10 +50,10 @@ public class SqlServiceFactory
       Utils.delete(new File("./.h2"));
 
       Connection full1 = DriverManager.getConnection("jdbc:h2:./.h2/northwind-source" + "-" + Utils.time());
-      SqlUtils.runDdl(full1, SqlServiceFactory.class.getResourceAsStream("northwind-empty.ddl"));
+      SqlUtils.runDdl(full1, SqlServiceFactory.class.getResourceAsStream("northwind-emptyish.h2.ddl"));
 
       Connection full2 = DriverManager.getConnection("jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time());
-      SqlUtils.runDdl(full2, SqlServiceFactory.class.getResourceAsStream("northwind-source.ddl"));
+      SqlUtils.runDdl(full2, SqlServiceFactory.class.getResourceAsStream("northwind-full.h2.ddl"));
 
       System.out.println("OK");
 
