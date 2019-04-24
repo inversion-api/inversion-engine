@@ -440,6 +440,20 @@ public class Utils
       return str.toString();
    }
 
+   public static Object first(List list)
+   {
+      if (list.size() > 0)
+         return list.get(0);
+      return null;
+   }
+
+   public static Object last(List list)
+   {
+      if (list.size() > 0)
+         return list.get(list.size() - 1);
+      return null;
+   }
+
    /**
     * @param delim
     * @param pieces
@@ -792,7 +806,7 @@ public class Utils
 
       return t;
    }
-   
+
    public static boolean testCompare(String str1, String str2)
    {
       str1 = str1.replaceAll("\\s+", " ").trim();
@@ -845,9 +859,9 @@ public class Utils
                debug = resp.getDebug();
                idx = debug.indexOf("<< response -------------");
                debug = debug.substring(0, idx) + "[E]: " + match + " TEST ERROR CAN'T FIND THIS IN DEBUG LINES\r\n\r\n" + debug.substring(idx, debug.length());
-               
+
                System.out.println(debug);
-               
+
                //System.exit(0);
                error("missing debug match: '" + match + "' in debug line: " + debugLine);
 
@@ -2083,14 +2097,14 @@ public class Utils
          return overrideValue;
 
       String value = System.getProperty(name);
-      
+
       if (Utils.empty(value))
          // try replacing dot for underscores, since Lambda doesn't support dots in env vars
          value = System.getProperty(name.replace(".", "_"));
 
       if (Utils.empty(value))
          value = System.getenv(name);
-      
+
       if (Utils.empty(value))
          // try replacing dot for underscores, since Lambda doesn't support dots in env vars
          value = System.getenv(name.replace(".", "_"));

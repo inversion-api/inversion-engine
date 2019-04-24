@@ -2,18 +2,21 @@ package io.rocketpartners.cloud.action.rest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.model.Url;
+import io.rocketpartners.cloud.rql.Parser;
+import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
@@ -70,46 +73,89 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       {
          toDelete.add(req.getUrl().toString());
       }
-
-      for (String url : toDelete)
+      else
       {
-         //don't do "next" pagination because we are deleting and the offsets would be wrong
-         //the 1000 needs to be replaced with some other configurable 'sanity' guard
-         for (int i = 0; i < 1000; i++)
-         {
-            String next = url;
-            if (next.indexOf("?") > 0)
-               next += "&includes=href";
-            else
-               next += "?includes=href";
-
-            Response getRes = service.get(next);
-            if (getRes.hasStatus(404) || getRes.data().size() == 0)
-            {
-               break;//everything has been deleted
-            }
-            else if (!getRes.isSuccess())
-            {
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error retrieving entity keys to delete: " + getRes.getErrorContent());
-            }
-
-            Table table = req.getCollection().getEntity().getTable();
-
-            ArrayNode deleteArr = getRes.data();
-            List<String> entityKeys = new ArrayList();
-
-            for (int j = 0; j < deleteArr.length(); j++)
-            {
-               ObjectNode deleteObj = deleteArr.getObject(j);
-               Url u = new Url(deleteObj.getString("href"));
-               List<String> path = Utils.explode("/", u.getPath());
-               String key = path.get(path.size() - 1);
-
-               entityKeys.add(key);
-            }
-            req.getCollection().getDb().delete(table, entityKeys);
-         }
+         toDelete.add(req.getUrl().toString());
       }
+
+      String collectionUrl = req.getApiUrl() + Utils.implode("/", req.getEndpointPath(), req.getCollectionKey());
+      delete(req, req.getCollection(), collectionUrl, toDelete);
    }
 
+   protected void delete(Request req, Collection collection, String collectionUrl, List<String> urls) throws Exception
+   {
+      //------------------------------------------------
+      // Normalize all of the params and convert attribute
+      // names to column names.
+
+      //      List<Term> terms = new ArrayList();
+      //      terms.add(Term.term(null, "eq", "includes", "href"));
+
+      Term or = Term.term(null, "or");
+      Term in = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName());
+
+      Parser parser = new Parser();
+      for (String u : urls)
+      {
+         Url url = new Url(u);
+         Map<String, String> params = url.getParams();
+         if (params.size() == 0)
+         {
+            List<String> path = Utils.explode("/", url.getPath());
+            String key = path.get(path.size() - 1);
+            in.withTerm(Term.term(in, key));
+         }
+         else
+         {
+            for (String paramName : params.keySet())
+            {
+               String termStr = null;
+               String paramValue = params.get(paramName);
+
+               if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
+               {
+                  termStr = paramName;
+               }
+               else
+               {
+                  termStr = "eq(" + paramName + "," + paramValue + ")";
+               }
+               Term term = parser.parse(termStr);
+               or.withTerm(term);
+            }
+         }
+      }
+
+      Term query = in;
+      if (or.size() > 0)
+      {
+         if (in.size() > 1)
+            or.withTerm(in);
+         
+         if(or.size() == 1)
+            query = or.getTerm(0);
+         else
+            query = or;
+            
+      }
+
+      String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
+
+      for (int i = 0; i < 1000; i++)
+      {
+         
+         //regardless of the query string passed in, this should resolve the keys 
+         //that need to be deleted and make sure the uses has read access to the key
+         //
+         //TODO: need to do more tests here
+         Response res = req.getService().get(url).statusOk();
+
+         if (res.data().size() == 0)
+            break;
+
+         List<String> entityKeys = new ArrayList();
+         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((ObjectNode) o).getString("href")))));
+         req.getCollection().getDb().delete(collection.getTable(), entityKeys);
+      }
+   }
 }

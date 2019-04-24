@@ -149,6 +149,18 @@ public class Term
       return null;
    }
 
+   public Term replaceTerm(Term oldTerm, Term newTerm)
+   {
+      terms.remove(newTerm);//make sure not in there twice
+      
+      int idx = terms.indexOf(oldTerm);
+      if (idx < 0)
+         terms.add(newTerm);
+      else
+         terms.set(idx, newTerm);
+      return this;
+   }
+
    public Term withTerms(Term... terms)
    {
       for (Term term : terms)
