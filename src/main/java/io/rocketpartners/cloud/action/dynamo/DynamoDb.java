@@ -110,12 +110,10 @@ public class DynamoDb extends Db<DynamoDb>
    @Override
    public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      com.amazonaws.services.dynamodbv2.document.Table dynamoTable = getDynamoTable(table.getName());
       AmazonDynamoDB dynamoClient = getDynamoClient();
       List keys = new ArrayList();
       List<WriteRequest> writeRequests = new LinkedList<WriteRequest>();
       BatchWriteItemRequest batch = new BatchWriteItemRequest();
-      //            .withReturnConsumedCapacity(returnConsumedCapacity);
       for (int i = 0; i < rows.size(); i++)
       {
          Map<String, Object> row = rows.get(i);
@@ -150,7 +148,6 @@ public class DynamoDb extends Db<DynamoDb>
    @Override
    public void delete(Table table, String entityKey) throws Exception
    {
-      //TODO put me back in!!!!
       Row key = table.decodeKey(entityKey);
 
       com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
