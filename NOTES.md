@@ -1,4 +1,6 @@
 
+* TODO: if there is no sort, the default for sql should be to sort by pk
+
 * TODO: RestPutHandler nest document put back 
 
 * TODO: does GRPC fit into Inversion?

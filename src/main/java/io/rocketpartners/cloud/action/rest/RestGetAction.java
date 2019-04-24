@@ -21,6 +21,7 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
@@ -224,6 +225,36 @@ public class RestGetAction extends Action<RestGetAction>
             }
             Term term = parser.parse(termStr);
             terms.add(term);
+
+            if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
+            {
+               //TODO: need test cases 
+               for (Term child : term.getTerms())
+               {
+                  if (child.hasToken("href"))
+                  {
+                     term.removeTerm(child);
+
+                     Index pk = collection.getTable().getPrimaryIndex();
+                     for (Column c : pk.getColumns())
+                     {
+                        boolean includesPkCol = false;
+                        for (Term col : term.getTerms())
+                        {
+                           if (col.hasToken(c.getName()))
+                           {
+                              includesPkCol = true;
+                              break;
+                           }
+                        }
+                        if (!includesPkCol)
+                           term.withTerm(Term.term(term, c.getName()));
+                     }
+                     break;
+                  }
+               }
+            }
+
             mapToColumns(collection, term);
          }
       }
@@ -272,7 +303,8 @@ public class RestGetAction extends Action<RestGetAction>
                   String link = null;
                   if (rel.isOneToMany())
                   {
-                     Object fkval = node.remove(rel.getFk1Col1().getName());
+                     //Object fkval = node.remove(rel.getFk1Col1().getName());
+                     Object fkval = node.get(rel.getFk1Col1().getName());
                      if (fkval != null)
                      {
                         link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);

@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Relationship;
-import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
@@ -256,24 +254,27 @@ public class SqlDb extends Db<SqlDb>
    @Override
    public String upsert(Table table, Map<String, Object> row) throws Exception
    {
-      if (isType("mysql"))
-      {
-         return mysqlUpsert(table, row);
-      }
-      else if (isType("h2"))
+
+      if (isType("h2"))
       {
          return h2Upsert(table, row);
       }
+      //    else if (isType("mysql"))
+      //    {
+      //       return mysqlUpsert(table, row);
+      //    }
+      //    
       else
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
       }
    }
-
-   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
-   {
-      return null;
-   }
+   //
+   //   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
+   //   {
+   //      Utils.error("IMPLEMENT ME!!!!");
+   //      return null;
+   //   }
 
    public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
@@ -300,14 +301,49 @@ public class SqlDb extends Db<SqlDb>
       return key.toString();
    }
 
+   public void delete(Table table, List<String> entityKeys) throws Exception
+   {
+      Index pk = table.getPrimaryIndex();
+
+      if (pk.getColumns().size() == 1)
+      {
+         String sql = "";
+         sql += " DELETE FROM " + quoteCol(table.getName());
+         sql += " WHERE " + quoteCol(pk.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(entityKeys.size()) + ")";
+         SqlUtils.execute(getConnection(), sql, entityKeys.toArray());
+      }
+      else
+      {
+         String sql = "";
+         sql += " DELETE FROM " + quoteCol(table.getName());
+         sql += " WHERE ";
+         
+         List values = new ArrayList();
+         for(String entityKey : entityKeys)
+         {
+            if(values.size() > 0)
+               sql += " OR ";
+            sql += "(";
+            Row row = table.decodeKey(entityKey);
+            int i = 0;
+            for(String key : row.keySet())
+            {
+               i++;
+               if(i > 1)
+                  sql += "AND ";
+               sql += quoteCol(key) + " = ? ";
+               values.add(row.get(key));
+            }
+            sql += ")";
+         }
+         SqlUtils.execute(getConnection(), sql, values.toArray());
+      }
+   }
+
    @Override
    public void delete(Table table, String entityKey) throws Exception
    {
-      String key = table.getKeyName();
-      if (key == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "TODO: add support for multi part key deletions.");
-
-      SqlUtils.deleteRow(getConnection(), table.getName(), key, entityKey);
+      delete(table, Arrays.asList(entityKey));
    }
 
    public Connection getConnection() throws ApiException

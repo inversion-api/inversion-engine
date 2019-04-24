@@ -257,10 +257,10 @@ public class HttpUtils
                      debug("## Creating temp file .. " + tempFile);
                   }
 
-                  response.withFile(tempFile);
-
-                  // stream to the temp file with append set to true (this is crucial for resumable downloads)
+               // stream to the temp file with append set to true (this is crucial for resumable downloads)
                   Utils.pipe(is, new FileOutputStream(tempFile, true));
+                  
+                  response.withFile(tempFile);
 
                   if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize())
                   {

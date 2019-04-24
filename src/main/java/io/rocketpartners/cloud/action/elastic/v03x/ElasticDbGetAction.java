@@ -73,7 +73,8 @@ public class ElasticDbGetAction extends Action
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
 
       // The path should include the Elastic index/type otherwise were gonna have a bad time.
-      String[] paths = req.getPath().split("/");
+      String path = req.getPath();
+      String[] paths = path != null ? path.split("/") : new String[]{};
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
          handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, table);
@@ -100,7 +101,8 @@ public class ElasticDbGetAction extends Action
          req.putParam("source", defaultSource);
       }
 
-      ElasticRql elasticRQL = (ElasticRql) Rql.getRql(db.getType());
+      String dbType = db.getType();
+      ElasticRql elasticRQL = (ElasticRql) Rql.getRql(dbType);
 
       Integer wantedPage = null;
       if (req.getParam("wantedpage") != null)
@@ -156,7 +158,6 @@ public class ElasticDbGetAction extends Action
       res.debug(url, json, headers);
 
       Response r = HttpUtils.rest("POST", url, json, headers, -1).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
-
       if (r.isSuccess())
       {
 
@@ -167,7 +168,7 @@ public class ElasticDbGetAction extends Action
          int totalHits = jsObj.findInt("hits.total");
          ArrayNode hits = jsObj.findArray("hits.hits");
 
-         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
+         boolean isAll = "all".equalsIgnoreCase(table.getName());//paths[paths.length - 1].toLowerCase().equals("no-type");
          boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
 
          ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
@@ -339,7 +340,7 @@ public class ElasticDbGetAction extends Action
 
       headers.put("Content-Type", "application/json");
 
-      return ElasticDb.getURL() + indexAndType + "_search";
+      return ((ElasticDb) table.getDb()).getUrl() + indexAndType + "_search";
    }
 
    /**

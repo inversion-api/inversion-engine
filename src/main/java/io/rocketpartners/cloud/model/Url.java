@@ -361,7 +361,7 @@ public class Url implements Cloneable
    public Url addPath(String path)
    {
       this.path = Utils.implode("/", this.path, path);
-      return null;
+      return this;
    }
 
    public String getFile()

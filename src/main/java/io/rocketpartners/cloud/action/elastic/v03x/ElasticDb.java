@@ -14,6 +14,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rocketpartners.cloud.action.elastic.v03x;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.HttpUtils;
+import io.rocketpartners.cloud.utils.HttpUtils.FutureResponse;
 import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -56,6 +58,12 @@ public class ElasticDb extends Db<ElasticDb>
    protected static int         maxRequestDuration       = 10;                  // duration in seconds.
 
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
+
+   public ElasticDb()
+   {
+      super();
+      withType("elastic");
+   }
 
    @Override
    protected void startup0()
@@ -102,7 +110,8 @@ public class ElasticDb extends Db<ElasticDb>
 
       // 'GET _all' returns all indices/aliases/mappings
 
-      Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
+      FutureResponse future = HttpUtils.get(getUrl() + "/_all");
+      Response allResp = future.get(maxRequestDuration, TimeUnit.SECONDS);
 
       if (allResp.isSuccess())
       {
@@ -115,10 +124,12 @@ public class ElasticDb extends Db<ElasticDb>
          // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
          Map<String, Table> tableMap = new HashMap<String, Table>();
 
-         for (Map.Entry<String, ObjectNode> entry : jsContentMap.entrySet())
+         for (String key : jsContentMap.keySet())
          {
             // we now have the index and with it, it's aliases and mappings
-            buildAliasTables(entry.getKey(), entry.getValue(), tableMap);
+            Object t = jsContentMap.get(key);
+
+            buildAliasTables(key, (ObjectNode) t, tableMap);
          }
       }
       else
@@ -169,27 +180,31 @@ public class ElasticDb extends Db<ElasticDb>
    {
 
       String aliasName = null;
-      Map<String, ObjectNode> jsMappingsDocProps = jsIndex.findNode("mappings._doc.properties").asMap();
-      Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
-      for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
+      ObjectNode jsMappingsDocPropsNode = jsIndex.findNode("mappings._doc.properties");
+      if (jsMappingsDocPropsNode != null)
       {
-         aliasName = propEntry.getKey();
-
-         Table table = null;
-
-         // use the previously created table if it exists.
-         if (tableMap.containsKey(aliasName))
-            table = tableMap.get(aliasName);
-         else
+         Map<String, ObjectNode> jsMappingsDocProps = jsMappingsDocPropsNode.asMap();
+         Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
+         for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
          {
-            table = new Table(this, aliasName);
-            tableMap.put(aliasName, table);
+            aliasName = propEntry.getKey();
+
+            Table table = null;
+
+            // use the previously created table if it exists.
+            if (tableMap.containsKey(aliasName))
+               table = tableMap.get(aliasName);
+            else
+            {
+               table = new Table(this, aliasName);
+               tableMap.put(aliasName, table);
+            }
+
+            withTable(table);
+
+            // use the mapping to add columns to the table.
+            addColumns(table, false, jsMappingsDocProps, "");
          }
-
-         withTable(table);
-
-         // use the mapping to add columns to the table.
-         addColumns(table, false, jsMappingsDocProps, "");
       }
    }
 
@@ -207,16 +222,16 @@ public class ElasticDb extends Db<ElasticDb>
          ObjectNode propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
-         if (propValue.hasProperty("type"))
+         if (propValue.hasProperty("type") && table.getColumn(colName) == null)
          {
             table.withColumn(colName, colName);
          }
       }
    }
 
-   public static String getURL()
+   public String getUrl()
    {
-      return url;
+      return Utils.findSysEnvPropStr(getName() + ".url", url);
    }
 
 }

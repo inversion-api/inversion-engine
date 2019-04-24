@@ -3921,10 +3921,10 @@ CREATE TABLE `EmployeeOrderDetails` (
 );
 
 ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails1`
-	FOREIGN KEY (`EmployeeID`) REFERENCES `Employees` (`EmployeeID`);
+	FOREIGN KEY (`EmployeeID`) REFERENCES `Employees` (`EmployeeID`) ON DELETE CASCADE;
 
 ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails2`
-	FOREIGN KEY (`OrderID`, `ProductID`) REFERENCES `OrderDetails` (`OrderID`, `ProductID`);
+	FOREIGN KEY (`OrderID`, `ProductID`) REFERENCES `OrderDetails` (`OrderID`, `ProductID`)  ON DELETE CASCADE;
     
 INSERT INTO `EmployeeOrderDetails`  
 SELECT o.EmployeeID, od.OrderId, od.ProductId FROM `Orders` o JOIN `OrderDetails` od ON o.OrderId = od.OrderId; 

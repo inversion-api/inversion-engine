@@ -716,7 +716,26 @@ public class SqlUtils
       String sql = "";
       sql += " DELETE FROM " + quote(conn, table);
       sql += " WHERE " + keyCol + " = ?";
-      int deletes = (Integer) execute(conn, sql, keyVal);
+      Integer deletes = (Integer) execute(conn, sql, keyVal);
+      if (deletes == null)
+         deletes = -1;
+      return deletes;
+
+   }
+
+   public static int deleteRows(Connection conn, String table, String keyCol, Object... keyVals) throws Exception
+   {
+      if (keyVals != null && keyVals.length == 1 && Collection.class.isAssignableFrom(keyVals[0].getClass()))
+      {
+         keyVals = ((Collection) keyVals[0]).toArray();
+      }
+
+      String sql = "";
+      sql += " DELETE FROM " + quote(conn, table);
+      sql += " WHERE " + keyCol + " in (" + getQuestionMarkStr(keyVals.length) + ")";
+      Integer deletes = (Integer) execute(conn, sql, keyVals);
+      if (deletes == null)
+         deletes = -1;
       return deletes;
 
    }

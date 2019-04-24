@@ -68,7 +68,8 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
 
       // The path should include the Elastic index/type otherwise were gonna have a bad time.
-      String[] paths = req.getPath().split("/");
+      String path = req.getPath();
+      String[] paths = path != null ? path.split("/") : new String[]{};
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
          handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, table);
@@ -319,26 +320,26 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
    private String buildSearchUrlAndHeaders(Table table, String[] paths, List<String> headers)
    {
-//      String indexAndType = null;
-//      // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
-//      if (paths.length < 3)
-//      {
-//         // indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
-//         indexAndType = "/" + table.getName() + "/_doc/";
-//      }
-//      // if the type is of 'no-type', dont' include it 
-//      else if (paths[2].toLowerCase().equals("no-type"))
-//      {
-//         indexAndType = "/" + table.getName() + "/";
-//      }
-//      else
-//         indexAndType = "/" + table.getName() + "/" + paths[2] + "/";
-//
-//      headers.add("Content-Type");
-//      headers.add("application/json");
-//
-//      return ElasticsearchDb.getUrl() + indexAndType + "_search";
-      
+      //      String indexAndType = null;
+      //      // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked
+      //      if (paths.length < 3)
+      //      {
+      //         // indexAndType = "/" + paths[1] + "/" + paths[1] + "/";
+      //         indexAndType = "/" + table.getName() + "/_doc/";
+      //      }
+      //      // if the type is of 'no-type', dont' include it 
+      //      else if (paths[2].toLowerCase().equals("no-type"))
+      //      {
+      //         indexAndType = "/" + table.getName() + "/";
+      //      }
+      //      else
+      //         indexAndType = "/" + table.getName() + "/" + paths[2] + "/";
+      //
+      //      headers.add("Content-Type");
+      //      headers.add("application/json");
+      //
+      //      return ElasticsearchDb.getUrl() + indexAndType + "_search";
+
       return null;
    }
 

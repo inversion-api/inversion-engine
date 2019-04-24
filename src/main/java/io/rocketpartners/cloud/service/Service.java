@@ -125,21 +125,30 @@ public class Service
             }
          }
 
-         for (Api api : apis)
-         {
-            System.out.println(api.getApiCode() + "--------------");
-
-            for (Endpoint e : api.getEndpoints())
-            {
-               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
-            }
-
-            for (Collection c : api.getCollections())
-            {
-               System.out.println("  - COLLECTION: " + c.getName());
-            }
-
-         }
+         //         for (Api api : apis)
+         //         {
+         //            System.out.println(api.getApiCode() + "--------------");
+         //
+         //            for (Endpoint e : api.getEndpoints())
+         //            {
+         //               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
+         //            }
+         //
+         //            List<String> strs = new ArrayList();
+         //            for (Collection c : api.getCollections())
+         //            {
+         //               if (c.getDb().getCollectionPath() != null)
+         //                  strs.add(c.getDb().getCollectionPath() + c.getName());
+         //               else
+         //                  strs.add(c.getName());
+         //            }
+         //            Collections.sort(strs);
+         //            for (String coll : strs)
+         //            {
+         //               System.out.println("  - COLLECTION: " + coll);
+         //            }
+         //
+         //         }
 
          started = true;
          return this;

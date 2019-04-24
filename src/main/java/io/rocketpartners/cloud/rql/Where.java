@@ -33,21 +33,39 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
    protected boolean addTerm(String token, Term term)
    {
-      if (term.hasToken("_key"))
+      if (functions.contains(token))
       {
-         if (term.getParent() != null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Function key() can not be nested within other functions.");
+         term = transform(term);
+      }
+      return super.addTerm(token, term);
+   }
 
-         String indexName = term.getToken(0);
+   protected Term transform(Term parent)
+   {
+      Term transformed = parent;
+
+      for (Term child : parent.getTerms())
+      {
+         if (!child.isLeaf())
+         {
+            if (!functions.contains(child.getToken()))
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid query: " + parent);
+            transform(child);
+         }
+      }
+
+      if (parent.hasToken("_key"))
+      {
+         String indexName = parent.getToken(0);
 
          Index index = getParent().table().getIndex(indexName);
          if (index == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the key() function unless your table has a unique index");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
 
          if (index.getColumns().size() == 1)
          {
             Term t = Term.term(null, "in", index.getColumns().get(0).getName());
-            List<Term> children = term.getTerms();
+            List<Term> children = parent.getTerms();
             for (int i = 1; i < children.size(); i++)
             {
                Term child = children.get(i);
@@ -56,7 +74,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             if (t.getNumTerms() == 2)
                t.withToken("eq");
 
-            term = t;
+            transformed = t;
          }
          else
          {
@@ -65,8 +83,8 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
             //or( and(eq(col1,val),eq(col2,val)), and(eq(col1,val),eq(col2,val)), and(eq(col1val), eq(col2,val)) 
             Term or = Term.term(null, "or");
-            List<Term> children = term.getTerms();
-            term = or;
+            List<Term> children = parent.getTerms();
+            transformed = or;
 
             for (int i = 1; i < children.size(); i++)
             {
@@ -83,20 +101,26 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             }
             if (or.getNumTerms() == 1)
             {
+               transformed = or.getTerm(0);
+
                //For a single key, unwrap or(and(eq(a,b), eq(c,d))) into individual parts equal to ?eq(a,b)&eq(b,c)
-               Term and = or.getTerm(0);
-               for (Term andCond : and.getTerms())
-               {
-                  andCond.withParent(null);
-                  if(!super.addTerm(andCond.getToken(), andCond))
-                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm Error");
-               }
-               return true;
+               //Term and = or.getTerm(0);
+               //               for (Term andCond : and.getTerms())
+               //               {
+               //                  parent = andCond;
+               //                  //andCond.withParent(null);
+               //                  //                  if (!super.addTerm(andCond.getToken(), andCond))
+               //                  //                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm Error");
+               //               }
+
             }
-            
          }
       }
-      return super.addTerm(token, term);
+
+      if (parent.getParent() != null && transformed != parent)
+         parent.getParent().replaceTerm(parent, transformed);
+      
+      return transformed;
    }
 
    public List<Term> filters()

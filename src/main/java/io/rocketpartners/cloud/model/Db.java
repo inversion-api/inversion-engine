@@ -17,7 +17,6 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -95,6 +94,14 @@ public abstract class Db<T extends Db>
    //   {
    //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
    //   }
+
+   public void delete(Table table, List<String> entityKeys) throws Exception
+   {
+      for (String entityKey : entityKeys)
+      {
+         delete(table, entityKey);
+      }
+   }
 
    public abstract void delete(Table table, String entityKey) throws Exception;
    //   {
