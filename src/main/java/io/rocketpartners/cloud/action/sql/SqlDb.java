@@ -19,7 +19,6 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -261,7 +262,7 @@ public class SqlDb extends Db<SqlDb>
       }
       else if (isType("mysql"))
       {
-         return mysqlUpsert(table, row);
+         return StringUtils.join(mysqlUpsert(table, row), ',');
       }
       else
       {
@@ -269,14 +270,14 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
+   public List<String> mysqlUpsert(Table table, Map<String, Object> row) throws Exception
    {
       return mysqlUpsert(table, Arrays.asList(row));
    }
 
-   public String mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      return SqlUtils.mysqlUpsert(getMySqlConn(), table.getName(), rows);
+      return SqlUtils.mysqlUpsert(getConnection(), table.getName(), rows);
    }
 
    public String h2Upsert(Table table, Map<String, Object> row) throws Exception
@@ -347,25 +348,6 @@ public class SqlDb extends Db<SqlDb>
    public void delete(Table table, String entityKey) throws Exception
    {
       delete(table, Arrays.asList(entityKey));
-   }
-
-   public static Connection getMySqlConn() throws SQLException
-   {
-
-      Connection connection = null;
-      try
-      {
-         Class.forName("com.mysql.jdbc.Driver");
-         //         TODO set connection to AWS Aurora mySql
-         //         connection = DriverManager.getConnection("jdbc:mysql://inversion.cluster-cqpoc4ovfn6g.us-east-2.rds.amazonaws.com/dbname", "username", "password");
-      }
-      catch (ClassNotFoundException e)
-      {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
-      }
-      return connection;
-
    }
 
    public Connection getConnection() throws ApiException

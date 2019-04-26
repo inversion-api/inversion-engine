@@ -435,15 +435,13 @@ public class SqlUtils
    {
       StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
       sql.append(" ON DUPLICATE KEY UPDATE ");
-      for (Object col : columnNameArray)
-      {
-         sql.append(col).append("=VALUES(").append(col).append("), ");
-      }
-      sql.substring(0, sql.length() - 1);
+      sql.append(getColumnStr(conn, columnNameArray)).append("=VALUES(");
+      sql.append(getColumnStr(conn, columnNameArray)).append(") ");
+
       return sql.toString();
    }
 
-   public static String mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
+   public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
 
@@ -459,7 +457,7 @@ public class SqlUtils
       PreparedStatement stmt = conn.prepareStatement(sql);
       try
       {
-         notifyBefore("mysqlUpsert", sql, rows);
+         notifyBefore("upsert", sql, rows);
 
          for (Map<String, Object> row : rows)
          {
@@ -475,14 +473,14 @@ public class SqlUtils
       catch (Exception e)
       {
          ex = e;
-         notifyError("mysqlUpsert", sql, rows, ex);
+         notifyError("upsert", sql, rows, ex);
       }
       finally
       {
          SqlUtils.close(stmt);
-         notifyAfter("mysqlUpsert", sql, rows, ex, null);
+         notifyAfter("upsert", sql, rows, ex, null);
       }
-      return sql;
+      return keys;
    }
 
    public static Object insertMap(Connection conn, String tableName, Map row) throws Exception
