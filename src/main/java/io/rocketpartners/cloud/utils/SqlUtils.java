@@ -431,6 +431,58 @@ public class SqlUtils
       return sql.toString();
    }
 
+   public static String buildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
+   {
+      StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
+      sql.append(" ON DUPLICATE KEY UPDATE ");
+      sql.append(getColumnStr(conn, columnNameArray)).append("=VALUES(");
+      sql.append(getColumnStr(conn, columnNameArray)).append(") ");
+
+      return sql.toString();
+   }
+
+   public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
+   {
+      LinkedHashSet keySet = new LinkedHashSet();
+
+      for (Map row : rows)
+      {
+         keySet.addAll(row.keySet());
+      }
+
+      List<String> keys = new ArrayList(keySet);
+      String sql = buildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
+
+      Exception ex = null;
+      PreparedStatement stmt = conn.prepareStatement(sql);
+      try
+      {
+         notifyBefore("upsert", sql, rows);
+
+         for (Map<String, Object> row : rows)
+         {
+            for (int i = 0; i < keys.size(); i++)
+            {
+               Object value = row.get(keys.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1, value);
+            }
+            stmt.addBatch();
+         }
+         stmt.executeBatch();
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("upsert", sql, rows, ex);
+      }
+      finally
+      {
+         SqlUtils.close(stmt);
+         notifyAfter("upsert", sql, rows, ex, null);
+      }
+      return keys;
+   }
+
    public static Object insertMap(Connection conn, String tableName, Map row) throws Exception
    {
       List keys = new ArrayList();

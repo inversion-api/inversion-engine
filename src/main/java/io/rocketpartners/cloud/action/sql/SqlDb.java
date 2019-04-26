@@ -28,6 +28,8 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -254,27 +256,29 @@ public class SqlDb extends Db<SqlDb>
    @Override
    public String upsert(Table table, Map<String, Object> row) throws Exception
    {
-
       if (isType("h2"))
       {
          return h2Upsert(table, row);
       }
-      //    else if (isType("mysql"))
-      //    {
-      //       return mysqlUpsert(table, row);
-      //    }
-      //    
+      else if (isType("mysql"))
+      {
+         return StringUtils.join(mysqlUpsert(table, row), ',');
+      }
       else
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
       }
    }
-   //
-   //   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
-   //   {
-   //      Utils.error("IMPLEMENT ME!!!!");
-   //      return null;
-   //   }
+
+   public List<String> mysqlUpsert(Table table, Map<String, Object> row) throws Exception
+   {
+      return mysqlUpsert(table, Arrays.asList(row));
+   }
+
+   public List<String> mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
+      return SqlUtils.mysqlUpsert(getConnection(), table.getName(), rows);
+   }
 
    public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
@@ -317,19 +321,19 @@ public class SqlDb extends Db<SqlDb>
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
          sql += " WHERE ";
-         
+
          List values = new ArrayList();
-         for(String entityKey : entityKeys)
+         for (String entityKey : entityKeys)
          {
-            if(values.size() > 0)
+            if (values.size() > 0)
                sql += " OR ";
             sql += "(";
             Row row = table.decodeKey(entityKey);
             int i = 0;
-            for(String key : row.keySet())
+            for (String key : row.keySet())
             {
                i++;
-               if(i > 1)
+               if (i > 1)
                   sql += "AND ";
                sql += quoteCol(key) + " = ? ";
                values.add(row.get(key));
