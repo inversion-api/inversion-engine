@@ -5,7 +5,9 @@ import org.junit.runners.Suite;
 
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbDeleteActions;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbGetActions;
+import io.rocketpartners.cloud.action.dynamo.TestDynamoDbPostActions;
 import io.rocketpartners.cloud.action.rest.TestCollapse;
+import io.rocketpartners.cloud.action.sql.TestSqlDeleteAction;
 import io.rocketpartners.cloud.action.sql.TestSqlGetAction;
 import io.rocketpartners.cloud.action.sql.TestSqlPostAction;
 import io.rocketpartners.cloud.action.sql.TestSqlQuery;
@@ -27,10 +29,12 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
 
       TestSqlQuery.class, //
       TestSqlGetAction.class, //
-      TestSqlPostAction.class,
+      TestSqlPostAction.class, //
+      TestSqlDeleteAction.class, //
 
       TestDynamoDbGetActions.class, //
-      TestDynamoDbDeleteActions.class,
+      TestDynamoDbDeleteActions.class, //
+      TestDynamoDbPostActions.class //
 
 })
 

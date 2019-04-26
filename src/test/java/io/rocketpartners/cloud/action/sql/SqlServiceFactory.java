@@ -66,7 +66,7 @@ public class SqlServiceFactory
 
       try
       {
-         SqlDb source = createDb("northwind-source", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
+         SqlDb source = createDb("northwind-full.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
          Connection conn = source.getConnection();
          Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\" WHERE (\"SHIPNAME\" = 'Blauer See Delikatessen' OR \"CUSTOMERID\" = 'HILAA') ORDER BY \"ORDERID\" DESC  LIMIT 100");
@@ -78,7 +78,7 @@ public class SqlServiceFactory
          //            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
          //         }
 
-         SqlDb partial = createDb("northwind-empty", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "sql/");
+         SqlDb partial = createDb("northwind-emptyish.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "sql/");
 
          conn = partial.getConnection();
          rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
@@ -146,6 +146,8 @@ public class SqlServiceFactory
             ObjectNode js = (ObjectNode) o;
             js.remove("href");
             res = service.post("northwind/sql/orders", js);
+            res.dump();
+               
             inserted += 1;
 
             //System.out.println(res.getDebug());

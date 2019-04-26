@@ -93,6 +93,7 @@ public class DynamoServiceFactory
                Utils.assertEq(1, res.data().length());
 
                res = service.delete(href);
+               res.dump();
                res.statusEq(204);
                res = service.get(href);
                res.statusEq(404);

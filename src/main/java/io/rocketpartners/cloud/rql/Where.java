@@ -36,8 +36,25 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
       if (functions.contains(token))
       {
          term = transform(term);
+         if (term.getParent() == null && term.hasToken("and"))//"unwrap" root and terms as redundant
+         {
+            for (Term t : term.getTerms())
+            {
+               t.withParent(null);
+               super.addTerm(t.getToken(), t);
+            }
+         }
+         else
+         {
+            super.addTerm(term.getToken(), term);
+         }
+         return true;
       }
-      return super.addTerm(token, term);
+      else
+      {
+         return super.addTerm(token, term);
+      }
+
    }
 
    protected Term transform(Term parent)
@@ -102,6 +119,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             if (or.getNumTerms() == 1)
             {
                transformed = or.getTerm(0);
+               transformed.withParent(null);
 
                //For a single key, unwrap or(and(eq(a,b), eq(c,d))) into individual parts equal to ?eq(a,b)&eq(b,c)
                //Term and = or.getTerm(0);
@@ -119,7 +137,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
       if (parent.getParent() != null && transformed != parent)
          parent.getParent().replaceTerm(parent, transformed);
-      
+
       return transformed;
    }
 

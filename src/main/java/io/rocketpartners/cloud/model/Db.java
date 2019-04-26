@@ -115,7 +115,7 @@ public abstract class Db<T extends Db>
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)
       {
-         keys.add(upsert(table, rows));
+         keys.add(upsert(table, row));
       }
       return keys;
    }

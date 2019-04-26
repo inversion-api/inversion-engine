@@ -42,72 +42,72 @@ public abstract class TestRestGetActions extends TestCase
       return cp + path;
    }
 
-   @Test
-   public void testLimit0() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-      ObjectNode json = null;
-
-      res = service.get(url("orders?limit=5"));
-      json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
-   }
-
-   @Test
-   public void testSort01() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-      ObjectNode json = null;
-
-      String url = url("orders?limit=2&sort=orderid&type=ORDER");
-
-      res = service.get(url);
-      System.out.println(res.getDebug());
-
-      assertEquals(2, res.findArray("data").length());
-      String href = res.findString("data.0.href");
-      assertTrue(href.endsWith("/orders/10257"));
-
-      res = service.get(url("orders?limit=2&sort=-orderid"));
-
-      assertEquals(2, res.findArray("data").length());
-      href = res.findString("data.0.href");
-      assertTrue(href.endsWith("/orders/11058"));
-   }
-
-   @Test
-   public void testPagination0() throws Exception
-   {
-      Service service = service();
-      Response res = null;
-
-      int total = 0;
-      int pages = 0;
-      String next = url("orders?limit=5&sort=orderId");
-      do
-      {
-         res = service.get(next);
-
-         System.out.println(res.getDebug());
-
-         if (res.data().size() == 0)
-            break;
-
-         total += res.data().length();
-         pages += 1;
-
-         next = res.next();
-
-         assertEquals(5, res.findArray("data").length());
-         assertEquals(5, res.find("meta.pageSize"));
-      }
-      while (pages < 20 && next != null);
-
-      assertEquals(5, pages);
-      assertEquals(25, total);
-   }
+//   @Test
+//   public void testLimit0() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      res = service.get(url("orders?limit=5"));
+//      json = res.getJson();
+//      assertEquals(5, json.find("meta.pageSize"));
+//      assertEquals(5, json.getArray("data").length());
+//   }
+//
+//   @Test
+//   public void testSort01() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//      ObjectNode json = null;
+//
+//      String url = url("orders?limit=2&sort=orderid");
+//
+//      res = service.get(url);
+//      res.dump();
+//
+//      assertEquals(2, res.findArray("data").length());
+//      String href = res.findString("data.0.href");
+//      assertTrue(href.endsWith("/orders/10257"));
+//
+//      res = service.get(url("orders?limit=2&sort=-orderid"));
+//      res.dump();
+//      
+//      assertEquals(2, res.findArray("data").length());
+//      href = res.findString("data.0.href");
+//      assertTrue(href.endsWith("/orders/11058"));
+//   }
+//   @Test
+//   public void testPagination0() throws Exception
+//   {
+//      Service service = service();
+//      Response res = null;
+//
+//      int total = 0;
+//      int pages = 0;
+//      String next = url("orders?limit=5&sort=orderId");
+//      do
+//      {
+//         res = service.get(next);
+//
+//         System.out.println(res.getDebug());
+//
+//         if (res.data().size() == 0)
+//            break;
+//
+//         total += res.data().length();
+//         pages += 1;
+//
+//         next = res.next();
+//
+//         assertEquals(5, res.findArray("data").length());
+//         assertEquals(5, res.find("meta.pageSize"));
+//      }
+//      while (pages < 20 && next != null);
+//
+//      assertEquals(5, pages);
+//      assertEquals(25, total);
+//   }
 
 }

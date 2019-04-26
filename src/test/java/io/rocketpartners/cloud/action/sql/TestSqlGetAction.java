@@ -39,7 +39,7 @@ public class TestSqlGetAction extends TestRestGetActions
       List<String> c2 = new ArrayList();
 
       Api api = service().getApi("northwind");
-      List<Table> tables = api.getDb("northwind-source").getTables();
+      List<Table> tables = api.getDb("northwind-full.h2").getTables();
       for (Table t : tables)
       {
          Collection c = api.getCollection(t);

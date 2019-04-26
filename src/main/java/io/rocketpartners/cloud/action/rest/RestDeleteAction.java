@@ -79,11 +79,17 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       }
 
       String collectionUrl = req.getApiUrl() + Utils.implode("/", req.getEndpointPath(), req.getCollectionKey());
-      delete(req, req.getCollection(), collectionUrl, toDelete);
+      int deleted = delete(req, req.getCollection(), collectionUrl, toDelete);
+
+      if (deleted < 1)
+         res.withStatus(SC.SC_404_NOT_FOUND);
+      else
+         res.withStatus(SC.SC_204_NO_CONTENT);
    }
 
-   protected void delete(Request req, Collection collection, String collectionUrl, List<String> urls) throws Exception
+   protected int delete(Request req, Collection collection, String collectionUrl, List<String> urls) throws Exception
    {
+      int deleted = 0;
       //------------------------------------------------
       // Normalize all of the params and convert attribute
       // names to column names.
@@ -131,19 +137,19 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       {
          if (in.size() > 1)
             or.withTerm(in);
-         
-         if(or.size() == 1)
+
+         if (or.size() == 1)
             query = or.getTerm(0);
          else
             query = or;
-            
+
       }
 
       String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
 
       for (int i = 0; i < 1000; i++)
       {
-         
+
          //regardless of the query string passed in, this should resolve the keys 
          //that need to be deleted and make sure the uses has read access to the key
          //
@@ -153,9 +159,13 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          if (res.data().size() == 0)
             break;
 
+         deleted += res.data().size();
+
          List<String> entityKeys = new ArrayList();
          res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((ObjectNode) o).getString("href")))));
          req.getCollection().getDb().delete(collection.getTable(), entityKeys);
       }
+
+      return deleted;
    }
 }

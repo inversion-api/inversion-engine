@@ -69,6 +69,30 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       assertEquals(25, total);
    }
 
+   //   @Test
+   //   public void testSort01() throws Exception
+   //   {
+   //      Service service = service();
+   //      Response res = null;
+   //      ObjectNode json = null;
+   //
+   //      String url = url("orders?limit=2&sort=orderid&type=ORDER");
+   //
+   //      res = service.get(url);
+   //      res.dump();
+   //
+   //      assertEquals(2, res.findArray("data").length());
+   //      String href = res.findString("data.0.href");
+   //      assertTrue(href.endsWith("/orders/10257~ORDER"));
+   //
+   //      res = service.get(url("orders?limit=2&sort=-orderid&type=ORDER"));
+   //      res.dump();
+   //
+   //      assertEquals(2, res.findArray("data").length());
+   //      href = res.findString("data.0.href");
+   //      assertTrue(href.endsWith("/orders/11058~ORDER"));
+   //   }
+
    @Test
    public void testSort01() throws Exception
    {
@@ -89,6 +113,11 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=2 scanIndexForward=false nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
       assertEquals(2, res.findArray("data").length());
       assertTrue(res.findString("data.0.href").endsWith("northwind/dynamodb/orders/11058~ORDER"));
+   }
+
+   public void testSort02DescendingSortRequiresPartitionKey() throws Exception
+   {
+      assertEquals(400, service().get(url("orders?limit=2&sort=-orderid")).getStatusCode());
    }
 
    @Test
@@ -159,8 +188,12 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       res = service.get("northwind/dynamodb/orders/11058~ORDER");
       json = res.getJson();
 
+      res.dump();
       assertEquals(json.getArray("data").length(), 1);
       assertDebug(res, "DynamoDbQuery: GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
+
+      //[1]: DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORDER} keyConditionExpression='' filterExpression='((#var1 = :val1) and (#var2 = :val2))' projectionExpression=''
+
    }
 
    @Test
@@ -226,20 +259,11 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       ObjectNode json = null;
 
       res = service.get("northwind/source/orders?eq(OrderId, 11058)").statusOk();
-      res.dump();
-
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)").statusOk();
-      res.dump();
-
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(employeeId,9)").statusOk();
-      res.dump();
-      
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(employeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')").statusOk();
-      res.dump();
       assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var4=hk, #var1=gs1hk, #var2=gs1sk, #var3=sk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3) and (#var4 = :val4)' projectionExpression=''");
-
       assertEquals(res.data().length(), 1);
-
    }
 
    @Test
@@ -259,6 +283,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       Response res = null;
 
       res = service.get("northwind/dynamodb/orders?eq(type, ORDER)&or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))");
+      res.dump();
       res.statusOk();
    }
 }

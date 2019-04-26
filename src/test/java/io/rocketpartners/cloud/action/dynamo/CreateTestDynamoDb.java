@@ -21,8 +21,8 @@ public class CreateTestDynamoDb
 {
    public static void main(String[] args) throws Exception
    {
-      //deleteTable("test-northwind");
-      createTable("test-northwind");
+      deleteTable("test-northwind");
+      //createTable("test-northwind");
    }
 
    public static void deleteTable(String tableName) throws Exception

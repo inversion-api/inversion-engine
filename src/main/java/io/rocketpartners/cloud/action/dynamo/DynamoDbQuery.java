@@ -202,10 +202,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
     */
    public DynamoDbIndex getIndex()
    {
-      //if the users requested a sort, you need to find an index with that sort key
+      //if the users requested a sort, you need to find an index with that sort k      String sortBy = order.getProperty(0);
       String sortBy = order.getProperty(0);
-
-      //TODO: make sure that use use the index that matches AFTER if AFTER is provided
 
       Term after = page().getAfter();
       if (after != null)
@@ -256,24 +254,32 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             String partCol = index.getHashKey().getName();
             String sortCol = index.getSortKey() != null ? index.getSortKey().getName() : null;
 
-            if (sortBy != null && !sortBy.equals(sortCol))
-               continue;
+            if (sortBy != null && !sortBy.equalsIgnoreCase(sortCol))
+               continue; //incompatible index. if a sort was requested, can't choose an index that has a different sort
 
             Term partKey = findTerm(partCol, "eq");
-
-            if (partKey == null)
+            
+            if(partKey == null && sortBy == null)
                continue;
-
+            
             Term sortKey = findTerm(sortCol, "eq");
+
             if (sortKey == null)
                sortKey = findTerm(sortCol, "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n");
 
-            if (sortKey == null && foundSortKey != null)
-               continue;
+            boolean use = false;
+            if(foundPartKey == null && partKey != null)
+               use = true;
+            
+            else if (sortKey == null && foundSortKey != null)
+               use = false; //if you already have an index with a sort key match, don't replace it
 
-            if (foundIndex == null //
+            else if (foundIndex == null //
                   || (sortKey != null && foundSortKey == null) //
-                  || (sortKey != null && sortKey.hasToken("eq") && !foundSortKey.hasToken("eq")))
+                  || (sortKey != null && sortKey.hasToken("eq") && !foundSortKey.hasToken("eq"))) //the new sort key has an equality condition
+               use  = true;
+            
+            if(use)
             {
                foundIndex = index;
                foundPartKey = partKey;
@@ -284,7 +290,13 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          if (sortBy != null && foundIndex == null)
          {
             //TODO: create test case to trigger this exception
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find valid index to query.  The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
+         }
+
+         if (foundPartKey == null && sortBy != null && !order.isAsc(0))
+         {
+            //an inverse/descending sort can only be run on a QuerySpec which requires a partition key.
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find valid index to query.  A descending sort on '" + sortBy + " is only possible when a partition key value is supplied.");
          }
 
          this.index = foundIndex;

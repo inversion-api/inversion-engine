@@ -45,6 +45,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    String         selectSql   = null;
 
+   String         type        = null;
+
    public SqlQuery(Table table, List<Term> terms)
    {
       super(table, terms);
@@ -199,7 +201,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
       }
 
-      if (Chain.peek().get("foundRows") == null && db.isType("mysql") && parts.select.toLowerCase().trim().startsWith("select"))
+      if (Chain.peek() != null && Chain.peek().get("foundRows") == null && "mysql".equalsIgnoreCase(getType()) && parts.select.toLowerCase().trim().startsWith("select"))
       {
          int idx = parts.select.toLowerCase().indexOf("select") + 6;
          parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
@@ -574,16 +576,19 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return buff.toString();
    }
 
-   //   public SqlQuery withType(String type)
-   //   {
-   //      this.type = type;
-   //      return this;
-   //   }
-   //
-   //   public String getType()
-   //   {
-   //      return type;
-   //   }
+   public SqlQuery withType(String type)
+   {
+      this.type = type;
+      return this;
+   }
+
+   public String getType()
+   {
+      if(db != null)
+         return db.getType();
+      
+      return type;
+   }
 
    public void withStringQuote(char stringQuote)
    {
