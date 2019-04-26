@@ -19,6 +19,7 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -254,27 +255,29 @@ public class SqlDb extends Db<SqlDb>
    @Override
    public String upsert(Table table, Map<String, Object> row) throws Exception
    {
-
       if (isType("h2"))
       {
          return h2Upsert(table, row);
       }
-      //    else if (isType("mysql"))
-      //    {
-      //       return mysqlUpsert(table, row);
-      //    }
-      //    
+      else if (isType("mysql"))
+      {
+         return mysqlUpsert(table, row);
+      }
       else
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
       }
    }
-   //
-   //   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
-   //   {
-   //      Utils.error("IMPLEMENT ME!!!!");
-   //      return null;
-   //   }
+
+   public String mysqlUpsert(Table table, Map<String, Object> row) throws Exception
+   {
+      return mysqlUpsert(table, Arrays.asList(row));
+   }
+
+   public String mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
+      return SqlUtils.mysqlUpsert(getMySqlConn(), table.getName(), rows);
+   }
 
    public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
@@ -317,19 +320,19 @@ public class SqlDb extends Db<SqlDb>
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
          sql += " WHERE ";
-         
+
          List values = new ArrayList();
-         for(String entityKey : entityKeys)
+         for (String entityKey : entityKeys)
          {
-            if(values.size() > 0)
+            if (values.size() > 0)
                sql += " OR ";
             sql += "(";
             Row row = table.decodeKey(entityKey);
             int i = 0;
-            for(String key : row.keySet())
+            for (String key : row.keySet())
             {
                i++;
-               if(i > 1)
+               if (i > 1)
                   sql += "AND ";
                sql += quoteCol(key) + " = ? ";
                values.add(row.get(key));
@@ -344,6 +347,25 @@ public class SqlDb extends Db<SqlDb>
    public void delete(Table table, String entityKey) throws Exception
    {
       delete(table, Arrays.asList(entityKey));
+   }
+
+   public static Connection getMySqlConn() throws SQLException
+   {
+
+      Connection connection = null;
+      try
+      {
+         Class.forName("com.mysql.jdbc.Driver");
+         //         TODO set connection to AWS Aurora mySql
+         //         connection = DriverManager.getConnection("jdbc:mysql://inversion.cluster-cqpoc4ovfn6g.us-east-2.rds.amazonaws.com/dbname", "username", "password");
+      }
+      catch (ClassNotFoundException e)
+      {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+      return connection;
+
    }
 
    public Connection getConnection() throws ApiException
