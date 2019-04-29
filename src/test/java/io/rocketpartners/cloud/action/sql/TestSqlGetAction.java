@@ -18,7 +18,7 @@ public class TestSqlGetAction extends TestRestGetActions
    
    protected String collectionPath()
    {
-      return "northwind/sql/";
+      return "northwind/h2/";
    }
 
    @Override
@@ -108,7 +108,7 @@ public class TestSqlGetAction extends TestRestGetActions
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
       assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
       assertTrue(res.findString("data.0.employee.reportsto.employees.0.href").endsWith("/employees/6"));
-      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"http://localhost/northwind/sql/employees/6\"") > 0);
+      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"http://localhost/northwind/h2/employees/6\"") > 0);
    }
 
    public void testExpandsManyToOne11() throws Exception
@@ -161,7 +161,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       res = service.get(url("orders/10395?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
 
-      String toMatch = Utils.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"http://localhost/northwind/sql/employees/5/territories\"}}} ]").toString();
+      String toMatch = Utils.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"http://localhost/northwind/h2/employees/5/territories\"}}} ]").toString();
       assertEquals(toMatch, res.data().toString());
    }
 
