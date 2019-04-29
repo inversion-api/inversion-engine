@@ -49,9 +49,9 @@ public class ElasticDb extends Db
       }
    }
 
-   protected static String    url                        = null;
+   protected static String      url                      = null;
 
-   protected static int       maxRequestDuration         = 10;                  // duration in seconds.
+   protected static int         maxRequestDuration       = 10;                  // duration in seconds.
 
    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
@@ -84,7 +84,7 @@ public class ElasticDb extends Db
 
          // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
          Map<String, Table> tableMap = new HashMap<String, Table>();
-         
+
          for (Map.Entry<String, JSObject> entry : jsContentMap.entrySet())
          {
             // we now have the index and with it, it's aliases and mappings
@@ -147,27 +147,36 @@ public class ElasticDb extends Db
    {
 
       String aliasName = null;
-      Map<String, JSObject> jsMappingsDocProps = jsIndex.getObject("mappings").getObject("_doc").getObject("properties").asMap();
-      Map<String, JSObject> jsAliasProps = jsIndex.getObject("aliases").asMap();
-      for (Map.Entry<String, JSObject> propEntry : jsAliasProps.entrySet())
+      JSObject jsMappingsDocJsObject = jsIndex.getObject("mappings").getObject("_doc");
+
+      if (jsMappingsDocJsObject != null)
       {
-         aliasName = propEntry.getKey();
-
-         Table table = null;
-
-         // use the previously created table if it exists.
-         if (tableMap.containsKey(aliasName))
-            table = tableMap.get(aliasName);
-         else
+         JSObject jsMappingsDocPropsJsObject = jsMappingsDocJsObject.getObject("properties");
+         if (jsMappingsDocPropsJsObject != null)
          {
-            table = new Table(this, aliasName);
-            tableMap.put(aliasName, table);
+            Map<String, JSObject> jsMappingsDocProps = jsMappingsDocPropsJsObject.asMap();
+            Map<String, JSObject> jsAliasProps = jsIndex.getObject("aliases").asMap();
+            for (Map.Entry<String, JSObject> propEntry : jsAliasProps.entrySet())
+            {
+               aliasName = propEntry.getKey();
+
+               Table table = null;
+
+               // use the previously created table if it exists.
+               if (tableMap.containsKey(aliasName))
+                  table = tableMap.get(aliasName);
+               else
+               {
+                  table = new Table(this, aliasName);
+                  tableMap.put(aliasName, table);
+               }
+
+               addTable(table);
+
+               // use the mapping to add columns to the table.
+               addColumns(table, false, jsMappingsDocProps, "");
+            }
          }
-
-         addTable(table);
-
-         // use the mapping to add columns to the table.
-         addColumns(table, false, jsMappingsDocProps, "");
       }
    }
 
