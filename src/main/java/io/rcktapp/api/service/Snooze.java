@@ -158,7 +158,7 @@ public class Snooze extends Service
       {
          ServletContext cx = getServletContext();
 
-         loadProperties(cx, "/WEB-INF/snooze.properties");
+         loadProperties(cx);
          loadJson(new File(cx.getRealPath("WEB-INF/snooze")));
 
          for (Api a : getApis())
@@ -352,15 +352,38 @@ public class Snooze extends Service
       return dbs;
    }
 
-   public void loadProperties(ServletContext cx, String file) throws Exception
+   public void loadProperties(ServletContext cx) throws Exception
    {
-      InputStream is = cx.getResourceAsStream(file);
-
-      if (is != null)
-         System.out.println("loading: " + file);
-
       Properties props = new Properties();
-      props.load(is);
+
+      for (int i = -1; i <= 100; i++)
+      {
+         String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + ".properties";
+         InputStream is = getServletContext().getResourceAsStream(fileName);
+         if (is != null)
+         {
+            System.out.println("loading: " + fileName);
+            props.load(is);
+         }
+      }
+
+      String profile = System.getProperty("snooze.profile");
+      if (profile == null)
+         profile = System.getenv("snooze.profile");
+
+      if (profile != null)
+      {
+         for (int i = -1; i <= 100; i++)
+         {
+            String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
+            InputStream is = getServletContext().getResourceAsStream(fileName);
+            if (is != null)
+            {
+               System.out.println("loading: " + fileName);
+               props.load(is);
+            }
+         }
+      }
 
       setDebug(Boolean.parseBoolean(props.getProperty("debug", "false")));
 
@@ -396,58 +419,6 @@ public class Snooze extends Service
          };
       wire.load(props);
 
-   }
-
-   String getProfile()
-   {
-      String profile = System.getProperty("snooze.profile");
-      if (profile == null)
-         profile = System.getenv("snooze.profile");
-      return profile;
-   }
-
-   Properties findProps(ServletContext cx) throws IOException
-   {
-      Properties props = new Properties();
-
-      for (int i = -1; i <= 100; i++)
-      {
-         String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = getServletContext().getResourceAsStream(fileName);
-         if (is != null)
-         {
-            //log.info("Loading properties file: " + fileName);
-            props.load(is);
-         }
-      }
-
-      String profile = getProfile();
-      if (profile != null)
-      {
-         for (int i = -1; i <= 100; i++)
-         {
-            String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
-            InputStream is = getServletContext().getResourceAsStream(fileName);
-            if (is != null)
-            {
-               //log.info("Loading properties file: " + fileName);
-               props.load(is);
-            }
-         }
-      }
-
-      //      if (log.isInfoEnabled())
-      //      {
-      //         List<String> keys = new ArrayList(props.keySet());
-      //         Collections.sort(keys);
-      //         log.info("Merged properties");
-      //         for (String key : keys)
-      //         {
-      //            log.info(" > " + key + " : " + props.getProperty(key));
-      //         }
-      //      }
-
-      return props;
    }
 
    public Connection getConnection(Api api) throws ApiException
