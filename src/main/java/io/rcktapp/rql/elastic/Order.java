@@ -48,7 +48,8 @@ public class Order
       for (int i = 0; i < orderList.size(); i++) {
          Map<String, String> orderMap = orderList.get(i);
          for(Map.Entry<String, String> entry : orderMap.entrySet()) {
-            if (entry.getValue() == "ASC") {
+            if (entry.getValue().equalsIgnoreCase("ASC"))
+            {
                entry.setValue("DESC");
             }
             else {
@@ -80,7 +81,7 @@ public class Order
       {
          for (Map.Entry<String, String> entry : map.entrySet())
          {
-            if (entry.getValue() == "desc")
+            if (entry.getValue().equalsIgnoreCase("DESC"))
                list.add("-" + entry.getKey());
             else
                list.add(entry.getKey());
