@@ -354,6 +354,14 @@ public class Snooze extends Service
 
    public void loadProperties(ServletContext cx) throws Exception
    {
+      System.out.println("loading configuration: ");
+
+      String profile = System.getProperty("snooze.profile");
+      if (profile == null)
+         profile = System.getenv("snooze.profile");
+
+      System.out.println("  - found snooze.profile: " + profile);
+
       Properties props = new Properties();
 
       for (int i = -1; i <= 100; i++)
@@ -362,14 +370,10 @@ public class Snooze extends Service
          InputStream is = getServletContext().getResourceAsStream(fileName);
          if (is != null)
          {
-            System.out.println("loading: " + fileName);
+            System.out.println("  - loading props: " + fileName);
             props.load(is);
          }
       }
-
-      String profile = System.getProperty("snooze.profile");
-      if (profile == null)
-         profile = System.getenv("snooze.profile");
 
       if (profile != null)
       {
@@ -379,7 +383,7 @@ public class Snooze extends Service
             InputStream is = getServletContext().getResourceAsStream(fileName);
             if (is != null)
             {
-               System.out.println("loading: " + fileName);
+               System.out.println("  - loading props: " + fileName);
                props.load(is);
             }
          }
