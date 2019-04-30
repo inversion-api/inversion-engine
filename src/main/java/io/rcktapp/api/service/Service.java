@@ -364,6 +364,9 @@ public class Service extends HttpServlet
                //http.setContentType("application/json; charset=utf-8");
                //http.setCharacterEncoding("UTF-8");
                http.setContentType("text/csv");
+               
+               //UTF8 BOM Support
+               //https://stackoverflow.com/questions/6002256/is-it-possible-to-force-excel-recognize-utf-8-csv-files-automatically
                out.write(0x00EF);
                out.write(0x00BB);
                out.write(0x00BF);

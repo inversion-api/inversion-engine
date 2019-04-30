@@ -8,14 +8,15 @@
  * License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 package io.rcktapp.api.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -395,6 +396,58 @@ public class Snooze extends Service
          };
       wire.load(props);
 
+   }
+
+   String getProfile()
+   {
+      String profile = System.getProperty("snooze.profile");
+      if (profile == null)
+         profile = System.getenv("snooze.profile");
+      return profile;
+   }
+
+   Properties findProps(ServletContext cx) throws IOException
+   {
+      Properties props = new Properties();
+
+      for (int i = -1; i <= 100; i++)
+      {
+         String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + ".properties";
+         InputStream is = getServletContext().getResourceAsStream(fileName);
+         if (is != null)
+         {
+            //log.info("Loading properties file: " + fileName);
+            props.load(is);
+         }
+      }
+
+      String profile = getProfile();
+      if (profile != null)
+      {
+         for (int i = -1; i <= 100; i++)
+         {
+            String fileName = "/WEB-INF/snooze" + (i < 0 ? "" : i) + "-" + profile + ".properties";
+            InputStream is = getServletContext().getResourceAsStream(fileName);
+            if (is != null)
+            {
+               //log.info("Loading properties file: " + fileName);
+               props.load(is);
+            }
+         }
+      }
+
+      //      if (log.isInfoEnabled())
+      //      {
+      //         List<String> keys = new ArrayList(props.keySet());
+      //         Collections.sort(keys);
+      //         log.info("Merged properties");
+      //         for (String key : keys)
+      //         {
+      //            log.info(" > " + key + " : " + props.getProperty(key));
+      //         }
+      //      }
+
+      return props;
    }
 
    public Connection getConnection(Api api) throws ApiException
