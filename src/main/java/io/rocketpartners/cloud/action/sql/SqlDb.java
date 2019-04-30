@@ -459,7 +459,7 @@ public class SqlDb extends Db<SqlDb>
       try
       {
          if (isType("mysql"))
-            withStringQuote('`');
+            withColumnQuote('`');
 
          if (isBootstrap())
          {
@@ -840,14 +840,16 @@ public class SqlDb extends Db<SqlDb>
       this.idleConnectionTestPeriod = idleConnectionTestPeriod;
    }
 
-   public void withStringQuote(char stringQuote)
+   public SqlDb withStringQuote(char stringQuote)
    {
       this.stringQuote = stringQuote;
+      return this;
    }
 
-   public void withColumnQuote(char columnQuote)
+   public SqlDb withColumnQuote(char columnQuote)
    {
       this.columnQuote = columnQuote;
+      return this;
    }
 
    public String quoteCol(String columnName)
