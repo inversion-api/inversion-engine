@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.atteo.evo.inflector.English;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -75,6 +77,8 @@ public class DynamoDb extends Db
    }
 
    protected String       awsRegion    = "us-east-1";
+   protected String       awsAccessKey = null;       // optional
+   protected String       awsSecretKey = null;       // optional
 
    /**
     * A CSV of pipe delimited collection name to table name pairs.
@@ -329,19 +333,37 @@ public class DynamoDb extends Db
       return entity;
    }
 
+   //   public AmazonDynamoDB getDynamoClient()
+   //   {
+   //      if (this.dynamoClient == null)
+   //      {
+   //         if (J.empty(awsRegion))
+   //         {
+   //            this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+   //         }
+   //         else
+   //         {
+   //            this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
+   //         }
+   //      }
+   //
+   //      return dynamoClient;
+   //   }
+
    public AmazonDynamoDB getDynamoClient()
    {
-      if (this.dynamoClient == null)
+
+      AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
+      if (!J.empty(awsRegion))
       {
-         if (J.empty(awsRegion))
-         {
-            this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-         }
-         else
-         {
-            this.dynamoClient = AmazonDynamoDBClientBuilder.standard().withRegion(awsRegion).build();
-         }
+         builder.withRegion(awsRegion);
       }
+      if (!J.empty(awsAccessKey) && !J.empty(awsSecretKey))
+      {
+         BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+         builder.withCredentials(new AWSStaticCredentialsProvider(creds));
+      }
+      AmazonDynamoDB dynamoClient = builder.build();
 
       return dynamoClient;
    }
@@ -534,6 +556,16 @@ public class DynamoDb extends Db
    public void setAwsRegion(String awsRegion)
    {
       this.awsRegion = awsRegion;
+   }
+
+   public void setAwsAccessKey(String awsAccessKey)
+   {
+      this.awsAccessKey = awsAccessKey;
+   }
+
+   public void setAwsSecretKey(String awsSecretKey)
+   {
+      this.awsSecretKey = awsSecretKey;
    }
 
    public void setBlueprintRow(String blueprintRow)
