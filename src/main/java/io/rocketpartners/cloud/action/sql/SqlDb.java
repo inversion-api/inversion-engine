@@ -247,10 +247,14 @@ public class SqlDb extends Db<SqlDb>
 
       if (pk.getColumns().size() == 1)
       {
+         List castKeys = new ArrayList();
+         for (String key : entityKeys)
+            castKeys.add(cast(pk.getColumn(0), key));
+
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
          sql += " WHERE " + quoteCol(pk.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(entityKeys.size()) + ")";
-         SqlUtils.execute(getConnection(), sql, entityKeys.toArray());
+         SqlUtils.execute(getConnection(), sql, castKeys.toArray());
       }
       else
       {
@@ -454,6 +458,9 @@ public class SqlDb extends Db<SqlDb>
    {
       try
       {
+         if (isType("mysql"))
+            withStringQuote('`');
+
          if (isBootstrap())
          {
             reflectDb();
