@@ -78,7 +78,7 @@ public class SqlServiceFactory
          //            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
          //         }
 
-         SqlDb partial = createDb("northwind-emptyish.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "sql/");
+         SqlDb partial = createDb("northwind-emptyish.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "h2/");
 
          conn = partial.getConnection();
          rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
@@ -123,7 +123,7 @@ public class SqlServiceFactory
          service.withApi("northwind")//
                 .withEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
                 .withDb(source).getApi()//
-                .withEndpoint("GET,PUT,POST,DELETE", "sql/", "*").withAction(new RestAction()).getApi()//
+                .withEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
                 .withDb(partial).getApi()//
                 .getService();
 
@@ -145,7 +145,7 @@ public class SqlServiceFactory
          {
             ObjectNode js = (ObjectNode) o;
             js.remove("href");
-            res = service.post("northwind/sql/orders", js);
+            res = service.post("northwind/h2/orders", js);
             res.dump();
                
             inserted += 1;
@@ -159,7 +159,7 @@ public class SqlServiceFactory
             Utils.assertEq(href, res.find("data.0.href"));//check that it actually was created
          }
 
-         res = service.get("northwind/sql/orders");
+         res = service.get("northwind/h2/orders");
          Utils.assertEq(25, res.find("meta.foundRows"));
 
       }

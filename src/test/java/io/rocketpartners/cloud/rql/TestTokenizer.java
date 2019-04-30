@@ -70,6 +70,10 @@ public class TestTokenizer extends TestCase
       add(tests, "(abc)", "(", "abc", ")");
       add(tests, "(abc())", "(", "abc(", ")", ")");
 
+      add(tests, "eq(brandfamily,'LAYS')", "eq(", "brandfamily", "'LAYS'", ")");
+      add(tests, "eq(brandfamily,'LAY\\'S')", "eq(", "brandfamily", "'LAY'S'", ")");
+      add(tests, "eq(brandfamily,'\"LAY\\'S\"')", "eq(", "brandfamily", "'\"LAY'S\"'", ")");
+
       for (int i = tests.size() - 1; i >= 0; i--)
       {
          List<String> test = tests.get(i);

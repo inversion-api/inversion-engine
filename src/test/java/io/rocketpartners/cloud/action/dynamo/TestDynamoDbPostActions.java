@@ -57,7 +57,7 @@ public class TestDynamoDbPostActions extends TestRestGetActions
       res.statusOk();
       Utils.assertEq(0, res.findArray("data").length(), "Confirm nothing in dynamo");
 
-      res = service.get("northwind/sql/orders?limit=25");
+      res = service.get("northwind/h2/orders?limit=25");
       json = res.getJson();
       Utils.assertEq(25, res.findArray("data").length(), "Confirm 25 documents obtained from sql");
 

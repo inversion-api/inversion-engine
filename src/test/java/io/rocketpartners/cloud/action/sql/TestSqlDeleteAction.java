@@ -11,7 +11,7 @@ public class TestSqlDeleteAction extends TestCase
 
    protected String collectionPath()
    {
-      return "northwind/sql/";
+      return "northwind/h2/";
    }
 
    protected Service service() throws Exception
