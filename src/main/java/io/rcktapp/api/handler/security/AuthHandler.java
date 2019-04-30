@@ -48,7 +48,8 @@ import io.rcktapp.api.service.Service;
 
 public class AuthHandler implements Handler
 {
-   long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeput
+   long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeout
+   long                       sessionUpdate           = 1000 * 20;      //update a session every 10s to prevent spamming the cache with every request
    protected int              sessionMax              = 10000;
 
    protected int              failedMax               = 10;
@@ -211,7 +212,7 @@ public class AuthHandler implements Handler
          {
             if (now - user.getRequestAt() > sessionExp)
             {
-               sessionCache.remove(token);
+               sessionCache.remove(sessionKey);
                user = null;
             }
          }
@@ -222,13 +223,20 @@ public class AuthHandler implements Handler
 
       if (user != null)
       {
+         boolean updateSessionCache = false;
+         long previousReqTime = user.getRequestAt();
+         long diff = now - previousReqTime;
+         if (diff > sessionUpdate || (now == previousReqTime))
+            updateSessionCache = true;
+
          user.setRequestAt(now);
          req.setUser(user);
 
+         sessionKey = req.getApi().getId() + "_" + newSessionId();//
+
          if (sessionReq && req.isPost())
          {
-            sessionKey = req.getApi().getId() + "_" + newSessionId();//
-            sessionCache.put(sessionKey, user);
+            updateSessionCache = true;
 
             resp.addHeader("x-auth-token", "Session " + sessionKey);
             JSObject obj = new JSObject();
@@ -252,6 +260,9 @@ public class AuthHandler implements Handler
 
             resp.setJson(new JSObject("data", obj));
          }
+
+         if (updateSessionCache)
+            sessionCache.put(sessionKey, user);
       }
 
       if (req.getUser() != null)
