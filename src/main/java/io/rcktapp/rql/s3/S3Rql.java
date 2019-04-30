@@ -1,5 +1,8 @@
 package io.rcktapp.rql.s3;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 import io.rcktapp.api.ApiException;
 import io.rcktapp.api.Request;
 import io.rcktapp.api.SC;
@@ -72,7 +75,7 @@ public class S3Rql extends Rql
          // GET request - If no queries exist manually build the s3 request
          if (req.getParams().size() == 1 && req.getParam("tenantid") != null)
          {
-            String prefix = determinePrefixFromPath(req.getCollectionKey(), req.getSubpath());
+            String prefix = determinePrefixFromPath(req.getCollectionKey(), URLDecoder.decode(req.getSubpath(), StandardCharsets.UTF_8.name()));
             s3Req = new S3Request(stmt.table.getName(), null, prefix, stmt.pagesize, isDownloadRequest, isMetaRequest, marker);
          }
          else
