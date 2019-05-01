@@ -4,11 +4,11 @@
 # Author:                Valon Hoti                                      #
 # Created on:            2010-07-07 20:00                                #
 # ---------------------------------------------------------------------- #
-DROP DATABASE IF EXISTS northwind;
+DROP DATABASE IF EXISTS northwindsource;
 
-CREATE DATABASE IF NOT EXISTS northwind;
+CREATE DATABASE IF NOT EXISTS northwindsource;
 
-USE northwind;
+USE northwindsource;
 
 # ---------------------------------------------------------------------- #
 # Tables                                                                 #

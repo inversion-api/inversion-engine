@@ -62,25 +62,45 @@ public class SqlServiceFactory
 
       try
       {
-//         String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
-//         String mysqlJbc = "jdbc:mysql://" + mysqlHost + ":3306/testnorthwind";
-//         SqlDb mysqlDb = createDb("mysql", "northwind-mysql.ddl", "com.mysql.jdbc.Driver", mysqlJbc, "testcase", "password", "mysql/");
 
          SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
-
-         Connection conn = sourceDb.getConnection();
-         Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\" WHERE (\"SHIPNAME\" = 'Blauer See Delikatessen' OR \"CUSTOMERID\" = 'HILAA') ORDER BY \"ORDERID\" DESC  LIMIT 100");
-         Utils.assertEq(25, rows.size());
-
-         //         rows = SqlUtils.selectRows(conn,  "SELECT o.EmployeeID, od.OrderId, od.ProductId FROM \"Order\" o JOIN \"OrderDetails\" od ON o.OrderId = od.OrderId"); 
-         //         for(Row row : rows)
-         //         {
-         //            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
-         //         }
-
          SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
 
-         conn = h2Db.getConnection();
+         SqlDb mysqlDb = null;
+         {
+            String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
+            String mysqlUrl = "jdbc:mysql://" + mysqlHost + ":3306";
+
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            Connection mysqlConn = null;
+            boolean sourceLoaded = false;
+            try
+            {
+               mysqlConn = DriverManager.getConnection(mysqlUrl, "testcase", "password");
+               SqlUtils.execute(mysqlConn, "USE northwindsource");
+               sourceLoaded = true;
+            }
+            catch (Exception ex)
+            {
+               ex.printStackTrace();
+            }
+            if (!sourceLoaded)
+            {
+               SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
+            }
+
+            try
+            {
+               SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
+            }
+            catch (Exception ex)
+            {
+               ex.printStackTrace();
+               throw ex;
+            }
+            mysqlUrl += "/northwindcopy";
+            mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
+         }
 
          service = new Service()
             {
@@ -123,6 +143,8 @@ public class SqlServiceFactory
                 .withDb(sourceDb).getApi()//
                 .withEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
                 .withDb(h2Db).getApi()//
+                .withEndpoint("GET,PUT,POST,DELETE", "mysql/", "*").withAction(new RestAction()).getApi()//
+                .withDb(mysqlDb).getApi()//
          ;
 
          service.startup();
@@ -213,16 +235,19 @@ public class SqlServiceFactory
 
       System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url);
 
-      try
+      if (ddl != null)
       {
-         Connection conn = db.getConnection();
-         SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
-      }
-      catch (Exception ex)
-      {
-         System.out.println("error initializing " + ddl);
-         ex.printStackTrace();
-         Utils.rethrow(ex);
+         try
+         {
+            Connection conn = db.getConnection();
+            SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
+         }
+         catch (Exception ex)
+         {
+            System.out.println("error initializing " + ddl);
+            ex.printStackTrace();
+            Utils.rethrow(ex);
+         }
       }
 
       return db;
