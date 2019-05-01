@@ -223,19 +223,20 @@ public class AuthHandler implements Handler
 
       if (user != null)
       {
+         // update the session cache if this is a session request OR 
+         // if the session update time has passed.
          boolean updateSessionCache = false;
          long previousReqTime = user.getRequestAt();
-         long diff = now - previousReqTime;
-         if (diff > sessionUpdate || (now == previousReqTime))
+         if (now - previousReqTime > sessionUpdate)
             updateSessionCache = true;
 
          user.setRequestAt(now);
          req.setUser(user);
 
-         sessionKey = req.getApi().getId() + "_" + newSessionId();//
 
          if (sessionReq && req.isPost())
          {
+            sessionKey = req.getApi().getId() + "_" + newSessionId();
             updateSessionCache = true;
 
             resp.addHeader("x-auth-token", "Session " + sessionKey);
