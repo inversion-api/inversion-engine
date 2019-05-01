@@ -1,13 +1,3 @@
-/*---------------------------------------------------------------------- 
- Target DBMS:           H2			                                      
- Project name:          Northwind                                       
- Author:                Johannes Trame                                   
- Created on:            2014-12-27 09:00        
- 
- from http://optique-project.eu/training-programme/module-ontop/
- http://www.optique-project.eu/optique-files/training-programme/Northwind.H2.sql
-                         
- ---------------------------------------------------------------------- */
 DROP SCHEMA IF EXISTS northwind;
 
 CREATE SCHEMA IF NOT EXISTS northwind;

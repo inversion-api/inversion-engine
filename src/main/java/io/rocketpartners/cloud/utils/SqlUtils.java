@@ -47,8 +47,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.amazonaws.services.dynamodbv2.xspec.M;
-
 import io.rocketpartners.cloud.utils.Rows.Row;
 
 /**
@@ -865,14 +863,19 @@ public class SqlUtils
       String line = null;
       String curLine = "";
       List<String> ddlList = new ArrayList<String>();
+      int num = 0;
       while ((line = br.readLine()) != null)
       {
-         if (line.startsWith("--"))
+         num += 1;
+         line = line.trim();
+
+         if (line.length() == 0 || line.startsWith("--") || line.startsWith("#"))
             continue;
-         curLine = curLine + line;
-         if (curLine.trim().endsWith(";"))
+
+         curLine = curLine + "\r\n" + line;
+         if (line.trim().endsWith(";"))
          {
-            ddlList.add(curLine);
+            ddlList.add(curLine.trim());
             curLine = "";
          }
       }
@@ -887,6 +890,8 @@ public class SqlUtils
 
    public static void runDdl(Connection con, String[] sql) throws SQLException
    {
+      System.out.print("running ddl: ");
+
       if (sql != null && sql.length > 0)
       {
          boolean oldAutoCommit = con.getAutoCommit();
@@ -898,13 +903,20 @@ public class SqlUtils
             {
                for (int i = 0; i < sql.length; i++)
                {
+                  if (i % 100 == 0)
+                     System.out.print("\r\n" + i + "/" + sql.length);
+                  else
+                     System.out.print(".");
+
                   try
                   {
-                     stmt.executeUpdate(sql[i]);
+                     stmt.execute(sql[i]);
                   }
                   catch (SQLException ex)
                   {
-                     ex.printStackTrace();
+                     System.out.println("Error trying to run statement: " + ex.getMessage());
+                     System.out.println(sql[i]);
+                     //ex.printStackTrace();
                      throw ex;
                   }
                }
@@ -920,6 +932,7 @@ public class SqlUtils
             con.setAutoCommit(oldAutoCommit);
          }
       }
+      System.out.println(".done");
    }
 
    /*

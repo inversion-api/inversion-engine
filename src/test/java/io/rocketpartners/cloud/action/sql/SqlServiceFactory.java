@@ -4,9 +4,15 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.sql.DriverManager;
+
+import com.amazonaws.services.rds.AmazonRDS;
+import com.amazonaws.services.rds.AmazonRDSClientBuilder;
+import com.amazonaws.services.rds.model.CreateDBInstanceRequest;
+import com.amazonaws.services.rds.model.DBInstance;
+import com.amazonaws.services.rds.model.DBInstanceAlreadyExistsException;
+import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
+import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.model.Response;
@@ -56,6 +62,10 @@ public class SqlServiceFactory
 
       try
       {
+//         String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
+//         String mysqlJbc = "jdbc:mysql://" + mysqlHost + ":3306/testnorthwind";
+//         SqlDb mysqlDb = createDb("mysql", "northwind-mysql.ddl", "com.mysql.jdbc.Driver", mysqlJbc, "testcase", "password", "mysql/");
+
          SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
          Connection conn = sourceDb.getConnection();
@@ -146,23 +156,18 @@ public class SqlServiceFactory
 
       SqlDb sourceDb = ((SqlDb) service.getApi("northwind").getDb("source"));
       Connection sourceConn = sourceDb.getConnection();
-      
+
       Rows orders = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?", "Blauer See Delikatessen", "HILAA");
       assertEquals(25, orders.size());
 
       SqlUtils.insertMaps(destCon, orderTbl, orders);
       assertEquals(25, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderTbl));
-      
 
       Rows orderDetails = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERDETAILS\" WHERE \"ORDERID\" IN ( SELECT \"ORDERID\" FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?)", "Blauer See Delikatessen", "HILAA");
       assertEquals(59, orderDetails.size());
-      
 
       SqlUtils.insertMaps(destCon, orderDetailsTbl, orderDetails);
       assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderDetailsTbl));
-
-      
-      
 
       //      Response res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid&expands=orderdetails");
       //      res.dump();
@@ -210,16 +215,6 @@ public class SqlServiceFactory
 
       try
       {
-         //         File dir = new File("./.h2");
-         //         dir.mkdir();
-         //
-         //         File[] dbfiles = dir.listFiles();
-         //         for (int i = 0; dbfiles != null && i < dbfiles.length; i++)
-         //         {
-         //            if (dbfiles[i].getName().startsWith(ddl))
-         //               dbfiles[i].delete();
-         //         }
-
          Connection conn = db.getConnection();
          SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
       }
@@ -233,36 +228,95 @@ public class SqlServiceFactory
       return db;
    }
 
-   //   public static void main(String[] args) throws Exception
-   //   {
-   //      new File("./northwind.db").delete();
-   //      new File("./northwind.mv.db").delete();
-   //      new File("./northwind.trace.db").delete();
-   //      new File("./northwind.lock.db").delete();
-   //
-   //      Class.forName("org.h2.Driver").newInstance();
-   //      Connection conn = DriverManager.getConnection("jdbc:h2:./northwind", "sa", "");
-   //
-   //      SqlUtils.runDdl(conn, CreateNorthwindsH2Db.class.getResourceAsStream("Northwind.H2.sql"));
-   //
-   //      DatabaseMetaData dbmd = conn.getMetaData();
-   //      ResultSet rs = dbmd.getTables(null, null, "%", new String[]{"TABLE", "VIEW"});
-   //      while (rs.next())
-   //      {
-   //         String tableCat = rs.getString("TABLE_CAT");
-   //         String tableSchem = rs.getString("TABLE_SCHEM");
-   //         String tableName = rs.getString("TABLE_NAME");
-   //
-   //         System.out.println(tableName);
-   //      }
-   //
-   //      Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM PRODUCTS");
-   //      for (Row row : rows)
-   //      {
-   //         System.out.println(row);
-   //      }
-   //
-   //      conn.close();
-   //
-   //   }
+   //Utility provisions micro MySQL RDS instance if it doesn't already exist, and returns the public URL
+   public static String createMySqlRDS(String type, String instanceName, String username, String password)
+   {
+      AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
+
+      CreateDBInstanceRequest dbRequest = null;
+
+      if ("mysql".equalsIgnoreCase(type))
+      {
+         dbRequest = new CreateDBInstanceRequest(instanceName, 20, "db.t2.micro", "mysql", username, password);
+         dbRequest.setEngineVersion("5.6.40");
+      }
+      else
+      {
+         throw new RuntimeException("Unsupported RDS type: " + type);
+      }
+
+      dbRequest.setDBName(instanceName);
+
+      String url = null;
+      try
+      {
+         DBInstance db = client.createDBInstance(dbRequest);
+         System.out.println("creating DB, need to wait for endpoint…");
+         while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
+         {
+            System.out.println("waiting…");
+            Thread.sleep(5000);
+         }
+         System.out.println("DB created, retrieving endpoint");
+         url = db.getEndpoint().toString();
+      }
+      catch (DBInstanceAlreadyExistsException e)
+      {
+         DescribeDBInstancesResult dbs = client.describeDBInstances();
+         for (DBInstance db : dbs.getDBInstances())
+         {
+            if (db.getDBInstanceIdentifier().equalsIgnoreCase(instanceName))
+            {
+               System.out.println("found existing DB, waiting for endpoint…");
+               while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
+               {
+                  System.out.println("waiting…");
+                  try
+                  {
+                     Thread.sleep(5000);
+                  }
+                  catch (InterruptedException e1)
+                  {
+                     e1.printStackTrace();
+                  }
+               }
+               System.out.println("endpoint available");
+               url = db.getEndpoint().getAddress();
+               break;
+            }
+         }
+      }
+      catch (NullPointerException e)
+      {
+         System.out.println("Null Pointer Exception!");
+         e.printStackTrace();
+         url = null;
+      }
+      catch (Exception e)
+      {
+         System.out.println("Error creating RDS Instance: " + e.getMessage());
+         e.printStackTrace();
+         url = null;
+      }
+      return url;
+   }
+
+   public static boolean deleteMySqlRDS(String instanceName)
+   {
+      boolean result = false;
+      try
+      {
+         AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
+         DeleteDBInstanceRequest deleteRequest = new DeleteDBInstanceRequest(instanceName).withSkipFinalSnapshot(true);
+         client.deleteDBInstance(deleteRequest);
+         result = true;
+      }
+      catch (Exception e)
+      {
+         System.out.println(e);
+         e.printStackTrace();
+
+      }
+      return result;
+   }
 }

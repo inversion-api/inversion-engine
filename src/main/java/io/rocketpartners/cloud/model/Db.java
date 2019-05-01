@@ -342,7 +342,7 @@ public abstract class Db<T extends Db>
 
    protected String beautifyCollectionName(String inName)
    {
-      String collectionName = inName;
+      String collectionName = inName.replaceAll("\\s+","");
 
       if (collectionName.toUpperCase().equals(collectionName))//crappy oracle style all uppercase name
          collectionName = collectionName.toLowerCase();

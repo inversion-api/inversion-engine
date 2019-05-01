@@ -221,15 +221,12 @@ public class TestSqlGetAction extends TestRestGetActions
 
       res = service.get(url("orderdetails/10395~46")).statusOk();
       assertEquals(1, res.getFoundRows());
-      res.dump();
 
       res = service.get(url("orders/10395?expands=orderdetails")).statusOk();
       assertTrue(res.findString("data.0.orderdetails.0.href").endsWith("orderdetails/10395~46"));
-      res.dump();
 
       res = service.get(url("orderdetails/10395~46?expands=order")).statusOk();
       assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
-      res.dump();
    }
 
    @Test
