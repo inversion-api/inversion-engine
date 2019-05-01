@@ -216,6 +216,20 @@ public abstract class Db<T extends Db>
          if (t.getName().equalsIgnoreCase(tableName))
             return t;
       }
+
+      tableName = tableName.replaceAll("\\s+", "");
+      for (Table t : tables)
+      {
+         String name = t.getName();
+
+         if (name.indexOf(" ") > -1)
+         {
+            name = name.replaceAll("\\s+", "");
+            if (name.equalsIgnoreCase(tableName))
+               return t;
+         }
+      }
+
       return null;
    }
 
@@ -342,7 +356,7 @@ public abstract class Db<T extends Db>
 
    protected String beautifyCollectionName(String inName)
    {
-      String collectionName = inName.replaceAll("\\s+","");
+      String collectionName = inName.replaceAll("\\s+", "");
 
       if (collectionName.toUpperCase().equals(collectionName))//crappy oracle style all uppercase name
          collectionName = collectionName.toLowerCase();

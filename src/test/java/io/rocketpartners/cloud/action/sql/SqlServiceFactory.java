@@ -183,13 +183,13 @@ public class SqlServiceFactory
       assertEquals(25, orders.size());
 
       SqlUtils.insertMaps(destCon, orderTbl, orders);
-      assertEquals(25, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderTbl));
+      assertEquals(25, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(orderTbl)));
 
       Rows orderDetails = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERDETAILS\" WHERE \"ORDERID\" IN ( SELECT \"ORDERID\" FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?)", "Blauer See Delikatessen", "HILAA");
       assertEquals(59, orderDetails.size());
 
       SqlUtils.insertMaps(destCon, orderDetailsTbl, orderDetails);
-      assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderDetailsTbl));
+      assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(orderDetailsTbl)));
 
       //      Response res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid&expands=orderdetails");
       //      res.dump();

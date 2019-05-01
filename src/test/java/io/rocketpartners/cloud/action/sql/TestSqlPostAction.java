@@ -22,8 +22,9 @@ public class TestSqlPostAction extends TestCase
    @Parameterized.Parameters
    public static Collection input()
    {
+      return Arrays.asList(new Object[][]{{"mysql"}});
       //return Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
-      return Arrays.asList(new Object[][]{{"h2"}});
+      //return Arrays.asList(new Object[][]{{"h2"}});
    }
 
    String db = null;
@@ -83,7 +84,8 @@ public class TestSqlPostAction extends TestCase
       assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
       //post one new bogus order
-      res = service.post("northwind/h2/orders", new ObjectNode("orderid", 222000, "shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
+      res = service.post(url("orders"), new ObjectNode("orderid", 222000, "shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
+      res.dump();
       assertEquals(res.find("data.0.href"), url("orders/222000"));
 
       //check the values we sent are the values we got back
@@ -94,7 +96,7 @@ public class TestSqlPostAction extends TestCase
       //check total records and that pagination is working as expected
       res = service.get(url("orders?limit=25&sort=orderid&page=2"));
       assertEquals(26, res.find("meta.foundRows"));
-      assertEquals(res.find("data.0.href"), "http://localhost/northwind/h2/orders/222000");
+      assertEquals(res.find("data.0.href"), url("orders/222000"));
 
       //some of these may not be in the "sql" db
       res = service.get("http://localhost/northwind/source/orders?limit=25&sort=orderid&page=2&excludes=href");
@@ -109,7 +111,7 @@ public class TestSqlPostAction extends TestCase
 
       String location = res.getHeader("Location");
 
-      assertEquals("http://localhost/northwind/h2/orders/10273,10274,10275,10276,10277,10278,10279,10280,10281,10282,10283,10284,10285,10286,10287,10288,10289,10290,10291,10292,10293,10294,10295,10296,10297", //
+      assertEquals(url("orders/10273,10274,10275,10276,10277,10278,10279,10280,10281,10282,10283,10284,10285,10286,10287,10288,10289,10290,10291,10292,10293,10294,10295,10296,10297"), //
             location);
 
       assertEquals(51, service.get(url("orders?limit=1")).find("meta.foundRows"));

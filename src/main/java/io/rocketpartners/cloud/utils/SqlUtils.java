@@ -69,6 +69,15 @@ public class SqlUtils
 
    static List<SqlListener> listeners = new ArrayList();
 
+   public static char colQuote(Connection conn)
+   {
+      String connstr = conn.toString().toLowerCase();
+      if (connstr.indexOf("mysql") > -1)
+         return '`';
+
+      return '"';
+   }
+
    public static String quote(Connection conn, Object str)
    {
       String connstr = conn.toString().toLowerCase();
@@ -435,9 +444,13 @@ public class SqlUtils
    {
       StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
       sql.append(" ON DUPLICATE KEY UPDATE ");
-      sql.append(getColumnStr(conn, columnNameArray)).append("=VALUES(");
-      sql.append(getColumnStr(conn, columnNameArray)).append(") ");
-
+      for (int i = 0; i < columnNameArray.length; i++)
+      {
+         Object col = columnNameArray[i];
+         sql.append("\r\n`").append(col).append("`= values(`").append(col).append("`)");
+         if(i<columnNameArray.length-1)
+            sql.append(", ");
+      }
       return sql.toString();
    }
 
