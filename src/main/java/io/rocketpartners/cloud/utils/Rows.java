@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Rows extends ArrayList<Rows.Row>
+import io.rocketpartners.cloud.utils.Rows.Row;
+
+public class Rows extends ArrayList<Row>
 {
    RowKeys keys    = null;
    Row     lastRow = null;
@@ -89,7 +91,6 @@ public class Rows extends ArrayList<Rows.Row>
       addRow(arr.toArray());
       return lastRow;
    }
-
 
    public void addRow(List values)
    {

@@ -114,7 +114,8 @@ public class Url implements Cloneable
             query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
 
-            this.params = new ObjectNode(Utils.parseQueryString(query));
+            withQuery(query);
+            //this.params = new ObjectNode(Utils.parseQueryString(query));
          }
 
          //replace slashes after stripping off query to leave query as it was found
@@ -251,6 +252,9 @@ public class Url implements Cloneable
 
       if (params.size() > 0)
       {
+         while (url.endsWith("/"))
+            url = url.substring(0, url.length() - 1);
+
          List<String> keys = new ArrayList(params.keySet());
          for (int i = 0; i < keys.size(); i++)
          {
@@ -263,7 +267,7 @@ public class Url implements Cloneable
                url += "&";
 
             url += key;
-            
+
             if (value != null)
                url += "=" + value;
          }

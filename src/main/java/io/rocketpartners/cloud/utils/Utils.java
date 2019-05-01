@@ -47,9 +47,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -2025,7 +2025,7 @@ public class Utils
 
    public static Map<String, String> parseQueryString(String query)
    {
-      Map params = new HashMap();
+      LinkedHashMap params = new LinkedHashMap();
       try
       {
          while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
@@ -2038,14 +2038,20 @@ public class Utils
             String[] pairs = query.split("&");
             for (String pair : pairs)
             {
+               pair = pair.trim();
+               
                if (pair.length() == 0)
                   continue;
 
                int idx = pair.indexOf("=");
                if (idx > 0)
                {
-                  String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-                  String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+                  String key = pair.substring(0, idx).trim();
+                  key = URLDecoder.decode(key, "UTF-8");
+                  
+                  String value = pair.substring(idx + 1).trim();
+                  value = URLDecoder.decode(value, "UTF-8");
+                  
                   params.put(key, value);
                }
                else

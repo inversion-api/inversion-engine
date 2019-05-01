@@ -1,6 +1,18 @@
+/*---------------------------------------------------------------------- 
+ Target DBMS:           H2			                                      
+ Project name:          Northwind                                       
+ Author:                Johannes Trame                                   
+ Created on:            2014-12-27 09:00        
+ 
+ from http://optique-project.eu/training-programme/module-ontop/
+ http://www.optique-project.eu/optique-files/training-programme/Northwind.H2.sql
+                         
+ ---------------------------------------------------------------------- */
+DROP SCHEMA IF EXISTS northwind;
 
+CREATE SCHEMA IF NOT EXISTS northwind;
 
-
+SET SCHEMA northwind;
 
 CREATE TABLE `Categories` (
     `CategoryID` INTEGER NOT NULL AUTO_INCREMENT,
@@ -3912,6 +3924,7 @@ ALTER TABLE `Products` ADD CONSTRAINT `FK_Products_Suppliers`
 ALTER TABLE `Territories` ADD CONSTRAINT `FK_Territories_Region` 
     FOREIGN KEY (`RegionID`) REFERENCES `Region` (`RegionID`);
     
+/* This table was added to support test cases with a multi part foreign key */
 
 CREATE TABLE `EmployeeOrderDetails` (
 	`EmployeeID` INTEGER NOT NULL,

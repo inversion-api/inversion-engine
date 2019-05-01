@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.amazonaws.services.dynamodbv2.xspec.M;
+
 import io.rocketpartners.cloud.utils.Rows.Row;
 
 /**
@@ -496,11 +498,13 @@ public class SqlUtils
       return execute(conn, sql, values.toArray());
    }
 
-   public static void insertMaps(Connection conn, String tableName, List<Map> rows) throws Exception
+   //note this was parameterized with "List<Map> rows" but could not figure out 
+   //how to get compiler to accept passing in a Rows object without removing <Map>
+   public static void insertMaps(Connection conn, String tableName, List rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
 
-      for (Map row : rows)
+      for (Map row : ((List<Map>) rows))
       {
          keySet.addAll(row.keySet());
       }
@@ -514,7 +518,7 @@ public class SqlUtils
       {
          notifyBefore("insertMaps", sql, rows);
 
-         for (Map row : rows)
+         for (Map row : ((List<Map>) rows))
          {
             for (int i = 0; i < keys.size(); i++)
             {

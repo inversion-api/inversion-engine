@@ -32,6 +32,7 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.rql.Page;
 import io.rocketpartners.cloud.rql.Parser;
 import io.rocketpartners.cloud.rql.Term;
@@ -177,13 +178,15 @@ public class RestGetAction extends Action<RestGetAction>
                   String next = req.getUrl().getOriginal();
                   for (Term nextTerm : nextTerms)
                   {
-                     next = replaceTerm(next, nextTerm);
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "fix me!!!!");
+                     //next = replaceTerm(next, nextTerm);
                   }
                   res.withNext(next);
                }
                else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows))
                {
                   String next = req.getUrl().getOriginal();
+
                   next = stripTerms(next, "offset", "page", "pageNum");
 
                   if (next.indexOf("?") < 0)
@@ -715,23 +718,6 @@ public class RestGetAction extends Action<RestGetAction>
 
    }
 
-   protected static String replaceTerm(String url, Term term)
-   {
-      String op = term.hasToken("eq") ? term.getToken(0) : term.getToken();
-
-      url = stripTerms(url, op);
-
-      if (url.indexOf("?") < 0)
-         url += "?";
-
-      if (!url.endsWith("?") && !url.endsWith("&"))
-         url += "&";
-
-      url += term.toString();
-
-      return url;
-   }
-
    protected static void mapToColumns(Collection collection, Term term)
    {
       if (term.isLeaf() && !term.isQuoted())
@@ -779,23 +765,27 @@ public class RestGetAction extends Action<RestGetAction>
       }
    }
 
-   protected static String stripTerms(String url, String... tokens)
+   public static String stripTerms(String url, String... tokens)
    {
-      for (String token : tokens)
+      Url u = new Url(url);
+      Parser p = new Parser();
+
+      Map<String, String> params = u.getParams();
+      for (String key : params.keySet())
       {
-         url = stripTerm(url, token + "=", '&');
-         url = stripTerm(url, token + "(", '&');
-         url = stripTerm(url, "eq(" + token + ",", '&');
+         Term t = p.parse(key);
+
+         for (String token : tokens)
+         {
+            if (key.equalsIgnoreCase(token) || t.hasToken("eq") && token.equalsIgnoreCase(t.getToken(0)))
+            {
+               u.removeParam(key);
+               break;
+            }
+         }
       }
-      url = url.replace("?&", "?");
-      url = url.replace("&&", "&");
 
-      while (url.endsWith("?"))
-         url = url.substring(0, url.length() - 1);
-
-      while (url.endsWith("&"))
-         url = url.substring(0, url.length() - 1);
-      return url;
+      return u.toString();
    }
 
    protected static String stripTerm(String str, String startToken, char... endingTokens)
@@ -808,6 +798,8 @@ public class RestGetAction extends Action<RestGetAction>
       {
          int start = str.toLowerCase().indexOf(startToken);
 
+         //this makes sure the char before the start token is not a letter or number which would mean we are in the
+         //middle of another token, not at the start of a token.
          while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
             start = str.toLowerCase().indexOf(startToken, start + 1);
 

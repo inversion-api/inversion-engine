@@ -1,11 +1,14 @@
 package io.rocketpartners.cloud.action.sql;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
-import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
@@ -20,6 +23,9 @@ public class SqlServiceFactory
 
    static
    {
+      //delete old h2 dbs
+      Utils.delete(new File("./.h2"));
+
       SqlUtils.addSqlListener(new SqlListener()
          {
 
@@ -43,22 +49,6 @@ public class SqlServiceFactory
          });
    }
 
-   public static void main(String[] args) throws Exception
-   {
-      Class.forName("org.h2.Driver");
-
-      Utils.delete(new File("./.h2"));
-
-      Connection full1 = DriverManager.getConnection("jdbc:h2:./.h2/northwind-source" + "-" + Utils.time());
-      SqlUtils.runDdl(full1, SqlServiceFactory.class.getResourceAsStream("northwind-emptyish.h2.ddl"));
-
-      Connection full2 = DriverManager.getConnection("jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time());
-      SqlUtils.runDdl(full2, SqlServiceFactory.class.getResourceAsStream("northwind-full.h2.ddl"));
-
-      System.out.println("OK");
-
-   }
-
    public static synchronized Service service() throws Exception
    {
       if (service != null)
@@ -66,9 +56,9 @@ public class SqlServiceFactory
 
       try
       {
-         SqlDb source = createDb("northwind-full.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
+         SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
-         Connection conn = source.getConnection();
+         Connection conn = sourceDb.getConnection();
          Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\" WHERE (\"SHIPNAME\" = 'Blauer See Delikatessen' OR \"CUSTOMERID\" = 'HILAA') ORDER BY \"ORDERID\" DESC  LIMIT 100");
          Utils.assertEq(25, rows.size());
 
@@ -78,11 +68,9 @@ public class SqlServiceFactory
          //            SqlUtils.insertMap(conn,  "EmployeeOrderDetails", row);
          //         }
 
-         SqlDb partial = createDb("northwind-emptyish.h2", "org.h2.Driver", "jdbc:h2:./.h2/northwind-empty" + "-" + Utils.time(), "sa", "", "h2/");
+         SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
 
-         conn = partial.getConnection();
-         rows = SqlUtils.selectRows(conn, "SELECT * FROM \"ORDERS\"");
-         Utils.assertEq(0, rows.size());
+         conn = h2Db.getConnection();
 
          service = new Service()
             {
@@ -122,46 +110,12 @@ public class SqlServiceFactory
          //
          service.withApi("northwind")//
                 .withEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
-                .withDb(source).getApi()//
+                .withDb(sourceDb).getApi()//
                 .withEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
-                .withDb(partial).getApi()//
-                .getService();
+                .withDb(h2Db).getApi()//
+         ;
 
-         Response res = null;
-
-         //      res = service.get("northwind/sql/orders");
-         //      Utils.assertEq(200, res.getStatusCode());
-         //      Utils.assertEq(0, res.findArray("data").length());
-
-         res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-         //System.out.println(res.getJson());
-         Utils.assertEq(25, res.findArray("data").length());
-         Utils.assertEq(100, res.find("meta.pageSize"));
-         Utils.assertEq(25, res.find("meta.foundRows"));
-         Utils.assertEq(11058, res.find("data.0.orderid"));
-
-         int inserted = 0;
-         for (Object o : res.getJson().getArray("data"))
-         {
-            ObjectNode js = (ObjectNode) o;
-            js.remove("href");
-            res = service.post("northwind/h2/orders", js);
-            res.dump();
-               
-            inserted += 1;
-
-            //System.out.println(res.getDebug());
-            Utils.assertEq(201, res.getStatusCode());//claims it was created
-
-            String href = res.findString("data.0.href");
-            res = service.get(href);
-
-            Utils.assertEq(href, res.find("data.0.href"));//check that it actually was created
-         }
-
-         res = service.get("northwind/h2/orders");
-         Utils.assertEq(25, res.find("meta.foundRows"));
-
+         service.startup();
       }
       catch (Exception ex)
       {
@@ -171,32 +125,103 @@ public class SqlServiceFactory
       return service;
    }
 
-   public static SqlDb createDb(String ddl, String driver, String url, String user, String pass, String collectionPath)
+   public static void prepData(String db, String collectionUrl) throws Exception
+   {
+
+      //this first part deletes all orders from the DB and then posts back selected 
+      //recoreds from the "source" db.
+
+      Service service = service();
+      SqlDb destDb = ((SqlDb) service.getApi("northwind").getDb(db));
+      Connection destCon = destDb.getConnection();
+
+      String orderDetailsTbl = destDb.getTable("OrderDetails").getName();
+      String orderTbl = destDb.getTable("Orders").getName();
+
+      SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderDetailsTbl));
+      SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderTbl));
+
+      int rows = SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getTable("Orders").getName()));
+      Utils.assertEq(0, rows);
+
+      SqlDb sourceDb = ((SqlDb) service.getApi("northwind").getDb("source"));
+      Connection sourceConn = sourceDb.getConnection();
+      
+      Rows orders = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?", "Blauer See Delikatessen", "HILAA");
+      assertEquals(25, orders.size());
+
+      SqlUtils.insertMaps(destCon, orderTbl, orders);
+      assertEquals(25, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderTbl));
+      
+
+      Rows orderDetails = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERDETAILS\" WHERE \"ORDERID\" IN ( SELECT \"ORDERID\" FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?)", "Blauer See Delikatessen", "HILAA");
+      assertEquals(59, orderDetails.size());
+      
+
+      SqlUtils.insertMaps(destCon, orderDetailsTbl, orderDetails);
+      assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + orderDetailsTbl));
+
+      
+      
+
+      //      Response res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid&expands=orderdetails");
+      //      res.dump();
+      //
+      //      Utils.assertEq(25, res.findArray("data").length());
+      //      Utils.assertEq(100, res.find("meta.pageSize"));
+      //      Utils.assertEq(25, res.find("meta.foundRows"));
+      //      Utils.assertEq(11058, res.find("data.0.orderid"));
+      //
+      //      for (Object o : res.getJson().getArray("data"))
+      //      {
+      //         ObjectNode js = (ObjectNode) o;
+      //         js.remove("href");
+      //         res = service.post(collectionUrl, js);
+      //
+      //         //System.out.println(res.getDebug());
+      //         Utils.assertEq(201, res.getStatusCode());//claims it was created
+      //
+      //         String href = res.findString("data.0.href");
+      //         res = service.get(href);
+      //
+      //         Utils.assertEq(href, res.find("data.0.href"));//check that it actually was created
+      //      }
+      //
+      //      res = service.get(collectionUrl);
+      //      Utils.assertEq(25, res.find("meta.foundRows"));
+      //
+      //      conn = sqldb.getConnection();
+      //      rows = SqlUtils.selectInt(conn, "SELECT count(*) FROM " + sqldb.quoteCol(sqldb.getTable("Orders").getName()));
+      //      Utils.assertEq(25, rows);
+
+   }
+
+   public static SqlDb createDb(String name, String ddl, String driver, String url, String user, String pass, String collectionPath)
    {
       SqlDb db = new SqlDb();
-      db.withName(ddl);
+      db.withName(name);
       db.withDriver(driver);
       db.withUrl(url);
       db.withUser(user);
       db.withPass(pass);
       db.withCollectionPath(collectionPath);
 
-      System.out.println("INITIALIZING DB: " + ddl + " - " + url);
+      System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url);
 
       try
       {
-         File dir = new File("./.h2");
-         dir.mkdir();
-
-         File[] dbfiles = dir.listFiles();
-         for (int i = 0; dbfiles != null && i < dbfiles.length; i++)
-         {
-            if (dbfiles[i].getName().startsWith(ddl))
-               dbfiles[i].delete();
-         }
+         //         File dir = new File("./.h2");
+         //         dir.mkdir();
+         //
+         //         File[] dbfiles = dir.listFiles();
+         //         for (int i = 0; dbfiles != null && i < dbfiles.length; i++)
+         //         {
+         //            if (dbfiles[i].getName().startsWith(ddl))
+         //               dbfiles[i].delete();
+         //         }
 
          Connection conn = db.getConnection();
-         SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl + ".ddl"));
+         SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
       }
       catch (Exception ex)
       {

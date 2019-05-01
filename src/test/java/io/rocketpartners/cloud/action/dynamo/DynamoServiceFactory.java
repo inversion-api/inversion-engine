@@ -105,7 +105,7 @@ public class DynamoServiceFactory
          res.statusOk();
          Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
-         res = service.service("GET", "northwind/h2/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
+         res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
          ObjectNode json = res.getJson();
          System.out.println(json);
 
