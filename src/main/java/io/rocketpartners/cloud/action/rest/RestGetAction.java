@@ -178,8 +178,14 @@ public class RestGetAction extends Action<RestGetAction>
                   String next = req.getUrl().getOriginal();
                   for (Term nextTerm : nextTerms)
                   {
-                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "fix me!!!!");
-                     //next = replaceTerm(next, nextTerm);
+                     next = stripTerms(next, nextTerm.getToken());
+                     
+                     if (next.indexOf("?") < 0)
+                        next += "?";
+                     if (!next.endsWith("?"))
+                        next += "&";
+
+                     next += nextTerm;
                   }
                   res.withNext(next);
                }

@@ -53,7 +53,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testCollections() throws Exception
    {
-      List c1 = new ArrayList(Arrays.asList("Categories", "CustomerDemographics", "Customers", "Employees", "Orders", "OrderDetails", "Products", "Regions", "Shippers", "Suppliers", "Territories"));
+      List c1 = new ArrayList(Arrays.asList("Categories", "CustomerDemographics", "Customers", "Employees", "IndexLogs", "Orders", "OrderDetails", "Products", "Regions", "Shippers", "Suppliers", "Territories"));
 
       List<String> c2 = new ArrayList();
 

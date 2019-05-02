@@ -27,7 +27,7 @@ import io.rocketpartners.cloud.utils.Utils;
 public class SqlServiceFactory
 {
    public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
-   //public static final List<Object[]> CONFIG_DBS_TO_TEST = Arrays.asList(new Object[][]{{"h2"}});
+   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 

@@ -113,6 +113,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          }
          else
          {
+            Term and = Term.term(null,  "and");
             for (String paramName : params.keySet())
             {
                String termStr = null;
@@ -127,7 +128,15 @@ public class RestDeleteAction extends Action<RestDeleteAction>
                   termStr = "eq(" + paramName + "," + paramValue + ")";
                }
                Term term = parser.parse(termStr);
-               or.withTerm(term);
+               and.withTerm(term);
+            }
+            if(and.size() == 0)
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to a collection unless you include an entityKey or query string");
+            }
+            else
+            {
+               or.withTerm(and);
             }
          }
       }

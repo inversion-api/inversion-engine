@@ -65,59 +65,59 @@ public class TestSqlDeleteAction extends TestCase
       SqlServiceFactory.prepData(db, url("indexlogs"));
    }
 
-   @Test
-   public void testSingleDelete() throws Exception
-   {
-      Response res = null;
-      Service service = service();
-
-      res = service.get(url("orderdetails?limit=1&sort=orderid")).statusOk();
-      String href = res.findString("data.0.href");
-
-      res = service.delete(href);
-      res = service.get(href).statusEq(404);
-      res.dump();
-   }
-
-   @Test
-   public void testBatchHrefDelete() throws Exception
-   {
-      Response res = null;
-      Service service = service();
-
-      res = service.get(url("orderdetails?limit=10&sort=orderid")).statusOk();
-
-      ArrayNode hrefs = new ArrayNode();
-
-      res.data().forEach(o -> hrefs.add(((ObjectNode) o).getString("href")));
-
-      assertEquals(10, hrefs.size());
-
-      res = service.delete(url("orderdetails"), hrefs);
-
-      for (int i = 0; i < hrefs.size(); i++)
-         service.get(hrefs.getString(i)).hasStatus(404);
-   }
-
-   @Test
-   public void testBatchQueryDelete() throws Exception
-   {
-      Response res = null;
-      Service service = service();
-
-      ArrayNode hrefs = new ArrayNode(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
-
-      for (int i = 0; i < hrefs.size(); i++)
-         assertTrue(service.get(hrefs.getString(i)).statusOk().getFoundRows() > 0);
-
-      service.delete(url("orderdetails"), hrefs).isSuccess();
-
-      for (int i = 0; i < hrefs.size(); i++)
-      {
-         res = service.get(hrefs.getString(i));
-         assertTrue(res.hasStatus(404) || (res.hasStatus(200) && res.getFoundRows() == 0));
-      }
-   }
+//   @Test
+//   public void testSingleDelete() throws Exception
+//   {
+//      Response res = null;
+//      Service service = service();
+//
+//      res = service.get(url("orderdetails?limit=1&sort=orderid")).statusOk();
+//      String href = res.findString("data.0.href");
+//
+//      res = service.delete(href);
+//      res = service.get(href).statusEq(404);
+//      res.dump();
+//   }
+//
+//   @Test
+//   public void testBatchHrefDelete() throws Exception
+//   {
+//      Response res = null;
+//      Service service = service();
+//
+//      res = service.get(url("orderdetails?limit=10&sort=orderid")).statusOk();
+//
+//      ArrayNode hrefs = new ArrayNode();
+//
+//      res.data().forEach(o -> hrefs.add(((ObjectNode) o).getString("href")));
+//
+//      assertEquals(10, hrefs.size());
+//
+//      res = service.delete(url("orderdetails"), hrefs);
+//
+//      for (int i = 0; i < hrefs.size(); i++)
+//         service.get(hrefs.getString(i)).hasStatus(404);
+//   }
+//
+//   @Test
+//   public void testBatchQueryDelete() throws Exception
+//   {
+//      Response res = null;
+//      Service service = service();
+//
+//      ArrayNode hrefs = new ArrayNode(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
+//
+//      for (int i = 0; i < hrefs.size(); i++)
+//         assertTrue(service.get(hrefs.getString(i)).statusOk().getFoundRows() > 0);
+//
+//      service.delete(url("orderdetails"), hrefs).isSuccess();
+//
+//      for (int i = 0; i < hrefs.size(); i++)
+//      {
+//         res = service.get(hrefs.getString(i));
+//         assertTrue(res.hasStatus(404) || (res.hasStatus(200) && res.getFoundRows() == 0));
+//      }
+//   }
 
    @Test
    public void testBatchQueryDeleteWithMultipleConditionsOnMultiPKTable() throws Exception
@@ -155,10 +155,13 @@ public class TestSqlDeleteAction extends TestCase
       // select * from IndexLog where tenantCode = 'us' and error is null and modifiedAt < '2019-04-01 00:00:00';
       String url = url("indexlogs?tenantCode=us&n(error)&lt(modifiedAt,2019-04-01 00:00:00)");
 
+      //[2]:    RestGetAction -> http://localhost/northwind/h2/indexlogs?or(lt(modifiedAt,2019-04-01 00:00:00),n(error),eq(tenantCode,us))&page=1&pageSize=100&includes=href
+      
       ArrayNode data = service.get(url).getJson().findArray("data");
       assertTrue("data should contain four records", data.size() == 4);
 
       Response res = service.delete(url("indexlogs"), new ArrayNode(url));
+      res.dump();
       assertTrue("bulk delete should succeed", res.isSuccess());
 
       data = service.get(url).getJson().findArray("data");
@@ -168,23 +171,24 @@ public class TestSqlDeleteAction extends TestCase
       assertEquals("Wrong number of records were deleted", 4, (allRecordsSize - allRecordsSizeAfterDelete));
    }
 
-   //   @Test
-   //   public void testBatchQueryDeleteWithForeignKeyConstraint() throws Exception
-   //   {
-   //      Service service = service();
-   //
-   //      // select * from Orders where ShipVia = '2' and ShipRegion is null and OrderDate < '2014-09-01 00:00:00';
-   //      String url = url("orders?shipvia=2&n(shipregion)&lt(orderdate,2014-09-01 00:00:00)");
-   //
-   //      ArrayNode data = service.get(url).getJson().findArray("data");
-   //      assertTrue("data should contain two records", data.size() == 2);
-   //
-   //      Response res = service.delete(url("orders"), new ArrayNode(url));
-   //      assertTrue("bulk delete should succeed", res.isSuccess());
-   //
-   //      data = service.get(url).getJson().findArray("data");
-   //      assertTrue("data should contain zero records after delete", data.size() == 0);
-   //
-   //   }
+//      @Test
+//      public void testBatchQueryDeleteWithForeignKeyConstraint() throws Exception
+//      {
+//         Service service = service();
+//   
+//         // select * from Orders where ShipVia = '2' and ShipRegion is null and OrderDate < '2014-09-01 00:00:00';
+//         String url = url("orders?shipvia=2&n(shipregion)&lt(orderdate,2014-09-01 00:00:00)");
+//   
+//         ArrayNode data = service.get(url).getJson().findArray("data");
+//         assertTrue("data should contain two records", data.size() == 2);
+//   
+//         Response res = service.delete(url("orders"), new ArrayNode(url));
+//         res.dump();
+//         assertTrue("bulk delete should succeed", res.isSuccess());
+//   
+//         data = service.get(url).getJson().findArray("data");
+//         assertTrue("data should contain zero records after delete", data.size() == 0);
+//   
+//      }
 
 }
