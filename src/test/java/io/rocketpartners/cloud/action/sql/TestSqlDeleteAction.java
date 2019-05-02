@@ -61,6 +61,8 @@ public class TestSqlDeleteAction extends TestCase
    public void before() throws Exception
    {
       SqlServiceFactory.prepData(db, url("orders"));
+      SqlServiceFactory.prepData(db, url("orderdetails"));
+      SqlServiceFactory.prepData(db, url("indexlogs"));
    }
 
    @Test
@@ -116,5 +118,73 @@ public class TestSqlDeleteAction extends TestCase
          assertTrue(res.hasStatus(404) || (res.hasStatus(200) && res.getFoundRows() == 0));
       }
    }
+
+   @Test
+   public void testBatchQueryDeleteWithMultipleConditionsOnMultiPKTable() throws Exception
+   {
+      Service service = service();
+
+      int allRecordsSize = service.get(url("orderdetails")).getJson().findArray("data").size();
+
+      // The Order Detail table has a two column PK
+      // select * from `Order Details` where Quantity = 60 and UnitPrice > 10;
+      String url = url("orderdetails?Quantity=60&gt(UnitPrice,10)");
+
+      ArrayNode data = service.get(url).getJson().findArray("data");
+      assertTrue("data should contain two records", data.size() == 2);
+
+      Response res = service.delete(url("orderdetails"), new ArrayNode(url));
+      assertTrue("bulk delete should succeed", res.isSuccess());
+
+      data = service.get(url).getJson().findArray("data");
+      assertTrue("data should contain zero records after delete", data.size() == 0);
+
+      int allRecordsSizeAfterDelete = service.get(url("orderdetails")).getJson().findArray("data").size();
+      assertEquals("Wrong number of records were deleted", 2, (allRecordsSize - allRecordsSizeAfterDelete));
+
+   }
+
+   @Test
+   public void testBatchQueryDeleteWithMultipleConditionsOnSinglePKtable() throws Exception
+   {
+      Service service = service();
+
+      int allRecordsSize = service.get(url("indexlogs")).getJson().findArray("data").size();
+
+      // The IndexLog table has a single column PK
+      // select * from IndexLog where tenantCode = 'us' and error is null and modifiedAt < '2019-04-01 00:00:00';
+      String url = url("indexlogs?tenantCode=us&n(error)&lt(modifiedAt,2019-04-01 00:00:00)");
+
+      ArrayNode data = service.get(url).getJson().findArray("data");
+      assertTrue("data should contain four records", data.size() == 4);
+
+      Response res = service.delete(url("indexlogs"), new ArrayNode(url));
+      assertTrue("bulk delete should succeed", res.isSuccess());
+
+      data = service.get(url).getJson().findArray("data");
+      assertTrue("data should contain zero records after delete", data.size() == 0);
+
+      int allRecordsSizeAfterDelete = service.get(url("indexlogs")).getJson().findArray("data").size();
+      assertEquals("Wrong number of records were deleted", 4, (allRecordsSize - allRecordsSizeAfterDelete));
+   }
+
+   //   @Test
+   //   public void testBatchQueryDeleteWithForeignKeyConstraint() throws Exception
+   //   {
+   //      Service service = service();
+   //
+   //      // select * from Orders where ShipVia = '2' and ShipRegion is null and OrderDate < '2014-09-01 00:00:00';
+   //      String url = url("orders?shipvia=2&n(shipregion)&lt(orderdate,2014-09-01 00:00:00)");
+   //
+   //      ArrayNode data = service.get(url).getJson().findArray("data");
+   //      assertTrue("data should contain two records", data.size() == 2);
+   //
+   //      Response res = service.delete(url("orders"), new ArrayNode(url));
+   //      assertTrue("bulk delete should succeed", res.isSuccess());
+   //
+   //      data = service.get(url).getJson().findArray("data");
+   //      assertTrue("data should contain zero records after delete", data.size() == 0);
+   //
+   //   }
 
 }

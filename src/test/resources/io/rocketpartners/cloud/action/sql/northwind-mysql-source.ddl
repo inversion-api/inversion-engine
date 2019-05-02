@@ -3951,3 +3951,37 @@ ALTER TABLE `Products` ADD CONSTRAINT `FK_Products_Suppliers`
 ALTER TABLE `Territories` ADD CONSTRAINT `FK_Territories_Region` 
     FOREIGN KEY (`RegionID`) REFERENCES `Region` (`RegionID`);
     
+
+    
+/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+CREATE TABLE `IndexLog` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenantCode` VARCHAR(100) NOT NULL,
+    `entityId` INTEGER,
+    `entityType` VARCHAR(100),
+    `error` VARCHAR(1024),
+    `noIndex` tinyint(1) DEFAULT '0',
+    `modifiedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+);
+
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (1, 'us', 100, 'locations', NULL, 0, '2019-02-12 15:44:18');
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (2, 'us', 200, 'locations', NULL, 1, '2019-04-02 15:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (3, 'us', 300, 'locations', 'error', 1, '2019-05-02 15:33:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (4, 'us', 567, 'ads', NULL, 0, '2019-01-22 15:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (5, 'ca', 837, 'ads', NULL, 0, '2019-05-01 12:03:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (6, 'us', 23, 'ads', NULL, 0, '2019-04-05 11:51:17'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (7, 'us', 24, 'ads', NULL, 0, '2019-04-22 15:05:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (8, 'us', 65, 'ads', NULL, 0, '2019-04-12 13:21:44'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (9, 'us', 765, 'ads', NULL, 0, '2019-04-08 03:00:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (10, 'ca', 239, 'ads', NULL, 0, '2019-04-09 23:32:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (11, 'ca', 8263, 'ads', NULL, 0, '2019-04-16 15:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (12, 'us', 103, 'items', NULL, 0, '2019-04-02 15:09:00'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (13, 'us', 105, 'items', NULL, 0, '2019-05-02 21:34:15'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (14, 'us', 23, 'ads', NULL, 0, '2019-05-02 15:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (15, 'ca', 8272, 'items', NULL, 0, '2019-05-02 15:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (16, 'us', 430, 'ads', 'error',1, '2019-03-01 12:21:22'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (17, 'us', 6252, 'ads', NULL, 0, '2019-05-02 03:51:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (18, 'us', 21, 'ads', NULL, 0, '2019-03-02 13:21:44'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (19, 'us', 23, 'ads', NULL, 0, '2019-05-02 05:05:18'); 
+INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (20, 'us', 567, 'ads', NULL, 0, '2019-03-02 12:21:22'); 
