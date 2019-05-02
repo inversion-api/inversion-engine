@@ -18,14 +18,10 @@ package io.rocketpartners.cloud.action.sql;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import io.rocketpartners.cloud.action.elastic.v03x.rql.SqlTokenizer;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Results;
-import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
