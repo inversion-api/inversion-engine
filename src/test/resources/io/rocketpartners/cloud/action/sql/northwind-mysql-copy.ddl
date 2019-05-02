@@ -251,4 +251,16 @@ ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails2`
 	FOREIGN KEY (`OrderID`, `ProductID`) REFERENCES `Order Details` (`OrderID`, `ProductID`)  ON DELETE CASCADE;
     
     
-    
+/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+CREATE TABLE `IndexLog` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenantCode` VARCHAR(100) NOT NULL,
+    `entityId` INTEGER,
+    `entityType` VARCHAR(100),
+    `error` VARCHAR(1024),
+    `noIndex` tinyint(1) DEFAULT '0',
+    `modifiedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+);
+INSERT INTO `IndexLog` SELECT * FROM northwindsource.IndexLog ORDER BY `id`;	
+
