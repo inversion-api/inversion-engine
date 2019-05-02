@@ -32,24 +32,6 @@ public class SqlTokenizer
    
    static Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 
-   public static void main(String[] args)
-   {
-      SqlTokenizer tok = new SqlTokenizer("select * from `order details` where \"id\" in (select * from some other table) and    x >= 500");
-
-      //      String next = null;
-      //      while ((next = tok.next()) != null)
-      //      {
-      //         System.out.println("\"" + next + "\"");
-      //      }
-
-      String next = null;
-      while ((next = tok.nextClause()) != null)
-      {
-         System.out.println("\"" + next + "\"");
-      }
-
-   }
-
    char[]       chars       = null;
    int          head        = 0;
 
@@ -124,17 +106,6 @@ public class SqlTokenizer
       boolean done = false;
       int parens = 0;
 
-      //      String wrap = "";
-      //
-      //      ``  
-      //      ''
-      //      ""
-      //      ()
-      //      
-      //      
-      //      \
-      //      
-
       for (; head < chars.length && !done; head++)
       {
          char c = chars[head];
@@ -173,7 +144,7 @@ public class SqlTokenizer
                token.append(c);
                continue;
             case '\"':
-               if (!(escape || singleQuote || backQuote))
+               if (!(escape || singleQuote || backQuote || parens > 0))
                {
                   if (!doubleQuote && token.length() > 0)
                   {
@@ -195,7 +166,7 @@ public class SqlTokenizer
                continue;
 
             case '\'':
-               if (!(escape || doubleQuote || backQuote))
+               if (!(escape || doubleQuote || backQuote || parens > 0))
                {
                   if (!singleQuote && token.length() > 0)
                   {
@@ -217,7 +188,7 @@ public class SqlTokenizer
                continue;
 
             case '`':
-               if (!(escape || doubleQuote || singleQuote))
+               if (!(escape || doubleQuote || singleQuote || parens > 0))
                {
                   if (!backQuote && token.length() > 0)
                   {
