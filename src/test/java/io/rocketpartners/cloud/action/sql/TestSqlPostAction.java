@@ -1,7 +1,5 @@
 package io.rocketpartners.cloud.action.sql;
 
-import java.sql.Connection;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.junit.Before;
@@ -12,8 +10,6 @@ import org.junit.runners.Parameterized;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.SqlUtils;
-import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
@@ -22,9 +18,7 @@ public class TestSqlPostAction extends TestCase
    @Parameterized.Parameters
    public static Collection input()
    {
-      return Arrays.asList(new Object[][]{{"mysql"}});
-      //return Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
-      //return Arrays.asList(new Object[][]{{"h2"}});
+      return SqlServiceFactory.DBS;
    }
 
    String db = null;
@@ -122,7 +116,7 @@ public class TestSqlPostAction extends TestCase
       String srcLocation = location.replace("/h2/", "/source/");
       String src = service.get(srcLocation).data().toString();
       String copy = service.get(location).data().toString();
-      src = src.replace("/source/", "/h2/");
+      src = src.replace("/source/", "/" + db + "/");
       assertEquals(src, copy);
 
       //we did not insert any order details

@@ -20,11 +20,10 @@ import io.rocketpartners.cloud.utils.Utils;
 @RunWith(Parameterized.class)
 public class TestSqlGetAction extends TestRestGetActions
 {
-
    @Parameterized.Parameters
    public static Collection input()
    {
-      return Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+      return SqlServiceFactory.DBS;
    }
 
    String db = null;
@@ -101,7 +100,7 @@ public class TestSqlGetAction extends TestRestGetActions
       res = service.get(url("orders?limit=5&sort=orderid"));
       assertEquals(5, res.data().size());
       assertTrue(res.findString("data.0.customer").endsWith("/customers/VINET"));
-      assertTrue(res.findString("data.0.orderdetails").endsWith("/orders/10248/orderdetails"));
+      assertTrue(res.findString("data.0.orderdetails").toLowerCase().endsWith("/orders/10248/orderdetails"));
       assertTrue(res.findString("data.0.employee").endsWith("/employees/5"));
 
       res = service.get(url("employees/1/territories?limit=5&order=-territoryid"));
@@ -191,7 +190,7 @@ public class TestSqlGetAction extends TestRestGetActions
       res = service.get(url("orders/10395?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
 
       String toMatch = Utils.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/5/territories") + "\"}}} ]").toString();
-      assertEquals(toMatch, res.data().toString());
+      assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
    }
 
    @Test
@@ -201,15 +200,16 @@ public class TestSqlGetAction extends TestRestGetActions
       Response res = null;
 
       res = service.get(url("orderdetails/10395~46"));
-      assertTrue(res.findString("data.0.href").endsWith("/orderdetails/10395~46"));
+      res.dump();
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
       assertTrue(res.findString("data.0.product").endsWith("/products/46"));
       assertTrue(res.findString("data.0.order").endsWith("/orders/10395"));
 
       res = service.get(url("orders/10395/orderdetails"));
       assertTrue(res.find("meta.foundRows") != null);
-      assertTrue(res.findString("data.0.href").endsWith("/orderdetails/10395~46"));
-      assertTrue(res.findString("data.1.href").endsWith("/orderdetails/10395~53"));
-      assertTrue(res.findString("data.2.href").endsWith("/orderdetails/10395~69"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
+      assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10395~53"));
+      assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10395~69"));
 
    }
 
@@ -223,7 +223,7 @@ public class TestSqlGetAction extends TestRestGetActions
       assertEquals(1, res.getFoundRows());
 
       res = service.get(url("orders/10395?expands=orderdetails")).statusOk();
-      assertTrue(res.findString("data.0.orderdetails.0.href").endsWith("orderdetails/10395~46"));
+      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10395~46"));
 
       res = service.get(url("orderdetails/10395~46?expands=order")).statusOk();
       assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
@@ -236,14 +236,15 @@ public class TestSqlGetAction extends TestRestGetActions
       Response res = null;
 
       res = service.get(url("employees/5?expands=orderdetails"));
-      assertTrue(res.findString("data.0.orderdetails.0.href").endsWith("/orderdetails/10248~11"));
+      res.dump();
+      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
 
       res = service.get(url("employees/5/orderdetails"));
-      assertTrue(res.findString("data.0.employees").endsWith("/orderdetails/10248~11/employees"));
-      assertTrue(res.findString("data.0.order").endsWith("/orders/10248"));
+      assertTrue(res.findString("data.0.employees").toLowerCase().endsWith("/orderdetails/10248~11/employees"));
+      assertTrue(res.findString("data.0.order").toLowerCase().endsWith("/orders/10248"));
 
       res = service.get(url("orderdetails/10248~11/employees"));
-      assertTrue(res.findString("data.0.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/employees/5"));
    }
 
 }

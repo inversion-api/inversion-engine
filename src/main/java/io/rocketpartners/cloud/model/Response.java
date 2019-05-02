@@ -77,7 +77,7 @@ public class Response
    {
       if (statusCode < 200 || statusCode > 299)
       {
-         System.err.println(debug);
+         dump();
          throw new ApiException(statusCode + "", statusError);
       }
 

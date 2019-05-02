@@ -179,7 +179,7 @@ public class SqlDb extends Db<SqlDb>
 
       String sql = (String) Chain.peek().remove("select");
       if (Utils.empty(sql))
-         sql = " SELECT * FROM " + table.getName();
+         sql = " SELECT * FROM " + quoteCol(table.getName());
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
       query.withSelectSql(sql);

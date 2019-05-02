@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.Arrays;
+import java.util.List;
 
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClientBuilder;
@@ -25,6 +27,9 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlServiceFactory
 {
+   public static final List DBS     = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+   //public static final List DBS     = Arrays.asList(new Object[][]{{"mysql"}});
+
    protected static Service service = null;
 
    static

@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.rocketpartners.cloud.action.elastic.v03x.rql.SqlTokenizer;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Index;
 import io.rocketpartners.cloud.model.Results;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -584,9 +586,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String getType()
    {
-      if(db != null)
+      if (db != null)
          return db.getType();
-      
+
       return type;
    }
 
@@ -707,133 +709,93 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public class Parts
    {
-      public String select = "";
-      public String from   = "";
-      public String where  = "";
-      public String group  = "";
-      public String order  = "";
-      public String limit  = "";
+      public String select = null;
+      public String from   = null;
+      public String where  = null;
+      public String group  = null;
+      public String order  = null;
+      public String limit  = null;
 
       public Parts(String sql)
       {
          if (sql == null)
             return;
+         
+         sql = sql.trim();
 
-         select = chopFirst(sql, "select", "from");
+         SqlTokenizer tok = new SqlTokenizer(sql);
 
-         if (empty(select))
-            select = chopFirst(sql, "update", "where");
-
-         if (empty(select))
-            select = chopFirst(sql, "delete", "from");
-
-         if (select != null)
+         String clause = null;
+         while ((clause = tok.nextClause()) != null)
          {
-            sql = sql.substring(select.length(), sql.length());
+            String token = (clause.indexOf(" ") > 0 ? clause.substring(0, clause.indexOf(" ")) : clause).toLowerCase();
 
-            if (sql.trim().substring(4).trim().startsWith("("))
+            switch (token)
             {
-               int end = sql.lastIndexOf("as") + 3;
-               String rest = sql.substring(end, sql.length());
-               int[] otherIdx = findFirstOfFirstOccurances(rest, "where", " group by", "order", "limit");
-               if (otherIdx != null)
-               {
-                  end += otherIdx[0];
-               }
-               else
-               {
-                  end = sql.length();
-               }
-
-               from = sql.substring(0, end);
-               sql = sql.substring(end, sql.length());
-            }
-            else
-            {
-               from = chopLast(sql, "from", "where", "group by", "order", "limit");
-            }
-            where = chopLast(sql, "where", "group by", "order", "limit");
-            group = chopLast(sql, "group by", "order", "limit");
-            order = chopLast(sql, "order", "limit");
-            limit = chopLast(sql, "limit");
-         }
-      }
-
-      int[] findFirstOfFirstOccurances(String haystack, String... regexes)
-      {
-         int[] first = null;
-         for (String regex : regexes)
-         {
-            regex = "\\b(" + regex.trim().replaceAll(" ", "\\\\s*") + ")\\b";
-            Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(haystack);
-            if (m.find())
-            {
-               int start = m.start(1);
-               int end = m.end(1);
-
-               if (first == null || start < first[0])
-                  first = new int[]{start, end};
+               //case "insert":
+               //case "update":
+               case "delete":
+               case "select":
+                  select = clause;
+                  continue;
+               case "from":
+                  from = clause;
+                  continue;
+               case "where":
+                  where = clause;
+                  continue;
+               case "group":
+                  group = clause;
+                  continue;
+               case "order":
+                  order = clause;
+                  continue;
+               case "limit":
+                  limit = clause;
+                  continue;
+               default :
+                  throw new RuntimeException("Unable to parse: \"" + clause + "\" - \"" + sql + "\"");
             }
          }
-         //      if (first != null)
-         //         System.out.println("found first '" + haystack.substring(first[0], first[1]) + "'");
-         return first;
-      }
 
-      int[] findFirstOfLastOccurances(String haystack, String... regexes)
-      {
-         int[] first = null;
-
-         for (String regex : regexes)
-         {
-            int[] last = null;
-
-            regex = "\\b(" + regex.trim().replaceAll(" ", "\\\\s*") + ")\\b";
-            Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(haystack);
-            while (m.find())
-            {
-               int start = m.start(1);
-               int end = m.end(1);
-
-               if (last == null || start > last[0])
-                  last = new int[]{start, end};
-            }
-
-            if (last != null && (first == null || last[0] < first[0]))
-               first = last;
-         }
-
-         return first;
-      }
-
-      protected String chopLast(String haystack, String start, String... ends)
-      {
-         int[] startIdx = findFirstOfFirstOccurances(haystack, start);
-
-         if (startIdx != null)
-         {
-            int[] endIdx = findFirstOfLastOccurances(haystack, ends);
-            if (endIdx != null)
-               return haystack.substring(startIdx[0], endIdx[0]).trim() + " ";
-            else
-               return haystack.substring(startIdx[0], haystack.length()).trim() + " ";
-         }
-         return null;
-      }
-
-      protected String chopFirst(String haystack, String start, String... ends)
-      {
-         int[] startIdx = findFirstOfFirstOccurances(haystack, start);
-
-         if (startIdx != null)
-         {
-            int[] endIdx = findFirstOfFirstOccurances(haystack, ends);
-            if (endIdx != null)
-               return haystack.substring(startIdx[0], endIdx[0]).trim() + " ";
-            else
-               return haystack.substring(startIdx[0], haystack.length()).trim() + " ";
-         }
-         return null;
+         //         select = chopFirst(sql, "select", "from");
+         //
+         //         if (empty(select))
+         //            select = chopFirst(sql, "update", "where");
+         //
+         //         if (empty(select))
+         //            select = chopFirst(sql, "delete", "from");
+         //
+         //         if (select != null)
+         //         {
+         //            sql = sql.substring(select.length(), sql.length());
+         //
+         //            if (sql.trim().substring(4).trim().startsWith("("))
+         //            {
+         //               int end = sql.lastIndexOf("as") + 3;
+         //               String rest = sql.substring(end, sql.length());
+         //               int[] otherIdx = findFirstOfFirstOccurances(rest, "where", " group by", "order", "limit");
+         //               if (otherIdx != null)
+         //               {
+         //                  end += otherIdx[0];
+         //               }
+         //               else
+         //               {
+         //                  end = sql.length();
+         //               }
+         //
+         //               from = sql.substring(0, end);
+         //               sql = sql.substring(end, sql.length());
+         //            }
+         //            else
+         //            {
+         //               from = chopLast(sql, "from", "where", "group by", "order", "limit");
+         //            }
+         //            where = chopLast(sql, "where", "group by", "order", "limit");
+         //            group = chopLast(sql, "group by", "order", "limit");
+         //            order = chopLast(sql, "order", "limit");
+         //            limit = chopLast(sql, "limit");
+         //         }
       }
    }
 }

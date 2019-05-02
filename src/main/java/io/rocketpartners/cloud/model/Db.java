@@ -23,6 +23,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysql.jdbc.Buffer;
+
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Rows.Row;
@@ -80,20 +82,10 @@ public abstract class Db<T extends Db>
     * @return Map<sourceEntityKey, relatedEntityKey>
     * @throws Exception
     */
-   //   public Map<String, String> select(Index toMatch, Index toRetrieve, List<String> matchKeys) throws Exception
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
-   //   }
-   //
-   //   public Rows select(Table table, List<Column> toMatch, List<Column> toRetrieve, Rows matchValues) throws Exception
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
-   //   }
-
-   public abstract Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception;
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select() to implement");
-   //   }
+   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select()");
+   }
 
    public void delete(Table table, List<String> entityKeys) throws Exception
    {
@@ -103,12 +95,15 @@ public abstract class Db<T extends Db>
       }
    }
 
-   public abstract void delete(Table table, String entityKey) throws Exception;
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete() to implement");
-   //   }
+   public void delete(Table table, String entityKey) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
+   }
 
-   public abstract String upsert(Table table, Map<String, Object> row) throws Exception;
+   public String upsert(Table table, Map<String, Object> row) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert()");
+   }
 
    public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
@@ -354,27 +349,100 @@ public abstract class Db<T extends Db>
       return (T) this;
    }
 
-   protected String beautifyCollectionName(String inName)
+   protected String beautifyCollectionName(String name)
    {
-      String collectionName = inName.replaceAll("\\s+", "");
+      name = beautifyAttributeName(name);
 
-      if (collectionName.toUpperCase().equals(collectionName))//crappy oracle style all uppercase name
-         collectionName = collectionName.toLowerCase();
+      if (!(name.endsWith("s") || name.endsWith("S")))
+         name = English.plural(name);
 
-      collectionName = Character.toLowerCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
-
-      if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
-         collectionName = English.plural(collectionName);
-
-      return collectionName;
+      return name;
    }
 
-   protected String beautifyAttributeName(String inName)
+   /**
+    * Try to make a camel case valid java script variable name.
+    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
+    * 
+    * @param name
+    * @return
+    */
+   protected String beautifyAttributeName(String name)
    {
-      if (inName.toUpperCase().equals(inName))
-         inName = inName.toLowerCase();
+      //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
+      if (name.toUpperCase().equals(name))
+      {
+         name = name.toLowerCase();
+      }
 
-      return inName;
+      StringBuffer buff = new StringBuffer("");
+
+      boolean nextUpper = false;
+      for (int i = 0; i < name.length(); i++)
+      {
+         char next = name.charAt(i);
+         if (next == ' ' || next == '_')
+         {
+            nextUpper = true;
+            continue;
+         }
+
+         if (buff.length() == 0 && // 
+               !(Character.isAlphabetic(next)// 
+                     || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why? 
+         {
+            next = 'x';
+         }
+
+         if (nextUpper)
+         {
+            next = Character.toUpperCase(next);
+            nextUpper = false;
+         }
+
+         if (buff.length() == 0)
+            next = Character.toLowerCase(next);
+
+         buff.append(next);
+      }
+      return buff.toString();
+
+      //      name = name.trim().replaceAll(" +", " ");
+      //
+      //      while (name.startsWith("_") && name.length() > 1)
+      //         name = name.substring(1, name.length());
+      //
+      //      while (name.endsWith("_") && name.length() > 1)
+      //         name = name.substring(0, name.length() - 1);
+      //
+      //      name = name.trim().replaceAll("_+", " ");
+      //
+      //      //convert "_" case aka "Snake Case" to camel case ex: something_like_this to somethingLikeThis
+      //      int idx = name.indexOf("_");
+      //      while (idx > -1 && name.length() > 1)
+      //      {
+      //         name = name.substring(0, idx) + name.substring(idx + 1, name.length());
+      //         if (idx < name.length())
+      //            name = name.substring(0, idx) + Character.toUpperCase(name.charAt(idx)) + name.substring(idx + 1, name.length());
+      //
+      //         idx = name.indexOf("_");
+      //      }
+      //
+      //      //convert "space case" to camel case ex: "something like this" to somethingLikeThis
+      //      idx = name.indexOf(" ");
+      //      while (idx > -1 && name.length() > 1)
+      //      {
+      //         name = name.substring(0, idx) + name.substring(idx + 1, name.length());
+      //         if (idx < name.length())
+      //            name = name.substring(0, idx) + Character.toUpperCase(name.charAt(idx)) + name.substring(idx + 1, name.length());
+      //
+      //         idx = name.indexOf(" ");
+      //      }
+
+      //probably camel case with leading cap, lower first char 
+      //      if (Character.isUpperCase(name.charAt(0)))
+      //         name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
+      //
+      //      return name;
    }
 
    protected String makeRelationshipName(Relationship rel)
@@ -401,14 +469,7 @@ public abstract class Db<T extends Db>
          pluralize = true;
       }
 
-      if (name.toUpperCase().equals(name))
-      {
-         name = name.toLowerCase();
-      }
-      else
-      {
-         name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
-      }
+      name = beautifyAttributeName(name);
 
       if (pluralize)
       {

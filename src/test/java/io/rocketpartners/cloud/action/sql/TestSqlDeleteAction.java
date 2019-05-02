@@ -20,8 +20,7 @@ public class TestSqlDeleteAction extends TestCase
    @Parameterized.Parameters
    public static Collection input()
    {
-      //return Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
-      return Arrays.asList(new Object[][]{{"h2"}});
+      return SqlServiceFactory.DBS;
    }
 
    protected String url(String path)

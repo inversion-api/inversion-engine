@@ -916,10 +916,10 @@ public class SqlUtils
             {
                for (int i = 0; i < sql.length; i++)
                {
-                  if (i % 100 == 0)
-                     System.out.print("\r\n" + i + "/" + sql.length);
-                  else
-                     System.out.print(".");
+//                  if (i % 100 == 0)
+//                     System.out.print("\r\n" + i + "/" + sql.length);
+//                  else
+//                     System.out.print(".");
 
                   try
                   {
