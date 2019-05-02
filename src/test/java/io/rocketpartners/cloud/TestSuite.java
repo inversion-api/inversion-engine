@@ -11,6 +11,7 @@ import io.rocketpartners.cloud.action.sql.TestSqlDeleteAction;
 import io.rocketpartners.cloud.action.sql.TestSqlGetAction;
 import io.rocketpartners.cloud.action.sql.TestSqlPostAction;
 import io.rocketpartners.cloud.action.sql.TestSqlQuery;
+import io.rocketpartners.cloud.action.sql.TestSqlTokenizer;
 import io.rocketpartners.cloud.model.TestDb;
 import io.rocketpartners.cloud.model.TestRule;
 import io.rocketpartners.cloud.rql.TestParser;
@@ -30,6 +31,7 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
 
       TestDb.class, //
 
+      TestSqlTokenizer.class, //
       TestSqlQuery.class, //
       TestSqlGetAction.class, //
       TestSqlPostAction.class, //

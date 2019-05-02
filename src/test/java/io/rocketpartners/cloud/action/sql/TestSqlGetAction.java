@@ -23,7 +23,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Parameterized.Parameters
    public static Collection input()
    {
-      return SqlServiceFactory.DBS;
+      return SqlServiceFactory.CONFIG_DBS_TO_TEST;
    }
 
    String db = null;

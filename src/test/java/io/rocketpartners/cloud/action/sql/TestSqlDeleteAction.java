@@ -20,7 +20,7 @@ public class TestSqlDeleteAction extends TestCase
    @Parameterized.Parameters
    public static Collection input()
    {
-      return SqlServiceFactory.DBS;
+      return SqlServiceFactory.CONFIG_DBS_TO_TEST;
    }
 
    protected String url(String path)
