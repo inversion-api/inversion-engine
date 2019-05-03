@@ -116,4 +116,15 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(830, total);
    }
 
+   @Test
+   public void testEq01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      res = service.get(url("orders?eq(orderid,10248)"));
+      json = res.getJson();
+      assertEquals(1, json.find("meta.foundRows"));
+      assertTrue(res.findString("data.0.orderid").equals("10248"));
+   }
 }
