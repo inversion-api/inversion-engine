@@ -431,7 +431,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
       }
 
-      if (term.hasToken("eq", "ne", "like", "w", "sw", "ew"))
+      if (term.hasToken("eq", "ne", "like", "w", "sw", "ew", "wo"))
       {
          if (terms.size() > 2)
             sql.append("(");
@@ -443,7 +443,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             String stringI = strings.get(i);
             if ("null".equalsIgnoreCase(stringI))
             {
-               if (term.hasToken("eq", "like", "w", "sw", "ew"))
+               if (term.hasToken("eq", "like", "w", "sw", "ew", "wo"))
                {
                   sql.append(string0).append(" IS NULL ");
                }
@@ -458,7 +458,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
                if (wildcard)
                {
-                  if (term.hasToken("ne"))
+                  if (term.hasToken("ne") || term.hasToken("wo"))
                      sql.append(string0).append(" NOT LIKE ").append(stringI);
                   else
                      sql.append(string0).append(" LIKE ").append(stringI);
@@ -642,7 +642,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       Term parent = term.getParent();
       if (parent != null)
       {
-         if (parent.hasToken("w"))
+         if (parent.hasToken("w") || parent.hasToken("wo"))
          {
             token = "*" + token + "*";
          }
@@ -655,7 +655,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             token = "*" + token;
          }
 
-         if (parent.hasToken("eq", "ne", "w", "sw", "ew", "like"))
+         if (parent.hasToken("eq", "ne", "w", "sw", "ew", "like", "wo"))
          {
             token = token.replace('*', '%');
          }
@@ -716,7 +716,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          if (sql == null)
             return;
-         
+
          sql = sql.trim();
 
          SqlTokenizer tok = new SqlTokenizer(sql);

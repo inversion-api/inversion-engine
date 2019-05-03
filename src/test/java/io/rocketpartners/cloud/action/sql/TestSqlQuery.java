@@ -395,6 +395,12 @@ public class TestSqlQuery extends TestCase
                             "select *, `firstName` AS 'name' from table1 LIMIT 100", // 
                             "select *, `firstName` AS 'name' from table1 LIMIT 100"));//the dynamicsql and preparedsql should match without fields
 
+      tests.add(new RqlTest("wo(city,andl)", //
+                            "select * from table1", //
+                            null, //
+                            "select * from table1 WHERE `city` NOT LIKE ? LIMIT 100", //
+                            "city", "%andl%"));
+
       boolean passed = true;
       int running = 0;
       //for (int j = tests.size() - 1; j >= 0; j--)
