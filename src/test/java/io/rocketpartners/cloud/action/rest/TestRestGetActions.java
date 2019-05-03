@@ -116,4 +116,95 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(830, total);
    }
 
+   @Test
+   public void testN01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&n(shipRegion)")).statusOk();
+      json = res.getJson();
+      assertEquals(5, json.find("meta.pageSize"));
+      assertEquals(5, json.getArray("data").length());
+   }
+   
+   @Test
+   public void testN02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&n(shipCountry)")).statusOk();
+      json = res.getJson();
+      assertEquals(0, json.find("meta.pageSize"));
+      assertEquals(0, json.getArray("data").length());
+   }
+
+   @Test
+   public void testNn01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&nn(shipRegion)")).statusOk();
+      json = res.getJson();
+      assertEquals(5, json.find("meta.pageSize"));
+      assertEquals(5, json.getArray("data").length());
+   }
+
+   @Test
+   public void testSw01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&sw(customerId,VI)")).statusOk();
+      json = res.getJson();
+      assertEquals(5, json.find("meta.pageSize"));
+      assertEquals(5, json.getArray("data").length());
+   }
+   
+   @Test
+   public void testSw02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&sw(customerId,Z)")).statusOk();
+      json = res.getJson();
+      assertEquals(0, json.find("meta.pageSize"));
+      assertEquals(0, json.getArray("data").length());
+   }
+
+   @Test
+   public void testLike01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&like(customerId,*VI*)")).statusOk();
+      json = res.getJson();
+      assertEquals(5, json.find("meta.pageSize"));
+      assertEquals(5, json.getArray("data").length());
+   }
+   
+   @Test
+   public void testLike02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&like(customerId,*ZZ*)")).statusOk();
+      json = res.getJson();
+      assertEquals(0, json.find("meta.pageSize"));
+      assertEquals(0, json.getArray("data").length());
+   }
+
 }
