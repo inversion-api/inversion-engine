@@ -1,5 +1,8 @@
 package io.rocketpartners.cloud.action.rest;
 
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 
 import io.rocketpartners.cloud.model.ObjectNode;
@@ -116,4 +119,43 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(830, total);
    }
 
+   @Test
+   public void testEmp01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get(url("orders?limit=5&emp(shipregion)"));
+      List<Map<String, Object>> resultsList = res.data().asList();
+      boolean assertion = true;
+      for (Map<String, Object> result : resultsList)
+      {
+         if (result.get("shipregion") != null && result.get("shipregion") != "")
+         {
+            assertion = false;
+            break;
+         }
+      }
+      assertTrue(assertion);
+   }
+   
+   @Test
+   public void testNemp01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get(url("orders?limit=5&nemp(shipregion)"));
+      List<Map<String, Object>> resultsList = res.data().asList();
+      boolean assertion = true;
+      for (Map<String, Object> result : resultsList)
+      {
+         if (result.get("shipregion") == null || result.get("shipregion") == "")
+         {
+            assertion = false;
+            break;
+         }
+      }
+      assertTrue(assertion);
+   }
 }
