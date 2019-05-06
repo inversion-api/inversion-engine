@@ -1,7 +1,11 @@
 package io.rocketpartners.cloud.action.rest;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Test;
 
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -116,4 +120,113 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(830, total);
    }
 
+   @Test
+   public void testEw01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      res = service.get(url("orders?ew(shipname,Chevalier)"));
+      ArrayNode data = res.getJson().getArray("data");
+      boolean assertion = true;
+      for (Object o : data)
+      {
+         ObjectNode js = (ObjectNode) o;
+         if (js.getString("shipname").endsWith("Chevalier"))
+            continue;
+         else
+         {
+            assertion = false;
+         }
+      }
+      assertTrue(data.size() > 0 && assertion);
+   }
+
+   @Test
+   public void testLt01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      res = service.get(url("orders?limit=5&lt(freight,2)"));
+      boolean assertion = true;
+      ArrayNode data = res.getJson().getArray("data");
+      for (Object o : data)
+      {
+         ObjectNode js = (ObjectNode) o;
+         if (Float.parseFloat(js.getString("freight")) < 2)
+            continue;
+         else
+         {
+            assertion = false;
+         }
+      }
+      assertTrue(data.size() > 0 && assertion);
+   }
+
+   @Test
+   public void testLe01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      boolean assertion = true;
+      res = service.get(url("orders?limit=5&le(freight,2)"));
+      ArrayNode data = res.getJson().getArray("data");
+      for (Object o : data)
+      {
+         ObjectNode js = (ObjectNode) o;
+         if (Float.parseFloat(js.getString("freight")) <= 2)
+            continue;
+         else
+         {
+            assertion = false;
+         }
+      }
+      assertTrue(data.size() > 0 && assertion);
+   }
+
+   @Test
+   public void testIn01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      res = service.get(url("orders?in(orderid,10249,10258,10252)"));
+      boolean assertion = true;
+      ArrayNode data = res.getJson().getArray("data");
+
+      List<String> list = Arrays.asList("10249", "10258", "10252");
+      for (Object o : data)
+      {
+         ObjectNode js = (ObjectNode) o;
+         if (list.indexOf(js.getString("orderid")) > -1)
+            continue;
+         else
+         {
+            assertion = false;
+         }
+      }
+      assertEquals(3, data.length());
+      assertTrue(assertion);
+   }
+
+   @Test
+   public void testOut01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("employees?out(employeeid,1,2)")).statusOk();
+      json = res.getJson();
+      assertEquals(7, json.getArray("data").length());
+   }
+
+   @Test
+   public void testW01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      res = service.get(url("employees?w(city,ondon)")).statusOk();
+      json = res.getJson();
+      assertEquals(4, json.getArray("data").length());
+   }
 }
