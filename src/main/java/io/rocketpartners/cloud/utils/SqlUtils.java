@@ -448,7 +448,7 @@ public class SqlUtils
       {
          Object col = columnNameArray[i];
          sql.append("\r\n`").append(col).append("`= values(`").append(col).append("`)");
-         if(i<columnNameArray.length-1)
+         if (i < columnNameArray.length - 1)
             sql.append(", ");
       }
       return sql.toString();
@@ -457,6 +457,7 @@ public class SqlUtils
    public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
+      List<String> primaryKeys = new ArrayList<String>();
 
       for (Map row : rows)
       {
@@ -467,7 +468,7 @@ public class SqlUtils
       String sql = buildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
 
       Exception ex = null;
-      PreparedStatement stmt = conn.prepareStatement(sql);
+      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
       try
       {
          notifyBefore("upsert", sql, rows);
@@ -490,10 +491,22 @@ public class SqlUtils
       }
       finally
       {
+         ResultSet rs = stmt.getGeneratedKeys();
+         while (rs.next())
+         {
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            int columnCount = rsMetaData.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++)
+            {
+               String key = rs.getString(i);
+               primaryKeys.add(key);
+            }
+         }
          SqlUtils.close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
       }
-      return keys;
+      return primaryKeys;
    }
 
    public static Object insertMap(Connection conn, String tableName, Map row) throws Exception
@@ -916,10 +929,10 @@ public class SqlUtils
             {
                for (int i = 0; i < sql.length; i++)
                {
-//                  if (i % 100 == 0)
-//                     System.out.print("\r\n" + i + "/" + sql.length);
-//                  else
-//                     System.out.print(".");
+                  //                  if (i % 100 == 0)
+                  //                     System.out.print("\r\n" + i + "/" + sql.length);
+                  //                  else
+                  //                     System.out.print(".");
 
                   try
                   {
