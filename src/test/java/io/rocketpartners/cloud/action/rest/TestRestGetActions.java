@@ -59,7 +59,7 @@ public abstract class TestRestGetActions extends TestCase
       res = service.get(url("orders?limit=5")).statusOk();
       json = res.getJson();
       assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
+      assertEquals(5, res.data().length());
    }
 
    @Test
@@ -74,7 +74,7 @@ public abstract class TestRestGetActions extends TestCase
       res = service.get(url);
       res.dump();
 
-      assertEquals(2, res.findArray("data").length());
+      assertEquals(2, res.data().length());
       String href = res.findString("data.0.href");
 
       assertTrue(href.endsWith("/orders/10248"));
@@ -82,7 +82,7 @@ public abstract class TestRestGetActions extends TestCase
       res = service.get(url("orders?limit=2&sort=-orderid"));
       res.dump();
 
-      assertEquals(2, res.findArray("data").length());
+      assertEquals(2, res.data().length());
       href = res.findString("data.0.href");
       assertTrue(href.endsWith("/orders/11077"));
 
@@ -111,7 +111,7 @@ public abstract class TestRestGetActions extends TestCase
 
          next = res.next();
 
-         assertEquals(5, res.findArray("data").length());
+         assertEquals(5, res.data().length());
          assertEquals(5, res.find("meta.pageSize"));
       }
       while (pages < 200 && next != null);
@@ -126,7 +126,7 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       res = service.get(url("orders?ew(shipname,Chevalier)"));
-      ArrayNode data = res.getJson().getArray("data");
+      ArrayNode data = res.data();
       boolean assertion = true;
       for (Object o : data)
       {
@@ -148,7 +148,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       res = service.get(url("orders?limit=5&lt(freight,2)"));
       boolean assertion = true;
-      ArrayNode data = res.getJson().getArray("data");
+      ArrayNode data = res.data();
       for (Object o : data)
       {
          ObjectNode js = (ObjectNode) o;
@@ -169,7 +169,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       boolean assertion = true;
       res = service.get(url("orders?limit=5&le(freight,2)"));
-      ArrayNode data = res.getJson().getArray("data");
+      ArrayNode data = res.data();
       for (Object o : data)
       {
          ObjectNode js = (ObjectNode) o;
@@ -190,7 +190,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       res = service.get(url("orders?in(orderid,10249,10258,10252)"));
       boolean assertion = true;
-      ArrayNode data = res.getJson().getArray("data");
+      ArrayNode data = res.data();
 
       List<String> list = Arrays.asList("10249", "10258", "10252");
       for (Object o : data)
@@ -216,7 +216,7 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("employees?out(employeeid,1,2)")).statusOk();
       json = res.getJson();
-      assertEquals(7, json.getArray("data").length());
+      assertEquals(7, res.data().length());
    }
 
    @Test
@@ -227,6 +227,6 @@ public abstract class TestRestGetActions extends TestCase
       ObjectNode json = null;
       res = service.get(url("employees?w(city,ondon)")).statusOk();
       json = res.getJson();
-      assertEquals(4, json.getArray("data").length());
+      assertEquals(4, res.data().length());
    }
 }
