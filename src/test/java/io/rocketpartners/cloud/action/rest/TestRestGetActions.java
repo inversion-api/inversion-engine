@@ -126,9 +126,9 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
 
       res = service.get(url("orders?limit=5&emp(shipregion)"));
-      List<Map<String, Object>> resultsList = res.data().asList();
+      List<ObjectNode> list = res.data().asList();
       boolean assertion = true;
-      for (Map<String, Object> result : resultsList)
+      for (Map<String, Object> result : list)
       {
          if (result.get("shipregion") != null && result.get("shipregion") != "")
          {
@@ -146,9 +146,9 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
 
       res = service.get(url("orders?limit=5&nemp(shipregion)"));
-      List<Map<String, Object>> resultsList = res.data().asList();
+      List<ObjectNode> list = res.data().asList();
       boolean assertion = true;
-      for (Map<String, Object> result : resultsList)
+      for (Map<String, Object> result : list)
       {
          if (result.get("shipregion") == null || result.get("shipregion") == "")
          {
