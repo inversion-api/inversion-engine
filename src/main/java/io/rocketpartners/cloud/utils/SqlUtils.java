@@ -494,14 +494,9 @@ public class SqlUtils
          ResultSet rs = stmt.getGeneratedKeys();
          while (rs.next())
          {
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            int columnCount = rsMetaData.getColumnCount();
 
-            for (int i = 1; i <= columnCount; i++)
-            {
-               String key = rs.getString(i);
-               primaryKeys.add(key);
-            }
+            String key = rs.getString(1);
+            primaryKeys.add(key);
          }
          SqlUtils.close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);

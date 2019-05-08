@@ -74,6 +74,7 @@ public class TestSqlPostAction extends TestCase
       SqlServiceFactory.prepData(db, url("orders"));
    }
 
+   @Test
    public void testUpsert() throws Exception
    {
       Service service = service();
@@ -86,7 +87,7 @@ public class TestSqlPostAction extends TestCase
          Connection conn = mysql.getConnection();
          try
          {
-            Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM Orders WHERE OrderId in(10273,10274,10275,10276)");
+            Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM Orders WHERE OrderID in(10257, 10395, 10476, 10486)");
 
             for (Row row : rows)
             {
@@ -94,22 +95,17 @@ public class TestSqlPostAction extends TestCase
             }
 
             Map clone1 = new HashMap(rows.get(0));
-            clone1.remove("OrderId");
+            clone1.remove("OrderID");
 
             Map clone2 = new HashMap(rows.get(0));
-            clone1.put("OrderId", 1);
-
-            rows.addRow(clone1);
-            rows.addRow(clone2);
+            clone1.put("OrderID", 1);
 
             List<Map<String, Object>> toUpsert = new ArrayList(rows);
+            toUpsert.add(clone1);
+            toUpsert.add(clone2);
+            List generatedKeys = SqlUtils.mysqlUpsert(conn, "Orders", toUpsert);
 
-            List generatedKeys = SqlUtils.mysqlUpsert(conn, "Order", toUpsert);
-
-            //start test here
-            //the generated key value for orders 10273,10274,10275 and 10276 is possibly null
-            //clone1 should have a generated key
-            //clone2 may not have a generated key.
+            assertEquals(toUpsert.size() - 1, generatedKeys.size());
          }
          finally
          {
