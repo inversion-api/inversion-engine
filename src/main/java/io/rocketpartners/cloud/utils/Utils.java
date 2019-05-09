@@ -18,6 +18,7 @@
  */
 package io.rocketpartners.cloud.utils;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -27,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -2039,7 +2041,7 @@ public class Utils
             for (String pair : pairs)
             {
                pair = pair.trim();
-               
+
                if (pair.length() == 0)
                   continue;
 
@@ -2048,10 +2050,10 @@ public class Utils
                {
                   String key = pair.substring(0, idx).trim();
                   key = URLDecoder.decode(key, "UTF-8");
-                  
+
                   String value = pair.substring(idx + 1).trim();
                   value = URLDecoder.decode(value, "UTF-8");
-                  
+
                   params.put(key, value);
                }
                else
@@ -2135,6 +2137,35 @@ public class Utils
       }
 
       return value;
+   }
+
+   public static String run(String... commands) throws IOException
+   {
+      Runtime rt = Runtime.getRuntime();
+      //String[] commands = {"/usr/local/bin/aws", "ec2", "describe-volumes"};
+      Process proc = rt.exec(commands);
+
+      BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+      String s = null;
+      StringBuffer out = new StringBuffer("");
+      while ((s = stdInput.readLine()) != null)
+      {
+         out.append(s).append("\r\n");
+      }
+
+      if (out.length() == 0)
+      {
+         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+         // read any errors from the attempted command
+         System.out.println("Here is the standard error of the command (if any):\n");
+         while ((s = stdError.readLine()) != null)
+         {
+            out.append(s).append("\r\n");
+         }
+      }
+
+      return out.toString();
    }
 
 }
