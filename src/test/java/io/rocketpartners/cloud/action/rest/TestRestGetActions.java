@@ -67,7 +67,6 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
 
       String url = url("orders?limit=2&sort=orderid");
 
@@ -212,10 +211,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
-
       res = service.get(url("employees?out(employeeid,1,2)")).statusOk();
-      json = res.getJson();
       assertEquals(7, res.data().length());
    }
 
@@ -224,9 +220,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-      ObjectNode json = null;
       res = service.get(url("employees?w(city,ondon)")).statusOk();
-      json = res.getJson();
       assertEquals(4, res.data().length());
    }
 }
