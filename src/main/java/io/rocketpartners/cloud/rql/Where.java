@@ -28,7 +28,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
    public Where(P query)
    {
       super(query);
-      withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "w", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+      withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
    }
 
    protected boolean addTerm(String token, Term term)
