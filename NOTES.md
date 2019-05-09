@@ -17,8 +17,10 @@
 * TODO: add tests for nested document put/post
 * TODO: add tests for nested document put/pust with compound keys
 
-* TODO: sort by primary index if no sort is provided
-* TODO: should we require a sort key to use pagination?
+ADDED TO GITHUB * TODO: sort by primary index if no sort is provided
+* TODO: should we require a sort key to use pagination YES
+
+
 * TODO: throw error if dynamo continuation token and requested sort don't match
 
 * TODO: update "rowCount" to "foundRows" or something like that
@@ -27,15 +29,15 @@
 * DONE: add test to make sure that link tables are not created as collections
 * TODO: create a test case for a 3 entity link table w/ composite foreign keys
 
-* TODO: add character escaping to Term so that it automatically knows how to escape control characters that might be in the data
-* TODO: get rid of Entity.getKey() because need to always support multi attribute/column keys
-* TODO: add support for expanding multi key column relationships
+DONE * TODO: add character escaping to Term so that it automatically knows how to escape control characters that might be in the data
+DONE * TODO: get rid of Entity.getKey() because need to always support multi attribute/column keys
+DONE * TODO: add support for expanding multi key column relationships
 * TODO: fix elastic search
 * TODO: fix s3
 * DONE: fix firehose
 * DONE: fix redis
 
-* TODO: link to another table with a compound key ...orderdetails was it?
+DONE * TODO: link to another table with a compound key ...orderdetails was it?
 * TODO: add back support for non collection selects
 * TODO: make iterator or lambda stream to loop over all results including pagination
 * DONE: put excludes and expands into restgetaction
