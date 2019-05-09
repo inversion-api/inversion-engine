@@ -54,7 +54,10 @@ dependencies {
 	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.5'
 
    
+
+   
 	//aws libs
+    //compile 'com.amazonaws:aws-java-sdk:1.11.547'
 	compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
 	compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
 	compile 'com.amazonaws:aws-java-sdk-kinesis:1.11.390'
