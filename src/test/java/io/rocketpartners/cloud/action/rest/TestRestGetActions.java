@@ -1,7 +1,6 @@
 package io.rocketpartners.cloud.action.rest;
 
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 
@@ -128,7 +127,7 @@ public abstract class TestRestGetActions extends TestCase
       res = service.get(url("orders?limit=5&emp(shipregion)"));
       List<ObjectNode> list = res.data().asList();
       boolean assertion = true;
-      for (Map<String, Object> result : list)
+      for (ObjectNode result : list)
       {
          if (result.get("shipregion") != null && result.get("shipregion") != "")
          {
@@ -138,7 +137,7 @@ public abstract class TestRestGetActions extends TestCase
       }
       assertTrue(assertion);
    }
-   
+
    @Test
    public void testNemp01() throws Exception
    {
@@ -148,7 +147,7 @@ public abstract class TestRestGetActions extends TestCase
       res = service.get(url("orders?limit=5&nemp(shipregion)"));
       List<ObjectNode> list = res.data().asList();
       boolean assertion = true;
-      for (Map<String, Object> result : list)
+      for (ObjectNode result : list)
       {
          if (result.get("shipregion") == null || result.get("shipregion") == "")
          {
