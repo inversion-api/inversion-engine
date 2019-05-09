@@ -98,14 +98,14 @@ public class TestSqlPostAction extends TestCase
             clone1.remove("OrderID");
 
             Map clone2 = new HashMap(rows.get(0));
-            clone1.put("OrderID", 1);
+            clone2.put("OrderID", 1);
 
             List<Map<String, Object>> toUpsert = new ArrayList(rows);
             toUpsert.add(clone1);
             toUpsert.add(clone2);
             List generatedKeys = SqlUtils.mysqlUpsert(conn, "Orders", toUpsert);
 
-            assertEquals(toUpsert.size() - 1, generatedKeys.size());
+            assertEquals("11078", generatedKeys.get(4));
          }
          finally
          {
