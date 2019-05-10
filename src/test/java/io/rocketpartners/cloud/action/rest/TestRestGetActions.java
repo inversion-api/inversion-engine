@@ -126,18 +126,11 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       res = service.get(url("orders?ew(shipname,Chevalier)"));
       ArrayNode data = res.data();
-      boolean assertion = true;
+      assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         ObjectNode js = (ObjectNode) o;
-         if (js.getString("shipname").endsWith("Chevalier"))
-            continue;
-         else
-         {
-            assertion = false;
-         }
+         assertTrue(((ObjectNode) o).getString("shipname").endsWith("Chevalier"));
       }
-      assertTrue(data.size() > 0 && assertion);
    }
 
    @Test
@@ -146,19 +139,12 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       res = service.get(url("orders?limit=5&lt(freight,2)"));
-      boolean assertion = true;
       ArrayNode data = res.data();
+      assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         ObjectNode js = (ObjectNode) o;
-         if (Float.parseFloat(js.getString("freight")) < 2)
-            continue;
-         else
-         {
-            assertion = false;
-         }
+         assertTrue(Float.parseFloat(((ObjectNode) o).getString("freight")) < 2);
       }
-      assertTrue(data.size() > 0 && assertion);
    }
 
    @Test
@@ -166,20 +152,13 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-      boolean assertion = true;
       res = service.get(url("orders?limit=5&le(freight,2)"));
       ArrayNode data = res.data();
+      assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         ObjectNode js = (ObjectNode) o;
-         if (Float.parseFloat(js.getString("freight")) <= 2)
-            continue;
-         else
-         {
-            assertion = false;
-         }
+         assertTrue(Float.parseFloat(((ObjectNode) o).getString("freight")) <= 2);
       }
-      assertTrue(data.size() > 0 && assertion);
    }
 
    @Test
@@ -188,22 +167,13 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       res = service.get(url("orders?in(orderid,10249,10258,10252)"));
-      boolean assertion = true;
       ArrayNode data = res.data();
-
       List<String> list = Arrays.asList("10249", "10258", "10252");
-      for (Object o : data)
-      {
-         ObjectNode js = (ObjectNode) o;
-         if (list.indexOf(js.getString("orderid")) > -1)
-            continue;
-         else
-         {
-            assertion = false;
-         }
-      }
       assertEquals(3, data.length());
-      assertTrue(assertion);
+      for (Object obj : data)
+      {
+         assertTrue(list.contains(((ObjectNode) obj).getString("orderId")));
+      }
    }
 
    @Test
@@ -212,7 +182,12 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       res = service.get(url("employees?out(employeeid,1,2)")).statusOk();
+      List<String> employeeIDs = Arrays.asList("1", "2");
       assertEquals(7, res.data().length());
+      for (Object obj : res.data())
+      {
+         assertFalse(employeeIDs.contains(((ObjectNode) obj).getString("orderId")));
+      }
    }
 
    @Test
@@ -222,5 +197,9 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       res = service.get(url("employees?w(city,ondon)")).statusOk();
       assertEquals(4, res.data().length());
+      for (Object obj : res.data())
+      {
+         assertTrue(((ObjectNode) obj).getString("city").contains("ondon"));
+      }
    }
 }
