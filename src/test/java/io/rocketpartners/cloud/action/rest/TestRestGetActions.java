@@ -144,7 +144,7 @@ public abstract class TestRestGetActions extends TestCase
       for (ObjectNode result : list)
       {
          String shipregion = result.getString("shipregion");
-         assertFalse(Utils.empty(shipregion));
+         assertFalse("shipregion was not supposed to be empty but was: '" + shipregion + "'",Utils.empty(shipregion));
       }
    }
 }
