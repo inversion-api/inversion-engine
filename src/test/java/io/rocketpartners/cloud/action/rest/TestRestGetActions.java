@@ -2,6 +2,7 @@ package io.rocketpartners.cloud.action.rest;
 
 import org.junit.Test;
 
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -122,13 +123,18 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       ObjectNode json = null;
+      ArrayNode data = null;
 
       res = service.get(url("orders?limit=5&n(shipRegion)")).statusOk();
       json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertNull(((ObjectNode) o).getString("shipregion"));
+      }
    }
-   
+
    @Test
    public void testN02() throws Exception
    {
@@ -138,8 +144,7 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("orders?limit=5&n(shipCountry)")).statusOk();
       json = res.getJson();
-      assertEquals(0, json.find("meta.pageSize"));
-      assertEquals(0, json.getArray("data").length());
+      assertTrue(json.getArray("data").length() == 0);
    }
 
    @Test
@@ -148,11 +153,16 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       ObjectNode json = null;
+      ArrayNode data = null;
 
       res = service.get(url("orders?limit=5&nn(shipRegion)")).statusOk();
       json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertNotNull(((ObjectNode) o).getString("shipregion"));
+      }
    }
 
    @Test
@@ -161,13 +171,18 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       ObjectNode json = null;
+      ArrayNode data = null;
 
       res = service.get(url("orders?limit=5&sw(customerId,VI)")).statusOk();
       json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertTrue(((ObjectNode) o).getString("customerid").startsWith("VI"));
+      }
    }
-   
+
    @Test
    public void testSw02() throws Exception
    {
@@ -177,8 +192,7 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("orders?limit=5&sw(customerId,Z)")).statusOk();
       json = res.getJson();
-      assertEquals(0, json.find("meta.pageSize"));
-      assertEquals(0, json.getArray("data").length());
+      assertTrue(json.getArray("data").length() == 0);
    }
 
    @Test
@@ -187,13 +201,18 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       ObjectNode json = null;
+      ArrayNode data = null;
 
       res = service.get(url("orders?limit=5&like(customerId,*VI*)")).statusOk();
       json = res.getJson();
-      assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, json.getArray("data").length());
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertTrue(((ObjectNode) o).getString("customerid").contains("VI"));
+      }
    }
-   
+
    @Test
    public void testLike02() throws Exception
    {
@@ -203,8 +222,7 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("orders?limit=5&like(customerId,*ZZ*)")).statusOk();
       json = res.getJson();
-      assertEquals(0, json.find("meta.pageSize"));
-      assertEquals(0, json.getArray("data").length());
+      assertTrue(json.getArray("data").length() == 0);
    }
 
 }
