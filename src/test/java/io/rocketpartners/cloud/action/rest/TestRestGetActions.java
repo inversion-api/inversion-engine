@@ -7,6 +7,7 @@ import org.junit.Test;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public abstract class TestRestGetActions extends TestCase
@@ -126,16 +127,11 @@ public abstract class TestRestGetActions extends TestCase
 
       res = service.get(url("orders?limit=5&emp(shipregion)"));
       List<ObjectNode> list = res.data().asList();
-      boolean assertion = true;
       for (ObjectNode result : list)
       {
-         if (result.get("shipregion") != null && result.get("shipregion") != "")
-         {
-            assertion = false;
-            break;
-         }
+         String shipregion = result.getString("shipregion");
+         assertTrue("shipregion was supposed to be empty but was: '" + shipregion + "'", Utils.empty(shipregion));
       }
-      assertTrue(assertion);
    }
 
    @Test
@@ -143,18 +139,12 @@ public abstract class TestRestGetActions extends TestCase
    {
       Service service = service();
       Response res = null;
-
       res = service.get(url("orders?limit=5&nemp(shipregion)"));
       List<ObjectNode> list = res.data().asList();
-      boolean assertion = true;
       for (ObjectNode result : list)
       {
-         if (result.get("shipregion") == null || result.get("shipregion") == "")
-         {
-            assertion = false;
-            break;
-         }
+         String shipregion = result.getString("shipregion");
+         assertFalse(Utils.empty(shipregion));
       }
-      assertTrue(assertion);
    }
 }
