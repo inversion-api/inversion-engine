@@ -407,6 +407,16 @@ public class TestSqlQuery extends TestCase
                             "select * from table1 WHERE `freight` <= ? LIMIT 100", //
                             "freight", "2"));
 
+      tests.add(new RqlTest("emp(startYear)", //
+                            "SELECT * FROM Person", //
+                            "SELECT * FROM Person WHERE `startYear` IS NULL OR `startYear` = '' LIMIT 100", //
+                            "SELECT * FROM Person WHERE `startYear` IS NULL OR `startYear` = '' LIMIT 100"));
+
+      tests.add(new RqlTest("nemp(startYear)", //
+                            "SELECT * FROM Person", //
+                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL AND `startYear` != '' LIMIT 100", //
+                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL AND `startYear` != '' LIMIT 100"));
+
       boolean passed = true;
       int running = 0;
       //for (int j = tests.size() - 1; j >= 0; j--)
