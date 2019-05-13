@@ -491,6 +491,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          sql.append(concatAll(" AND ", " IS NOT NULL", strings));
       }
+      else if ("emp".equalsIgnoreCase(token))
+      {
+         sql.append(strings.get(0)).append(" IS NULL OR ").append(strings.get(0)).append(" = ''");
+      }
+      else if ("nemp".equalsIgnoreCase(token))
+      {
+         sql.append(strings.get(0)).append(" IS NOT NULL AND ").append(strings.get(0)).append(" != ''");
+      }
       else if ("n".equalsIgnoreCase(token))
       {
          sql.append(concatAll(" AND ", " IS NULL", strings));

@@ -1,11 +1,14 @@
 package io.rocketpartners.cloud.action.rest;
 
+import java.util.List;
+
 import org.junit.Test;
 
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public abstract class TestRestGetActions extends TestCase
@@ -118,6 +121,20 @@ public abstract class TestRestGetActions extends TestCase
    }
 
    @Test
+   public void testEmp01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+
+      res = service.get(url("orders?limit=5&emp(shipregion)"));
+      List<ObjectNode> list = res.data().asList();
+      for (ObjectNode result : list)
+      {
+         String shipregion = result.getString("shipregion");
+         assertTrue("shipregion was supposed to be empty but was: '" + shipregion + "'", Utils.empty(shipregion));
+      }
+   }
+
    public void testN01() throws Exception
    {
       Service service = service();
@@ -136,6 +153,19 @@ public abstract class TestRestGetActions extends TestCase
    }
 
    @Test
+   public void testNemp01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      res = service.get(url("orders?limit=5&nemp(shipregion)"));
+      List<ObjectNode> list = res.data().asList();
+      for (ObjectNode result : list)
+      {
+         String shipregion = result.getString("shipregion");
+         assertFalse("shipregion was not supposed to be empty but was: '" + shipregion + "'",Utils.empty(shipregion));
+      }
+   }
+
    public void testN02() throws Exception
    {
       Service service = service();
@@ -224,5 +254,4 @@ public abstract class TestRestGetActions extends TestCase
       json = res.getJson();
       assertTrue(json.getArray("data").length() == 0);
    }
-
 }
