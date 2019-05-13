@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -134,6 +135,23 @@ public abstract class TestRestGetActions extends TestCase
       }
    }
 
+   public void testN01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      ArrayNode data = null;
+
+      res = service.get(url("orders?limit=5&n(shipRegion)")).statusOk();
+      json = res.getJson();
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertNull(((ObjectNode) o).getString("shipregion"));
+      }
+   }
+
    @Test
    public void testNemp01() throws Exception
    {
@@ -146,5 +164,94 @@ public abstract class TestRestGetActions extends TestCase
          String shipregion = result.getString("shipregion");
          assertFalse("shipregion was not supposed to be empty but was: '" + shipregion + "'",Utils.empty(shipregion));
       }
+   }
+
+   public void testN02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&n(shipCountry)")).statusOk();
+      json = res.getJson();
+      assertTrue(json.getArray("data").length() == 0);
+   }
+
+   @Test
+   public void testNn01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      ArrayNode data = null;
+
+      res = service.get(url("orders?limit=5&nn(shipRegion)")).statusOk();
+      json = res.getJson();
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertNotNull(((ObjectNode) o).getString("shipregion"));
+      }
+   }
+
+   @Test
+   public void testSw01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      ArrayNode data = null;
+
+      res = service.get(url("orders?limit=5&sw(customerId,VI)")).statusOk();
+      json = res.getJson();
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertTrue(((ObjectNode) o).getString("customerid").startsWith("VI"));
+      }
+   }
+
+   @Test
+   public void testSw02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&sw(customerId,Z)")).statusOk();
+      json = res.getJson();
+      assertTrue(json.getArray("data").length() == 0);
+   }
+
+   @Test
+   public void testLike01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      ArrayNode data = null;
+
+      res = service.get(url("orders?limit=5&like(customerId,*VI*)")).statusOk();
+      json = res.getJson();
+      data = json.getArray("data");
+      assertTrue(data.length() > 0);
+      for (Object o : data)
+      {
+         assertTrue(((ObjectNode) o).getString("customerid").contains("VI"));
+      }
+   }
+
+   @Test
+   public void testLike02() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+
+      res = service.get(url("orders?limit=5&like(customerId,*ZZ*)")).statusOk();
+      json = res.getJson();
+      assertTrue(json.getArray("data").length() == 0);
    }
 }

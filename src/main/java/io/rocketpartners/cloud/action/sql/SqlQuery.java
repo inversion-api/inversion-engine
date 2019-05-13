@@ -240,6 +240,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
 
       List<Sort> sorts = order().getSorts();
+      if (sorts.isEmpty())
+      {
+         for (Column col : table.getPrimaryIndex().getColumns())
+         {
+            Sort sort = new Sort(asCol(col.getName()), true);
+            sorts.add(sort);
+         }
+      }
       for (int i = 0; i < sorts.size(); i++)
       {
          //-- now setup the "ORDER BY" clause based on the
@@ -724,7 +732,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          if (sql == null)
             return;
-         
+
          sql = sql.trim();
 
          SqlTokenizer tok = new SqlTokenizer(sql);
