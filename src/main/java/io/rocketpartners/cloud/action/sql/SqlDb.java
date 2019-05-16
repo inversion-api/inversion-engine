@@ -379,19 +379,22 @@ public class SqlDb extends Db<SqlDb>
          {
             for (Db db : (List<Db>) new ArrayList(conns.keySet()))
             {
-               Connection conn = conns.get(db);
-
-               if (!conn.getAutoCommit())
+               try
                {
-                  try
+                  Connection conn = conns.get(db);
+                  if (!conn.isClosed() && !conn.getAutoCommit())
                   {
                      conn.commit();
                   }
-                  catch (Exception ex)
-                  {
-                     if (toThrow != null)
-                        toThrow = ex;
-                  }
+               }
+               catch (Exception ex)
+               {
+                  String msg = (ex.getMessage() + "").toLowerCase();
+                  if (msg.indexOf("connection is closed") > -1)
+                     continue;
+
+                  if (toThrow != null)
+                     toThrow = ex;
                }
             }
          }
