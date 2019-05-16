@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import io.rocketpartners.cloud.action.rest.TestRestGetActions;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -14,7 +15,6 @@ import junit.framework.TestCase;
 
 public class TestDynamoDbPostActions extends TestCase
 {
-
    protected Service service() throws Exception
    {
       return DynamoServiceFactory.service();
