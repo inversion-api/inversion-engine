@@ -240,7 +240,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
 
       List<Sort> sorts = order().getSorts();
-      if (sorts.isEmpty())
+      if (sorts.isEmpty() && table != null && table.getPrimaryIndex() != null)
       {
          for (Column col : table.getPrimaryIndex().getColumns())
          {

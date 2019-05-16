@@ -395,6 +395,18 @@ public class TestSqlQuery extends TestCase
                             "select *, `firstName` AS 'name' from table1 LIMIT 100", // 
                             "select *, `firstName` AS 'name' from table1 LIMIT 100"));//the dynamicsql and preparedsql should match without fields
 
+      tests.add(new RqlTest("lt(freight,2)", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `freight` < 2 LIMIT 100", //
+                            "select * from table1 WHERE `freight` < ? LIMIT 100", // 
+                            "freight", "2"));
+
+      tests.add(new RqlTest("le(freight,2)", //
+                            "select * from table1", //
+                            "select * from table1 WHERE `freight` <= 2 LIMIT 100", //
+                            "select * from table1 WHERE `freight` <= ? LIMIT 100", //
+                            "freight", "2"));
+
       tests.add(new RqlTest("emp(startYear)", //
                             "SELECT * FROM Person", //
                             "SELECT * FROM Person WHERE `startYear` IS NULL OR `startYear` = '' LIMIT 100", //
