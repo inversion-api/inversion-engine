@@ -48,6 +48,7 @@ import io.rocketpartners.cloud.utils.Utils;
 public class AuthAction extends Action<AuthAction>
 {
    long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeput
+   long                       sessionUpdate           = 1000 * 10;      //update a session every 10s to prevent spamming the cache with every request
    protected int              sessionMax              = 10000;
 
    protected int              failedMax               = 10;
@@ -210,7 +211,7 @@ public class AuthAction extends Action<AuthAction>
          {
             if (now - user.getRequestAt() > sessionExp)
             {
-               sessionCache.remove(token);
+               sessionCache.remove(sessionKey);
                user = null;
             }
          }
@@ -221,13 +222,20 @@ public class AuthAction extends Action<AuthAction>
 
       if (user != null)
       {
+         // update the session cache if this is a session request OR 
+         // if the session update time has passed.
+         boolean updateSessionCache = false;
+         long previousReqTime = user.getRequestAt();
+         if (now - previousReqTime > sessionUpdate)
+            updateSessionCache = true;
+
          user.withRequestAt(now);
          req.withUser(user);
 
          if (sessionReq && req.isPost())
          {
-            sessionKey = req.getApi().getId() + "_" + newSessionId();//
-            sessionCache.put(sessionKey, user);
+            sessionKey = req.getApi().getId() + "_" + newSessionId();
+            updateSessionCache = true;
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
             ObjectNode obj = new ObjectNode();
@@ -251,6 +259,9 @@ public class AuthAction extends Action<AuthAction>
 
             resp.withJson(new ObjectNode("data", obj));
          }
+
+         if (updateSessionCache)
+            sessionCache.put(sessionKey, user);
       }
 
       if (req.getUser() != null)
