@@ -2,6 +2,7 @@ package io.rocketpartners.cloud.action.rest;
 
 import org.junit.Test;
 
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
@@ -134,12 +135,19 @@ public abstract class TestRestGetActions extends TestCase
       Service service = service();
       Response res = null;
       ObjectNode json = null;
+      ArrayNode data = null;
+
       res = service.get(url("orders?eq(employeeid,5)"));
       json = res.getJson();
       assertEquals(42, json.find("meta.foundRows"));
 
-      res = service.get(url("orders?eq(employeeid,5)&wo(shipcountry,Switzerland)"));
+      res = service.get(url("orders?eq(employeeid,5)&wo(shipcountry,witzer)"));
       json = res.getJson();
+      data = json.getArray("data");
       assertEquals(41, json.find("meta.foundRows"));
+      for (Object o : data)
+      {
+         assertFalse(((ObjectNode) o).getString("shipcountry").contains("witzer"));
+      }
    }
 }
