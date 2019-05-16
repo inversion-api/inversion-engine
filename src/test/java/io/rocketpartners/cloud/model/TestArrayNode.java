@@ -19,14 +19,18 @@ public class TestArrayNode
    {
       assertTrue(new ArrayNode().isEmpty());
       assertFalse(new ArrayNode("a", "b").isEmpty());
-      
+
       ArrayNode a = new ArrayNode();
       a.add("1");
       assertFalse(a.isEmpty());
-      
-      ArrayNode b = new ArrayNode();
-      b.add("1");
-      b.clear();
-      assertTrue(b.isEmpty());
+   }
+
+   @Test
+   public void testClearAndIsEmpty()
+   {
+      ArrayNode a = new ArrayNode();
+      a.add("1");
+      a.clear();
+      assertTrue(a.isEmpty());
    }
 }
