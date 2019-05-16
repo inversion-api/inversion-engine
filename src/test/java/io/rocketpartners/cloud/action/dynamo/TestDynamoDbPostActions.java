@@ -11,10 +11,10 @@ import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
+import junit.framework.TestCase;
 
-public class TestDynamoDbPostActions extends TestRestGetActions
+public class TestDynamoDbPostActions extends TestCase
 {
-   @Override
    protected Service service() throws Exception
    {
       return DynamoServiceFactory.service();
