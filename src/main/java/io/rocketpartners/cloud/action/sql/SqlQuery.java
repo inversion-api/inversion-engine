@@ -473,10 +473,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                }
                else
                {
-                  if (term.hasToken("eq"))
-                     sql.append(string0).append(" = ").append(stringI);
+                  if (term.hasToken("ne", "wo"))
+                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
                   else
-                     sql.append(" NOT ").append(string0).append(" <=> ").append(stringI);
+                     sql.append(string0).append(" = ").append(stringI);
                }
             }
 
@@ -493,11 +493,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
       else if ("emp".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" IS NULL OR ").append(strings.get(0)).append(" = ''");
+         sql.append("(").append(strings.get(0)).append(" IS NULL OR ").append(strings.get(0)).append(" = ").append(asString("")).append(")");
       }
       else if ("nemp".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" IS NOT NULL AND ").append(strings.get(0)).append(" != ''");
+         sql.append("(").append(strings.get(0)).append(" IS NOT NULL AND ").append(strings.get(0)).append(" != ").append(asString("")).append(")");
       }
       else if ("n".equalsIgnoreCase(token))
       {
@@ -660,13 +660,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          if (parent.hasToken("w") || parent.hasToken("wo"))
          {
-            token = "*" + token + "*";
+            if(!token.startsWith("*"))
+               token = "*" + token;
+            
+            if(!token.endsWith("*"))
+               token += "*";
          }
-         else if (parent.hasToken("sw"))
+         else if (parent.hasToken("sw") && !token.endsWith("*"))
          {
             token = token + "*";
          }
-         else if (parent.hasToken("ew"))
+         else if (parent.hasToken("ew") && !token.startsWith("*"))
          {
             token = "*" + token;
          }
