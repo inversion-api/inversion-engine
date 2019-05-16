@@ -14,6 +14,7 @@ import io.rocketpartners.cloud.action.sql.TestSqlQuery;
 import io.rocketpartners.cloud.action.sql.TestSqlTokenizer;
 import io.rocketpartners.cloud.model.TestDb;
 import io.rocketpartners.cloud.model.TestRule;
+import io.rocketpartners.cloud.model.TestUrl;
 import io.rocketpartners.cloud.rql.TestParser;
 import io.rocketpartners.cloud.rql.TestQuery;
 import io.rocketpartners.cloud.rql.TestTokenizer;
@@ -23,6 +24,7 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
 @Suite.SuiteClasses({ //
 
       TestRule.class, //
+      TestUrl.class, //
       TestCollapse.class, //
 
       TestTokenizer.class, //
