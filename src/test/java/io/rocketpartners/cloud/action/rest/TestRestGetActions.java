@@ -334,4 +334,38 @@ public abstract class TestRestGetActions extends TestCase
       json = res.getJson();
       assertTrue(json.getArray("data").length() == 0);
    }
+   
+   @Test
+   public void testEq01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      res = service.get(url("orders?eq(orderid,10248)"));
+      json = res.getJson();
+      assertEquals(1, json.find("meta.foundRows"));
+      assertTrue(res.findString("data.0.orderid").equals("10248"));
+   }
+ 
+   @Test
+   public void testWo01() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      ObjectNode json = null;
+      ArrayNode data = null;
+
+      res = service.get(url("orders?eq(employeeid,5)"));
+      json = res.getJson();
+      assertEquals(42, json.find("meta.foundRows"));
+
+      res = service.get(url("orders?eq(employeeid,5)&wo(shipcountry,witzer)"));
+      json = res.getJson();
+      data = json.getArray("data");
+      assertEquals(41, json.find("meta.foundRows"));
+      for (Object o : data)
+      {
+         assertFalse(((ObjectNode) o).getString("shipcountry").contains("witzer"));
+      }
+   }
 }
