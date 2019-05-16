@@ -244,7 +244,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          for (Column col : table.getPrimaryIndex().getColumns())
          {
-            Sort sort = new Sort(asCol(col.getName()), true);
+            Sort sort = new Sort(col.getName(), true);
             sorts.add(sort);
          }
       }
