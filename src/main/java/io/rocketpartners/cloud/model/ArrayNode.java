@@ -88,7 +88,7 @@ public class ArrayNode extends ObjectNode implements Iterable
    {
       objects.addAll(array.asList());
    }
-   
+
    public void add(Object object)
    {
       objects.add(object);
@@ -117,6 +117,18 @@ public class ArrayNode extends ObjectNode implements Iterable
    public boolean contains(Object object)
    {
       return objects.contains(object);
+   }
+
+   @Override
+   public boolean isEmpty()
+   {
+      return objects.isEmpty();
+   }
+
+   @Override
+   public void clear()
+   {
+      objects.clear();
    }
 
    @Override
