@@ -441,9 +441,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       if (term.hasToken("eq", "ne", "like", "w", "sw", "ew", "wo"))
       {
-         if (terms.size() > 2)
+         boolean negation = term.hasToken("ne", "nw", "wo");
+         
+         if (terms.size() > 2 || negation)
             sql.append("(");
 
+         if(negation)
+            sql.append("NOT (");
+         
          String string0 = strings.get(0);
 
          for (int i = 1; i < terms.size(); i++)
@@ -451,14 +456,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             String stringI = strings.get(i);
             if ("null".equalsIgnoreCase(stringI))
             {
-               if (term.hasToken("eq", "like", "w", "sw", "ew", "wo"))
+               //if (term.hasToken("eq", "like", "w", "sw", "ew", "wo"))
                {
                   sql.append(string0).append(" IS NULL ");
                }
-               else
-               {
-                  sql.append(string0).append(" IS NOT NULL ");
-               }
+//               else
+//               {
+//                  sql.append(string0).append(" IS NOT NULL ");
+//               }
             }
             else
             {
@@ -466,25 +471,28 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
                if (wildcard)
                {
-                  if (term.hasToken("ne") || term.hasToken("wo"))
-                     sql.append(string0).append(" NOT LIKE ").append(stringI);
-                  else
+//                  if (term.hasToken("ne") || term.hasToken("wo"))
+//                     sql.append(string0).append(" NOT LIKE ").append(stringI);
+//                  else
                      sql.append(string0).append(" LIKE ").append(stringI);
                }
                else
                {
-                  if (term.hasToken("ne", "wo"))
-                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
-                  else
+//                  if (term.hasToken("ne", "wo"))
+//                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
+//                  else
                      sql.append(string0).append(" = ").append(stringI);
                }
             }
 
             if (i < terms.size() - 1)
-               sql.append(" OR ").append(string0);
+               sql.append(" OR ");
          }
 
-         if (terms.size() > 2)
+         if (terms.size() > 2 || negation)
+            sql.append(")");
+         
+         if(negation)
             sql.append(")");
       }
       else if ("nn".equalsIgnoreCase(token))

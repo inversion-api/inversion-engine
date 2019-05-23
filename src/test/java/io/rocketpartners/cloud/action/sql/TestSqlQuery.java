@@ -50,13 +50,13 @@ public class TestSqlQuery extends TestCase
       //Test 1
       tests.add(new RqlTest("group(startYear)&includes=startYear,motiveConfirmed,another&startYear=ne=null&as(count(motiveConfirmed),another)", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
-                            "SELECT `startYear`, `motiveConfirmed`, COUNT(`motiveConfirmed`) AS 'another' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, `motiveConfirmed`, COUNT(`motiveConfirmed`) AS 'another' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE (NOT (`startYear` IS NULL )) GROUP BY `startYear` LIMIT 100", //
                             null));
 
       tests.add(new RqlTest("ne(startYear, null)", //
                             "SELECT * FROM Person", //
-                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL LIMIT 100", //
-                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL LIMIT 100"));
+                            "SELECT * FROM Person WHERE (NOT (`startYear` IS NULL )) LIMIT 100", //
+                            "SELECT * FROM Person WHERE (NOT (`startYear` IS NULL )) LIMIT 100"));
 
       tests.add(new RqlTest("aggregate(count,country,result)&includes=country,result&&in(status,killed)&limit=1", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId JOIN Country c ON e.country = c.country_name", //
@@ -175,8 +175,8 @@ public class TestSqlQuery extends TestCase
 
       tests.add(new RqlTest("includes=lastName&firstName=wells&lastName=Burke&state=ne=CA&age=ge=38", //
                             "select * from table1", //
-                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND NOT `state` <=> 'CA' AND `age` >= 38 LIMIT 100", //
-                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND NOT `state` <=> ? AND `age` >= ? LIMIT 100", //
+                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND (NOT (`state` = 'CA')) AND `age` >= 38 LIMIT 100", //
+                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND (NOT (`state` = ?)) AND `age` >= ? LIMIT 100", //
                             "firstName", "wells", "lastName", "Burke", "state", "CA", "age", "38"));
 
       //Test 25
@@ -188,14 +188,14 @@ public class TestSqlQuery extends TestCase
 
       tests.add(new RqlTest("sum(if(eq(\"col1\",if(ne(`col2`,'val1'),`col3`,'val2')),1,'something blah'))", //
                             "SELECT * from table1", //
-                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> 'val1', `col3`, 'val2'), 1, 'something blah')) from table1 LIMIT 100", //
-                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> ?, `col3`, ?), 1, ?)) from table1 LIMIT 100", //
+                            "SELECT *, SUM(IF(`col1` = IF((NOT (`col2` = 'val1')), `col3`, 'val2'), 1, 'something blah')) from table1 LIMIT 100", //
+                            "SELECT *, SUM(IF(`col1` = IF((NOT (`col2` = ?)), `col3`, ?), 1, ?)) from table1 LIMIT 100", //
                             "col2", "val1", "col3", "val2", null, "something blah"));
 
       tests.add(new RqlTest("sum(if(eq(`col1`,if(ne(`col2`,'val1'),`col3`,'val2')),1,'something blah'))", //
                             "SELECT * from table1", //
-                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> 'val1', `col3`, 'val2'), 1, 'something blah')) from table1 LIMIT 100", //
-                            "SELECT *, SUM(IF(`col1` = IF( NOT `col2` <=> ?, `col3`, ?), 1, ?)) from table1 LIMIT 100", //
+                            "SELECT *, SUM(IF(`col1` = IF((NOT (`col2` = 'val1')), `col3`, 'val2'), 1, 'something blah')) from table1 LIMIT 100", //
+                            "SELECT *, SUM(IF(`col1` = IF((NOT (`col2` = ?)), `col3`, ?), 1, ?)) from table1 LIMIT 100", //
                             "col2", "val1", "col3", "val2", null, "something blah"));
 
       tests.add(new RqlTest("includes=firstName,lastName", //
@@ -205,19 +205,19 @@ public class TestSqlQuery extends TestCase
 
       tests.add(new RqlTest("firstName=wells&lastName=Burke&state=ne=CA&age=ge=38&includes=lastName", //
                             "select * from table1", //
-                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND NOT `state` <=> 'CA' AND `age` >= 38 LIMIT 100", //
-                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND NOT `state` <=> ? AND `age` >= ? LIMIT 100", //
+                            "select `lastName` from table1 WHERE `firstName` = 'wells' AND `lastName` = 'Burke' AND (NOT (`state` = 'CA')) AND `age` >= 38 LIMIT 100", //
+                            "select `lastName` from table1 WHERE `firstName` = ? AND `lastName` = ? AND (NOT (`state` = ?)) AND `age` >= ? LIMIT 100", //
                             "firstName", "wells", "lastName", "Burke", "state", "CA", "age", "38"));
 
       //TEST 30
       tests.add(new RqlTest("group(startYear)&includes=startYear&startYear=ne=null&as(count(motiveConfirmed), 'Motive Spaces Confirmed')", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
-                            "SELECT `startYear`, COUNT(`motiveConfirmed`) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL  GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, COUNT(`motiveConfirmed`) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE (NOT (`startYear` IS NULL ))  GROUP BY `startYear` LIMIT 100", //
                             null));
 
       tests.add(new RqlTest("group(startYear)&includes=startYear,'Motive Spaces Confirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,true),1,0)), 'Motive Spaces Confirmed')", //
                             "SELECT * FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 1, 1, 0)) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE `startYear` IS NOT NULL GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 1, 1, 0)) AS 'Motive Spaces Confirmed' FROM Person p JOIN Entry e ON p.id = e.personId  JOIN Country c ON e.country = c.country_name WHERE (NOT (`startYear` IS NULL )) GROUP BY `startYear` LIMIT 100", //
                             null));
 
       tests.add(new RqlTest("motiveConfirmed=someValue", //
@@ -243,14 +243,14 @@ public class TestSqlQuery extends TestCase
 
       tests.add(new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')", //
                             "SELECT * FROM Entry", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear` LIMIT 100", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE (NOT (`startYear` IS NULL )) GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE (NOT (`startYear` IS NULL )) GROUP BY `startYear` LIMIT 100", //
                             "motiveConfirmed", "Confirmed", "type", "Media Worker", "motiveConfirmed", "Unconfirmed"));
       //      
       tests.add(new RqlTest("as(sum(if(eq(type,'Media Worker'),1,0)),'Media Worker')&group(startYear)&includes=startYear,'Motive Confirmed','Media Worker','Motive Unconfirmed'&startYear=ne=null&as(sum(if(eq(motiveConfirmed,Confirmed),1,0)),'Motive Confirmed')&as(sum(if(eq(motiveConfirmed,Unconfirmed),1,0)),'Motive Unconfirmed')&or(eq(`type`,'Media Worker'),ne(`motiveConfirmed`,NULL))", //
                             "SELECT * FROM Entry", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = 'Media Worker' OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear` LIMIT 100", //
-                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE `startYear` IS NOT NULL AND (`type` = ? OR `motiveConfirmed` IS NOT NULL) GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = 'Confirmed', 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE (NOT (`startYear` IS NULL )) AND (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) GROUP BY `startYear` LIMIT 100", //
+                            "SELECT `startYear`, SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = ?, 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = ?, 1, 0)) AS 'Motive Unconfirmed'  FROM Entry WHERE (NOT (`startYear` IS NULL )) AND (`type` = ? OR (NOT (`motiveConfirmed` IS NULL ))) GROUP BY `startYear` LIMIT 100", //
                             "motiveConfirmed", "Confirmed", "type", "Media Worker", "motiveConfirmed", "Unconfirmed", "type", "Media Worker"));
 
       tests.add(new RqlTest("countascol(impunity, 'Full Justice', 'Partial Impunity', 'Complete Impunity')", //
@@ -291,7 +291,7 @@ public class TestSqlQuery extends TestCase
       dynamicSql += " JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) ";
       dynamicSql += " JOIN Person p ON e.personId = p.id ";
       dynamicSql += " LEFT JOIN Country c ON e.country = c.country_name";
-      dynamicSql += " WHERE (`type` = 'Media Worker' OR `motiveConfirmed` IS NOT NULL) ";
+      dynamicSql += " WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) ";
       dynamicSql += " AND `status` = 'Killed' ";
       dynamicSql += " ORDER BY `Year` DESC LIMIT 100";
 
@@ -315,7 +315,7 @@ public class TestSqlQuery extends TestCase
       dynamicSql += " JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) ";
       dynamicSql += " JOIN Person p ON e.personId = p.id ";
       dynamicSql += " LEFT JOIN Country c ON e.country = c.country_name";
-      dynamicSql += " WHERE (`type` = 'Media Worker' OR `motiveConfirmed` IS NOT NULL) ";
+      dynamicSql += " WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) ";
       dynamicSql += " AND `status` = 'Killed' ";
       dynamicSql += " ORDER BY `Year` DESC LIMIT 100";
 
@@ -398,7 +398,7 @@ public class TestSqlQuery extends TestCase
       tests.add(new RqlTest("wo(city,andl)", //
                             "select * from table1", //
                             null, //
-                            "select * from table1 WHERE `city` NOT LIKE ? LIMIT 100", //
+                            "select * from table1 WHERE (NOT (`city` LIKE ?)) LIMIT 100", //
                             "city", "%andl%"));
 
       tests.add(new RqlTest("lt(freight,2)", //
@@ -415,21 +415,40 @@ public class TestSqlQuery extends TestCase
 
       tests.add(new RqlTest("emp(startYear)", //
                             "SELECT * FROM Person", //
-                            "SELECT * FROM Person WHERE `startYear` IS NULL OR `startYear` = '' LIMIT 100", //
-                            "SELECT * FROM Person WHERE `startYear` IS NULL OR `startYear` = '' LIMIT 100"));
+                            "SELECT * FROM Person WHERE (`startYear` IS NULL OR `startYear` = '') LIMIT 100", //
+                            "SELECT * FROM Person WHERE (`startYear` IS NULL OR `startYear` = '') LIMIT 100"));
 
       tests.add(new RqlTest("nemp(startYear)", //
                             "SELECT * FROM Person", //
-                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL AND `startYear` != '' LIMIT 100", //
-                            "SELECT * FROM Person WHERE `startYear` IS NOT NULL AND `startYear` != '' LIMIT 100"));
+                            "SELECT * FROM Person WHERE (`startYear` IS NOT NULL AND `startYear` != '') LIMIT 100", //
+                            "SELECT * FROM Person WHERE (`startYear` IS NOT NULL AND `startYear` != '') LIMIT 100"));
+
+      tests.add(new RqlTest("w(code,'070847030973','070847030911')", //
+                            "SELECT * FROM Item", //
+                            "SELECT * FROM Item WHERE (`code` LIKE '%070847030973%' OR `code` LIKE '%070847030911%') LIMIT 100", //
+                            "SELECT * FROM Item WHERE (`code` LIKE ? OR `code` LIKE ?) LIMIT 100", //
+                            "code", "%070847030973%", "code", "%070847030911%"));
+
+      tests.add(new RqlTest("wo(code,'070847030973','070847030911')", //
+                            "SELECT * FROM Item", //
+                            "SELECT * FROM Item WHERE (NOT (`code` LIKE '%070847030973%' OR `code` LIKE '%070847030911%')) LIMIT 100", //
+                            "SELECT * FROM Item WHERE (NOT (`code` LIKE ? OR `code` LIKE ?)) LIMIT 100", //
+                            "code", "%070847030973%", "code", "%070847030911%"));
+
+      tests.add(new RqlTest("ne(code,'070847030973','070847030911')", //
+                            "SELECT * FROM Item", //
+                            "SELECT * FROM Item WHERE (NOT (`code` = '070847030973' OR `code` = '070847030911')) LIMIT 100", //
+                            "SELECT * FROM Item WHERE (NOT (`code` = ? OR `code` = ?)) LIMIT 100", //
+                            "code", "070847030973", "code", "070847030911"));
 
       boolean passed = true;
       int running = 0;
+      RqlTest test = null;
       //for (int j = tests.size() - 1; j >= 0; j--)
       for (int j = 0; j < tests.size(); j++)
       {
          running = j + 1;
-         RqlTest test = tests.get(j);
+         test = tests.get(j);
          try
          {
             SqlQuery query = new SqlQuery(null, null);//test.rql, test.select);
@@ -502,6 +521,7 @@ public class TestSqlQuery extends TestCase
       }
       else
       {
+         System.out.println("FAILED RQL:" + test.rql);
          System.out.println("FAILED: " + running);
          fail();
       }

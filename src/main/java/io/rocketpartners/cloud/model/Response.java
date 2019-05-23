@@ -22,11 +22,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.assertj.core.util.Arrays;
 
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
@@ -163,7 +163,7 @@ public class Response
       if (msgs != null && msgs.length == 0)
          return;
 
-      if (msgs != null && msgs.length == 1 && Arrays.isArray(msgs[0]))
+      if (msgs != null && msgs.length == 1 && msgs[0].getClass().isArray())
          msgs = (Object[]) msgs[0];
 
       for (int i = 0; msgs != null && i < msgs.length; i++)
@@ -172,7 +172,7 @@ public class Response
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
-         if (Arrays.isArray(msg))
+         if (msg.getClass().isArray())
          {
             write0(buff, (Object[]) msg);
          }
