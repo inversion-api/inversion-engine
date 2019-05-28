@@ -45,7 +45,7 @@ dependencies {
       compile findProject(":fort_s")
    }
    else {
-      compile("com.github.wellsb1:fort_s:release-1.0.x-SNAPSHOT") { changing = true }
+      compile("com.github.wellsb1:fort_s:release-1.1.x-SNAPSHOT") { changing = true }
    }
    
    compile("com.github.wellsb1:fort_fusion_vtl:master-SNAPSHOT") { changing = true }
