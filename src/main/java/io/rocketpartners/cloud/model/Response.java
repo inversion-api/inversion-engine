@@ -598,6 +598,9 @@ public class Response
 
    public String getErrorContent()
    {
+      if (!isSuccess() && error != null)
+         return Utils.getShortCause(error);
+
       try
       {
          if (!isSuccess() && file != null && file.length() > 0)

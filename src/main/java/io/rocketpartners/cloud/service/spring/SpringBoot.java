@@ -22,6 +22,9 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Service;
@@ -37,7 +40,8 @@ public class SpringBoot
    {
       try
       {
-         org.springframework.boot.SpringApplication.run(SpringBoot.class, args);
+         //org.springframework.boot.SpringApplication.run(SpringBoot.class, args);
+         run((Service) null);
       }
       catch (Exception ex)
       {
@@ -52,12 +56,24 @@ public class SpringBoot
 
    public static void run(Service service)
    {
-      new SpringApplicationBuilder(SpringBoot.class).initializers(new ServiceInitializer(service)).run();
+      try
+      {
+         //SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class, Controller.class);
+         SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class);
+         builder.initializers(new ServiceInitializer(service));
+         builder.run();
+         //new SpringApplicationBuilder(SpringBoot.class).run();//initializers(new ServiceInitializer(service)).run();
+      }
+      catch (Exception ex)
+      {
+         Utils.getCause(ex).printStackTrace();
+         ex.printStackTrace();
+      }
    }
+
 
    static class ServiceInitializer implements ApplicationContextInitializer
    {
-
       Service service;
 
       public ServiceInitializer(Service service)
