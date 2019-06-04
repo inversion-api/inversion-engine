@@ -107,6 +107,7 @@ public class Tokenizer
                if (escape || doubleQuote)
                {
                   next.append(c);
+                  escape = false;
                   continue;
                }
 
