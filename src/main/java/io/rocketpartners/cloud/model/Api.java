@@ -397,18 +397,18 @@ public class Api
       this.loadTime = loadTime;
    }
 
-//   /**
-//    * Tries to find the best match endpoint for this collection
-//    * based on collection.include/excludePaths, endpoint.include/excludePaths
-//    * and endpointPath.
-//    * 
-//    * @param collection
-//    * @return
-//    */
-//   public Endpoint findEndpoint(Collection collection)
-//   {
-//      
-//   }
+   //   /**
+   //    * Tries to find the best match endpoint for this collection
+   //    * based on collection.include/excludePaths, endpoint.include/excludePaths
+   //    * and endpointPath.
+   //    * 
+   //    * @param collection
+   //    * @return
+   //    */
+   //   public Endpoint findEndpoint(Collection collection)
+   //   {
+   //      
+   //   }
 
    public List<Endpoint> getEndpoints()
    {
@@ -495,6 +495,12 @@ public class Api
          acl.withApi(this);
    }
 
+   public Api withAclRule(AclRule acl)
+   {
+      addAclRule(acl);
+      return this;
+   }
+
    public void setAclRules(List<AclRule> acls)
    {
       this.aclRules.clear();
@@ -536,6 +542,12 @@ public class Api
    public void setMultiTenant(boolean multiTenant)
    {
       this.multiTenant = multiTenant;
+   }
+
+   public Api withMultiTenant(boolean multiTenant)
+   {
+      this.multiTenant = multiTenant;
+      return this;
    }
 
    public Object putCache(Object key, Object value)

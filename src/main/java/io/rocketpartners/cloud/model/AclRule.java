@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.rocketpartners.cloud.utils.Utils;
 
-public class AclRule extends Rule
+public class AclRule extends Rule<AclRule>
 {
    protected boolean          allow       = true;
    protected boolean          info        = false;
@@ -30,6 +30,17 @@ public class AclRule extends Rule
 
    protected List<String>     restricts   = new ArrayList();
    protected List<String>     requires    = new ArrayList();
+
+   public AclRule()
+   {
+      super();
+   }
+
+   public AclRule(String... methods)
+   {
+      super();
+      withMethods(methods);
+   }
 
    public boolean ruleMatches(Request req)
    {
@@ -153,6 +164,14 @@ public class AclRule extends Rule
       return this;
    }
 
+   public AclRule withRestricts(String... restricts)
+   {
+      for (String restrict : Utils.explode(",", restricts))
+         withRestrict(restrict);
+
+      return this;
+   }
+
    public AclRule withRestrict(String restrict)
    {
       if (!restricts.contains(restrict))
@@ -168,6 +187,14 @@ public class AclRule extends Rule
       {
          withRequire(require);
       }
+      return this;
+   }
+
+   public AclRule withRequires(String... requires)
+   {
+      for (String require : Utils.explode(",", requires))
+         withRequire(require);
+
       return this;
    }
 
@@ -208,6 +235,17 @@ public class AclRule extends Rule
    {
       this.info = info;
       return this;
+   }
+
+   @Override
+   public String toString()
+   {
+      if (name != null)
+      {
+         return super.toString();
+      }
+
+      return System.identityHashCode(this) + " - " + permissions + " - " + includePaths + " - " + methods;
    }
 
 }
