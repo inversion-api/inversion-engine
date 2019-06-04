@@ -31,8 +31,6 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
-import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
@@ -770,6 +768,12 @@ public class Service
    public void setServletMapping(String servletMapping)
    {
       this.servletMapping = servletMapping;
+   }
+
+   public Service withServletMapping(String servletMapping)
+   {
+      setServletMapping(servletMapping);
+      return this;
    }
 
    public void setAllowHeaders(String allowedHeaders)
