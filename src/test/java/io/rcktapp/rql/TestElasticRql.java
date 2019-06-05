@@ -161,6 +161,53 @@ public class TestElasticRql
    }
 
    @Test
+   public void with01()
+   {
+      try
+      {
+         QueryDsl dsl = ((ElasticRql) Rql.getRql("elastic")).toQueryDsl(split("w(name,'nestl','f\\'')"));
+         assertNull(dsl.getNested());
+         assertNull(dsl.getNestedPath());
+         assertNull(dsl.getRange());
+         assertNull(dsl.getTerm());
+         assertNull(dsl.getWildcard());
+         assertNotNull(dsl.getBool());  // A bool is used because comma separated values are valid for all 'with' functions
+         
+         assertNull(dsl.getBool().getFilter());
+         assertNull(dsl.getBool().getMust());
+         assertNull(dsl.getBool().getMustNot());
+         assertNotNull(dsl.getBool().getShould());
+         
+         assertEquals(2, dsl.getBool().getShould().size());
+         assertTrue(dsl.getBool().getShould().get(0) instanceof Wildcard);
+         
+         Wildcard wildcard = (Wildcard)dsl.getBool().getShould().get(0);
+
+         assertEquals("name", wildcard.getName());
+         assertEquals("*nestl*", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
+         
+         wildcard = (Wildcard)dsl.getBool().getShould().get(1);
+
+         assertEquals("name", wildcard.getName());
+         assertEquals("*f'*", wildcard.getValue());
+         assertNull(wildcard.getNestedPath());
+
+         ObjectMapper mapper = new ObjectMapper();
+         String json = mapper.writeValueAsString(dsl);
+
+         assertNotNull("json should not be empty.", json);
+         assertEquals("{\"bool\":{\"should\":[{\"wildcard\":{\"name\":\"*nestl*\"}},{\"wildcard\":{\"name\":\"*f'*\"}}]}}", json);
+
+      }
+      catch (Exception e)
+      {
+         log.debug("derp! ", e);
+         fail();
+      }
+   }
+
+   @Test
    public void without()
    {
       try
