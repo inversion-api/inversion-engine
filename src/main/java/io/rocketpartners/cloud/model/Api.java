@@ -445,6 +445,19 @@ public class Api
       return endpoint;
    }
 
+   public Endpoint withEndpoint(Action action, String method, String includePaths)
+   {
+      return withEndpoint(action, method, null, includePaths);
+   }
+
+   public Endpoint withEndpoint(Action action, String method, String path, String includePaths)
+   {
+      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
+      endpoint.withAction(action);
+      withEndpoint(endpoint);
+      return endpoint;
+   }
+
    public <T extends Action> T withAction(T action)
    {
       return withAction(action, null, null);
