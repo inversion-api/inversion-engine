@@ -326,7 +326,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    public R withExcludePaths(String... paths)
    {
       for (String path : Utils.explode(",", paths))
-         withIncludePath(path);
+         withExcludePath(path);
 
       return (R) this;
    }
