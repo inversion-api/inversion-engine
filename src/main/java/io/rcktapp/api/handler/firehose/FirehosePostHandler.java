@@ -1,31 +1,20 @@
 package io.rcktapp.api.handler.firehose;
 
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehose;
 import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder;
 import com.amazonaws.services.kinesisfirehose.model.ListDeliveryStreamsRequest;
 import com.amazonaws.services.kinesisfirehose.model.ListDeliveryStreamsResult;
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
-
 import io.forty11.web.js.JSArray;
 import io.forty11.web.js.JSObject;
-import io.rcktapp.api.Action;
-import io.rcktapp.api.Api;
-import io.rcktapp.api.ApiException;
-import io.rcktapp.api.Chain;
-import io.rcktapp.api.Collection;
-import io.rcktapp.api.Endpoint;
-import io.rcktapp.api.Handler;
-import io.rcktapp.api.Request;
-import io.rcktapp.api.Response;
-import io.rcktapp.api.SC;
-import io.rcktapp.api.Table;
+import io.rcktapp.api.*;
 import io.rcktapp.api.service.Service;
+
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Posts records to a mapped AWS Kinesis Firehose stream. 
@@ -78,7 +67,7 @@ public class FirehosePostHandler implements Handler
       if (body == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Attempting to post an empty body to a Firehose stream");
 
-      if (body instanceof JSObject)
+      if (! (body instanceof JSArray))
          body = new JSArray(body);
 
       JSArray array = (JSArray) body;
@@ -93,7 +82,9 @@ public class FirehosePostHandler implements Handler
          if (data == null)
             continue;
 
-         String string = data instanceof JSObject ? ((JSObject) data).toString(prettyPrint) : data.toString();
+         String string = data instanceof JSObject ?
+               this.convertJsonFieldNamesToLowercase((JSObject) data).toString(prettyPrint)
+               : data.toString();
 
          if (separator != null && !string.endsWith(separator))
             string += separator;
@@ -113,6 +104,39 @@ public class FirehosePostHandler implements Handler
       }
 
       res.setStatus(SC.SC_201_CREATED);
+   }
+
+
+   // TODO Remove this with upgrade to Snooze 4. Method provided by Tim Collins as a temporary workaround. - Lukas Bradley 6 June 2019
+   private JSObject convertJsonFieldNamesToLowercase(JSObject json)
+   {
+      if (json instanceof JSArray)
+      {
+         for (Object o : ((JSArray) json).getObjects())
+         {
+            if (o instanceof JSObject)
+            {
+               convertJsonFieldNamesToLowercase((JSObject) o);
+            }
+         }
+      }
+      else
+      {
+         Object obj = null;
+         for (String key : json.keySet())
+         {
+            obj = json.get(key);
+            if (obj instanceof JSObject)
+            {
+               obj = convertJsonFieldNamesToLowercase((JSObject) obj);
+            }
+
+            json.remove(key);
+            json.put(key.toLowerCase(), obj);
+         }
+      }
+
+      return json;
    }
 
    public static final String upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
