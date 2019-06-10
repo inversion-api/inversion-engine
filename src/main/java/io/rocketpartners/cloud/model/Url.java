@@ -341,7 +341,7 @@ public class Url implements Cloneable
       return query;
    }
 
-   public void withQuery(String query)
+   public Url withQuery(String query)
    {
       this.query = query;
       params = new ObjectNode();
@@ -349,6 +349,7 @@ public class Url implements Cloneable
       {
          params.putAll(Utils.parseQueryString(query));
       }
+      return this;
    }
 
    public String getPath()
