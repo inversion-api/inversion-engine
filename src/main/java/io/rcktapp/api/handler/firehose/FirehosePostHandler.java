@@ -67,45 +67,49 @@ public class FirehosePostHandler implements Handler
       if (body == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Attempting to post an empty body to a Firehose stream");
 
-      if (! (body instanceof JSArray))
+      if (!(body instanceof JSArray))
          body = new JSArray(body);
 
       JSArray array = (JSArray) body;
 
       List<Record> batch = new ArrayList();
 
-      
-      for (int i = 0; i < array.length(); i++)
+      try
       {
-         Object data = array.get(i);
+         for (int i = 0; i < array.length(); i++)
+         {
+            Object data = array.get(i);
 
-         if (data == null)
-            continue;
+            if (data == null)
+               continue;
 
-         String string = data instanceof JSObject ?
-               this.convertJsonFieldNamesToLowercase((JSObject) data).toString(prettyPrint)
-               : data.toString();
+            String string = data instanceof JSObject ? this.convertJsonFieldNamesToLowercase((JSObject) data).toString(prettyPrint) : data.toString();
 
-         if (separator != null && !string.endsWith(separator))
-            string += separator;
+            if (separator != null && !string.endsWith(separator))
+               string += separator;
 
-         batch.add(new Record().withData(ByteBuffer.wrap(string.getBytes())));
+            batch.add(new Record().withData(ByteBuffer.wrap(string.getBytes())));
 
-         if (i > 0 && i % batchMax == 0)
+            if (i > 0 && i % batchMax == 0)
+            {
+               firehose.putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(streamName).withRecords(batch));
+               batch.clear();
+            }
+         }
+
+         if (batch.size() > 0)
          {
             firehose.putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(streamName).withRecords(batch));
-            batch.clear();
          }
       }
-
-      if (batch.size() > 0)
+      catch (Exception e)
       {
-         firehose.putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(streamName).withRecords(batch));
+         e.printStackTrace();
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error putting records to firehose stream '" + streamName + "' - " + e.getMessage());
       }
 
       res.setStatus(SC.SC_201_CREATED);
    }
-
 
    // TODO Remove this with upgrade to Snooze 4. Method provided by Tim Collins as a temporary workaround. - Lukas Bradley 6 June 2019
    private JSObject convertJsonFieldNamesToLowercase(JSObject json)
