@@ -55,6 +55,9 @@ public class TestParser
       add(tests, "eq(a'bc)", "eq(a'bc)");
       add(tests, "func(a,b)", "a=func=b");
       add(tests, "func(a,b)", "func(a  , b   )");
+      add(tests, "eq(column,test')", "column=test\\\'");
+      add(tests, "eq(column,test\")", "column=test\\\"");
+      add(tests, "eq(column,Barb 1\\2 Pnt W 6 Tort)", "eq(column,Barb 1\\\\2 Pnt W 6 Tort)");
 
       //add(test, "includes=a,b,c", "includes(a,b,c)")
 
