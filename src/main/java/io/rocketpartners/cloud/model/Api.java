@@ -397,19 +397,6 @@ public class Api
       this.loadTime = loadTime;
    }
 
-//   /**
-//    * Tries to find the best match endpoint for this collection
-//    * based on collection.include/excludePaths, endpoint.include/excludePaths
-//    * and endpointPath.
-//    * 
-//    * @param collection
-//    * @return
-//    */
-//   public Endpoint findEndpoint(Collection collection)
-//   {
-//      
-//   }
-
    public List<Endpoint> getEndpoints()
    {
       return new ArrayList(endpoints);
@@ -553,9 +540,10 @@ public class Api
       return url;
    }
 
-   public void setUrl(String url)
+   public Api withUrl(String url)
    {
       this.url = url;
+      return this;
    }
 
 }
