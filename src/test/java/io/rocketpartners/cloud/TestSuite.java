@@ -20,6 +20,7 @@ import io.rocketpartners.cloud.model.TestUrl;
 import io.rocketpartners.cloud.rql.TestParser;
 import io.rocketpartners.cloud.rql.TestQuery;
 import io.rocketpartners.cloud.rql.TestTokenizer;
+import io.rocketpartners.cloud.service.config.TestConfig;
 
 @RunWith(Suite.class)
 
@@ -35,6 +36,7 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
       TestQuery.class, //
 
       TestDb.class, //
+      TestConfig.class, //
 
       TestSqlTokenizer.class, //
       TestSqlQuery.class, //

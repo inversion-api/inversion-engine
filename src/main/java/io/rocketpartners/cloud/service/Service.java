@@ -104,7 +104,7 @@ public class Service
       starting = true;
       try
       {
-         configurator.loadConfg(this);
+         configurator.loadConfig(this);
 
          for (Api api : apis)
          {

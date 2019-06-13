@@ -82,7 +82,7 @@ public class PropsConfig
       destroyed = true;
    }
 
-   public synchronized void loadConfg(Service service)
+   public synchronized void loadConfig(Service service)
    {
       if (this.service != null)
          return;
@@ -439,7 +439,7 @@ public class PropsConfig
 
       for (int i = -1; i <= 100; i++)
       {
-         String fileName = service.getConfigPath() + "snooze" + (i < 0 ? "" : i) + ".properties";
+         String fileName = service.getConfigPath() + "inversion" + (i < 0 ? "" : i) + ".properties";
          InputStream is = service.getResource(fileName);
          if (is != null)
          {
@@ -452,7 +452,7 @@ public class PropsConfig
       {
          for (int i = -1; i <= 100; i++)
          {
-            String fileName = service.getConfigPath() + "snooze" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
+            String fileName = service.getConfigPath() + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
             InputStream is = service.getResource(fileName);
             if (is != null)
             {
@@ -463,7 +463,7 @@ public class PropsConfig
       }
 
       if (config.files.isEmpty())
-         log.warn("\n\n######################################################\n# WARNING!!! No '.properties' files have been loaded.#\n######################################################\n");
+         log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
 
       List keys = new ArrayList(config.props.keySet());
       Collections.sort(keys);
