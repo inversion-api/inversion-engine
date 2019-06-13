@@ -1,11 +1,77 @@
-# Snooze API as a Service Platform
+# Inversion Cloud API Engine
 
-Snooze is the fastest way to deliver a REST API.
+Create more, code less with Inversion.
 
-With Snooze, you can connect your web application front end directly to your backend data source without any server side programming required.
+Inversion is the fastest way to deliver a REST API.
 
-Snooze is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
+With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
+
+Inversion is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
+
+
+Inverted the Paradigm
+
+Comign up with a brand name for this product was not easy.  After countless hours of ideation, we decided to go right after the heart of the matter.  
+To their great benefit, projects that use Inversion are inverting the classic three tier web application architecture 
+
+
+API Specificity (BAD!)
+
+Business Overview
+
+Nerdy Gist - Tech Overview
+
+
+Putting a minimal REST API onto a single database table is easy by modern development standards.  There are  
+
+Putting a flexible and useful REST API interface onto a large and complex database data model can be very timetable is hard. 
+
+
+Which columns should callers be able to
+ - query on - should be all by default
+ - sort on - should be all by default
+ - pagination options
+ - document expansion (key traversal across document types)
+ - combined put/post
+ - batch operations
+
+
+
+Your DB tables probably look similar to your REST JSON documents so why spend time writing a bunch of middle middle tier
+
+
+We believe it is possible to dynamically configure a set of REST API Collection Endpoints to 
+
+
+Inversion is supplied with a minimal set of configuration options identifying the backend datasrouces the API will connect to.  
+
+This configuration allows the Inversion runtime to inspect the backend schema and expose the backend resources as REST Collections.  
+For example, a MySQL table named    
+ 
+ 
+Under the hood, each HTTP request is mapped to an Endpoint which invokes a Chain of configured Actions.  Actions connect to backend end Db objects to find/upsert/delete resouces.
+For example, the RestGetAction may be configure against one Endpoint connecting to a MySQL table on one URL path, and against a different Endpoint connecting to DynamoDb table on 
+a different URL Path.  
+
+
+Configuring an ordered list of Actions against the same URL path (chaining) allows developers to 
+  
+
+
+ 
+Inversion allows you go configure REST Endpoint that invoke a Chain of one or more Actions.  Custom business logic can be supplied via Node/JavaScript
+handlers or by implementing custom Java Action subclasses.   
+
+
+
+
+What's The Point?
+
+Superpowers (Feature & Benefits)
+
+
+
 
 
 ## Contents
