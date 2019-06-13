@@ -368,6 +368,7 @@ public class Service
                         req.withEndpointPath(endpointPath);
                         req.withEndpoint(e);
 
+
                         if (i < parts.size())
                         {
                            String collectionKey = parts.get(i);
@@ -462,10 +463,10 @@ public class Service
             throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
          }
 
-         if (Utils.empty(req.getCollectionKey()))
-         {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
-         }
+         //         if (Utils.empty(req.getCollectionKey()))
+         //         {
+         //            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
+         //         }
 
          //this will get all actions specifically configured on the endpoint
          List<Action> actions = req.getEndpoint().getActions(req);
@@ -475,6 +476,8 @@ public class Service
          //that acts like a filter
          for (Action a : req.getApi().getActions())
          {
+            //http://host/{apipath}/{endpointpath}/{subpath}
+            //since these actions were not assigned to 
             if (a.matches(req.getMethod(), req.getPath()))
                actions.add(a);
          }
