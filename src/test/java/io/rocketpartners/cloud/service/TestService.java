@@ -89,7 +89,22 @@ public class TestService extends TestCase
 
       service = new Service()//
                              .withApi((String) null)//
-                             .withEndpoint(new MockActionA(), "GET", "actionA*").getApi()//
+                             .withEndpoint("GET", "actionA*").withAction(new MockActionA(), "GET", "*").getApi()//
+                             .getService();
+      
+      Response resp = null;
+      resp = service.get("/actionA");
+      assertEquals(SC.SC_200_OK, resp.getStatusCode());
+   }
+   
+   @Test
+   public void testSimpleEndpoint2()
+   {
+      Service service = null;
+
+      service = new Service()//
+                             .withApi((String) null)//
+                             .withEndpoint("GET", "actionA", "*").withAction(new MockActionA(), "GET", "*").getApi()//
                              .getService();
       
       Response resp = null;
