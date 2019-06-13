@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.SC;
 import junit.framework.TestCase;
 
 public class TestService extends TestCase
@@ -79,6 +80,21 @@ public class TestService extends TestCase
       data = resp.getJson();
       assertEquals("MockActionB", data.find("data.0.className"));
 
+   }
+
+   @Test
+   public void testSimpleEndpoint()
+   {
+      Service service = null;
+
+      service = new Service()//
+                             .withApi((String) null)//
+                             .withEndpoint(new MockActionA(), "GET", "actionA*").getApi()//
+                             .getService();
+      
+      Response resp = null;
+      resp = service.get("/actionA");
+      assertEquals(SC.SC_200_OK, resp.getStatusCode());
    }
 
 }
