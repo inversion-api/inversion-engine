@@ -726,6 +726,9 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static void mapToColumns(Collection collection, Term term)
    {
+      if(collection == null)
+         return;
+      
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();
@@ -755,6 +758,9 @@ public class RestGetAction extends Action<RestGetAction>
 
    static void mapToAttributes(Collection collection, Term term)
    {
+      if(collection == null)
+         return;
+      
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();

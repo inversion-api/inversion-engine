@@ -131,7 +131,7 @@ public class Endpoint extends Rule<Endpoint>
       List<Action> filtered = new ArrayList();
       for (Action a : actions)
       {
-         if (a.matches(req.getMethod(), req.getPath()))
+         if (a.matches(req.getMethod(), req.getSubpath()))
             filtered.add(a);
       }
 
@@ -148,7 +148,7 @@ public class Endpoint extends Rule<Endpoint>
       return this;
    }
 
-   public <T extends Action> T withAction(T action)
+   public <T extends Action> Endpoint withAction(T action)
    {
       if (!actions.contains(action))
          actions.add(action);
@@ -158,13 +158,14 @@ public class Endpoint extends Rule<Endpoint>
 
       Collections.sort(actions);
 
-      return action;
+      return this;
    }
 
-   public <T extends Action> T withAction(int order, T action)
+   public <T extends Action> Endpoint withAction(int order, T action)
    {
       action.withOrder(order);
-      return withAction(action);
+      withAction(action);
+      return this;
    }
 
    public Endpoint withAction(Action action, String methods, String includePaths)

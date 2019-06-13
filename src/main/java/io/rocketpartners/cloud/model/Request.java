@@ -37,7 +37,6 @@ public class Request
 
    Url                                    url                    = null;
    String                                 method                 = null;
-   String                                 path                   = null;
 
    Service                                service                = null;
    Api                                    api                    = null;
@@ -50,17 +49,10 @@ public class Request
 
    User                                   user                   = null;
 
-   /**
-    * The path minus any Endpoint.path prefix
-    */
-   String                                 subpath                = null;
-
    Collection                             collection             = null;
    String                                 collectionKey          = null;
    String                                 entityKey              = null;
    String                                 subCollectionKey       = null;
-
-   //ObjectNode                               params                 = new ObjectNode();
 
    String                                 body                   = null;
    ObjectNode                             json                   = null;
@@ -418,15 +410,51 @@ public class Request
       return url;
    }
 
+   /**
+    * Returns the URL path with the apiPath subtracted from the beginning
+    */
    public String getPath()
    {
+      String path = url.getPath();
+      String prePath = apiPath;
+
+      while (!Utils.empty(path) && path.startsWith("/"))
+         path = path.substring(1, path.length());
+
+      while (!Utils.empty(prePath) && prePath.startsWith("/"))
+         prePath = prePath.substring(1, prePath.length());
+
+      if (!Utils.empty(prePath))
+      {
+         path = path.substring(prePath.length(), path.length());
+      }
+
+      while (!Utils.empty(path) && path.startsWith("/"))
+         path = path.substring(1, path.length());
+
       return path;
    }
 
-   public Request withPath(String path)
+   public String getSubpath()
    {
-      this.path = path;
-      return this;
+      String path = getPath();
+      String prePath = this.endpointPath;
+
+      while (!Utils.empty(path) && path.startsWith("/"))
+         path = path.substring(1, path.length());
+
+      while (!Utils.empty(prePath) && prePath.startsWith("/"))
+         prePath = prePath.substring(1, prePath.length());
+
+      if (!Utils.empty(prePath))
+      {
+         path = path.substring(prePath.length(), path.length());
+      }
+
+      while (!Utils.empty(path) && path.startsWith("/"))
+         path = path.substring(1, path.length());
+
+      return path;
    }
 
    public String getQuery()
@@ -531,17 +559,6 @@ public class Request
    public Request withSubCollectionKey(String subCollectionKey)
    {
       this.subCollectionKey = subCollectionKey;
-      return this;
-   }
-
-   public String getSubpath()
-   {
-      return subpath;
-   }
-
-   public Request withSubpath(String subpath)
-   {
-      this.subpath = subpath;
       return this;
    }
 
