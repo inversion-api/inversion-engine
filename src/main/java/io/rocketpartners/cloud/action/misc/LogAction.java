@@ -38,6 +38,7 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class LogAction extends Action<LogAction>
 {
@@ -177,5 +178,57 @@ public class LogAction extends Action<LogAction>
       this.logMaskFields.clear();
       this.logMaskFields.addAll(logMaskFields);
    }
+   
+   public LogAction withLogMaskFields(java.util.Collection<String> logMaskFields)
+   {
+      setLogMaskFields(logMaskFields);
+      return this;
+   }
+   
+   public LogAction withLogMaskFields(String... logMaskFields)
+   {
+      for (String maskField : Utils.explode(",", logMaskFields))
+         withLogMaskField(maskField);
 
+      return this;
+   }
+   
+   public LogAction withLogMaskField(String logMaskField)
+   {
+      if (!logMaskFields.contains(logMaskField))
+         logMaskFields.add(logMaskField);
+      return this;
+   }
+   
+   public String getLogTable()
+   {
+      return logTable;
+   }
+   
+   public void setLogTable(String logTable)
+   {
+      this.logTable = logTable;
+   }
+   
+   public LogAction withLogTable(String logTable)
+   {
+      setLogTable(logTable);
+      return this;
+   }
+   
+   public String getLogChangeTable()
+   {
+      return logChangeTable;
+   }
+   
+   public void setLogChangeTable(String logChangeTable)
+   {
+      this.logChangeTable = logChangeTable;
+   }
+   
+   public LogAction withLogChangeTable(String logChangeTable)
+   {
+      setLogChangeTable(logChangeTable);
+      return this;
+   }
 }

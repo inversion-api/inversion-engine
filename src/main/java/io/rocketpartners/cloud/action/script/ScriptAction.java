@@ -527,6 +527,12 @@ public class ScriptAction extends Action<ScriptAction>
    {
       this.cacheExpireSeconds = cacheExpireSeconds;
    }
+   
+   public ScriptAction withCacheExpireSeconds(long cacheExpireSeconds)
+   {
+      setCacheExpireSeconds(cacheExpireSeconds);
+      return this;
+   }
 
    public static class Util
    {

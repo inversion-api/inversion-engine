@@ -173,70 +173,154 @@ public class RedisAuthSessionCache implements AuthSessionCache
    {
       this.redisHost = redisHost;
    }
+   
+   public RedisAuthSessionCache withRedisHost(String redisHost) 
+   {
+      setRedisHost(redisHost);
+      return this;
+   }
 
    public void setRedisPort(int redisPort)
    {
       this.redisPort = redisPort;
+   }
+   
+   public RedisAuthSessionCache withRedisPort(int redisPort)
+   {
+      setRedisPort(redisPort);
+      return this;
    }
 
    public void setRedisPoolMin(int redisPoolMin)
    {
       this.redisPoolMin = redisPoolMin;
    }
+   
+   public RedisAuthSessionCache withRedisPoolMin(int redisPoolMin)
+   {
+      setRedisPoolMin(redisPoolMin);
+      return this;
+   }
 
    public void setRedisPoolMax(int redisPoolMax)
    {
       this.redisPoolMax = redisPoolMax;
+   }
+   
+   public RedisAuthSessionCache withRedisPoolMax(int redisPoolMax)
+   {
+      setRedisPoolMax(redisPoolMax);
+      return this;
    }
 
    public void setRedisTestOnBorrow(boolean redisTestOnBorrow)
    {
       this.redisTestOnBorrow = redisTestOnBorrow;
    }
+   
+   public RedisAuthSessionCache withRedisTestOnBorrow(boolean redisTestOnBorrow)
+   {
+      setRedisTestOnBorrow(redisTestOnBorrow);
+      return this;
+   }
 
    public void setRedisTestOnReturn(boolean redisTestOnReturn)
    {
       this.redisTestOnReturn = redisTestOnReturn;
+   }
+   
+   public RedisAuthSessionCache withRedisTestOnReturn(boolean redisTestOnReturn)
+   {
+      setRedisTestOnReturn(redisTestOnReturn);
+      return this;
    }
 
    public void setRedisTestWhileIdle(boolean redisTestWhileIdle)
    {
       this.redisTestWhileIdle = redisTestWhileIdle;
    }
+   
+   public RedisAuthSessionCache withRedisTestWhileIdle(boolean redistTestWhileIdle)
+   {
+      setRedisTestWhileIdle(redisTestWhileIdle);
+      return this;
+   }
 
    public void setRedisMinEvictableIdleTimeMillis(int redisMinEvictableIdleTimeMillis)
    {
       this.redisMinEvictableIdleTimeMillis = redisMinEvictableIdleTimeMillis;
+   }
+   
+   public RedisAuthSessionCache withRedisMinEvictableIdleTimeMillis(int redisMinEvictableIdleTimeMillis)
+   {
+      setRedisMinEvictableIdleTimeMillis(redisMinEvictableIdleTimeMillis);
+      return this;
    }
 
    public void setRedisTimeBetweenEvictionRunsMillis(int redisTimeBetweenEvictionRunsMillis)
    {
       this.redisTimeBetweenEvictionRunsMillis = redisTimeBetweenEvictionRunsMillis;
    }
+   
+   public RedisAuthSessionCache withRedisTimeBetweenEvictionRunsMillis(int redisTimeBetweenEvictionRunsMillis)
+   {
+      setRedisTimeBetweenEvictionRunsMillis(redisTimeBetweenEvictionRunsMillis);
+      return this;
+   }
 
    public void setRedisNumTestsPerEvictionRun(int redisNumTestsPerEvictionRun)
    {
       this.redisNumTestsPerEvictionRun = redisNumTestsPerEvictionRun;
+   }
+   
+   public RedisAuthSessionCache withRedisNumTestsPerEvictionRun(int redisNumTestsPerEvictionRun)
+   {
+      setRedisNumTestsPerEvictionRun(redisNumTestsPerEvictionRun);
+      return this;
    }
 
    public void setRedisBlockWhenExhausted(boolean redisBlockWhenExhausted)
    {
       this.redisBlockWhenExhausted = redisBlockWhenExhausted;
    }
+   
+   public RedisAuthSessionCache withRedisBlockWhenExhausted(boolean redisBlockWhenExhausted)
+   {
+      setRedisBlockWhenExhausted(redisBlockWhenExhausted);
+      return this;
+   }
 
    public void setRedisReadSocketTimeout(int redisReadSocketTimeout)
    {
       this.redisReadSocketTimeout = redisReadSocketTimeout;
+   }
+   
+   public RedisAuthSessionCache withRedisReadSocketTimeout(int redisReadSocketTimeout)
+   {
+      setRedisReadSocketTimeout(redisReadSocketTimeout);
+      return this;
    }
 
    public void setRedisTtl(int redisTtl)
    {
       this.redisTtl = redisTtl;
    }
+   
+   public RedisAuthSessionCache withRedisTtl(int redisTtl)
+   {
+      setRedisTtl(redisTtl);
+      return this;
+   }
 
    public void setKeyPrefix(String keyPrefix)
    {
       this.keyPrefix = keyPrefix;
+   }
+   
+   public RedisAuthSessionCache withKeyPrefix(String keyPrefix)
+   {
+      setKeyPrefix(keyPrefix);
+      return this;
    }
 
 }

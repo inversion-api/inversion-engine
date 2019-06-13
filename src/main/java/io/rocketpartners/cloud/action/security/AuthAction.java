@@ -459,49 +459,58 @@ public class AuthAction extends Action<AuthAction>
       return id;
    }
 
-   public void setSessionMax(int sessionMax)
+   public AuthAction withSessionMax(int sessionMax)
    {
       this.sessionMax = sessionMax;
+      return this;
    }
 
-   public void setFailedMax(int failedMax)
+   public AuthAction withFailedMax(int failedMax)
    {
       this.failedMax = failedMax;
+      return this;
    }
 
-   public void setFailedExp(int failedExp)
+   public AuthAction withFailedExp(int failedExp)
    {
       this.failedExp = failedExp;
+      return this;
    }
 
-   public void setCollection(String collection)
+   public AuthAction withCollection(String collection)
    {
       this.collection = collection;
+      return this;
    }
 
-   public void setAuthenticatedPerm(String authenticatedPerm)
+   public AuthAction withAuthenticatedPerm(String authenticatedPerm)
    {
       this.authenticatedPerm = authenticatedPerm;
+      return this;
    }
 
-   public void setSessionCache(AuthSessionCache sessionCache)
+   public AuthAction withSessionCache(AuthSessionCache sessionCache)
    {
       this.sessionCache = sessionCache;
+      return this;
    }
 
-   public void setShouldTrackRequestTimes(boolean shouldTrackRequestTimes)
+   public AuthAction withShouldTrackRequestTimes(boolean shouldTrackRequestTimes)
    {
       this.shouldTrackRequestTimes = shouldTrackRequestTimes;
+      return this;
    }
 
-   public void setSessionExp(long sessionExp)
+   public AuthAction withSessionExp(long sessionExp)
    {
       this.sessionExp = sessionExp;
+      return this;
    }
 
-   public void setDb(SqlDb db)
+   public AuthAction withDb(SqlDb db)
    {
       this.db = db;
+      return this;
    }
 
    class LRUAuthSessionCache implements AuthSessionCache

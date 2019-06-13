@@ -26,6 +26,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlSuggestAction extends Action
 {
@@ -127,6 +128,23 @@ public class SqlSuggestAction extends Action
    {
       this.whitelist.clear();
       this.whitelist.addAll(whitelist);
+   }
+   
+   public SqlSuggestAction withWhitelist(java.util.Collection<String> whitelist)
+   {
+      setWhitelist(whitelist);
+      return this;
+   }
+   
+   public SqlSuggestAction withWhitelist(String... whitelist)
+   {
+      this.whitelist.clear();
+      for (String whitelistEntry : Utils.explode(",", whitelist))
+      {
+         this.whitelist.add(whitelistEntry);
+      }
+
+      return this;
    }
 
 }
