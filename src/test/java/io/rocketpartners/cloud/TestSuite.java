@@ -7,6 +7,7 @@ import io.rocketpartners.cloud.action.dynamo.TestDynamoDbDeleteActions;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbGetActions;
 import io.rocketpartners.cloud.action.dynamo.TestDynamoDbPostActions;
 import io.rocketpartners.cloud.action.rest.TestCollapse;
+import io.rocketpartners.cloud.action.security.TestAclAction;
 import io.rocketpartners.cloud.action.sql.TestSqlDeleteAction;
 import io.rocketpartners.cloud.action.sql.TestSqlGetAction;
 import io.rocketpartners.cloud.action.sql.TestSqlPostAction;
@@ -19,6 +20,7 @@ import io.rocketpartners.cloud.model.TestUrl;
 import io.rocketpartners.cloud.rql.TestParser;
 import io.rocketpartners.cloud.rql.TestQuery;
 import io.rocketpartners.cloud.rql.TestTokenizer;
+import io.rocketpartners.cloud.service.config.TestConfig;
 
 @RunWith(Suite.class)
 
@@ -34,6 +36,7 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
       TestQuery.class, //
 
       TestDb.class, //
+      TestConfig.class, //
 
       TestSqlTokenizer.class, //
       TestSqlQuery.class, //
@@ -43,7 +46,9 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
 
       TestDynamoDbGetActions.class, //
       TestDynamoDbDeleteActions.class, //
-      TestDynamoDbPostActions.class //
+      TestDynamoDbPostActions.class, //
+      
+      TestAclAction.class
 
 })
 

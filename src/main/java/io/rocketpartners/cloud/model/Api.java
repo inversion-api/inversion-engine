@@ -432,6 +432,19 @@ public class Api
       return endpoint;
    }
 
+   public Endpoint withEndpoint(Action action, String method, String includePaths)
+   {
+      return withEndpoint(action, method, null, includePaths);
+   }
+
+   public Endpoint withEndpoint(Action action, String method, String path, String includePaths)
+   {
+      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
+      endpoint.withAction(action);
+      withEndpoint(endpoint);
+      return endpoint;
+   }
+
    public <T extends Action> T withAction(T action)
    {
       return withAction(action, null, null);
@@ -482,6 +495,12 @@ public class Api
          acl.withApi(this);
    }
 
+   public Api withAclRule(AclRule acl)
+   {
+      addAclRule(acl);
+      return this;
+   }
+
    public void setAclRules(List<AclRule> acls)
    {
       this.aclRules.clear();
@@ -523,6 +542,12 @@ public class Api
    public void setMultiTenant(boolean multiTenant)
    {
       this.multiTenant = multiTenant;
+   }
+
+   public Api withMultiTenant(boolean multiTenant)
+   {
+      this.multiTenant = multiTenant;
+      return this;
    }
 
    public Object putCache(Object key, Object value)

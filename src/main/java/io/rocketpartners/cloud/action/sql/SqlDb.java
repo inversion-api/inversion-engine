@@ -88,7 +88,14 @@ public class SqlDb extends Db<SqlDb>
             @Override
             public void onError(String method, String sql, Object args, Exception ex)
             {
-               ex.printStackTrace();
+               if (method != null && method.equals("selectRows"))
+               {
+                  logger.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
+               }
+               else
+               {
+                  ex.printStackTrace();
+               }
             }
 
             @Override
