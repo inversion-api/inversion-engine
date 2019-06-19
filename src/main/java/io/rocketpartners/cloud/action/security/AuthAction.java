@@ -367,7 +367,7 @@ public class AuthAction extends Action<AuthAction>
    {
       String sql = "";
       sql += " SELECT DISTINCT r.* ";
-      sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ";
+      sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ?";
       return SqlUtils.selectObjects(conn, sql, Role.class, user.getId());
    }
 
