@@ -182,6 +182,12 @@ public class Api
    {
       this.id = id;
    }
+   
+   public Api withId(int id)
+   {
+      setId(id);
+      return this;
+   }
 
    public String getHash()
    {
