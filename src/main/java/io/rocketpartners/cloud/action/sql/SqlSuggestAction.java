@@ -84,7 +84,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
             String firstProp = propertyList.get(0);
             String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
       
-            Collection collection = req.getCollection();//getApi().getCollection(collectionKey, SqlDb.class);
+            Collection collection = api.getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
             if (collection == null)
                throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
       
