@@ -91,7 +91,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
             SqlDb db = (SqlDb) collection.getDb();
       
             //TODO pass list of Terms
-            SqlQuery query = new SqlQuery(collection.getTable(), (List<Term>) req.getParams());
+            SqlQuery query = new SqlQuery(collection.getTable(), req.getParams());
       
             for (int i = 0; i < propertyList.size(); i++)
             {
