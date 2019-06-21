@@ -52,7 +52,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
             Set<String> whitelist = this.whitelist;
             if (whitelistStr != null)
             {
-               whitelist = new HashSet(Utils.explode(",", whitelistStr));
+               whitelist = new HashSet(Utils.explode(",", whitelistStr.toLowerCase()));
             }
       
             String properties = req.removeParam(propertyProp);
@@ -76,10 +76,6 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
                value = value.replace("\"", "");
             }
       
-            String sql = "";
-            sql += " SELECT DISTINCT " + searchProp;
-            sql += " \r\n FROM (";
-      
             List<String> propertyList = Utils.explode(",", properties);
             String firstProp = propertyList.get(0);
             String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
@@ -87,17 +83,16 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
             Collection collection = api.getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
             if (collection == null)
                throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
-      
-            SqlDb db = (SqlDb) collection.getDb();
-      
-            //TODO pass list of Terms
-            SqlQuery query = new SqlQuery(collection.getTable(), req.getParams());
+            
+            String sql = "";
+            sql += " SELECT DISTINCT " + searchProp;
+            sql += " \r\n FROM (";
       
             for (int i = 0; i < propertyList.size(); i++)
             {
                String prop = propertyList.get(i);
       
-               if (!whitelist.contains(prop))
+               if (!whitelist.contains(prop.toLowerCase()))
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
       
                if (prop.indexOf(".") < 0)
@@ -105,13 +100,13 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
       
                collectionKey = prop.substring(0, prop.indexOf("."));
       
-               String tableName = SqlUtils.check(req.getCollection().getEntity().getTable().getName());
+               String tableName = SqlUtils.check(collection.getEntity().getTable().getName());
                String column = SqlUtils.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
       
-               sql += " \r\nSELECT DISTINCT " + query.asCol(column) + " AS " + searchProp + " FROM " + query.asCol(tableName) + " WHERE " + query.asCol(column) + " LIKE '%" + SqlUtils.check(value) + "%' AND " + query.asCol(column) + " != ''";
+               sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + SqlUtils.check(value) + "%' AND " + column + " != ''";
       
                if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
-                  sql += " AND " + query.asCol(tenantCol) + "=" + req.getUser().getTenantId();
+                  sql += " AND " + tenantCol + "=" + req.getUser().getTenantId();
       
                if (i + 1 < propertyList.size())
                   sql += " \r\nUNION ";
@@ -122,19 +117,24 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
             // removing the tenantId here so the Get Handler won't add an additional where clause to the sql we are sending it
             req.removeParam("tenantId");
       
+            SqlDb db = (SqlDb) collection.getDb();
             chain.put("db", db.getName());
             chain.put("select", sql);
    }
 
    public List<String> getWhitelist()
    {
-      return new ArrayList(whitelist);
+      return new ArrayList<String>(whitelist);
    }
 
    public void setWhitelist(java.util.Collection<String> whitelist)
    {
       this.whitelist.clear();
-      this.whitelist.addAll(whitelist);
+      for (String entry : whitelist)
+      {
+         String lowercaseEntry = entry.toLowerCase();
+         this.whitelist.add(lowercaseEntry);
+      }
    }
    
    public SqlSuggestAction withWhitelist(java.util.Collection<String> whitelist)
@@ -148,7 +148,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
       this.whitelist.clear();
       for (String whitelistEntry : Utils.explode(",", whitelist))
       {
-         this.whitelist.add(whitelistEntry);
+         this.whitelist.add(whitelistEntry.toLowerCase());
       }
 
       return this;
