@@ -69,7 +69,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       List values = getColValues();
       Rows rows = SqlUtils.selectRows(conn, sql, values);
-      //Rows rows = SqlUtils.selectRows(conn, "SELECT * FROM ORDERS");
       int foundRows = -1;
 
       if (Chain.peek().get("foundRows") == null)
@@ -244,8 +243,16 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          for (Column col : table.getPrimaryIndex().getColumns())
          {
-            Sort sort = new Sort(col.getName(), true);
-            sorts.add(sort);
+            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
+            {
+               Sort sort = new Sort(col.getName(), true);
+               sorts.add(sort);
+            }
+            else
+            {
+               sorts.clear();
+               break;
+            }
          }
       }
       for (int i = 0; i < sorts.size(); i++)
@@ -442,13 +449,13 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (term.hasToken("eq", "ne", "like", "w", "sw", "ew", "wo"))
       {
          boolean negation = term.hasToken("ne", "nw", "wo");
-         
+
          if (terms.size() > 2 || negation)
             sql.append("(");
 
-         if(negation)
+         if (negation)
             sql.append("NOT (");
-         
+
          String string0 = strings.get(0);
 
          for (int i = 1; i < terms.size(); i++)
@@ -491,8 +498,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
          if (terms.size() > 2 || negation)
             sql.append(")");
-         
-         if(negation)
+
+         if (negation)
             sql.append(")");
       }
       else if ("nn".equalsIgnoreCase(token))
@@ -668,10 +675,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       {
          if (parent.hasToken("w") || parent.hasToken("wo"))
          {
-            if(!token.startsWith("*"))
+            if (!token.startsWith("*"))
                token = "*" + token;
-            
-            if(!token.endsWith("*"))
+
+            if (!token.endsWith("*"))
                token += "*";
          }
          else if (parent.hasToken("sw") && !token.endsWith("*"))

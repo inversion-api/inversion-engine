@@ -22,6 +22,7 @@ import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
+import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
@@ -140,7 +141,7 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<ObjectNode> results = select(req, req.getCollection(), req.getUrl().getParams());
+      Results<ObjectNode> results = select(req, req.getCollection(), req.getUrl().getParams(), api);
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
@@ -210,7 +211,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    }
 
-   protected Results<ObjectNode> select(Request req, Collection collection, Map<String, String> params) throws Exception
+   protected Results<ObjectNode> select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
    {
       //------------------------------------------------
       // Normalize all of the params and convert attribute
@@ -267,8 +268,20 @@ public class RestGetAction extends Action<RestGetAction>
             mapToColumns(collection, term);
          }
       }
+      Results results = null;
 
-      Results results = collection.getDb().select(collection.getTable(), terms);
+      if (collection == null)
+      {
+         Db db = api.findDb((String) Chain.peek().get("db"));
+         if (db == null)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection");
+         results = db.select(null, terms);
+      }
+      else
+      {
+         results = collection.getDb().select(collection.getTable(), terms);
+      }
+      
 
       if (results.size() > 0)
       {
@@ -347,7 +360,8 @@ public class RestGetAction extends Action<RestGetAction>
             }
 
          }
-         expand(req, collection, results.getRows(), null, null, null);
+         if (collection != null)
+            expand(req, collection, results.getRows(), null, null, null);
          exclude(results.getRows());
 
       } // end if results.size() > 0
