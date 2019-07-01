@@ -225,12 +225,12 @@ public class Utils
       json.writeEndObject();
    }
 
-   public static ArrayNode parseJsonArray(String json)
+   public static ArrayNode parseArrayNode(String json)
    {
       return ((ArrayNode) parseJson(json));
    }
 
-   public static ObjectNode parseJsonObject(String json)
+   public static ObjectNode parseObjectNode(String json)
    {
       return ((ObjectNode) parseJson(json));
    }

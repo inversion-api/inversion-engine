@@ -72,7 +72,7 @@ public class RestPostAction extends Action<RestPostAction>
 
       if (collapseAll || collapses.size() > 0)
       {
-         obj = Utils.parseJsonObject(obj.toString());
+         obj = Utils.parseObjectNode(obj.toString());
          collapse(obj, collapseAll, collapses, "");
       }
 

@@ -44,7 +44,7 @@ public class Url implements Cloneable
       u.path = path;
       u.query = query;
       if (params.size() > 0)
-         Utils.parseJsonObject(params.toString());
+         Utils.parseObjectNode(params.toString());
 
       return u;
    }
