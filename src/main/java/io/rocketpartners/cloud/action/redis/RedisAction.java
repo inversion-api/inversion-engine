@@ -107,7 +107,7 @@ public class RedisAction extends Action<RedisAction>
             {
                log.debug("CACHE HIT : " + key);
 
-               resJson = Utils.parseJsonObject(value);
+               resJson = Utils.parseObjectNode(value);
                res.withJson(resJson);
                res.withStatus(SC.SC_200_OK);
                chain.cancel();

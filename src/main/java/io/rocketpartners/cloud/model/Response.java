@@ -297,7 +297,7 @@ public class Response
    public ObjectNode getJson()
    {
       if (file != null && file.length() > 0)
-         return Utils.parseJsonObject(getContent());
+         return Utils.parseObjectNode(getContent());
       else
          return json;
    }

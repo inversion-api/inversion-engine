@@ -288,7 +288,7 @@ public class Request
 
       try
       {
-         json = Utils.parseJsonObject(body);
+         json = Utils.parseObjectNode(body);
       }
       catch (Exception ex)
       {

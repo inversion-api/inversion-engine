@@ -175,7 +175,15 @@ public class SqlDb extends Db<SqlDb>
       //      }
 
       //      String dbname = (String) req.getChain().get("db");
-      SqlDb db = (SqlDb) table.getDb();
+      SqlDb db = null;
+      if (table == null)
+      {
+         db = this;
+      }
+      else
+      {
+         db = (SqlDb) table.getDb();
+      }
       //      if (db == null)
       //      {
       //         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
@@ -186,7 +194,11 @@ public class SqlDb extends Db<SqlDb>
 
       String sql = (String) Chain.peek().remove("select");
       if (Utils.empty(sql))
+      {
+         if (table == null)
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Table missing");
          sql = " SELECT * FROM " + quoteCol(table.getName());
+      }
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
       query.withSelectSql(sql);

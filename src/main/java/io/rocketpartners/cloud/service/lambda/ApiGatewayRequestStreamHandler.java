@@ -60,7 +60,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       try
       {
-         ObjectNode json = Utils.parseJsonObject(input);
+         ObjectNode json = Utils.parseObjectNode(input);
 
          debug("Request Event");
          debug(json.toString(false));
@@ -146,7 +146,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("error", Utils.getShortCause(ex));
 
-            responseBody.put("request", Utils.parseJsonObject(input));
+            responseBody.put("request", Utils.parseObjectNode(input));
 
             ObjectNode responseJson = new ObjectNode();
             responseJson.put("isBase64Encoded", false);

@@ -271,7 +271,7 @@ public class ScriptAction extends Action<ScriptAction>
             {
                try
                {
-                  ObjectNode obj = Utils.parseJsonObject(content);
+                  ObjectNode obj = Utils.parseObjectNode(content);
                   res.withJson(obj);
                   setText = false;
                }

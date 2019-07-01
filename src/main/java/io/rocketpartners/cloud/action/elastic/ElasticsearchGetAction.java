@@ -158,7 +158,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         ObjectNode jsObj = Utils.parseJsonObject(r.getContent());
+         ObjectNode jsObj = Utils.parseObjectNode(r.getContent());
 
          int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
          ArrayNode hits = jsObj.getNode("hits").getArray("hits");
@@ -280,7 +280,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         ObjectNode jsObj = Utils.parseJsonObject(r.getContent());
+         ObjectNode jsObj = Utils.parseObjectNode(r.getContent());
          ObjectNode auto = (ObjectNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
          ArrayNode resultArray = new ArrayNode();
          for (ObjectNode obj : (List<ObjectNode>) auto.getArray("options").asList())
