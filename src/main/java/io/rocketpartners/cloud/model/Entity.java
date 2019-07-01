@@ -33,10 +33,9 @@ public class Entity
 
    protected boolean                 exclude       = false;
 
-   //   public Entity()
-   //   {
-   //      System.out.println("Entity()");
-   //   }
+   public Entity()
+   {
+   }
 
    protected Entity(Collection collection, Table table)
    {

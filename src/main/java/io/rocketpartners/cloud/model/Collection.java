@@ -18,10 +18,9 @@ package io.rocketpartners.cloud.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Collection extends Rule
+public class Collection extends Rule<Collection>
 {
    protected Entity       entity  = null;
-   protected String       name    = null;
    protected List<String> aliases = new ArrayList();
    protected boolean      exclude = false;
 

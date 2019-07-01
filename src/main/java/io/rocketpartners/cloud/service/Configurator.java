@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package io.rocketpartners.cloud.utils;
+package io.rocketpartners.cloud.service;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -64,18 +64,20 @@ import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.PropsConfig.AutoWire.Ignore;
-import io.rocketpartners.cloud.utils.PropsConfig.AutoWire.Includer;
-import io.rocketpartners.cloud.utils.PropsConfig.AutoWire.Namer;
+import io.rocketpartners.cloud.service.Configurator.AutoWire.Ignore;
+import io.rocketpartners.cloud.service.Configurator.AutoWire.Includer;
+import io.rocketpartners.cloud.service.Configurator.AutoWire.Namer;
+import io.rocketpartners.cloud.utils.Utils;
 
-public class PropsConfig
+public class Configurator
 {
-   Logger  log       = LoggerFactory.getLogger(Service.class.getName() + ".configuration");
+   public static final String ROOT_BEAN_NAME = "inversion";
 
-   boolean destroyed = false;
+   Logger                     log            = LoggerFactory.getLogger(Service.class.getName() + ".configuration");
 
-   Service service   = null;
+   boolean                    destroyed      = false;
+
+   Service                    service        = null;
 
    public void destroy()
    {
@@ -96,8 +98,9 @@ public class PropsConfig
          if (config.files.size() == 0)
             return;
 
+         //all this does is set investion.* properties on the service class
          AutoWire w = new AutoWire();
-         w.putBean("snooze", service);
+         w.putBean(ROOT_BEAN_NAME, service);
          w.load(config.props);
 
          loadConfig(config, true, service.isConfigFast());
@@ -105,38 +108,44 @@ public class PropsConfig
       catch (Exception e)
       {
          e.printStackTrace();
-         throw new RuntimeException("Unable to load snooze configs: " + e.getMessage(), e);
+         throw new RuntimeException("Unable to load config files: " + e.getMessage(), e);
       }
 
-      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-      {
-         Thread t = new Thread(new Runnable()
-            {
-               @Override
-               public void run()
-               {
-                  while (true)
-                  {
-                     try
-                     {
-                        Utils.sleep(service.getConfigTimeout());
-                        if (destroyed)
-                           return;
+      //      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
+      //      {
+      //         Thread t = new Thread(new Runnable()
+      //            {
+      //               @Override
+      //               public void run()
+      //               {
+      //                  while (true)
+      //                  {
+      //                     try
+      //                     {
+      //                        Utils.sleep(service.getConfigTimeout());
+      //                        if (destroyed)
+      //                           return;
+      //
+      //                        Config config = findConfig();
+      //                        loadConfig(config, false, false);
+      //                     }
+      //                     catch (Throwable t)
+      //                     {
+      //                        log.warn("Error loading config", t);
+      //                     }
+      //                  }
+      //               }
+      //            }, "snooze-config-reloader");
+      //
+      //         t.setDaemon(true);
+      //         t.start();
+      //      }
+   }
 
-                        Config config = findConfig();
-                        loadConfig(config, false, false);
-                     }
-                     catch (Throwable t)
-                     {
-                        log.warn("Error loading config", t);
-                     }
-                  }
-               }
-            }, "snooze-config-reloader");
-
-         t.setDaemon(true);
-         t.start();
-      }
+   public static Properties encode(Object... beans) throws Exception
+   {
+      Properties autoProps = AutoWire.encode(new ApiNamer(), new ApiIncluder(), beans);
+      return autoProps;
    }
 
    void loadConfig(Config config, boolean forceReload, boolean fastLoad) throws Exception
@@ -161,7 +170,7 @@ public class PropsConfig
          for (Api api : wire.getBeans(Api.class))
          {
             if (Utils.empty(api.getApiCode()))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getName() + "' is missing an 'apiCode'.  An Api can not be loaded without one.");
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
 
             Api existingApi = service.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
@@ -309,7 +318,7 @@ public class PropsConfig
       //            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class,                               //
       //            boolean.class, char.class, byte.class, short.class, int.class, long.class, float.class, double.class, void.class);
 
-      List<Field> excludes     = Arrays.asList(Utils.getField("handlers", Api.class));
+      List<Field> excludes     = Arrays.asList(Utils.getField("actions", Api.class));
 
       List        excludeTypes = new ArrayList(Arrays.asList(Logger.class, Action.class, Endpoint.class, Rule.class));
 
@@ -340,6 +349,10 @@ public class PropsConfig
 
             boolean inc = !excludeTypes.contains(c);
             return inc;
+         }
+         else if (Properties.class.isAssignableFrom(c))
+         {
+            return true;
          }
          else if (Map.class.isAssignableFrom(c))
          {
@@ -376,7 +389,11 @@ public class PropsConfig
       {
          Object name = null;
          Class clazz = o.getClass();
-         if (o instanceof Api || o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
+         if (o instanceof Api)
+         {
+            name = ((Api) o).getApiCode();
+         }
+         else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
          {
             name = Utils.getField("name", clazz).get(o);
          }
@@ -398,7 +415,7 @@ public class PropsConfig
          else if (o instanceof Collection)
          {
             Collection col = (Collection) o;
-            name = col.getApi().getName() + ".collections." + col.getDb().getName() + "_" + col.getName();
+            name = col.getApi().getApiCode() + ".collections." + col.getDb().getName() + "_" + col.getName();
          }
          else if (o instanceof Entity)
          {
@@ -672,7 +689,8 @@ public class PropsConfig
                   if (value != null)
                      value = value.trim();
 
-                  if (value != null && (value.length() == 0 || "null".equals(value)))
+                  //if (value != null && (value.length() == 0 || "null".equals(value)))
+                  if ("null".equals(value))
                   {
                      value = null;
                   }
@@ -800,7 +818,7 @@ public class PropsConfig
                   {
                      field.set(obj, beans.get(value));
                   }
-                  else if (Collection.class.isAssignableFrom(type))
+                  else if (java.util.Collection.class.isAssignableFrom(type))
                   {
                      java.util.Collection list = (java.util.Collection) cast(value, type);
                      ((java.util.Collection) field.get(obj)).addAll(list);
@@ -991,7 +1009,7 @@ public class PropsConfig
          {
             return (T) (Float) Float.parseFloat(str);
          }
-         else if (Collection.class.isAssignableFrom(type))
+         else if (java.util.Collection.class.isAssignableFrom(type))
          {
             java.util.Collection list = new ArrayList();
             String[] parts = str.split(",");
@@ -1107,7 +1125,7 @@ public class PropsConfig
                   if (value.getClass().isArray())
                      value = Arrays.asList(value);
 
-                  if (value instanceof Collection)
+                  if (value instanceof java.util.Collection)
                   {
                      if (((java.util.Collection) value).size() == 0)
                         continue;
@@ -1153,7 +1171,8 @@ public class PropsConfig
          }
          catch (Exception ex)
          {
-            System.err.println("Error encoding " + object.getClass().getName());
+            System.err.println("Error encoding " + object.getClass().getName() + " - " + ex.getMessage());
+            ex.printStackTrace();
             throw ex;
          }
       }

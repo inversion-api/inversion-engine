@@ -33,7 +33,6 @@ public class Api
 
    protected transient Service service     = null;
 
-   protected String            name        = null;
    protected boolean           debug       = false;
 
    protected int               id          = 0;
@@ -51,17 +50,6 @@ public class Api
 
    public Api()
    {
-   }
-
-   public Api(String name)
-   {
-      this.name = name;
-   }
-
-   public Api(String name, String apiCode)
-   {
-      withName(name);
-      withApiCode(apiCode);
    }
 
    public synchronized Api startup()
@@ -160,17 +148,6 @@ public class Api
    public Service getService()
    {
       return service;
-   }
-
-   public String getName()
-   {
-      return name;
-   }
-
-   public Api withName(String name)
-   {
-      this.name = name;
-      return this;
    }
 
    public int getId()

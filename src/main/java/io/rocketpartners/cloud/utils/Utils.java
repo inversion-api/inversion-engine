@@ -1041,6 +1041,8 @@ public class Utils
     */
    public static List<Field> getFields(Class clazz)
    {
+      Class inClass = clazz;
+
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 
@@ -1062,7 +1064,7 @@ public class Utils
                }
                else
                {
-                  System.out.println("skipping: " + f);
+                  System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
                }
             }
          }
