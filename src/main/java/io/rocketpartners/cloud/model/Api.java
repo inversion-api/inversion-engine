@@ -284,7 +284,7 @@ public class Api
 
    public List<Collection> getCollections()
    {
-      return new ArrayList(collections);
+      return new ArrayList<Collection>(collections);
    }
 
    public void setCollections(List<Collection> collections)
@@ -296,7 +296,12 @@ public class Api
 
    public Collection withCollection(Table table, String name)
    {
-      Collection collection = new Collection(this, table, name);
+      Collection collection = this.getCollection(table);
+      if(collection == null)
+      {
+         collection = new Collection(this, table, name);
+         this.withCollection(collection);
+      }
       return collection;
    }
 
