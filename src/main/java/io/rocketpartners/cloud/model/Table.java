@@ -127,7 +127,7 @@ public class Table
    /**
     * @param columns the columns to set
     */
-   public Table withColumns(List<Column> cols)
+   public Table withColumns(Column... cols)
    {
       for (Column col : cols)
          withColumn(col);
@@ -136,31 +136,38 @@ public class Table
 
    public Table withColumn(Column column)
    {
-      Column existing = getColumn(column.getName());
+      Column existing = column.getName() == null ? null : getColumn(column.getName());
+
+      if (existing != null && existing == column)
+         return this;
+
       if (existing != null)
          throw new ApiException("you are trying to add a column name that already exists: " + column.getName());
 
       if (column != null && !columns.contains(column))
       {
          columns.add(column);
-         column.withTable(this);
+
+         if (column.getTable() != this)
+            column.withTable(this);
       }
       return this;
    }
 
-   public Table withColumn(String name, String type)
+   public Column makeColumn(String name, String type)
    {
       Column column = getColumn(name);
 
       if (column == null)
       {
          column = new Column();
-         columns.add(column);
-      }
-      column.withName(name);
-      column.withType(type);
+         column.withName(name);
+         column.withType(type);
 
-      return this;
+         withColumn(column);
+      }
+
+      return column;
    }
 
    public void removeColumn(Column column)
@@ -226,7 +233,7 @@ public class Table
    {
       return decodeKeys(inKey).iterator().next();
    }
-   
+
    public Row decodeKey(Index index, String inKey)
    {
       return decodeKeys(index, inKey).iterator().next();
@@ -381,7 +388,7 @@ public class Table
       return found;
    }
 
-   public Table withIndexes(ArrayList<Index> indexes)
+   public Table withIndexes(Index... indexes)
    {
       for (Index index : indexes)
          withIndex(index);
@@ -392,12 +399,16 @@ public class Table
    public Table withIndex(Index index)
    {
       if (index != null && !indexes.contains(index))
+      {
          indexes.add(index);
+         if(index.getTable() != this)
+            index.withTable(this);
+      }
 
       return this;
    }
 
-   public Index withIndex(Column column, String name, String type, boolean unique)
+   public Index makeIndex(Column column, String name, String type, boolean unique)
    {
       //System.out.println("WITH INDEX: " + name + " - " + column);
       Index index = getIndex(name);

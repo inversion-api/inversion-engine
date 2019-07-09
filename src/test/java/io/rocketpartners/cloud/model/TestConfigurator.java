@@ -11,9 +11,9 @@ import java.util.Properties;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
-import io.rocketpartners.cloud.service.Configurator;
-import io.rocketpartners.cloud.service.Configurator.AutoWire;
+import io.rocketpartners.cloud.utils.Configurator;
 import io.rocketpartners.cloud.utils.Utils;
+import io.rocketpartners.cloud.utils.Wirer;
 import junit.framework.TestCase;
 
 public class TestConfigurator extends TestCase
@@ -25,7 +25,18 @@ public class TestConfigurator extends TestCase
 
       Properties props1 = Configurator.encode(source);
 
-      AutoWire w = new AutoWire();
+      List<String> keys = new ArrayList(props1.keySet());
+      Collections.sort(keys);
+
+      //      for (String key : keys)
+      //      {
+      //         String value = props1.getProperty(key);
+      //
+      //         if (key.indexOf(".api") >= 0)
+      //            System.out.println(key + "=" + value);
+      //      }
+
+      Wirer w = new Wirer();
       w.load(props1);
 
       Api copy1 = (Api) w.getBean("northwind");
@@ -35,9 +46,10 @@ public class TestConfigurator extends TestCase
       String print1 = print(props1);
       String print2 = print(props2);
 
-//      assertTrue(props1.containsKey("h2.pass"));
-//      assertTrue(props2.containsKey("h2.pass"));
+      //      assertTrue(props1.containsKey("h2.pass"));
+      //      assertTrue(props2.containsKey("h2.pass"));
 
+      //compare(print1, print2);
       assertTrue(compare(print1, print2));
    }
 
@@ -53,12 +65,10 @@ public class TestConfigurator extends TestCase
          line1 = r1.readLine();
          line2 = r2.readLine();
 
-         if (line1 == null && line2 == null)
-            break;
-
          if (Utils.equal(line1, line2))
          {
-            System.out.println(line1);
+            if (line1 != null)
+               System.out.println(line1);
          }
          else
          {
@@ -66,6 +76,9 @@ public class TestConfigurator extends TestCase
             System.out.println("DIFFERENT LINE2: " + line2);
             return false;
          }
+
+         if (line1 == null || line2 == null)
+            break;
       }
 
       return true;

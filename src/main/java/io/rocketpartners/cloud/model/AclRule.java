@@ -22,14 +22,14 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class AclRule extends Rule<AclRule>
 {
-   protected boolean          allow       = true;
-   protected boolean          info        = false;
+   protected boolean      allow       = true;
+   protected boolean      info        = false;
 
-   protected List<Permission> permissions = new ArrayList();
-   protected List<Role>       roles       = new ArrayList();
+   protected List<String> permissions = new ArrayList();
+   protected List<Role>   roles       = new ArrayList();
 
-   protected List<String>     restricts   = new ArrayList();
-   protected List<String>     requires    = new ArrayList();
+   protected List<String> restricts   = new ArrayList();
+   protected List<String> requires    = new ArrayList();
 
    public AclRule()
    {
@@ -95,43 +95,29 @@ public class AclRule extends Rule<AclRule>
       if (this.api != api)
       {
          this.api = api;
-         api.addAclRule(this);
+         api.withAclRule(this);
       }
       return this;
    }
 
-   public ArrayList<Permission> getPermissions()
+   public ArrayList<String> getPermissions()
    {
       return new ArrayList(permissions);
    }
 
-   //   public void setPermissions(List<Permission> permissions)
-   //   {
-   //      this.permissions.clear();
-   //      for (Permission permission : permissions)
-   //         addPermission(permission);
-   //   }
-
    public AclRule withPermissions(String permissions)
    {
-      this.permissions.clear();
       for (String permission : Utils.explode(",", permissions))
          withPermission(permission);
 
       return this;
    }
 
-   public AclRule withPermission(Permission permission)
+   public AclRule withPermission(String permission)
    {
       if (!permissions.contains(permission))
          permissions.add(permission);
 
-      return this;
-   }
-
-   public AclRule withPermission(String permission)
-   {
-      withPermission(new Permission(permission));
       return this;
    }
 
@@ -182,7 +168,6 @@ public class AclRule extends Rule<AclRule>
 
    public AclRule withRequires(List<String> requires)
    {
-      this.requires.clear();
       for (String require : requires)
       {
          withRequire(require);
@@ -200,7 +185,8 @@ public class AclRule extends Rule<AclRule>
 
    public AclRule withRequire(String require)
    {
-      requires.add(require);
+      if (!requires.contains(require))
+         requires.add(require);
 
       return this;
    }

@@ -64,10 +64,10 @@ public class S3Db extends Db<S3Db>
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
          // Other core metadata includes: eTag, size, lastModified, storageClass
-         table.withColumn("key", String.class.getName());
+         table.makeColumn("key", String.class.getName());
          withTable(table);
 
-         api.withCollection(table, beautifyCollectionName(table.getName()));
+         api.makeCollection(table, beautifyCollectionName(table.getName()));
       }
    }
 

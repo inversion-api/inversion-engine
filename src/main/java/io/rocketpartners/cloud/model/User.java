@@ -20,45 +20,38 @@ import java.util.List;
 
 public class User
 {
-   protected int              id          = 0;
-   protected String           username    = null;
-   protected String           password    = null;
+   protected int          id          = 0;
+   protected String       username    = null;
+   protected String       password    = null;
 
-   protected String           displayName = null;
+   protected String       displayName = null;
 
-   protected List<Permission> permissions = new ArrayList();
-   protected List<Role>       roles       = new ArrayList();
+   protected List<String> permissions = new ArrayList();
+   protected List<Role>   roles       = new ArrayList();
 
-   protected String           accessKey   = null;
-   protected String           secretKey   = null;
+   protected String       accessKey   = null;
+   protected String       secretKey   = null;
 
-   protected int              tenantId    = 0;
-   protected String           tenantCode  = null;
+   protected int          tenantId    = 0;
+   protected String       tenantCode  = null;
 
    /**
     * the time of the last request
     */
-   protected long             requestAt   = -1;
+   protected long         requestAt   = -1;
    /**
     * the remote host of the last request
     */
-   protected String           remoteAddr  = null;
+   protected String       remoteAddr  = null;
 
    /**
     * the number of consecutive failed logins
     */
-   protected int              failedNum   = 0;
+   protected int          failedNum   = 0;
 
    public User()
    {
 
-   }
-
-   public User(String username, java.util.Collection<Role> roles, java.util.Collection<Permission> perms)
-   {
-      this.username = username;
-      withRoles(roles);
-      withPermissions(permissions);
    }
 
    public String getUsername()
@@ -160,16 +153,34 @@ public class User
       return this;
    }
 
-   public List<Permission> getPermissions()
+   public List<String> getPermissions()
    {
-      return permissions;
+      return new ArrayList(permissions);
    }
 
-   public User withPermissions(java.util.Collection<Permission> permissions)
+   public void setPermissions(List<String> permissions)
    {
       this.permissions.clear();
-      if (permissions != null)
-         this.permissions.addAll(permissions);
+      for (String permission : permissions)
+      {
+         withPermission(permission);
+      }
+   }
+
+   public User withPermissions(String... permissions)
+   {
+      for (String permission : permissions)
+      {
+         withPermission(permission);
+      }
+      return this;
+   }
+
+   public User withPermission(String permission)
+   {
+      if (!permissions.contains(permission))
+         permissions.add(permission);
+
       return this;
    }
 

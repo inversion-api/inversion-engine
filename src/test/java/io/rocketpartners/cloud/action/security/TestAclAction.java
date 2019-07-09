@@ -21,9 +21,9 @@ public class TestAclAction
    {
       Service service = new Service()//
                                      .withApi("test")//
-                                     .withAction(new AclAction()).getApi()//
-                                     .withEndpoint("GET", "blocked/*").withAction(new MockActionA()).getApi()//
-                                     .withEndpoint("GET", "open/*").withAction(new MockActionA()).getApi()//
+                                     .makeAction(new AclAction()).getApi()//
+                                     .makeEndpoint("GET", "blocked/*").withAction(new MockActionA()).getApi()//
+                                     .makeEndpoint("GET", "open/*").withAction(new MockActionA()).getApi()//
                                      .withAclRule(new AclRule("GET").withIncludePaths("open/*"))//
                                      .getService();
 

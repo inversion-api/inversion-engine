@@ -590,7 +590,7 @@ public class SqlDb extends Db<SqlDb>
                   column.withUnique(unique);
                }
 
-               table.withIndex(column, idxName, idxType, unique);
+               table.makeIndex(column, idxName, idxType, unique);
 
             }
             indexMd.close();
@@ -630,7 +630,7 @@ public class SqlDb extends Db<SqlDb>
                Column pk = getColumn(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               getTable(fkTableName).withIndex(fk, fkName, "FOREIGN_KEY", false);
+               getTable(fkTableName).makeIndex(fk, fkName, "FOREIGN_KEY", false);
 
                //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
@@ -667,7 +667,7 @@ public class SqlDb extends Db<SqlDb>
          List<Column> cols = table.getColumns();
          String name = beautifyCollectionName(table.getName());
 
-         Collection collection = api.withCollection(table, name);
+         Collection collection = api.makeCollection(table, name);
          if (getCollectionPath() != null)
             collection.withIncludePath(getCollectionPath());
 

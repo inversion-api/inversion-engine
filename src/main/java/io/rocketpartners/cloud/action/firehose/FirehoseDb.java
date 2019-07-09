@@ -120,7 +120,7 @@ public class FirehoseDb extends Db<FirehoseDb>
             if (arr.length == 1)//a specific collection name was not supplied by the config
                collectionName = beautifyCollectionName(collectionName);
 
-            api.withCollection(table, collectionName);
+            api.makeCollection(table, collectionName);
          }
       }
       else

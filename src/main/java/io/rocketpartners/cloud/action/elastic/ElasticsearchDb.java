@@ -132,19 +132,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          Collection collection = new Collection();
 
          collection.withName(super.beautifyCollectionName(t.getName()));
-         Entity entity = collection.withEntity(t);
-         //
-         //         for (Column col : cols)
-         //         {
-         //            Attribute attr = new Attribute();
-         //            attr.withEntity(entity);
-         //            attr.withName(col.getName());
-         //            attr.withColumn(col);
-         //            attr.withHint(col.getTable().getName() + "." + col.getName());
-         //            attr.withType(col.getType());
-         //            entity.withAttribute(attr);
-         //         }
-
+         collection.withTable(t);
          api.withCollection(collection);
       }
    }

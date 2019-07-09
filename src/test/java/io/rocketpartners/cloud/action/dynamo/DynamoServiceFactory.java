@@ -61,7 +61,7 @@ public class DynamoServiceFactory
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       final Api api = service.getApi(apiCode);
       api.withDb(dynamoDb);
-      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new RestAction());
+      api.makeEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new RestAction());
 
       dynamoDb.startup();
 

@@ -141,19 +141,6 @@ public class Collection extends Rule<Collection>
       return getEntity().getTable();
    }
 
-   public Entity withEntity(Table table)
-   {
-      if (entity != null)
-      {
-         if (entity.getTable() != table)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error.  You are trying to set an entity on collection that already has one.");
-
-         return null;
-      }
-      entity = new Entity(this, table);
-      return entity;
-   }
-
    /**
     * @param entity the entity to set
     */

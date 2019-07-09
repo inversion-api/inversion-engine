@@ -16,12 +16,12 @@ public class MockDb extends Db<MockDb>
    @Override
    protected void startup0()
    {
-      Table users = withTable("users")//
-                                      .withColumn("primaryKey", "int")//
-                                      .withColumn("firstName", "varchar")//
-                                      .withColumn("lastName", "varchar");
+      Table users = makeTable("users")//
+                                      .makeColumn("primaryKey", "int").getTable()//
+                                      .makeColumn("firstName", "varchar").getTable()//
+                                      .makeColumn("lastName", "varchar").getTable();
 
-      api.withCollection(users, "users");
+      api.makeCollection(users, "users");
 
    }
 

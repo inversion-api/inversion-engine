@@ -89,7 +89,7 @@ public class Attribute
          withName(col.getName());
       }
       withType(col.getType());
-      
+
       return this;
    }
 

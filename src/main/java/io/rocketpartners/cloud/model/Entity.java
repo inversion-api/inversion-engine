@@ -16,11 +16,7 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-
-import io.rocketpartners.cloud.rql.Term;
-import io.rocketpartners.cloud.utils.Utils;
 
 public class Entity
 {
@@ -41,6 +37,12 @@ public class Entity
    {
       withCollection(collection);
       withTable(table);
+      
+      for (Column column : table.getColumns())
+      {
+         Attribute attr = new Attribute(this, column);
+         withAttribute(attr);
+      }
    }
 
    public boolean isExclude()
@@ -52,17 +54,6 @@ public class Entity
    {
       this.exclude = exclude;
       return this;
-   }
-
-   public Attribute getAttribute(String name)
-   {
-      for (Attribute a : attributes)
-      {
-         if (a.getName().equalsIgnoreCase(name))
-            return a;
-      }
-
-      return null;
    }
 
    public Relationship getRelationship(String name)
@@ -105,14 +96,7 @@ public class Entity
     */
    public Entity withTable(Table tbl)
    {
-      attributes.clear();
       this.table = tbl;
-
-      for (Column column : tbl.getColumns())
-      {
-         Attribute attr = new Attribute(this, column);
-         withAttribute(attr);
-      }
       return this;
    }
 
@@ -124,14 +108,37 @@ public class Entity
       return new ArrayList(attributes);
    }
 
-   /**
-    * @param attributes the attributes to set
-    */
-   public Entity withAttributes(List<Attribute> attributes)
+   public Entity withAttributes(Attribute... attributes)
    {
-      this.attributes.clear();
+      for (Attribute attribute : attributes)
+         withAttribute(attribute);
+
+      return this;
+   }
+
+   public Attribute getAttribute(String name)
+   {
       for (Attribute attr : attributes)
-         withAttribute(attr);
+      {
+         if (name.equalsIgnoreCase(attr.getName()))
+            return attr;
+      }
+      return null;
+   }
+
+   public Entity withAttribute(Attribute attribute)
+   {
+      Attribute a = getAttribute(attribute.getName());
+      if (a != null && a != attribute)
+         System.out.println("???");
+
+      if (attribute != null && !attributes.contains(attribute))
+      {
+         attributes.add(attribute);
+
+         if (attribute.getEntity() != this)
+            attribute.withEntity(this);
+      }
 
       return this;
    }
@@ -159,8 +166,11 @@ public class Entity
       if (relationship != null && !relationships.contains(relationship))
       {
          relationships.add(relationship);
-         relationship.withEntity(this);
+
+         if (relationship.getEntity() != this)
+            relationship.withEntity(this);
       }
+
       return this;
    }
 
@@ -169,29 +179,21 @@ public class Entity
       relationships.remove(relationship);
    }
 
-   public Attribute withAttribute(Column column)
-   {
-      return withAttribute(column, null);
-   }
-
-   public Attribute withAttribute(Column column, String name)
-   {
-      Attribute attr = new Attribute(this, column);
-      if (name != null)
-         attr.withName(name);
-
-      withAttribute(attr);
-
-      return attr;
-   }
-
-   public Entity withAttribute(Attribute attribute)
-   {
-      if (attribute != null && !attributes.contains(attribute))
-         attributes.add(attribute);
-
-      return this;
-   }
+   //   public Attribute withAttribute(Column column)
+   //   {
+   //      return withAttribute(column, null);
+   //   }
+   //
+   //   public Attribute withAttribute(Column column, String name)
+   //   {
+   //      Attribute attr = new Attribute(this, column);
+   //      if (name != null)
+   //         attr.withName(name);
+   //
+   //      withAttribute(attr);
+   //
+   //      return attr;
+   //   }
 
    public void removeAttribute(Attribute attribute)
    {

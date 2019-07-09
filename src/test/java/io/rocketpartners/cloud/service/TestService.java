@@ -65,8 +65,8 @@ public class TestService extends TestCase
 
       service = new Service()//
                              .withApi((String) null)//
-                             .withEndpoint("get", "actionA/*").withAction(new MockActionA(), "get", "*").getApi()//
-                             .withEndpoint("get", "actionB/*").withAction(new MockActionB(), "get", "*").getApi()//
+                             .makeEndpoint("get", "actionA/*").withAction(new MockActionA(), "get", "*").getApi()//
+                             .makeEndpoint("get", "actionB/*").withAction(new MockActionB(), "get", "*").getApi()//
                              .getService();
 
       Response resp = null;
@@ -89,7 +89,7 @@ public class TestService extends TestCase
 
       service = new Service()//
                              .withApi((String) null)//
-                             .withEndpoint("GET", "actionA*").withAction(new MockActionA(), "GET", "*").getApi()//
+                             .makeEndpoint("GET", "actionA*").withAction(new MockActionA(), "GET", "*").getApi()//
                              .getService();
       
       Response resp = null;
@@ -104,7 +104,7 @@ public class TestService extends TestCase
 
       service = new Service()//
                              .withApi((String) null)//
-                             .withEndpoint("GET", "actionA", "*").withAction(new MockActionA(), "GET", "*").getApi()//
+                             .makeEndpoint("GET", "actionA", "*").withAction(new MockActionA(), "GET", "*").getApi()//
                              .getService();
       
       Response resp = null;

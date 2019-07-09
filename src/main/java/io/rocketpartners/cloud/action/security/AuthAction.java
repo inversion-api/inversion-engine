@@ -16,6 +16,7 @@
 package io.rocketpartners.cloud.action.security;
 
 import java.security.MessageDigest;
+import java.security.Permission;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,6 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
-import io.rocketpartners.cloud.model.Permission;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Role;
@@ -188,10 +188,10 @@ public class AuthAction extends Action<AuthAction>
                {
                   tempUser.withRequestAt(now);
                   tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
-                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
+                  tempUser.setPermissions(getPermissions(conn, req.getApi(), tempUser));
                   if (!Utils.empty(authenticatedPerm))
                   {
-                     tempUser.getPermissions().add(new Permission(authenticatedPerm));
+                     tempUser.withPermission(authenticatedPerm);
                   }
 
                   user = tempUser;
@@ -244,9 +244,9 @@ public class AuthAction extends Action<AuthAction>
             obj.put("displayname", user.getDisplayName());
 
             ArrayNode perms = new ArrayNode();
-            for (Permission perm : user.getPermissions())
+            for (String perm : user.getPermissions())
             {
-               perms.add(perm.getName());
+               perms.add(perm);
             }
             obj.put("perms", perms);
 
@@ -371,20 +371,20 @@ public class AuthAction extends Action<AuthAction>
       return SqlUtils.selectObjects(conn, sql, Role.class, user.getId());
    }
 
-   protected List<Permission> getPermissions(Connection conn, Api api, User user) throws Exception
+   protected List<String> getPermissions(Connection conn, Api api, User user) throws Exception
    {
       String sql = "";
-      sql += "\r\n SELECT DISTINCT * ";
+      sql += "\r\n SELECT DISTINCT name ";
       sql += "\r\n  FROM ";
       sql += "\r\n  ( ";
-      sql += "\r\n    SELECT p.id, p.name ";
+      sql += "\r\n    SELECT p.name ";
       sql += "\r\n    FROM Permission p";
       sql += "\r\n    JOIN UserPermission up ON p.id = up.permissionId";
       sql += "\r\n    WHERE up.userId = ? AND up.apiId = ? AND up.tenantId = ? ";
       sql += "\r\n                                                           ";
       sql += "\r\n    UNION";
       sql += "\r\n                                                           ";
-      sql += "\r\n    SELECT p.id, p.name";
+      sql += "\r\n    SELECT p.name";
       sql += "\r\n    FROM Permission p";
       sql += "\r\n    JOIN GroupPermission gp ON p.id = gp.permissionId";
       sql += "\r\n    JOIN UserGroup ug ON ug.groupId = gp.groupId ";

@@ -241,7 +241,7 @@ public abstract class Db<T extends Db>
       return tables;
    }
 
-   public Table withTable(String name)
+   public Table makeTable(String name)
    {
       Table table = new Table(this, name);
       withTable(table);
@@ -251,7 +251,7 @@ public abstract class Db<T extends Db>
    /**
     * @param tables the tables to set
     */
-   public T withTables(List<Table> tbls)
+   public T withTables(Table... tbls)
    {
       for (Table table : tbls)
          withTable(table);
@@ -314,7 +314,7 @@ public abstract class Db<T extends Db>
       if (this.api != api)
       {
          this.api = api;
-         api.addDb(this);
+         api.withDb(this);
       }
       return (T) this;
    }

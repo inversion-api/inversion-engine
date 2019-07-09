@@ -37,6 +37,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Url;
+import io.rocketpartners.cloud.utils.Configurator;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -709,7 +710,7 @@ public class Service
          existingApi.shutdown();
       }
 
-      api.setService(this);
+      api.withService(this);
    }
 
    public synchronized void removeApi(Api api)

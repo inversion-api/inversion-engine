@@ -40,8 +40,8 @@ public class TestConfig extends TestCase
 
       Service service = new Service()//
                                      .withApi("test")//
-                                     .withDb(new SqlDb().withName("db").withType("mysql")).getApi()//
-                                     .withEndpoint("GET,PUT,POST,DELETE", "test/", "*").withAction(new RestAction()).getApi()//
+                                     .withDb(new SqlDb().withName("db").withType("mysql"))//
+                                     .makeEndpoint("GET,PUT,POST,DELETE", "test/", "*").withAction(new RestAction()).getApi()//
                                      .getService();
 
       service.setProfile("someprofile");

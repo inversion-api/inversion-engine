@@ -37,6 +37,7 @@ public class Api
 
    protected int               id          = 0;
 
+   protected String            name        = null;
    protected String            apiCode     = null;
    protected boolean           multiTenant = false;
    protected String            url         = null;
@@ -136,13 +137,14 @@ public class Api
       }
    }
 
-   public void setService(Service service)
+   public Api withService(Service service)
    {
       if (this.service != service)
       {
          this.service = service;
          service.addApi(this);
       }
+      return this;
    }
 
    public Service getService()
@@ -155,14 +157,9 @@ public class Api
       return id;
    }
 
-   public void setId(int id)
-   {
-      this.id = id;
-   }
-   
    public Api withId(int id)
    {
-      setId(id);
+      this.id = id;
       return this;
    }
 
@@ -171,9 +168,10 @@ public class Api
       return hash;
    }
 
-   public void setHash(String hash)
+   public Api withHash(String hash)
    {
       this.hash = hash;
+      return this;
    }
 
    public Table findTable(String name)
@@ -282,22 +280,24 @@ public class Api
       return null;
    }
 
+   public Collection makeCollection(Table table, String name)
+   {
+      Collection collection = new Collection(this, table, name);
+      withCollection(collection);
+      return collection;
+   }
+
    public List<Collection> getCollections()
    {
       return new ArrayList(collections);
    }
 
-   public void setCollections(List<Collection> collections)
+   public Api withCollections(Collection... collections)
    {
-      this.collections.clear();
       for (Collection collection : collections)
          withCollection(collection);
-   }
 
-   public Collection withCollection(Table table, String name)
-   {
-      Collection collection = new Collection(this, table, name);
-      return collection;
+      return null;
    }
 
    /**
@@ -306,11 +306,6 @@ public class Api
     */
    public Api withCollection(Collection collection)
    {
-      //      if ("null".equals(collection.getName() + ""))
-      //         System.out.println("asdfs");
-
-      //      System.out.println(collection.getName());
-
       if (!collections.contains(collection))
          collections.add(collection);
 
@@ -349,25 +344,23 @@ public class Api
    /**
        * @param dbs the dbs to set
        */
-   public void setDbs(List<Db> dbs)
+   public Api withDbs(Db... dbs)
    {
       for (Db db : dbs)
-         addDb(db);
+         withDb(db);
+
+      return this;
    }
 
-   public void addDb(Db db)
+   public Api withDb(Db db)
    {
       if (!dbs.contains(db))
          dbs.add(db);
 
       if (db.getApi() != this)
          db.withApi(this);
-   }
 
-   public <T extends Db> T withDb(T db)
-   {
-      addDb(db);
-      return db;
+      return this;
    }
 
    public long getLoadTime()
@@ -385,11 +378,12 @@ public class Api
       return new ArrayList(endpoints);
    }
 
-   public void setEndpoints(List<Endpoint> endpoints)
+   public Api withEndpoints(Endpoint... endpoints)
    {
-      this.endpoints.clear();
       for (Endpoint endpoint : endpoints)
          withEndpoint(endpoint);
+
+      return this;
    }
 
    public Api withEndpoint(Endpoint endpoint)
@@ -403,24 +397,24 @@ public class Api
       return this;
    }
 
-   public Endpoint withEndpoint(String method, String includePaths)
+   public Endpoint makeEndpoint(String method, String includePaths)
    {
-      return withEndpoint(method, null, includePaths);
+      return makeEndpoint(method, null, includePaths);
    }
 
-   public Endpoint withEndpoint(String method, String path, String includePaths)
+   public Endpoint makeEndpoint(String method, String path, String includePaths)
    {
       Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
       withEndpoint(endpoint);
       return endpoint;
    }
 
-   public Endpoint withEndpoint(Action action, String method, String includePaths)
+   public Endpoint makeEndpoint(Action action, String method, String includePaths)
    {
-      return withEndpoint(action, method, null, includePaths);
+      return makeEndpoint(action, method, null, includePaths);
    }
 
-   public Endpoint withEndpoint(Action action, String method, String path, String includePaths)
+   public Endpoint makeEndpoint(Action action, String method, String path, String includePaths)
    {
       Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
       endpoint.withAction(action);
@@ -428,12 +422,36 @@ public class Api
       return endpoint;
    }
 
-   public <T extends Action> T withAction(T action)
+   public List<Action> getActions()
    {
-      return withAction(action, null, null);
+      return new ArrayList(actions);
    }
 
-   public <T extends Action> T withAction(T action, String methods, String includePaths)
+   public Api withActions(Action... actions)
+   {
+      for (Action action : actions)
+         withAction(action);
+
+      return this;
+   }
+
+   public Api withAction(Action action)
+   {
+      if (!actions.contains(action))
+         actions.add(action);
+
+      if (action.getApi() != this)
+         action.withApi(this);
+
+      return this;
+   }
+
+   public <T extends Action> T makeAction(T action)
+   {
+      return makeAction(action, null, null);
+   }
+
+   public <T extends Action> T makeAction(T action, String methods, String includePaths)
    {
       for (String method : Utils.explode(",", methods))
       {
@@ -445,28 +463,12 @@ public class Api
          action.withIncludePaths(path);
       }
 
-      if (!actions.contains(action))
-         actions.add(action);
-
-      if (action.getApi() != this)
-         action.withApi(this);
+      withAction(action);
 
       return action;
    }
 
-   public List<Action> getActions()
-   {
-      return new ArrayList(actions);
-   }
-
-   public void setActions(List<Action> actions)
-   {
-      this.actions.clear();
-      for (Action action : actions)
-         withAction(action);
-   }
-
-   public void addAclRule(AclRule acl)
+   public Api withAclRule(AclRule acl)
    {
       if (!aclRules.contains(acl))
       {
@@ -476,19 +478,16 @@ public class Api
 
       if (acl.getApi() != this)
          acl.withApi(this);
-   }
 
-   public Api withAclRule(AclRule acl)
-   {
-      addAclRule(acl);
       return this;
    }
 
-   public void setAclRules(List<AclRule> acls)
+   public Api withAclRules(AclRule... acls)
    {
-      this.aclRules.clear();
       for (AclRule acl : acls)
-         addAclRule(acl);
+         withAclRule(acl);
+
+      return this;
    }
 
    public List<AclRule> getAclRules()
@@ -508,7 +507,7 @@ public class Api
 
    public String getApiCode()
    {
-      return apiCode;
+      return apiCode != null ? apiCode : name;
    }
 
    public Api withApiCode(String apiCode)
@@ -517,14 +516,20 @@ public class Api
       return this;
    }
 
+   public String getName()
+   {
+      return name != null ? name : apiCode;
+   }
+
+   public Api withName(String name)
+   {
+      this.name = name;
+      return this;
+   }
+
    public boolean isMultiTenant()
    {
       return multiTenant;
-   }
-
-   public void setMultiTenant(boolean multiTenant)
-   {
-      this.multiTenant = multiTenant;
    }
 
    public Api withMultiTenant(boolean multiTenant)

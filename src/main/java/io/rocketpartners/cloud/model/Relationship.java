@@ -119,31 +119,43 @@ public class Relationship
       if (obj == null)
          return false;
 
+      if (obj == this)
+         return true;
+
+      
       return toString().equals(obj.toString());
    }
 
    public int hashCode()
    {
-      return toString().hashCode();
+      //return toString().hashCode();
+      return super.hashCode();
    }
 
    public String toString()
    {
-      String str = "Relationship: " + getEntity().getCollection() + "." + getName() + ":" + getType() + " ";
-      if (isOneToMany())
+      try
       {
-         str += getEntity().getTable().getPrimaryIndex() + " -> " + getFkIndex1();
-      }
-      if (isManyToOne())
-      {
-         str += getEntity().getTable().getPrimaryIndex() + " <- " + getFkIndex1();
-      }
-      else
-      {
-         str += getFkIndex1() + " <--> " + getFkIndex2();
-      }
+         String str = "Relationship: " + getEntity().getCollection() + "." + getName() + ":" + getType() + " ";
+         if (isOneToMany())
+         {
+            str += getEntity().getTable().getPrimaryIndex() + " -> " + getFkIndex1();
+         }
+         if (isManyToOne())
+         {
+            str += getEntity().getTable().getPrimaryIndex() + " <- " + getFkIndex1();
+         }
+         else
+         {
+            str += getFkIndex1() + " <--> " + getFkIndex2();
+         }
 
-      return str;
+         return str;
+      }
+      catch (NullPointerException ex)
+      {
+         return "Relationship: " + name + "-" + type + "-" + fkIndex1 + "-" + fkIndex2;
+      }
    }
 
    /**
