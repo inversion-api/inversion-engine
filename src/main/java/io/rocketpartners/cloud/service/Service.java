@@ -62,10 +62,28 @@ public class Service
     */
    protected String                          servletMapping = null;
 
+   /**
+    * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
+    * This is used so that you can ship common settings in inversion[1-99].properties files
+    * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
+    * profile specific settings files.
+    */
    protected String                          profile        = null;
 
+   /**
+    * The path to inversion*.properties files
+    */
    protected String                          configPath     = "";
+   
+   /**
+    * The number of milliseconds between background reloads of the Api config
+    */
    protected int                             configTimeout  = 10000;
+   
+   /**
+    * Indicates that the supplied config files contain all the setup info and the Api
+    * will not be reflectively configured as it otherwise would be.
+    */
    protected boolean                         configFast     = false;
    protected boolean                         configDebug    = false;
    protected String                          configOut      = null;

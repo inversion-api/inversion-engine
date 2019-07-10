@@ -99,35 +99,35 @@ public class Configurator
          throw new RuntimeException("Unable to load config files: " + e.getMessage(), e);
       }
 
-      //      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-      //      {
-      //         Thread t = new Thread(new Runnable()
-      //            {
-      //               @Override
-      //               public void run()
-      //               {
-      //                  while (true)
-      //                  {
-      //                     try
-      //                     {
-      //                        Utils.sleep(service.getConfigTimeout());
-      //                        if (destroyed)
-      //                           return;
-      //
-      //                        Config config = findConfig();
-      //                        loadConfig(config, false, false);
-      //                     }
-      //                     catch (Throwable t)
-      //                     {
-      //                        log.warn("Error loading config", t);
-      //                     }
-      //                  }
-      //               }
-      //            }, "snooze-config-reloader");
-      //
-      //         t.setDaemon(true);
-      //         t.start();
-      //      }
+      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
+      {
+         Thread t = new Thread(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  while (true)
+                  {
+                     try
+                     {
+                        Utils.sleep(service.getConfigTimeout());
+                        if (destroyed)
+                           return;
+
+                        Config config = findConfig();
+                        loadConfig(config, false, false);
+                     }
+                     catch (Throwable t)
+                     {
+                        log.warn("Error loading config", t);
+                     }
+                  }
+               }
+            }, "snooze-config-reloader");
+
+         t.setDaemon(true);
+         t.start();
+      }
    }
 
    public static Properties encode(Object... beans) throws Exception
@@ -449,9 +449,14 @@ public class Configurator
    {
       Config config = new Config();
 
+      String configPath = service.getConfigPath();
+
+      if (configPath.length() > 0 && !(configPath.endsWith("/") || configPath.endsWith("\\")))
+         configPath += "/";
+
       for (int i = -1; i <= 100; i++)
       {
-         String fileName = service.getConfigPath() + "inversion" + (i < 0 ? "" : i) + ".properties";
+         String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
          InputStream is = service.getResource(fileName);
          if (is != null)
          {
@@ -464,7 +469,7 @@ public class Configurator
       {
          for (int i = -1; i <= 100; i++)
          {
-            String fileName = service.getConfigPath() + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
+            String fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
             InputStream is = service.getResource(fileName);
             if (is != null)
             {
