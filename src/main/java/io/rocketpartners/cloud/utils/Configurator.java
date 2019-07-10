@@ -123,7 +123,7 @@ public class Configurator
                      }
                   }
                }
-            }, "snooze-config-reloader");
+            }, "inversion-config-reloader");
 
          t.setDaemon(true);
          t.start();

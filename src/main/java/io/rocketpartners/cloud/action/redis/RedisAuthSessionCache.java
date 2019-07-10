@@ -28,7 +28,7 @@ public class RedisAuthSessionCache implements AuthSessionCache
 
    ObjectMapper      om                                 = new ObjectMapper();
 
-   // configurable snooze.props 
+   // configurable inversion.props 
    protected String  redisHost                          = null;
    protected int     redisPort                          = 6379;
 

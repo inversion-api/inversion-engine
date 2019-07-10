@@ -49,7 +49,7 @@ import io.rocketpartners.cloud.service.Service;
  * Sends browser multi-part file uploads to a defined S3 location
  * 
  * Bean property config can be set directly on the handler in your
- * snooze.properties files but you should really consider this to be
+ * inversion.properties files but you should really consider this to be
  * a service singleton where the properties can be passed in via 
  * Action config allowing a single handler instance to upload files
  * to multiple buckets based on request path.

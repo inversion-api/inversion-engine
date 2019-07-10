@@ -115,7 +115,7 @@ public class Controller implements InitializingBean
       {
          e.printStackTrace();
 
-         log.error("Error initializing snooze", e);
+         log.error("Error initializing.", e);
          throw e;
       }
    }

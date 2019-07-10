@@ -112,8 +112,8 @@ public class ScriptAction extends Action<ScriptAction>
 
          velocity = new VelocityEngine();
 
-         velocity.setProperty(RuntimeConstants.RESOURCE_LOADER, "snooze");
-         velocity.setProperty("snooze.resource.loader.class", VelocityResourceLoader.class.getName());
+         velocity.setProperty(RuntimeConstants.RESOURCE_LOADER, "inversion");
+         velocity.setProperty("inversion.resource.loader.class", VelocityResourceLoader.class.getName());
          velocity.setProperty("userdirective", SwitchDirective.class.getName() + ", " + SaveDirective.class.getName() + ", " + LayoutDirective.class.getName());
          velocity.init();
 
