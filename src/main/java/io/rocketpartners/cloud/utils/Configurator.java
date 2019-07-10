@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,6 @@ import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.Wirer.Ignore;
 import io.rocketpartners.cloud.utils.Wirer.Includer;
 import io.rocketpartners.cloud.utils.Wirer.Namer;
 
@@ -132,7 +132,7 @@ public class Configurator
 
    public static Properties encode(Object... beans) throws Exception
    {
-      Properties autoProps = Wirer.encode(new ApiNamer(), new ApiIncluder(), beans);
+      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
       return autoProps;
    }
 
@@ -140,6 +140,20 @@ public class Configurator
    {
       Wirer wire = new Wirer()
          {
+
+            //IMPORTANT IMPORTANT IMPORTANT
+            // add special case exceptions here for cases where users may add unclean data
+            // that should not be set directly on bean fields but should be passed the approperiate setter
+            public boolean handleProp(Object bean, String prop, String value) throws Exception
+            {
+               if (bean instanceof Endpoint && prop.equals("path"))
+               {
+                  ((Endpoint) bean).withPath(value);
+                  return true;
+               }
+               return false;
+            }
+
             @Override
             public void onLoad(String name, Object module, Map<String, Object> props) throws Exception
             {
@@ -174,7 +188,7 @@ public class Configurator
 
          if (doLoad)
          {
-            Properties autoProps = Wirer.encode(new ApiNamer(), new ApiIncluder(), wire.getBeans(Api.class).toArray());
+            Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), wire.getBeans(Api.class).toArray());
             autoProps.putAll(config.props);
             wire.clear();
             wire.load(autoProps);
@@ -182,16 +196,6 @@ public class Configurator
 
             if (!Utils.empty(service.getConfigOut()))
             {
-               //               autoProps = new Properties(autoProps)
-               //                  {
-               //                     public Enumeration keys()
-               //                     {
-               //                        Vector keys = new Vector(super.keySet());
-               //                        Collections.sort(keys);
-               //                        return keys.elements();
-               //                     }
-               //                  };
-
                String fileName = "./" + service.getConfigOut().trim();
 
                File file = new File(fileName);
@@ -306,15 +310,12 @@ public class Configurator
       }
    }
 
-   static class ApiIncluder implements Includer
+   static class WirerSerializerIncluder implements Includer
    {
-      //      List        includes     = Arrays.asList(Api.class, Collection.class, Entity.class, Attribute.class, Relationship.class, Db.class, Table.class, Column.class, Index.class,   //
-      //            Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, Void.class, String.class,                               //
-      //            boolean.class, char.class, byte.class, short.class, int.class, long.class, float.class, double.class, void.class);
+      List<Field> excludes     = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
-      List<Field> excludes     = Arrays.asList(Utils.getField("actions", Api.class));
-
-      List        excludeTypes = new ArrayList(Arrays.asList(Logger.class, Action.class, Endpoint.class, Rule.class));
+      List        excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
+            Action.class, Endpoint.class, Rule.class));                                                           //these are things that must be supplied by manual config so don't write them out.
 
       @Override
       public boolean include(Field field)
@@ -323,9 +324,6 @@ public class Configurator
             return false;
 
          if (excludes.contains(field) || excludeTypes.contains(field.getType()))
-            return false;
-
-         if (field.getName().equals("api") || Api.class.isAssignableFrom(field.getType()))
             return false;
 
          Class c = field.getType();
@@ -379,7 +377,7 @@ public class Configurator
 
    }
 
-   static class ApiNamer implements Namer
+   static class WirerSerializerNamer implements Namer
    {
       @Override
       public String getName(Object o) throws Exception

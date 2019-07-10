@@ -31,7 +31,7 @@ public class Wirer
 {
    @Retention(RetentionPolicy.RUNTIME)
    @Target(ElementType.FIELD)
-   public @interface Ignore {
+   public @interface Ignore1 {
       //public String value() default "";
    }
 
@@ -181,7 +181,7 @@ public class Wirer
 
       //FIRST STEP
       // - instantiate all beans
-      
+
       for (Object p : props.keySet())
       {
          String key = (String) p;
@@ -213,11 +213,10 @@ public class Wirer
       List<String> keys = new ArrayList(beans.keySet());
       keys = sort(keys);
 
-      
       //LOOP THROUGH TWICE.  
       // - First loop, set atomic props
       // - Second loop, set bean props
-      
+
       for (int i = 0; i <= 1; i++)
       {
          boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
@@ -264,13 +263,41 @@ public class Wirer
                   }
                   else
                   {
-                     set(key, obj, prop, value);
+                     Field field = getField(prop, obj.getClass());
+                     if (field != null)
+                     {
+                        Class type = field.getType();
+
+                        if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass()))
+                        {
+                           field.set(obj, beans.get(value));
+                        }
+                        else if (java.util.Collection.class.isAssignableFrom(type))
+                        {
+                           java.util.Collection list = (java.util.Collection) cast(key, value, type, field);
+                           ((java.util.Collection) field.get(obj)).addAll(list);
+                        }
+                        else if (Map.class.isAssignableFrom(type))
+                        {
+                           Map map = (Map) cast(key, value, type, null);
+                           ((Map) field.get(obj)).putAll(map);
+                        }
+                        else
+                        {
+                           field.set(obj, cast(key, value, type, null));
+                        }
+                     }
+                     else
+                     {
+                        System.out.println("Can't map: " + key + " = " + value);
+                     }
+
                   }
                }
             }
          }
       }
-      
+
       //THIRD STEP
       // - Perform implicit setters based on nested paths of keys
 
@@ -296,56 +323,32 @@ public class Wirer
                Object parent = beans.get(parentKey);
                if (parent != null)
                {
-                  Method adder = findAdder(parent.getClass(), propKey);
-
-                  if (adder != null)
+                  Field field = getField(propKey, parent.getClass());
+                  if (field != null)
                   {
-                     Class paramType = adder.getParameterTypes()[0];
-                     if (Collection.class.isAssignableFrom(paramType))
+                     if (Map.class.isAssignableFrom(field.getType()))
                      {
-                        List l = new ArrayList();
-                        l.add(obj);
-                        obj = l;
+                        Map map = (Map) field.get(parent);
+                        if (!map.containsKey(mapKey))
+                           map.put(mapKey, obj);
                      }
-                     else if (paramType.isArray())
+                     else if (java.util.Collection.class.isAssignableFrom(field.getType()))
                      {
-                        Class subtype = getArrayElementClass(paramType);
-                        Object array = Array.newInstance(subtype, 1);
-                        Array.set(array, 0, obj);
-                        obj = array;
-                     }
-
-                     adder.invoke(parent, obj);
-                  }
-                  else
-                  {
-                     Field field = getField(propKey, parent.getClass());
-                     if (field != null)
-                     {
-                        if (Map.class.isAssignableFrom(field.getType()))
+                        //System.err.println("You should consider adding " + parent.getClass().getName() + ".with" + propKey + "in camel case singular or plural form");//a settinger to accomodate property: " + beanName);
+                        java.util.Collection list = (java.util.Collection) field.get(parent);
+                        if (!list.contains(obj))
                         {
-                           Map map = (Map) field.get(parent);
-                           if (!map.containsKey(mapKey))
-                              map.put(mapKey, obj);
-                        }
-                        else if (java.util.Collection.class.isAssignableFrom(field.getType()))
-                        {
-                           System.err.println("You should consider adding " + parent.getClass().getName() + ".with" + propKey + "in camel case singular or plural form");//a settinger to accomodate property: " + beanName);
-                           java.util.Collection list = (java.util.Collection) field.get(parent);
-                           if (!list.contains(obj))
-                           {
-                              list.add(obj);
-                           }
-                        }
-                        else
-                        {
-                           System.err.println("Unable to set nested value: '" + beanName + "'");
+                           list.add(obj);
                         }
                      }
                      else
                      {
-                        System.err.println("Field is not a mapped: " + beanName + " - " + field);
+                        System.err.println("Unable to set nested value: '" + beanName + "'");
                      }
+                  }
+                  else
+                  {
+                     System.err.println("Field is not a mapped: " + beanName + " - " + field);
                   }
                }
                else
@@ -363,95 +366,6 @@ public class Wirer
          onLoad(name, bean, loadedPros);
       }
 
-   }
-
-   public Method findAdder(Class clazz, String propKey)
-   {
-      String name = Character.toUpperCase(propKey.charAt(0)) + propKey.substring(1, propKey.length());
-
-      //      if (name.endsWith("es"))
-      //         name = name.substring(0, name.length() - 2);
-
-      if (name.endsWith("s"))
-         name = name.substring(0, name.length() - 1);
-
-      String[] guesses = new String[]{"with" + name, "with" + name + "s", "with" + name + "es", "add" + name, "add" + name + "s", "add" + name + "es"};
-
-      for (String guess : guesses)
-      {
-         Method adder = getMethod(clazz, guess);
-         if (adder == null || adder.getParameterTypes().length != 1)
-            continue;
-
-         return adder;
-      }
-
-      return null;
-   }
-
-   public void set(String key, Object obj, String prop, String value) throws Exception
-   {
-
-      try
-      {
-         Method setter = getMethod(obj.getClass(), "set" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
-         if (setter == null)
-            setter = getMethod(obj.getClass(), "with" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
-
-         if (setter == null)
-         {
-            setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length()));
-            if (setter == null && prop.endsWith("s"))
-               setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length() - 1));
-
-            if (setter == null && prop.endsWith("es"))
-               setter = getMethod(obj.getClass(), "add" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1, prop.length() - 2));
-         }
-
-         if (setter != null && setter.getParameterTypes().length == 1)
-         {
-            Object castValue = cast(key, value, setter.getParameterTypes()[0], null);
-            setter.invoke(obj, castValue);
-         }
-         else
-         {
-            Field field = getField(prop, obj.getClass());
-            if (field != null)
-            {
-               Class type = field.getType();
-
-               if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass()))
-               {
-                  field.set(obj, beans.get(value));
-               }
-               else if (java.util.Collection.class.isAssignableFrom(type))
-               {
-                  java.util.Collection list = (java.util.Collection) cast(key, value, type, field);
-                  ((java.util.Collection) field.get(obj)).addAll(list);
-               }
-               else if (Map.class.isAssignableFrom(type))
-               {
-                  Map map = (Map) cast(key, value, type, null);
-                  ((Map) field.get(obj)).putAll(map);
-               }
-               else
-               {
-                  field.set(obj, cast(key, value, type, null));
-               }
-            }
-            else
-            {
-               System.out.println("Can't map: " + key + " = " + value);
-            }
-
-         }
-      }
-      catch (Exception ex)
-      {
-         System.err.println("Error setting " + key + " = " + value + " - " + ex.getMessage());
-         Utils.getCause(ex).printStackTrace();
-         Utils.rethrow("Error setting " + key + " = " + prop, ex);
-      }
    }
 
    public void putBean(String key, Object bean)
@@ -494,16 +408,6 @@ public class Wirer
             matches.add(bean);
       }
       return matches;
-   }
-
-   public static Method getMethod(Class clazz, String name)
-   {
-      for (Method m : clazz.getMethods())
-      {
-         if (m.getName().equalsIgnoreCase(name))
-            return m;
-      }
-      return null;
    }
 
    protected Field getField(String fieldName, Class clazz)

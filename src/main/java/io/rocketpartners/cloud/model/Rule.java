@@ -16,10 +16,10 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +32,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    protected String       name         = null;
    protected int          order        = 1000;
 
-   protected Set<String>  methods      = new HashSet();
+   protected Set<String>  methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
    protected List<String> excludePaths = new ArrayList();
    protected List<String> includePaths = new ArrayList();
@@ -199,7 +199,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
       for (String method : methods)
       {
-         if (method != null && this.methods.contains(method.toLowerCase()))
+         if (method != null && this.methods.contains(method))
             return true;
       }
       return false;
@@ -237,7 +237,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
       for (String method : Utils.explode(",", methods))
       {
-         method = method.toLowerCase();
          if (!this.methods.contains(method))
             this.methods.add(method);
       }
