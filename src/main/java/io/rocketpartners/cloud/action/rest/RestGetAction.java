@@ -82,10 +82,20 @@ public class RestGetAction extends Action<RestGetAction>
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
 
             Row entityKeyRow = collection.getTable().decodeKey(req.getEntityKey());
-            for (String key : entityKeyRow.keySet())
+
+            //maps query string parameter names for the main tables pk to the related tables fk
+            Index fkIdx = rel.getFkIndex1();
+            for (Column fk : fkIdx.getColumns())
             {
-               newHref += key + "=" + entityKeyRow.get(key) + "&";
+               String pkName = fk.getPk().getName();
+               Object pkVal = entityKeyRow.get(pkName);
+
+               if(pkVal == null)
+                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
+               
+               newHref += fk.getName() + "=" + pkVal + "&";
             }
+
             newHref = newHref.substring(0, newHref.length() - 1);
          }
          else if (rel.isManyToMany())
@@ -180,7 +190,7 @@ public class RestGetAction extends Action<RestGetAction>
                   for (Term nextTerm : nextTerms)
                   {
                      next = stripTerms(next, nextTerm.getToken());
-                     
+
                      if (next.indexOf("?") < 0)
                         next += "?";
                      if (!next.endsWith("?"))
@@ -281,7 +291,6 @@ public class RestGetAction extends Action<RestGetAction>
       {
          results = collection.getDb().select(collection.getTable(), terms);
       }
-      
 
       if (results.size() > 0)
       {
@@ -443,42 +452,46 @@ public class RestGetAction extends Action<RestGetAction>
       if (expandsPath == null)
          expandsPath = "";
 
-      if (pkCache == null)
-      {
-         //------------------------------------------------
-         // pkCache is used to make nested document expansion efficient
-         //
-         // the pkCache is used to map requested entities back to the right 
-         // objects on the recursion stack and to keep track of entities
-         // so you don't waste time requerying for things you have 
-         // already retrieved.
-         pkCache = new MultiKeyMap()
-            {
-               //               public Object put(Object key1, Object key2, Object value)
-               //               {
-               //                  System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
-               //                  return super.put(key1, key2, value);
-               //               }
-               //
-               //               public Object get(Object key1, Object key2)
-               //               {
-               //                  Object value =  super.get(key1, key2);
-               //                  String str = (value + "").replace("\r", "").replace("\n", "");
-               //                  System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
-               //                  return value;
-               //               }
-            };
-
-         for (ObjectNode node : parentObjs)
-         {
-            pkCache.put(collection, getEntityKey(node), node);
-         }
-      }
-
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         if (expand(expands, expandsPath, rel))
+         boolean shouldExpand = shouldExpand(expands, expandsPath, rel);
+         
+         System.out.println("should expand " + Chain.getDepth() + " -> " + rel + " -> " + shouldExpand);
+         
+         if (shouldExpand)
          {
+            if (pkCache == null)
+            {
+               //------------------------------------------------
+               // pkCache is used to make nested document expansion efficient
+               //
+               // the pkCache is used to map requested entities back to the right 
+               // objects on the recursion stack and to keep track of entities
+               // so you don't waste time requerying for things you have 
+               // already retrieved.
+               pkCache = new MultiKeyMap()
+                  {
+                     //               public Object put(Object key1, Object key2, Object value)
+                     //               {
+                     //                  System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
+                     //                  return super.put(key1, key2, value);
+                     //               }
+                     //
+                     //               public Object get(Object key1, Object key2)
+                     //               {
+                     //                  Object value =  super.get(key1, key2);
+                     //                  String str = (value + "").replace("\r", "").replace("\n", "");
+                     //                  System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
+                     //                  return value;
+                     //               }
+                  };
+
+               for (ObjectNode node : parentObjs)
+               {
+                  pkCache.put(collection, getEntityKey(node), node);
+               }
+            }
+
             //ONE_TO_MANY - Player.locationId -> Location.id
             //MANY_TO_ONE - Location.id <- Player.locationId  
             //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
@@ -544,7 +557,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof ArrayNode)
-                        throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error");
+                        throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
 
@@ -740,9 +753,9 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected static void mapToColumns(Collection collection, Term term)
    {
-      if(collection == null)
+      if (collection == null)
          return;
-      
+
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();
@@ -772,9 +785,9 @@ public class RestGetAction extends Action<RestGetAction>
 
    static void mapToAttributes(Collection collection, Term term)
    {
-      if(collection == null)
+      if (collection == null)
          return;
-      
+
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();
@@ -864,7 +877,7 @@ public class RestGetAction extends Action<RestGetAction>
          return path + "." + next;
    }
 
-   protected static boolean expand(Set<String> expands, String path, Relationship rel)
+   protected static boolean shouldExpand(Set<String> expands, String path, Relationship rel)
    {
       boolean expand = false;
       path = path.length() == 0 ? rel.getName() : path + "." + rel.getName();

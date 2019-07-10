@@ -37,7 +37,7 @@ public class Entity
    {
       withCollection(collection);
       withTable(table);
-      
+
       for (Column column : table.getColumns())
       {
          Attribute attr = new Attribute(this, column);
@@ -154,7 +154,7 @@ public class Entity
    /**
     * @param relationships the relationships to set
     */
-   public Entity withRelationships(List<Relationship> relationships)
+   public Entity withRelationships(Relationship... relationships)
    {
       for (Relationship rel : relationships)
          withRelationship(rel);
@@ -163,7 +163,17 @@ public class Entity
 
    public Entity withRelationship(Relationship relationship)
    {
-      if (relationship != null && !relationships.contains(relationship))
+      if (relationship.getName() == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error. A relationship must have a name before it can be set on an entity.");
+
+      Relationship existing = getRelationship(relationship.getName());
+
+      if (existing != null && existing != relationship)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error...you are attempting to add a second relationship of the same name to an entity." + existing);
+      }
+
+      if (existing == null)
       {
          relationships.add(relationship);
 

@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
 
+import io.rocketpartners.cloud.model.Relationship;
+
 public class Wirer
 {
    @Retention(RetentionPolicy.RUNTIME)
@@ -177,6 +179,9 @@ public class Wirer
    {
       HashMap<String, Map> loaded = new LinkedHashMap();
 
+      //FIRST STEP
+      // - instantiate all beans
+      
       for (Object p : props.keySet())
       {
          String key = (String) p;
@@ -208,6 +213,11 @@ public class Wirer
       List<String> keys = new ArrayList(beans.keySet());
       keys = sort(keys);
 
+      
+      //LOOP THROUGH TWICE.  
+      // - First loop, set atomic props
+      // - Second loop, set bean props
+      
       for (int i = 0; i <= 1; i++)
       {
          boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
@@ -260,6 +270,9 @@ public class Wirer
             }
          }
       }
+      
+      //THIRD STEP
+      // - Perform implicit setters based on nested paths of keys
 
       for (String beanName : keys)
       {
@@ -573,39 +586,7 @@ public class Wirer
          Class subtype = null;
          if (type.isArray())
          {
-            String typeStr = type.toString();
-            if (typeStr.startsWith("class [Z"))
-            {
-               subtype = boolean.class;
-            }
-            else if (typeStr.startsWith("class [B"))
-            {
-               subtype = byte.class;
-            }
-            else if (typeStr.startsWith("class [C"))
-            {
-               subtype = char.class;
-            }
-            else if (typeStr.startsWith("class [I"))
-            {
-               subtype = int.class;
-            }
-            else if (typeStr.startsWith("class [J"))
-            {
-               subtype = long.class;
-            }
-            else if (typeStr.startsWith("class [F"))
-            {
-               subtype = float.class;
-            }
-            else if (typeStr.startsWith("class [D"))
-            {
-               subtype = double.class;
-            }
-            else if (typeStr.startsWith("class ["))
-            {
-               subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
-            }
+            subtype = getArrayElementClass(type);
          }
 
          if (subtype == null && field != null)

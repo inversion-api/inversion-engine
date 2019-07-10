@@ -483,7 +483,7 @@ public class SqlDb extends Db<SqlDb>
          if (isType("mysql"))
             withColumnQuote('`');
 
-         if (isBootstrap())
+         if (isBootstrap() && getTables().size() == 0)
          {
             reflectDb();
             configApi();
@@ -712,11 +712,12 @@ public class SqlDb extends Db<SqlDb>
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
-                  r.withEntity(entity1);
+
                   r.withRelated(entity2);
                   r.withFkIndex1(idx1);
                   r.withFkIndex2(idx2);
                   r.withName(makeRelationshipName(r));
+                  r.withEntity(entity1);
                   relationshipStrs.add(r.toString());
                }
             }
@@ -741,9 +742,9 @@ public class SqlDb extends Db<SqlDb>
                      //to another entity twice
                      r.withType(Relationship.REL_MANY_TO_ONE);
                      r.withFkIndex1(fkIdx);
-                     r.withEntity(pkEntity);
                      r.withRelated(fkEntity);
                      r.withName(makeRelationshipName(r));
+                     r.withEntity(pkEntity);
                      relationshipStrs.add(r.toString());
                   }
 
@@ -752,23 +753,19 @@ public class SqlDb extends Db<SqlDb>
                      Relationship r = new Relationship();
                      r.withType(Relationship.REL_ONE_TO_MANY);
                      r.withFkIndex1(fkIdx);
-                     r.withEntity(fkEntity);
                      r.withRelated(pkEntity);
                      r.withName(makeRelationshipName(r));
+                     r.withEntity(fkEntity);
                      relationshipStrs.add(r.toString());
                   }
                }
                catch (Exception ex)
                {
-                  System.out.println("Error inspecting index: " + fkIdx);
-                  ex.printStackTrace();
+                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx);
                }
             }
-
          }
       }
-      //      Collections.sort(relationshipStrs);
-      //      relationshipStrs.forEach(s -> System.out.println("RELATIONSHIP: " + s));
    }
 
    public SqlDb withType(String type)
