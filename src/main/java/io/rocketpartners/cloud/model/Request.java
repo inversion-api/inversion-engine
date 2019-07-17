@@ -59,8 +59,6 @@ public class Request
 
    boolean                                browse                 = false;
 
-   boolean                                explain                = false;
-
    public Uploader                        uploader               = null;
 
    static final int                       DEFAULT_RETRY_ATTEMPTS = 1;
@@ -263,7 +261,9 @@ public class Request
 
    public boolean isExplain()
    {
-      return isDebug() && explain;
+      String str = getParam("explain");
+      boolean explain = isDebug() && !Utils.empty(str) && !"false".equalsIgnoreCase(str.trim());
+      return explain;
    }
 
    public String getBody()
@@ -311,7 +311,10 @@ public class Request
 
    public Map<String, String> getParams()
    {
-      return url.getParams();
+      Map<String, String> params = url.getParams();
+      params.putAll(Chain.peek().getConfig());
+
+      return params;
    }
 
    public String removeParam(String param)

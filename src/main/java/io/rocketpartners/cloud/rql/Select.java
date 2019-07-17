@@ -25,7 +25,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
    public Select(P query)
    {
       super(query);
-      withFunctions("as", "includes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
+      withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
    }
 
    public boolean isDistinct()

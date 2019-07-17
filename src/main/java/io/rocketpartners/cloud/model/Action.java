@@ -27,9 +27,26 @@ import io.rocketpartners.cloud.utils.Utils;
 /**
  * @author wells
  */
-public class Action<A extends Action> extends Rule<A>
+public abstract class Action<A extends Action> extends Rule<A>
 {
    protected String comment = null;
+
+   public Action()
+   {
+
+   }
+
+   public Action(String config)
+   {
+      withConfig(config);
+   }
+
+   public Action(String config, String includePaths, String excludePaths)
+   {
+      withConfig(config);
+      withIncludePath(includePaths);
+      withExcludePath(excludePaths);
+   }
 
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {

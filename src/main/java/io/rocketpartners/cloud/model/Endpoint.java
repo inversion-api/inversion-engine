@@ -28,6 +28,18 @@ public class Endpoint extends Rule<Endpoint>
    protected List<Action> actions  = new ArrayList();
    protected boolean      internal = false;
 
+   public Endpoint()
+   {
+
+   }
+
+   public Endpoint(String method, String path, String includePaths)
+   {
+      withMethod(method);
+      withPath(path);
+      withIncludePath(includePaths);
+   }
+
    public String toString()
    {
       return "Endpoint: " + methods + " - '" + (path != null ? path : "/") + "' " + includePaths + " - " + excludePaths;
@@ -170,15 +182,8 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint withAction(Action action, String methods, String includePaths)
    {
-      for (String method : Utils.explode(",", methods))
-      {
-         action.withMethods(method);
-      }
-
-      for (String path : Utils.explode(",", includePaths))
-      {
-         action.withIncludePaths(path);
-      }
+      action.withMethods(methods);
+      action.withIncludePath(includePaths);
       withAction(action);
       return this;
    }

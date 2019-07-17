@@ -48,7 +48,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected int maxRows        = 100;
 
-   protected Set reservedParams = new HashSet(Arrays.asList("includes", "excludes", "expands"));
+   protected Set reservedParams = new HashSet(Arrays.asList("select", "includes", "excludes", "expands"));
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -151,7 +151,10 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<ObjectNode> results = select(req, req.getCollection(), req.getUrl().getParams(), api);
+      
+      
+      
+      Results<ObjectNode> results = select(req, req.getCollection(), req.getParams(), api);
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {

@@ -162,19 +162,6 @@ public class SqlDb extends Db<SqlDb>
    @Override
    public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      //      Collection collection = null;
-      //      try
-      //      {
-      //         collection = req.getCollection();
-      //      }
-      //      catch (ApiException e)
-      //      {
-      //         // need to try catch this because getCollection throws an exception if the collection isn't found
-      //         // but not having a collection isn't always an error in this handler because a previous handler 
-      //         // like the SqlSuggestHandler or ScriptHandler may have set the "sql" chain param. 
-      //      }
-
-      //      String dbname = (String) req.getChain().get("db");
       SqlDb db = null;
       if (table == null)
       {
@@ -184,13 +171,6 @@ public class SqlDb extends Db<SqlDb>
       {
          db = (SqlDb) table.getDb();
       }
-      //      if (db == null)
-      //      {
-      //         throw new ApiException(SC.SC_404_NOT_FOUND, "Unable to map request to a db table or query. Please check your endpoint.");
-      //      }
-
-      //      Entity entity = collection != null ? collection.getEntity() : null;
-      //      Table tbl = entity != null ? entity.getTable() : null;
 
       String sql = (String) Chain.peek().remove("select");
       if (Utils.empty(sql))
@@ -205,7 +185,6 @@ public class SqlDb extends Db<SqlDb>
       query.withDb(db);
 
       return query.doSelect();
-
    }
 
    @Override

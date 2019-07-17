@@ -16,8 +16,10 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -27,17 +29,17 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected Api          api          = null;
+   protected Api                     api          = null;
 
-   protected String       name         = null;
-   protected int          order        = 1000;
+   protected String                  name         = null;
+   protected int                     order        = 1000;
 
-   protected Set<String>  methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected Set<String>             methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   protected List<String> excludePaths = new ArrayList();
-   protected List<String> includePaths = new ArrayList();
+   protected List<String>            excludePaths = new ArrayList();
+   protected List<String>            includePaths = new ArrayList();
 
-   protected Properties   config       = new Properties();
+   protected HashMap<String, String> config       = new HashMap();
 
    @Override
    public int compareTo(Rule a)
@@ -121,7 +123,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          }
          else
          {
-            if(!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
+            if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
                wildcardPath += "/";
             return Utils.wildcardMatch(wildcardPath, path);
          }
@@ -256,10 +258,16 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return (R) this;
    }
 
-   public R withIncludePath(String includePath)
+   public R withIncludePath(String paths)
    {
-      if (!includePaths.contains(includePath))
-         includePaths.add(includePath);
+      if (paths != null)
+      {
+         for (String path : Utils.explode(",", paths))
+         {
+            if (!includePaths.contains(path))
+               includePaths.add(path);
+         }
+      }
       return (R) this;
    }
 
@@ -276,10 +284,16 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return (R) this;
    }
 
-   public R withExcludePath(String excludePath)
+   public R withExcludePath(String paths)
    {
-      if (!excludePaths.contains(excludePath))
-         excludePaths.add(excludePath);
+      if (paths != null)
+      {
+         for (String path : Utils.explode(",", paths))
+         {
+            if (!excludePaths.contains(path))
+               excludePaths.add(path);
+         }
+      }
       return (R) this;
    }
 
@@ -299,6 +313,11 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return order;
    }
 
+   public Set<String> getConfigKeys()
+   {
+      return new HashSet(config.keySet());
+   }
+
    public String getConfig(String key)
    {
       return (String) config.get(key);
@@ -306,37 +325,27 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public String getConfig(String key, String defaultValue)
    {
-      return config.getProperty(key, defaultValue);
+      String value = config.get(key);
+      if (Utils.empty(value))
+         value = defaultValue;
+
+      return value;
    }
 
    public R withConfig(String queryString)
    {
       try
       {
-         config.clear();
-         config.putAll(Utils.parseQueryString(queryString));
-         //config.load(new ByteArrayInputStream(propertiesString.getBytes()));
+         if (queryString != null)
+         {
+            Map<String, String> parsed = Utils.parseQueryString(queryString);
+            config.putAll(parsed);
+         }
       }
       catch (Exception ex)
       {
          ex.printStackTrace();
       }
-      return (R) this;
-   }
-
-   public R withExcludePaths(String... paths)
-   {
-      for (String path : Utils.explode(",", paths))
-         withExcludePath(path);
-
-      return (R) this;
-   }
-
-   public R withIncludePaths(String... paths)
-   {
-      for (String path : Utils.explode(",", paths))
-         withIncludePath(path);
-
       return (R) this;
    }
 

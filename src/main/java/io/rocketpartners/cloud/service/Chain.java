@@ -16,8 +16,10 @@
 package io.rocketpartners.cloud.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
@@ -248,12 +250,17 @@ public class Chain
       if (vars.containsKey(key))
          return vars.get(key);
 
-      for (int i = next - 1; i >= 0; i--)
-      {
-         Object param = actions.get(i).getConfig(key);
-         if (!Utils.empty(param))
-            return param;
-      }
+      
+      Object value = getConfig(key);
+      if(value != null)
+         return value;
+      
+//      for (int i = next - 1; i >= 0; i--)
+//      {
+//         Object param = actions.get(i).getConfig(key);
+//         if (!Utils.empty(param))
+//            return param;
+//      }
 
       if (parent != null)
          return parent.get(key);
@@ -263,7 +270,10 @@ public class Chain
 
    public Object remove(Object key)
    {
-      return vars.remove(key);
+      if(vars.containsKey(key))
+         return vars.remove(key);
+      
+      return getConfig(key + "");
    }
 
    /**
@@ -309,6 +319,27 @@ public class Chain
       return values;
    }
 
+   public Map<String, String> getConfig()
+   {
+      Map<String, String> config = new HashMap();
+      for (String key : getConfigKeys())
+      {
+         config.put(key, getConfig(key));
+      }
+      return config;
+   }
+
+   public Set<String> getConfigKeys()
+   {
+      Set<String> keys = request.getEndpoint().getConfigKeys();
+      for (int i = next - 1; i >= 0; i--)
+      {
+         keys.addAll(actions.get(i).getConfigKeys());
+      }
+
+      return keys;
+   }
+
    public int getConfig(String key, int defaultValue)
    {
       return Integer.parseInt(getConfig(key, defaultValue + ""));
@@ -319,6 +350,11 @@ public class Chain
       return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
    }
 
+   public String getConfig(String key)
+   {
+      return getConfig(key, (String) null);
+   }
+
    public String getConfig(String key, String defaultValue)
    {
       String value = request.getEndpoint().getConfig(key);
@@ -327,10 +363,13 @@ public class Chain
          return value;
       }
 
-      value = actions.get(next - 1).getConfig(key);
-      if (!Utils.empty(value))
+      for (int i = next - 1; i >= 0; i--)
       {
-         return value;
+         value = actions.get(i).getConfig(key);
+         if (!Utils.empty(value))
+         {
+            return value;
+         }
       }
 
       return defaultValue;
@@ -408,7 +447,7 @@ public class Chain
    {
       return request;
    }
-   
+
    //   public Request getRequest()
    //   {
    //      return peek().request;
