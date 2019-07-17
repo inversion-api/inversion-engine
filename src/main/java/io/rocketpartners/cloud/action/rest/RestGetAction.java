@@ -244,6 +244,10 @@ public class RestGetAction extends Action<RestGetAction>
                termStr = "eq(" + paramName + "," + paramValue + ")";
             }
             Term term = parser.parse(termStr);
+            
+            if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
+               continue;
+            
             terms.add(term);
 
             if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
