@@ -44,8 +44,8 @@ public abstract class Action<A extends Action> extends Rule<A>
    public Action(String config, String includePaths, String excludePaths)
    {
       withConfig(config);
-      withIncludePath(includePaths);
-      withExcludePath(excludePaths);
+      withIncludePaths(includePaths);
+      withExcludePaths(excludePaths);
    }
 
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception

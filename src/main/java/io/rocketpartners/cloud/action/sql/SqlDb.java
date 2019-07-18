@@ -172,7 +172,9 @@ public class SqlDb extends Db<SqlDb>
          db = (SqlDb) table.getDb();
       }
 
-      String sql = (String) Chain.peek().remove("select");
+      String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
+      
+      String sql = (String) Chain.peek().remove(selectKey);
       if (Utils.empty(sql))
       {
          if (table == null)
@@ -648,7 +650,7 @@ public class SqlDb extends Db<SqlDb>
 
          Collection collection = api.makeCollection(table, name);
          if (getCollectionPath() != null)
-            collection.withIncludePath(getCollectionPath());
+            collection.withIncludePaths(getCollectionPath());
 
          Entity entity = collection.getEntity();
 

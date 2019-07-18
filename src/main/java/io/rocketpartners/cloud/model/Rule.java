@@ -29,17 +29,20 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected Api                     api          = null;
+   protected Api          api          = null;
 
-   protected String                  name         = null;
-   protected int                     order        = 1000;
+   protected String       name         = null;
+   protected int          order        = 1000;
 
-   protected Set<String>             methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected Set<String>  methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   protected List<String>            excludePaths = new ArrayList();
-   protected List<String>            includePaths = new ArrayList();
+   protected List<String> excludePaths = new ArrayList();
+   protected List<String> includePaths = new ArrayList();
 
-   protected HashMap<String, String> config       = new HashMap();
+   /**
+    * ObjectNode is used because it implements a case insensitive map without modifying the keys
+    */
+   protected ObjectNode   config       = new ObjectNode();
 
    @Override
    public int compareTo(Rule a)
@@ -212,27 +215,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(methods);
    }
 
-   public R withMethods(String methods)
-   {
-      return withMethod(methods);
-   }
-
-   public R withMethods(List<String> methods)
-   {
-      for (String method : methods)
-         withMethod(method);
-      return (R) this;
-   }
-
    public R withMethods(String... methods)
-   {
-      for (String method : Utils.explode(",", methods))
-         withMethod(method);
-
-      return (R) this;
-   }
-
-   public R withMethod(String methods)
    {
       if (methods == null)
          return (R) this;
@@ -250,15 +233,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(includePaths);
    }
 
-   public R withIncludePaths(List<String> includePaths)
-   {
-      this.includePaths.clear();
-      for (String includePath : includePaths)
-         withIncludePath(includePath);
-      return (R) this;
-   }
-
-   public R withIncludePath(String paths)
+   public R withIncludePaths(String... paths)
    {
       if (paths != null)
       {
@@ -276,15 +251,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(excludePaths);
    }
 
-   public R withExcludePaths(List<String> excludePaths)
-   {
-      this.excludePaths.clear();
-      for (String excludePath : excludePaths)
-         withExcludePath(excludePath);
-      return (R) this;
-   }
-
-   public R withExcludePath(String paths)
+   public R withExcludePaths(String... paths)
    {
       if (paths != null)
       {
@@ -325,7 +292,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public String getConfig(String key, String defaultValue)
    {
-      String value = config.get(key);
+      String value = config.getString(key);
       if (Utils.empty(value))
          value = defaultValue;
 

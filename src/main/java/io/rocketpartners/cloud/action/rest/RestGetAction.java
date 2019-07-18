@@ -48,7 +48,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected int maxRows        = 100;
 
-   protected Set reservedParams = new HashSet(Arrays.asList("select", "includes", "excludes", "expands"));
+   protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", "includes", "excludes", "expands"));
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -144,7 +144,7 @@ public class RestGetAction extends Action<RestGetAction>
          res.withJson(included.getJson());
          return;
       }
-      else if (req.getEntityKey() != null)
+      else if (req.getCollection() != null && req.getEntityKey() != null)
       {
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
          Term term = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName(), entityKeys.toArray());

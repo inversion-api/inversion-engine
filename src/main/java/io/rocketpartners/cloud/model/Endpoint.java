@@ -35,9 +35,9 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint(String method, String path, String includePaths)
    {
-      withMethod(method);
+      withMethods(method);
       withPath(path);
-      withIncludePath(includePaths);
+      withIncludePaths(includePaths);
    }
 
    public String toString()
@@ -183,7 +183,7 @@ public class Endpoint extends Rule<Endpoint>
    public Endpoint withAction(Action action, String methods, String includePaths)
    {
       action.withMethods(methods);
-      action.withIncludePath(includePaths);
+      action.withIncludePaths(includePaths);
       withAction(action);
       return this;
    }

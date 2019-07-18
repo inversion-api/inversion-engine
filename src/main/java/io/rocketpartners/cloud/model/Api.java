@@ -404,7 +404,7 @@ public class Api
 
    public Endpoint makeEndpoint(String method, String path, String includePaths)
    {
-      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePath(includePaths);
+      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
       withEndpoint(endpoint);
       return endpoint;
    }
@@ -416,7 +416,7 @@ public class Api
 
    public Endpoint makeEndpoint(Action action, String method, String path, String includePaths)
    {
-      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePath(includePaths);
+      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
       endpoint.withAction(action);
       withEndpoint(endpoint);
       return endpoint;
@@ -454,7 +454,7 @@ public class Api
    public <T extends Action> T makeAction(T action, String methods, String includePaths)
    {
       action.withMethods(methods);
-      action.withIncludePath(includePaths);
+      action.withIncludePaths(includePaths);
 
       withAction(action);
 

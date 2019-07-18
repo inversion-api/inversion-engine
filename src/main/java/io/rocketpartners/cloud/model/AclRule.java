@@ -100,27 +100,6 @@ public class AclRule extends Rule<AclRule>
       return this;
    }
 
-   public ArrayList<String> getPermissions()
-   {
-      return new ArrayList(permissions);
-   }
-
-   public AclRule withPermissions(String permissions)
-   {
-      for (String permission : Utils.explode(",", permissions))
-         withPermission(permission);
-
-      return this;
-   }
-
-   public AclRule withPermission(String permission)
-   {
-      if (!permissions.contains(permission))
-         permissions.add(permission);
-
-      return this;
-   }
-
    public ArrayList<Role> getRoles()
    {
       return new ArrayList(roles);
@@ -142,58 +121,53 @@ public class AclRule extends Rule<AclRule>
       return this;
    }
 
-   public AclRule withRestricts(List<String> restricts)
+   public ArrayList<String> getPermissions()
    {
-      for (String restrict : restricts)
-         withRestrict(restrict);
+      return new ArrayList(permissions);
+   }
 
+   public AclRule withPermission(String... permissions)
+   {
+      if (permissions != null)
+      {
+         for (String permission : Utils.explode(",", permissions))
+         {
+            if (!this.permissions.contains(permission))
+               this.permissions.add(permission);
+         }
+      }
       return this;
    }
 
    public AclRule withRestricts(String... restricts)
    {
-      for (String restrict : Utils.explode(",", restricts))
-         withRestrict(restrict);
-
-      return this;
-   }
-
-   public AclRule withRestrict(String restrict)
-   {
-      if (!restricts.contains(restrict))
-         restricts.add(restrict);
-
-      return this;
-   }
-
-   public AclRule withRequires(List<String> requires)
-   {
-      for (String require : requires)
+      if (restricts != null)
       {
-         withRequire(require);
+         for (String restrict : Utils.explode(",", restricts))
+         {
+            if (!this.restricts.contains(restrict))
+               this.restricts.add(restrict);
+         }
       }
-      return this;
-   }
-
-   public AclRule withRequires(String... requires)
-   {
-      for (String require : Utils.explode(",", requires))
-         withRequire(require);
-
-      return this;
-   }
-
-   public AclRule withRequire(String require)
-   {
-      if (!requires.contains(require))
-         requires.add(require);
-
       return this;
    }
 
    public List<String> getRestricts()
    {
       return new ArrayList(restricts);
+   }
+
+   public AclRule withRequires(String... requires)
+   {
+      if (requires != null)
+      {
+         for (String require : Utils.explode(",", requires))
+         {
+            if (!this.requires.contains(require))
+               this.requires.add(require);
+         }
+      }
+      return this;
    }
 
    public List<String> getRequires()

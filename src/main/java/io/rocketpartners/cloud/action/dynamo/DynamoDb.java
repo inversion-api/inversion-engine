@@ -276,7 +276,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
 
       if (getCollectionPath() != null)
-         collection.withIncludePath(getCollectionPath());
+         collection.withIncludePaths(getCollectionPath());
 
       return collection;
    }
