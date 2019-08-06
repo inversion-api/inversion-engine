@@ -123,4 +123,6 @@ javadoc {
 //   exclude "**/utils/**"
 }
 
-
+test {
+    exclude '**/*'
+}
