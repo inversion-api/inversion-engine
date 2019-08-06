@@ -445,7 +445,7 @@ public abstract class Db<T extends Db>
       //      return name;
    }
 
-   protected String makeRelationshipName(Relationship rel)
+   protected String makeRelationshipName(Entity entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
@@ -460,7 +460,45 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getRelated().getCollection().getName();//.getTbl().getName();
+         //Example
+         //
+         //if the Alarm table has a FK to the Category table
+         //this would be called to add a relationship to the Category
+         //collection called "alarms"....this is the default case
+         //assuming the Alarm fk column is semantically related to 
+         //the Category table with a name such as:
+         //category, categories, categoryId or categoriesId 
+         //
+         //say for example that the Alarm table had two foreign
+         //keys to the Category table.  One called "categoryId"
+         //and the other called "subcategoryId".  In this case
+         //the "categoryId" column is semantically related and would
+         //result in the collection property "alarms" being added
+         //to the Category collection.  The "subcategoyId" column
+         //name is not one of the semantically related names 
+         //so it results in a property called "subcategoryAlarms"
+         //being added to the Category collection.
+         
+         
+         String idxColName = rel.getFk1Col1().getName();
+         if (idxColName.toLowerCase().endsWith("id") && idxColName.length() > 2)
+         {
+            idxColName = idxColName.substring(0, idxColName.length() - 2);
+         }
+
+         String collectionName = rel.getRelated().getCollection().getName();
+         String tableName = entity.getTable().getName();
+         if (!tableName.equalsIgnoreCase(idxColName) //
+               && !English.plural(idxColName).equalsIgnoreCase(tableName))
+         {
+            name = idxColName + Character.toUpperCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
+            //System.out.println("RELATIONSHIP: " + name + " " +  rel);
+         }
+         else
+         {
+            name = collectionName;
+         }
+
          pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))

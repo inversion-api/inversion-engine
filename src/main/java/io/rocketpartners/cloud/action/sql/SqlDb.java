@@ -173,7 +173,7 @@ public class SqlDb extends Db<SqlDb>
       }
 
       String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
-      
+
       String sql = (String) Chain.peek().remove(selectKey);
       if (Utils.empty(sql))
       {
@@ -697,7 +697,7 @@ public class SqlDb extends Db<SqlDb>
                   r.withRelated(entity2);
                   r.withFkIndex1(idx1);
                   r.withFkIndex2(idx2);
-                  r.withName(makeRelationshipName(r));
+                  r.withName(makeRelationshipName(entity1, r));
                   r.withEntity(entity1);
                   relationshipStrs.add(r.toString());
                }
@@ -724,7 +724,7 @@ public class SqlDb extends Db<SqlDb>
                      r.withType(Relationship.REL_MANY_TO_ONE);
                      r.withFkIndex1(fkIdx);
                      r.withRelated(fkEntity);
-                     r.withName(makeRelationshipName(r));
+                     r.withName(makeRelationshipName(pkEntity, r));
                      r.withEntity(pkEntity);
                      relationshipStrs.add(r.toString());
                   }
@@ -735,14 +735,14 @@ public class SqlDb extends Db<SqlDb>
                      r.withType(Relationship.REL_ONE_TO_MANY);
                      r.withFkIndex1(fkIdx);
                      r.withRelated(pkEntity);
-                     r.withName(makeRelationshipName(r));
+                     r.withName(makeRelationshipName(fkEntity, r));
                      r.withEntity(fkEntity);
                      relationshipStrs.add(r.toString());
                   }
                }
                catch (Exception ex)
                {
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx);
+                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
                }
             }
          }
