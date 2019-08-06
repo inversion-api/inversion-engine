@@ -29,20 +29,21 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected Api          api          = null;
+   protected Api                  api          = null;
 
-   protected String       name         = null;
-   protected int          order        = 1000;
+   protected String               name         = null;
+   protected int                  order        = 1000;
 
-   protected Set<String>  methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected Set<String>          methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   protected List<String> excludePaths = new ArrayList();
-   protected List<String> includePaths = new ArrayList();
+   protected List<String>         excludePaths = new ArrayList();
+   protected List<String>         includePaths = new ArrayList();
 
    /**
     * ObjectNode is used because it implements a case insensitive map without modifying the keys
     */
-   protected ObjectNode   config       = new ObjectNode();
+   protected transient ObjectNode configMap    = new ObjectNode();
+   protected String               configStr    = null;
 
    @Override
    public int compareTo(Rule a)
@@ -282,17 +283,17 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public Set<String> getConfigKeys()
    {
-      return new HashSet(config.keySet());
+      return new HashSet(configMap.keySet());
    }
 
    public String getConfig(String key)
    {
-      return (String) config.get(key);
+      return (String) configMap.get(key);
    }
 
    public String getConfig(String key, String defaultValue)
    {
-      String value = config.getString(key);
+      String value = configMap.getString(key);
       if (Utils.empty(value))
          value = defaultValue;
 
@@ -305,8 +306,10 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          if (queryString != null)
          {
+            configStr = configStr == null ? queryString : configStr + "&" + queryString;
+            
             Map<String, String> parsed = Utils.parseQueryString(queryString);
-            config.putAll(parsed);
+            configMap.putAll(parsed);
          }
       }
       catch (Exception ex)

@@ -480,7 +480,16 @@ public class Configurator
       }
 
       if (config.files.isEmpty())
+      {
          log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
+      }
+      //      else
+      //      {
+      //         for (String fileName : config.files)
+      //         {
+      //            log.warn("LOADING CONFIG FILE: " + fileName);
+      //         }
+      //      }
 
       List keys = new ArrayList(config.props.keySet());
       Collections.sort(keys);
