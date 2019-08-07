@@ -486,17 +486,18 @@ public abstract class Db<T extends Db>
             idxColName = idxColName.substring(0, idxColName.length() - 2);
          }
 
-         String collectionName = rel.getRelated().getCollection().getName();
-         String tableName = entity.getTable().getName();
-         if (!tableName.equalsIgnoreCase(idxColName) //
-               && !English.plural(idxColName).equalsIgnoreCase(tableName))
+         String collectionName = entity.getCollection().getName();
+         String relatedCollectionName = rel.getRelated().getCollection().getName();
+         //String tableName = entity.getTable().getName();
+         if (!collectionName.equalsIgnoreCase(idxColName) //
+               && !English.plural(idxColName).equalsIgnoreCase(collectionName))
          {
-            name = idxColName + Character.toUpperCase(collectionName.charAt(0)) + collectionName.substring(1, collectionName.length());
+            name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
             //System.out.println("RELATIONSHIP: " + name + " " +  rel);
          }
          else
          {
-            name = collectionName;
+            name = relatedCollectionName;
          }
 
          pluralize = true;

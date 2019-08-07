@@ -74,12 +74,12 @@ public class Service
     * The path to inversion*.properties files
     */
    protected String                          configPath     = "";
-   
+
    /**
     * The number of milliseconds between background reloads of the Api config
     */
    protected int                             configTimeout  = 10000;
-   
+
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
     * will not be reflectively configured as it otherwise would be.
@@ -341,9 +341,16 @@ public class Service
 
          if (!Utils.empty(servletMapping))
          {
-            for (String servletPath : Utils.explode("/", servletMapping))
+            for (String servletPathPart : Utils.explode("/", servletMapping))
             {
-               apiPath.add(servletPath);
+               if (!servletPathPart.equalsIgnoreCase(parts.get(0)))
+               {
+                  //the inbound URL does not match the expected servletMapping
+                  //this may be becuse you are localhost testing...going to 
+                  //optomistically skip 
+                  break;
+               }
+               apiPath.add(servletPathPart);
                parts.remove(0);
             }
          }

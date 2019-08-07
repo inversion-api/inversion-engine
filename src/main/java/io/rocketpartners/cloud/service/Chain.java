@@ -126,7 +126,7 @@ public class Chain
 
       Request req = getRequest();
 
-      String url = req.getApiUrl();//req.getApiPath();
+      String url = req.getApiPath();
 
       if (url == null)
          url = "";
@@ -181,7 +181,8 @@ public class Chain
 
          url = newUrl + url.substring(url.indexOf("/", 8));
       }
-      else
+
+      if (Utils.empty(collection.getApi().getUrl()))
       {
          String proto = req.getHeader("x-forwarded-proto");
          if (!Utils.empty(proto))
@@ -250,17 +251,16 @@ public class Chain
       if (vars.containsKey(key))
          return vars.get(key);
 
-      
       Object value = getConfig(key);
-      if(value != null)
+      if (value != null)
          return value;
-      
-//      for (int i = next - 1; i >= 0; i--)
-//      {
-//         Object param = actions.get(i).getConfig(key);
-//         if (!Utils.empty(param))
-//            return param;
-//      }
+
+      //      for (int i = next - 1; i >= 0; i--)
+      //      {
+      //         Object param = actions.get(i).getConfig(key);
+      //         if (!Utils.empty(param))
+      //            return param;
+      //      }
 
       if (parent != null)
          return parent.get(key);
@@ -270,9 +270,9 @@ public class Chain
 
    public Object remove(Object key)
    {
-      if(vars.containsKey(key))
+      if (vars.containsKey(key))
          return vars.remove(key);
-      
+
       return getConfig(key + "");
    }
 
