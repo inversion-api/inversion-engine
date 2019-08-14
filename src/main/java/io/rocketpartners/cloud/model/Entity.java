@@ -163,23 +163,11 @@ public class Entity
 
    public Entity withRelationship(Relationship relationship)
    {
-      if (relationship.getName() == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error. A relationship must have a name before it can be set on an entity.");
-
-      Relationship existing = getRelationship(relationship.getName());
-
-      if (existing != null && existing != relationship)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Configuration error...you are attempting to add a second relationship of the same name to an entity." + existing);
-      }
-
-      if (existing == null)
-      {
+      if (!relationships.contains(relationship))
          relationships.add(relationship);
 
-         if (relationship.getEntity() != this)
-            relationship.withEntity(this);
-      }
+      if (relationship.getEntity() != this)
+         relationship.withEntity(this);
 
       return this;
    }
