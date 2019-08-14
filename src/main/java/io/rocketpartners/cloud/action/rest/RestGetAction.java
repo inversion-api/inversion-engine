@@ -463,7 +463,7 @@ public class RestGetAction extends Action<RestGetAction>
       {
          boolean shouldExpand = shouldExpand(expands, expandsPath, rel);
          
-         System.out.println("should expand " + Chain.getDepth() + " -> " + rel + " -> " + shouldExpand);
+         //System.out.println("should expand " + Chain.getDepth() + " -> " + rel + " -> " + shouldExpand);
          
          if (shouldExpand)
          {
