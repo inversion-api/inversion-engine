@@ -158,9 +158,31 @@ public class AuthHandler implements Handler
             sessionKey = url.substring(url.lastIndexOf("/") + 1, url.length());
 
          if (sessionKey == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authorization or x-auth-token header");
 
          sessionCache.remove(sessionKey);
+      }
+      else if (sessionReq && req.isGet())
+      {
+         // This will return status info about the session
+         // useful for client applications checking to see if the user is still logged in
+         if (sessionKey == null)
+         {
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "GET session requires a session authorization or x-auth-token header");
+         }
+
+         user = sessionCache.get(sessionKey);
+
+         if (user == null)
+         {
+            throw new ApiException(SC.SC_401_UNAUTHORIZED);
+         }
+
+         resp.setJson(buildSessionJson(user, now));
+
+         chain.cancel();
+         return;
+
       }
       else if (!J.empty(username, password))
       {
@@ -233,33 +255,13 @@ public class AuthHandler implements Handler
          user.setRequestAt(now);
          req.setUser(user);
 
-
          if (sessionReq && req.isPost())
          {
             sessionKey = req.getApi().getId() + "_" + newSessionId();
             updateSessionCache = true;
 
             resp.addHeader("x-auth-token", "Session " + sessionKey);
-            JSObject obj = new JSObject();
-            obj.put("id", user.getId());
-            obj.put("username", username);
-            obj.put("displayname", user.getDisplayName());
-
-            JSArray perms = new JSArray();
-            for (Permission perm : user.getPermissions())
-            {
-               perms.add(perm.getName());
-            }
-            obj.put("perms", perms);
-
-            JSArray roles = new JSArray();
-            for (Role role : user.getRoles())
-            {
-               roles.add(role.getName());
-            }
-            obj.put("roles", roles);
-
-            resp.setJson(new JSObject("data", obj));
+            resp.setJson(buildSessionJson(user, now));
          }
 
          if (updateSessionCache)
@@ -302,6 +304,32 @@ public class AuthHandler implements Handler
          req.setUser(user);
       }
 
+   }
+
+   protected JSObject buildSessionJson(User user, long now)
+   {
+      JSObject obj = new JSObject();
+      obj.put("id", user.getId());
+      obj.put("username", user.getUsername());
+      obj.put("displayname", user.getDisplayName());
+      obj.put("lastUpdate", user.getRequestAt());
+      obj.put("expiresIn", user.getRequestAt() + sessionExp - now);
+
+      JSArray perms = new JSArray();
+      for (Permission perm : user.getPermissions())
+      {
+         perms.add(perm.getName());
+      }
+      obj.put("perms", perms);
+
+      JSArray roles = new JSArray();
+      for (Role role : user.getRoles())
+      {
+         roles.add(role.getName());
+      }
+      obj.put("roles", roles);
+
+      return new JSObject("data", obj);
    }
 
    protected User getUser(Connection conn, Api api, String tenantCode, String username, String accessKey) throws Exception
