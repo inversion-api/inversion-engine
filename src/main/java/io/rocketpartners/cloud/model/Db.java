@@ -445,7 +445,7 @@ public abstract class Db<T extends Db>
       //      return name;
    }
 
-   protected String makeRelationshipName(Entity entity, Relationship rel)
+   protected String makeRelationshipUniqueName(Entity entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
@@ -478,13 +478,16 @@ public abstract class Db<T extends Db>
          //name is not one of the semantically related names 
          //so it results in a property called "subcategoryAlarms"
          //being added to the Category collection.
-         
-         
+
          String idxColName = rel.getFk1Col1().getName();
          if (idxColName.toLowerCase().endsWith("id") && idxColName.length() > 2)
          {
             idxColName = idxColName.substring(0, idxColName.length() - 2);
          }
+
+         idxColName = idxColName.replace("_", "");//allow fk cols like "person_id"
+         if (idxColName.toUpperCase().equals(idxColName))
+            idxColName = idxColName.toLowerCase();
 
          String collectionName = entity.getCollection().getName();
          String relatedCollectionName = rel.getRelated().getCollection().getName();
@@ -493,13 +496,47 @@ public abstract class Db<T extends Db>
                && !English.plural(idxColName).equalsIgnoreCase(collectionName))
          {
             name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
-            //System.out.println("RELATIONSHIP: " + name + " " +  rel);
+            System.out.println("RELATIONSHIP: " + name + " " + rel);
          }
          else
          {
             name = relatedCollectionName;
          }
 
+         pluralize = true;
+      }
+      else if (type.equals(Relationship.REL_MANY_TO_MANY))
+      {
+         name = rel.getFk2Col1().getPk().getTable().getName();
+         pluralize = true;
+      }
+
+      name = beautifyAttributeName(name);
+
+      if (pluralize)
+      {
+         name = English.plural(name);
+      }
+
+      return name;
+   }
+
+   protected String makeRelationshipName(Entity entity, Relationship rel)
+   {
+      String name = null;
+      String type = rel.getType();
+      boolean pluralize = false;
+      if (type.equals(Relationship.REL_ONE_TO_MANY))
+      {
+         name = rel.getFk1Col1().getName();
+         if (name.toLowerCase().endsWith("id") && name.length() > 2)
+         {
+            name = name.substring(0, name.length() - 2);
+         }
+      }
+      else if (type.equals(Relationship.REL_MANY_TO_ONE))
+      {
+         name = rel.getRelated().getCollection().getName();
          pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))

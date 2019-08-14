@@ -747,6 +747,30 @@ public class SqlDb extends Db<SqlDb>
             }
          }
       }
+
+      //now we need to see if any relationship names conflict and need to be made unique
+      for (Collection coll : api.getCollections())
+      {
+         Entity entity = coll.getEntity();
+
+         List<Relationship> relationships = entity.getRelationships();
+
+         for (int i = 0; i < relationships.size(); i++)
+         {
+            String nameA = relationships.get(i).getName();
+
+            for (int j = i + 1; j < relationships.size(); j++)
+            {
+               String nameB = relationships.get(j).getName();
+
+               if (nameA.equalsIgnoreCase(nameB))
+               {
+                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
+                  relationships.get(j).withName(uniqueName);
+               }
+            }
+         }
+      }
    }
 
    public SqlDb withType(String type)
