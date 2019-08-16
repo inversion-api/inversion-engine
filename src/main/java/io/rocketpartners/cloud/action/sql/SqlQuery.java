@@ -210,7 +210,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (cols.length() > 0)
       {
          boolean restrictCols = find("includes") != null;
-         int star = parts.select.indexOf(".* ");
+         int star = parts.select.indexOf("* ");
          if (restrictCols && star > 0)
          {
             //force the inclusion of pk cols even if there
@@ -234,9 +234,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                }
             }
 
-            int idx = parts.select.substring(0, star).lastIndexOf(" ");
-            
-            parts.select = parts.select.substring(0, idx) + cols + parts.select.substring(star + 2, parts.select.length());
+            //inserts the select list before the *
+            int idx = parts.select.substring(0, star).indexOf(" ");
+            parts.select = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
          }
          else
          {
@@ -461,6 +461,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    protected String print(Term term, String col, boolean preparedStmt)
    {
+      if(col == null && term.toString().equals("if(eq(\"col1\",'value'),1,'something blah')"))
+         System.out.println("asdfs");
+      
       if (term.isLeaf())
       {
          String token = term.getToken();
@@ -495,7 +498,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             break;
          }
       }
-
+      
       List<String> strings = new ArrayList();
       for (Term t : terms)
       {
@@ -506,7 +509,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       //allows for callers to substitute callable statement "?"s
       //and/or to account for data type conversion 
-      if (preparedStmt)
+      if (preparedStmt && col != null)
       {
          for (int i = 0; i < terms.size(); i++)
          {
@@ -731,10 +734,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String quoteCol(String str)
    {
-      if(str == null)
-         System.out.println("asdf"); 
-         
-      
       StringBuffer buff = new StringBuffer();
       String[] parts = str.split("\\.");
       for(int i=0; i<parts.length; i++)
@@ -749,7 +748,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String asCol(String columnName)
    {
-      if(columnName.indexOf(".") < 0)
+      if(table != null && columnName.indexOf(".") < 0)
          columnName = table.getName() + "." + columnName;
          
       return quoteCol(columnName);

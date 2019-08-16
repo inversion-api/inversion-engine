@@ -8,6 +8,10 @@ import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.List;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClientBuilder;
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest;
@@ -28,9 +32,9 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlServiceFactory
 {
-   //   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
-   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
+   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 
@@ -96,11 +100,6 @@ public class SqlServiceFactory
                @Override
                public void startup0()
                {
-                  //
-                  //                  Thread t = new Thread(new Runnable()
-                  //                     {
-                  //                        public void run()
-                  //                        {
                   try
                   {
                      SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
@@ -110,7 +109,7 @@ public class SqlServiceFactory
                             .withDb(sourceDb);
 
                      Connection conn = sourceDb.getConnection();
-                     
+
                      if (shouldLoad("h2"))
                      {
                         SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
@@ -124,8 +123,7 @@ public class SqlServiceFactory
                      {
                         SqlDb mysqlDb = null;
                         {
-                           String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
-                           String mysqlUrl = "jdbc:mysql://" + mysqlHost + ":3306";
+                           String mysqlUrl = "jdbc:mysql://testnorthwind.cb4bo9agap0y.us-east-1.rds.amazonaws.com:3306";
 
                            Class.forName("com.mysql.jdbc.Driver").newInstance();
                            Connection mysqlConn = null;
@@ -169,23 +167,8 @@ public class SqlServiceFactory
                      ex.printStackTrace();
                      Utils.rethrow(ex);
                   }
-                  //                        }
-                  //
-                  //                     });
-                  //
-                  //                  t.start();
-                  //                  try
-                  //                  {
-                  //                     System.out.println("joining");
-                  //                     t.join();
-                  //                     System.out.println("started");
-                  //                  }
-                  //                  catch (Exception ex)
-                  //                  {
-                  //                     ex.printStackTrace();
-                  //                  }
                }
-               
+
                public Chain service(Request req, Response res)
                {
                   Chain chain = super.service(req, res);
@@ -197,8 +180,6 @@ public class SqlServiceFactory
                {
                   Response res = super.service(method, url, body);
 
-                  
-                  
                   if (Chain.size() == 1)
                   {
                      if (res.getChain().request().isGet())
@@ -319,8 +300,6 @@ public class SqlServiceFactory
       db.withPass(pass);
       db.withCollectionPath(collectionPath);
 
-      
-
       if (ddl != null)
       {
          try
@@ -328,7 +307,7 @@ public class SqlServiceFactory
             Connection conn = db.getConnection();
             SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
             conn.commit();
-            
+
             //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));
          }
          catch (Exception ex)
@@ -342,95 +321,4 @@ public class SqlServiceFactory
       return db;
    }
 
-   //Utility provisions micro MySQL RDS instance if it doesn't already exist, and returns the public URL
-   public static String createMySqlRDS(String type, String instanceName, String username, String password)
-   {
-      AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
-
-      CreateDBInstanceRequest dbRequest = null;
-
-      if ("mysql".equalsIgnoreCase(type))
-      {
-         dbRequest = new CreateDBInstanceRequest(instanceName, 20, "db.t2.micro", "mysql", username, password);
-         dbRequest.setEngineVersion("5.6.40");
-      }
-      else
-      {
-         throw new RuntimeException("Unsupported RDS type: " + type);
-      }
-
-      dbRequest.setDBName(instanceName);
-
-      String url = null;
-      try
-      {
-         DBInstance db = client.createDBInstance(dbRequest);
-         System.out.println("creating DB, need to wait for endpoint…");
-         while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
-         {
-            System.out.println("waiting…");
-            Thread.sleep(5000);
-         }
-         System.out.println("DB created, retrieving endpoint");
-         url = db.getEndpoint().toString();
-      }
-      catch (DBInstanceAlreadyExistsException e)
-      {
-         DescribeDBInstancesResult dbs = client.describeDBInstances();
-         for (DBInstance db : dbs.getDBInstances())
-         {
-            if (db.getDBInstanceIdentifier().equalsIgnoreCase(instanceName))
-            {
-               System.out.println("found existing DB, waiting for endpoint…");
-               while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
-               {
-                  System.out.println("waiting…");
-                  try
-                  {
-                     Thread.sleep(5000);
-                  }
-                  catch (InterruptedException e1)
-                  {
-                     e1.printStackTrace();
-                  }
-               }
-               System.out.println("endpoint available");
-               url = db.getEndpoint().getAddress();
-               break;
-            }
-         }
-      }
-      catch (NullPointerException e)
-      {
-         System.out.println("Null Pointer Exception!");
-         e.printStackTrace();
-         url = null;
-      }
-      catch (Exception e)
-      {
-         System.out.println("Error creating RDS Instance: " + e.getMessage());
-         e.printStackTrace();
-         url = null;
-      }
-      return url;
-   }
-
-   public static boolean deleteMySqlRDS(String instanceName)
-   {
-      boolean result = false;
-      try
-      {
-         AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
-         DeleteDBInstanceRequest deleteRequest = new DeleteDBInstanceRequest(instanceName).withSkipFinalSnapshot(true);
-         client.deleteDBInstance(deleteRequest);
-         result = true;
-      }
-      catch (Exception e)
-      {
-         System.out.println(e);
-         e.printStackTrace();
-
-      }
-      return result;
-   }
 }

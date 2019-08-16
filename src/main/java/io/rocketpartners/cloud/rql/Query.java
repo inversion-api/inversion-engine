@@ -310,6 +310,9 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
+      if(columnName == null)
+         System.out.println("errorrasdfas");
+      
       Table table = this.table;
       String shortName = columnName;
 
