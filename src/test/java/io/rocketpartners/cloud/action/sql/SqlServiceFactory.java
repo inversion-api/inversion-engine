@@ -8,18 +8,6 @@ import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.List;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClientBuilder;
-import com.amazonaws.services.rds.model.CreateDBInstanceRequest;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBInstanceAlreadyExistsException;
-import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
-import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
-
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;

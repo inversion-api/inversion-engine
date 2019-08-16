@@ -47,16 +47,6 @@ public class Replacer
          return "?";
       }
 
-      else if (col.startsWith("'"))
-         System.out.println("?asasdf");
-
-      //    if (col.startsWith("\"") || col.startsWith("`") || col.startsWith("'"))
-      //    {
-      //       cols.add(Parser.dequote(col, col.charAt(0), rql.getIdentifierQuote()));
-      //       vals.add(val);
-      //       return "?";
-      //    }
-
       return val;
    }
 

@@ -114,7 +114,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             foundRows = SqlUtils.selectInt(conn, sql, getColValues());
          }
 
-         Chain.peek().put("foundRows",  foundRows);
+         Chain.peek().put("foundRows", foundRows);
       }
 
       return new Results(this, foundRows, rows);
@@ -132,8 +132,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String getPreparedStmt()
    {
-      //return "SELECT *  FROM \"CUSTOMERS\"  ORDER BY \"CUSTOMERID\" ASC OFFSET 0 LIMIT 100";
-      
       return toSql(true);
    }
 
@@ -163,8 +161,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                Term join = joins.get(i);
                String tableName = join.getToken(0);
                String tableAlias = join.getToken(1);
-                     
-               if(!joined.containsKey(tableAlias))
+
+               if (!joined.containsKey(tableAlias))
                {
                   joined.put(tableAlias, tableName);
                   select += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
@@ -210,7 +208,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (cols.length() > 0)
       {
          boolean restrictCols = find("includes") != null;
-         int star = parts.select.indexOf("* ");
+         int star = parts.select.lastIndexOf("* ");
          if (restrictCols && star > 0)
          {
             //force the inclusion of pk cols even if there
@@ -234,9 +232,13 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                }
             }
 
+            //SELECT y.year, e.*, p.*, `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
+            //SELECT `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
+
             //inserts the select list before the *
             int idx = parts.select.substring(0, star).indexOf(" ");
-            parts.select = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
+            String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
+            parts.select = newSelect;
          }
          else
          {
@@ -266,19 +268,18 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          Term join = joins.get(i);
 
          String where = "";
-         
-         for(int j=2; j<join.size(); j+=4)//the first token is the related name, the second token is the table alias
+
+         for (int j = 2; j < join.size(); j += 4)//the first token is the related name, the second token is the table alias
          {
-            if(j > 2)
+            if (j > 2)
                where += " AND ";
-            where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j+1)) + " = " + quoteCol(join.getToken(j+2)) + "." + quoteCol(join.getToken(j+3));
+            where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j + 1)) + " = " + quoteCol(join.getToken(j + 2)) + "." + quoteCol(join.getToken(j + 3));
          }
-         
-         
+
          if (where != null)
          {
             where = "(" + where + ")";
-            
+
             if (empty(parts.where))
                parts.where = " WHERE " + where;
             else
@@ -461,9 +462,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    protected String print(Term term, String col, boolean preparedStmt)
    {
-      if(col == null && term.toString().equals("if(eq(\"col1\",'value'),1,'something blah')"))
-         System.out.println("asdfs");
-      
       if (term.isLeaf())
       {
          String token = term.getToken();
@@ -498,7 +496,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             break;
          }
       }
-      
+
       List<String> strings = new ArrayList();
       for (Term t : terms)
       {
@@ -509,7 +507,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       //allows for callers to substitute callable statement "?"s
       //and/or to account for data type conversion 
-      if (preparedStmt && col != null)
+      if (preparedStmt)
       {
          for (int i = 0; i < terms.size(); i++)
          {
@@ -736,21 +734,21 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       StringBuffer buff = new StringBuffer();
       String[] parts = str.split("\\.");
-      for(int i=0; i<parts.length; i++)
+      for (int i = 0; i < parts.length; i++)
       {
          buff.append(columnQuote).append(parts[i]).append(columnQuote);
-         if(i < parts.length -1)
+         if (i < parts.length - 1)
             buff.append(".");
       }
-      
+
       return buff.toString();//columnQuote + str + columnQuote;
    }
 
    public String asCol(String columnName)
    {
-      if(table != null && columnName.indexOf(".") < 0)
+      if (table != null && columnName.indexOf(".") < 0)
          columnName = table.getName() + "." + columnName;
-         
+
       return quoteCol(columnName);
    }
 
