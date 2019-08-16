@@ -17,7 +17,9 @@ package io.rocketpartners.cloud.action.sql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Index;
@@ -45,6 +47,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    String         type        = null;
 
+   List<Term>     joins;
+
    public SqlQuery(Table table, List<Term> terms)
    {
       super(table, terms);
@@ -54,10 +58,22 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       if (term.hasToken("eq"))
       {
+         String name = term.getToken(0);
+
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (table != null && table.getColumn(term.getToken(0)) == null)
+         if (name.indexOf(".") < 0 && table != null && table.getColumn(name) == null)
             return true;
       }
+
+      if (joins == null)
+         joins = new ArrayList();
+
+      if (term.hasToken("join"))
+      {
+         joins.add(term);
+         return true;
+      }
+
       return super.addTerm(token, term);
    }
 
@@ -84,22 +100,21 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
          else
          {
-            sql = "SELECT * " + sql.substring(sql.indexOf("FROM "), sql.length());
-
             if (sql.indexOf("LIMIT ") > 0)
-               sql = sql.substring(0, sql.indexOf("LIMIT "));
+               sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
 
             if (sql.indexOf("OFFSET ") > 0)
-               sql = sql.substring(0, sql.indexOf("OFFSET "));
+               sql = sql.substring(0, sql.lastIndexOf("OFFSET "));
 
             if (sql.indexOf("ORDER BY ") > 0)
-               sql = sql.substring(0, sql.indexOf("ORDER BY "));
+               sql = sql.substring(0, sql.lastIndexOf("ORDER BY "));
 
             sql = "SELECT count(1) FROM ( " + sql + " ) as q";
 
             foundRows = SqlUtils.selectInt(conn, sql, getColValues());
          }
 
+         Chain.peek().put("foundRows",  foundRows);
       }
 
       return new Results(this, foundRows, rows);
@@ -117,6 +132,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String getPreparedStmt()
    {
+      //return "SELECT *  FROM \"CUSTOMERS\"  ORDER BY \"CUSTOMERID\" ASC OFFSET 0 LIMIT 100";
+      
       return toSql(true);
    }
 
@@ -129,7 +146,40 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    {
       clearValues();
 
-      Parts parts = new Parts(selectSql);
+      String select = this.selectSql;
+
+      if (select == null)
+      {
+         String qt = quoteCol(table.getName());
+
+         if (joins != null && joins.size() > 0)
+         {
+            Map joined = new HashMap();
+
+            select = "SELECT DISTINCT " + qt + ".* FROM " + qt;
+
+            for (int i = 0; i < joins.size(); i++)
+            {
+               Term join = joins.get(i);
+               String tableName = join.getToken(0);
+               String tableAlias = join.getToken(1);
+                     
+               if(!joined.containsKey(tableAlias))
+               {
+                  joined.put(tableAlias, tableName);
+                  select += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
+               }
+            }
+         }
+         else
+         {
+
+            select = " SELECT " + qt + ".* FROM " + qt;
+            //select = " SELECT * FROM " + qt;   
+         }
+      }
+
+      Parts parts = new Parts(select);
 
       StringBuffer cols = new StringBuffer();
 
@@ -160,7 +210,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (cols.length() > 0)
       {
          boolean restrictCols = find("includes") != null;
-         int star = parts.select.indexOf(" * ");
+         int star = parts.select.indexOf(".* ");
          if (restrictCols && star > 0)
          {
             //force the inclusion of pk cols even if there
@@ -184,7 +234,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                }
             }
 
-            parts.select = parts.select.substring(0, star + 1) + cols + parts.select.substring(star + 2, parts.select.length());
+            int idx = parts.select.substring(0, star).lastIndexOf(" ");
+            
+            parts.select = parts.select.substring(0, idx) + cols + parts.select.substring(star + 2, parts.select.length());
          }
          else
          {
@@ -208,6 +260,31 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       //            {
       //               
       //            }
+
+      for (int i = 0; joins != null && i < joins.size(); i++)
+      {
+         Term join = joins.get(i);
+
+         String where = "";
+         
+         for(int j=2; j<join.size(); j+=4)//the first token is the related name, the second token is the table alias
+         {
+            if(j > 2)
+               where += " AND ";
+            where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j+1)) + " = " + quoteCol(join.getToken(j+2)) + "." + quoteCol(join.getToken(j+3));
+         }
+         
+         
+         if (where != null)
+         {
+            where = "(" + where + ")";
+            
+            if (empty(parts.where))
+               parts.where = " WHERE " + where;
+            else
+               parts.where += " AND " + where;
+         }
+      }
 
       terms = where().filters();
       for (int i = 0; i < terms.size(); i++)
@@ -467,10 +544,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                {
                   sql.append(string0).append(" IS NULL ");
                }
-//               else
-//               {
-//                  sql.append(string0).append(" IS NOT NULL ");
-//               }
+               //               else
+               //               {
+               //                  sql.append(string0).append(" IS NOT NULL ");
+               //               }
             }
             else
             {
@@ -478,17 +555,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
                if (wildcard)
                {
-//                  if (term.hasToken("ne") || term.hasToken("wo"))
-//                     sql.append(string0).append(" NOT LIKE ").append(stringI);
-//                  else
-                     sql.append(string0).append(" LIKE ").append(stringI);
+                  //                  if (term.hasToken("ne") || term.hasToken("wo"))
+                  //                     sql.append(string0).append(" NOT LIKE ").append(stringI);
+                  //                  else
+                  sql.append(string0).append(" LIKE ").append(stringI);
                }
                else
                {
-//                  if (term.hasToken("ne", "wo"))
-//                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
-//                  else
-                     sql.append(string0).append(" = ").append(stringI);
+                  //                  if (term.hasToken("ne", "wo"))
+                  //                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
+                  //                  else
+                  sql.append(string0).append(" = ").append(stringI);
                }
             }
 
@@ -654,11 +731,27 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
    public String quoteCol(String str)
    {
-      return columnQuote + str + columnQuote;
+      if(str == null)
+         System.out.println("asdf"); 
+         
+      
+      StringBuffer buff = new StringBuffer();
+      String[] parts = str.split("\\.");
+      for(int i=0; i<parts.length; i++)
+      {
+         buff.append(columnQuote).append(parts[i]).append(columnQuote);
+         if(i < parts.length -1)
+            buff.append(".");
+      }
+      
+      return buff.toString();//columnQuote + str + columnQuote;
    }
 
    public String asCol(String columnName)
    {
+      if(columnName.indexOf(".") < 0)
+         columnName = table.getName() + "." + columnName;
+         
       return quoteCol(columnName);
    }
 
