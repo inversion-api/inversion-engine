@@ -17,9 +17,11 @@ import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
+import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.spring.SpringBoot;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
@@ -72,7 +74,17 @@ public class SqlServiceFactory
       //         });
    }
 
+   public static void main(String[] args) throws Exception
+   {
+      SpringBoot.run(service(false));
+   }
+
    public static synchronized Service service() throws Exception
+   {
+      return service(true);
+   }
+
+   public static synchronized Service service(boolean startup) throws Exception
    {
       if (service != null)
          return service;
@@ -81,10 +93,112 @@ public class SqlServiceFactory
       {
          service = new Service()
             {
+               @Override
+               public void startup0()
+               {
+                  //
+                  //                  Thread t = new Thread(new Runnable()
+                  //                     {
+                  //                        public void run()
+                  //                        {
+                  try
+                  {
+                     SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
+
+                     service.withApi("northwind")//
+                            .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
+                            .withDb(sourceDb);
+
+                     Connection conn = sourceDb.getConnection();
+                     
+                     if (shouldLoad("h2"))
+                     {
+                        SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
+
+                        service.getApi("northwind")//
+                               .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
+                               .withDb(h2Db);
+                     }
+
+                     if (shouldLoad("mysql"))
+                     {
+                        SqlDb mysqlDb = null;
+                        {
+                           String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
+                           String mysqlUrl = "jdbc:mysql://" + mysqlHost + ":3306";
+
+                           Class.forName("com.mysql.jdbc.Driver").newInstance();
+                           Connection mysqlConn = null;
+                           boolean sourceLoaded = false;
+                           try
+                           {
+                              mysqlConn = DriverManager.getConnection(mysqlUrl, "testcase", "password");
+                              SqlUtils.execute(mysqlConn, "USE northwindsource");
+                              sourceLoaded = true;
+                           }
+                           catch (Exception ex)
+                           {
+                              ex.printStackTrace();
+                           }
+                           if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
+                           {
+                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
+                           }
+
+                           try
+                           {
+                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
+                           }
+                           catch (Exception ex)
+                           {
+                              ex.printStackTrace();
+                              throw ex;
+                           }
+                           mysqlUrl += "/northwindcopy";
+                           mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
+
+                           service.getApi("northwind")//
+                                  .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
+                                  .withAction(new RestAction()).getApi()//
+                                  .withDb(mysqlDb);
+                        }
+                     }
+                  }
+                  catch (Exception ex)
+                  {
+                     ex.printStackTrace();
+                     Utils.rethrow(ex);
+                  }
+                  //                        }
+                  //
+                  //                     });
+                  //
+                  //                  t.start();
+                  //                  try
+                  //                  {
+                  //                     System.out.println("joining");
+                  //                     t.join();
+                  //                     System.out.println("started");
+                  //                  }
+                  //                  catch (Exception ex)
+                  //                  {
+                  //                     ex.printStackTrace();
+                  //                  }
+               }
+               
+               public Chain service(Request req, Response res)
+               {
+                  Chain chain = super.service(req, res);
+                  //System.err.print(res.getDebug());
+                  return chain;
+               }
+
                public Response service(String method, String url, String body)
                {
                   Response res = super.service(method, url, body);
 
+                  
+                  
                   if (Chain.size() == 1)
                   {
                      if (res.getChain().request().isGet())
@@ -114,68 +228,14 @@ public class SqlServiceFactory
                }
             };
 
-         SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
-
-         service.withApi("northwind")//
-                .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
-                .withDb(sourceDb);
-
-         if (shouldLoad("h2"))
+         if (startup)
          {
-            SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
-
-            service.getApi("northwind")//
-                   .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
-                   .withDb(h2Db);
+            service.startup();
          }
-
-         if (shouldLoad("mysql"))
-         {
-            SqlDb mysqlDb = null;
-            {
-               String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
-               String mysqlUrl = "jdbc:mysql://" + mysqlHost + ":3306";
-
-               Class.forName("com.mysql.jdbc.Driver").newInstance();
-               Connection mysqlConn = null;
-               boolean sourceLoaded = false;
-               try
-               {
-                  mysqlConn = DriverManager.getConnection(mysqlUrl, "testcase", "password");
-                  SqlUtils.execute(mysqlConn, "USE northwindsource");
-                  sourceLoaded = true;
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-               }
-               if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
-               {
-                  SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
-               }
-
-               try
-               {
-                  SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-                  throw ex;
-               }
-               mysqlUrl += "/northwindcopy";
-               mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
-
-               service.getApi("northwind")//
-                      .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
-                      .withAction(new RestAction()).getApi()//
-                      .withDb(mysqlDb);
-            }
-         }
-
-         service.startup();
       }
-      catch (Exception ex)
+      catch (
+
+      Exception ex)
       {
          ex.printStackTrace();
          throw ex;
@@ -259,7 +319,7 @@ public class SqlServiceFactory
       db.withPass(pass);
       db.withCollectionPath(collectionPath);
 
-      System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url);
+      
 
       if (ddl != null)
       {
@@ -267,6 +327,9 @@ public class SqlServiceFactory
          {
             Connection conn = db.getConnection();
             SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
+            conn.commit();
+            
+            //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));
          }
          catch (Exception ex)
          {
