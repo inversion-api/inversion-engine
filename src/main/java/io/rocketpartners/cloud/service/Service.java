@@ -118,7 +118,7 @@ public class Service
     * Designed to be overridden of subclasses to lazy load/configure
     * the service.
     */
-   protected void preStartup()
+   protected void startup0()
    {
 
    }
@@ -131,7 +131,7 @@ public class Service
       starting = true;
       try
       {
-         preStartup();
+         startup0();
 
          configurator.loadConfig(this);
 
