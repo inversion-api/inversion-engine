@@ -17,13 +17,13 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.mysql.jdbc.Buffer;
 
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.utils.English;
@@ -405,44 +405,6 @@ public abstract class Db<T extends Db>
          buff.append(next);
       }
       return buff.toString();
-
-      //      name = name.trim().replaceAll(" +", " ");
-      //
-      //      while (name.startsWith("_") && name.length() > 1)
-      //         name = name.substring(1, name.length());
-      //
-      //      while (name.endsWith("_") && name.length() > 1)
-      //         name = name.substring(0, name.length() - 1);
-      //
-      //      name = name.trim().replaceAll("_+", " ");
-      //
-      //      //convert "_" case aka "Snake Case" to camel case ex: something_like_this to somethingLikeThis
-      //      int idx = name.indexOf("_");
-      //      while (idx > -1 && name.length() > 1)
-      //      {
-      //         name = name.substring(0, idx) + name.substring(idx + 1, name.length());
-      //         if (idx < name.length())
-      //            name = name.substring(0, idx) + Character.toUpperCase(name.charAt(idx)) + name.substring(idx + 1, name.length());
-      //
-      //         idx = name.indexOf("_");
-      //      }
-      //
-      //      //convert "space case" to camel case ex: "something like this" to somethingLikeThis
-      //      idx = name.indexOf(" ");
-      //      while (idx > -1 && name.length() > 1)
-      //      {
-      //         name = name.substring(0, idx) + name.substring(idx + 1, name.length());
-      //         if (idx < name.length())
-      //            name = name.substring(0, idx) + Character.toUpperCase(name.charAt(idx)) + name.substring(idx + 1, name.length());
-      //
-      //         idx = name.indexOf(" ");
-      //      }
-
-      //probably camel case with leading cap, lower first char 
-      //      if (Character.isUpperCase(name.charAt(0)))
-      //         name = Character.toLowerCase(name.charAt(0)) + name.substring(1, name.length());
-      //
-      //      return name;
    }
 
    protected String makeRelationshipUniqueName(Entity entity, Relationship rel)
@@ -564,44 +526,44 @@ public abstract class Db<T extends Db>
    {
       return cast(attr.getType(), value);
    }
-   //
-   //   public Object cast(String type, Object value)
-   //   {
-   //      return cast0(type, value);
-   //   }
-   //
-   //   protected Object cast0(String type, Object value)
-   //   {
-   //      try
-   //      {
-   //         return SqlUtils.cast(value, type);
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-   //      }
-   //   }
 
-   //   protected Map transformIn(ObjectNode node)
-   //   {
-   //      return null;
-   //   }
-   //
-   //   protected ObjectNode transformOut(Map<String, Object> row)
-   //   {
-   //      ObjectNode node = new ObjectNode();
-   //      if (collection == null)
-   //         return new ObjectNode(row);
-   //
-   //      for (Attribute attr : collection.getEntity().getAttributes())
-   //      {
-   //         String attrName = attr.getName();
-   //         String colName = attr.getColumn().getName();
-   //         Object val = row.get(colName);
-   //         node.put(attrName, val);
-   //      }
-   //
-   //      m return node;
-   //   }
+   public Set<Term> mapToColumns(Collection collection, Term term)
+   {
+      Set<Term> terms = new HashSet();
+      
+      if(term.getParent() == null)
+         terms.add(term);
+
+      if (collection == null)
+         return terms;
+
+      if (term.isLeaf() && !term.isQuoted())
+      {
+         String token = term.getToken();
+
+         while (token.startsWith("-") || token.startsWith("+"))
+            token = token.substring(1, token.length());
+
+         Attribute attr = collection.getAttribute(token);
+         if (attr != null)
+         {
+            String columnName = attr.getColumn().getName();
+
+            if (term.getToken().startsWith("-"))
+               columnName = "-" + columnName;
+
+            term.withToken(columnName);
+         }
+      }
+      else
+      {
+         for (Term child : term.getTerms())
+         {
+            terms.addAll(mapToColumns(collection, child));
+         }
+      }
+
+      return terms;
+   }
 
 }

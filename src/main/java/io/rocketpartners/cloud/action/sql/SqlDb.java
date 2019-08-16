@@ -23,8 +23,10 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -121,7 +123,7 @@ public class SqlDb extends Db<SqlDb>
 
    public SqlDb()
    {
-
+      //System.out.println("SqlDb() <init>");
    }
 
    public SqlDb(String name)
@@ -172,19 +174,24 @@ public class SqlDb extends Db<SqlDb>
          db = (SqlDb) table.getDb();
       }
 
+      Connection conn = db.getConnection();
+
       String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
 
-      String sql = (String) Chain.peek().remove(selectKey);
-      if (Utils.empty(sql))
-      {
-         if (table == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Table missing");
-         sql = " SELECT * FROM " + quoteCol(table.getName());
-      }
+      String selectSql = (String) Chain.peek().remove(selectKey);
+      //      if (Utils.empty(sql))
+      //      {
+      //         if (table == null)
+      //            throw new ApiException(SC.SC_400_BAD_REQUEST, "Table missing");
+      //         sql = " SELECT * FROM " + quoteCol(table.getName());
+      //      }
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
-      query.withSelectSql(sql);
       query.withDb(db);
+      if (selectSql != null)
+      {
+         query.withSelectSql(selectSql);
+      }
 
       return query.doSelect();
    }
@@ -309,10 +316,12 @@ public class SqlDb extends Db<SqlDb>
 
                   if (pool == null && !isShutdown())
                   {
+                     //System.out.println("CREATING NEW POOL: " + getUrl());
                      //pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
 
                      HikariConfig config = new HikariConfig();
-                     config.setDriverClassName(getDriver());
+                     String driver = getDriver();
+                     config.setDriverClassName(driver);
                      config.setJdbcUrl(getUrl());
                      config.setUsername(getUser());
                      config.setPassword(getPass());
@@ -329,6 +338,17 @@ public class SqlDb extends Db<SqlDb>
 
             ConnectionLocal.putConnection(this, conn);
          }
+
+         //         String res = "TABLE NOT FOUND";
+         //         try
+         //         {
+         //            res = SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1").toString();
+         //         }
+         //         catch(Exception ex)
+         //         {
+         //            
+         //         }
+         //System.out.println("GETTING CONNECTION: " + getUrl() + " - " + res);         
 
          return conn;
       }
@@ -771,6 +791,139 @@ public class SqlDb extends Db<SqlDb>
             }
          }
       }
+   }
+
+   public Set<Term> mapToColumns(Collection collection, Term term)
+   {
+      Set terms = new HashSet();
+      
+      if(term.getParent() == null)
+         terms.add(term);
+
+      if (collection == null)
+         return terms;
+
+      if (term.isLeaf() && !term.isQuoted())
+      {
+         String token = term.getToken();
+
+         while (token.startsWith("-") || token.startsWith("+"))
+            token = token.substring(1, token.length());
+
+         String name = "";
+         String[] parts = token.split("\\.");
+
+         //         if (parts.length > 2)//this could be a literal
+         //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
+
+         for (int i = 0; i < parts.length; i++)
+         {
+            String part = parts[i];
+
+            if (i == parts.length - 1)
+            {
+               Attribute attr = collection.getAttribute(parts[i]);
+
+               if (attr == null)
+                  break;
+               //throw new ApiException("Unable to identify related column for dotted attribute name: '" + token + "'");
+
+               name += attr.getColumn().getName();
+               break;
+            }
+            else
+            {
+               Relationship rel = collection.getRelationship(part);
+
+               if (rel == null)
+                  break;
+
+               //               if (rel == null)
+               //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
+
+               String aliasPrefix = "_join_" + rel.getEntity().getCollection().getName() + "_" + part + "_";
+
+               Term join = null;
+               for (int j = 0; j < 2; j++)
+               {
+                  String relatedTable = rel.getRelated().getTable().getName();
+
+                  if (rel.isManyToMany() && j == 0)
+                     relatedTable = rel.getFk1Col1().getTable().getName();
+
+                  String tableAlias = aliasPrefix + (j + 1);
+
+                  List joinTerms = new ArrayList();
+                  joinTerms.add(relatedTable);
+                  joinTerms.add(tableAlias);
+
+                  Index idx = j == 0 ? rel.getFkIndex1() : rel.getFkIndex2();
+                  if (idx == null)
+                     break;//will NOT be null only for M2M relationships
+
+                  name = tableAlias + ".";
+
+                  if (rel.isOneToMany())
+                  {
+                     for (Column col : idx.getColumns())
+                     {
+                        joinTerms.add(col.getTable().getName());
+                        joinTerms.add(col.getName());
+                        joinTerms.add(tableAlias);
+                        joinTerms.add(col.getPk().getName());
+                     }
+                  }
+                  else
+                  {
+                     if (j == 0)
+                     {
+                        for (Column col : idx.getColumns())
+                        {
+                           joinTerms.add(col.getPk().getTable().getName());
+                           joinTerms.add(col.getPk().getName());
+                           joinTerms.add(tableAlias);
+                           joinTerms.add(col.getName());
+                        }
+                     }
+                     else//second time through on M2M
+                     {
+                        for (Column col : idx.getColumns())
+                        {
+                           String m2mTbl = join.getToken(1);
+
+                           joinTerms.add(m2mTbl);
+                           joinTerms.add(col.getName());
+                           joinTerms.add(tableAlias);
+                           joinTerms.add(col.getPk().getName());
+                        }
+                     }
+                  }
+
+                  join = Term.term(null, "join", joinTerms);
+                  terms.add(join);
+               }
+
+               collection = rel.getRelated().getCollection();
+
+            }
+         }
+
+         if (!Utils.empty(name))
+         {
+            if (term.getToken().startsWith("-"))
+               name = "-" + name;
+            term.withToken(name);
+         }
+      }
+      else
+      {
+         for (Term child : term.getTerms())
+         {
+            terms.addAll(mapToColumns(collection, child));
+         }
+      }
+
+      return terms;
    }
 
    public SqlDb withType(String type)

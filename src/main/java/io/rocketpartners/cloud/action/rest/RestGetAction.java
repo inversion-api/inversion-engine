@@ -4,6 +4,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,9 +91,9 @@ public class RestGetAction extends Action<RestGetAction>
                String pkName = fk.getPk().getName();
                Object pkVal = entityKeyRow.get(pkName);
 
-               if(pkVal == null)
+               if (pkVal == null)
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
-               
+
                newHref += fk.getName() + "=" + pkVal + "&";
             }
 
@@ -151,9 +152,6 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      
-      
-      
       Results<ObjectNode> results = select(req, req.getCollection(), req.getParams(), api);
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
@@ -175,7 +173,7 @@ public class RestGetAction extends Action<RestGetAction>
          int foundRows = results.getFoundRows();
          if (foundRows >= 0)
          {
-            Chain.peek().put("foundRows", foundRows);
+            //  Chain.peek().put("foundRows", foundRows);
             res.withFoundRows(foundRows);
          }
 
@@ -230,6 +228,7 @@ public class RestGetAction extends Action<RestGetAction>
       // Normalize all of the params and convert attribute
       // names to column names.
       List<Term> terms = new ArrayList();
+
       if (params.size() > 0)
       {
          Parser parser = new Parser();
@@ -247,11 +246,9 @@ public class RestGetAction extends Action<RestGetAction>
                termStr = "eq(" + paramName + "," + paramValue + ")";
             }
             Term term = parser.parse(termStr);
-            
+
             if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
                continue;
-            
-            terms.add(term);
 
             if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
             {
@@ -282,9 +279,10 @@ public class RestGetAction extends Action<RestGetAction>
                }
             }
 
-            mapToColumns(collection, term);
+            terms.addAll(collection.getDb().mapToColumns(collection, term));
          }
       }
+
       Results results = null;
 
       if (collection == null)
@@ -462,9 +460,9 @@ public class RestGetAction extends Action<RestGetAction>
       for (Relationship rel : collection.getEntity().getRelationships())
       {
          boolean shouldExpand = shouldExpand(expands, expandsPath, rel);
-         
+
          //System.out.println("should expand " + Chain.getDepth() + " -> " + rel + " -> " + shouldExpand);
-         
+
          if (shouldExpand)
          {
             if (pkCache == null)
@@ -756,38 +754,6 @@ public class RestGetAction extends Action<RestGetAction>
          str = str.substring(idx + 1, str.length());
       return str;
 
-   }
-
-   protected static void mapToColumns(Collection collection, Term term)
-   {
-      if (collection == null)
-         return;
-
-      if (term.isLeaf() && !term.isQuoted())
-      {
-         String token = term.getToken();
-
-         while (token.startsWith("-") || token.startsWith("+"))
-            token = token.substring(1, token.length());
-
-         Attribute attr = collection.getAttribute(token);
-         if (attr != null)
-         {
-            String columnName = attr.getColumn().getName();
-
-            if (term.getToken().startsWith("-"))
-               columnName = "-" + columnName;
-
-            term.withToken(columnName);
-         }
-      }
-      else
-      {
-         for (Term child : term.getTerms())
-         {
-            mapToColumns(collection, child);
-         }
-      }
    }
 
    static void mapToAttributes(Collection collection, Term term)
