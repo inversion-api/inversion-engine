@@ -911,7 +911,7 @@ public class SqlUtils
 
    public static void runDdl(Connection con, String[] sql) throws SQLException
    {
-      System.out.print("running ddl: ");
+      //System.out.print("running ddl: ");
 
       if (sql != null && sql.length > 0)
       {
@@ -953,7 +953,7 @@ public class SqlUtils
             con.setAutoCommit(oldAutoCommit);
          }
       }
-      System.out.println(".done");
+      //System.out.println(".done");
    }
 
    /*

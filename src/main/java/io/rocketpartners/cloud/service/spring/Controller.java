@@ -108,7 +108,18 @@ public class Controller implements InitializingBean
             });
 
          servlet.getService().setProfile(profile);
-         servlet.getService().startup();
+
+         //WARNING DON'T STARTUP THE SERVICE HERE.  
+         //WDB 2019-08-19
+         //There seems to be a class loader issues or something that causes unreliable 
+         //side effects if the service is loaded at this point.  Letting the service
+         //lazy load itself on first request seems to get around it.  This was discovered
+         //when testing with H2DB. The DB would bootstrap correctly but then would not
+         //have any tables in it when a request came in.  Also if an H2 connection
+         //was made before SpringBoot started, it would cause SprintBoot to fail loading
+         //...something to do with a URL stream handler already being registered by H2.
+         //
+         //servlet.getService().startup();
 
       }
       catch (Exception e)

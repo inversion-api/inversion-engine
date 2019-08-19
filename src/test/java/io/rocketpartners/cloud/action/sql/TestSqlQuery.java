@@ -285,8 +285,7 @@ public class TestSqlQuery extends TestCase
       select += " LEFT JOIN Country c ON e.country = c.country_name";
 
       dynamicSql = "";
-      dynamicSql += " SELECT y.year, e.*, p.*,  ";
-      dynamicSql += " `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'";
+      dynamicSql += " SELECT `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed'";
       dynamicSql += " FROM Entry e  ";
       dynamicSql += " JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) ";
       dynamicSql += " JOIN Person p ON e.personId = p.id ";

@@ -12,40 +12,43 @@ import junit.framework.TestCase;
 public class TestConfig extends TestCase
 {
 
-   @Test
-   public void testConfigSimple()
-   {
-      Service service = new Service();
-
-      service.setProfile("simple");
-      service.setConfigPath("io/rocketpartners/cloud/service/config/");
-
-      try
-      {
-         service.startup();
-         Assert.assertEquals(true, service.isConfigDebug());
-      }
-      catch (Exception e)
-      {
-         Assert.fail("service.startup() threw an exception - " + e.getMessage());
-      }
-
-   }
+//   @Test
+//   public void testConfigSimple()
+//   {
+//      Service service = new Service();
+//
+//      service.setProfile("simple");
+//      service.setConfigPath("io/rocketpartners/cloud/service/config/");
+//
+//      try
+//      {
+//         service.startup();
+//         Assert.assertEquals(true, service.isConfigDebug());
+//      }
+//      catch (Exception e)
+//      {
+//         Assert.fail("service.startup() threw an exception - " + e.getMessage());
+//      }
+//
+//   }
 
    @Test
    public void testConfigDB()
    {
       // Do this because I needed a static jdbc url that could be configured in the properties file
-      SqlDb h2Db = SqlServiceFactory.createDb("db", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-testconfig", "sa", "", "test/");
+      //SqlDb h2Db = SqlServiceFactory.createDb("db", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-testconfig", "sa", "", "test/");
 
       Service service = new Service()//
                                      .withApi("test")//
-                                     .withDb(new SqlDb().withName("db").withType("mysql"))//
+                                     //.withDb(new SqlDb().withName("db").withType("mysql"))//
                                      .makeEndpoint("GET,PUT,POST,DELETE", "test/", "*").withAction(new RestAction()).getApi()//
                                      .getService();
 
       service.setProfile("someprofile");
       service.setConfigPath("io/rocketpartners/cloud/service/config/");
+      
+      service.setConfigDebug(true);
+      service.setConfigOut("inversion.debug.text");
 
       try
       {
@@ -58,6 +61,7 @@ public class TestConfig extends TestCase
       }
       catch (Exception e)
       {
+         e.printStackTrace();
          Assert.fail("service.startup() threw an exception - " + e.getMessage());
       }
 

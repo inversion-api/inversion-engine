@@ -114,6 +114,15 @@ public class Service
       destroyed = true;
    }
 
+   /*
+    * Designed to be overridden of subclasses to lazy load/configure
+    * the service.
+    */
+   protected void startup0()
+   {
+
+   }
+
    public synchronized Service startup()
    {
       if (started || starting) //initing is an accidental recursion guard
@@ -122,6 +131,8 @@ public class Service
       starting = true;
       try
       {
+         startup0();
+
          configurator.loadConfig(this);
 
          for (Api api : apis)

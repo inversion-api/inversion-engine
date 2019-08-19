@@ -45,6 +45,70 @@ public class TestSqlGetAction extends TestRestGetActions
       return SqlServiceFactory.service();
    }
 
+   @Test
+   public void testRelatedCollectionJoinSelect() throws Exception
+   {
+      Response res = null;
+      Service service = service();
+
+      res = service.get(url("customers?orders.shipCity=NONE&customerid=VINET"));
+      assertEquals(res.getFoundRows(), 0);
+
+      res = service.get(url("customers?customerid=VINET&orders.freight=32.3800&expands=orders"));
+      res.dump();
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/customers/VINET"));
+      assertEquals(res.findArray("data.0.orders").length(), 1);
+
+      res = service.get(url("customers?customerid=VINET&in(orders.freight,32.3800,11.0800)&expands=orders"));
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/customers/VINET"));
+      assertEquals(res.findArray("data.0.orders").length(), 2);
+
+      res = service.get(url("orders?in(freight,32.3800,11.0800)&customer.customerid=VINET&expands=customer"));
+      assertEquals(res.getFoundRows(), 2);
+      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/VINET"));
+      assertTrue(res.findString("data.1.customer.href").endsWith("/customers/VINET"));
+
+      //composite key many-to-many
+      res = service.get(url("employees?orderdetails.orderid=10258&expands=orderdetails"));
+      res.dump();
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/employees/1"));
+      assertEquals(res.findArray("data.0.orderdetails").length(), 3);
+      assertEquals(res.findString("data.0.orderdetails.0.orderid"), "10258");
+
+      //joining back to yourself...have to alias table as join still
+      res = service.get(url("employees?reportsto.employeeid=2"));
+      assertEquals(res.getFoundRows(), 5);
+      assertTrue(res.findString("data.0.reportsto").endsWith("/employees/2"));
+
+      //joining back to yourself...the other way, finds #3's boss...it would be silly to do this but it needs to work
+      res = service.get(url("employees?employees.employeeid=3"));
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/employees/2"));
+
+      //three way join on the employee table
+      res = service.get(url("employees?employees.employeeid=6&reportsto.employeeid=2"));
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/employees/5"));
+
+      //works
+      res = service.get(url("employees?employees.lastname=Davolio&expands=employees"));
+      res.dump();
+      assertEquals(res.getFoundRows(), 1);
+      assertTrue(res.findString("data.0.href").endsWith("/employees/2"));
+      assertEquals(res.findArray("data.0.employees").length(), 1);
+      assertEquals(res.find("data.0.employees.0.lastname"), "Davolio");
+
+      res = service.get(url("employees?orderdetails.orderid=10258&expands=orderdetails"));
+      assertEquals(res.getFoundRows(), 1);
+
+      //none of the orderdetails from above have a quantity of 90
+      res = service.get(url("employees?orderdetails.orderid=10258&orderdetails.quantity=90"));
+      assertEquals(res.getFoundRows(), 0);
+   }
+
    /**
     * Makes sure that MTM link tables are not recognized as entities
     *  
@@ -222,7 +286,8 @@ public class TestSqlGetAction extends TestRestGetActions
       res = service.get(url("orderdetails/10395~46")).statusOk();
       assertEquals(1, res.getFoundRows());
 
-      res = service.get(url("orders/10395?expands=orderdetails")).statusOk();
+      res = service.get(url("orders/10395?expands=orderdetails"));
+      res.statusOk();
       assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10395~46"));
 
       res = service.get(url("orderdetails/10395~46?expands=order")).statusOk();

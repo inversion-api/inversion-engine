@@ -310,13 +310,26 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
-      if (table != null)
+      Table table = this.table;
+      String shortName = columnName;
+
+      if (columnName != null)
       {
-         Column col = table.getColumn(columnName);
-         if (col == null)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
-         value = db.cast(col, value);
+         if (columnName.indexOf(".") > -1)
+         {
+            table = table.getDb().getTable(columnName.substring(0, columnName.indexOf(".")));
+            shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
+         }
+
+         if (table != null)
+         {
+            Column col = table.getColumn(shortName);
+            if (col == null)
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+            value = db.cast(col, value);
+         }
       }
+      
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }

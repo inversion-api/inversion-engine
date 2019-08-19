@@ -8,27 +8,21 @@ import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.List;
 
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClientBuilder;
-import com.amazonaws.services.rds.model.CreateDBInstanceRequest;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBInstanceAlreadyExistsException;
-import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
-import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
-
 import io.rocketpartners.cloud.action.rest.RestAction;
+import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.spring.SpringBoot;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlServiceFactory
 {
-   //   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
-   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
+   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 
@@ -72,7 +66,17 @@ public class SqlServiceFactory
       //         });
    }
 
+   public static void main(String[] args) throws Exception
+   {
+      SpringBoot.run(service(false));
+   }
+
    public static synchronized Service service() throws Exception
+   {
+      return service(true);
+   }
+
+   public static synchronized Service service(boolean startup) throws Exception
    {
       if (service != null)
          return service;
@@ -81,6 +85,85 @@ public class SqlServiceFactory
       {
          service = new Service()
             {
+               @Override
+               public void startup0()
+               {
+                  try
+                  {
+                     SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
+
+                     service.withApi("northwind")//
+                            .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
+                            .withDb(sourceDb);
+
+                     Connection conn = sourceDb.getConnection();
+
+                     if (shouldLoad("h2"))
+                     {
+                        SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
+
+                        service.getApi("northwind")//
+                               .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
+                               .withDb(h2Db);
+                     }
+
+                     if (shouldLoad("mysql"))
+                     {
+                        SqlDb mysqlDb = null;
+                        {
+                           String mysqlUrl = "jdbc:mysql://testnorthwind.cb4bo9agap0y.us-east-1.rds.amazonaws.com:3306";
+
+                           Class.forName("com.mysql.jdbc.Driver").newInstance();
+                           Connection mysqlConn = null;
+                           boolean sourceLoaded = false;
+                           try
+                           {
+                              mysqlConn = DriverManager.getConnection(mysqlUrl, "testcase", "password");
+                              SqlUtils.execute(mysqlConn, "USE northwindsource");
+                              sourceLoaded = true;
+                           }
+                           catch (Exception ex)
+                           {
+                              ex.printStackTrace();
+                           }
+                           if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
+                           {
+                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
+                           }
+
+                           try
+                           {
+                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
+                           }
+                           catch (Exception ex)
+                           {
+                              ex.printStackTrace();
+                              throw ex;
+                           }
+                           mysqlUrl += "/northwindcopy";
+                           mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
+
+                           service.getApi("northwind")//
+                                  .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
+                                  .withAction(new RestAction()).getApi()//
+                                  .withDb(mysqlDb);
+                        }
+                     }
+                  }
+                  catch (Exception ex)
+                  {
+                     ex.printStackTrace();
+                     Utils.rethrow(ex);
+                  }
+               }
+
+               public Chain service(Request req, Response res)
+               {
+                  Chain chain = super.service(req, res);
+                  //System.err.print(res.getDebug());
+                  return chain;
+               }
+
                public Response service(String method, String url, String body)
                {
                   Response res = super.service(method, url, body);
@@ -114,68 +197,14 @@ public class SqlServiceFactory
                }
             };
 
-         SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
-
-         service.withApi("northwind")//
-                .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
-                .withDb(sourceDb);
-
-         if (shouldLoad("h2"))
+         if (startup)
          {
-            SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
-
-            service.getApi("northwind")//
-                   .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
-                   .withDb(h2Db);
+            service.startup();
          }
-
-         if (shouldLoad("mysql"))
-         {
-            SqlDb mysqlDb = null;
-            {
-               String mysqlHost = createMySqlRDS("mysql", "testnorthwind", "testcase", "password");
-               String mysqlUrl = "jdbc:mysql://" + mysqlHost + ":3306";
-
-               Class.forName("com.mysql.jdbc.Driver").newInstance();
-               Connection mysqlConn = null;
-               boolean sourceLoaded = false;
-               try
-               {
-                  mysqlConn = DriverManager.getConnection(mysqlUrl, "testcase", "password");
-                  SqlUtils.execute(mysqlConn, "USE northwindsource");
-                  sourceLoaded = true;
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-               }
-               if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
-               {
-                  SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
-               }
-
-               try
-               {
-                  SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-                  throw ex;
-               }
-               mysqlUrl += "/northwindcopy";
-               mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
-
-               service.getApi("northwind")//
-                      .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
-                      .withAction(new RestAction()).getApi()//
-                      .withDb(mysqlDb);
-            }
-         }
-
-         service.startup();
       }
-      catch (Exception ex)
+      catch (
+
+      Exception ex)
       {
          ex.printStackTrace();
          throw ex;
@@ -259,14 +288,15 @@ public class SqlServiceFactory
       db.withPass(pass);
       db.withCollectionPath(collectionPath);
 
-      System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url);
-
       if (ddl != null)
       {
          try
          {
             Connection conn = db.getConnection();
             SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
+            conn.commit();
+
+            //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));
          }
          catch (Exception ex)
          {
@@ -279,95 +309,4 @@ public class SqlServiceFactory
       return db;
    }
 
-   //Utility provisions micro MySQL RDS instance if it doesn't already exist, and returns the public URL
-   public static String createMySqlRDS(String type, String instanceName, String username, String password)
-   {
-      AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
-
-      CreateDBInstanceRequest dbRequest = null;
-
-      if ("mysql".equalsIgnoreCase(type))
-      {
-         dbRequest = new CreateDBInstanceRequest(instanceName, 20, "db.t2.micro", "mysql", username, password);
-         dbRequest.setEngineVersion("5.6.40");
-      }
-      else
-      {
-         throw new RuntimeException("Unsupported RDS type: " + type);
-      }
-
-      dbRequest.setDBName(instanceName);
-
-      String url = null;
-      try
-      {
-         DBInstance db = client.createDBInstance(dbRequest);
-         System.out.println("creating DB, need to wait for endpoint…");
-         while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
-         {
-            System.out.println("waiting…");
-            Thread.sleep(5000);
-         }
-         System.out.println("DB created, retrieving endpoint");
-         url = db.getEndpoint().toString();
-      }
-      catch (DBInstanceAlreadyExistsException e)
-      {
-         DescribeDBInstancesResult dbs = client.describeDBInstances();
-         for (DBInstance db : dbs.getDBInstances())
-         {
-            if (db.getDBInstanceIdentifier().equalsIgnoreCase(instanceName))
-            {
-               System.out.println("found existing DB, waiting for endpoint…");
-               while (db.getDBInstanceStatus().equalsIgnoreCase("creating"))
-               {
-                  System.out.println("waiting…");
-                  try
-                  {
-                     Thread.sleep(5000);
-                  }
-                  catch (InterruptedException e1)
-                  {
-                     e1.printStackTrace();
-                  }
-               }
-               System.out.println("endpoint available");
-               url = db.getEndpoint().getAddress();
-               break;
-            }
-         }
-      }
-      catch (NullPointerException e)
-      {
-         System.out.println("Null Pointer Exception!");
-         e.printStackTrace();
-         url = null;
-      }
-      catch (Exception e)
-      {
-         System.out.println("Error creating RDS Instance: " + e.getMessage());
-         e.printStackTrace();
-         url = null;
-      }
-      return url;
-   }
-
-   public static boolean deleteMySqlRDS(String instanceName)
-   {
-      boolean result = false;
-      try
-      {
-         AmazonRDS client = AmazonRDSClientBuilder.defaultClient();
-         DeleteDBInstanceRequest deleteRequest = new DeleteDBInstanceRequest(instanceName).withSkipFinalSnapshot(true);
-         client.deleteDBInstance(deleteRequest);
-         result = true;
-      }
-      catch (Exception e)
-      {
-         System.out.println(e);
-         e.printStackTrace();
-
-      }
-      return result;
-   }
 }
