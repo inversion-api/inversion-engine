@@ -788,7 +788,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          boolean wildcard = token.indexOf('%') >= 0;
          if (wildcard)
          {
-            // escape underscores - SQL pattern matching enables you to use "_" to match any single character
+            // escape underscores because SQL pattern matching enables you to use "_" to match any single character and we don't want that behavior
             token = token.replace("_", "\\_");
          }
 
