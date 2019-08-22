@@ -784,6 +784,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          {
             token = token.replace('*', '%');
          }
+
+         boolean wildcard = token.indexOf('%') >= 0;
+         if (wildcard)
+         {
+            // escape underscores because SQL pattern matching enables you to use "_" to match any single character and we don't want that behavior
+            token = token.replace("_", "\\_");
+         }
+
       }
 
       return stringQuote + token.toString() + stringQuote;

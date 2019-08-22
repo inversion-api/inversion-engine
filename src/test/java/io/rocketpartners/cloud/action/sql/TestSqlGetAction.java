@@ -312,4 +312,43 @@ public class TestSqlGetAction extends TestRestGetActions
       assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/employees/5"));
    }
 
+   @Test
+   public void testWildcardAndUnderscores() throws Exception
+   {
+      Service service = service();
+      Response res = null;
+      res = service.get(url("indexlogs?w(error,ERROR_MSG)")).statusOk();
+
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+
+      String debug = res.getDebug().toLowerCase();
+      if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+      {
+         assertTrue(debug.indexOf("args=[%error\\_msg%]") > 0);
+      }
+
+      res = service.get(url("indexlogs?w(error,ERROR MSG)")).statusOk();
+
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+
+      debug = res.getDebug().toLowerCase();
+      if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+      {
+         assertTrue(debug.indexOf("args=[%error msg%]") > 0);
+      }
+      
+      res = service.get(url("indexlogs?eq(error,ERROR_MSG foo)")).statusOk();
+
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+
+      debug = res.getDebug().toLowerCase();
+      if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+      {
+         assertTrue(debug.indexOf("args=[error_msg foo]") > 0);
+      }
+
+     
+
+   }
+
 }
