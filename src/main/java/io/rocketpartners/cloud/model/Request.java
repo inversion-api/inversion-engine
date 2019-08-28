@@ -312,8 +312,6 @@ public class Request
    public Map<String, String> getParams()
    {
       Map<String, String> params = url.getParams();
-      params.putAll(Chain.peek().getConfig());
-
       return params;
    }
 
