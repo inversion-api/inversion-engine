@@ -510,6 +510,35 @@ public class Utils
       return found;
    }
 
+   public static String dequote(String str)
+   {
+      return dequote(str, new char[]{'\'', '"', '`'});
+   }
+
+   public static String dequote(String str, char[] quoteChars)
+   {
+      if (str == null)
+         return null;
+
+      while (str.length() >= 2 && str.charAt(0) == str.charAt(str.length() - 1))// && (str.charAt(0) == '\'' || str.charAt(0) == '"' || str.charAt(0) == '`'))
+      {
+         boolean changed = false;
+         for (int i = 0; i < quoteChars.length; i++)
+         {
+            if (str.charAt(0) == quoteChars[i])
+            {
+               str = str.substring(1, str.length() - 1);
+               changed = true;
+               break;
+            }
+         }
+         if (!changed)
+            break;
+      }
+
+      return str;
+   }
+
    public static int roundUp(int num, int divisor)
    {
       int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
@@ -844,28 +873,33 @@ public class Utils
       return true;
    }
 
-   public static Response assertDebug(Response resp, String... matches)
+   public static Response assertDebug(Response resp, String lineMatch, String... matches)
    {
       String debug = resp.getDebug();
 
-      int idx = debug.indexOf("DynamoDbQuery");
+      debug = debug.substring(0, debug.indexOf("<< response"));
+
+      int idx = debug.indexOf(" " + lineMatch + " ");
+      if (idx < 0)
+         return resp;
+
       String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
 
-      for (String match : matches)
+      for (int i = 0; i < matches.length; i++)
       {
+         String match = matches[i];
          List<String> matchTokens = split(match, ' ', '\'', '"', '{', '}');
          for (String matchToken : matchTokens)
          {
             if (debugLine.indexOf(matchToken) < 0)
             {
-               debug = resp.getDebug();
-               idx = debug.indexOf("<< response -------------");
-               debug = debug.substring(0, idx) + "[E]: " + match + " TEST ERROR CAN'T FIND THIS IN DEBUG LINES\r\n\r\n" + debug.substring(idx, debug.length());
+               String msg = "ERROR: Can't find match token in debug line";
+               msg += "\r\n" + "  - debug line    : " + debugLine;
+               msg += "\r\n" + "  - missing token : " + matchToken;
 
-               System.out.println(debug);
+               System.err.println(msg);
 
-               //System.exit(0);
-               error("missing debug match: '" + match + "' in debug line: " + debugLine);
+               error(msg);
 
             }
          }
