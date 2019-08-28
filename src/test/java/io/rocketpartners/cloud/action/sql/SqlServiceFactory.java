@@ -160,7 +160,11 @@ public class SqlServiceFactory
                public Chain service(Request req, Response res)
                {
                   Chain chain = super.service(req, res);
-                  //System.err.print(res.getDebug());
+
+                  String debug = res.getDebug();
+                  debug = debug.substring(0, debug.indexOf("<< response"));
+
+                  System.out.print(debug);
                   return chain;
                }
 
