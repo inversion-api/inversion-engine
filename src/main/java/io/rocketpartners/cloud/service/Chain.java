@@ -357,6 +357,23 @@ public class Chain
 
    public String getConfig(String key, String defaultValue)
    {
+      if (request == null)
+      {
+         System.out.println("The Request on the Chain is null, this should never happen");
+      }
+      else if (request.getEndpoint() == null)
+      {
+         System.out.println("The Endpoint on the Request is null, this should never happen");
+         System.out.println(" -- Chain stack starting with this chain and then every parent after");
+
+         Chain tempChain = this;
+         while (tempChain != null)
+         {
+            System.out.println(" ----  " + tempChain + " ::: " + tempChain.request() + " ::: " + tempChain.request().getUrl());
+            tempChain = tempChain.getParent();
+         }
+      }
+
       String value = request.getEndpoint().getConfig(key);
       if (!Utils.empty(value))
       {

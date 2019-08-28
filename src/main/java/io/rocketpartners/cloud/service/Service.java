@@ -292,57 +292,58 @@ public class Service
          startup();
 
       Chain chain = Chain.push(this, req, res);
-      req.withChain(chain);
-      res.withChain(chain);
-
-      //--
-      //-- CORS header setup
-      //--
-      String allowedHeaders = new String(this.allowedHeaders);
-      String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
-      if (corsRequestHeader != null)
-      {
-         List<String> headers = Arrays.asList(corsRequestHeader.split(","));
-         for (String h : headers)
-         {
-            h = h.trim();
-            allowedHeaders = allowedHeaders.concat(h).concat(",");
-         }
-      }
-      res.withHeader("Access-Control-Allow-Origin", "*");
-      res.withHeader("Access-Control-Allow-Credentials", "true");
-      res.withHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-      res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
-
-      //--
-      //-- End CORS Header Setup
-
-      if (req.isMethod("options"))
-      {
-         //this is a CORS preflight request. All of hte work was done bove
-         res.withStatus(SC.SC_200_OK);
-         return chain;
-      }
-
-      if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
-      {
-         res.withStatus(SC.SC_404_NOT_FOUND);
-         return chain;
-      }
-
-      String xfp = req.getHeader("X-Forwarded-Proto");
-      String xfh = req.getHeader("X-Forwarded-Host");
-      if (xfp != null || xfh != null)
-      {
-         if (xfp != null)
-            req.getUrl().withProtocol(xfp);
-
-         if (xfh != null)
-            req.getUrl().withHost(xfh);
-      }
 
       try
       {
+         req.withChain(chain);
+         res.withChain(chain);
+
+         //--
+         //-- CORS header setup
+         //--
+         String allowedHeaders = new String(this.allowedHeaders);
+         String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
+         if (corsRequestHeader != null)
+         {
+            List<String> headers = Arrays.asList(corsRequestHeader.split(","));
+            for (String h : headers)
+            {
+               h = h.trim();
+               allowedHeaders = allowedHeaders.concat(h).concat(",");
+            }
+         }
+         res.withHeader("Access-Control-Allow-Origin", "*");
+         res.withHeader("Access-Control-Allow-Credentials", "true");
+         res.withHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+         res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
+
+         //--
+         //-- End CORS Header Setup
+
+         if (req.isMethod("options"))
+         {
+            //this is a CORS preflight request. All of hte work was done bove
+            res.withStatus(SC.SC_200_OK);
+            return chain;
+         }
+
+         if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
+         {
+            res.withStatus(SC.SC_404_NOT_FOUND);
+            return chain;
+         }
+
+         String xfp = req.getHeader("X-Forwarded-Proto");
+         String xfh = req.getHeader("X-Forwarded-Host");
+         if (xfp != null || xfh != null)
+         {
+            if (xfp != null)
+               req.getUrl().withProtocol(xfp);
+
+            if (xfh != null)
+               req.getUrl().withHost(xfh);
+         }
+
          Url url = req.getUrl();
 
          String urlPath = url.getPath();
