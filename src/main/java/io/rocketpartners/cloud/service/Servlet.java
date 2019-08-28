@@ -37,15 +37,46 @@ import com.amazonaws.util.IOUtils;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Request;
-import io.rocketpartners.cloud.model.Response;
-import io.rocketpartners.cloud.model.SC;
-import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.model.Request.Upload;
 import io.rocketpartners.cloud.model.Request.Uploader;
+import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Servlet extends HttpServlet
 {
+   public static class ServletLocal
+   {
+      static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
+      static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
+
+      public static void set(HttpServletRequest req, HttpServletResponse res)
+      {
+         request.set(req);
+         response.set(res);
+      }
+
+      public static void setRequest(HttpServletRequest req)
+      {
+         request.set(req);
+      }
+
+      public static void setResponse(HttpServletResponse res)
+      {
+         response.set(res);
+      }
+
+      public static HttpServletRequest getRequest()
+      {
+         return request.get();
+      }
+
+      public static HttpServletResponse getResponse()
+      {
+         return response.get();
+      }
+   }
+
    Service service = new Service();
 
    public void destroy()
@@ -71,6 +102,7 @@ public class Servlet extends HttpServlet
    @Override
    public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
    {
+      ServletLocal.set(httpReq, httpResp);
 
       Response res = null;
       Request req = null;
