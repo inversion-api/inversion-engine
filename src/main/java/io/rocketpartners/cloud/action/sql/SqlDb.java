@@ -108,13 +108,28 @@ public class SqlDb extends Db<SqlDb>
             @Override
             public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
             {
+               String debugPrefix = "sql ";
+
+               String debugType = "unknown";
+
+               if (Chain.peek() != null)
+               {
+                  Collection coll = Chain.getRequest().getCollection();
+                  if (coll != null && coll.getDb() != null)
+                  {
+                     Db db = coll.getDb();
+                     debugType = db.getType().toLowerCase();
+                  }
+               }
+               debugPrefix += debugType;
+
                args = (args != null && args.getClass().isArray() ? Arrays.asList((Object[]) args) : args);
 
                sql = sql.replaceAll("\r", "");
                sql = sql.replaceAll("\n", " ");
                sql = sql.trim().replaceAll(" +", " ");
                StringBuffer buff = new StringBuffer("");
-               buff.append("SQL -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
+               buff.append(debugPrefix).append(" -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                String msg = buff.toString();
                Chain.debug(msg);
             }
@@ -173,8 +188,6 @@ public class SqlDb extends Db<SqlDb>
       {
          db = (SqlDb) table.getDb();
       }
-
-      Connection conn = db.getConnection();
 
       String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
 
@@ -796,8 +809,8 @@ public class SqlDb extends Db<SqlDb>
    public Set<Term> mapToColumns(Collection collection, Term term)
    {
       Set terms = new HashSet();
-      
-      if(term.getParent() == null)
+
+      if (term.getParent() == null)
          terms.add(term);
 
       if (collection == null)
