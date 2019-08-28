@@ -36,12 +36,7 @@ public abstract class Action<A extends Action> extends Rule<A>
 
    }
 
-   public Action(String config)
-   {
-      withConfig(config);
-   }
-
-   public Action(String config, String includePaths, String excludePaths)
+   public Action(String includePaths, String excludePaths, String config)
    {
       withConfig(config);
       withIncludePaths(includePaths);
