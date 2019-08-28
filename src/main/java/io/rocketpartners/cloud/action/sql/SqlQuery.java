@@ -37,6 +37,7 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.SqlUtils;
+import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
@@ -59,6 +60,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (term.hasToken("eq"))
       {
          String name = term.getToken(0);
+         
+         if(name.endsWith(".select"))
+            return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
          if (name.indexOf(".") < 0 && table != null && table.getColumn(name) == null)
@@ -435,30 +439,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return "?";
    }
 
-   public static String dequote(String str)
-   {
-      char[] quoteChars = new char[]{'\'', '"', '`'};
-      if (str == null)
-         return null;
-
-      while (str.length() >= 2 && str.charAt(0) == str.charAt(str.length() - 1))// && (str.charAt(0) == '\'' || str.charAt(0) == '"' || str.charAt(0) == '`'))
-      {
-         boolean changed = false;
-         for (int i = 0; i < quoteChars.length; i++)
-         {
-            if (str.charAt(0) == quoteChars[i])
-            {
-               str = str.substring(1, str.length() - 1);
-               changed = true;
-               break;
-            }
-         }
-         if (!changed)
-            break;
-      }
-
-      return str;
-   }
 
    protected String print(Term term, String col, boolean preparedStmt)
    {
@@ -517,7 +497,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                String val = strings.get(i);
                if (val.charAt(0) != columnQuote)
                {
-                  val = dequote(val);//t.getToken();//go back to the unprinted/quoted version
+                  val = Utils.dequote(val);//t.getToken();//go back to the unprinted/quoted version
                   strings.set(i, replace(term, t, i, col, val));
                }
             }
