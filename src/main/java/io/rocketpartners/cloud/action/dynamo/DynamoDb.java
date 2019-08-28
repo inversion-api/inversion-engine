@@ -486,12 +486,31 @@ public class DynamoDb extends Db<DynamoDb>
             return null;
 
          if (type == null)
+         {
+            try
+            {
+               if (value.toString().indexOf(".") < 0)
+               {
+                  value = Long.parseLong(value.toString());
+               }
+               else
+               {
+                  value = Double.parseDouble(value.toString());
+               }
+
+               return value;
+            }
+            catch (Exception ex)
+            {
+
+            }
             return value.toString();
+         }
 
          switch (type)
          {
             case "N":
-               return Long.parseLong(value.toString());
+               return Double.parseDouble(value.toString());
 
             case "BOOL":
                return Boolean.parseBoolean(value.toString());

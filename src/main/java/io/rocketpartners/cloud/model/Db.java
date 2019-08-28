@@ -131,7 +131,7 @@ public abstract class Db<T extends Db>
                return value.toString();
 
             case "N":
-               return Long.parseLong(value.toString());
+               return value.toString().indexOf(".") < 0 ? Long.parseLong(value.toString()) : Double.parseDouble(value.toString());
 
             case "BOOL":
                return Boolean.parseBoolean(value.toString());
@@ -519,7 +519,7 @@ public abstract class Db<T extends Db>
 
    public Object cast(Column column, Object value)
    {
-      return cast(column.getType(), value);
+      return cast(column != null ? column.getType() : null, value);
    }
 
    public Object cast(Attribute attr, Object value)
