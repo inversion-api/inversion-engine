@@ -594,7 +594,7 @@ public class Service
       return chain;
    }
 
-   void writeResponse(Request req, Response res) throws Exception
+   protected void writeResponse(Request req, Response res) throws Exception
    {
       boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();
