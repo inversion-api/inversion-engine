@@ -49,7 +49,20 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected int maxRows        = 100;
 
-   protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", "includes", "excludes", "expands"));
+   /**
+    * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves 
+    */
+   protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+
+   public RestGetAction()
+   {
+
+   }
+
+   public RestGetAction(String inludePaths)
+   {
+      super(inludePaths, null, null);
+   }
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -170,15 +183,19 @@ public class RestGetAction extends Action<RestGetAction>
          res.withPageSize(page.getPageSize());
          res.withPageNum(page.getPageNum());
 
+         int offest = page.getOffset();
+         int limit = page.getLimit();
+
          int foundRows = results.getFoundRows();
+
+         if (foundRows < 0 && results.size() > 0 && offest <= 0 && results.size() < limit)
+            foundRows = results.size();
+
          if (foundRows >= 0)
          {
             //  Chain.peek().put("foundRows", foundRows);
             res.withFoundRows(foundRows);
          }
-
-         int offest = page.getOffset();
-         int limit = page.getLimit();
 
          if (results.size() > 0)
          {
@@ -190,7 +207,8 @@ public class RestGetAction extends Action<RestGetAction>
                   String next = req.getUrl().getOriginal();
                   for (Term nextTerm : nextTerms)
                   {
-                     next = stripTerms(next, nextTerm.getToken());
+                     String toStrip = nextTerm.getToken();
+                     next = stripTerms(next, toStrip);
 
                      if (next.indexOf("?") < 0)
                         next += "?";
@@ -255,7 +273,7 @@ public class RestGetAction extends Action<RestGetAction>
                //TODO: need test cases 
                for (Term child : term.getTerms())
                {
-                  if (child.hasToken("href"))
+                  if (child.hasToken("href") && collection != null)
                   {
                      term.removeTerm(child);
 
@@ -279,7 +297,14 @@ public class RestGetAction extends Action<RestGetAction>
                }
             }
 
-            terms.addAll(collection.getDb().mapToColumns(collection, term));
+            if (collection != null)
+            {
+               terms.addAll(collection.getDb().mapToColumns(collection, term));
+            }
+            else
+            {
+               terms.add(term);
+            }
          }
       }
 
@@ -288,8 +313,10 @@ public class RestGetAction extends Action<RestGetAction>
       if (collection == null)
       {
          Db db = api.findDb((String) Chain.peek().get("db"));
+
          if (db == null)
             throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection");
+
          results = db.select(null, terms);
       }
       else
@@ -789,7 +816,10 @@ public class RestGetAction extends Action<RestGetAction>
 
          for (String token : tokens)
          {
-            if (key.equalsIgnoreCase(token) || t.hasToken("eq") && token.equalsIgnoreCase(t.getToken(0)))
+            if (key.equalsIgnoreCase(token) //
+                  || (t.hasToken("eq") && token.equalsIgnoreCase(t.getToken(0))) //
+                  || t.getToken().equalsIgnoreCase(token)//
+            )
             {
                u.removeParam(key);
                break;
