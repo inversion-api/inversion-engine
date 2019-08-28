@@ -158,15 +158,6 @@ public class User
       return new ArrayList(permissions);
    }
 
-   public void setPermissions(List<String> permissions)
-   {
-      this.permissions.clear();
-      for (String permission : permissions)
-      {
-         withPermission(permission);
-      }
-   }
-
    public User withPermissions(String... permissions)
    {
       for (String permission : permissions)
@@ -189,11 +180,13 @@ public class User
       return roles;
    }
 
-   public User withRoles(java.util.Collection<Role> roles)
+   public User withRoles(Role... roles)
    {
       this.roles.clear();
-      if (roles != null)
-         this.roles.addAll(roles);
+
+      for (int i = 0; roles != null && i < roles.length; i++)
+         this.roles.add(roles[i]);
+
       return this;
    }
 
