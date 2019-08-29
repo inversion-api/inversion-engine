@@ -60,9 +60,7 @@ public class TestSqlDeleteAction extends TestCase
    @Before
    public void before() throws Exception
    {
-      SqlServiceFactory.prepData(db, url("orders"));
-      SqlServiceFactory.prepData(db, url("orderdetails"));
-      SqlServiceFactory.prepData(db, url("indexlogs"));
+      SqlServiceFactory.prepData(db);
    }
 
    @Test
@@ -152,26 +150,28 @@ public class TestSqlDeleteAction extends TestCase
       Service service = service();
 
       Response res = service.get(url("indexlogs"));
-      res.dump();
       int allRecordsSize = res.data().size();
 
+      res = service.get(url("indexlogs/20"));
+      
       // The IndexLog table has a single column PK
       // select * from IndexLog where tenantCode = 'us' and error is null and modifiedAt < '2019-04-01 00:00:00';
       String url = url("indexlogs?tenantCode=us&n(error)&lt(modifiedAt,2019-04-01 00:00:00)");
+      res = service.get(url);
 
-      //[2]:    RestGetAction -> http://localhost/northwind/h2/indexlogs?or(lt(modifiedAt,2019-04-01 00:00:00),n(error),eq(tenantCode,us))&page=1&pageSize=100&includes=href
-
-      ArrayNode data = service.get(url).getJson().findArray("data");
+      ArrayNode data =res.getJson().findArray("data");
       assertTrue("data should contain four records", data.size() == 4);
 
       res = service.delete(url("indexlogs"), new ArrayNode(url));
       res.dump();
       assertTrue("bulk delete should succeed", res.isSuccess());
 
-      data = service.get(url).getJson().findArray("data");
+      res = service.get(url);
+      data = res.getJson().findArray("data");
       assertTrue("data should contain zero records after delete", data.size() == 0);
 
-      int allRecordsSizeAfterDelete = service.get(url("indexlogs")).getJson().findArray("data").size();
+      res = service.get(url("indexlogs"));
+      int allRecordsSizeAfterDelete = res.getJson().findArray("data").size();
       assertEquals("Wrong number of records were deleted", 4, (allRecordsSize - allRecordsSizeAfterDelete));
    }
 

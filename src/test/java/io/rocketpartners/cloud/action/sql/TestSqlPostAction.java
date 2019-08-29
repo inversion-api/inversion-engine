@@ -71,7 +71,7 @@ public class TestSqlPostAction extends TestCase
    @Before
    public void before() throws Exception
    {
-      SqlServiceFactory.prepData(db, url("orders"));
+      SqlServiceFactory.prepData(db);
    }
 
    @Test
