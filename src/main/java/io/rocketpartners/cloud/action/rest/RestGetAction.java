@@ -270,6 +270,23 @@ public class RestGetAction extends Action<RestGetAction>
 
             if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
             {
+               //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
+               //dotted path expressions.  If you don't use dotted path expressions the includes values
+               //can be used to limit the sql select clause...however if any of the columns are actually
+               //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
+               boolean dottedInclude = false;
+               for (int i = 1; i < term.size(); i++)
+               {
+                  String str = term.getToken(i);
+                  if (str.indexOf(".") > -1)
+                  {
+                     dottedInclude = true;
+                     break;
+                  }
+               }
+               if(dottedInclude)
+                  continue;
+
                //TODO: need test cases 
                for (Term child : term.getTerms())
                {
