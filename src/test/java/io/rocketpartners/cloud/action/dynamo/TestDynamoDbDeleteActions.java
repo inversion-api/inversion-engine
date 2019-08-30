@@ -5,30 +5,38 @@ import org.junit.Test;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestDynamoDbDeleteActions extends TestCase
 {
    @Test
-   public void test1()throws Exception
+   public void test1() throws Exception
    {
       Service service = DynamoServiceFactory.service();
       Response res = null;
-      ObjectNode json = null;
 
-      res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid");
-      res.dump();
-      json = res.getJson();
-      assertEquals(25, json.getArray("data").length());
-      assertTrue(json.findString("data.0.href").endsWith("/dynamodb/orders/10257~ORDER"));
-      assertEquals(1, service.get("northwind/dynamodb/orders/10257~ORDER").getJson().getArray("data").length());
+      res = service.get("northwind/dynamodb/orders?limit=1");
+      
+      String href = res.findString("data.0.href");
+      assertNotNull(href);
+      
+      Object orderId = res.find("data.0.orderid");
+      
+      Utils.assertDebug(res,  "DynamoDb", "GetItemSpec partKeyCol=hk partKeyVal=" + orderId + " sortKeyCol=sk sortKeyVal=ORDER");
 
-      service.delete("northwind/dynamodb/orders/10257~ORDER").hasStatus(204);//throws an error if not OK
+      ObjectNode record = res.findNode("data.0");
 
-      service.get("northwind/dynamodb/orders/10257~ORDER").statusEq(404);
+      service.delete(href).hasStatus(204);
+      service.get(href).statusEq(404);
 
-      res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid");
-      json = res.getJson();
-      assertEquals(24, json.getArray("data").length());
+      record.remove("href");
+      service.post("northwind/dynamodb/orders", record).statusEq(404);
+
+      res = service.get(href);
+      assertEquals(1, res.data().length());
+
+      ObjectNode updatedRecord = res.findNode("data.0");
+      assertEquals(record.toString(), updatedRecord.toString());
    }
 }

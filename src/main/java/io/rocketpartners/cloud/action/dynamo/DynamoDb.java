@@ -27,8 +27,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
@@ -36,6 +38,7 @@ import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndexDescription;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
+import com.oracle.truffle.js.builtins.SymbolPrototypeBuiltins.SymbolToStringNode;
 
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Collection;
@@ -47,6 +50,7 @@ import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Term;
+import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Rows.Row;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -121,6 +125,12 @@ public class DynamoDb extends Db<DynamoDb>
          String key = table.encodeKey(row);
          keys.add(key);
 
+         for (String attr : (List<String>)new ArrayList(row.keySet()))
+         {
+            if (Utils.empty(row.get(attr)))
+               row.remove(attr);
+         }
+
          if (i > 0 && i % batchMax == 0)
          {
             //write a batch to dynamo
@@ -130,7 +140,9 @@ public class DynamoDb extends Db<DynamoDb>
             writeRequests.clear();
          }
          //add to the current row to batch 
-         PutRequest put = new PutRequest().withItem(ItemUtils.fromSimpleMap(row));
+         Map<String, AttributeValue> item = ItemUtils.fromSimpleMap(row);
+         Chain.debug("DynamoDb", "PutRequest", item);
+         PutRequest put = new PutRequest().withItem(item);
          writeRequests.add(new WriteRequest(put));
       }
 
@@ -509,9 +521,14 @@ public class DynamoDb extends Db<DynamoDb>
 
          switch (type)
          {
-            case "N":
-               return Double.parseDouble(value.toString());
+            case "S":
+               return value.toString();
 
+            case "N":
+               if (value.toString().indexOf(".") < 0)
+                  return Long.parseLong(value.toString());
+               else
+                  Double.parseDouble(value.toString());
             case "BOOL":
                return Boolean.parseBoolean(value.toString());
 

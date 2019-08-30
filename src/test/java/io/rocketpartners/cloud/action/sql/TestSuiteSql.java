@@ -27,6 +27,6 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
       TestSqlDeleteAction.class, //
 })
 
-public class TestSuite
+public class TestSuiteSql
 {
 }

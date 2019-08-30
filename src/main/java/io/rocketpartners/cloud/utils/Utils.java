@@ -875,13 +875,25 @@ public class Utils
 
    public static Response assertDebug(Response resp, String lineMatch, String... matches)
    {
+      if (matches == null || matches.length == 0)
+      {
+         matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1, lineMatch.length())};
+         lineMatch = lineMatch.substring(0, lineMatch.indexOf(" "));
+      }
+
+      if (matches == null || matches.length == 0)
+         return resp;
+
       String debug = resp.getDebug();
 
       debug = debug.substring(0, debug.indexOf("<< response"));
 
       int idx = debug.indexOf(" " + lineMatch + " ");
       if (idx < 0)
+      {
+         System.err.println("SKIPPING DEBUG MATCH: " + lineMatch + " " + Arrays.asList(matches));
          return resp;
+      }
 
       String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
 

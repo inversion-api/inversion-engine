@@ -131,7 +131,10 @@ public abstract class Db<T extends Db>
                return value.toString();
 
             case "N":
-               return value.toString().indexOf(".") < 0 ? Long.parseLong(value.toString()) : Double.parseDouble(value.toString());
+               if (value.toString().indexOf(".") < 0)
+                  return Long.parseLong(value.toString());
+               else
+                  Double.parseDouble(value.toString());
 
             case "BOOL":
                return Boolean.parseBoolean(value.toString());

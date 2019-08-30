@@ -2,6 +2,7 @@ package io.rocketpartners.cloud.action.dynamo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -24,10 +25,12 @@ import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
@@ -65,52 +68,51 @@ public class DynamoServiceFactory
       Service service = SqlServiceFactory.service();
 
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
-
-      //--
-      //--
-      //--
-
-      //DynamoDbQuery: ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
-
-      Map nameMap = new HashMap();
-      nameMap.put("#var1", "shipregion");
-
-      Map valueMap = new HashMap();
-      valueMap.put(":val1", null);
-
-      
-      ScanSpec scanSpec = new ScanSpec();
-      scanSpec.withMaxPageSize(1000);
-      scanSpec.withMaxResultSize(1000);
-      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
-      scanSpec.withFilterExpression("(#var1 = :val1)");
-      scanSpec.withNameMap(nameMap);
-      scanSpec.withValueMap(valueMap);
-
       Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);
-
-      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
-      int num = 0;
-      for (Item item : scanResult)
-      {
-         num +=1;
-         String val = item.getString("shipRegion");
-         if(val == null)
-            val = item.getString("shipregion");
-         val += "";
-         
-         System.out.println(val + " - " + item.asMap());
-         if (!"null".equalsIgnoreCase(val))
-         {
-            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
-            throw new RuntimeException("WRONG!!!");
-         }
-      }
-      
-      if(num == 0)
-         throw new RuntimeException("WRONG!!!");
-
-      System.out.println("done");
+//      //--
+//      //--
+//      //--
+//
+//      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
+//
+//      Map nameMap = new HashMap();
+//      nameMap.put("#var1", "shipregion");
+//
+//      Map valueMap = new HashMap();
+//      valueMap.put(":val1", null);
+//
+//      ScanSpec scanSpec = new ScanSpec();
+//      scanSpec.withMaxPageSize(1000);
+//      scanSpec.withMaxResultSize(1000);
+//      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
+//      scanSpec.withFilterExpression("(#var1 = :val1)");
+//      scanSpec.withNameMap(nameMap);
+//      scanSpec.withValueMap(valueMap);
+//
+//      
+//
+//      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
+//      int num = 0;
+//      for (Item item : scanResult)
+//      {
+//         num += 1;
+//         String val = item.getString("shipRegion");
+//         if (val == null)
+//            val = item.getString("shipregion");
+//         val += "";
+//
+//         System.out.println(val + " - " + item.asMap());
+//         if (!"null".equalsIgnoreCase(val))
+//         {
+//            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
+//            throw new RuntimeException("WRONG!!!");
+//         }
+//      }
+//
+//      if (num == 0)
+//         throw new RuntimeException("WRONG!!!");
+//
+//      System.out.println("done");
 
       //--
       //--
@@ -148,46 +150,47 @@ public class DynamoServiceFactory
       Response res = null;
 
       //10248 - 11077
-//      relaodDynamo = relaodDynamo || !"10248".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=orderid").findString("data.0.orderid"));
-//      //relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=-orderid&includes=href").findString("data.0.orderid"));
-//      relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?orderid=11077&limit=1&type=ORDER").findString("data.0.orderid"));
+      //      relaodDynamo = relaodDynamo || !"10248".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=orderid").findString("data.0.orderid"));
+      //      //relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=-orderid&includes=href").findString("data.0.orderid"));
+      //      relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?orderid=11077&limit=1&type=ORDER").findString("data.0.orderid"));
 
       if (relaodDynamo)
       {
-         System.out.print("RELOADING DYNAMO...");
+         System.out.print("CLEARING DYNAMO...");
 
-         String next = "northwind/dynamodb/orders?limit=100&includes=href";
-         do
+         ItemCollection<ScanOutcome> deleteoutcome = table.scan();
+         Iterator<Item> iterator = deleteoutcome.iterator();
+
+         int deletedCount = 0;
+         while (iterator.hasNext())
          {
-            res = service.get(next);
-            res.statusOk();
-            next = res.next();
-
-            System.out.print("DELETING...");
-
-            for (Object obj : res.getJson().getArray("data"))
-            {
-               String href = ((ObjectNode) obj).getString("href");
-               res = service.delete(href);
-               res.statusEq(204);
-            }
+            deletedCount +=1;
+            if(deletedCount % 100 == 0)
+               System.out.print(deletedCount + " ");
+            
+            Item item = iterator.next();
+            Object hk = item.get("hk");
+            Object sk = item.get("sk");
+            table.deleteItem("hk", hk, "sk", sk);
          }
-         while (next != null);
 
-         System.out.print("LOADING...");
-
+         //--confirm all deleted
          res = service.get("northwind/dynamodb/orders");
          res.statusOk();
          Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
+         System.out.println("");
+         System.out.println("RELOADING DYNAMO...");
+
          int pages = 0;
          int total = 0;
          String start = "northwind/source/orders?pageSize=100&sort=orderid";
-         next = start;
+         String next = start;
          do
          {
-            res = service.get(next);
+            ArrayNode toPost = new ArrayNode();
 
+            res = service.get(next);
             if (res.data().size() == 0)
                break;
 
@@ -217,11 +220,12 @@ public class DynamoServiceFactory
                      js.put(key, value);
                   }
                }
-
-               res = service.post("northwind/dynamodb/orders", js);
-               Utils.assertEq(201, res.getStatusCode());
-               System.out.println("DYNAMO LOADED: " + total + " - " + js.getString("orderid"));
+               toPost.add(js);
             }
+
+            res = service.post("northwind/dynamodb/orders", toPost);
+            Utils.assertEq(201, res.getStatusCode());
+            System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
          }
          while (pages < 200 && next != null);
 

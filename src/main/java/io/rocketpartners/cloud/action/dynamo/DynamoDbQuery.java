@@ -71,6 +71,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
       FUNCTION_MAP.put("w", "contains");
       FUNCTION_MAP.put("sw", "begins_with");
+      FUNCTION_MAP.put("attribute_not_exists", "attribute_not_exists");
+      FUNCTION_MAP.put("attribute_exists", "attribute_exists");
+      
+      //attribute_not_exists
+      //attribute_exists
 
       //https://stackoverflow.com/questions/34349135/how-do-you-query-for-a-non-existent-null-attribute-in-dynamodb
       //FUNCTION_MAP.put("nn", "attribute_exists");//needs to be
@@ -85,9 +90,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
    public DynamoDbQuery(Table table, List<Term> terms)
    {
-      super(table, terms);
+      super(table);
       where().clearFunctions();
-      where().withFunctions("eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out", "and", "or", "not");
+      
+      //withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+      where().withFunctions("_key", "eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out", "and", "or", "not", "attribute_not_exists", "attribute_exists");
+      super.withTerms(terms);
 
       //https://stackoverflow.com/questions/34349135/how-do-you-query-for-a-non-existent-null-attribute-in-dynamodb
 
@@ -107,11 +115,16 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
          if (term.hasToken("n", "emp"))
          {
-            term = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
+            Term eqNull = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
+            Term attrNotExists = Term.term(null, "attribute_not_exists", term.getTerm(0));
+            
+            term = Term.term(term.getParent(),  "or",  attrNotExists, eqNull);
          }
          else if (term.hasToken("nn", "nemp"))
          {
-            term = Term.term(term.getParent(), "ne", term.getTerm(0), "null");
+            Term neNull = Term.term(term.getParent(), "ne", term.getTerm(0), "null");
+            Term attrExists = Term.term(null, "attribute_exists", term.getTerm(0));
+            term = Term.term(term.getParent(), "and", attrExists, neNull);
          }
       }
       if (term.hasToken("sw"))//sw (startswith) includes a implicit trailing wild card
@@ -391,7 +404,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          String sortKeyCol = sortKey.getToken(0);
          Object sortKeyVal = db.cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
 
-         Chain.debug("DynamoDbQuery: GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
+         Chain.debug("DynamoDb GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
          return new GetItemSpec().withPrimaryKey(partKeyCol, partKeyVal, sortKeyCol, sortKeyVal);
       }
@@ -415,7 +428,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
       boolean doQuery = partKey != null && partKey.getTerm(1).isLeaf();
 
-      StringBuffer debug = new StringBuffer("DynamoDbQuery: ").append(doQuery ? "QuerySpec" : "ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
+      StringBuffer debug = new StringBuffer("DynamoDb ").append(doQuery ? "QuerySpec" : "ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
       int pageSize = page().getPageSize();
       debug.append(" maxPageSize=" + pageSize);

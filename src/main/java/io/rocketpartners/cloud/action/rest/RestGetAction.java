@@ -284,7 +284,7 @@ public class RestGetAction extends Action<RestGetAction>
                      break;
                   }
                }
-               if(dottedInclude)
+               if (dottedInclude)
                   continue;
 
                //TODO: need test cases 
@@ -332,7 +332,7 @@ public class RestGetAction extends Action<RestGetAction>
          Db db = api.findDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection");
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
 
          results = db.select(null, terms);
       }
@@ -403,7 +403,10 @@ public class RestGetAction extends Action<RestGetAction>
                for (String key : row.keySet())
                {
                   if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
-                     node.put(key, row.get(key));
+                  {
+                     Object value = row.get(key);
+                     node.put(key, value);
+                  }
                }
 
                //------------------------------------------------
