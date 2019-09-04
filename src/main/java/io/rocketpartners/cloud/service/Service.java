@@ -543,7 +543,7 @@ public class Service
 
          if (ex instanceof ApiException)
          {
-            if (req != null && req.isDebug())
+            if (req != null && req.isDebug() && ((ApiException)ex).getStatus().startsWith("5"))
             {
                log.error("Error in Service", ex);
             }

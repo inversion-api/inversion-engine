@@ -396,6 +396,18 @@ public class Api
 
       return this;
    }
+   
+   
+   public Api withEndpoint(String methods, String includePaths, Action... actions)
+   {
+      for(Action action : actions)
+      {
+         makeEndpoint(action, methods, null, includePaths);
+      }
+      
+      return this;
+   }
+   
 
    public Endpoint makeEndpoint(String method, String includePaths)
    {

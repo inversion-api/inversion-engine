@@ -13,7 +13,6 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.service.spring.SpringBoot;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
@@ -68,7 +67,7 @@ public class SqlServiceFactory
 
    public static void main(String[] args) throws Exception
    {
-      SpringBoot.run(service(false));
+      //SpringBoot.run(service(false));
    }
 
    public static synchronized Service service() throws Exception

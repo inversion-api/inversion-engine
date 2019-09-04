@@ -104,9 +104,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
                {
                   int colonIdx = matchPart.indexOf(":");
                   if (colonIdx < 0)
-                     continue;
+                     colonIdx = 0;
 
-                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}"));
+                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
 
                   Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                   Matcher matcher = pattern.matcher(pathPart);

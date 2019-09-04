@@ -77,7 +77,7 @@ public class Servlet extends HttpServlet
       }
    }
 
-   Service service = new Service();
+   Service service = null;//new Service();
 
    public void destroy()
    {
