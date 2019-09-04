@@ -1,4 +1,6 @@
-# Inversion - API as a Service Platform
+# Inversion Cloud API Engine
+
+Create more, code less with Inversion.
 
 Inversion is the fastest way to deliver a REST API.
 
@@ -6,6 +8,70 @@ With Inversion, you can connect your web application front end directly to your 
 
 Inversion is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
+
+
+Inverted the Paradigm
+
+Comign up with a brand name for this product was not easy.  After countless hours of ideation, we decided to go right after the heart of the matter.  
+To their great benefit, projects that use Inversion are inverting the classic three tier web application architecture 
+
+
+API Specificity (BAD!)
+
+Business Overview
+
+Nerdy Gist - Tech Overview
+
+
+Putting a minimal REST API onto a single database table is easy by modern development standards.  There are  
+
+Putting a flexible and useful REST API interface onto a large and complex database data model can be very timetable is hard. 
+
+
+Which columns should callers be able to
+ - query on - should be all by default
+ - sort on - should be all by default
+ - pagination options
+ - document expansion (key traversal across document types)
+ - combined put/post
+ - batch operations
+
+
+
+Your DB tables probably look similar to your REST JSON documents so why spend time writing a bunch of middle middle tier
+
+
+We believe it is possible to dynamically configure a set of REST API Collection Endpoints to 
+
+
+Inversion is supplied with a minimal set of configuration options identifying the backend datasrouces the API will connect to.  
+
+This configuration allows the Inversion runtime to inspect the backend schema and expose the backend resources as REST Collections.  
+For example, a MySQL table named    
+ 
+ 
+Under the hood, each HTTP request is mapped to an Endpoint which invokes a Chain of configured Actions.  Actions connect to backend end Db objects to find/upsert/delete resouces.
+For example, the RestGetAction may be configure against one Endpoint connecting to a MySQL table on one URL path, and against a different Endpoint connecting to DynamoDb table on 
+a different URL Path.  
+
+
+Configuring an ordered list of Actions against the same URL path (chaining) allows developers to 
+  
+
+
+ 
+Inversion allows you go configure REST Endpoint that invoke a Chain of one or more Actions.  Custom business logic can be supplied via Node/JavaScript
+handlers or by implementing custom Java Action subclasses.   
+
+
+
+
+What's The Point?
+
+Superpowers (Feature & Benefits)
+
+
+
 
 
 ## Contents
@@ -20,6 +86,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
    * [AclRules](#aclrules)
    * [Permissions](#permissions)
+   * [Path Matching](#path-matching)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted & Required Parameters](#restricted--required-query-parameters)
@@ -40,6 +107,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 1. [Elasticsearch Specifics](#elasticsearch-specifics)
 1. [DynamoDB Specifics](#dynamodb-specifics)  
 1. [Developer Notes](#developer-notes)
+   * [Javadocs](#Javadocs)
    * [Logging](#logging)
    * [Gradle, Maven, etc.](#gradle-maven-etc)    
 1. [Changes](#changes)   
@@ -52,11 +120,10 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
  * Tables exposed as REST collections
  * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
- * RQL
  * Nested document expansion for foreign keys
  * Nested document put/post
- * Pagination / ordering
  * Batch/bulk put/post/delete
+ * Pagination / ordering
  * Declarative security
  * Sql Injection proof
  * Consistent response envelope
@@ -72,11 +139,11 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
   
 ## Quickstart
 
-The fasted way to get going is to checkout/fork the [Snooze Spring Boot Starter Project](https://github.com/RocketPartners/rckt_snooze_spring)
+The fasted way to get going is to checkout/fork the [Inversion Spring Boot Starter Project](https://github.com/RocketPartners/rckt_inversion_spring)
 and follow the readme instructions to get going in less than 5 minutes.  
 
-If you are comfortable with Gradle, Eclipse, and Tomact then you can start with this project and configure your Tomcat servlet with the web.xml 
-included in this project.
+If you are comfortable with Gradle, Eclipse, Tomact etc. then you can start with this project and configure your application 
+server of choice with the web.xml included in this project.   
 
 In either case, all you need to do is supply edit your JDBC connection information the soooze.properties configuration file.
 Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
@@ -89,21 +156,24 @@ Try out some [RQL](#resource-query-language-rql) queries like:
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
 * http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
 
-Swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' and restart and your API will be fully CRUD ready!
+Add '&explain' to your query string to see debug output of what exactly the server is doing.
+
+* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY&explain
+
+No swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' in your config, restart and your API will be fully CRUD ready!
  
 
 ```properties
     
-snooze.debug=true
-snooze.servletMapping=api
+#inversion.servletMapping=api
 
 ########################################################################
 ## APIs 
 ########################################################################
 api.class=io.rcktapp.api.Api
+api.debug
 api.accountCode=demo
 api.apiCode=helloworld
-api.dbs=db
 api.actions=restA
 api.endpoints=restEp
 
@@ -112,7 +182,6 @@ api.endpoints=restEp
 ## DATABASES 
 ########################################################################
 db.class=io.rcktapp.api.handler.sql.SqlDb
-db.name=db
 db.driver=YOUR_JDBC_DRIVER_HERE
 db.url=YOUR_JDBC_URL_HERE
 db.user=YOUR_JDBC_USER_HERE
@@ -145,7 +214,6 @@ restEp.includePaths=*
 restEp.excludePaths=somethingExcluded*
 restEp.methods=GET
 #restEp.methods=GET,PUT,POST,DELETE
-restEp.handler=restH
 
 
 ```
@@ -181,30 +249,36 @@ Examples example:
 
 ### Configuration File Loading
 
-Inversion looks for files named snooze[1-100][-${Snooze.profile}].properties in the WEB-INF folder.  Files without a profile are always loaded first in numerically assending 
-order and then files with a profile matching ${Snooze.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
+Inversion looks for files named inversion[1-100][-${inversion.profile}].properties in the classpath (for example in the WEB-INF folder).  Files without a profile are always loaded first in numerically ascending 
+order and then files with a profile matching ${inversion.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
 key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
 that do not have to duplicate config between them.
   
-The config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
 notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
 
 Configuration and API bootstrapping takes place in the following stages:
 
-1. Inversion servlet wiring - All 'snooze.' bean propertie are set on the Inversion servlet.  This is useful for things like setting 'debug' or chaing the runtime 'profile'.  
+1. Inversion service wiring - All 'inversion.*' bean properties are set on the core Inversion service instance.  This is useful for things like setting 'inversion.debug' or changing 'inversion.profile'.  
 1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
 1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
 1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
-model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that mapp back to the Tables,Columns and Indexes. 
-1. Serialization - The dynamically configured Api model is then serialzied back out to name=value property format as if it were user supplied config.    
-1. The user supplied config from step 1 are then merged down on onto the dynamically config map.  This means that you can overwrite any dynamically configured key/value pair.  
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Service.addApi() and are ready to run.
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
+1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
 
 This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
 of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  Inversion logs the merged user supplied values AND the fully merged final config to INFO so you can inspect any keys 
-you might want to customize.
+happens in memory at runtime NOT development time.  
+
+If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find 
+any that you may want to customize. 
+
+The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
+supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
+the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
 
 
 ## Keeping Passwords out of Config Files
@@ -213,9 +287,9 @@ If you want to keep your database passwords (or any other sensative info) out of
 VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
 to the top of the batch file you use to launch our app or application server.  
 
-### Inversion Servlet Config
+### Inversion Service Config
 
-As you may have seen in the [Quickstart](#quickstart) example above 'snooze' is a reserved known bean name in the configuration files. 'snooze' referers to the 
+As you may have seen in the [Quickstart](#quickstart) example above 'inversion' is a reserved known bean name in the configuration files. 'inversion' referers to the 
 Inversion servlet itself and you can set any bean properties you want.
 
 ### Dbs, Tables, Columns and Indexs
@@ -234,18 +308,19 @@ Collections logically map to Db Tables.  An Entity logically represents a row in
 to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
 in a URL or as a JSON property name.
 
+Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
 
 ### Endpoints, Actions and Handlers
 
-Endpoints, Actions, and Handlers are how you map requests to the work that actually gets done. Programmers familiar with AOP might be comfortable with a loose analogy of a an Endpoint 
-acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application specific about this pattern.  The magic of Inversion is in the implementation 
-of various Handlers.
+An Endpoint maps a URL pattern to one or more Actions by [path matching](#path-matching).  Actions map to an Handler which is where work actually gets done. Multiple Actions can map to the same Handler instance. Programmers 
+familiar with AOP might be comfortable with a loose analogy of a an Endpoint acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application 
+specific about this pattern.  The magic of Inversion is in the implementation of various Handlers.
 
 An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
 to run when an Endpoint is called by a client.  
 
-Actions link Endpoints to Handlers.  Behind each Endpoint can be an orderd list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
+Actions link Endpoints to Handlers.  Behind each Endpoint can be an ordered list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
 based on the configuration information on the Action.  Actions are mapped to URL paths / http methods and as such may be selected to run as part of one or more Endpoints.     
 
 Work is done in the Handlers.  If an application must have custom business logic or otherwise can't manage to achieve a desired result via configuration, 99% of the time, the answer
@@ -253,7 +328,7 @@ is a custom Handler. Handlers do not have to be singletons but the design patter
 ties things back to the url/http method being invoked.
 
 
-Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io/rcktapp/api/Handler.html):
+Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
  * SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
  * SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
  * SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
@@ -267,13 +342,40 @@ Example [Handlers](https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/io
 ### AclRules
 
 AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
-be setup (in that order) to protect resources according to configed AclRules.
+be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [path matching](#path-matching) just like Endpoints and Actions.
     
 ### Permissions
 
 The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
 
     
+### Path Matching
+
+Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" 
+configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used match any arbitrary path ending and 
+regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
+Leading and trailing '/' characters are not considered when path matching.
+
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex
+based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
+path parts optional.  Regular expression matches can not match across a '/'.
+
+Here are some examples: 
+
+ * endpoint1.includesPaths=dir1/dir2/*
+ * endpoint1.excludePaths=dir1/dir2/hidden/*
+ * endpoint2.includePath=something/{collection:[a-z]}/*
+ 
+One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
+ 
+ * endpoint3.includesPaths={collection:customers|books|albums}/[{entity:[0-9]}]/{relationship:[a-z]}
+
+If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
+have been supplied by the query string.
+
+The names "component", "entity", and "relationship" are special.  If supply them, the Request parser will use those values when configuring the Request object.
+If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
+
 
 ## Resource Query Language (RQL)
 
@@ -294,7 +396,7 @@ you use to query a REST collection for entities that match specific criteria or 
   You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-[See io.rcktapp.rql.TestSqlRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_snooze/blob/master/src/test/java/io/rcktapp/rql/TestSqlRql.java)
+[See io.rcktapp.rql.TestSqlRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_inversion/blob/master/src/test/java/io/rcktapp/rql/TestSqlRql.java)
 
 ### Reserved Query String Parameters
 
@@ -352,7 +454,7 @@ RQL query params as well as for JSON properties.
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
- sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     |                    | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
+ sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     | :grey_exclamation: | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
  sort(col1,[...colN])             | :heavy_check_mark:  |                     |                    | same as sort= but with "function format"
  order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
@@ -463,16 +565,17 @@ Retrieve locations with an empty state value
 
 Example Config
 ```
-elasticH.class=io.rcktapp.api.service.ElasticHandler
-elasticH.elasticURL=https://yourElasticSearchDB.amazonaws.com
+elasticdb.class=io.rcktapp.api.handler.elastic.ElasticDb
+elasticdb.url=https://yourElasticSearchDB.amazonaws.com
 
+elasticH.class=io.rcktapp.api.handler.elastic.ElasticDbRestHandler
 elasticEp.class=io.rcktapp.api.Endpoint
-elasticEp.includePaths=elastic*
+elasticEp.path=desiredPath
 elasticEp.methods=GET
 elasticEp.handler=elasticH
 ```
 
-[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_snooze/blob/wb/readme_updates/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
+[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_inversion/blob/wb/readme_updates/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
 
 
 ## DynamoDB Specifics
@@ -497,6 +600,9 @@ Configuration is done on the Endpoint's config property.
 	* FORMAT: collection name (comma separated)  
 	* EXAMPLE: promo,loyalty-punchcard
 	* On POST, this will append the tenant id to the primary key, for example, if the pk is a mobile number and was sent up as 4045551212 and the tenantId was 1, this record will be stored with a primary key of 1::4045551212.  On GET and DELETE, this will automatically append the tenantId prior to looking up the record and will strip it out of the results. So, this is completely invisible to the api user, they will only ever see the mobilenumber as 4045551212.  If you login to the AWS console and view the table, there you will see the actually mobilenumber as 1::4045551212.
+* sorting queries
+	* Scans cannot be sorted, only queries can.
+	* When sorting a query, the field that is sorted MUST match the sort key of the query index
 
 Example Config
 ```
@@ -650,37 +756,37 @@ TODO: add more specific doco here.
 For all Handler configuration options or to understand how to use Inversion as a framework for a custom application
 check out the Javadocs.
 
- * 0.3.x - https://rocketpartners.github.io/rckt_snooze/0.3.x/javadoc/
+ * 0.3.x - https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/
 
 
 ### Runtime Profiles
 
 As discussed in [Configuration File Loading](#configuration-file-loading) Inversion was designed to support different runtime profiles.  
-You can set a JVM property or environment variable for snooze.profile=${profile} to cause the specified set of config files to load.
+You can set a JVM property or environment variable for inversion.profile=${profile} to cause the specified set of config files to load.
 Suppose you had the following config files in WEB-INF directory:
 
-* snooze.properties
-* snooze3.properties
-* snooze-dev.properties
-* snooze99-dev.properties
-* snooze-stage.propeties
-* snooze-prod.properties
-* snooze1-prod.properties
-* snooze2-prod.properties
+* inversion.properties
+* inversion3.properties
+* inversion-dev.properties
+* inversion99-dev.properties
+* inversion-stage.propeties
+* inversion-prod.properties
+* inversion1-prod.properties
+* inversion2-prod.properties
 
-If you were to add '-Dsnooze.profile=prod' to your JVM launch command then snooze.properties, snooze3.properties, snooze-prod.properties
-snooze1-prod.properties, and snooze2-prod.properties would be loaded in that order.  snooze-dev.properties and snooze-stage.propeties
+If you were to add '-Dinversion.profile=prod' to your JVM launch command then inversion.properties, inversion3.properties, inversion-prod.properties
+inversion1-prod.properties, and inversion2-prod.properties would be loaded in that order.  inversion-dev.properties and inversion-stage.propeties
 would be completely ignored.  
 
 This technique makes it simple to use the same build WAR asset to be deployed to multiple different runtime targets. 
 
-Another helpful trick here would be to launch in development with '-Dsnooze.profile=dev' add something like "snooze99-dev.properties" 
+Another helpful trick here would be to launch in development with '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
 to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
 and you custom settings will load last trumping any other keys shared with other files. 
 
 
 ### Logging
- * Inversion uses logback, but it is not configured out of the box - the service implementing Snooze will be responsible for providing their own logback.xml config file!
+ * Inversion uses logback, but it is not configured out of the box - the service implementing Inversion will be responsible for providing their own logback.xml config file!
 ```
 dependencies {
     ...
@@ -703,13 +809,13 @@ configurations.all {
 }
 
 dependencies {
-    compile 'com.github.RocketPartners:rckt_snooze:release-0.3.x-SNAPSHOT'
+    compile 'com.github.RocketPartners:rckt_inversion:release-0.3.x-SNAPSHOT'
 } 
 ```   
 
 ### Spring Boot
 
-If you don't want to monkey with an application server deployment, a this [Snooze Spring Boot starter project](https://github.com/RocketPartners/rckt_snooze_spring) 
+If you don't want to monkey with an application server deployment, a this [Inversion Spring Boot starter project](https://github.com/RocketPartners/rckt_inversion_spring) 
 will get you up and running in less than 5 minutes.
 
 
@@ -771,40 +877,41 @@ will get you up and running in less than 5 minutes.
   
 ## Changes
 
-2018-05-09 --------------------------------
+2018-11-20 0.3.x --------------------------
+
+  * Created 0.3.x branch refactored Rql and Db and changed package structure
+    of Handlers to accomodate recent additions of DynamoDb and Elasticsearch.
+    The 0.2.x branch and before were signifficantly RDBMS centric.  This is
+    an attempt to make the design more accomodating to additional backends
+
+2018-05-09 0.2.x --------------------------
 
  * Changed the way that GetHandler expands documents so that netsted collection
    requrests are set back through the "front door" and will obey all endpoint
    security requirments for that subcollection
-
  * Added "explain" query string param for debugging sql queries
-
  * Added "required" and "restricted" action/endpoint configuration params that enable 
    api designers to enhance security
 
 
-2018-05-04 --------------------------------
+2018-05-04 0.2.x --------------------------
 
  * Add Reponse.changes to allow handlers to accumulate a list of changes
    that occure durring a request.  
-
  * Updated LogHandler to persist Response.changes values
 
-2018-05-02 -------------------------------- 
+2018-05-02 0.3.x --------------------------
  
  * Corrected rql handling off 'offset'
-
  * Corrected rql handling double quoted string params
-
  * Added test for double/single quotes
-
  * Rehabbed TestRql so that all tests pass
 
-2018-04-24 --------------------------------
+2018-04-24 0.2.x --------------------------
  
  * Fixed incorrectly named "href" fields for expanded relationships
 
-2018-04-04 --------------------------------
+2018-04-04 0.2.x --------------------------
  
  * Changed Endpoint.path to Endpoint.paths and Endpoint.method to Endpoint.methods.  A comma separated list
    from either the db configuration or props file configuration will correctly parse into a collection.
@@ -816,19 +923,19 @@ will get you up and running in less than 5 minutes.
  * Added RestHandler as a shortcut that delegates to a stock Get/Post/Delete handler.  This made it much
    easier to minimize configuration now that a Endpoint can easily map to multiple methods.
    
-2018-03-02 --------------------------------
+2018-03-02 0.2.x --------------------------
 
  * Corrected Endpoint order sorting defect
  * Added support for comma separated list of methods for Endpoint matching
 
-2018-02-23 --------------------------------
+2018-02-23 0.2.x --------------------------
 
  * Enhanced pluralization redirects to cover 404 errors generated by handlers.
  * Prevented attempts at pluralization of things ending in 's'.  It was to error prone
  * Added 'order' column to Endpoint so that wildcard with conflicting paths can be prioritized
  * Added quoting for tables to prevent sql errors when tables have reserved names
   
-2018-02-18 --------------------------------
+2018-02-18 0.2.x --------------------------
  
  * Enabled schema refresh.  If api.debug=ture and api.refresh=true the schema will be refreshed
    from the DB within 60 seconds of the last API call.  This "developer mode" allows you to 
@@ -842,7 +949,7 @@ will get you up and running in less than 5 minutes.
    
    http(s)://whateverhost/[${servletPrefix}/]${account.code}/${collection}
 
-2017-11-16 --------------------------------
+2017-11-16 0.2.x --------------------------
 
 * Changed default behavior of the GetHandler so that all responses are wrapped as if they were
   paginated with a wrapper {meta:{}, data:[]}
@@ -855,8 +962,7 @@ will get you up and running in less than 5 minutes.
   1. http(s)://whateverhost/[${servletPrefix}/]${account.code}${api.code}/${collection}
   2. http(s)://${account.code}.domain.com/[${servletPrefix}/]${account.code}${api.code}/${collection}
   3. http(s)://${account.code}.domain.com/[${servletPrefix}/]${api.code}/${collection}
-  
-  
+   
   
              
              
