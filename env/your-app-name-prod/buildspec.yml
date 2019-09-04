@@ -1,0 +1,51 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "*************************** Log in to Amazon ECR"
+      - aws --version
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - CONTAINER_NAME=your-app-name-prod
+      - REPOSITORY_URI=123456789.dkr.ecr.us-east-1.amazonaws.com/$CONTAINER_NAME
+      - TASK_DEF_FILE=env/$CONTAINER_NAME/taskdef.json
+      - APP_SPEC_FILE=env/$CONTAINER_NAME/appspec.yml
+      - DOCKER_FILE=env/$CONTAINER_NAME/Dockerfile
+      - SPRING_PROFILE=$CONTAINER_NAME
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo "IMAGE_TAG     = $IMAGE_TAG"
+      - echo "APP_SPEC_FILE = $APP_SPEC_FILE"
+      - echo "DOCKER_FILE   = $DOCKER_FILE"
+  build:
+    commands:
+      - echo "*************************** Build the jar and docker image"
+      - chmod 755 gradlew
+      - pwd
+      - ls -la
+      - ./gradlew sendSlackMsg -PslackTitle="${CONTAINER_NAME} - Building :gear:" -PslackText="Image Tag - ${IMAGE_TAG}"
+      - ./gradlew build -PimageTagName=$IMAGE_TAG -Papp=$CONTAINER_NAME
+      - ls -la build/libs
+      - ./gradlew updateTaskDefImageTagName -PtaskDefFile=$TASK_DEF_FILE -PimageTagName=$IMAGE_TAG
+      - docker -v
+      - docker build --file $DOCKER_FILE --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg SPRING_PROFILE=$SPRING_PROFILE -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo "*************************** Push Docker Image"
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+    finally:
+      - echo "*************************** Post Build Finally"
+      - |
+         if expr "${CODEBUILD_BUILD_SUCCEEDING}" : "0" >/dev/null; then
+           ./gradlew sendSlackMsg -PslackTitle="${CONTAINER_NAME} - Build Failed :face_vomiting:" -PslackText="Image Tag - ${IMAGE_TAG}" -PslackColor="#df3312";
+         fi
+      - |
+         if expr "${CODEBUILD_BUILD_SUCCEEDING}" : "1" >/dev/null; then
+           ./gradlew sendSlackMsg -PslackTitle="${CONTAINER_NAME} - Build Successful :thumbsup:" -PslackText="Image Tag - ${IMAGE_TAG}" -PslackColor="#1e8900";
+         fi
+artifacts:
+  files:
+    - build/taskdef.json
+    - $APP_SPEC_FILE
