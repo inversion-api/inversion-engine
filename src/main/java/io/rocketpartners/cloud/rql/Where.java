@@ -66,7 +66,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid query: " + parent);
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
             transform(child);
          }
       }

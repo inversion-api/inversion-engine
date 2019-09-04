@@ -2,12 +2,19 @@ package io.rocketpartners.cloud.action.dynamo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
@@ -18,10 +25,12 @@ import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
@@ -30,9 +39,9 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class DynamoServiceFactory
 {
-   public static String                  northwind     = "test-northwind";
-   public static final boolean           RELOAD_DYNAMO = true;
-   protected static Map<String, Service> services      = new HashMap();
+   public static String                  northwind    = "test-northwind";
+   public static boolean                 relaodDynamo = false;
+   protected static Map<String, Service> services     = new HashMap();
 
    public static synchronized Service service() throws Exception
    {
@@ -59,6 +68,56 @@ public class DynamoServiceFactory
       Service service = SqlServiceFactory.service();
 
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
+      Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);
+//      //--
+//      //--
+//      //--
+//
+//      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
+//
+//      Map nameMap = new HashMap();
+//      nameMap.put("#var1", "shipregion");
+//
+//      Map valueMap = new HashMap();
+//      valueMap.put(":val1", null);
+//
+//      ScanSpec scanSpec = new ScanSpec();
+//      scanSpec.withMaxPageSize(1000);
+//      scanSpec.withMaxResultSize(1000);
+//      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
+//      scanSpec.withFilterExpression("(#var1 = :val1)");
+//      scanSpec.withNameMap(nameMap);
+//      scanSpec.withValueMap(valueMap);
+//
+//      
+//
+//      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
+//      int num = 0;
+//      for (Item item : scanResult)
+//      {
+//         num += 1;
+//         String val = item.getString("shipRegion");
+//         if (val == null)
+//            val = item.getString("shipregion");
+//         val += "";
+//
+//         System.out.println(val + " - " + item.asMap());
+//         if (!"null".equalsIgnoreCase(val))
+//         {
+//            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
+//            throw new RuntimeException("WRONG!!!");
+//         }
+//      }
+//
+//      if (num == 0)
+//         throw new RuntimeException("WRONG!!!");
+//
+//      System.out.println("done");
+
+      //--
+      //--
+      //--
+
       final Api api = service.getApi(apiCode);
       api.withDb(dynamoDb);
       api.makeEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new RestAction());
@@ -89,87 +148,91 @@ public class DynamoServiceFactory
       orders.withIncludePaths("dynamodb/*");
 
       Response res = null;
-      res = service.get("northwind/dynamodb/orders?limit=3");
-      res.statusOk();
 
-      if (RELOAD_DYNAMO)
+      //10248 - 11077
+      //      relaodDynamo = relaodDynamo || !"10248".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=orderid").findString("data.0.orderid"));
+      //      //relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=-orderid&includes=href").findString("data.0.orderid"));
+      //      relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?orderid=11077&limit=1&type=ORDER").findString("data.0.orderid"));
+
+      if (relaodDynamo)
       {
-         String next = "northwind/dynamodb/orders?limit=3";
-         do
+         System.out.print("CLEARING DYNAMO...");
+
+         ItemCollection<ScanOutcome> deleteoutcome = table.scan();
+         Iterator<Item> iterator = deleteoutcome.iterator();
+
+         int deletedCount = 0;
+         while (iterator.hasNext())
          {
-            res = service.get(next);
-            System.out.println(res);
-            res.statusOk();
-            next = res.next();
-
-            for (Object obj : res.getJson().getArray("data"))
-            {
-               String href = ((ObjectNode) obj).getString("href");
-               System.out.println(href);
-               res = service.get(href);
-               res.statusOk();
-               System.out.println(res);
-               Utils.assertEq(1, res.data().length());
-
-               res = service.delete(href);
-               res.dump();
-               res.statusEq(204);
-               res = service.get(href);
-               res.statusEq(404);
-            }
+            deletedCount +=1;
+            if(deletedCount % 100 == 0)
+               System.out.print(deletedCount + " ");
+            
+            Item item = iterator.next();
+            Object hk = item.get("hk");
+            Object sk = item.get("sk");
+            table.deleteItem("hk", hk, "sk", sk);
          }
-         while (next != null);
 
+         //--confirm all deleted
          res = service.get("northwind/dynamodb/orders");
          res.statusOk();
          Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
-         res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid");
-         ObjectNode json = res.getJson();
-         System.out.println(json);
+         System.out.println("");
+         System.out.println("RELOADING DYNAMO...");
 
-         //               res = service.request("GET", "northwind/sql/orders", null).pageSize(100).order("orderid").go();
-         //               json = res.getJson();
-         //               System.out.println(json);
-         Utils.assertEq(json.find("meta.pageSize"), 100);
-         Utils.assertEq(json.find("meta.foundRows"), 25);
-         Utils.assertEq(json.find("data.0.orderid"), 11058);
-
-         for (Object o : json.getArray("data"))
+         int pages = 0;
+         int total = 0;
+         String start = "northwind/source/orders?pageSize=100&sort=orderid";
+         String next = start;
+         do
          {
-            ObjectNode js = (ObjectNode) o;
+            ArrayNode toPost = new ArrayNode();
 
-            js.remove("href");
-            js.put("type", "ORDER");
+            res = service.get(next);
+            if (res.data().size() == 0)
+               break;
 
-            for (String key : js.keySet())
+            pages += 1;
+            next = res.next();
+
+            //-- now post to DynamoDb
+            for (Object o : res.data())
             {
-               String value = js.getString(key);
-               if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
+               total += 1;
+               ObjectNode js = (ObjectNode) o;
+
+               js.remove("href");
+               js.put("type", "ORDER");
+
+               for (String key : js.keySet())
                {
-                  value = value.substring(value.lastIndexOf("/") + 1, value.length());
-                  js.remove(key);
+                  String value = js.getString(key);
+                  if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
+                  {
+                     value = value.substring(value.lastIndexOf("/") + 1, value.length());
+                     js.remove(key);
 
-                  if (!key.toLowerCase().endsWith("id"))
-                     key = key + "Id";
+                     if (!key.toLowerCase().endsWith("id"))
+                        key = key + "Id";
 
-                  js.put(key, value);
+                     js.put(key, value);
+                  }
                }
+               toPost.add(js);
             }
 
-            res = service.post("northwind/dynamodb/orders", js);
+            res = service.post("northwind/dynamodb/orders", toPost);
             Utils.assertEq(201, res.getStatusCode());
-
-            res = service.get(res.findString("data.0.href"));
-
-            System.out.println(js);
-            System.out.println(res.find("data.0"));
-
+            System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
          }
+         while (pages < 200 && next != null);
+
+         Utils.assertEq(9, pages);
+         Utils.assertEq(830, total);
       }
-      //            }
-      //
-      //         });
+
       return service;
    }
 

@@ -1,13 +1,12 @@
 package io.rocketpartners.cloud.action.dynamo;
 
-import static io.rocketpartners.cloud.utils.Utils.assertDebug;
-
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.rest.TestRestGetActions;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * @see README.md
@@ -27,71 +26,38 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    }
 
    @Test
-   public void testPagination0() throws Exception
+   public void testOut01() throws Exception
    {
-      Service service = service();
-      Response res = null;
-
-      int total = 0;
-      int pages = 0;
-      String next = url("orders?type=ORDER&limit=5&sort=orderId");
-      do
-      {
-         res = service.get(next);
-         res.dump();
-
-         assertDebug(res, "QuerySpec:'gs3'");
-
-         if (pages == 0)
-         {
-            assertTrue(res.findString("data.0.href").endsWith("/orders/10257~ORDER"));
-         }
-
-         if (pages == 4)
-         {
-            assertTrue(res.findString("data.0.href").endsWith("/orders/10957~ORDER"));
-         }
-
-         if (res.data().size() == 0)
-            break;
-
-         total += res.data().length();
-         pages += 1;
-
-         next = res.next();
-
-         assertEquals(5, res.findArray("data").length());
-         assertEquals(5, res.find("meta.pageSize"));
-      }
-      while (pages < 20 && next != null);
-
-      assertEquals(5, pages);
-      assertEquals(25, total);
+      System.err.println("IMPLEMENT ME TestDynamoDbGetActions.testOut01()");
+      //TODO: implement me
    }
 
-   //   @Test
-   //   public void testSort01() throws Exception
-   //   {
-   //      Service service = service();
-   //      Response res = null;
-   //      ObjectNode json = null;
-   //
-   //      String url = url("orders?limit=2&sort=orderid&type=ORDER");
-   //
-   //      res = service.get(url);
-   //      res.dump();
-   //
-   //      assertEquals(2, res.findArray("data").length());
-   //      String href = res.findString("data.0.href");
-   //      assertTrue(href.endsWith("/orders/10257~ORDER"));
-   //
-   //      res = service.get(url("orders?limit=2&sort=-orderid&type=ORDER"));
-   //      res.dump();
-   //
-   //      assertEquals(2, res.findArray("data").length());
-   //      href = res.findString("data.0.href");
-   //      assertTrue(href.endsWith("/orders/11058~ORDER"));
-   //   }
+   public void testLike01() throws Exception
+   {
+      System.err.println("DynamoDb implementation does not support the like() operator...skipping test.");
+   }
+
+   public void testLike02() throws Exception
+   {
+      System.err.println("DynamoDb implementation does not support the like() operator...skipping test.");
+   }
+
+   @Test
+   public void testW01() throws Exception
+   {
+      System.err.println("DynamoDb implementation does not support the w() operator....skipping test.");
+   }
+
+   public void testWo01() throws Exception
+   {
+      System.err.println("DynamoDb implementation does not support the wo() operator....skipping test.");
+   }
+
+   @Test
+   public void testEw01() throws Exception
+   {
+      System.err.println("DynamoDb implementation does not support the ew() operator....skipping test.");
+   }
 
    @Test
    public void testSort01() throws Exception
@@ -105,14 +71,14 @@ public class TestDynamoDbGetActions extends TestRestGetActions
 
       res = service.get(url);
 
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=2 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'gs3' maxPageSize=2 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
       assertEquals(2, res.findArray("data").length());
-      assertTrue(res.findString("data.0.href").endsWith("northwind/dynamodb/orders/10257~ORDER"));
+      assertTrue(res.findString("data.0.href").endsWith("northwind/dynamodb/orders/10248~ORDER"));
 
       res = service.get(url("orders?limit=2&type=ORDER&sort=-orderid"));
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=2 scanIndexForward=false nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'gs3' maxPageSize=2 scanIndexForward=false nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
       assertEquals(2, res.findArray("data").length());
-      assertTrue(res.findString("data.0.href").endsWith("northwind/dynamodb/orders/11058~ORDER"));
+      assertTrue(res.findString("data.0.href").endsWith("northwind/dynamodb/orders/11077~ORDER"));
    }
 
    public void testSort02DescendingSortRequiresPartitionKey() throws Exception
@@ -131,17 +97,19 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(5, json.getArray("data").length());
-      assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
 
-      res = service.get("northwind/dynamodb/orders?limit=100&sort=orderid&type=ORDER");
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
+      res = service.get("northwind/dynamodb/orders?limit=1000&sort=orderid&type=ORDER");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'gs3' maxPageSize=1000 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
 
       json = res.getJson();
-      assertEquals(25, json.getArray("data").length());
+      assertEquals(830, json.getArray("data").length());
       String first = json.findString("data.0.href");
       //assertTrue(first.endsWith("/dynamodb/orders/10641~ORDER"));
-      assertTrue(first.endsWith("/dynamodb/orders/10257~ORDER"));
-      assertEquals(1, service.get("northwind/dynamodb/orders/10257~ORDER").getJson().getArray("data").length());
+      assertTrue(first.endsWith("/dynamodb/orders/10248~ORDER"));
+
+      res = service.get("northwind/dynamodb/orders/10248~ORDER");
+      assertEquals(1, res.data().length());
 
    }
 
@@ -155,7 +123,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       res = service.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen").statusOk();
       json = res.getJson();
       assertEquals(7, json.getArray("data").length());
-      assertDebug(res, "DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=ls2} valueMap={:val1=Blauer See Delikatessen} keyConditionExpression='' filterExpression='(#var1 = :val1)' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=ls2} valueMap={:val1=Blauer See Delikatessen} keyConditionExpression='' filterExpression='(#var1 = :val1)' projectionExpression=''");
    }
 
    @Test
@@ -169,7 +137,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=11058} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=11058} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -183,16 +151,16 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
+      Utils.assertDebug(res, "DynamoDb  GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
 
       res = service.get("northwind/dynamodb/orders/11058~ORDER");
       json = res.getJson();
 
       res.dump();
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
+      Utils.assertDebug(res, "DynamoDb  GetItemSpec partKeyCol=hk partKeyVal=11058 sortKeyCol=sk sortKeyVal=ORDER");
 
-      //[1]: DynamoDbQuery: ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORDER} keyConditionExpression='' filterExpression='((#var1 = :val1) and (#var2 = :val2))' projectionExpression=''
+      //[1]: DynamoDb  ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORDER} keyConditionExpression='' filterExpression='((#var1 = :val1) and (#var2 = :val2))' projectionExpression=''
 
    }
 
@@ -207,7 +175,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       json = res.getJson();
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=AAAAA} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=AAAAA} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -220,7 +188,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,A)").statusOk();
       json = res.getJson();
 
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk, #var3=ls1} valueMap={:val1=12345, :val2=AAAAA, :val3=A} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='(#var3 > :val3)' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk, #var3=ls1} valueMap={:val1=12345, :val2=AAAAA, :val3=A} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='(#var3 > :val3)' projectionExpression=''");
    }
 
    @Test
@@ -235,7 +203,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       //System.out.println(res.getDebug());
 
       assertEquals(json.getArray("data").length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(#var2,:val2)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=sk} valueMap={:val1=11058, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(#var2,:val2)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -248,7 +216,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       res.dump();
 
       assertEquals(res.data().length(), 1);
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1, #var3=sk} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3)' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'ls1' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk, #var2=ls1, #var3=sk} valueMap={:val1=11058, :val2=Mannheim, :val3=ORD} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3)' projectionExpression=''");
    }
 
    @Test
@@ -262,7 +230,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)").statusOk();
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&eq(employeeId,9)").statusOk();
       res = service.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(employeeId,9)&eq(OrderDate,'2014-10-29T00:00-0400')").statusOk();
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var4=hk, #var1=gs1hk, #var2=gs1sk, #var3=sk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3) and (#var4 = :val4)' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'gs1' maxPageSize=100 scanIndexForward=true nameMap={#var4=hk, #var1=gs1hk, #var2=gs1sk, #var3=sk} valueMap={:val1=9, :val2=2014-10-29T00:00-0400, :val3=ORD, :val4=11058} keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)' filterExpression='begins_with(#var3,:val3) and (#var4 = :val4)' projectionExpression=''");
       assertEquals(res.data().length(), 1);
    }
 
@@ -273,7 +241,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       Response res = null;
 
       res = service.get("northwind/dynamodb/orders?gt(OrderId, 1)&eq(type, ORDER)").statusOk();
-      assertDebug(res, "DynamoDbQuery: QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=1} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='' projectionExpression=''");
+      Utils.assertDebug(res, "DynamoDb  QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=1} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)' filterExpression='' projectionExpression=''");
    }
 
    @Test
@@ -283,7 +251,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
       Response res = null;
 
       res = service.get("northwind/dynamodb/orders?eq(type, ORDER)&or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))");
-      res.dump();
+      Utils.assertDebug(res, "DynamoDb", "QuerySpec:'gs3' maxPageSize=100 scanIndexForward=true nameMap={#var1=sk, #var2=ls2, #var3=customerid} valueMap={:val1=ORDER, :val2=Blauer See Delikatessen, :val3=HILAA} keyConditionExpression='(#var1 = :val1)' filterExpression='((#var2 = :val2) or (#var3 = :val3))' projectionExpression=''");
       res.statusOk();
    }
 }

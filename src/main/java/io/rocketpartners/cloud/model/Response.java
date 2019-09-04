@@ -382,6 +382,7 @@ public class Response
    public Response withFoundRows(int foundRows)
    {
       withMeta("foundRows", foundRows);
+      updatePageCount();
       return this;
    }
 
@@ -399,6 +400,8 @@ public class Response
    public Response withPageNum(int pageNum)
    {
       withMeta("pageNum", pageNum);
+      updatePageCount();
+
       return this;
    }
 
@@ -420,6 +423,22 @@ public class Response
          }
       }
       return pageSize;
+   }
+
+   protected void updatePageCount()
+   {
+      int ps = getPageSize();
+      int fr = getFoundRows();
+      if (ps > 0 && fr > 0)
+      {
+         int pageCount = fr / ps + (fr % ps == 0 ? 0 : 1);
+         withPageCount(pageCount);
+      }
+   }
+
+   public int getPageCount()
+   {
+      return json.findInt("meta.pageCount");
    }
 
    public String next()

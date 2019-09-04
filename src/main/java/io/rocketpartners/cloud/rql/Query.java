@@ -95,8 +95,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    public Query(E table)
    {
-      super(null);
-      withTable(table);
+      this(table, null);
    }
 
    public Query(E table, Object terms)

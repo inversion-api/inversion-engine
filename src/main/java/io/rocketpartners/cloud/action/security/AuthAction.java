@@ -188,7 +188,7 @@ public class AuthAction extends Action<AuthAction>
                {
                   tempUser.withRequestAt(now);
                   tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
-                  tempUser.setPermissions(getPermissions(conn, req.getApi(), tempUser));
+                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
                   if (!Utils.empty(authenticatedPerm))
                   {
                      tempUser.withPermission(authenticatedPerm);
@@ -275,7 +275,7 @@ public class AuthAction extends Action<AuthAction>
       {
          user = new User();
          user.withUsername("Anonymous");
-         user.withRoles(Arrays.asList(new Role("guest")));
+         user.withRoles(new Role("guest"));
 
          if (api.isMultiTenant())
          {
@@ -363,15 +363,16 @@ public class AuthAction extends Action<AuthAction>
       return matched;
    }
 
-   protected List<Role> getRoles(Connection conn, Api api, User user) throws Exception
+   protected Role[] getRoles(Connection conn, Api api, User user) throws Exception
    {
       String sql = "";
       sql += " SELECT DISTINCT r.* ";
       sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ?";
-      return SqlUtils.selectObjects(conn, sql, Role.class, user.getId());
+      List<Role> roles = SqlUtils.selectObjects(conn, sql, Role.class, user.getId());
+      return roles.toArray(new Role[roles.size()]);
    }
 
-   protected List<String> getPermissions(Connection conn, Api api, User user) throws Exception
+   protected String[] getPermissions(Connection conn, Api api, User user) throws Exception
    {
       String sql = "";
       sql += "\r\n SELECT DISTINCT name ";
@@ -392,7 +393,8 @@ public class AuthAction extends Action<AuthAction>
       sql += "\r\n  ) as perms";
 
       List args = Arrays.asList(user.getId(), api.getId(), user.getTenantId(), user.getId(), api.getId(), user.getTenantId());
-      return SqlUtils.selectObjects(conn, sql, Permission.class, args);
+      List<String> perms = SqlUtils.selectObjects(conn, sql, Permission.class, args);
+      return perms.toArray(new String[perms.size()]);
    }
 
    public static String hashPassword(Object salt, String password) throws ApiException

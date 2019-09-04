@@ -20,12 +20,13 @@ import io.rocketpartners.cloud.rql.TestTokenizer;
 
 @Suite.SuiteClasses({ //
 
+      TestSqlTokenizer.class, //
       TestSqlQuery.class, //
       TestSqlGetAction.class, //
       TestSqlPostAction.class, //
       TestSqlDeleteAction.class, //
 })
 
-public class TestSuite
+public class TestSuiteSql
 {
 }

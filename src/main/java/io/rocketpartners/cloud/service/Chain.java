@@ -18,6 +18,7 @@ package io.rocketpartners.cloud.service;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -290,7 +291,7 @@ public class Chain
     */
    public Set<String> mergeEndpointActionParamsConfig(String key)
    {
-      LinkedHashSet values = new LinkedHashSet();
+      List<String> values = new LinkedList();
 
       String value = request.getEndpoint().getConfig(key);
       if (value != null)
@@ -316,7 +317,14 @@ public class Chain
          values.addAll(Utils.explode(",", value));
       }
 
-      return values;
+      for (int i = 0; i < values.size(); i++)
+      {
+         value = values.get(i);
+         value = Utils.dequote(value);
+         values.set(i, value);
+      }
+
+      return new LinkedHashSet(values);
    }
 
    public Map<String, String> getConfig()

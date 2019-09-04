@@ -15,6 +15,8 @@
  */
 package io.rocketpartners.cloud.rql;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,5 +94,17 @@ public class TestParser
       }
 
       System.out.println("PASSED");
+   }
+
+   @Test
+   public void test2() throws Exception
+   {
+      Parser parser = new Parser();
+      Term t = parser.parse("w(name,'BANANA KG (RESEAU')");
+      
+      assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());
+      
+      t = parser.parse("w(name,'BANANA KG (RESEAU)')");
+      assertEquals("BANANA KG (RESEAU)", t.getTerm(1).getToken());
    }
 }

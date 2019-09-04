@@ -15,79 +15,75 @@
  */
 package io.rocketpartners.cloud.service.spring;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.Utils;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 public class SpringBoot
 {
-   //static Service service = null;
 
-   public static void main(String[] args)
-   {
-      try
-      {
-         //org.springframework.boot.SpringApplication.run(SpringBoot.class, args);
-         run((Service) null);
-      }
-      catch (Exception ex)
-      {
-         Utils.getCause(ex).printStackTrace();
-      }
-   }
 
-   public static void run(Api api)
-   {
-      run(new Service().withApi(api));
-   }
+//   public static void main(String[] args)
+//   {
+//      try
+//      {
+//         //org.springframework.boot.SpringApplication.run(SpringBoot.class, args);
+//         run((Service) null);
+//      }
+//      catch (Exception ex)
+//      {
+//         Utils.getCause(ex).printStackTrace();
+//      }
+//   }
+//
+//   public static void run(Api api)
+//   {
+//      run(new Service().withApi(api));
+//   }
 
    public static void run(Service service)
    {
-      try
-      {
-         //SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class, Controller.class);
-         SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class);
-         builder.initializers(new ServiceInitializer(service));
-         builder.run();
-         //new SpringApplicationBuilder(SpringBoot.class).run();//initializers(new ServiceInitializer(service)).run();
-      }
-      catch (Exception ex)
-      {
-         Utils.getCause(ex).printStackTrace();
-         ex.printStackTrace();
-      }
+      SpringApplication.run(SpringBoot.class);
+//      try
+//      {
+//         //SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class, Controller.class);
+//         SpringApplicationBuilder builder = new SpringApplicationBuilder(SpringBoot.class);
+//         builder.initializers(new ServiceInitializer(service));
+//         builder.run();
+//         //new SpringApplicationBuilder(SpringBoot.class).run();//initializers(new ServiceInitializer(service)).run();
+//      }
+//      catch (Exception ex)
+//      {
+//         Utils.getCause(ex).printStackTrace();
+//         ex.printStackTrace();
+//      }
    }
-
-
-   static class ServiceInitializer implements ApplicationContextInitializer
-   {
-      Service service;
-
-      public ServiceInitializer(Service service)
-      {
-         super();
-         this.service = service;
-      }
-
-      @Override
-      public void initialize(ConfigurableApplicationContext applicationContext)
-      {
-         applicationContext.getBeanFactory().registerSingleton("service", service);
-      }
-
-   }
+//
+//
+//   static class ServiceInitializer implements ApplicationContextInitializer
+//   {
+//      Service service;
+//
+//      public ServiceInitializer(Service service)
+//      {
+//         super();
+//         this.service = service;
+//      }
+//
+//      @Override
+//      public void initialize(ConfigurableApplicationContext applicationContext)
+//      {
+//         applicationContext.getBeanFactory().registerSingleton("service", service);
+//      }
+//
+//   }
 
 }

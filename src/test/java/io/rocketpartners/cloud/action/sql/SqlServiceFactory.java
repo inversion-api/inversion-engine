@@ -160,7 +160,11 @@ public class SqlServiceFactory
                public Chain service(Request req, Response res)
                {
                   Chain chain = super.service(req, res);
-                  //System.err.print(res.getDebug());
+
+                  String debug = res.getDebug();
+                  debug = debug.substring(0, debug.indexOf("<< response"));
+
+                  System.out.print(debug);
                   return chain;
                }
 
@@ -212,22 +216,31 @@ public class SqlServiceFactory
       return service;
    }
 
-   public static void prepData(String db, String collectionUrl) throws Exception
+   /**
+    * This restores select tables to a default state so test case writers
+    * can modify data and then have it restored before the next test case runs.
+    * 
+    * Tables restored include Orders, OrderDetails, IndexLog  
+    *   
+    * @param db
+    * @throws Exception
+    */
+   public static void prepData(String db) throws Exception
    {
-
-      //this first part deletes all orders from the DB and then posts back selected 
-      //recoreds from the "source" db.
-
       Service service = service();
       SqlDb destDb = ((SqlDb) service.getApi("northwind").getDb(db));
       Connection destCon = destDb.getConnection();
 
+      //-- Clear and restore the Order and OrderDetails tables.  OrderDetails must be
+      //-- cleared first and restored second because of foreign key dependencies
+      
       String orderDetailsTbl = destDb.getTable("OrderDetails").getName();
       String orderTbl = destDb.getTable("Orders").getName();
 
       SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderDetailsTbl));
       SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderTbl));
-
+      
+      
       int rows = SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getTable("Orders").getName()));
       Utils.assertEq(0, rows);
 
@@ -245,37 +258,14 @@ public class SqlServiceFactory
 
       SqlUtils.insertMaps(destCon, orderDetailsTbl, orderDetails);
       assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(orderDetailsTbl)));
-
-      //      Response res = service.service("GET", "northwind/source/orders?or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))&pageSize=100&sort=-orderid&expands=orderdetails");
-      //      res.dump();
-      //
-      //      Utils.assertEq(25, res.findArray("data").length());
-      //      Utils.assertEq(100, res.find("meta.pageSize"));
-      //      Utils.assertEq(25, res.find("meta.foundRows"));
-      //      Utils.assertEq(11058, res.find("data.0.orderid"));
-      //
-      //      for (Object o : res.getJson().getArray("data"))
-      //      {
-      //         ObjectNode js = (ObjectNode) o;
-      //         js.remove("href");
-      //         res = service.post(collectionUrl, js);
-      //
-      //         //System.out.println(res.getDebug());
-      //         Utils.assertEq(201, res.getStatusCode());//claims it was created
-      //
-      //         String href = res.findString("data.0.href");
-      //         res = service.get(href);
-      //
-      //         Utils.assertEq(href, res.find("data.0.href"));//check that it actually was created
-      //      }
-      //
-      //      res = service.get(collectionUrl);
-      //      Utils.assertEq(25, res.find("meta.foundRows"));
-      //
-      //      conn = sqldb.getConnection();
-      //      rows = SqlUtils.selectInt(conn, "SELECT count(*) FROM " + sqldb.quoteCol(sqldb.getTable("Orders").getName()));
-      //      Utils.assertEq(25, rows);
-
+      
+      //-- Restore the IndexLog table from source
+      String indexLogTbl = destDb.getTable("IndexLog").getName();
+      SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(indexLogTbl));
+      
+      Rows indexLogs = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"INDEXLOG\"");
+      SqlUtils.insertMaps(destCon, indexLogTbl, indexLogs);
+      
    }
 
    public static SqlDb createDb(String name, String ddl, String driver, String url, String user, String pass, String collectionPath)

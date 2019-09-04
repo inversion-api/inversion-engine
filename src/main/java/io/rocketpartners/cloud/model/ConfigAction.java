@@ -34,21 +34,14 @@ public class ConfigAction extends Action<ConfigAction>
 
    }
 
-   public ConfigAction(String config)
+   public ConfigAction(String includePaths, String excludePaths, String config)
    {
-      super(config);
-   }
-
-   public ConfigAction(String config, String includePaths, String excludePaths)
-   {
-      super(config, includePaths, excludePaths);
+      super(includePaths, excludePaths, config);
    }
 
    public final void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       //does nothing on purpose!
    }
-
-  
 
 }
