@@ -291,10 +291,11 @@ public class Service
       if (!started)
          startup();
 
-      Chain chain = Chain.push(this, req, res);
+      Chain chain = null;
 
       try
       {
+         chain = Chain.push(this, req, res);
          req.withChain(chain);
          res.withChain(chain);
 
