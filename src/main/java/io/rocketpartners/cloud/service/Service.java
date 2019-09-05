@@ -280,7 +280,7 @@ public class Service
       Request req = new Request(method, url, null);
       req.withService(this);
 
-      Response res = Chain.getResponse();
+      Response res = Chain.peek().getResponse();
 
       service(req, res);
       return res;

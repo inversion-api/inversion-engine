@@ -114,7 +114,7 @@ public class SqlDb extends Db<SqlDb>
 
                if (Chain.peek() != null)
                {
-                  Collection coll = Chain.getRequest().getCollection();
+                  Collection coll = Chain.peek().getRequest().getCollection();
                   if (coll != null && coll.getDb() != null)
                   {
                      Db db = coll.getDb();

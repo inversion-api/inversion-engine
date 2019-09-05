@@ -91,7 +91,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       Rows rows = SqlUtils.selectRows(conn, sql, values);
       int foundRows = -1;
 
-      if (Chain.peek().get("foundRows") == null && Chain.first().request().isMethod("GET"))
+      if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
       {
          if (rows.size() == 0)
          {

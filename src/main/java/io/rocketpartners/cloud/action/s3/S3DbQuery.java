@@ -53,7 +53,7 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Table, Select<Select<Selec
       req.setMaxKeys(page().getLimit()); // TODO fix pagesize...currently always set to 1000 ... tied to 'size' but not 'pagesize'?
       req.setDelimiter("/");
 
-      String prefix = Chain.getRequest().getSubpath();
+      String prefix = Chain.peek().getRequest().getSubpath();
 
       while (prefix.startsWith("/"))
          prefix = prefix.substring(1, prefix.length());

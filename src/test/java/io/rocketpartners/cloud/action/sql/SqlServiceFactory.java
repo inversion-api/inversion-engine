@@ -173,11 +173,11 @@ public class SqlServiceFactory
 
                   if (Chain.size() == 1)
                   {
-                     if (res.getChain().request().isGet())
+                     if (res.getChain().getRequest().isGet())
                      {
                         if (res.find("meta.foundRows") == null)
                         {
-                           System.out.println(res.getChain().request().getUrl());
+                           System.out.println(res.getChain().getRequest().getUrl());
                            System.out.println(res.meta());
                         }
                      }

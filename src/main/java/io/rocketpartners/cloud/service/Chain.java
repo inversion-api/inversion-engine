@@ -97,16 +97,6 @@ public class Chain
       return get().size();
    }
 
-   public static Request getRequest()
-   {
-      return peek().request;
-   }
-
-   public static Response getResponse()
-   {
-      return peek().response;
-   }
-
    public static void debug(Object... msgs)
    {
       Stack<Chain> stack = get();
@@ -135,7 +125,7 @@ public class Chain
    {
       String collectionKey = collection.getName();
 
-      Request req = getRequest();
+      Request req = peek().getRequest();
 
       String url = req.getApiUrl();
 
@@ -387,7 +377,7 @@ public class Chain
          Chain tempChain = this;
          while (tempChain != null)
          {
-            System.out.println(" ----  " + tempChain + " ::: " + tempChain.request() + " ::: " + tempChain.request().getUrl());
+            System.out.println(" ----  " + tempChain + " ::: " + tempChain.getRequest() + " ::: " + tempChain.getRequest().getUrl());
             tempChain = tempChain.getParent();
          }
       }
@@ -478,19 +468,14 @@ public class Chain
       return this;
    }
 
-   public Request request()
+   public Request getRequest()
    {
       return request;
    }
 
-   //   public Request getRequest()
-   //   {
-   //      return peek().request;
-   //   }
-   //
-   //   public Response getResponse()
-   //   {
-   //      return response;
-   //   }
+   public Response getResponse()
+   {
+      return response;
+   }
 
 }
