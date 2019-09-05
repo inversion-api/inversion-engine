@@ -152,7 +152,8 @@ public class TestSqlDeleteAction extends TestCase
       Response res = service.get(url("indexlogs"));
       int allRecordsSize = res.data().size();
 
-      res = service.get(url("indexlogs/20"));
+      //res = service.get(url("indexlogs/1,4,16,18"));
+      //res.dump();
       
       // The IndexLog table has a single column PK
       // select * from IndexLog where tenantCode = 'us' and error is null and modifiedAt < '2019-04-01 00:00:00';
@@ -160,7 +161,7 @@ public class TestSqlDeleteAction extends TestCase
       res = service.get(url);
 
       ArrayNode data =res.getJson().findArray("data");
-      assertTrue("data should contain four records", data.size() == 4);
+      assertTrue("data should contain three records", data.size() == 3);
 
       res = service.delete(url("indexlogs"), new ArrayNode(url));
       res.dump();
@@ -172,7 +173,7 @@ public class TestSqlDeleteAction extends TestCase
 
       res = service.get(url("indexlogs"));
       int allRecordsSizeAfterDelete = res.getJson().findArray("data").size();
-      assertEquals("Wrong number of records were deleted", 4, (allRecordsSize - allRecordsSizeAfterDelete));
+      assertEquals("Wrong number of records were deleted", 3, (allRecordsSize - allRecordsSizeAfterDelete));
    }
 
    //2019-05-16 this is currently failing because of the OrderDetails child records...not sure what to do with this test
