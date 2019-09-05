@@ -55,6 +55,16 @@ public class Chain
       return get().size();
    }
 
+   public static Chain first()
+   {
+      Stack<Chain> stack = get();
+      if (!stack.empty())
+      {
+         return stack.get(0);
+      }
+      return null;
+   }
+
    public static Chain peek()
    {
       Stack<Chain> stack = get();
