@@ -2,101 +2,107 @@ package io.rocketpartners.cloud.service;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
 import junit.framework.TestCase;
 
 public class TestService extends TestCase
 {
-//   public static void main(String[] args)
-//   {
-//      TestService tests = new TestService();
-//      tests.test1();
-//   }
+   //   public static void main(String[] args)
+   //   {
+   //      TestService tests = new TestService();
+   //      tests.test1();
+   //   }
 
-//   @Test
-//   public void test1()
-//   {
-//      Service service = null;
-//
-//      service = new Service()//
-//                             .withApi((String) null)//
-//                             .withEndpoint("get", "*").getApi()//
-//                             .withAction(new MockActionA(), "get", "*").getApi()//
-//                             .withDb(new MockDb()).getApi().getService();
-//
-//      Response resp = service.get("users");
-//      assertEquals(200, resp.getStatusCode());
-//      assertEquals(1, resp.getPageSize());
-//
-//      //action is placed on the endpoint instead of the api
-//      service = new Service()//
-//                             .withApi((String) null)//
-//                             .withEndpoint("get", "*").withAction(new MockActionA(), "get", "*").getApi()//
-//                             .withDb(new MockDb()).getApi().getService();
-//
-//      resp = service.get("users");
-//      assertEquals(200, resp.getStatusCode());
-//      assertEquals(1, resp.getPageSize());
-//
-//      service = new Service()//
-//                             .withApi("testApi")//
-//                             .withEndpoint("get", "*").getApi()//
-//                             .withAction(new MockActionA(), "get", "*").getApi()//
-//                             .withDb(new MockDb()).getApi().getService();
-//
-//      resp = service.get("users");
-//      assertEquals(404, resp.getStatusCode());
-//
-//      resp = service.get("testApi/users");
-//      assertEquals(200, resp.getStatusCode());
-//      assertEquals(1, resp.getPageSize());
-//
-//      assertEquals(200, service.get("/testApi/users").getStatusCode());
-//      assertEquals(200, service.get("http://localhost/testApi/users").getStatusCode());
-//      assertEquals(200, service.get("http://whateverhost:12345/testApi/users").getStatusCode());
-//   }
+   //   @Test
+   //   public void test1()
+   //   {
+   //      Service service = null;
+   //
+   //      service = new Service()//
+   //                             .withApi((String) null)//
+   //                             .withEndpoint("get", "*").getApi()//
+   //                             .withAction(new MockActionA(), "get", "*").getApi()//
+   //                             .withDb(new MockDb()).getApi().getService();
+   //
+   //      Response resp = service.get("users");
+   //      assertEquals(200, resp.getStatusCode());
+   //      assertEquals(1, resp.getPageSize());
+   //
+   //      //action is placed on the endpoint instead of the api
+   //      service = new Service()//
+   //                             .withApi((String) null)//
+   //                             .withEndpoint("get", "*").withAction(new MockActionA(), "get", "*").getApi()//
+   //                             .withDb(new MockDb()).getApi().getService();
+   //
+   //      resp = service.get("users");
+   //      assertEquals(200, resp.getStatusCode());
+   //      assertEquals(1, resp.getPageSize());
+   //
+   //      service = new Service()//
+   //                             .withApi("testApi")//
+   //                             .withEndpoint("get", "*").getApi()//
+   //                             .withAction(new MockActionA(), "get", "*").getApi()//
+   //                             .withDb(new MockDb()).getApi().getService();
+   //
+   //      resp = service.get("users");
+   //      assertEquals(404, resp.getStatusCode());
+   //
+   //      resp = service.get("testApi/users");
+   //      assertEquals(200, resp.getStatusCode());
+   //      assertEquals(1, resp.getPageSize());
+   //
+   //      assertEquals(200, service.get("/testApi/users").getStatusCode());
+   //      assertEquals(200, service.get("http://localhost/testApi/users").getStatusCode());
+   //      assertEquals(200, service.get("http://whateverhost:12345/testApi/users").getStatusCode());
+   //   }
+
+   //   @Test
+   //   public void test2()
+   //   {
+   //      Service service = null;
+   //
+   //      service = new Service()//
+   //                             .withApi((String) null)//
+   //                             .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
+   //                             .withEndpoint("get", "actionB/*", new MockActionB("get", "*"))//
+   //                             .getService();
+   //
+   //      Response resp = null;
+   //      ObjectNode data = null;
+   //
+   //      resp = service.get("/actionA/helloworld");
+   //      data = resp.getJson();
+   //      assertEquals("MockActionA", data.find("data.0.className"));
+   //
+   //      resp = service.get("/actionB/hellomoon");
+   //      data = resp.getJson();
+   //      assertEquals("MockActionB", data.find("data.0.className"));
+   //
+   //   }
+   //
+   //   @Test
+   //   public void testSimpleEndpoint()
+   //   {
+   //      Service service = null;
+   //
+   //      service = new Service()//
+   //                             .withApi((String) null)//
+   //                             .withEndpoint("GET", "actionA*", new MockActionA("GET", "*"))//
+   //                             .getService();
+   //
+   //      Response resp = null;
+   //      resp = service.get("/actionA");
+   //      assertEquals(SC.SC_200_OK, resp.getStatusCode());
+   //   }
 
    @Test
-   public void test2()
+   public void testRulePaths()
    {
-      Service service = null;
-
-      service = new Service()//
-                             .withApi((String) null)//
-                             .makeEndpoint("get", "actionA/*").withAction(new MockActionA(), "get", "*").getApi()//
-                             .makeEndpoint("get", "actionB/*").withAction(new MockActionB(), "get", "*").getApi()//
-                             .getService();
-
-      Response resp = null;
-      ObjectNode data = null;
-
-      resp = service.get("/actionA/helloworld");
-      data = resp.getJson();
-      assertEquals("MockActionA", data.find("data.0.className"));
-
-      resp = service.get("/actionB/hellomoon");
-      data = resp.getJson();
-      assertEquals("MockActionB", data.find("data.0.className"));
-
+      assertEquals("a/b", Rule.asPath("/a////b/////"));
    }
 
-   @Test
-   public void testSimpleEndpoint()
-   {
-      Service service = null;
-
-      service = new Service()//
-                             .withApi((String) null)//
-                             .makeEndpoint("GET", "actionA*").withAction(new MockActionA(), "GET", "*").getApi()//
-                             .getService();
-      
-      Response resp = null;
-      resp = service.get("/actionA");
-      assertEquals(SC.SC_200_OK, resp.getStatusCode());
-   }
-   
    @Test
    public void testSimpleEndpoint2()
    {
@@ -104,9 +110,9 @@ public class TestService extends TestCase
 
       service = new Service()//
                              .withApi((String) null)//
-                             .makeEndpoint("GET", "actionA", "*").withAction(new MockActionA(), "GET", "*").getApi()//
+                             .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*"))//
                              .getService();
-      
+
       Response resp = null;
       resp = service.get("/actionA");
       assertEquals(SC.SC_200_OK, resp.getStatusCode());

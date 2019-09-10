@@ -104,9 +104,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
                {
                   int colonIdx = matchPart.indexOf(":");
                   if (colonIdx < 0)
-                     continue;
+                     colonIdx = 0;
 
-                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}"));
+                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
 
                   Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                   Matcher matcher = pattern.matcher(pathPart);
@@ -240,6 +240,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          for (String path : Utils.explode(",", paths))
          {
+            path = Rule.asPath(path);
             if (!includePaths.contains(path))
                includePaths.add(path);
          }
@@ -258,6 +259,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          for (String path : Utils.explode(",", paths))
          {
+            path = Rule.asPath(path);
             if (!excludePaths.contains(path))
                excludePaths.add(path);
          }
@@ -307,7 +309,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          if (queryString != null)
          {
             configStr = configStr == null ? queryString : configStr + "&" + queryString;
-            
+
             Map<String, String> parsed = Utils.parseQueryString(queryString);
             configMap.putAll(parsed);
          }
@@ -324,4 +326,31 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       this.order = order;
       return (R) this;
    }
+
+   /**
+    * Trims leading and trailing 
+    * @param path
+    * @return
+    */
+   public static String asPath(String path)
+   {
+      if (path != null)
+      {
+         path = path.trim().replaceAll("/+", "/");
+
+         if (path.startsWith("/"))
+            path = path.substring(1, path.length());
+
+         if (path.endsWith("/"))
+            path = path.substring(0, path.length() - 1);
+      }
+      
+      if (Utils.empty(path))
+      {
+         path = null;
+      }
+
+      return path;
+   }
+
 }

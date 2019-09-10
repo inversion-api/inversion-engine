@@ -1,0 +1,29 @@
+{
+    "taskDefinition": "your-app-name-prod:1",
+    "cluster": "your-ecs-cluster-name",
+    "loadBalancers": [
+        {
+            "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:123456789:targetgroup/your-app-name-prod-1/abcd1234",
+            "containerName": "your-app-name-prod",
+            "containerPort": 8080
+        }
+    ],
+    "desiredCount": 1,
+    "launchType": "FARGATE",
+    "schedulingStrategy": "REPLICA",
+    "deploymentController": {
+        "type": "CODE_DEPLOY"
+    },
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": [
+                "subnet-abc",
+                "subnet-xyz"
+            ],
+            "securityGroups": [
+                "sg-123456"
+            ],
+            "assignPublicIp": "ENABLED"
+        }
+    }
+}

@@ -13,7 +13,6 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.service.spring.SpringBoot;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
@@ -68,7 +67,7 @@ public class SqlServiceFactory
 
    public static void main(String[] args) throws Exception
    {
-      SpringBoot.run(service(false));
+      //SpringBoot.run(service(false));
    }
 
    public static synchronized Service service() throws Exception
@@ -93,7 +92,7 @@ public class SqlServiceFactory
                      SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
                      service.withApi("northwind")//
-                            .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
+                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
                             .withDb(sourceDb);
 
                      Connection conn = sourceDb.getConnection();
@@ -103,7 +102,7 @@ public class SqlServiceFactory
                         SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
 
                         service.getApi("northwind")//
-                               .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
+                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
                                .withDb(h2Db);
                      }
 
@@ -144,8 +143,7 @@ public class SqlServiceFactory
                            mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
 
                            service.getApi("northwind")//
-                                  .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
-                                  .withAction(new RestAction()).getApi()//
+                                  .withEndpoint("GET,PUT,POST,DELETE", "mysql/*", new RestAction())//
                                   .withDb(mysqlDb);
                         }
                      }
@@ -174,11 +172,11 @@ public class SqlServiceFactory
 
                   if (Chain.size() == 1)
                   {
-                     if (res.getChain().request().isGet())
+                     if (res.getChain().getRequest().isGet())
                      {
                         if (res.find("meta.foundRows") == null)
                         {
-                           System.out.println(res.getChain().request().getUrl());
+                           System.out.println(res.getChain().getRequest().getUrl());
                            System.out.println(res.meta());
                         }
                      }

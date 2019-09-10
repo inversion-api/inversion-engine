@@ -715,7 +715,7 @@ public class RestGetAction extends Action<RestGetAction>
       //--
       //-- Nested param support
       //TODO: don't remember the use case here.  need to find and make a test case
-      Map<String, String> params = Chain.getRequest().getParams();
+      Map<String, String> params = Chain.peek().getRequest().getParams();
       String lcPath = expandsPath.toLowerCase();
       for (String key : params.keySet())
       {

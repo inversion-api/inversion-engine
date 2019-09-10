@@ -280,7 +280,7 @@ public class Service
       Request req = new Request(method, url, null);
       req.withService(this);
 
-      Response res = Chain.getResponse();
+      Response res = Chain.peek().getResponse();
 
       service(req, res);
       return res;
@@ -291,10 +291,11 @@ public class Service
       if (!started)
          startup();
 
-      Chain chain = Chain.push(this, req, res);
+      Chain chain = null;
 
       try
       {
+         chain = Chain.push(this, req, res);
          req.withChain(chain);
          res.withChain(chain);
 
@@ -367,94 +368,91 @@ public class Service
             }
          }
 
-         if (parts.size() > 0)
+         for (Api a : apis)
          {
-            for (Api a : apis)
+            if (!((parts.size() == 0 && apis.size() == 1) || (apis.size() == 1 && a.getApiCode() == null) || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
+               continue;
+
+            req.withApi(a);
+
+            if (parts.size() > 0 && parts.get(0).equalsIgnoreCase((a.getApiCode())))
             {
-               if (!((apis.size() == 1 && a.getApiCode() == null) || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
-                  continue;
+               apiPath.add(parts.remove(0));
+            }
 
-               req.withApi(a);
+            if (a.isMultiTenant() && parts.size() > 0)
+            {
+               String tenantCode = parts.remove(0);
+               apiPath.add(tenantCode);
+               req.withTenantCode(tenantCode);
+            }
 
-               if (parts.get(0).equalsIgnoreCase((a.getApiCode())))
+            req.withApiPath(Utils.implode("/", apiPath) + "/");
+
+            String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
+            for (int i = 0; i <= parts.size(); i++)
+            {
+               String endpointPath = i == 0 ? "" : (Utils.implode("/", parts.subList(0, i)) + "/");
+
+               for (Endpoint e : a.getEndpoints())
                {
-                  apiPath.add(parts.remove(0));
-               }
-
-               if (a.isMultiTenant() && parts.size() > 0)
-               {
-                  String tenantCode = parts.remove(0);
-                  apiPath.add(tenantCode);
-                  req.withTenantCode(tenantCode);
-               }
-
-               req.withApiPath(Utils.implode("/", apiPath) + "/");
-
-               String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
-               for (int i = 0; i <= parts.size(); i++)
-               {
-                  String endpointPath = i == 0 ? "" : (Utils.implode("/", parts.subList(0, i)) + "/");
-
-                  for (Endpoint e : a.getEndpoints())
+                  if (e.matches(req.getMethod(), endpointPath) //
+                        && e.matches(req.getMethod(), remainingPath))
                   {
-                     if (e.matches(req.getMethod(), endpointPath) //
-                           && e.matches(req.getMethod(), remainingPath))
+                     req.withEndpointPath(endpointPath);
+                     req.withEndpoint(e);
+
+                     if (i < parts.size())
                      {
-                        req.withEndpointPath(endpointPath);
-                        req.withEndpoint(e);
+                        String collectionKey = parts.get(i);
 
-                        if (i < parts.size())
+                        req.withCollectionKey(collectionKey);
+                        i += 1;
+
+                        for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                         {
-                           String collectionKey = parts.get(i);
+                           if (collectionKey.equalsIgnoreCase(collection.getName())//
+                                 && (collection.getIncludePaths().size() > 0 //
+                                       || collection.getExcludePaths().size() > 0))
+                           {
+                              if (collection.matches(req.getMethod(), endpointPath))
+                              {
+                                 req.withCollection(collection);
+                                 break;
+                              }
+                           }
+                        }
 
-                           req.withCollectionKey(collectionKey);
-                           i += 1;
-
+                        if (req.getCollection() == null)
+                        {
                            for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
                            {
-                              if (collectionKey.equalsIgnoreCase(collection.getName())//
-                                    && (collection.getIncludePaths().size() > 0 //
-                                          || collection.getExcludePaths().size() > 0))
+                              if (collectionKey.equalsIgnoreCase(collection.getName()) //
+                                    && collection.getIncludePaths().size() == 0 //
+                                    && collection.getExcludePaths().size() == 0)
                               {
-                                 if (collection.matches(req.getMethod(), endpointPath))
-                                 {
-                                    req.withCollection(collection);
-                                    break;
-                                 }
+                                 req.withCollection(collection);
+                                 break;
                               }
                            }
+                        }
 
-                           if (req.getCollection() == null)
-                           {
-                              for (io.rocketpartners.cloud.model.Collection collection : a.getCollections())
-                              {
-                                 if (collectionKey.equalsIgnoreCase(collection.getName()) //
-                                       && collection.getIncludePaths().size() == 0 //
-                                       && collection.getExcludePaths().size() == 0)
-                                 {
-                                    req.withCollection(collection);
-                                    break;
-                                 }
-                              }
-                           }
-
-                        }
-                        if (i < parts.size())
-                        {
-                           req.withEntityKey(parts.get(i));
-                           i += 1;
-                        }
-                        if (i < parts.size())
-                        {
-                           req.withSubCollectionKey(parts.get(i));
-                        }
-                        break;
                      }
-                  }
-
-                  if (req.getEndpoint() != null)
+                     if (i < parts.size())
+                     {
+                        req.withEntityKey(parts.get(i));
+                        i += 1;
+                     }
+                     if (i < parts.size())
+                     {
+                        req.withSubCollectionKey(parts.get(i));
+                     }
                      break;
+                  }
                }
+
+               if (req.getEndpoint() != null)
+                  break;
             }
          }
 
@@ -542,7 +540,7 @@ public class Service
 
          if (ex instanceof ApiException)
          {
-            if (req != null && req.isDebug())
+            if (req != null && req.isDebug() && ((ApiException) ex).getStatus().startsWith("5"))
             {
                log.error("Error in Service", ex);
             }

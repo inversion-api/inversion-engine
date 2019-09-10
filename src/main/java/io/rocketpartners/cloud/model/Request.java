@@ -15,6 +15,8 @@
  */
 package io.rocketpartners.cloud.model;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -497,20 +499,20 @@ public class Request
       return this;
    }
 
-   public String getApiPath()
-   {
-      return apiPath;
-   }
-
    public String getApiUrl()
    {
       String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
       return apiUrl;
    }
 
+   public String getApiPath()
+   {
+      return apiPath;
+   }
+
    public Request withApiPath(String apiUrl)
    {
-      this.apiPath = apiUrl;
+      this.apiPath = Rule.asPath(apiUrl);
       return this;
    }
 
@@ -521,7 +523,7 @@ public class Request
 
    public Request withEndpointPath(String endpointPath)
    {
-      this.endpointPath = endpointPath;
+      this.endpointPath = Rule.asPath(endpointPath);
       return this;
    }
 
