@@ -93,21 +93,7 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint withPath(String path)
    {
-      if (path != null)
-      {
-         path = path.toLowerCase();
-         path = Utils.implode("/", Utils.explode("/", path));
-
-         if (!Utils.empty(path) && !path.endsWith("/"))
-            path += "/";
-      }
-
-      if (Utils.empty(path))
-      {
-         path = null;
-      }
-
-      this.path = path;
+      this.path = Rule.asPath(path);
       return this;
    }
 

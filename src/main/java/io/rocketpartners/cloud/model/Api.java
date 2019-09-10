@@ -378,6 +378,36 @@ public class Api
       return new ArrayList(endpoints);
    }
 
+   public Endpoint makeEndpoint(String methods, String path, Action... actions)
+   {
+      String includePaths = null;
+      Endpoint endpoint = new Endpoint();
+
+      if (path != null && path.endsWith("/*"))
+      {
+         includePaths = "*";
+         path = path.substring(0, path.length() - 2);
+      }
+
+      endpoint.withPath(path);
+      endpoint.withIncludePaths(includePaths);
+
+      for (Action action : actions)
+      {
+         endpoint.withAction(action);
+      }
+
+      withEndpoint(endpoint);
+
+      return endpoint;
+   }
+
+   public Api withEndpoint(String methods, String path, Action... actions)
+   {
+      makeEndpoint(methods, path, actions);
+      return this;
+   }
+
    public Api withEndpoints(Endpoint... endpoints)
    {
       for (Endpoint endpoint : endpoints)
@@ -396,43 +426,31 @@ public class Api
 
       return this;
    }
-   
-   
-   public Api withEndpoint(String methods, String includePaths, Action... actions)
-   {
-      for(Action action : actions)
-      {
-         makeEndpoint(action, methods, null, includePaths);
-      }
-      
-      return this;
-   }
-   
 
-   public Endpoint makeEndpoint(String method, String includePaths)
-   {
-      return makeEndpoint(method, null, includePaths);
-   }
-
-   public Endpoint makeEndpoint(String method, String path, String includePaths)
-   {
-      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
-      withEndpoint(endpoint);
-      return endpoint;
-   }
-
-   public Endpoint makeEndpoint(Action action, String method, String includePaths)
-   {
-      return makeEndpoint(action, method, null, includePaths);
-   }
-
-   public Endpoint makeEndpoint(Action action, String method, String path, String includePaths)
-   {
-      Endpoint endpoint = new Endpoint().withMethods(method).withPath(path).withIncludePaths(includePaths);
-      endpoint.withAction(action);
-      withEndpoint(endpoint);
-      return endpoint;
-   }
+   //   public Endpoint makeEndpoint(String method, String includePaths)
+   //   {
+   //      return makeEndpoint(method, null, includePaths);
+   //   }
+   //
+   //   public Endpoint makeEndpoint(String method, String path, String includePaths)
+   //   {
+   //      Endpoint endpoint = new Endpoint(method, path, includePaths);
+   //      withEndpoint(endpoint);
+   //      return endpoint;
+   //   }
+   //
+   //   public Endpoint makeEndpoint(Action action, String method, String includePaths)
+   //   {
+   //      return makeEndpoint(action, method, null, includePaths);
+   //   }
+   //
+   //   public Endpoint makeEndpoint(Action action, String method, String path, String includePaths)
+   //   {
+   //      Endpoint endpoint = new Endpoint(method, path, includePaths);
+   //      endpoint.withAction(action);
+   //      withEndpoint(endpoint);
+   //      return endpoint;
+   //   }
 
    public List<Action> getActions()
    {

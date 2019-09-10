@@ -120,7 +120,7 @@ public class DynamoServiceFactory
 
       final Api api = service.getApi(apiCode);
       api.withDb(dynamoDb);
-      api.makeEndpoint("GET,PUT,POST,DELETE", "dynamodb", "*").withAction(new RestAction());
+      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
 
       dynamoDb.startup();
 

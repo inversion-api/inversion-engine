@@ -9,6 +9,12 @@ import io.rocketpartners.cloud.model.Response;
 
 public class MockActionA extends Action<Action>
 {
+   
+   public MockActionA(String methods, String includePaths)
+   {
+      withMethods(methods);
+      withIncludePaths(includePaths);
+   }
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception

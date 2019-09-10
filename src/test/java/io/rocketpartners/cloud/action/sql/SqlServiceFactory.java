@@ -92,7 +92,7 @@ public class SqlServiceFactory
                      SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
                      service.withApi("northwind")//
-                            .makeEndpoint("GET,PUT,POST,DELETE", "source/", "*").withAction(new RestAction()).getApi()//
+                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
                             .withDb(sourceDb);
 
                      Connection conn = sourceDb.getConnection();
@@ -102,7 +102,7 @@ public class SqlServiceFactory
                         SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
 
                         service.getApi("northwind")//
-                               .makeEndpoint("GET,PUT,POST,DELETE", "h2/", "*").withAction(new RestAction()).getApi()//
+                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
                                .withDb(h2Db);
                      }
 
@@ -143,8 +143,7 @@ public class SqlServiceFactory
                            mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
 
                            service.getApi("northwind")//
-                                  .makeEndpoint("GET,PUT,POST,DELETE", "mysql/", "*")//
-                                  .withAction(new RestAction()).getApi()//
+                                  .withEndpoint("GET,PUT,POST,DELETE", "mysql/*", new RestAction())//
                                   .withDb(mysqlDb);
                         }
                      }
