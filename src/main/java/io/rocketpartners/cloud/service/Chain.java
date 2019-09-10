@@ -142,10 +142,13 @@ public class Chain
 
          String ep = req.getEndpointPath();
 
-         url += ep;
+         if (!Utils.empty(ep))
+         {
+            url += ep;
 
-         if (!url.endsWith("/"))
-            url += "/";
+            if (!url.endsWith("/"))
+               url += "/";
+         }
       }
       else if (collection != null && collection.getIncludePaths().size() > 0)
       {
