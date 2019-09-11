@@ -23,6 +23,22 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
 {
+   public RestDeleteAction()
+   {
+      this(null);
+   }
+
+   public RestDeleteAction(String inludePaths)
+   {
+      this(inludePaths, null, null);
+   }
+
+   public RestDeleteAction(String inludePaths, String excludePaths, String config)
+   {
+      super(inludePaths, excludePaths, config);
+      withMethods("DELETE");
+   }
+
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
@@ -113,7 +129,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          }
          else
          {
-            Term and = Term.term(null,  "and");
+            Term and = Term.term(null, "and");
             for (String paramName : params.keySet())
             {
                String termStr = null;
@@ -130,7 +146,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
                Term term = parser.parse(termStr);
                and.withTerm(term);
             }
-            if(and.size() == 0)
+            if (and.size() == 0)
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to a collection unless you include an entityKey or query string");
             }

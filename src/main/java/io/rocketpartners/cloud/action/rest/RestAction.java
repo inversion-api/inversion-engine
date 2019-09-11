@@ -8,11 +8,27 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 
-public class RestAction<T extends RestAction> extends Action<T>
+public class RestAction extends Action<RestAction>
 {
    protected RestGetAction    get    = new RestGetAction();
    protected RestDeleteAction delete = new RestDeleteAction();
    protected RestPostAction   post   = new RestPostAction();
+
+   public RestAction()
+   {
+      this(null);
+   }
+
+   public RestAction(String inludePaths)
+   {
+      this(inludePaths, null, null);
+   }
+
+   public RestAction(String inludePaths, String excludePaths, String config)
+   {
+      super(inludePaths, excludePaths, config);
+      withMethods("PUT,POST");
+   }
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception

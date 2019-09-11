@@ -7,8 +7,14 @@ import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 
-public class MockActionA extends Action<Action>
+public class MockActionA extends Action<MockActionA>
 {
+   
+   public MockActionA()
+   {
+      
+   }
+   
    
    public MockActionA(String methods, String includePaths)
    {

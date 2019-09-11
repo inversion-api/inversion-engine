@@ -56,12 +56,18 @@ public class RestGetAction extends Action<RestGetAction>
 
    public RestGetAction()
    {
-
+      this(null);
    }
 
    public RestGetAction(String inludePaths)
    {
-      super(inludePaths, null, null);
+      this(inludePaths, null, null);
+   }
+
+   public RestGetAction(String inludePaths, String excludePaths, String config)
+   {
+      super(inludePaths, excludePaths, config);
+      withMethods("GET");
    }
 
    @Override

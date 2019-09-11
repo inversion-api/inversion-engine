@@ -48,6 +48,22 @@ public class RestPostAction extends Action<RestPostAction>
    protected boolean strictRest     = true;
    protected boolean expandResponse = true;
 
+   public RestPostAction()
+   {
+      this(null);
+   }
+
+   public RestPostAction(String inludePaths)
+   {
+      this(inludePaths, null, null);
+   }
+
+   public RestPostAction(String inludePaths, String excludePaths, String config)
+   {
+      super(inludePaths, excludePaths, config);
+      withMethods("PUT,POST");
+   }
+
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
