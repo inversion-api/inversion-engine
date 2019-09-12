@@ -53,6 +53,11 @@ public class Api
    {
    }
 
+   public Api(String apiCode)
+   {
+      withApiCode(apiCode);
+   }
+
    public synchronized Api startup()
    {
       if (started || starting) //starting is an accidental recursion guard
