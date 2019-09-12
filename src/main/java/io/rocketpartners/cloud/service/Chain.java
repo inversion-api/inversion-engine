@@ -15,6 +15,7 @@
  */
 package io.rocketpartners.cloud.service;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -168,14 +169,14 @@ public class Chain
          if (!url.endsWith("/"))
             url += "/";
 
-         url += collectionKey;
+         url += URLEncoder.encode(collectionKey);
       }
 
       if (!Utils.empty(entityKey))
-         url += "/" + entityKey;
+         url += "/" + URLEncoder.encode(entityKey.toString());
 
       if (!Utils.empty(subCollectionKey))
-         url += "/" + subCollectionKey;
+         url += "/" + URLEncoder.encode(subCollectionKey);
 
       if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
       {
