@@ -27,7 +27,6 @@ public class RestAction extends Action<RestAction>
    public RestAction(String inludePaths, String excludePaths, String config)
    {
       super(inludePaths, excludePaths, config);
-      withMethods("PUT,POST");
    }
 
    @Override
