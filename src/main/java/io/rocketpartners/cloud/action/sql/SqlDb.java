@@ -146,6 +146,15 @@ public class SqlDb extends Db<SqlDb>
       withName(name);
    }
 
+   public SqlDb(String name, String driver, String url, String user, String pass)
+   {
+      withName(name);
+      withDriver(driver);
+      withUrl(url);
+      withUser(user);
+      withPass(pass);
+   }
+
    @Override
    public String getType()
    {
@@ -329,18 +338,7 @@ public class SqlDb extends Db<SqlDb>
 
                   if (pool == null && !isShutdown())
                   {
-                     //System.out.println("CREATING NEW POOL: " + getUrl());
-                     //pool = JdbcConnectionPool.create("jdbc:h2:./northwind", "sa", "");
-
-                     HikariConfig config = new HikariConfig();
-                     String driver = getDriver();
-                     config.setDriverClassName(driver);
-                     config.setJdbcUrl(getUrl());
-                     config.setUsername(getUser());
-                     config.setPassword(getPass());
-                     config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
-                     pool = new HikariDataSource(config);
-
+                     pool = createConnectionPool();
                      pools.put(dsKey, pool);
                   }
                }
@@ -352,17 +350,6 @@ public class SqlDb extends Db<SqlDb>
             ConnectionLocal.putConnection(this, conn);
          }
 
-         //         String res = "TABLE NOT FOUND";
-         //         try
-         //         {
-         //            res = SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1").toString();
-         //         }
-         //         catch(Exception ex)
-         //         {
-         //            
-         //         }
-         //System.out.println("GETTING CONNECTION: " + getUrl() + " - " + res);         
-
          return conn;
       }
       catch (Exception ex)
@@ -370,6 +357,20 @@ public class SqlDb extends Db<SqlDb>
          log.error("Unable to get DB connection", ex);
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
       }
+   }
+
+   protected DataSource createConnectionPool()
+   {
+      HikariConfig config = new HikariConfig();
+      String driver = getDriver();
+      config.setDriverClassName(driver);
+      config.setJdbcUrl(getUrl());
+      config.setUsername(getUser());
+      config.setPassword(getPass());
+      config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
+      DataSource pool = new HikariDataSource(config);
+
+      return pool;
    }
 
    public static class ConnectionLocal
