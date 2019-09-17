@@ -19,9 +19,9 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class SqlServiceFactory
 {
-   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
-   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
+   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 
@@ -231,14 +231,13 @@ public class SqlServiceFactory
 
       //-- Clear and restore the Order and OrderDetails tables.  OrderDetails must be
       //-- cleared first and restored second because of foreign key dependencies
-      
+
       String orderDetailsTbl = destDb.getTable("OrderDetails").getName();
       String orderTbl = destDb.getTable("Orders").getName();
 
       SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderDetailsTbl));
       SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderTbl));
-      
-      
+
       int rows = SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getTable("Orders").getName()));
       Utils.assertEq(0, rows);
 
@@ -256,14 +255,14 @@ public class SqlServiceFactory
 
       SqlUtils.insertMaps(destCon, orderDetailsTbl, orderDetails);
       assertEquals(59, SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(orderDetailsTbl)));
-      
+
       //-- Restore the IndexLog table from source
       String indexLogTbl = destDb.getTable("IndexLog").getName();
       SqlUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(indexLogTbl));
-      
+
       Rows indexLogs = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"INDEXLOG\"");
       SqlUtils.insertMaps(destCon, indexLogTbl, indexLogs);
-      
+
    }
 
    public static SqlDb createDb(String name, String ddl, String driver, String url, String user, String pass, String collectionPath)

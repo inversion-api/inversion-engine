@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.Rows.Row;
@@ -202,7 +207,7 @@ public class Table
          if (Utils.empty(val))
             return null;
 
-         val = val.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,");
+         val = encodeStr(val.toString());
 
          if (key.length() > 0)
             key.append("~");
@@ -222,11 +227,53 @@ public class Table
          if (piece == null)
             throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Trying to encode an entity key with a null component: '" + pieces + "'");
 
-         entityKey.append(piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+         entityKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
          if (i < pieces.size() - 1)
             entityKey.append("~");
       }
       return entityKey.toString();
+   }
+
+   public static String encodeStr(String string)
+   {
+      Pattern p = Pattern.compile("[^A-Za-z0-9]");
+      Matcher m = p.matcher(string);
+      StringBuffer sb = new StringBuffer();
+      while (m.find())
+      {
+         String chars = m.group();
+         String hex = new String(Hex.encodeHex(chars.getBytes()));
+         while (hex.length() < 4)
+            hex = "0" + hex;
+
+         //System.out.println(chars + " -> " + hex);
+         m.appendReplacement(sb, "*" + hex);
+      }
+      m.appendTail(sb);
+      return sb.toString();
+   }
+
+   public static String decodeStr(String string)
+   {
+      try
+      {
+         Pattern p = Pattern.compile("\\*[0-9a-f]{4}");
+         Matcher m = p.matcher(string);
+         StringBuffer sb = new StringBuffer();
+         while (m.find())
+         {
+            String group = m.group();
+            String hex = group.substring(1);
+            String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
+            m.appendReplacement(sb, chars);
+         }
+         m.appendTail(sb);
+         return sb.toString();
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException(ex);
+      }
    }
 
    public Row decodeKey(String inKey)
@@ -265,7 +312,7 @@ public class Table
 
          for (int i = 0; i < columns.size(); i++)
          {
-            Object value = row.get(i).toString().replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
+            Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
                throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
@@ -401,7 +448,7 @@ public class Table
       if (index != null && !indexes.contains(index))
       {
          indexes.add(index);
-         if(index.getTable() != this)
+         if (index.getTable() != this)
             index.withTable(this);
       }
 

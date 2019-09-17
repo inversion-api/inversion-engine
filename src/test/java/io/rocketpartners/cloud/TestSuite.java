@@ -1,5 +1,6 @@
 package io.rocketpartners.cloud;
 
+import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -15,11 +16,11 @@ import io.rocketpartners.cloud.action.sql.TestSqlQuery;
 import io.rocketpartners.cloud.action.sql.TestSqlTokenizer;
 import io.rocketpartners.cloud.model.TestArrayNode;
 import io.rocketpartners.cloud.model.TestDb;
-import io.rocketpartners.cloud.model.TestRule;
 import io.rocketpartners.cloud.model.TestUrl;
 import io.rocketpartners.cloud.rql.TestParser;
 import io.rocketpartners.cloud.rql.TestQuery;
 import io.rocketpartners.cloud.rql.TestTokenizer;
+import io.rocketpartners.cloud.service.TestKeyEncoding;
 import io.rocketpartners.cloud.service.TestService;
 import io.rocketpartners.cloud.service.config.TestConfig;
 
@@ -36,6 +37,7 @@ import io.rocketpartners.cloud.service.config.TestConfig;
       TestParser.class, //
       TestQuery.class, //
 
+      TestKeyEncoding.class,//
       TestDb.class, //
       TestService.class, //
       TestConfig.class, //

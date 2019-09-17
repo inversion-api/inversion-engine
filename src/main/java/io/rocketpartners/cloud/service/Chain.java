@@ -165,15 +165,14 @@ public class Chain
          if (!url.endsWith("/"))
             url += "/";
 
-         url += URLEncoder.encode(collectionKey);
+         url += collectionKey;
       }
 
       if (!Utils.empty(entityKey))
-         //url += "/" + URLEncoder.encode(entityKey.toString());
          url += "/" + entityKey.toString();
 
       if (!Utils.empty(subCollectionKey))
-         url += "/" + URLEncoder.encode(subCollectionKey);
+         url += "/" + subCollectionKey;
 
       if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
       {
@@ -417,9 +416,9 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
-         
+
          Chain.debug("Action " + action.getClass().getSimpleName() + " " + action.toString());
-         
+
          action.run(service, request.getApi(), request.getEndpoint(), this, request, response);
          return true;
       }

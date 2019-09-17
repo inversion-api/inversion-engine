@@ -264,3 +264,15 @@ CREATE TABLE `IndexLog` (
 );
 INSERT INTO `IndexLog` SELECT * FROM northwindsource.IndexLog ORDER BY `id`;	
 
+
+
+/* This table was added to support test cases for keys that have non url save characters in them */	
+CREATE TABLE `Urls` (
+    `url` VARCHAR(512) NOT NULL,
+    `short` VARCHAR(100) NOT NULL,
+    `text` VARCHAR(512) NOT NULL,
+     CONSTRAINT `PK_Urls` PRIMARY KEY (`url`, `short`)
+);
+
+INSERT INTO `Urls` SELECT * FROM northwindsource.Urls;	
+
