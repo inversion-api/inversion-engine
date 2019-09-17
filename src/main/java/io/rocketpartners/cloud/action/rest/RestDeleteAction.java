@@ -94,7 +94,11 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          toDelete.add(req.getUrl().toString());
       }
 
-      String collectionUrl = req.getApiUrl() + Utils.implode("/", req.getEndpointPath(), req.getCollectionKey());
+      String collectionUrl = req.getApiUrl();
+      if(!collectionUrl.endsWith("/"))
+         collectionUrl += "/";
+      
+      collectionUrl += Utils.implode("/", req.getEndpointPath().toString(), req.getCollectionKey().toString());
       int deleted = delete(req, req.getCollection(), collectionUrl, toDelete);
 
       if (deleted < 1)
@@ -123,7 +127,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          Map<String, String> params = url.getParams();
          if (params.size() == 0)
          {
-            List<String> path = Utils.explode("/", url.getPath());
+            List<String> path = url.getPath().parts();
             String key = path.get(path.size() - 1);
             in.withTerm(Term.term(in, key));
          }

@@ -16,42 +16,51 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class User
 {
-   protected int          id          = 0;
-   protected String       username    = null;
-   protected String       password    = null;
+   protected int         id          = 0;
+   protected String      username    = null;
+   protected String      password    = null;
 
-   protected String       displayName = null;
+   protected String      displayName = null;
 
-   protected List<String> permissions = new ArrayList();
-   protected List<Role>   roles       = new ArrayList();
+   protected Set<String> permissions = new HashSet();
+   protected Set<String> roles       = new HashSet();
 
-   protected String       accessKey   = null;
-   protected String       secretKey   = null;
+   protected String      accessKey   = null;
+   protected String      secretKey   = null;
 
-   protected int          tenantId    = 0;
-   protected String       tenantCode  = null;
+   protected int         tenantId    = 0;
+   protected String      tenantCode  = null;
 
    /**
     * the time of the last request
     */
-   protected long         requestAt   = -1;
+   protected long        requestAt   = -1;
    /**
     * the remote host of the last request
     */
-   protected String       remoteAddr  = null;
+   protected String      remoteAddr  = null;
 
    /**
     * the number of consecutive failed logins
     */
-   protected int          failedNum   = 0;
+   protected int         failedNum   = 0;
 
    public User()
    {
 
+   }
+
+   public User(String username, String roles, String permissions)
+   {
+      withUsername(username);
+      withRoles(roles);
+      withPermissions(permissions);
    }
 
    public String getUsername()
@@ -158,34 +167,60 @@ public class User
       return new ArrayList(permissions);
    }
 
-   public User withPermissions(String... permissions)
+   public boolean hasPermissions(String... permissions)
    {
+      if (permissions == null)
+         return true;
+
       for (String permission : permissions)
       {
-         withPermission(permission);
+         if (!this.permissions.contains(permission))
+            return false;
       }
+      return true;
+   }
+
+   public User withPermissions(String... permissions)
+   {
+      if (permissions != null)
+      {
+         for (String permission : permissions)
+         {
+            if (!this.permissions.contains(permission))
+               this.permissions.add(permission);
+         }
+      }
+
       return this;
    }
 
-   public User withPermission(String permission)
+   public Set<String> getRoles()
    {
-      if (!permissions.contains(permission))
-         permissions.add(permission);
-
-      return this;
+      return new HashSet(roles);
    }
 
-   public List<Role> getRoles()
+   public boolean hasRoles(String... roles)
    {
-      return roles;
+      if (roles == null)
+         return true;
+
+      for (String role : roles)
+      {
+         if (!this.roles.contains(role))
+            return false;
+      }
+      return true;
    }
 
-   public User withRoles(Role... roles)
+   public User withRoles(String... roles)
    {
-      this.roles.clear();
-
-      for (int i = 0; roles != null && i < roles.length; i++)
-         this.roles.add(roles[i]);
+      if (roles != null)
+      {
+         for (String role : roles)
+         {
+            this.roles.add(role);
+         }
+      }
 
       return this;
    }

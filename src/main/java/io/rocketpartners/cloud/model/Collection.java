@@ -46,7 +46,7 @@ public class Collection extends Rule<Collection>
       return this.methods.size() == 0 || super.isMethod(methods);
    }
 
-   public boolean matches(String method, String path)
+   public boolean matches(String method, Path path)
    {
       if (exclude)
          return false;

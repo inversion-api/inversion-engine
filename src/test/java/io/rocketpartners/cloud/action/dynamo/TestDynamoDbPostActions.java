@@ -59,6 +59,7 @@ public class TestDynamoDbPostActions extends TestCase
       //-- pull the orders again fresh from h2
       String url = "northwind/h2/orders?in(orderId, " + SqlUtils.getQuotedInClauseStr(orderIds).replaceAll("\"", "") + ")";
       res = service.get(url);
+      res.dump();
       assertTrue(res.data().size() == 5);
 
       //-- reconfigure the h2 json for posting to dynamo

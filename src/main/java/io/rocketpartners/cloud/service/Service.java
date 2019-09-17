@@ -33,6 +33,7 @@ import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -107,6 +108,16 @@ public class Service
    {
       public void onStartup(Service service);
 
+   }
+
+   public Service()
+   {
+
+   }
+
+   public Service(Api api)
+   {
+      withApi(api);
    }
 
    public void destroy()
@@ -347,8 +358,8 @@ public class Service
 
          Url url = req.getUrl();
 
-         String urlPath = url.getPath();
-         List<String> parts = Utils.explode("/", urlPath);
+         Path urlPath = url.getPath();
+         List<String> parts = urlPath.parts();
 
          List<String> apiPath = new ArrayList();
 
@@ -360,7 +371,7 @@ public class Service
                {
                   //the inbound URL does not match the expected servletMapping
                   //this may be becuse you are localhost testing...going to 
-                  //optomistically skip 
+                  //optimistically skip 
                   break;
                }
                apiPath.add(servletPathPart);
@@ -370,7 +381,9 @@ public class Service
 
          for (Api a : apis)
          {
-            if (!((parts.size() == 0 && apis.size() == 1) || (apis.size() == 1 && a.getApiCode() == null) || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
+            if (!((parts.size() == 0 && apis.size() == 1) //
+                  || (apis.size() == 1 && a.getApiCode() == null) //
+                  || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
                continue;
 
             req.withApi(a);
@@ -387,12 +400,13 @@ public class Service
                req.withTenantCode(tenantCode);
             }
 
-            req.withApiPath(Utils.implode("/", apiPath) + "/");
+            req.withApiPath(new Path(apiPath));
 
-            String remainingPath = (Utils.implode("/", parts) + "/"); //find the endpoint that matches the fewest path segments
+            
+            Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
             for (int i = 0; i <= parts.size(); i++)
             {
-               String endpointPath = i == 0 ? "" : (Utils.implode("/", parts.subList(0, i)) + "/");
+               Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
 
                for (Endpoint e : a.getEndpoints())
                {
@@ -671,7 +685,7 @@ public class Service
          String plural = English.plural(collection);
          if (!plural.equals(collection))
          {
-            String path = req.getPath();
+            String path = req.getPath().toString();
             path = path.replaceFirst(collection, plural);
             Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
             if (rightEndpoint != null)
@@ -688,8 +702,9 @@ public class Service
       return false;
    }
 
-   Endpoint findEndpoint(Api api, String method, String path)
+   Endpoint findEndpoint(Api api, String method, String pathStr)
    {
+      Path path = new Path(pathStr);
       for (Endpoint endpoint : api.getEndpoints())
       {
          if (endpoint.matches(method, path))

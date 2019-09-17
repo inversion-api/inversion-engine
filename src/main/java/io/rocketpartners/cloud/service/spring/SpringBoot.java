@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
+import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.service.Servlet;
 import io.rocketpartners.cloud.utils.Utils;
@@ -17,6 +18,15 @@ import io.rocketpartners.cloud.utils.Utils;
 public class SpringBoot
 {
    static Service service = null;
+
+   /**
+    * Convenience method for launching a Service with a single API.
+    * @param api
+    */
+   public static void run(Api api)
+   {
+      run(new Service().withApi(api));
+   }
 
    public static void run(Service inService)
    {

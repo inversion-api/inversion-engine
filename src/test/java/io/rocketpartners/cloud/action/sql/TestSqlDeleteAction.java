@@ -75,8 +75,10 @@ public class TestSqlDeleteAction extends TestCase
       String href = res.findString("data.0.href");
 
       res = service.delete(href);
-      res = service.get(href).statusEq(404);
       res.dump();
+      res = service.get(href);
+      res.dump();
+      res.statusEq(404);
    }
 
    @Test

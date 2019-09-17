@@ -16,12 +16,10 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
 import io.rocketpartners.cloud.service.Service;
-import io.rocketpartners.cloud.utils.Utils;
 
 public class Api
 {
@@ -45,7 +43,6 @@ public class Api
    protected List<Db>          dbs         = new ArrayList();
    protected List<Endpoint>    endpoints   = new ArrayList();
    protected List<Action>      actions     = new ArrayList();
-   protected List<AclRule>     aclRules    = new ArrayList();
 
    protected List<Collection>  collections = new ArrayList();
 
@@ -383,19 +380,9 @@ public class Api
       return new ArrayList(endpoints);
    }
 
-   public Endpoint makeEndpoint(String methods, String path, Action... actions)
+   public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
    {
-      String includePaths = null;
-      Endpoint endpoint = new Endpoint();
-
-      if (path != null && path.endsWith("/*"))
-      {
-         includePaths = "*";
-         path = path.substring(0, path.length() - 2);
-      }
-
-      endpoint.withPath(path);
-      endpoint.withIncludePaths(includePaths);
+      Endpoint endpoint = new Endpoint(methods, pathExpression);
 
       for (Action action : actions)
       {
@@ -494,33 +481,6 @@ public class Api
       withAction(action);
 
       return action;
-   }
-
-   public Api withAclRule(AclRule acl)
-   {
-      if (!aclRules.contains(acl))
-      {
-         aclRules.add(acl);
-         Collections.sort(aclRules);
-      }
-
-      if (acl.getApi() != this)
-         acl.withApi(this);
-
-      return this;
-   }
-
-   public Api withAclRules(AclRule... acls)
-   {
-      for (AclRule acl : acls)
-         withAclRule(acl);
-
-      return this;
-   }
-
-   public List<AclRule> getAclRules()
-   {
-      return new ArrayList(aclRules);
    }
 
    public boolean isDebug()

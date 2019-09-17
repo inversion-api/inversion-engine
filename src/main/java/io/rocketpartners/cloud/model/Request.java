@@ -42,11 +42,11 @@ public class Request
 
    Service                                service                = null;
    Api                                    api                    = null;
-   String                                 apiPath                = null;
+   Path                                   apiPath                = null;
    String                                 apiCode                = null;
    String                                 tenantCode             = null;
 
-   String                                 endpointPath           = null;
+   Path                                   endpointPath           = null;
    Endpoint                               endpoint               = null;
 
    User                                   user                   = null;
@@ -175,17 +175,6 @@ public class Request
       this.url = new Url(url);
       return this;
    }
-   //
-   //   public Request withUrl(Url url)
-   //   {
-   //      this.url = url;
-   //      String query = url.getQuery();
-   //      if (!Utils.empty(query))
-   //      {
-   //         this.params.putAll(Utils.parseQueryString(query));
-   //      }
-   //      return this;
-   //   }
 
    public Request withMethod(String method)
    {
@@ -204,29 +193,6 @@ public class Request
       this.headers.putAll(headers);
       return this;
    }
-
-   //   public Request withParams(Map<String, String> params)
-   //   {
-   //      //      this.params.putAll(params);
-   //      //
-   //      //      boolean explain = this.params.containsKey("explain") && !((String) this.params.remove("explain")).equalsIgnoreCase("false");
-   //      //      this.explain = this.explain || explain;
-   //      //      return this;
-   //
-   //      
-   //      
-   //      for (String key : params.keySet())
-   //      {
-   //         withParam(key, params.get(key));
-   //      }
-   //      return this;
-   //   }
-   //
-   //   public Request withParam(String key, String value)
-   //   {
-   //      this.params.put(key, value);
-   //      return this;
-   //   }
 
    public Collection getCollection()
    {
@@ -416,48 +382,26 @@ public class Request
    /**
     * Returns the URL path with the apiPath subtracted from the beginning
     */
-   public String getPath()
+   public Path getPath()
    {
-      String path = url.getPath();
-      String prePath = apiPath;
+      Path path = url.getPath();
 
-      while (!Utils.empty(path) && path.startsWith("/"))
-         path = path.substring(1, path.length());
-
-      while (!Utils.empty(prePath) && prePath.startsWith("/"))
-         prePath = prePath.substring(1, prePath.length());
-
-      if (!Utils.empty(prePath))
-      {
-         path = path.substring(prePath.length(), path.length());
-      }
-
-      while (!Utils.empty(path) && path.startsWith("/"))
-         path = path.substring(1, path.length());
+      int startIdx = apiPath == null ? 0 : apiPath.size();
+      path = path.subpath(startIdx, path.size());
 
       return path;
    }
 
-   public String getSubpath()
+   public Path getSubpath()
    {
-      String path = getPath();
-      String prePath = this.endpointPath;
+      Path subpath = getPath();
+      Path ep = this.endpointPath;
 
-      while (!Utils.empty(path) && path.startsWith("/"))
-         path = path.substring(1, path.length());
+      int startIdx = ep == null ? 0 : ep.size();
 
-      while (!Utils.empty(prePath) && prePath.startsWith("/"))
-         prePath = prePath.substring(1, prePath.length());
+      subpath = subpath.subpath(startIdx, subpath.size());
 
-      if (!Utils.empty(prePath))
-      {
-         path = path.substring(prePath.length(), path.length());
-      }
-
-      while (!Utils.empty(path) && path.startsWith("/"))
-         path = path.substring(1, path.length());
-
-      return path;
+      return subpath;
    }
 
    public String getQuery()
@@ -505,25 +449,25 @@ public class Request
       return apiUrl;
    }
 
-   public String getApiPath()
+   public Path getApiPath()
    {
       return apiPath;
    }
 
-   public Request withApiPath(String apiUrl)
+   public Request withApiPath(Path apiPath)
    {
-      this.apiPath = Rule.asPath(apiUrl);
+      this.apiPath = apiPath;
       return this;
    }
 
-   public String getEndpointPath()
+   public Path getEndpointPath()
    {
       return endpointPath;
    }
 
-   public Request withEndpointPath(String endpointPath)
+   public Request withEndpointPath(Path endpointPath)
    {
-      this.endpointPath = Rule.asPath(endpointPath);
+      this.endpointPath = endpointPath;
       return this;
    }
 

@@ -38,7 +38,7 @@ import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.model.AclRule;
+import io.rocketpartners.cloud.action.security.AclRule;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -304,9 +304,9 @@ public class Configurator
          if (api.getActions().size() == 0)
             api.withActions((Action[]) found.toArray(new Action[found.size()]));
 
-         found = wire.getBeans(AclRule.class);
-         if (api.getAclRules().size() == 0)
-            api.withAclRules((AclRule[]) found.toArray(new AclRule[found.size()]));
+         //         found = wire.getBeans(AclRule.class);
+         //         if (api.getAclRules().size() == 0)
+         //            api.withAclRules((AclRule[]) found.toArray(new AclRule[found.size()]));
       }
    }
 

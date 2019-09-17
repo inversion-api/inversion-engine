@@ -30,7 +30,7 @@ public class Url implements Cloneable
    protected String     protocol = "http";
    protected String     host     = null;
    protected int        port     = 0;
-   protected String     path     = null;
+   protected Path       path     = null;
    protected String     query    = null;
    protected ObjectNode params   = new ObjectNode();
 
@@ -97,6 +97,8 @@ public class Url implements Cloneable
 
    protected void parse(String url)
    {
+      String path = null;
+
       if (url.indexOf(":/") > 0 && url.indexOf("://") < 0)
          url = url.replaceAll(":/", "://");
 
@@ -220,10 +222,10 @@ public class Url implements Cloneable
          {
             path = '/' + url;
          }
-         while (path.contains("//"))
-         {
-            path = path.replace("//", "/");
-         }
+
+         if (!Utils.empty(path))
+            this.path = new Path(path);
+
       }
       catch (Exception ex)
       {
@@ -242,12 +244,9 @@ public class Url implements Cloneable
             url += ":" + port;
       }
 
-      if (!Utils.empty(path))
+      if (path != null && path.size() > 0)
       {
-         if (!path.startsWith("/"))
-            url += "/";
-
-         url += path;
+         url += "/" + path;
       }
 
       if (params.size() > 0)
@@ -336,6 +335,25 @@ public class Url implements Cloneable
       return this;
    }
 
+   public Path getPath()
+   {
+      return path;
+   }
+
+   public Url withPath(Path path)
+   {
+      this.path = path;
+      return this;
+   }
+
+   public String getFile()
+   {
+      if (path != null && path.size() > 0)
+         return path.part(path.size() - 1);
+
+      return null;
+   }
+
    public String getQuery()
    {
       return query;
@@ -352,35 +370,24 @@ public class Url implements Cloneable
       return this;
    }
 
-   public String getPath()
-   {
-      return path;
-   }
-
-   public Url withPath(String path)
-   {
-      this.path = path;
-      return this;
-   }
-
-   public Url addPath(String path)
-   {
-      this.path = Utils.implode("/", this.path, path);
-      return this;
-   }
-
-   public String getFile()
-   {
-      if (path != null && !path.endsWith("/"))
-      {
-         if (path.lastIndexOf('/') > -1)
-            return path.substring(path.lastIndexOf('/') + 1, path.length());
-         return path;
-
-      }
-
-      return null;
-   }
+   //   public Url addPath(String path)
+   //   {
+   //      this.path = Utils.implode("/", this.path, path);
+   //      return this;
+   //   }
+   //
+   //   public String getFile()
+   //   {
+   //      if (path != null && !path.endsWith("/"))
+   //      {
+   //         if (path.lastIndexOf('/') > -1)
+   //            return path.substring(path.lastIndexOf('/') + 1, path.length());
+   //         return path;
+   //
+   //      }
+   //
+   //      return null;
+   //   }
 
    public Url withParams(Map<String, String> params)
    {

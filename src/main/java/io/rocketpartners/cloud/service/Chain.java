@@ -31,6 +31,7 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
+import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.utils.Utils;
@@ -141,21 +142,16 @@ public class Chain
          //going after the same collection...so must be going after the same endpoint
          //so get the endpoint path from the current request and ame sure it is on the url.
 
-         String ep = req.getEndpointPath();
+         Path epp = req.getEndpointPath();
 
-         if (!Utils.empty(ep))
+         if (epp != null && epp.size() > 0)
          {
-            url += ep;
-
-            if (!url.endsWith("/"))
-               url += "/";
+            url += epp + "/";
          }
       }
       else if (collection != null && collection.getIncludePaths().size() > 0)
       {
-         //TODO: need test case here
-
-         String collectionPath = (String) collection.getIncludePaths().get(0);
+         String collectionPath = (String) collection.getIncludePaths().get(0).toString();
          if (collectionPath.indexOf("*") > -1)
             collectionPath = collectionPath.substring(0, collectionPath.indexOf("*"));
 
@@ -173,7 +169,8 @@ public class Chain
       }
 
       if (!Utils.empty(entityKey))
-         url += "/" + URLEncoder.encode(entityKey.toString());
+         //url += "/" + URLEncoder.encode(entityKey.toString());
+         url += "/" + entityKey.toString();
 
       if (!Utils.empty(subCollectionKey))
          url += "/" + URLEncoder.encode(subCollectionKey);
@@ -386,11 +383,7 @@ public class Chain
          }
       }
 
-      String value = request.getEndpoint().getConfig(key);
-      if (!Utils.empty(value))
-      {
-         return value;
-      }
+      String value = null;
 
       for (int i = next - 1; i >= 0; i--)
       {
@@ -399,6 +392,12 @@ public class Chain
          {
             return value;
          }
+      }
+
+      value = request.getEndpoint().getConfig(key);
+      if (!Utils.empty(value))
+      {
+         return value;
       }
 
       return defaultValue;
@@ -418,6 +417,9 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
+         
+         Chain.debug("Action " + action.getClass().getSimpleName() + " " + action.toString());
+         
          action.run(service, request.getApi(), request.getEndpoint(), this, request, response);
          return true;
       }

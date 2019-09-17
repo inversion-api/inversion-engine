@@ -68,7 +68,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
 
       // The path should include the Elastic index/type otherwise were gonna have a bad time.
-      String path = req.getPath();
+      String path = req.getPath().toString();
       String[] paths = path != null ? path.split("/") : new String[]{};
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {

@@ -302,7 +302,7 @@ public class ScriptAction extends Action<ScriptAction>
       Map<ObjectNode, String> paths = new HashMap();
       List<ObjectNode> scripts = new ArrayList();
 
-      String subpath = req.getSubpath();
+      String subpath = req.getSubpath().toString();
 
       List<String> parts = Utils.explode("/", subpath);
 

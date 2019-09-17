@@ -36,8 +36,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    protected Set<String>          methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   protected List<String>         excludePaths = new ArrayList();
-   protected List<String>         includePaths = new ArrayList();
+   protected List<Path>           excludePaths = new ArrayList();
+   protected List<Path>           includePaths = new ArrayList();
 
    /**
     * ObjectNode is used because it implements a case insensitive map without modifying the keys
@@ -67,99 +67,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return api;
    }
 
-   public static boolean pathMatches(String wildcardPath, String path)
-   {
-      try
-      {
-         if (wildcardPath.indexOf("{") > -1)
-         {
-            List<String> regexParts = Utils.explode("/", wildcardPath);
-            List<String> pathParts = Utils.explode("/", path);
-
-            if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
-               return false;
-
-            boolean optional = false;
-
-            for (int i = 0; i < regexParts.size(); i++)
-            {
-               String matchPart = regexParts.get(i);
-
-               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
-               {
-                  matchPart = matchPart.substring(1, matchPart.length() - 1);
-                  optional = true;
-               }
-
-               if (pathParts.size() == i)
-               {
-                  if (optional)
-                     return true;
-                  return false;
-               }
-
-               String pathPart = pathParts.get(i);
-
-               if (matchPart.startsWith("{"))
-               {
-                  int colonIdx = matchPart.indexOf(":");
-                  if (colonIdx < 0)
-                     colonIdx = 0;
-
-                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
-
-                  Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                  Matcher matcher = pattern.matcher(pathPart);
-
-                  if (!matcher.matches())
-                     return false;
-               }
-               else if (!Utils.wildcardMatch(matchPart, pathPart))
-               {
-                  return false;
-               }
-
-               if (matchPart.endsWith("*") && i == regexParts.size() - 1)
-                  return true;
-            }
-
-            return true;
-         }
-         else
-         {
-            if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
-               wildcardPath += "/";
-            return Utils.wildcardMatch(wildcardPath, path);
-         }
-      }
-      catch (NullPointerException npe)
-      {
-         npe.printStackTrace();
-      }
-      catch (Exception ex)
-      {
-         //intentionally ignore
-      }
-
-      return false;
-      //      wildcardPath = Utils.path(wildcardPath.replace('\\', '/'));
-      //      path = Utils.path(path.replace('\\', '/'));
-      //
-      //      if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/"))
-      //         wildcardPath += "/";
-      //
-      //      if (!path.endsWith("*") && !path.endsWith("/"))
-      //         path += "/";
-      //
-      //      if (wildcardPath.startsWith("/"))
-      //         wildcardPath = wildcardPath.substring(1, wildcardPath.length());
-      //
-      //      if (path.startsWith("/"))
-      //         path = path.substring(1, path.length());
-
-   }
-
-   public boolean matches(String method, String path)
+   public boolean matches(String method, Path path)
    {
       boolean included = false;
       boolean excluded = false;
@@ -172,9 +80,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          }
          else
          {
-            for (String includePath : includePaths)
+            for (Path includePath : includePaths)
             {
-               if (pathMatches(includePath, path))
+               if (includePath.matches(path))
                {
                   included = true;
                   break;
@@ -184,9 +92,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
          if (included)
          {
-            for (String excludePath : excludePaths)
+            for (Path excludePath : excludePaths)
             {
-               if (pathMatches(excludePath, path))
+               if (excludePath.matches(path))
                {
                   excluded = true;
                   break;
@@ -229,7 +137,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return (R) this;
    }
 
-   public List<String> getIncludePaths()
+   public List<Path> getIncludePaths()
    {
       return new ArrayList(includePaths);
    }
@@ -240,15 +148,22 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          for (String path : Utils.explode(",", paths))
          {
-            path = Rule.asPath(path);
-            if (!includePaths.contains(path))
-               includePaths.add(path);
+            includePaths.add(new Path(path));
          }
       }
       return (R) this;
    }
 
-   public List<String> getExcludePaths()
+   public R withIncludePaths(Path... paths)
+   {
+      for (Path path : paths)
+      {
+         includePaths.add(path);
+      }
+      return (R) this;
+   }
+
+   public List<Path> getExcludePaths()
    {
       return new ArrayList(excludePaths);
    }
@@ -259,10 +174,17 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       {
          for (String path : Utils.explode(",", paths))
          {
-            path = Rule.asPath(path);
-            if (!excludePaths.contains(path))
-               excludePaths.add(path);
+            excludePaths.add(new Path(path));
          }
+      }
+      return (R) this;
+   }
+
+   public R withExcludePaths(Path... paths)
+   {
+      for (Path path : paths)
+      {
+         excludePaths.add(path);
       }
       return (R) this;
    }
@@ -325,32 +247,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    {
       this.order = order;
       return (R) this;
-   }
-
-   /**
-    * Trims leading and trailing 
-    * @param path
-    * @return
-    */
-   public static String asPath(String path)
-   {
-      if (path != null)
-      {
-         path = path.trim().replaceAll("/+", "/");
-
-         if (path.startsWith("/"))
-            path = path.substring(1, path.length());
-
-         if (path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-      }
-      
-      if (Utils.empty(path))
-      {
-         path = null;
-      }
-
-      return path;
    }
 
 }

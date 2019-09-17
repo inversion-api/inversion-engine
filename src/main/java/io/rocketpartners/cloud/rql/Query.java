@@ -325,10 +325,12 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
             Column col = table.getColumn(shortName);
             if (col == null)
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+
             value = db.cast(col, value);
+
          }
       }
-      
+
       values.add(new DefaultKeyValue(columnName, value));
       return r();
    }

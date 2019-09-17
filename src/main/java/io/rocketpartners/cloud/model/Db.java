@@ -522,7 +522,14 @@ public abstract class Db<T extends Db>
 
    public Object cast(Column column, Object value)
    {
-      return cast(column != null ? column.getType() : null, value);
+      try
+      {
+         return cast(column != null ? column.getType() : null, value);
+      }
+      catch (Exception ex)
+      {
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error casting column '" + column.getTable().getName() + "." + column.getName() + "' with value '" + value + "' to type " + column.getType() + ". " + ex.getMessage());
+      }
    }
 
    public Object cast(Attribute attr, Object value)
@@ -533,8 +540,8 @@ public abstract class Db<T extends Db>
    public Set<Term> mapToColumns(Collection collection, Term term)
    {
       Set<Term> terms = new HashSet();
-      
-      if(term.getParent() == null)
+
+      if (term.getParent() == null)
          terms.add(term);
 
       if (collection == null)

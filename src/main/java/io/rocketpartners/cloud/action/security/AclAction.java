@@ -25,7 +25,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.model.AclRule;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -39,9 +38,57 @@ import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Utils;
 
+/**
+ * The AclAction secures an API by making sure that a requests matches one or 
+ * more declared AclRules.
+ * 
+ * AclRules specify the roles and permissions that a user must have to access
+ * specific method/path combinations and can also specify input/output
+ * parameters that are either required or restricted
+ * 
+ * @author wells
+ *
+ */
 public class AclAction extends Action<AclAction>
 {
-   Logger log = LoggerFactory.getLogger(AclAction.class);
+   Logger                  log      = LoggerFactory.getLogger(AclAction.class);
+
+   protected List<AclRule> aclRules = new ArrayList();
+
+   public AclAction()
+   {
+      this(null);
+   }
+
+   public AclAction(String includePaths, AclRule... aclRules)
+   {
+      this(null, includePaths, null, null, aclRules);
+   }
+
+   public AclAction(String methods, String includePaths, String excludePaths, String config, AclRule... aclRules)
+   {
+      super(includePaths, excludePaths, config);
+
+      withOrder(500);
+      withMethods(methods);
+
+      if (aclRules != null)
+         withAclRules(aclRules);
+   }
+
+   public AclAction withAclRules(AclRule... acls)
+   {
+      for (AclRule acl : acls)
+      {
+         if (!aclRules.contains(acl))
+         {
+            aclRules.add(acl);
+         }
+      }
+
+      Collections.sort(aclRules);
+      return this;
+   }
 
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
@@ -51,19 +98,29 @@ public class AclAction extends Action<AclAction>
 
       log.debug("Request Path: " + req.getPath());
 
-      for (AclRule aclRule : api.getAclRules())
+      for (AclRule aclRule : aclRules)
       {
          if (aclRule.ruleMatches(req))
          {
-            log.debug("Matched ACL: " + aclRule.getName());
+            //log.debug("Matched ACL: " + aclRule.getName());
             if (!aclRule.isAllow())
             {
+               Chain.debug("ACL: MATCH_DENY" + aclRule);
+
                allowed = false;
                break;
             }
-            else if (!aclRule.isInfo() && aclRule.isAllow())
+            else
             {
-               allowed = true;
+               if (!aclRule.isInfo() && aclRule.isAllow())
+               {
+                  Chain.debug("ACL: MATCH_ALLOW " + aclRule);
+                  allowed = true;
+               }
+               else
+               {
+                  Chain.debug("ACL: MATCH_INFO " + aclRule);
+               }
             }
 
             matched.add(aclRule);
@@ -72,6 +129,7 @@ public class AclAction extends Action<AclAction>
 
       if (!allowed)
       {
+         Chain.debug("ACL: NO_MATCH_DENY");
          throw new ApiException(SC.SC_403_FORBIDDEN);
       }
 
@@ -84,8 +142,8 @@ public class AclAction extends Action<AclAction>
          restricts.addAll(aclRule.getRestricts());
       }
 
-      log.debug("ACL requires: " + requires);
-      log.debug("ACL restricts: " + restricts);
+      Chain.debug("ACL requires: " + requires);
+      Chain.debug("ACL restricts: " + restricts);
 
       cleanParams(chain, req, restricts, requires);
       cleanJson(chain, req.getJson(), restricts, requires, false);
