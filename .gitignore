@@ -38,3 +38,5 @@ snooze99.properties
 /.env
 
 .*.md.html
+/inversion.properties
+/inversion.properties.merged

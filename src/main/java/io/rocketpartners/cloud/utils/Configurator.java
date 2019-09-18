@@ -86,7 +86,7 @@ public class Configurator
          if (config.files.size() == 0)
             return;
 
-         //all this does is set investion.* properties on the service class
+         //all this does is set inversion.* properties on the service class
          Wirer w = new Wirer();
          w.putBean(ROOT_BEAN_NAME, service);
          w.load(config.props);

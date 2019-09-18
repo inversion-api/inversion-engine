@@ -17,6 +17,7 @@ package io.rocketpartners.cloud.demo;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.action.sql.H2SqlDb;
+import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.service.Inversion;
 
@@ -67,7 +68,7 @@ public class Demo001SqlDbNorthwind
    public static void main(String[] args) throws Exception
    {
       Inversion.run(buildApi());
-
+      
       System.out.println("\r\n");
       System.out.println("Your API is running at 'http://localhost:8080/northwind'.");
       System.out.println("REST collection endpoints have been created for each db entity");

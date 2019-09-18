@@ -7,12 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,7 +23,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
 
-import io.rocketpartners.cloud.model.Relationship;
+import io.rocketpartners.cloud.model.Path;
 
 public class Wirer
 {
@@ -455,6 +453,10 @@ public class Wirer
       if (String.class.isAssignableFrom(type))
       {
          return (T) stringVal;
+      }
+      else if (Path.class.isAssignableFrom(type))
+      {
+         return (T) new Path(stringVal);
       }
       else if (boolean.class.isAssignableFrom(type))
       {

@@ -42,46 +42,14 @@ public class Endpoint extends Rule<Endpoint>
    public Endpoint(String method, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
    {
       withMethods(method);
-
-      Path path = new Path();
-      List<String> pathParts = Utils.explode("/", basePathStr);
-      for (int i = 0; i < pathParts.size(); i++)
-      {
-         String part = pathParts.get(i);
-         if (part.indexOf("*") > -1 || part.indexOf("[") > -1 || part.indexOf("{") > -1)
-         {
-            if (!Utils.empty(includeRelativeSubPathsStr))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You can't initialize an endpoint with a wildcard path AND specific includeRelativeSubPathsStr.  Move the wildcard portion to includeRelativeSubPathsStr. " + basePathStr + " - " + includeRelativeSubPathsStr);
-
-            Path subPath = new Path();
-
-            for (int j = i; j < pathParts.size(); j++)
-            {
-               subPath.addPart(pathParts.get(j));
-            }
-            withIncludePaths(subPath);
-
-            break;
-         }
-         else
-         {
-            path.addPart(part);
-         }
-      }
-
-      withPath(path);
-
-      if (!Utils.empty(includeRelativeSubPathsStr))
-      {
-         withIncludePaths(includeRelativeSubPathsStr);
-      }
+      withPath(basePathStr);
+      withIncludePaths(includeRelativeSubPathsStr);
 
       if (actions != null)
       {
          for (Action action : actions)
             withAction(action);
       }
-
    }
 
    public String toString()
@@ -101,46 +69,6 @@ public class Endpoint extends Rule<Endpoint>
          return false;
       }
 
-//      if (!isMethod(method))
-//         return false;
-//
-//      int index = 0;
-//      for (index = 0; index < path.size(); index++)
-//      {
-//         if (!path.matches(index, toMatch))
-//            return false;
-//      }
-//
-//      //exact path match
-//      if (index == toMatch.size() && includePaths.size() == 0 && excludePaths.size() == 0)
-//         return true;
-//
-//      for (Path includePath : includePaths)
-//      {
-//         if (includePath.matchesRest(index, toMatch))
-//         {
-//            for (Path excludePath : excludePaths)
-//            {
-//               if (excludePath.matchesRest(index, toMatch))
-//               {
-//                  return false;
-//               }
-//            }
-//            return true;
-//         }
-//      }
-//
-//      for (Path excludePath : excludePaths)
-//      {
-//         if (excludePath.matchesRest(index, toMatch))
-//            return false;
-//      }
-//
-//      
-//      //if nothing matched and exclude paths were provided but no include paths were provided, consider it a match
-//      return includePaths.size() == 0 && excludePaths.size() > 0;
-      
-      
       boolean included = false;
       boolean excluded = false;
 
@@ -152,8 +80,7 @@ public class Endpoint extends Rule<Endpoint>
             if (!path.matches(index, toMatch))
                return false;
          }
-         
-         
+
          if (includePaths.size() == 0)
          {
             included = true;
@@ -183,7 +110,7 @@ public class Endpoint extends Rule<Endpoint>
          }
       }
       return included && !excluded;
-      
+
    }
 
    public Endpoint withApi(Api api)
@@ -209,9 +136,35 @@ public class Endpoint extends Rule<Endpoint>
    public Endpoint withPath(Path path)
    {
       if (path.isRegex())
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You can use wildcards in the Endpoint.includePaths' but non in Endpoint.path");
+      {
+         Path newPath = new Path();
+         List<String> pathParts = path.parts();
+         for (int i = 0; i < pathParts.size(); i++)
+         {
+            String part = pathParts.get(i);
+            if (part.indexOf("*") > -1 || part.indexOf("[") > -1 || part.indexOf("{") > -1)
+            {
+               Path subPath = new Path();
+
+               for (int j = i; j < pathParts.size(); j++)
+               {
+                  subPath.addPart(pathParts.get(j));
+               }
+               withIncludePaths(subPath);
+
+               break;
+            }
+            else
+            {
+               newPath.addPart(part);
+            }
+         }
+
+         path = newPath;
+      }
 
       this.path = path;
+
       return this;
    }
 

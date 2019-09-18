@@ -15,6 +15,9 @@
  */
 package io.rocketpartners.cloud.service;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -163,30 +166,30 @@ public class Service
             }
          }
 
-         //         for (Api api : apis)
-         //         {
-         //            System.out.println(api.getApiCode() + "--------------");
-         //
-         //            for (Endpoint e : api.getEndpoints())
-         //            {
-         //               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
-         //            }
-         //
-         //            List<String> strs = new ArrayList();
-         //            for (Collection c : api.getCollections())
-         //            {
-         //               if (c.getDb().getCollectionPath() != null)
-         //                  strs.add(c.getDb().getCollectionPath() + c.getName());
-         //               else
-         //                  strs.add(c.getName());
-         //            }
-         //            Collections.sort(strs);
-         //            for (String coll : strs)
-         //            {
-         //               System.out.println("  - COLLECTION: " + coll);
-         //            }
-         //
-         //         }
+         for (Api api : apis)
+         {
+            System.out.println(api.getApiCode() + "--------------");
+
+            for (Endpoint e : api.getEndpoints())
+            {
+               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
+            }
+
+            List<String> strs = new ArrayList();
+            for (io.rocketpartners.cloud.model.Collection c : api.getCollections())
+            {
+               if (c.getDb().getCollectionPath() != null)
+                  strs.add(c.getDb().getCollectionPath() + c.getName());
+               else
+                  strs.add(c.getName());
+            }
+            Collections.sort(strs);
+            for (String coll : strs)
+            {
+               System.out.println("  - COLLECTION: " + coll);
+            }
+
+         }
 
          started = true;
          return this;
@@ -402,7 +405,6 @@ public class Service
 
             req.withApiPath(new Path(apiPath));
 
-            
             Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
             for (int i = 0; i <= parts.size(); i++)
             {
@@ -850,10 +852,30 @@ public class Service
 
    public InputStream getResource(String name)
    {
-      if (resourceLoader != null)
-         return resourceLoader.getResource(name);
+      try
+      {
+         InputStream stream = null;
+         if (resourceLoader != null)
+            stream = resourceLoader.getResource(name);
 
-      return getClass().getClassLoader().getResourceAsStream(name);
+         if (stream == null)
+         {
+            File file = new File(System.getProperty("user.dir"), name);
+            if (file.exists())
+               stream = new BufferedInputStream(new FileInputStream(file));
+         }
+
+         if (stream == null)
+         {
+            stream = getClass().getClassLoader().getResourceAsStream(name);
+         }
+
+         return stream;
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException(ex);
+      }
    }
 
    public boolean isConfigFast()

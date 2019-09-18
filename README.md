@@ -2,29 +2,74 @@
 
 Create more, code less with Inversion.
 
-Inversion is the fastest way to deliver a REST API.
+Inversion is the fastest way to deliver a full featured and secure REST API.
 
 With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
 
-Inversion is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
-multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
+Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against 
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.  
 
 ## Quick Start
 
-Clone the github repo, build with gradle, launch the demo app.
+With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java)
+launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  
+The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
+ 
+The demo connects to an in memory H2 SQL database that gets initialized from
+scratch each time the demo is run.  That means you can fully explore
+modifying operations (PUT,POST,DELETE) and 'break' whatever you want
+then restart and have a clean demo app again.
+
+To run the demo simply clone the GitHub repo, build with Gradle, launch the demo app via Gradle.
 
 ```
 git clone https://github.com/RocketPartners/rocket-inversion.git
 ./gradlew build
 ./gradlew demo1
-
 ```
 
-The gradle task demo1 runs (io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind.java)[https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java].
+You can launch a API that connects to your own db backend with just a few lines of code.
+
+```java
+Inversion.run(new Api()
+            .withName("demo")
+            .withDb(new SqlDb("dbnickname", "${YOUR_JDBC_DRIVER}", "${YOUR_JDBC_URL}", "${YOUR_JDBC_USERNAME}", "${YOUR_JDBC_PASSWORD"))
+            .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+```
+
+If you prefer you can also wire up an API via configuration files, instead of through code. 
+The properties file below will create an identical API to the coded example above
+
+Place the example below into a file "./inversion.properties" 
+
+```
+demo.class=io.rocketpartners.cloud.model.Api
+
+db.class=io.rocketpartners.cloud.action.sql.SqlDb
+db.driver=${YOUR_JDBC_DRIVER}
+db.url=${YOUR_JDBC_URL}
+db.user=${YOUR_JDBC_PASSWORD}
+db.pass=${YOUR_JDBC_PASSWORD}
+
+ep.class=io.rocketpartners.cloud.model.Endpoint
+ep.methods=GET,PUT,POST,DELETE
+ep.path=/*
+ep.actions=rest
+
+rest.class=io.rocketpartners.cloud.action.rest.RestAction
+```
+
+Then launch Inversion and it will wire up your API from the configuration.  If Inversion
+has already been built, you skip the 'gradle build' in the example below.
+
+```
+gradle build
+java -jar build/libs/rocket-inversion-master.jar
+```
 
 
 
-#IMPORTANT NOTE: 
+# WARNING ON ALL FOLLOWING CONTENT 
 This documentation is currently a work in progress being migrated from 0.3.x branch to match the major refactors of the 0.4.x branch.  
 
 
@@ -895,96 +940,7 @@ will get you up and running in less than 5 minutes.
 * Twitter - https://developer.twitter.com/
 
   
-## Changes
 
-2018-11-20 0.3.x --------------------------
-
-  * Created 0.3.x branch refactored Rql and Db and changed package structure
-    of Handlers to accomodate recent additions of DynamoDb and Elasticsearch.
-    The 0.2.x branch and before were signifficantly RDBMS centric.  This is
-    an attempt to make the design more accomodating to additional backends
-
-2018-05-09 0.2.x --------------------------
-
- * Changed the way that GetHandler expands documents so that netsted collection
-   requrests are set back through the "front door" and will obey all endpoint
-   security requirments for that subcollection
- * Added "explain" query string param for debugging sql queries
- * Added "required" and "restricted" action/endpoint configuration params that enable 
-   api designers to enhance security
-
-
-2018-05-04 0.2.x --------------------------
-
- * Add Reponse.changes to allow handlers to accumulate a list of changes
-   that occure durring a request.  
- * Updated LogHandler to persist Response.changes values
-
-2018-05-02 0.3.x --------------------------
- 
- * Corrected rql handling off 'offset'
- * Corrected rql handling double quoted string params
- * Added test for double/single quotes
- * Rehabbed TestRql so that all tests pass
-
-2018-04-24 0.2.x --------------------------
- 
- * Fixed incorrectly named "href" fields for expanded relationships
-
-2018-04-04 0.2.x --------------------------
- 
- * Changed Endpoint.path to Endpoint.paths and Endpoint.method to Endpoint.methods.  A comma separated list
-   from either the db configuration or props file configuration will correctly parse into a collection.
-   This required a schema tweak and upgradingin to fortj-0.0.3.
-   
- * Added the ability to set a Handler directly on an Endpoint for faster props file configuration.  Under 
-   the covers in the Endpoint.setHandler method, an empty Action is created to hold the Handler.  
-   
- * Added RestHandler as a shortcut that delegates to a stock Get/Post/Delete handler.  This made it much
-   easier to minimize configuration now that a Endpoint can easily map to multiple methods.
-   
-2018-03-02 0.2.x --------------------------
-
- * Corrected Endpoint order sorting defect
- * Added support for comma separated list of methods for Endpoint matching
-
-2018-02-23 0.2.x --------------------------
-
- * Enhanced pluralization redirects to cover 404 errors generated by handlers.
- * Prevented attempts at pluralization of things ending in 's'.  It was to error prone
- * Added 'order' column to Endpoint so that wildcard with conflicting paths can be prioritized
- * Added quoting for tables to prevent sql errors when tables have reserved names
-  
-2018-02-18 0.2.x --------------------------
- 
- * Enabled schema refresh.  If api.debug=ture and api.refresh=true the schema will be refreshed
-   from the DB within 60 seconds of the last API call.  This "developer mode" allows you to 
-   change the target DB and almost immediately see the changes in the api.  This applies to changes
-   in the target schema AND changes in the api configuration.  For example if you were to add a new
-   end point mapping.
-
- * Added a 4th from of API to url mappin that ommits the 
-   api.code when the api.code and account.code match.  This avoids host.com/myapi/myapai/collection
-   duplication.
-   
-   http(s)://whateverhost/[${servletPrefix}/]${account.code}/${collection}
-
-2017-11-16 0.2.x --------------------------
-
-* Changed default behavior of the GetHandler so that all responses are wrapped as if they were
-  paginated with a wrapper {meta:{}, data:[]}
-  
-* Enabled redirection to pluralized version of a collection if the singular form is used  
-
-* Removed schema table URL and added schema columns Account.code and Api.code.  Now instead of 
-  mapping an API to a specific URL the urls must be in one of three forms:
-  
-  1. http(s)://whateverhost/[${servletPrefix}/]${account.code}${api.code}/${collection}
-  2. http(s)://${account.code}.domain.com/[${servletPrefix}/]${account.code}${api.code}/${collection}
-  3. http(s)://${account.code}.domain.com/[${servletPrefix}/]${api.code}/${collection}
-   
-  
-             
              
              
 

@@ -693,9 +693,9 @@ public class SqlDb extends Db<SqlDb>
             attr.withName(beautifyAttributeName(attr.getName()));
          }
 
-         String debug = getCollectionPath();
-         debug = (debug == null ? "" : (debug + collection));
-         //System.out.println("CREATING COLLECTION: " + debug);
+         //         String debug = getCollectionPath();
+         //         debug = (debug == null ? "" : (debug + collection));
+         //         System.out.println("CREATING COLLECTION: " + debug);
       }
 
       //-- Now go back through and create relationships for all foreign keys

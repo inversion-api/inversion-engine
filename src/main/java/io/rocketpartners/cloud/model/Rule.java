@@ -156,9 +156,12 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public R withIncludePaths(Path... paths)
    {
-      for (Path path : paths)
+      if (paths != null)
       {
-         includePaths.add(path);
+         for (Path path : paths)
+         {
+            includePaths.add(path);
+         }
       }
       return (R) this;
    }
