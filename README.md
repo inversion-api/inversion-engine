@@ -68,7 +68,7 @@ demo.class=io.rocketpartners.cloud.model.Api
 db.class=io.rocketpartners.cloud.action.sql.SqlDb
 db.driver=${YOUR_JDBC_DRIVER}
 db.url=${YOUR_JDBC_URL}
-db.user=${YOUR_JDBC_PASSWORD}
+db.user=${YOUR_JDBC_USERNAME}
 db.pass=${YOUR_JDBC_PASSWORD}
 
 ep.class=io.rocketpartners.cloud.model.Endpoint
