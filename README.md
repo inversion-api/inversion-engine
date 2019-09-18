@@ -9,11 +9,31 @@ With Inversion, you can connect your web application front end directly to your 
 Inversion is not a code generator it is a runtime service that reflectively creates a secure best practice JSON REST API for CRUD operations against 
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB.  
 
+## Quick Start
 
-Inverted the Paradigm
+Clone the github repo, build with gradle, launch the demo app.
 
-Comign up with a brand name for this product was not easy.  After countless hours of ideation, we decided to go right after the heart of the matter.  
-To their great benefit, projects that use Inversion are inverting the classic three tier web application architecture 
+```
+git clone https://github.com/RocketPartners/rocket-inversion.git
+./gradlew build
+./gradlew demo1
+
+```
+
+The gradle task demo1 runs (io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind.java)[https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java].
+
+
+
+#IMPORTANT NOTE: 
+This documentation is currently a work in progress being migrated from 0.3.x branch to match the major refactors of the 0.4.x branch.  
+
+
+
+
+Inverting the Paradigm
+
+Coming up with a brand name for this product was not easy.  After countless hours of ideation, we decided to go right after the heart of the matter.  
+Projects that use Inversion are inverting the classic three tier web application architecture.   
 
 
 API Specificity (BAD!)
