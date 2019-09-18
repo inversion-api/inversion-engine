@@ -12,8 +12,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 ## Quick Start
 
 With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java)
-launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  
-The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
+launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  The demo 
+supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
  
 The demo connects to an in memory H2 SQL database that gets initialized from
 scratch each time the demo is run.  That means you can fully explore
@@ -28,19 +28,23 @@ git clone https://github.com/RocketPartners/rocket-inversion.git
 ./gradlew demo1
 ```
 
-You can launch a API that connects to your own db backend with just a few lines of code.
+You can launch an API that connects to your own DB backend with just a few lines of Java code.
 
 ```java
 Inversion.run(new Api()
             .withName("demo")
-            .withDb(new SqlDb("dbnickname", "${YOUR_JDBC_DRIVER}", "${YOUR_JDBC_URL}", "${YOUR_JDBC_USERNAME}", "${YOUR_JDBC_PASSWORD"))
+            .withDb(new SqlDb("dbNickname", 
+                              "${YOUR_JDBC_DRIVER}", 
+                              "${YOUR_JDBC_URL}", 
+                              "${YOUR_JDBC_USERNAME}", 
+                              "${YOUR_JDBC_PASSWORD"))
             .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
 ```
 
-If you prefer you can also wire up an API via configuration files, instead of through code. 
-The properties file below will create an identical API to the coded example above
+Or, if you prefer, you can wire up an API via configuration files, instead of through code. 
+The properties file below will create an identical API to the Java coded example above
 
-Place the example below into a file "./inversion.properties" 
+Place the example below into a file "./inversion.properties". 
 
 ```
 demo.class=io.rocketpartners.cloud.model.Api
@@ -59,8 +63,8 @@ ep.actions=rest
 rest.class=io.rocketpartners.cloud.action.rest.RestAction
 ```
 
-Then launch Inversion and it will wire up your API from the configuration.  If Inversion
-has already been built, you skip the 'gradle build' in the example below.
+Then launch Inversion and it will wire up your API from the configuration.  
+If Inversion has already been built, you skip the 'gradle build' in the example below.
 
 ```
 gradle build
