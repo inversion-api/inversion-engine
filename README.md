@@ -20,7 +20,7 @@ scratch each time the demo is run.  That means you can fully explore
 modifying operations (PUT,POST,DELETE) and 'break' whatever you want
 then restart and have a clean demo app again.
 
-To run the demo simply clone the GitHub repo, build with Gradle, launch the demo app via Gradle.
+To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
 
 ```
 git clone https://github.com/RocketPartners/rocket-inversion.git
@@ -28,7 +28,19 @@ git clone https://github.com/RocketPartners/rocket-inversion.git
 ./gradlew demo1
 ```
 
-You can launch an API that connects to your own DB backend with just a few lines of Java code.
+The demo API is now running at 'http://localhost:8080/northwind with REST collection endpoints for each DB entity.
+
+You can get started by exploring some of these urls:
+ - GET http://localhost:8080/northwind/products
+ - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2
+ - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
+ - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
+      
+Append '&explain=true' to any query string to see an explanation of what is happening under the covers
+ - GET http://localhost:8080/northwind/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true
+
+
+You can build an API that connects to your own DB backend with just a few lines of Java code.
 
 ```java
 Inversion.run(new Api()
@@ -63,8 +75,8 @@ ep.actions=rest
 rest.class=io.rocketpartners.cloud.action.rest.RestAction
 ```
 
-Then launch Inversion and it will wire up your API from the configuration.  
-If Inversion has already been built, you skip the 'gradle build' in the example below.
+Then launch Inversion and it will wire up your API from the configuration.  If 
+Inversion has already been built, you skip the 'gradle build' in the example below.
 
 ```
 gradle build
