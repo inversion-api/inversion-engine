@@ -2,7 +2,7 @@
 
 Create more, code less with Inversion.
 
-Inversion is the fastest way to deliver a full featured and secure REST API.
+Inversion is the fastest way to deliver full featured and secure REST APIs.
 
 With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
 
@@ -17,8 +17,8 @@ supports full GET,PUT,POST,DELETE operations with an extensive Resource Query La
  
 The demo connects to an in memory H2 SQL database that gets initialized from
 scratch each time the demo is run.  That means you can fully explore
-modifying operations (PUT,POST,DELETE) and 'break' whatever you want
-then restart and have a clean demo app again.
+modifying operations (PUT,POST,DELETE) and 'break' whatever you want. When
+you restart that data will be back in its original demo state.
 
 To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
 
@@ -62,7 +62,7 @@ The properties file below will create an identical API to the Java coded example
 
 Place the example below into a file "./inversion.properties". 
 
-```
+```properties
 demo.class=io.rocketpartners.cloud.model.Api
 
 db.class=io.rocketpartners.cloud.action.sql.SqlDb
