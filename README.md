@@ -37,8 +37,10 @@ You can get started by exploring some of these urls:
  - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
       
 Append '&explain=true' to any query string to see an explanation of what is happening under the covers
- - GET http://localhost:8080/northwind/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true
+ - GET http://localhost:8080/northwind/employees?title='Sales%20Representative'&sort=employeeid&pageSize=2&page=2&explain=true
 
+
+### Coding Your Own API
 
 You can build an API that connects to your own DB backend with just a few lines of Java code.
 
@@ -52,6 +54,8 @@ Inversion.run(new Api()
                               "${YOUR_JDBC_PASSWORD"))
             .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
 ```
+
+### Configuration Instead of Code
 
 Or, if you prefer, you can wire up an API via configuration files, instead of through code. 
 The properties file below will create an identical API to the Java coded example above
