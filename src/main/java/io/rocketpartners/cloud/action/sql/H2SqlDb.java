@@ -1,4 +1,19 @@
-package io.rocketpartners.cloud.demo.sql;
+/*
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
+ * http://rocketpartners.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+package io.rocketpartners.cloud.action.sql;
 
 import java.io.File;
 import java.io.InputStream;
@@ -9,7 +24,6 @@ import javax.sql.DataSource;
 
 import org.h2.tools.Server;
 
-import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -28,7 +42,7 @@ public class H2SqlDb extends SqlDb
    static Object LOCK      = new Object();
    static Server server    = null;
 
-   String        h2Dir     = new File(System.getProperty("user.home"), ".inversion_demo").toString();
+   String        h2Dir     = new File(System.getProperty("user.home"), ".inversion").toString();
    String        h2File    = null;
    InputStream   ddlStream = null;
    boolean       resetDb   = true;

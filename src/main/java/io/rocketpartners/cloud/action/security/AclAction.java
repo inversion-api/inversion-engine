@@ -76,6 +76,11 @@ public class AclAction extends Action<AclAction>
          withAclRules(aclRules);
    }
 
+   public AclAction withAclRule(String name, String methods, String includePaths, String... permissions)
+   {
+      return withAclRules(new AclRule(name, methods, includePaths, permissions));
+   }
+
    public AclAction withAclRules(AclRule... acls)
    {
       for (AclRule acl : acls)

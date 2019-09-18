@@ -65,19 +65,27 @@ public class AclRule extends Rule<AclRule>
       super();
    }
 
-   public AclRule(String methods)
-   {
-      super();
-      withMethods(methods);
-   }
+   //   public AclRule(String methods)
+   //   {
+   //      super();
+   //      withMethods(methods);
+   //   }
 
-   public AclRule(String methods, String includePaths, String excludePaths, String config)
+   public AclRule(String name, String methods, String includePaths, String... permissions)
    {
+      withName(name);
       withMethods(methods);
       withIncludePaths(includePaths);
-      withExcludePaths(excludePaths);
-      withConfig(config);
+      withPermissions(permissions);
    }
+
+   //   public AclRule(String methods, String includePaths, String excludePaths, String config)
+   //   {
+   //      withMethods(methods);
+   //      withIncludePaths(includePaths);
+   //      withExcludePaths(excludePaths);
+   //      withConfig(config);
+   //   }
 
    @Override
    public AclRule withApi(Api api)

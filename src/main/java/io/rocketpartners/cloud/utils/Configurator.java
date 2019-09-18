@@ -479,7 +479,7 @@ public class Configurator
          }
       }
 
-      if (config.files.isEmpty())
+      if (service.getApis().size() == 0 && config.files.isEmpty())
       {
          log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
       }

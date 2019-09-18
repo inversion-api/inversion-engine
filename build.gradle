@@ -52,9 +52,6 @@ dependencies {
 
 	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.5'
 	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.5'
-
-   
-
    
 	//aws libs
     //compile 'com.amazonaws:aws-java-sdk:1.11.547'
@@ -124,5 +121,18 @@ javadoc {
 }
 
 test {
+    //test are not run for now because we can't figure out how to 
+    //run tests that require live data backends and credentials
+    //as part of a portable automaoted build/test process
+    //there are many many test but right now, the easiest way
+    //to run them is from eclipse.
     exclude '**/*'
 }
+
+task demo1(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = "io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind"
+}
+
+
+

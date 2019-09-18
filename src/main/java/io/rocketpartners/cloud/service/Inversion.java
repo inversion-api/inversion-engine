@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud.service.spring;
+package io.rocketpartners.cloud.service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -15,9 +15,14 @@ import io.rocketpartners.cloud.utils.Utils;
 
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
-public class SpringBoot
+public class Inversion
 {
    static Service service = null;
+
+   public static void main(String[] args)
+   {
+      run(new Service());
+   }
 
    /**
     * Convenience method for launching a Service with a single API.
@@ -33,7 +38,7 @@ public class SpringBoot
       try
       {
          service = inService;
-         SpringApplication.run(SpringBoot.class);
+         SpringApplication.run(Inversion.class);
       }
       catch (Throwable e)
       {
