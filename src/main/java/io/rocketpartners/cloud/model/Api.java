@@ -506,7 +506,7 @@ public class Api
 
    public String getName()
    {
-      return name != null ? name : apiCode;
+      return name;
    }
 
    public Api withName(String name)
