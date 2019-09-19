@@ -63,6 +63,11 @@ public class AuthAction extends Action<AuthAction>
 
    protected boolean          shouldTrackRequestTimes = true;
 
+   public AuthAction()
+   {
+      withOrder(100);
+   }
+   
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
