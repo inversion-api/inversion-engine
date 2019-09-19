@@ -29,16 +29,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Vector;
 
 import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.rocketpartners.cloud.action.security.AclRule;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
@@ -49,6 +50,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
+import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
@@ -99,35 +101,35 @@ public class Configurator
          throw new RuntimeException("Unable to load config files: " + e.getMessage(), e);
       }
 
-      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-      {
-         Thread t = new Thread(new Runnable()
-            {
-               @Override
-               public void run()
-               {
-                  while (true)
-                  {
-                     try
-                     {
-                        Utils.sleep(service.getConfigTimeout());
-                        if (destroyed)
-                           return;
-
-                        Config config = findConfig();
-                        loadConfig(config, false, false);
-                     }
-                     catch (Throwable t)
-                     {
-                        log.warn("Error loading config", t);
-                     }
-                  }
-               }
-            }, "inversion-config-reloader");
-
-         t.setDaemon(true);
-         t.start();
-      }
+//      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
+//      {
+//         Thread t = new Thread(new Runnable()
+//            {
+//               @Override
+//               public void run()
+//               {
+//                  while (true)
+//                  {
+//                     try
+//                     {
+//                        Utils.sleep(service.getConfigTimeout());
+//                        if (destroyed)
+//                           return;
+//
+//                        Config config = findConfig();
+//                        loadConfig(config, false, false);
+//                     }
+//                     catch (Throwable t)
+//                     {
+//                        log.warn("Error loading config", t);
+//                     }
+//                  }
+//               }
+//            }, "inversion-config-reloader");
+//
+//         t.setDaemon(true);
+//         t.start();
+//      }
    }
 
    public static Properties encode(Object... beans) throws Exception
@@ -296,13 +298,26 @@ public class Configurator
          if (api.getDbs().size() == 0)
             api.withDbs((Db[]) found.toArray(new Db[found.size()]));
 
+         Set<Action> privateActions = new HashSet();
          found = wire.getBeans(Endpoint.class);
          if (api.getEndpoints().size() == 0)
-            api.withEndpoints((Endpoint[]) found.toArray(new Endpoint[found.size()]));
+         {
+            for (Endpoint ep : (List<Endpoint>) found)
+            {
+               api.withEndpoint(ep);
+               privateActions.addAll(ep.getActions());
+            }
+         }
 
          found = wire.getBeans(Action.class);
          if (api.getActions().size() == 0)
-            api.withActions((Action[]) found.toArray(new Action[found.size()]));
+         {
+            for (Action action : (List<Action>) found)
+            {
+               if (!privateActions.contains(action))
+                  api.withAction(action);
+            }
+         }
 
          //         found = wire.getBeans(AclRule.class);
          //         if (api.getAclRules().size() == 0)
@@ -315,7 +330,7 @@ public class Configurator
       List<Field> excludes     = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
       List        excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
-            Action.class, Endpoint.class, Rule.class));                                                           //these are things that must be supplied by manual config so don't write them out.
+            Action.class, Endpoint.class, Rule.class, Path.class));                                               //these are things that must be supplied by manual config so don't write them out.
 
       @Override
       public boolean include(Field field)
@@ -410,7 +425,7 @@ public class Configurator
          else if (o instanceof Collection)
          {
             Collection col = (Collection) o;
-            name = col.getApi().getApiCode() + ".collections." + col.getDb().getName() + "_" + col.getName();
+            name = col.getApi().getName() + ".collections." + col.getDb().getName() + "_" + col.getName();
          }
          else if (o instanceof Entity)
          {
@@ -434,7 +449,7 @@ public class Configurator
          if (name != null)
             return name.toString();
 
-         throw new RuntimeException("Unable to name: " + o);
+         throw new RuntimeException("Unable to name: " + o + " " + o.getClass());
       }
    }
 
@@ -485,10 +500,10 @@ public class Configurator
       }
       //      else
       //      {
-      //         for (String fileName : config.files)
-      //         {
-      //            log.warn("LOADING CONFIG FILE: " + fileName);
-      //         }
+      for (String fileName : config.files)
+      {
+         log.warn("LOADING CONFIG FILE: " + fileName);
+      }
       //      }
 
       List keys = new ArrayList(config.props.keySet());

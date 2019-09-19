@@ -60,7 +60,7 @@ public class Demo001SqlDbNorthwind
    {
       return new Api()//
                       .withName("northwind")//
-                      .withDb(new H2SqlDb("db", "DemoSqlDbNorthwind1.db", true, Demo001SqlDbNorthwind.class.getResourceAsStream("northwind.h2.ddl")))//
+                      .withDb(new H2SqlDb("db", "DemoSqlDbNorthwind1.db", Demo001SqlDbNorthwind.class.getResource("northwind.h2.ddl").toString()))//
                       //.withDb(new SqlDb("db", "YOUR_JDBC_DRIVER", "YOUR_JDBC_URL", "YOUR_JDBC_USERNAME", "YOUR_JDBC_PASSWORD")))//
                       .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction());
    }

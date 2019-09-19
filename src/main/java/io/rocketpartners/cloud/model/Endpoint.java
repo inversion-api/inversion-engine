@@ -195,6 +195,11 @@ public class Endpoint extends Rule<Endpoint>
    //      addAction(a);
    //   }
 
+   public List<Action> getActions()
+   {
+      return new ArrayList(actions);
+   }
+   
    public List<Action> getActions(Request req)
    {
       List<Action> filtered = new ArrayList();

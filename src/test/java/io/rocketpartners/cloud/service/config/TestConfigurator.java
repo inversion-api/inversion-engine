@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud.model;
+package io.rocketpartners.cloud.service.config;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +11,10 @@ import java.util.Properties;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
+import io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind;
+import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.Collection;
+import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.service.Service;
 import io.rocketpartners.cloud.utils.Configurator;
 import io.rocketpartners.cloud.utils.Utils;
@@ -40,37 +44,36 @@ public class TestConfigurator extends TestCase
    {
       Service service = SqlServiceFactory.service();
       Api source = service.getApi("northwind");
-
       Properties props1 = Configurator.encode(source);
-
-      List<String> keys = new ArrayList(props1.keySet());
-      Collections.sort(keys);
-
-      //      for (String key : keys)
-      //      {
-      //         String value = props1.getProperty(key);
-      //
-      //         if (key.indexOf(".api") >= 0)
-      //            System.out.println(key + "=" + value);
-      //      }
 
       Wirer w = new Wirer();
       w.load(props1);
 
       Api copy1 = (Api) w.getBean("northwind");
-
       Properties props2 = Configurator.encode(copy1);
 
-      String print1 = print(props1);
-      String print2 = print(props2);
+      assertTrue(compare(props1, props2));
+   }
+   
+   @Test
+   public void testPropsConfig2() throws Exception
+   {
+      Api source = Demo001SqlDbNorthwind.buildApi();
+      Properties props1 = Configurator.encode(source);
 
-      System.out.println(print2);
+      Wirer w = new Wirer();
+      w.load(props1);
 
-      //      assertTrue(props1.containsKey("h2.pass"));
-      //      assertTrue(props2.containsKey("h2.pass"));
+      Api copy1 = (Api) w.getBean(source.getName());
+      Properties props2 = Configurator.encode(copy1);
 
-      //compare(print1, print2);
-      assertTrue(compare(print1, print2));
+      assertTrue(compare(props1, props2));
+   }
+   
+
+   protected boolean compare(Properties props1, Properties props2) throws IOException
+   {
+      return compare(print(props1), print(props2));
    }
 
    protected boolean compare(String str1, String str2) throws IOException
