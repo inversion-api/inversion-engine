@@ -16,7 +16,7 @@
 package io.rocketpartners.cloud.action.sql;
 
 import java.io.File;
-import java.io.InputStream;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -39,33 +39,42 @@ import io.rocketpartners.cloud.utils.Utils;
  */
 public class H2SqlDb extends SqlDb
 {
-   static Object LOCK      = new Object();
-   static Server server    = null;
+   static Object LOCK   = new Object();
+   static Server server = null;
 
-   String        h2Dir     = new File(System.getProperty("user.home"), ".inversion").toString();
-   String        h2File    = null;
-   InputStream   ddlStream = null;
-   boolean       resetDb   = true;
+   String        h2Dir;
+   String        h2File;
+   String        ddlUrl;
+   boolean       resetDb;
 
-   public H2SqlDb(String name, String h2File, boolean resetDb, InputStream ddlStream)
+   public H2SqlDb()
    {
-      this(name, null, h2File, resetDb, ddlStream);
+      this(null, null, null, null);
    }
 
-   public H2SqlDb(String name, String h2Dir, String h2File, boolean resetDb, InputStream ddlStream)
+   public H2SqlDb(String name, String h2File, String ddlUrl)
+   {
+      this(name, null, h2File, ddlUrl);
+   }
+
+   public H2SqlDb(String name, String h2Dir, String h2File, String ddlUrl)
    {
       withName(name);
+      withType("h2");
       withDriver("org.h2.Driver");
       withUser("sa");
       withPass("");
-      if (h2Dir != null)
-         withH2Dir(h2Dir);
+
+      if (h2Dir == null)
+         h2Dir = new File(System.getProperty("user.home"), ".inversion").toString();
+
+      withH2Dir(h2Dir);
       withH2File(h2File);
-      withResetDb(resetDb);
-      withDdlStream(ddlStream);
+      withDdlUrl(ddlUrl);
    }
 
-   public DataSource createConnectionPool()
+   @Override
+   protected DataSource createConnectionPool()
    {
       try
       {
@@ -78,16 +87,13 @@ public class H2SqlDb extends SqlDb
             }
          }
 
-         String url = "jdbc:h2:tcp://localhost:9092/nio:" + h2Dir + "/" + h2File + ";AUTO_SERVER=TRUE";
-         withUrl(url);
-
-         if (resetDb)
+         if (isResetDb())
          {
-            File dir = new File(h2Dir);
+            File dir = new File(getH2Dir());
             File[] files = dir.listFiles();
             for (int i = 0; files != null && i < files.length; i++)
             {
-               if (files[i].getName().startsWith(h2File))
+               if (files[i].getName().startsWith(getH2File()))
                {
                   System.out.println("Deleting old h2 file: " + files[i]);
                   files[i].delete();
@@ -95,16 +101,14 @@ public class H2SqlDb extends SqlDb
             }
          }
 
-         //Server.createTcpServer("-tcpPort", port + "").start();
-
-         if (ddlStream != null)
+         if (getDdlUrl() != null)
          {
-            File f = new File(h2Dir, h2File + ".mv.db");
+            File f = new File(getH2Dir(), h2File + ".mv.db");
             if (!f.exists())
             {
                Class.forName(getDriver());
-               Connection conn = DriverManager.getConnection(url, getUser(), getPass());
-               SqlUtils.runDdl(conn, ddlStream);
+               Connection conn = DriverManager.getConnection(getUrl(), getUser(), getPass());
+               SqlUtils.runDdl(conn, new URL(getDdlUrl()).openStream());
                conn.commit();
                conn.close();
             }
@@ -137,10 +141,41 @@ public class H2SqlDb extends SqlDb
       return this;
    }
 
-   public H2SqlDb withDdlStream(InputStream ddlStream)
+   public H2SqlDb withDdlUrl(String ddlUrl)
    {
-      this.ddlStream = ddlStream;
+      this.ddlUrl = ddlUrl;
       return this;
+   }
+
+   @Override
+   public String getUrl()
+   {
+      String url = super.getUrl();
+      if (url == null && getH2Dir() != null && h2File != null)
+      {
+         url = "jdbc:h2:tcp://localhost:9092/nio:" + getH2Dir() + "/" + getH2File() + ";AUTO_SERVER=TRUE";
+      }
+      return url;
+   }
+
+   public String getH2Dir()
+   {
+      return h2Dir;
+   }
+
+   public String getH2File()
+   {
+      return h2File;
+   }
+
+   public String getDdlUrl()
+   {
+      return ddlUrl;
+   }
+
+   public boolean isResetDb()
+   {
+      return resetDb;
    }
 
 }

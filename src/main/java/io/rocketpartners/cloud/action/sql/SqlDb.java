@@ -326,7 +326,7 @@ public class SqlDb extends Db<SqlDb>
          Connection conn = ConnectionLocal.getConnection(this);
          if (conn == null && !isShutdown())
          {
-            String dsKey = getName() + getUrl() + getUser() + getPass();
+            String dsKey = "name=" + getName() + ", url=" + getUrl() + ", user=" + getUser();
 
             DataSource pool = pools.get(dsKey);
 
@@ -334,6 +334,8 @@ public class SqlDb extends Db<SqlDb>
             {
                synchronized (pools)
                {
+                  //System.out.println("CREATING CONNECTION POOL: " + dsKey);
+                  
                   pool = pools.get(getName());
 
                   if (pool == null && !isShutdown())
