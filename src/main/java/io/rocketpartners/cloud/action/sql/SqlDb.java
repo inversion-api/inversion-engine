@@ -108,7 +108,7 @@ public class SqlDb extends Db<SqlDb>
             @Override
             public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
             {
-               String debugPrefix = "sql ";
+               String debugPrefix = "SqlDb: ";
 
                String debugType = "unknown";
 

@@ -1,4 +1,4 @@
-package io.rocketpartners.cloud.service.config;
+package io.rocketpartners.cloud.service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import java.util.Properties;
 
 import org.junit.Test;
 
+import io.rocketpartners.cloud.action.security.AuthAction;
+import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
 import io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind;
 import io.rocketpartners.cloud.model.Api;
@@ -24,23 +26,46 @@ import junit.framework.TestCase;
 public class TestConfigurator extends TestCase
 {
 
+   /**
+    * Test that properties files are loaded for the given
+    * profile in the correct order allowing keys to be
+    * overridden. 
+    */
    @Test
-   public void testWire1() throws Exception
+   public void testConfigSimple()
    {
-      Properties props = new Properties();
-      props.load(getClass().getResourceAsStream("wire1.properties"));
+      Service dev = new Service();
+      dev.setProfile("dev");
+      dev.setConfigPath("io/rocketpartners/cloud/service/config/");
+      dev.startup();
 
-      Wirer w = new Wirer();
-      w.load(props);
+      Api devApi = dev.getApi("northwind");
+      assertEquals(20, ((SqlDb) devApi.getDb("db")).getPoolMax());
+      assertEquals(0, devApi.getActions().size());
 
-      Api api = w.getBean(Api.class);
-      Collection coll = api.getCollection("locations");
-      List<Relationship> rels = coll.getEntity().getRelationships();
-      System.out.println(rels);
+      Service prod = new Service();
+      prod.setProfile("prod");
+      prod.setConfigPath("io/rocketpartners/cloud/service/config/");
+      prod.startup();
+
+      Api prodApi = prod.getApi("northwind");
+
+      assertEquals(70, ((SqlDb) prodApi.getDb("db")).getPoolMax());
+      assertEquals(1, prodApi.getActions().size());
+      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
    }
 
+   /**
+    * Test the stability of properties file encoding/decoding
+    * by encoding an Api to a properties file, decoding it back
+    * into an object model and then encoding it back into a
+    * second properties file.  The two properties files should
+    * match if the encoder/decoder worked propertly
+    *  
+    * @throws Exception
+    */
    @Test
-   public void testPropsConfig1() throws Exception
+   public void testEncodeDecodeEncodeAccuracy1() throws Exception
    {
       Service service = SqlServiceFactory.service();
       Api source = service.getApi("northwind");
@@ -54,9 +79,9 @@ public class TestConfigurator extends TestCase
 
       assertTrue(compare(props1, props2));
    }
-   
+
    @Test
-   public void testPropsConfig2() throws Exception
+   public void testEncodeDecodeEncodeAccuracy2() throws Exception
    {
       Api source = Demo001SqlDbNorthwind.buildApi();
       Properties props1 = Configurator.encode(source);
@@ -69,7 +94,6 @@ public class TestConfigurator extends TestCase
 
       assertTrue(compare(props1, props2));
    }
-   
 
    protected boolean compare(Properties props1, Properties props2) throws IOException
    {

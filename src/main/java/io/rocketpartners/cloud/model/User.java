@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.rocketpartners.cloud.utils.Utils;
+
 public class User
 {
    protected int         id          = 0;
@@ -172,7 +174,7 @@ public class User
       if (permissions == null)
          return true;
 
-      for (String permission : permissions)
+      for (String permission : Utils.explode(",", permissions))
       {
          if (!this.permissions.contains(permission))
             return false;
@@ -184,7 +186,7 @@ public class User
    {
       if (permissions != null)
       {
-         for (String permission : permissions)
+         for (String permission : Utils.explode(",", permissions))
          {
             if (!this.permissions.contains(permission))
                this.permissions.add(permission);

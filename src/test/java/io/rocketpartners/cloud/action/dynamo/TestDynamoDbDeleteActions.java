@@ -30,13 +30,13 @@ public class TestDynamoDbDeleteActions extends TestCase
       service.delete(href).hasStatus(204);
 
       //make sure it was deleted
-      service.get(href).statusEq(404);
+      service.get(href).assertStatus(404);
 
       //now put the recored back and lets make sure
       //it looks the same as it did when we pulled it the first time
       record.remove("href");
       res = service.post("northwind/dynamodb/orders", record);
-      res.statusEq(201);
+      res.assertStatus(201);
       res.dump();
 
       //set this back for the comaprison below

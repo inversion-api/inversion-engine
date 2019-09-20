@@ -78,7 +78,7 @@ public class TestSqlDeleteAction extends TestCase
       res.dump();
       res = service.get(href);
       res.dump();
-      res.statusEq(404);
+      res.assertStatus(404);
    }
 
    @Test

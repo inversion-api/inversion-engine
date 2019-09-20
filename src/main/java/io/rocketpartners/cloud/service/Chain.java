@@ -416,9 +416,6 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
-
-         Chain.debug("Action " + action.getClass().getSimpleName() + " " + action.toString());
-
          action.run(service, request.getApi(), request.getEndpoint(), this, request, response);
          return true;
       }

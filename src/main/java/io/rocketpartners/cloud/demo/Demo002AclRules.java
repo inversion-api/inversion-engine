@@ -43,51 +43,51 @@ public class Demo002AclRules
       Api api = Demo001SqlDbNorthwind.buildApi();
 
       Action authAction = new Action()
-      {
-         //generally you would use AuthAction or a custom subclass to do authentication and authorization
-         //and pull credentials from a dirctory or db etc.  This is here as a trivial example showing how
-         //a user with permissions is attached to the request
-         public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
          {
-            String username = req.getParam("username");
-
-            Map<String, String> perms = new HashMap();
-            perms.put("Jack", "human_resources,manager");
-            perms.put("Diane", "sales_perms,sales_perms");
-            perms.put("Bill", "sales_perms");
-            perms.put("Ted", "supplychain_perms");
-            perms.put("Alice", "supplychain_perms,manager");
-            perms.put("Jessica", "admin_perms");
-
-            String userPerms = perms.get(username);
-
-            if (username != null && userPerms == null)
-               throw new ApiException(SC.SC_401_UNAUTHORIZED, "Unknown user '" + username + "'");
-
-            if (userPerms != null)
+            //generally you would use AuthAction or a custom subclass to do authentication and authorization
+            //and pull credentials from a dirctory or db etc.  This is here as a trivial example showing how
+            //a user with permissions is attached to the request
+            public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
             {
-               Chain.debug("user '" + username + "' - perms=" + userPerms);
-               User user = new User(username, "user", userPerms);
-               req.withUser(user);
+               String username = req.getParam("username");
+
+               Map<String, String> perms = new HashMap();
+               perms.put("Jack", "human_resources,manager");
+               perms.put("Diane", "sales_perms,sales_perms");
+               perms.put("Bill", "sales_perms");
+               perms.put("Ted", "supplychain_perms");
+               perms.put("Alice", "supplychain_perms,manager");
+               perms.put("Jessica", "admin_perms");
+
+               String userPerms = perms.get(username);
+
+               if (username != null && userPerms == null)
+                  throw new ApiException(SC.SC_401_UNAUTHORIZED, "Unknown user '" + username + "'");
+
+               if (userPerms != null)
+               {
+                  Chain.debug("User: '" + username + "' - perms=" + userPerms);
+                  User user = new User(username, "user", userPerms);
+                  req.withUser(user);
+               }
             }
-         }
-      };
-      
+         };
+
       authAction.withOrder(100);
       api.withAction(authAction);
 
       AclAction acl = new AclAction("/*");
       acl.withOrder(500);
-      
+
       api.withAction(acl);
 
-      acl.withAclRule("public_read", "GET", "categories/*, products/*");
-      acl.withAclRule("human_resources_all", "GET,PUT,POST,DELETE", "territories/*,employees/*", null, "human_resources", "manager");
-      acl.withAclRule("sales_fulfillment_all", "GET,PUT,POST,DELETE", "customers/*,customerdemographics/*,orders/*,orderdetails/*", null, "sales_perms");
-      acl.withAclRule("sales_manager_read", "GET", "territories/*,employees/*", null, "sales_perms", "manager");
-      acl.withAclRule("supply_chain_read", "GET", "shippers/*,suppliers/*,regions/*", null, "supplychain_perms");
-      acl.withAclRule("supply_chain_write", "PUT,POST,DELETE", "categories/*,products/*,shippers/*,suppliers/*,regions/*", null, "supplychain_perms", "manager");
-      acl.withAclRule("admin_all", "GET,PUT,POST,DELETE", "*", null, "admin_perms");
+      acl.withAclRule("rule_allow_public_read", "GET", "categories/*, products/*");
+      acl.withAclRule("rule_allow_human_resources_all", "GET,PUT,POST,DELETE", "territories/*,employees/*", null, "human_resources", "manager");
+      acl.withAclRule("rule_allow_sales_fulfillment_all", "GET,PUT,POST,DELETE", "customers/*,customerdemographics/*,orders/*,orderdetails/*", null, "sales_perms");
+      acl.withAclRule("rule_allow_sales_manager_read", "GET", "territories/*,employees/*", null, "sales_perms", "manager");
+      acl.withAclRule("rule_allow_supply_chain_read", "GET", "shippers/*,suppliers/*,regions/*", null, "supplychain_perms");
+      acl.withAclRule("rule_allow_supply_chain_write", "PUT,POST,DELETE", "categories/*,products/*,shippers/*,suppliers/*,regions/*", null, "supplychain_perms", "manager");
+      acl.withAclRule("rule_allow_admin_all", "GET,PUT,POST,DELETE", "*", null, "admin_perms");
 
       return api;
    }

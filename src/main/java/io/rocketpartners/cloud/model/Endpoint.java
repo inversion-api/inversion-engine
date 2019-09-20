@@ -54,7 +54,10 @@ public class Endpoint extends Rule<Endpoint>
 
    public String toString()
    {
-      return "Endpoint: " + methods + " - '" + (path != null ? path : "/") + "' " + includePaths + " - " + excludePaths;
+      if (name != null)
+         return name;
+
+      return (!Utils.empty(name) ? name + " " : "") + methods + " '/" + (!Utils.empty(path) ? path : "") + "' " + includePaths + " - " + excludePaths;
    }
 
    public boolean matches(String method, String toMatch)
@@ -199,7 +202,7 @@ public class Endpoint extends Rule<Endpoint>
    {
       return new ArrayList(actions);
    }
-   
+
    public List<Action> getActions(Request req)
    {
       List<Action> filtered = new ArrayList();
@@ -224,11 +227,8 @@ public class Endpoint extends Rule<Endpoint>
 
    public <T extends Action> Endpoint withAction(T action)
    {
-      if (!actions.contains(action))
-         actions.add(action);
-
-      if (action.getApi() != getApi())
-         action.withApi(getApi());
+      if (actions.contains(action))
+         return this;
 
       boolean inserted = false;
       for (int i = 0; i < actions.size(); i++)
@@ -244,6 +244,9 @@ public class Endpoint extends Rule<Endpoint>
       if (!inserted)
          actions.add(action);
 
+      if (action.getApi() != getApi())
+         action.withApi(getApi());
+      
       return this;
    }
 

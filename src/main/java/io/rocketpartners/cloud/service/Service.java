@@ -86,7 +86,7 @@ public class Service
 
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
-    * will not be reflectively configured as it otherwise would be.
+    * will not be reflectively configured as it otherwise would.
     */
    protected boolean                         configFast     = false;
    protected boolean                         configDebug    = false;
@@ -166,6 +166,37 @@ public class Service
             }
          }
 
+         //      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
+         //      {
+         //         Thread t = new Thread(new Runnable()
+         //            {
+         //               @Override
+         //               public void run()
+         //               {
+         //                  while (true)
+         //                  {
+         //                     try
+         //                     {
+         //                        Utils.sleep(service.getConfigTimeout());
+         //                        if (destroyed)
+         //                           return;
+         //
+         //                        Config config = findConfig();
+         //                        loadConfig(config, false, false);
+         //                     }
+         //                     catch (Throwable t)
+         //                     {
+         //                        log.warn("Error loading config", t);
+         //                     }
+         //                  }
+         //               }
+         //            }, "inversion-config-reloader");
+         //
+         //         t.setDaemon(true);
+         //         t.start();
+         //      }
+
+         //-- the following block is only debug output
          for (Api api : apis)
          {
             System.out.println(api.getApiCode() + "--------------");
@@ -188,8 +219,8 @@ public class Service
             {
                System.out.println("  - COLLECTION: " + coll);
             }
-
          }
+         //-- end debug output
 
          started = true;
          return this;
@@ -535,6 +566,14 @@ public class Service
 
          Collections.sort(actions);
 
+         //-- appends info to chain.debug that can be used for debugging an d
+         //-- for test cases to validate what actually ran
+         if (req.isDebug())
+         {
+            Chain.debug("Endpoint: " + req.getEndpoint());
+            Chain.debug("Actions: " + actions);
+         }
+
          chain.withActions(actions).go();
 
          ConnectionLocal.commit();
@@ -722,8 +761,7 @@ public class Service
 
    public Api withApi(String apiCode)
    {
-      Api api = new Api();
-      api.withApiCode(apiCode);
+      Api api = new Api(apiCode);
       addApi(api);
       return api;
    }

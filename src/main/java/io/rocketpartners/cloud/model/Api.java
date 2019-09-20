@@ -50,9 +50,10 @@ public class Api
    {
    }
 
-   public Api(String apiCode)
+   public Api(String name)
    {
-      withApiCode(apiCode);
+      withName(name);
+      withApiCode(name);
    }
 
    public synchronized Api startup()

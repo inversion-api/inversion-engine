@@ -73,69 +73,6 @@ public class Response
       withUrl(url);
    }
 
-   public Response statusOk()
-   {
-      if (statusCode < 200 || statusCode > 299)
-      {
-         dump();
-         throw new ApiException(statusCode + "", statusError);
-      }
-
-      return this;
-   }
-
-   public Response statusOk(String message)
-   {
-      if (statusCode < 200 || statusCode > 299)
-         throw new ApiException(statusCode + "", message);
-
-      return this;
-   }
-
-   public Response statusEq(int... statusCodes)
-   {
-      boolean matched = false;
-      for (int statusCode : statusCodes)
-      {
-         if (statusCode == this.statusCode)
-         {
-            matched = true;
-            break;
-         }
-      }
-
-      if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
-
-      return this;
-   }
-
-   public Response statusEq(String message, int... statusCodes)
-   {
-      boolean matched = false;
-      for (int statusCode : statusCodes)
-      {
-         if (statusCode == this.statusCode)
-         {
-            matched = true;
-            break;
-         }
-      }
-
-      if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
-
-      return this;
-   }
-
-   public Response statusEq(int statusCode, String message)
-   {
-      if (this.statusCode != statusCode)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
-
-      return this;
-   }
-
    public boolean hasStatus(int... statusCodes)
    {
       for (int statusCode : statusCodes)
@@ -848,6 +785,120 @@ public class Response
             // ignore
          }
       }
+   }
+
+   public Response statusOk()
+   {
+      if (statusCode < 200 || statusCode > 299)
+      {
+         dump();
+         throw new ApiException(statusCode + "", statusError);
+      }
+
+      return this;
+   }
+
+   //----------------------------------------------------------------------------------------------------------------------
+   //----------------------------------------------------------------------------------------------------------------------
+   //TEST ASSERTION CONVENIENCE METHODS
+
+   public Response assertOk(String message)
+   {
+      if (statusCode < 200 || statusCode > 299)
+         throw new ApiException(statusCode + "", message);
+
+      return this;
+   }
+
+   public Response assertStatus(int... statusCodes)
+   {
+      boolean matched = false;
+      for (int statusCode : statusCodes)
+      {
+         if (statusCode == this.statusCode)
+         {
+            matched = true;
+            break;
+         }
+      }
+
+      if (!matched)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
+
+      return this;
+   }
+
+   public Response assertStatus(String message, int... statusCodes)
+   {
+      boolean matched = false;
+      for (int statusCode : statusCodes)
+      {
+         if (statusCode == this.statusCode)
+         {
+            matched = true;
+            break;
+         }
+      }
+
+      if (!matched)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+
+      return this;
+   }
+
+   public Response assertStatus(int statusCode, String message)
+   {
+      if (this.statusCode != statusCode)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+
+      return this;
+   }
+
+   public Response assertDebug(String lineMatch, String... matches)
+   {
+      if (matches == null || matches.length == 0)
+      {
+         matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1, lineMatch.length())};
+         lineMatch = lineMatch.substring(0, lineMatch.indexOf(" "));
+      }
+
+      if (matches == null || matches.length == 0)
+         return this;
+
+      String debug = getDebug();
+
+      debug = debug.substring(0, debug.indexOf("<< response"));
+
+      int idx = debug.indexOf(" " + lineMatch + " ");
+      if (idx < 0)
+      {
+         System.err.println("SKIPPING DEBUG MATCH: " + lineMatch + " " + Arrays.asList(matches));
+         return this;
+      }
+
+      String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
+
+      for (int i = 0; i < matches.length; i++)
+      {
+         String match = matches[i];
+         List<String> matchTokens = Utils.split(match, ' ', '\'', '"', '{', '}');
+         for (String matchToken : matchTokens)
+         {
+            if (debugLine.indexOf(matchToken) < 0)
+            {
+               String msg = "ERROR: Can't find match token in debug line";
+               msg += "\r\n" + "  - debug line    : " + debugLine;
+               msg += "\r\n" + "  - missing token : " + matchToken;
+               msg += "\r\n" + debug;
+               
+               System.err.println(msg);
+
+               Utils.error(msg);
+
+            }
+         }
+      }
+      return this;
    }
 
 }

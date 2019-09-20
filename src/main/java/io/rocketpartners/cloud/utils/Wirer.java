@@ -144,6 +144,13 @@ public class Wirer
       return keys;
    }
 
+   /**
+    * Sorts based on the number of "." characters first and then
+    * based on the string value.
+    * 
+    * @param keys
+    * @return
+    */
    public static List<String> sort(java.util.Collection keys)
    {
       List<String> sorted = new ArrayList(keys);

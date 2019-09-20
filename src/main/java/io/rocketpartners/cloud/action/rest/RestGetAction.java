@@ -73,9 +73,6 @@ public class RestGetAction extends Action<RestGetAction>
    @Override
    public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      Chain.debug("");
-      Chain.debug("RestGetAction -> " + req.getUrl());
-
       if (req.getSubCollectionKey() != null)
       {
          String entityKey = req.getEntityKey();

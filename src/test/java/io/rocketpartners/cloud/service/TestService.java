@@ -8,7 +8,6 @@ import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Response;
-import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestService extends TestCase
@@ -102,11 +101,11 @@ public class TestService extends TestCase
                              .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction"))//
                              .getService();
 
-      Utils.assertDebug(service.get("northwind/source/collection"), "Action", "sourceAction");
-      Utils.assertDebug(service.get("northwind/source"), "Action", "sourceAction");
-      Utils.assertDebug(service.get("northwind/h2/collection"), "Action", "h2Action");
-      Utils.assertDebug(service.get("northwind/mysql/collection/entity/subcollection"), "Action", "mysqlAction");
-      Utils.assertDebug(service.get("northwind/dynamo/collection"), "Action", "dynamoAction");
+      service.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
+      service.get("northwind/source").assertDebug("Action:", "sourceAction");
+      service.get("northwind/h2/collection").assertDebug("Actio:n", "h2Action");
+      service.get("northwind/mysql/collection/entity/subcollection").assertDebug("Action:", "mysqlAction");
+      service.get("northwind/dynamo/collection").assertDebug("Action:", "dynamoAction");
    }
 
    @Test
@@ -258,23 +257,23 @@ public class TestService extends TestCase
       Response res = service.get("test/test");
       res.dump();
 
-      Utils.assertDebug(res, "Endpoint_actionA_overriddenParam", "actionAOverride");
-      Utils.assertDebug(res, "Endpoint_actionA_endpointParam", "endpointValue");
-      Utils.assertDebug(res, "Endpoint_actionA_actionAParam", "actionAValue");
-      Utils.assertDebug(res, "Endpoint_actionA_actionBParam", "null");
-      Utils.assertDebug(res, "Endpoint_actionA_actionCParam", "null");
+      res.assertDebug("Endpoint_actionA_overriddenParam", "actionAOverride");
+      res.assertDebug("Endpoint_actionA_endpointParam", "endpointValue");
+      res.assertDebug("Endpoint_actionA_actionAParam", "actionAValue");
+      res.assertDebug("Endpoint_actionA_actionBParam", "null");
+      res.assertDebug("Endpoint_actionA_actionCParam", "null");
 
-      Utils.assertDebug(res, "Endpoint_actionB_overriddenParam", "actionBOverride");
-      Utils.assertDebug(res, "Endpoint_actionB_endpointParam", "endpointValue");
-      Utils.assertDebug(res, "Endpoint_actionB_actionAParam", "actionAValue");
-      Utils.assertDebug(res, "Endpoint_actionB_actionBParam", "actionBValue");
-      Utils.assertDebug(res, "Endpoint_actionB_actionCParam", "null");
+      res.assertDebug("Endpoint_actionB_overriddenParam", "actionBOverride");
+      res.assertDebug("Endpoint_actionB_endpointParam", "endpointValue");
+      res.assertDebug("Endpoint_actionB_actionAParam", "actionAValue");
+      res.assertDebug("Endpoint_actionB_actionBParam", "actionBValue");
+      res.assertDebug("Endpoint_actionB_actionCParam", "null");
 
-      Utils.assertDebug(res, "Endpoint_actionC_overriddenParam", "actionCOverride");
-      Utils.assertDebug(res, "Endpoint_actionC_endpointParam", "endpointValue");
-      Utils.assertDebug(res, "Endpoint_actionC_actionAParam", "actionAValue");
-      Utils.assertDebug(res, "Endpoint_actionC_actionBParam", "actionBValue");
-      Utils.assertDebug(res, "Endpoint_actionC_actionCParam", "actionCValue");
+      res.assertDebug("Endpoint_actionC_overriddenParam", "actionCOverride");
+      res.assertDebug("Endpoint_actionC_endpointParam", "endpointValue");
+      res.assertDebug("Endpoint_actionC_actionAParam", "actionAValue");
+      res.assertDebug("Endpoint_actionC_actionBParam", "actionBValue");
+      res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
 
    }
 

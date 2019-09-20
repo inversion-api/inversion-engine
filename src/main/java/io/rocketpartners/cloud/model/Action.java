@@ -59,7 +59,9 @@ public abstract class Action<A extends Action> extends Rule<A>
       if (this.api != api)
       {
          this.api = api;
-         //intentionally not bidirectional 
+         //intentionally not bidirectional because actions set 
+         //directly on the Api are not private to an endpoint but
+         //matched against all requests.
          // api.withAction(this);
       }
       return (A) this;
@@ -162,4 +164,15 @@ public abstract class Action<A extends Action> extends Rule<A>
       return Utils.empty(path) ? next : path + "." + next;
    }
 
+   public String toString()
+   {
+      if (name != null)
+         return name;
+
+      String cn = getClass().getSimpleName();
+      if (Utils.empty(cn))
+         cn = getClass().getName();
+
+      return cn;
+   }
 }

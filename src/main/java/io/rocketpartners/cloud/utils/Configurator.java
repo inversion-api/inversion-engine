@@ -65,14 +65,7 @@ public class Configurator
 
    Logger                     log            = LoggerFactory.getLogger(Service.class.getName() + ".configuration");
 
-   boolean                    destroyed      = false;
-
    Service                    service        = null;
-
-   public void destroy()
-   {
-      destroyed = true;
-   }
 
    public synchronized void loadConfig(Service service)
    {
@@ -100,36 +93,6 @@ public class Configurator
          e.printStackTrace();
          throw new RuntimeException("Unable to load config files: " + e.getMessage(), e);
       }
-
-//      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-//      {
-//         Thread t = new Thread(new Runnable()
-//            {
-//               @Override
-//               public void run()
-//               {
-//                  while (true)
-//                  {
-//                     try
-//                     {
-//                        Utils.sleep(service.getConfigTimeout());
-//                        if (destroyed)
-//                           return;
-//
-//                        Config config = findConfig();
-//                        loadConfig(config, false, false);
-//                     }
-//                     catch (Throwable t)
-//                     {
-//                        log.warn("Error loading config", t);
-//                     }
-//                  }
-//               }
-//            }, "inversion-config-reloader");
-//
-//         t.setDaemon(true);
-//         t.start();
-//      }
    }
 
    public static Properties encode(Object... beans) throws Exception
@@ -142,17 +105,11 @@ public class Configurator
    {
       Wirer wire = new Wirer()
          {
-
             //IMPORTANT IMPORTANT IMPORTANT
             // add special case exceptions here for cases where users may add unclean data
             // that should not be set directly on bean fields but should be passed the approperiate setter
             public boolean handleProp(Object bean, String prop, String value) throws Exception
             {
-               if (bean instanceof Endpoint && prop.equals("path"))
-               {
-                  ((Endpoint) bean).withPath(value);
-                  return true;
-               }
                return false;
             }
 
@@ -165,6 +122,9 @@ public class Configurator
             }
          };
       wire.load(config.props);
+      
+      //-- this just loads the bare bones config supplied  
+      //-- in inversion*.properties files by the users.  
       autoWireApi(wire);
 
       boolean doLoad = false;
@@ -190,10 +150,15 @@ public class Configurator
 
          if (doLoad)
          {
+            //-- this serializes out the object model that was bootsrapped off of the
+            //-- configuration files.  At this point the db.startup() has been called
+            //-- on all of the DBs and they configured collections on the Api.  
             Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), wire.getBeans(Api.class).toArray());
             autoProps.putAll(config.props);
             wire.clear();
             wire.load(autoProps);
+            
+            
             autoWireApi(wire);
 
             if (!Utils.empty(service.getConfigOut()))
@@ -207,9 +172,10 @@ public class Configurator
                file.getParentFile().mkdirs();
                BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
+               //properties are sorted based on the number of "." segments they contain so that "shallow"
+               //depth properties can be set before deeper depth properties.
                Properties sorted = new Properties()
                   {
-
                      public Enumeration keys()
                      {
                         Vector v = new Vector(Wirer.sort(keySet()));
@@ -473,6 +439,13 @@ public class Configurator
       {
          String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
          InputStream is = service.getResource(fileName);
+
+         if (is == null)
+         {
+            fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + ".properties";
+            is = service.getResource(fileName);
+         }
+
          if (is != null)
          {
             config.files.add(fileName);
@@ -484,8 +457,28 @@ public class Configurator
       {
          for (int i = -1; i <= 100; i++)
          {
-            String fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
-            InputStream is = service.getResource(fileName);
+            InputStream is = null;
+            String fileName = null;
+
+            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
+            is = service.getResource(fileName);
+
+            if (is == null)
+            {
+               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
+               is = service.getResource(fileName);
+            }
+            if (is == null)
+            {
+               fileName = configPath + "inversion" + "-" + service.getProfile() + (i < 0 ? "" : i) + ".properties";
+               is = service.getResource(fileName);
+            }
+            if (is == null)
+            {
+               fileName = configPath + "inversion" + "-" + service.getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
+               is = service.getResource(fileName);
+            }
+
             if (is != null)
             {
                config.files.add(fileName);

@@ -107,10 +107,10 @@ public class AclAction extends Action<AclAction>
       {
          if (aclRule.ruleMatches(req))
          {
-            //log.debug("Matched ACL: " + aclRule.getName());
+            //log.debug("Matched AclAction: " + aclRule.getName());
             if (!aclRule.isAllow())
             {
-               Chain.debug("ACL: MATCH_DENY" + aclRule);
+               Chain.debug("AclAction: MATCH_DENY" + aclRule);
 
                allowed = false;
                break;
@@ -119,12 +119,12 @@ public class AclAction extends Action<AclAction>
             {
                if (!aclRule.isInfo() && aclRule.isAllow())
                {
-                  Chain.debug("ACL: MATCH_ALLOW " + aclRule);
+                  Chain.debug("AclAction: MATCH_ALLOW " + aclRule);
                   allowed = true;
                }
                else
                {
-                  Chain.debug("ACL: MATCH_INFO " + aclRule);
+                  Chain.debug("AclAction: MATCH_INFO " + aclRule);
                }
             }
 
@@ -134,7 +134,7 @@ public class AclAction extends Action<AclAction>
 
       if (!allowed)
       {
-         Chain.debug("ACL: NO_MATCH_DENY");
+         Chain.debug("AclAction: NO_MATCH_DENY");
          throw new ApiException(SC.SC_403_FORBIDDEN);
       }
 
@@ -147,8 +147,11 @@ public class AclAction extends Action<AclAction>
          restricts.addAll(aclRule.getRestricts());
       }
 
-      Chain.debug("ACL requires: " + requires);
-      Chain.debug("ACL restricts: " + restricts);
+      if (!requires.isEmpty())
+         Chain.debug("AclAction: requires: " + requires);
+
+      if (!restricts.isEmpty())
+         Chain.debug("AclAction: restricts: " + restricts);
 
       cleanParams(chain, req, restricts, requires);
       cleanJson(chain, req.getJson(), restricts, requires, false);

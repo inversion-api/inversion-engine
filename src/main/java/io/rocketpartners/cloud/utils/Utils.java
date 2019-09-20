@@ -71,7 +71,6 @@ import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import io.rocketpartners.cloud.model.ArrayNode;
 import io.rocketpartners.cloud.model.ObjectNode;
 import io.rocketpartners.cloud.model.ObjectNode.Property;
-import io.rocketpartners.cloud.model.Response;
 
 /**
  * Collection of utility methods designed to make
@@ -871,52 +870,6 @@ public class Utils
          }
       }
       return true;
-   }
-
-   public static Response assertDebug(Response resp, String lineMatch, String... matches)
-   {
-      if (matches == null || matches.length == 0)
-      {
-         matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1, lineMatch.length())};
-         lineMatch = lineMatch.substring(0, lineMatch.indexOf(" "));
-      }
-
-      if (matches == null || matches.length == 0)
-         return resp;
-
-      String debug = resp.getDebug();
-
-      debug = debug.substring(0, debug.indexOf("<< response"));
-
-      int idx = debug.indexOf(" " + lineMatch + " ");
-      if (idx < 0)
-      {
-         System.err.println("SKIPPING DEBUG MATCH: " + lineMatch + " " + Arrays.asList(matches));
-         return resp;
-      }
-
-      String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
-
-      for (int i = 0; i < matches.length; i++)
-      {
-         String match = matches[i];
-         List<String> matchTokens = split(match, ' ', '\'', '"', '{', '}');
-         for (String matchToken : matchTokens)
-         {
-            if (debugLine.indexOf(matchToken) < 0)
-            {
-               String msg = "ERROR: Can't find match token in debug line";
-               msg += "\r\n" + "  - debug line    : " + debugLine;
-               msg += "\r\n" + "  - missing token : " + matchToken;
-
-               System.err.println(msg);
-
-               error(msg);
-
-            }
-         }
-      }
-      return resp;
    }
 
    public static List<String> split(String string, char splitOn, char... quoteChars)

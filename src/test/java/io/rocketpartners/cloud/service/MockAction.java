@@ -12,6 +12,11 @@ public class MockAction extends Action<MockAction>
 {
    ObjectNode json = null;
 
+   public MockAction()
+   {
+      
+   }
+   
    public MockAction(String name)
    {
       this(null, null, name, new ObjectNode("name", name));
