@@ -47,8 +47,11 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Javadocs](#Javadocs)
    * [Logging](#logging)
    * [Gradle, Maven, etc.](#gradle-maven-etc)    
-1. [Changes](#changes)   
-  
+1. [REST API Design Resources](rest-api-design-resources)
+   * [HTTP Status Codes](http-status-codes)
+   * [Standards-ish](#standards-ish)
+   * [Web Query Languages](#web-query-languages)
+   * [Best Practices and Design Resources](best-dractices-and-design-resources)
  
    
 ## Features & Benefits
@@ -707,20 +710,14 @@ configurations.all {
 }
 
 dependencies {
-    compile 'com.github.RocketPartners:rckt_inversion:release-0.3.x-SNAPSHOT'
+    compile 'com.github.RocketPartners:rckt_inversion:master-SNAPSHOT'
 } 
 ```   
 
-### Spring Boot
 
-If you don't want to monkey with an application server deployment, a this [Inversion Spring Boot starter project](https://github.com/RocketPartners/rckt_inversion_spring) 
-will get you up and running in less than 5 minutes.
+## REST API Design Resources
 
-
-
-## Rest API Design Resources
-
-### HTTP Error Codes
+### HTTP Status Codes
  * http://msdn.microsoft.com/en-us/library/azure/dd179357.aspx
  * http://www.restapitutorial.com/httpstatuscodes.html
  * http://www.restapitutorial.com/lessons/httpmethods.html 
@@ -740,7 +737,7 @@ will get you up and running in less than 5 minutes.
  * https://developers.facebook.com/docs/graph-api/
  
  
-### URL Query Languages
+### Web Query Languages
  
  * http://dundalek.com/rql/
  * https://doc.apsstandard.org/2.1/spec/rql/
