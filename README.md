@@ -10,29 +10,28 @@ Inversion is not a code generator it is a runtime service that reflectively crea
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.  
 
 ## Contents
-1. [Features & Benefits](#features--benefits)
+1. [Features and Benefits](#features-and-benefits)
 1. [Quick Start](#quick-start)
 1. [URL Structure](#url-structure)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
-   * [Sorting / Ordering](#sorting--ordering)
-   * [Pagination / Offset & Limit](#pagination--offset--limit)
+   * [Sorting and Ordering](#sorting-and-ordering)
+   * [Pagination, Offset and Limit](#pagination-offset-and-limit)
    * [Query Functions](#query-functions)
    * [Aggregations](#aggregations)
    * [Nested Document Expansion](#nested-document-expansion)
    * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
-   * [Restricted & Required Parameters](#restricted--required-query-parameters)
+   * [Restricted and Required Parameters](#restricted-and-required-query-parameters)
    * [Miscellaneous](#miscellaneous)
 1. [Configuring Your Api](#configuring-your-api)
-   * [Configuration Files Loading](#configuration-file-loading)
+   * [Configuration File Loading](#configuration-file-loading)
    * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
 1. [Core Object Model Concepts](#core-object-model-concepts)
    * [Apis](#apis)
-   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
-   * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
-   * [Endpoints & Actions](#endpoints--actions)
-   * [AclRules](#aclrules)
-   * [Permissions](#permissions)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexes)
+   * [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
+   * [Endpoints and Actions](#endpoints-and-actions)
+   * [AclActions and AclRules](#aclactions-and-aclrules)
    * [Path Matching](#path-matching)
 1. [Security Model](#security-model)
    * [Account Roles](#account-roles)
@@ -54,7 +53,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Best Practices and Design Resources](best-dractices-and-design-resources)
  
    
-## Features & Benefits
+## Features and Benefits
  * Deploy a secure JSON REST API against your backend database in five minutes without any coding.
  * Support for MySql, PostgreSQL, SqlServer, DynamoDb, ElasticSearch, S3, Redis and many more.
  * Makes structured relational database backed APIs as frictionless as working with an unstructured document store dbs.
@@ -154,8 +153,7 @@ java -jar build/libs/rocket-inversion-master.jar
 
 ## URL Structure
 
-Inversion is designed to host multiple APIs potentially owned by different tenants.  All functional URLs for an API are prefixed 
-with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the AccountCode. 
+Inversion is designed to host multiple APIs potentially owned by different tenants.  All URLs are prefixed with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the accountCode. 
 
 Valid based URL formats are:
  * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -223,7 +221,7 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
  sw(column,[value])               |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column
 
  
- ### Sorting & Ordering
+ ### Sorting and Ordering
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -232,7 +230,7 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
  order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
 
-### Pagination, Offset & Limit
+### Pagination, Offset and Limit
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -303,7 +301,7 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
  * **excludes** - A comma separated list of collection attributes to exclude.
  
 
-### Restricted & Required Query Parameters
+### Restricted and Required Query Parameters
 
 If a table has a column named "userId" or "accountId" these are special case known columns who's
 values may not be supplied by an api user request.  The value of these fields always comes from
@@ -395,7 +393,7 @@ in a URL or as a JSON property name.
 Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
 
-### Endpoints & Actions
+### Endpoints and Actions
 
 An Endpoint maps one or more HTTP methods and URL pattern to an ordered list of one or more Actions via [path matching](#path-matching).  Actions are where the work actually gets done.  If an API needs custom business logic that can not be achieved by configuring an existing Action, a custom Action subclass is the answer.
 
@@ -450,109 +448,7 @@ The names "component", "entity", and "relationship" are special.  If you configu
 If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
 
 
-    
-  
-## Elasticsearch Specifics
-Currently, the following functions are available for use:
-
-* `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
-* auto-suggest paths should be in the following format: `.../elastic/indexType/suggest?suggestField=value&type=prefix`
-> a `type` auto-suggest parameter can be set to define the type of search.  By default, auto-suggest will do a 'prefix' search.  If no results are found, auto-suggest will then try a wildcard search and return those results.  If you want to limit auto-suggest to one type of search, set `type=prefix` or `type=wildcard`.  While both types are fast, prefix searches are the fastest (~2ms vs ~20ms) 
-* nested searching is allowed simply by specifying the name of the nested field, such as: `player.location.city` would retrieve the nested `location.city` value from a player. 
-
-The index/type will be automatically generated so that only one value needs to be sent.  
-`/elastic/location/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
-
-The index/type used above `.../elastic/location/location?and(...` is the same as `/elastic/location?and(...`.
-In the second example, it is assumed that the index/type `location` are the same value.
-
-Elastic pagination: paging beyond the 10,000th item is significantly slower than paging within the range of 0-10,000. Once the 10k index has been reached, elastic must manually cycle through the data in order to obtain the desired page.  10,000 is the default max_result value within ElasticSearch.
-
-#### Elasticsearch RQL Examples
-Retrieve all location data for the locations in the city of Chandler
-`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)`
-
-Retrieve only the address properties for the locations in the city of Chandler
-`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)?source=address1,address2,address3`
-
-Retrieve the locations in the city of Chandler AND have a locationCode of 270*** **AND** have an address including *McQueen*
-`http://localhost:8080/apiCode/elastic/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
-
-Retrieve all locations with players.registerNum > 5 
-`http://localhost:8080/apiCode/elastic/location?gt(players.registerNum,5)`
-
-
-Retrieve the locations with an address1 that includes 'VALLEY' AND PHOENIX locations that have deleted players 
-`http://localhost:8080/apiCode/elastic/location?and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))`
-
-Retrieve auto-suggested cities that start with 'chan' 
-`http://localhost:8080/apiCode/elastic/location/suggest?suggestCity=chan`
-
-Retrieve locations with an empty state value
-`http://localhost:8080/apiCode/elastic/location?emp(state)`
-
-Example Config
-```
-elasticdb.class=io.rcktapp.api.handler.elastic.ElasticDb
-elasticdb.url=https://yourElasticSearchDB.amazonaws.com
-
-elasticH.class=io.rcktapp.api.handler.elastic.ElasticDbRestHandler
-elasticEp.class=io.rcktapp.api.Endpoint
-elasticEp.path=desiredPath
-elasticEp.methods=GET
-elasticEp.handler=elasticH
-```
-
-[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_inversion/blob/wb/readme_updates/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
-
-
-## DynamoDB Specifics
-
-Configuration is done on the Endpoint's config property.
-
-* tableMap
-	* Maps a collection name to a dynamo table
-	* FORMAT: collection name | dynamodb name  (comma separated)
-	* EXAMPLE: promo|promo-dev
-* conditionalWriteConf
-	* Allows a conditional write expression to be configured for a dynamo table
-	* FORMAT: collection name | withConditionExpression | payload fields  (comma separated)
-	* EXAMPLE: promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate
-* blueprintRow
-	* Config which row should be used for building the collection typeMap (otherwise first row of scan will be used) - *(Note: you will probably not need to use this unless new columns are introduced to a table in the future.)*
-	* FORMAT: collection name | primaryKey | sortKey (optional)
-	* EXAMPLE: loyalty-punchcard | 111 | abc
-* appendTenantIdToPk
-	* Enables appending the tenant id to the primary key. 
-	* *(Note: must be multi-tenant api also for this to have any effect)*
-	* FORMAT: collection name (comma separated)  
-	* EXAMPLE: promo,loyalty-punchcard
-	* On POST, this will append the tenant id to the primary key, for example, if the pk is a mobile number and was sent up as 4045551212 and the tenantId was 1, this record will be stored with a primary key of 1::4045551212.  On GET and DELETE, this will automatically append the tenantId prior to looking up the record and will strip it out of the results. So, this is completely invisible to the api user, they will only ever see the mobilenumber as 4045551212.  If you login to the AWS console and view the table, there you will see the actually mobilenumber as 1::4045551212.
-* sorting queries
-	* Scans cannot be sorted, only queries can.
-	* When sorting a query, the field that is sorted MUST match the sort key of the query index
-
-Example Config
-```
-dynamoH.class=io.rcktapp.api.service.ext.DynamoDbHandler
-
-dynamoEp.class=io.rcktapp.api.Endpoint
-dynamoEp.includePaths=dynamo*
-dynamoEp.methods=GET,POST,DELETE
-dynamoEp.handler=dynamoH
-dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&appendTenantIdToPk=loyalty-punchcard
-```	
-
-## REST to CRUD - GET,POST,PUT,DELETE       
-
-QueryStrings params (and required status) can be used with POST/PUT/DELETE re not just GET method
-requests.   
-
-
-
-
 ## Security Model
-
  
 ### Account Roles
 
@@ -671,7 +567,98 @@ you can configure JOIN filters that will limit a users access to the desired row
 
 TODO: add more specific doco here.
  
+  
+## Elasticsearch Specifics
+Currently, the following functions are available for use:
 
+* `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
+* auto-suggest paths should be in the following format: `.../elastic/indexType/suggest?suggestField=value&type=prefix`
+> a `type` auto-suggest parameter can be set to define the type of search.  By default, auto-suggest will do a 'prefix' search.  If no results are found, auto-suggest will then try a wildcard search and return those results.  If you want to limit auto-suggest to one type of search, set `type=prefix` or `type=wildcard`.  While both types are fast, prefix searches are the fastest (~2ms vs ~20ms) 
+* nested searching is allowed simply by specifying the name of the nested field, such as: `player.location.city` would retrieve the nested `location.city` value from a player. 
+
+The index/type will be automatically generated so that only one value needs to be sent.  
+`/elastic/location/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
+
+The index/type used above `.../elastic/location/location?and(...` is the same as `/elastic/location?and(...`.
+In the second example, it is assumed that the index/type `location` are the same value.
+
+Elastic pagination: paging beyond the 10,000th item is significantly slower than paging within the range of 0-10,000. Once the 10k index has been reached, elastic must manually cycle through the data in order to obtain the desired page.  10,000 is the default max_result value within ElasticSearch.
+
+
+#### Elasticsearch RQL Examples
+Retrieve all location data for the locations in the city of Chandler
+`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)`
+
+Retrieve only the address properties for the locations in the city of Chandler
+`http://localhost:8080/apiCode/elastic/location?eq(city,Chandler)?source=address1,address2,address3`
+
+Retrieve the locations in the city of Chandler AND have a locationCode of 270*** **AND** have an address including *McQueen*
+`http://localhost:8080/apiCode/elastic/location?and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))`
+
+Retrieve all locations with players.registerNum > 5 
+`http://localhost:8080/apiCode/elastic/location?gt(players.registerNum,5)`
+
+
+Retrieve the locations with an address1 that includes 'VALLEY' AND PHOENIX locations that have deleted players 
+`http://localhost:8080/apiCode/elastic/location?and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))`
+
+Retrieve auto-suggested cities that start with 'chan' 
+`http://localhost:8080/apiCode/elastic/location/suggest?suggestCity=chan`
+
+Retrieve locations with an empty state value
+`http://localhost:8080/apiCode/elastic/location?emp(state)`
+
+Example Config
+```
+elasticdb.class=io.rcktapp.api.handler.elastic.ElasticDb
+elasticdb.url=https://yourElasticSearchDB.amazonaws.com
+
+elasticH.class=io.rcktapp.api.handler.elastic.ElasticDbRestHandler
+elasticEp.class=io.rcktapp.api.Endpoint
+elasticEp.path=desiredPath
+elasticEp.methods=GET
+elasticEp.handler=elasticH
+```
+
+[See io.rcktapp.rql.RqlToElasticSearchTest for several examples of RQL to Elastic queries](https://github.com/RocketPartners/rckt_inversion/blob/wb/readme_updates/src/test/java/io/rcktapp/rql/RqlToElasticSearchTest.java)
+
+
+## DynamoDB Specifics
+
+Configuration is done on the Endpoint's config property.
+
+* tableMap
+	* Maps a collection name to a dynamo table
+	* FORMAT: collection name | dynamodb name  (comma separated)
+	* EXAMPLE: promo|promo-dev
+* conditionalWriteConf
+	* Allows a conditional write expression to be configured for a dynamo table
+	* FORMAT: collection name | withConditionExpression | payload fields  (comma separated)
+	* EXAMPLE: promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate
+* blueprintRow
+	* Config which row should be used for building the collection typeMap (otherwise first row of scan will be used) - *(Note: you will probably not need to use this unless new columns are introduced to a table in the future.)*
+	* FORMAT: collection name | primaryKey | sortKey (optional)
+	* EXAMPLE: loyalty-punchcard | 111 | abc
+* appendTenantIdToPk
+	* Enables appending the tenant id to the primary key. 
+	* *(Note: must be multi-tenant api also for this to have any effect)*
+	* FORMAT: collection name (comma separated)  
+	* EXAMPLE: promo,loyalty-punchcard
+	* On POST, this will append the tenant id to the primary key, for example, if the pk is a mobile number and was sent up as 4045551212 and the tenantId was 1, this record will be stored with a primary key of 1::4045551212.  On GET and DELETE, this will automatically append the tenantId prior to looking up the record and will strip it out of the results. So, this is completely invisible to the api user, they will only ever see the mobilenumber as 4045551212.  If you login to the AWS console and view the table, there you will see the actually mobilenumber as 1::4045551212.
+* sorting queries
+	* Scans cannot be sorted, only queries can.
+	* When sorting a query, the field that is sorted MUST match the sort key of the query index
+
+Example Config
+```
+dynamoH.class=io.rcktapp.api.service.ext.DynamoDbHandler
+
+dynamoEp.class=io.rcktapp.api.Endpoint
+dynamoEp.includePaths=dynamo*
+dynamoEp.methods=GET,POST,DELETE
+dynamoEp.handler=dynamoH
+dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&appendTenantIdToPk=loyalty-punchcard
+```	
 
 
 ## Developer Notes
@@ -684,9 +671,8 @@ check out the Javadocs.
  * 0.3.x - https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/
 
 
-
-
 ### Logging
+
  * Inversion uses logback, but it is not configured out of the box - the service implementing Inversion will be responsible for providing their own logback.xml config file!
 ```
 dependencies {
