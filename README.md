@@ -9,6 +9,66 @@ With Inversion, you can connect your web application front end directly to your 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against 
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.  
 
+## Contents
+1. [Features & Benefits](#features--benefits)
+1. [Quick Start](#quickstart)
+1. [Resource Query Language (RQL)](#resource-query-language-rql)
+   * [Reserved Query String Parameters](#reserved-query-string-parameters)
+   * [Restricted & Required Parameters](#restricted--required-query-parameters)
+   * [Sorting / Ordering](#sorting--ordering)
+   * [Pagination / Offset & Limit](#pagination--offset--limit)
+   * [Query Filters](#query-filters)
+   * [Aggregations](#aggregations)
+   * [Nested Document Expansion](#nested-document-expansion)
+   * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
+   * [Miscellaneous](#miscellaneous)
+1. [URL Structure](#url-structure)
+1. [Configuring Your Api](#configuring-your-api)
+   * [Configuration Files Loading](#configuration-file-loading)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
+   * [Apis](#apis)
+   * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
+   * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
+   * [AclRules](#aclrules)
+   * [Permissions](#permissions)
+   * [Path Matching](#path-matching)
+1. [Security Model](#security-model)
+   * [Account Roles](#account-roles)
+   * [Api Permissions](#api-permissions)
+   * [Authentication](#authentication)
+   * [Authorization](#authorization)
+   * [Multi-Tenant APIs](#multi-tenant-apis)
+   * [Row Level Security](#row-level-security)   
+1. [Elasticsearch Specifics](#elasticsearch-specifics)
+1. [DynamoDB Specifics](#dynamodb-specifics)  
+1. [Developer Notes](#developer-notes)
+   * [Javadocs](#Javadocs)
+   * [Logging](#logging)
+   * [Gradle, Maven, etc.](#gradle-maven-etc)    
+1. [Changes](#changes)   
+  
+ 
+   
+## Feature & Benefits
+ * Deploy a secure JSON REST API against your backend database in five minutes without any coding.
+ * Support for MySql, PostgreSQL, SqlServer, DynamoDb, ElasticSearch, S3, Redis and many more.
+ * Makes structured relational database backed APIs as frictionless as working with an unstructured document store dbs.
+ * Database tables are automatically exposed as REST collections endpoints.
+ * Database foreign key relationships result in nested documents that can be retrieved in a single request to eliminate over fetching.
+ * Elegant "beautification" and pluralization of "ugly" table and column names.  All collection and attribute names are converted to JSON friendly camelCase.  "MY_COLUMN_NAME" gets converted to "myColumnName".
+ * Smart pagination and ordering with a consistent document envelope.
+ * Powerful Resource Query Language (RQL) lets you select the exact resrouces you are looking for.
+ * For complex nested document PUT/POSTS, all resources are "upserted" with new or updated foreign key dependencies updated first and relationships resolved automatically.  You can compose a rich client side JSON model mixing existing and new resources and PUT/POST the entire object in one request. 
+ * Sql Injection proof through the use of prepared statements instead of dynamic sql.
+ * Permission and roll based declarative security model.
+ * Always CORS cross site enabled.
+ * Expose multiple backends in a single API.
+ * Designed to support single and multi tenant API usage patterns.
+ * "Explain" mode shows you exactly what the backend is doing including all SQL statements run.
+ * Configured via drop dead simple properties files or directly in Java code.
+
+
+
 ## Quick Start
 
 With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java)
@@ -93,381 +153,9 @@ java -jar build/libs/rocket-inversion-master.jar
 This documentation is currently a work in progress being migrated from 0.3.x branch to match the major refactors of the 0.4.x branch.  
 
 
-
-
-Inverting the Paradigm
-
-Coming up with a brand name for this product was not easy.  After countless hours of ideation, we decided to go right after the heart of the matter.  
-Projects that use Inversion are inverting the classic three tier web application architecture.   
-
-
-API Specificity (BAD!)
-
-Business Overview
-
-Nerdy Gist - Tech Overview
-
-
-Putting a minimal REST API onto a single database table is easy by modern development standards.  There are  
-
-Putting a flexible and useful REST API interface onto a large and complex database data model can be very timetable is hard. 
-
-
-Which columns should callers be able to
- - query on - should be all by default
- - sort on - should be all by default
- - pagination options
- - document expansion (key traversal across document types)
- - combined put/post
- - batch operations
-
-
-
-Your DB tables probably look similar to your REST JSON documents so why spend time writing a bunch of middle middle tier
-
-
-We believe it is possible to dynamically configure a set of REST API Collection Endpoints to 
-
-
-Inversion is supplied with a minimal set of configuration options identifying the backend datasrouces the API will connect to.  
-
-This configuration allows the Inversion runtime to inspect the backend schema and expose the backend resources as REST Collections.  
-For example, a MySQL table named    
- 
- 
-Under the hood, each HTTP request is mapped to an Endpoint which invokes a Chain of configured Actions.  Actions connect to backend end Db objects to find/upsert/delete resouces.
-For example, the RestGetAction may be configure against one Endpoint connecting to a MySQL table on one URL path, and against a different Endpoint connecting to DynamoDb table on 
-a different URL Path.  
-
-
-Configuring an ordered list of Actions against the same URL path (chaining) allows developers to 
-  
-
-
- 
-Inversion allows you go configure REST Endpoint that invoke a Chain of one or more Actions.  Custom business logic can be supplied via Node/JavaScript
-handlers or by implementing custom Java Action subclasses.   
-
-
-
-
-What's The Point?
-
-Superpowers (Feature & Benefits)
-
-
-
-
-
-## Contents
-1. [Features & Benefits](#features--benefits)
-1. [Quick Start](#quickstart)
-1. [URL Structure](#url-structure)
-1. [Configuring Your Api](#configuring-your-api)
-   * [Configuration Files Loading](#configuration-file-loading)
-   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
-   * [Apis](#apis)
-   * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
-   * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
-   * [AclRules](#aclrules)
-   * [Permissions](#permissions)
-   * [Path Matching](#path-matching)
-1. [Resource Query Language (RQL)](#resource-query-language-rql)
-   * [Reserved Query String Parameters](#reserved-query-string-parameters)
-   * [Restricted & Required Parameters](#restricted--required-query-parameters)
-   * [Sorting / Ordering](#sorting--ordering)
-   * [Pagination / Offset & Limit](#pagination--offset--limit)
-   * [Query Filters](#query-filters)
-   * [Aggregations](#aggregations)
-   * [Nested Document Expansion](#nested-document-expansion)
-   * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
-   * [Miscellaneous](#miscellaneous)
-1. [Security Model](#security-model)
-   * [Account Roles](#account-roles)
-   * [Api Permissions](#api-permissions)
-   * [Authentication](#authentication)
-   * [Authorization](#authorization)
-   * [Multi-Tenant APIs](#multi-tenant-apis)
-   * [Row Level Security](#row-level-security)   
-1. [Elasticsearch Specifics](#elasticsearch-specifics)
-1. [DynamoDB Specifics](#dynamodb-specifics)  
-1. [Developer Notes](#developer-notes)
-   * [Javadocs](#Javadocs)
-   * [Logging](#logging)
-   * [Gradle, Maven, etc.](#gradle-maven-etc)    
-1. [Changes](#changes)   
-  
- 
-  
-  
-## Features & Benefits
- 
- * Get a full featured secure REST JSON API for full CRUD operations against your backend data source without any coding.
- * Tables exposed as REST collections
- * GET requests to query tables/collections where complex sql WHERE and aggregate conditions as URL query paramters (Resource Query Language, RQL).  
- * Nested document expansion for foreign keys
- * Nested document put/post
- * Batch/bulk put/post/delete
- * Pagination / ordering
- * Declarative security
- * Sql Injection proof
- * Consistent response envelope
- * Always CORS cross site capable
- * Multiple RDBMS back ends in a single API
- * "Smart PUT/POST" - no id/href field no problem. Nested/mixed put/post 
- * "Explain" mode shows you the exact statements to be run
- * Mutli tenant design  
- * Elegant pluralization of db tables w/ intelligant redirect
-
-
-
-  
-## Quickstart
-
-The fasted way to get going is to checkout/fork the [Inversion Spring Boot Starter Project](https://github.com/RocketPartners/rckt_inversion_spring)
-and follow the readme instructions to get going in less than 5 minutes.  
-
-If you are comfortable with Gradle, Eclipse, Tomact etc. then you can start with this project and configure your application 
-server of choice with the web.xml included in this project.   
-
-In either case, all you need to do is supply edit your JDBC connection information the soooze.properties configuration file.
-Simply swap out the JDBC params in the example below and you will have a read only (GET only) API that exposes
-all of the db tables to:  https://localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}
-
-Try out some [RQL](#resource-query-language-rql) queries like:
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?columnX=somevalue
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?or(eq(columnX,value),eq(columnY,'another value'))
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}/${ROW_PK}/${FKCOL}
-
-Add '&explain' to your query string to see debug output of what exactly the server is doing.
-
-* http&#58;//localhost/demo/helloworld/${YOUR_TABLE_NAME_HERE}?page=2&limit=10&sort=columnX,-columnY&explain
-
-No swap the line 'restEp.methods=GET' with 'restEp.methods=GET,PUT,POST,DELETE' in your config, restart and your API will be fully CRUD ready!
- 
-
-```properties
-    
-#inversion.servletMapping=api
-
-########################################################################
-## APIs 
-########################################################################
-api.class=io.rcktapp.api.Api
-api.debug
-api.accountCode=demo
-api.apiCode=helloworld
-api.actions=restA
-api.endpoints=restEp
-
-
-########################################################################
-## DATABASES 
-########################################################################
-db.class=io.rcktapp.api.handler.sql.SqlDb
-db.driver=YOUR_JDBC_DRIVER_HERE
-db.url=YOUR_JDBC_URL_HERE
-db.user=YOUR_JDBC_USER_HERE
-db.pass=YOUR_JDBC_PASSWORD_HERE
-db.poolMin=3
-db.poolMax=5
-
-
-########################################################################
-## HANDLERS 
-########################################################################
-restH.class=io.rcktapp.api.service.RestHandler
-
-
-########################################################################
-## ACTIONS 
-########################################################################
-restA.class=io.rcktapp.api.Action
-restA.handler=restH
-restA.includePaths=*
-restA.methods=GET,PUT,POST,DELETE
-restA.order=10
-
-
-########################################################################
-## ENDPOINTS 
-########################################################################
-restEp.class=io.rcktapp.api.Endpoint
-restEp.includePaths=*
-restEp.excludePaths=somethingExcluded*
-restEp.methods=GET
-#restEp.methods=GET,PUT,POST,DELETE
-
-
-```
-
-## URL Structure
-
-Inversion is designed to host multiple APIs potentially owned by different organizations.  All functional URLs for an API are prefixed 
-with an AccountCode and ApiCode path components.  The AccountCode uniquely identifies the organization that owns the API and is unique to the 
-host server. The ApiCode uniquely identifies the Api within the namespace created by the AccountCode. 
-
-Valid based URL formats are:
- * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * http(s)://${accountCode}.host.com/[${servletPath}]/${apiCode}/
- * http(s)://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
-
-A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
-plural versions will be redirected to the plural url.
- * ${API_URL}/${COLLECTION}/
- * ${API_URL}/${COLLECTION}/${ENTITY_ID}
- * ${API_URL}/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
-
-Examples example:  
- * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
- * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
- * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
- * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
-
-
-
-## Configuring Your API
-
-
-### Configuration File Loading
-
-Inversion looks for files named inversion[1-100][-${inversion.profile}].properties in the classpath (for example in the WEB-INF folder).  Files without a profile are always loaded first in numerically ascending 
-order and then files with a profile matching ${inversion.profile} (if there are any) are loaded in ascending order. All files are loaded into a shared map so "the last loaded 
-key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with short files 
-that do not have to duplicate config between them.
-  
-Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
-
-Configuration and API bootstrapping takes place in the following stages:
-
-1. Inversion service wiring - All 'inversion.*' bean properties are set on the core Inversion service instance.  This is useful for things like setting 'inversion.debug' or changing 'inversion.profile'.  
-1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
-1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
-1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
-model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
-1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
-1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
-
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
-of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  
-
-If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find 
-any that you may want to customize. 
-
-The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
-supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
-the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
-
-
-## Keeping Passwords out of Config Files
-
-If you want to keep your database passwords (or any other sensative info) out of your snoooze.properties config files, you can simply set an environment variable OR
-VM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD'
-to the top of the batch file you use to launch our app or application server.  
-
-### Inversion Service Config
-
-As you may have seen in the [Quickstart](#quickstart) example above 'inversion' is a reserved known bean name in the configuration files. 'inversion' referers to the 
-Inversion servlet itself and you can set any bean properties you want.
-
-### Dbs, Tables, Columns and Indexs
-
-TODO
-
-
-### Apis
-
-An Api exposes a set of Endpoints.  Generally, Inversion will auto configure Endpoints that map to Db backed Collections for CRUD operations.   
-   
-
-### Collections, Entities, Attributes and Relationships
-
-Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
-to Collections to perform CRUD operations on the underlying Db.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
-in a URL or as a JSON property name.
-
-Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
-
-
-### Endpoints, Actions and Handlers
-
-An Endpoint maps a URL pattern to one or more Actions by [path matching](#path-matching).  Actions map to an Handler which is where work actually gets done. Multiple Actions can map to the same Handler instance. Programmers 
-familiar with AOP might be comfortable with a loose analogy of a an Endpoint acting as a Join point, an Action being a Pointcut, and a Handler being an Aspect.  There is nothing application 
-specific about this pattern.  The magic of Inversion is in the implementation of various Handlers.
-
-An Endpoint represents a specific combination or a URL path (that may contain a trailing wildcard *) and one or more HTTP methods that will be called by clients.  One or more Actions are selected
-to run when an Endpoint is called by a client.  
-
-Actions link Endpoints to Handlers.  Behind each Endpoint can be an ordered list of Actions. Actions can contain configuration used by Handlers.  One Handler instance may behave differently
-based on the configuration information on the Action.  Actions are mapped to URL paths / http methods and as such may be selected to run as part of one or more Endpoints.     
-
-Work is done in the Handlers.  If an application must have custom business logic or otherwise can't manage to achieve a desired result via configuration, 99% of the time, the answer
-is a custom Handler. Handlers do not have to be singletons but the design pattern is that anything that would be "use case specific" should be abstracted into Action config which
-ties things back to the url/http method being invoked.
-
-
-Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
- * SqlGetHandler - Returns a Collection listing matching RQL criteria or can return a single requested Entity from an RDBMS table
- * SqlPostHandler - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
- * SqlDeleteHandler - Deletes Collection Entites from the underlying RDBMS table
- * AuthHandler - Logs a user in and puts a User object in the session  
- * AclHandler - Processes AclRules to secure your Endpoints
- * LogHandler - Logs requests and the JSON payloads
- * S3UploadHandler - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
- * RateLimitHandler - Protecs Endpoints from accidental or intentional DoS type traffic
-
-
-### AclRules
-
-AclRules allow you to declare that a User must have specified Permissions to access resources at a given url path and http method.  Generally AuthHandler and AclHandler will 
-be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [path matching](#path-matching) just like Endpoints and Actions.
-    
-### Permissions
-
-The AuthHandler will set Permission objects on the per request User object that may be checked against AclRule declarations by the AclHandler.
-
-    
-### Path Matching
-
-Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" 
-configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used match any arbitrary path ending and 
-regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
-Leading and trailing '/' characters are not considered when path matching.
-
-Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex
-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
-path parts optional.  Regular expression matches can not match across a '/'.
-
-Here are some examples: 
-
- * endpoint1.includesPaths=dir1/dir2/*
- * endpoint1.excludePaths=dir1/dir2/hidden/*
- * endpoint2.includePath=something/{collection:[a-z]}/*
- 
-One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
- 
- * endpoint3.includesPaths={collection:customers|books|albums}/[{entity:[0-9]}]/{relationship:[a-z]}
-
-If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
-have been supplied by the query string.
-
-The names "component", "entity", and "relationship" are special.  If supply them, the Request parser will use those values when configuring the Request object.
-If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
-
-
 ## Resource Query Language (RQL)
 
 RQL is the set of HTTP query string parameters that allows developers to "slice and dice" the data returned from the API to meet their specific needs.
-
-you use to query a REST collection for entities that match specific criteria or otherise alter the operation to be performed and the response values. 
-
 
 ### General
  
@@ -476,27 +164,19 @@ you use to query a REST collection for entities that match specific criteria or 
  * function(column, value OR expression) - eq(col,value), lt(column,value), and(eq(col,value), lt(column,value)), in(col, val1, val2, val3, val4)
  * name=eq=value, column=lt=value, col=in=val1,val2,val3
 * Quotes & Escaping Quotes - ' or " can be used to quote values.  Use a \ to escape any inner occurances of the outter quote.  If you quote with single quotes you don't have to escape inner double quotes and vice versa  
-* Wildcards - the '*' character is treated as a univeral wildcard for all supported backents.  
-  For example, for RDBMS '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  
-  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
+* Wildcards - the '*' character is treated as a univeral wildcard for all supported backends.  
+  For example, for SQL backends '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-[See io.rcktapp.rql.TestSqlRql for many examples of complex RQL queries](https://github.com/RocketPartners/rckt_inversion/blob/master/src/test/java/io/rcktapp/rql/TestSqlRql.java)
+[See TestSqlQuery.java for many examples of complex RQL queries and how they translate into SQL](https://github.com/RocketPartners/rocket-inversion/blob/master/src/test/java/io/rocketpartners/cloud/action/sql/TestSqlQuery.java)
 
 ### Reserved Query String Parameters
 
-TODO: this section needs work
-
- * q - 
- * explain - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional
-   debug information including the SQL run.  The response body will not be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this
-   to work. 
- * includes - 
- * excludes - 
- * expands -
- * colapse 
-
-
+ * **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work. 
+ * **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
+ * **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
+ * **excludes** - A comma separated list of collection attributes to exclude.
+ 
 
 ### Restricted & Required Query Parameters
 
@@ -606,8 +286,173 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
  ---                              | :---:               | :---:               | :---:              | ---
  expands=collection.property[...property][,table2.property2...]         | :heavy_check_mark:  |                     |                    | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value
   
+
+
+
+## URL Structure
+
+Inversion is designed to host multiple APIs potentially owned by different tenants.  All functional URLs for an API are prefixed 
+with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the AccountCode. 
+
+Valid based URL formats are:
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
+
+A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
+plural versions will be redirected to the plural url.
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
+
+Examples example:  
+ * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
+ * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
+ * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
+ * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
+
+
+
+## Configuring Your API
+
+
+### Configuration File Loading
+
+An Inversion API can be wired up natively in Java code or via configuration files.
+
+When started, Inversion attempts to locate files with the following naming conventions in the classpath (including the working directory).
+* inversion[-][1-100].properties
+* inversion[-][1-100][-${inversion.profile}].properties
+* inversion[-][-${inversion.profile}][-][1-100].properties
+
+${inversion.profile} is an optional environment variable or Java system param that allows you to load different configrations at runtime based on container attributes.  Files are loaded sequentially and files with a matching ${inversion.profile} in their hame are loaded AFTER files without a profile.  
+
+All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with files that do not have to duplicate config between them.
+
+A typical configuration, for example, may load:
+* inversion1.properties, inversion2.properties,inversion-dev-1.properties, if ${inversion.profile} has been set to 'dev'
+* OR, inversion.properties, inversion-prod.properties,inversion-prod-1.properties if ${inversion.profile} has been set to 'prod'
+
+A helpful development trick here is to launch Inversion with a JVM parameter '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
+to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
+and you custom settings will load last trumping any other keys shared with other files. 
+
+Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
+
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Inversion service wiring - All 'inversion.*' bean properties are set on the core Inversion service instance.  This is useful for things like setting 'inversion.debug' or changing 'inversion.profile'.  
+1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
+1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
+1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
+1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  
+
+If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find 
+any that you may want to customize. 
+
+The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
+supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
+the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
+
+
+## Keeping Passwords out of Config Files
+
+If you want to keep your database passwords (or any other sensative info) out of your inversion.properties config files, you can simply set an environment variable OR
+JVM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD' to the top of the batch file you use to launch our app or application server.  
+
+### Inversion Service Config
+
+As you may have seen in the [Quickstart](#quickstart) example above 'inversion' is a reserved known bean name in the configuration files. 'inversion' referers to the 
+Inversion service itself and you can set any bean properties you want.
+
+
+### Apis
+
+An Api exposes a set of Endpoints offering access to Collections backed by Db Tables.  
+
+### Dbs, Tables, Columns and Indexs
+
+The Db, Table, Column and Index objects are modeled off of RDBMS systems but are not specifically bound to RDBMS or SQL based systems.  For example, there are DynamoDb and ElasticsearchDB subclasses of Db.  As would be expected, Tables are composed of Columns and a Db can have one or more Tables. Tables are optomized, related to each other, and constrained through Indexes. 
+
+Implementing support for a new backend datasource is simpley a matter of implementing a new Db subclass.  The data source specific Db/Table/Column/Index implementation should absract all backend details away so that datasource agnostic Actions can work transparently with Collections that may be backed by completely different backend types.
+
+### Collections, Entities, Attributes and Relationships
+
+Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
+to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
+in a URL or as a JSON property name.
+
+Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
+
+
+### Endpoints and Actions
+
+An Endpoint maps one or more HTTP methods and URL pattern to an ordered list of one or more Actions via [path matching](#path-matching).  Actions are where the work actually gets done.  If an API needs custom business logic that can not be achieved by configuring an existing Action, a custom Action subclass is the answer.
+
+An Action can be set directly on an Endpoint to be 'private' to that endpoint, or an Action can be added directly to the Api and be eligible to be run across multiple Endpoints.  An example of an Action that would normaly be configured to run across multiple Endpoints would be something like the security AclAction or LogAction.
+
+
+
+Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
+ * RestGetAction - Returns a Collection listing matching RQL criteria or can return a single requested Entity from a Db Table.
+ * RestPostAction - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
+ * RestDeleteDelete - Deletes Collection Entites from the underlying Db Table.
+ * AuthAction - Logs a user in and puts a User object in the Request
+ * AclAction - Processes AclRules to secure your Endpoints
+ * LogAction - Logs requests and the JSON payloads
+ * S3UploadAction - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
+ * RateLimitAction - Protecs Endpoints from accidental or intentional DoS type traffic
+
+
+### AclAction and AclRules
+
+AclRules allow you to declare that a User must have specified roles and permissions to access resources at a given url path and http method.  
+
+Generally AuthHandler and AclHandler will 
+be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [path matching](#path-matching) just like Endpoints and Actions.
     
-  
+    
+### Path Matching
+
+Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" 
+configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used match any arbitrary path ending and 
+regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
+Leading and trailing '/' characters are not considered when path matching.
+
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex
+based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
+path parts optional.  Regular expression matches can not match across a '/'.
+
+Here are some examples: 
+
+ * endpoint1.includesPaths=dir1/dir2/*
+ * endpoint1.excludePaths=dir1/dir2/hidden/*
+ * endpoint2.includePath=something/{collection:[a-z]}/*
+ 
+One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
+ 
+ * endpoint3.includesPaths={collection:customers|books|albums}/[{entity:[0-9]}]/{relationship:[a-z]}
+
+If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
+have been supplied by the query string.
+
+The names "component", "entity", and "relationship" are special.  If you configure a path match them, the Inversion will use those values when configuring the Request object.
+If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
+
+
+    
   
 ## Elasticsearch Specifics
 Currently, the following functions are available for use:
@@ -777,13 +622,11 @@ then a 403 Forbidden HTTP status code is returned.
 
 ### Multi-Tenant APIs
 
-Api's can be flagged as 'multiTenant'.  If so, the collection key in the url prefix must be immediately 
-preceded by a tenantCode.
+Api's can be flagged as 'multiTenant'.  If so, a tenantCode must immediately follow the apiCode in the URL.
 
-Ex: ```http://localhost/accountCode/apiCode/tenantCode/collectionKey/[entityKey]```
+Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectionKey/[entityKey]```
 
-If the AuthHandler is being used, it will enforce that the Url tenantCode matches the logged in users
-tenantCode (if there is a logged in user).
+If the AuthAction is being used, it will enforce that the Url tenantCode matches the logged in users tenantCode (if there is a logged in user).
 
 IMPORTANT: this Url match restriction alone will not prevent access to cross tenant data. To fully
 restrict and require the tenantId and tenantCode query string parameters and JSON body properties
@@ -801,8 +644,7 @@ tenantAcl.methods=GET,PUT,POST,DELETE
 
 ```
 
-Including this configuration will ensure that tenantId is always considered in queries (if it exists
-on the target Table) and can not be supplied by the caller, it will be pulled from the logged in 
+Including this configuration will ensure that tenantId is always considered in queries (if it exists on the target Table) and can not be supplied by the caller, it will be pulled from the logged in 
 user.
   
 
@@ -844,30 +686,6 @@ check out the Javadocs.
  * 0.3.x - https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/
 
 
-### Runtime Profiles
-
-As discussed in [Configuration File Loading](#configuration-file-loading) Inversion was designed to support different runtime profiles.  
-You can set a JVM property or environment variable for inversion.profile=${profile} to cause the specified set of config files to load.
-Suppose you had the following config files in WEB-INF directory:
-
-* inversion.properties
-* inversion3.properties
-* inversion-dev.properties
-* inversion99-dev.properties
-* inversion-stage.propeties
-* inversion-prod.properties
-* inversion1-prod.properties
-* inversion2-prod.properties
-
-If you were to add '-Dinversion.profile=prod' to your JVM launch command then inversion.properties, inversion3.properties, inversion-prod.properties
-inversion1-prod.properties, and inversion2-prod.properties would be loaded in that order.  inversion-dev.properties and inversion-stage.propeties
-would be completely ignored.  
-
-This technique makes it simple to use the same build WAR asset to be deployed to multiple different runtime targets. 
-
-Another helpful trick here would be to launch in development with '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
-to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
-and you custom settings will load last trumping any other keys shared with other files. 
 
 
 ### Logging
