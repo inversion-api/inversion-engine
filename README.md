@@ -12,7 +12,12 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 ## Contents
 1. [Features and Benefits](#features-and-benefits)
 1. [Quick Start](#quick-start)
+   * [Coding Your Own API](#coding-your-own-api)
+   * [Configuration Instead of Code](#configuration-instead-of-code)   
 1. [URL Structure](#url-structure)
+1. [Configuring Your Api](#configuring-your-api)
+   * [Configuration File Loading](#configuration-file-loading)
+   * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
    * [Sorting and Ordering](#sorting-and-ordering)
    * [Pagination, Offset and Limit](#pagination-offset-and-limit)
@@ -23,9 +28,6 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Reserved Query String Parameters](#reserved-query-string-parameters)
    * [Restricted and Required Parameters](#restricted-and-required-query-parameters)
    * [Miscellaneous](#miscellaneous)
-1. [Configuring Your Api](#configuring-your-api)
-   * [Configuration File Loading](#configuration-file-loading)
-   * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
 1. [Core Object Model Concepts](#core-object-model-concepts)
    * [Apis](#apis)
    * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexes)
@@ -173,6 +175,65 @@ Examples example:
  * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
  * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
+## Configuring Your API
+
+
+### Configuration File Loading
+
+An Inversion API can be wired up natively in Java code or via configuration files.
+
+When started, Inversion attempts to locate files with the following naming conventions in the classpath (including the working directory).
+* inversion[-][1-100].properties
+* inversion[-][1-100][-${inversion.profile}].properties
+* inversion[-][-${inversion.profile}][-][1-100].properties
+
+${inversion.profile} is an optional environment variable or Java system param that allows you to load different configrations at runtime based on container attributes.  Files are loaded sequentially and files with a matching ${inversion.profile} in their hame are loaded AFTER files without a profile.  
+
+All files are loaded into a shared map so "the last loaded 
+key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with files that do not have to duplicate config between them.
+
+A typical configuration, for example, may load:
+* inversion1.properties, inversion2.properties,inversion-dev-1.properties, if ${inversion.profile} has been set to 'dev'
+* OR, inversion.properties, inversion-prod.properties,inversion-prod-1.properties if ${inversion.profile} has been set to 'prod'
+
+A helpful development trick here is to launch Inversion with a JVM parameter '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
+to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
+and you custom settings will load last trumping any other keys shared with other files. 
+
+Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
+notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
+bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
+
+
+Configuration and API bootstrapping takes place in the following stages:
+
+1. Inversion service wiring - All 'inversion.*' bean properties are set on the core Inversion service instance.  This is useful for things like setting 'inversion.debug' or changing 'inversion.profile'.  
+1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
+1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
+1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
+model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
+1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
+1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
+1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
+
+This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
+of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
+happens in memory at runtime NOT development time.  
+
+If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find 
+any that you may want to customize. 
+
+The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
+supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
+the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
+
+
+## Keeping Passwords out of Config Files
+
+If you want to keep your database passwords (or any other sensative info) out of your inversion.properties config files, you can simply set an environment variable OR
+JVM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD' to the top of the batch file you use to launch our app or application server.  
+
+
 
 ## Resource Query Language (RQL)
 
@@ -309,68 +370,6 @@ the User object which is configured during authentication (see above).  This is 
 RQL query params as well as for JSON properties.
 
 
-## Configuring Your API
-
-
-### Configuration File Loading
-
-An Inversion API can be wired up natively in Java code or via configuration files.
-
-When started, Inversion attempts to locate files with the following naming conventions in the classpath (including the working directory).
-* inversion[-][1-100].properties
-* inversion[-][1-100][-${inversion.profile}].properties
-* inversion[-][-${inversion.profile}][-][1-100].properties
-
-${inversion.profile} is an optional environment variable or Java system param that allows you to load different configrations at runtime based on container attributes.  Files are loaded sequentially and files with a matching ${inversion.profile} in their hame are loaded AFTER files without a profile.  
-
-All files are loaded into a shared map so "the last loaded 
-key wins" in terms of overwriting settings.  This design is intended to make it easy to support multiple runtime configurations such as 'dev' or 'prod' with files that do not have to duplicate config between them.
-
-A typical configuration, for example, may load:
-* inversion1.properties, inversion2.properties,inversion-dev-1.properties, if ${inversion.profile} has been set to 'dev'
-* OR, inversion.properties, inversion-prod.properties,inversion-prod-1.properties if ${inversion.profile} has been set to 'prod'
-
-A helpful development trick here is to launch Inversion with a JVM parameter '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
-to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
-and you custom settings will load last trumping any other keys shared with other files. 
-
-Each config file itself is a glorified bean property map in form of bean.name=value. Any bean in scope can be used as a value on the right side of the assignment and '.'
-notation to any level of nesting on the left hand side is valid.  You can assign multiple values to a list on the left hand side by setting a comma separated list ex: 
-bean.aList=bean1,bean2,bean3.  Nearly any JavaBean property in the object model (see Java Docs) can be wired up through the config file.  
-
-
-Configuration and API bootstrapping takes place in the following stages:
-
-1. Inversion service wiring - All 'inversion.*' bean properties are set on the core Inversion service instance.  This is useful for things like setting 'inversion.debug' or changing 'inversion.profile'.  
-1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
-1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
-1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
-model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
-1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
-1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
-1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
-
-This process allows the user supplied configuration to be kept to a minimum while also allowing any reflectively generated configuration to be overridden.  Instead
-of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
-happens in memory at runtime NOT development time.  
-
-If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find 
-any that you may want to customize. 
-
-The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
-supply a key such as "api.dbs=db1,db2,db3" the system will go ahead and assign all of the configed Dbs to the Api.  If there is more than one Api defined or if
-the dbs have been set via config already, this auto wiring step will not happen.  Same thing goes for Endpoints being automatically added to an Api.
-
-
-## Keeping Passwords out of Config Files
-
-If you want to keep your database passwords (or any other sensative info) out of your inversion.properties config files, you can simply set an environment variable OR
-JVM system property using the relevant key.  For example you could add '-Ddb.pass=MY_PASSWORD' to your JVM launch configuration OR something like 'EXPORT db.pass=MY_PASSWORD' to the top of the batch file you use to launch our app or application server.  
-
-### Inversion Service Config
-
-As you may have seen in the [Quickstart](#quickstart) example above 'inversion' is a reserved known bean name in the configuration files. 'inversion' referers to the 
-Inversion service itself and you can set any bean properties you want.
 
 ## Core Object Model Concepts
 
