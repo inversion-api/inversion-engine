@@ -11,24 +11,26 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 
 ## Contents
 1. [Features & Benefits](#features--benefits)
-1. [Quick Start](#quickstart)
+1. [Quick Start](#quick-start)
+1. [URL Structure](#url-structure)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
-   * [Reserved Query String Parameters](#reserved-query-string-parameters)
-   * [Restricted & Required Parameters](#restricted--required-query-parameters)
    * [Sorting / Ordering](#sorting--ordering)
    * [Pagination / Offset & Limit](#pagination--offset--limit)
-   * [Query Filters](#query-filters)
+   * [Query Functions](#query-functions)
    * [Aggregations](#aggregations)
    * [Nested Document Expansion](#nested-document-expansion)
    * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
+   * [Reserved Query String Parameters](#reserved-query-string-parameters)
+   * [Restricted & Required Parameters](#restricted--required-query-parameters)
    * [Miscellaneous](#miscellaneous)
-1. [URL Structure](#url-structure)
 1. [Configuring Your Api](#configuring-your-api)
    * [Configuration Files Loading](#configuration-file-loading)
-   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
+   * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
+1. [Core Object Model Concepts](#core-object-model-concepts)
    * [Apis](#apis)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-indexes)
    * [Collections, Entities, Attributes, Relationships](#collections-entities-attributes-and-relationships)
-   * [Endpoints, Actions and Handlers](#endpoints-actions-and-handlers)
+   * [Endpoints & Actions](#endpoints--actions)
    * [AclRules](#aclrules)
    * [Permissions](#permissions)
    * [Path Matching](#path-matching)
@@ -49,7 +51,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
   
  
    
-## Feature & Benefits
+## Features & Benefits
  * Deploy a secure JSON REST API against your backend database in five minutes without any coding.
  * Support for MySql, PostgreSQL, SqlServer, DynamoDb, ElasticSearch, S3, Redis and many more.
  * Makes structured relational database backed APIs as frictionless as working with an unstructured document store dbs.
@@ -147,10 +149,28 @@ gradle build
 java -jar build/libs/rocket-inversion-master.jar
 ```
 
+## URL Structure
 
+Inversion is designed to host multiple APIs potentially owned by different tenants.  All functional URLs for an API are prefixed 
+with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the AccountCode. 
 
-# WARNING ON ALL FOLLOWING CONTENT 
-This documentation is currently a work in progress being migrated from 0.3.x branch to match the major refactors of the 0.4.x branch.  
+Valid based URL formats are:
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
+ * http(s)://${accountCode}.host.com/[${servletPath}]/${apiCode}/
+ * http(s)://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
+
+A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
+plural versions will be redirected to the plural url.
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
+
+Examples example:  
+ * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
+ * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
+ * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
+ * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 
 ## Resource Query Language (RQL)
@@ -170,23 +190,8 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
 [See TestSqlQuery.java for many examples of complex RQL queries and how they translate into SQL](https://github.com/RocketPartners/rocket-inversion/blob/master/src/test/java/io/rocketpartners/cloud/action/sql/TestSqlQuery.java)
 
-### Reserved Query String Parameters
 
- * **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work. 
- * **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
- * **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
- * **excludes** - A comma separated list of collection attributes to exclude.
- 
-
-### Restricted & Required Query Parameters
-
-If a table has a column named "userId" or "accountId" these are special case known columns who's
-values may not be supplied by an api user request.  The value of these fields always comes from
-the User object which is configured during authentication (see above).  This is true for 
-RQL query params as well as for JSON properties.
-
-
-### Query Filters
+### Query Functions
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -215,7 +220,7 @@ RQL query params as well as for JSON properties.
  sw(column,[value])               |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column
 
  
- ### Sorting / Ordering
+ ### Sorting & Ordering
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -224,7 +229,7 @@ RQL query params as well as for JSON properties.
  order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
 
 
-### Pagination / Offset & Limit
+### Pagination, Offset & Limit
 
  RQL Function                     | Database            | Elastic             | Dynamo             | Description  
  ---                              | :---:               | :---:               | :---:              | ---
@@ -287,31 +292,20 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
  expands=collection.property[...property][,table2.property2...]         | :heavy_check_mark:  |                     |                    | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value
   
 
+### Reserved Query String Parameters
 
+ * **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work. 
+ * **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
+ * **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
+ * **excludes** - A comma separated list of collection attributes to exclude.
+ 
 
-## URL Structure
+### Restricted & Required Query Parameters
 
-Inversion is designed to host multiple APIs potentially owned by different tenants.  All functional URLs for an API are prefixed 
-with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the AccountCode. 
-
-Valid based URL formats are:
- * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
- * http(s)://${accountCode}.host.com/[${servletPath}]/${apiCode}/
- * http(s)://host.com/[${servletPath}]/${accountCode} ONLY when apiCode and accountCode are the same thing (used to make a prettier URL for a 'default' Api per Account)
-
-A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
-plural versions will be redirected to the plural url.
- * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/
- * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}
- * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
-
-Examples example:  
- * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
- * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
- * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
- * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
-
+If a table has a column named "userId" or "accountId" these are special case known columns who's
+values may not be supplied by an api user request.  The value of these fields always comes from
+the User object which is configured during authentication (see above).  This is true for 
+RQL query params as well as for JSON properties.
 
 
 ## Configuring Your API
@@ -377,6 +371,7 @@ JVM system property using the relevant key.  For example you could add '-Ddb.pas
 As you may have seen in the [Quickstart](#quickstart) example above 'inversion' is a reserved known bean name in the configuration files. 'inversion' referers to the 
 Inversion service itself and you can set any bean properties you want.
 
+## Core Object Model Concepts
 
 ### Apis
 
@@ -397,7 +392,7 @@ in a URL or as a JSON property name.
 Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
 
-### Endpoints and Actions
+### Endpoints & Actions
 
 An Endpoint maps one or more HTTP methods and URL pattern to an ordered list of one or more Actions via [path matching](#path-matching).  Actions are where the work actually gets done.  If an API needs custom business logic that can not be achieved by configuring an existing Action, a custom Action subclass is the answer.
 
