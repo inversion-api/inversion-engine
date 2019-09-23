@@ -115,40 +115,6 @@ public abstract class Db<T extends Db>
       return keys;
    }
 
-   public Object cast(String type, Object value)
-   {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-            return value.toString();
-
-         switch (type)
-         {
-            case "S":
-               return value.toString();
-
-            case "N":
-               if (value.toString().indexOf(".") < 0)
-                  return Long.parseLong(value.toString());
-               else
-                  Double.parseDouble(value.toString());
-
-            case "BOOL":
-               return Boolean.parseBoolean(value.toString());
-
-            default :
-               return SqlUtils.cast(value, type);
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-      }
-   }
-
    public synchronized Db startup()
    {
       if (started || starting) //starting is an accidental recursion guard
@@ -535,6 +501,40 @@ public abstract class Db<T extends Db>
    public Object cast(Attribute attr, Object value)
    {
       return cast(attr.getType(), value);
+   }
+
+   public Object cast(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+            return value.toString();
+
+         switch (type)
+         {
+            case "S":
+               return value.toString();
+
+            case "N":
+               if (value.toString().indexOf(".") < 0)
+                  return Long.parseLong(value.toString());
+               else
+                  Double.parseDouble(value.toString());
+
+            case "BOOL":
+               return Boolean.parseBoolean(value.toString());
+
+            default :
+               return SqlUtils.cast(value, type);
+         }
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
    }
 
    public Set<Term> mapToColumns(Collection collection, Term term)

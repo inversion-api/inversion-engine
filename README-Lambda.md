@@ -1,6 +1,6 @@
 #Needs to be updated!!!
 
-See the main [Snooze API as a Service](https://github.com/RocketPartners/rckt_snooze) page or the [Spring Boot Quickstart Template](https://github.com/RocketPartners/rckt_snooze_spring) for more information.
+io.rocketpartners.cloud.service.lambda.ApiGatewayRequestStreamHandler makes it trivial to run your Inversion API as a Lambda. 
 
  * https://docs.aws.amazon.com/lambda/latest/dg/vpc.html
  * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html

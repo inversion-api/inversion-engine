@@ -23,7 +23,7 @@ apply plugin: 'org.springframework.boot'
 //would be useless.
 //apply plugin: 'war'
 
-project.docsDirName='../docs/0.3.x/'
+project.docsDirName='../docs/master/'
 
 configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 

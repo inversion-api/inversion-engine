@@ -335,17 +335,6 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
   * function(sqlfunction, col, value, [...valueN]) - tries to apply the requested aggregate function
   * rowcount
 
-
-
-### Miscellaneous
-
-* as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
- 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
-
-
   
 ### Nested Document Expansion
 
@@ -369,6 +358,13 @@ values may not be supplied by an api user request.  The value of these fields al
 the User object which is configured during authentication (see above).  This is true for 
 RQL query params as well as for JSON properties.
 
+### Miscellaneous
+
+* as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
+ 
+ RQL Function                     | Database            | Elastic             | Dynamo             | Description  
+ ---                              | :---:               | :---:               | :---:              | ---
+ as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
 
 
 ## Core Object Model Concepts
@@ -743,6 +739,10 @@ dependencies {
  * https://www.mnot.net/blog/2011/11/25/linking_in_json
  * https://blog.safaribooksonline.com/2013/05/23/instrumenting-apis-with-links-in-rest/
  * http://stackoverflow.com/questions/297005/what-is-the-gold-standard-for-website-apis-twitter-flickr-facebook-etc
+ * https://www.moesif.com/blog/technical/api-design/REST-API-Design-Filtering-Sorting-and-Pagination/#
+ * https://github.com/NationalBankBelgium/REST-API-Design-Guide/wiki
+ * https://cloud.google.com/bigquery/docs/reference/legacy-sql
+
  
 ### REST APIs in the Wild
 
