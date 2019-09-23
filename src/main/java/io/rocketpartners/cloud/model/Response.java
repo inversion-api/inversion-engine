@@ -129,12 +129,21 @@ public class Response
    public Response withStatus(String status)
    {
       statusMesg = status;
-      statusCode = Integer.parseInt(status.substring(0, 3));
-
-      if (statusMesg.length() > 4)
+      try
       {
-         statusMesg = status.substring(4, status.length());
+         statusCode = Integer.parseInt(status.substring(0, 3));
+         
+         if (statusMesg.length() > 4)
+         {
+            statusMesg = status.substring(4, status.length());
+         }
       }
+      catch (Exception ex)
+      {
+         //the status message did not start with numeric status code. 
+         //this can be ignored.
+      }
+      
 
       return this;
    }
@@ -890,7 +899,7 @@ public class Response
                msg += "\r\n" + "  - debug line    : " + debugLine;
                msg += "\r\n" + "  - missing token : " + matchToken;
                msg += "\r\n" + debug;
-               
+
                System.err.println(msg);
 
                Utils.error(msg);

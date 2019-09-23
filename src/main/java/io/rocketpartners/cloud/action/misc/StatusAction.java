@@ -5,6 +5,7 @@ import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Service;
 
@@ -19,8 +20,9 @@ import io.rocketpartners.cloud.service.Service;
  */
 public class StatusAction extends Action<StatusAction>
 {
-   protected int    statusCode = 200;
-   protected String status     = "OK";
+   protected int     statusCode    = 200;
+   protected String  status        = SC.SC_200_OK;
+   protected boolean cancelRequest = true;
 
    public StatusAction()
    {
@@ -41,6 +43,8 @@ public class StatusAction extends Action<StatusAction>
    {
       res.withStatus(status);
       res.withStatusCode(statusCode);
+      if (cancelRequest)
+         chain.cancel();
    }
 
    public int getStatusCode()
@@ -62,6 +66,17 @@ public class StatusAction extends Action<StatusAction>
    public StatusAction withStatus(String status)
    {
       this.status = status;
+      return this;
+   }
+
+   public boolean isCancelRequest()
+   {
+      return cancelRequest;
+   }
+
+   public StatusAction withCancelRequest(boolean cancelRequest)
+   {
+      this.cancelRequest = cancelRequest;
       return this;
    }
 
