@@ -19,9 +19,9 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Configuration File Loading](#configuration-file-loading)
    * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
 1. [Resource Query Language (RQL)](#resource-query-language-rql)
+   * [Query Functions](#query-functions)
    * [Sorting and Ordering](#sorting-and-ordering)
    * [Pagination, Offset and Limit](#pagination-offset-and-limit)
-   * [Query Functions](#query-functions)
    * [Aggregations](#aggregations)
    * [Nested Document Expansion](#nested-document-expansion)
    * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
@@ -30,10 +30,10 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Miscellaneous](#miscellaneous)
 1. [Core Object Model Concepts](#core-object-model-concepts)
    * [Apis](#apis)
-   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexes)
+   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexs)
    * [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
    * [Endpoints and Actions](#endpoints-and-actions)
-   * [AclActions and AclRules](#aclactions-and-aclrules)
+   * [AclActions and AclRules](#aclaction-and-aclrules)
    * [Path Matching](#path-matching)
 1. [Security Model](#security-model)
    * [Account Roles](#account-roles)
@@ -48,11 +48,11 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    * [Javadocs](#Javadocs)
    * [Logging](#logging)
    * [Gradle, Maven, etc.](#gradle-maven-etc)    
-1. [REST API Design Resources](rest-api-design-resources)
-   * [HTTP Status Codes](http-status-codes)
+1. [REST API Design Resources](#rest-api-design-resources)
+   * [HTTP Status Codes](#http-status-codes)
    * [Standards-ish](#standards-ish)
    * [Web Query Languages](#web-query-languages)
-   * [Best Practices and Design Resources](best-dractices-and-design-resources)
+   * [Best Practices and Design Resources](#best-dractices-and-design-resources)
  
    
 ## Features and Benefits
@@ -742,7 +742,7 @@ dependencies {
  * https://www.moesif.com/blog/technical/api-design/REST-API-Design-Filtering-Sorting-and-Pagination/#
  * https://github.com/NationalBankBelgium/REST-API-Design-Guide/wiki
  * https://cloud.google.com/bigquery/docs/reference/legacy-sql
-
+ * https://github.com/Azure/azure-rest-api-specs
  
 ### REST APIs in the Wild
 
@@ -753,6 +753,7 @@ dependencies {
 * LinkedIn - https://developer.linkedin.com/docs
 * Amazon S3 - https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html
 * Twitter - https://developer.twitter.com/
+* Spotify - https://developer.spotify.com/documentation/web-api/
 
   
 
