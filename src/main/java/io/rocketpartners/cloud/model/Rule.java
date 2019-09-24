@@ -16,34 +16,31 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.rocketpartners.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected Api                  api          = null;
+   protected Api             api          = null;
 
-   protected String               name         = null;
-   protected int                  order        = 1000;
+   protected String          name         = null;
+   protected int             order        = 1000;
 
-   protected Set<String>          methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected Set<String>     methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   protected List<Path>           excludePaths = new ArrayList();
-   protected List<Path>           includePaths = new ArrayList();
+   protected List<Path>      excludePaths = new ArrayList();
+   protected List<Path>      includePaths = new ArrayList();
 
    /**
-    * ObjectNode is used because it implements a case insensitive map without modifying the keys
+    * JSMap is used because it implements a case insensitive map without modifying the keys
     */
-   protected transient ObjectNode configMap    = new ObjectNode();
-   protected String               configStr    = null;
+   protected transient JsonMap configMap    = new JsonMap();
+   protected String          configStr    = null;
 
    @Override
    public int compareTo(Rule a)

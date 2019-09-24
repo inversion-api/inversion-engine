@@ -12,12 +12,12 @@ import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Rows;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class SqlServiceFactory
+public class SqlEngineFactory
 {
    public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
@@ -25,7 +25,7 @@ public class SqlServiceFactory
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 
-   protected static Service           service              = null;
+   protected static Engine            engine               = null;
 
    protected static boolean shouldLoad(String db)
    {
@@ -70,19 +70,19 @@ public class SqlServiceFactory
       //SpringBoot.run(service(false));
    }
 
-   public static synchronized Service service() throws Exception
+   public static synchronized Engine service() throws Exception
    {
       return service(true);
    }
 
-   public static synchronized Service service(boolean startup) throws Exception
+   public static synchronized Engine service(boolean startup) throws Exception
    {
-      if (service != null)
-         return service;
+      if (engine != null)
+         return engine;
 
       try
       {
-         service = new Service()
+         engine = new Engine()
             {
                @Override
                public void startup0()
@@ -91,9 +91,9 @@ public class SqlServiceFactory
                   {
                      SqlDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
 
-                     service.withApi("northwind")//
-                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
-                            .withDb(sourceDb);
+                     engine.withApi("northwind")//
+                           .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
+                           .withDb(sourceDb);
 
                      Connection conn = sourceDb.getConnection();
 
@@ -101,9 +101,9 @@ public class SqlServiceFactory
                      {
                         SqlDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
 
-                        service.getApi("northwind")//
-                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
-                               .withDb(h2Db);
+                        engine.getApi("northwind")//
+                              .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
+                              .withDb(h2Db);
                      }
 
                      if (shouldLoad("mysql"))
@@ -127,12 +127,12 @@ public class SqlServiceFactory
                            }
                            if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
                            {
-                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
+                              SqlUtils.runDdl(mysqlConn, SqlEngineFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
                            }
 
                            try
                            {
-                              SqlUtils.runDdl(mysqlConn, SqlServiceFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
+                              SqlUtils.runDdl(mysqlConn, SqlEngineFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
                            }
                            catch (Exception ex)
                            {
@@ -142,9 +142,9 @@ public class SqlServiceFactory
                            mysqlUrl += "/northwindcopy";
                            mysqlDb = createDb("mysql", null, "com.mysql.jdbc.Driver", mysqlUrl, "testcase", "password", "mysql/");
 
-                           service.getApi("northwind")//
-                                  .withEndpoint("GET,PUT,POST,DELETE", "mysql/*", new RestAction())//
-                                  .withDb(mysqlDb);
+                           engine.getApi("northwind")//
+                                 .withEndpoint("GET,PUT,POST,DELETE", "mysql/*", new RestAction())//
+                                 .withDb(mysqlDb);
                         }
                      }
                   }
@@ -201,7 +201,7 @@ public class SqlServiceFactory
 
          if (startup)
          {
-            service.startup();
+            engine.startup();
          }
       }
       catch (
@@ -211,7 +211,7 @@ public class SqlServiceFactory
          ex.printStackTrace();
          throw ex;
       }
-      return service;
+      return engine;
    }
 
    /**
@@ -225,8 +225,8 @@ public class SqlServiceFactory
     */
    public static void prepData(String db) throws Exception
    {
-      Service service = service();
-      SqlDb destDb = ((SqlDb) service.getApi("northwind").getDb(db));
+      Engine engine = service();
+      SqlDb destDb = ((SqlDb) engine.getApi("northwind").getDb(db));
       Connection destCon = destDb.getConnection();
 
       //-- Clear and restore the Order and OrderDetails tables.  OrderDetails must be
@@ -241,7 +241,7 @@ public class SqlServiceFactory
       int rows = SqlUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getTable("Orders").getName()));
       Utils.assertEq(0, rows);
 
-      SqlDb sourceDb = ((SqlDb) service.getApi("northwind").getDb("source"));
+      SqlDb sourceDb = ((SqlDb) engine.getApi("northwind").getDb("source"));
       Connection sourceConn = sourceDb.getConnection();
 
       Rows orders = SqlUtils.selectRows(sourceConn, "SELECT * FROM \"ORDERS\" WHERE \"SHIPNAME\" = ? OR \"CUSTOMERID\" = ?", "Blauer See Delikatessen", "HILAA");
@@ -280,7 +280,7 @@ public class SqlServiceFactory
          try
          {
             Connection conn = db.getConnection();
-            SqlUtils.runDdl(conn, SqlServiceFactory.class.getResourceAsStream(ddl));
+            SqlUtils.runDdl(conn, SqlEngineFactory.class.getResourceAsStream(ddl));
             conn.commit();
 
             //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));

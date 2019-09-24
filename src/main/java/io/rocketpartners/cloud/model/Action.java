@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -48,7 +48,7 @@ public abstract class Action<A extends Action> extends Rule<A>
       withConfig(config);
    }
 
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
 
    }
@@ -78,9 +78,9 @@ public abstract class Action<A extends Action> extends Rule<A>
       return (A) this;
    }
 
-   public static List<ObjectNode> find(Object parent, String... paths)
+   public static List<JsonMap> find(Object parent, String... paths)
    {
-      List<ObjectNode> found = new ArrayList();
+      List<JsonMap> found = new ArrayList();
       for (String apath : paths)
       {
          for (String path : (List<String>) Utils.explode(",", apath))
@@ -91,26 +91,26 @@ public abstract class Action<A extends Action> extends Rule<A>
       return found;
    }
 
-   public static void find(Object parent, List<ObjectNode> found, String targetPath, String currentPath)
+   public static void find(Object parent, List<JsonMap> found, String targetPath, String currentPath)
    {
-      if (parent instanceof ArrayNode)
+      if (parent instanceof JsonArray)
       {
-         for (Object child : (ArrayNode) parent)
+         for (Object child : (JsonArray) parent)
          {
-            if (child instanceof ObjectNode)
+            if (child instanceof JsonMap)
                find(child, found, targetPath, currentPath);
          }
       }
-      else if (parent instanceof ObjectNode)
+      else if (parent instanceof JsonMap)
       {
          if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
          {
-            found.add((ObjectNode) parent);
+            found.add((JsonMap) parent);
          }
 
-         for (String key : ((ObjectNode) parent).keySet())
+         for (String key : ((JsonMap) parent).keySet())
          {
-            Object child = ((ObjectNode) parent).get(key);
+            Object child = ((JsonMap) parent).get(key);
             String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
             find(child, found, targetPath, nextPath);
          }

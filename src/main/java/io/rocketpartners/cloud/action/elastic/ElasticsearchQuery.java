@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.rql.Group;
 import io.rocketpartners.cloud.rql.Order;
@@ -66,25 +66,25 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
       return new ElasticsearchPage(this);
    }
 
-   protected void push(List<ObjectNode> stack, ObjectNode child)
+   protected void push(List<JsonMap> stack, JsonMap child)
    {
 
    }
 
-   public ObjectNode getJson()
+   public JsonMap getJson()
    {
-      ObjectNode root = new ObjectNode();
+      JsonMap root = new JsonMap();
       for (Term term : getTerms())
       {
-         ObjectNode child = toJson(null, term);
+         JsonMap child = toJson(null, term);
       }
 
       return root;
    }
 
-   public ObjectNode toJson(Term parent, Term child)
+   public JsonMap toJson(Term parent, Term child)
    {
-      ObjectNode query = null;
+      JsonMap query = null;
 
       String token = child.getToken().toLowerCase();
       String field = child.getToken(0);
@@ -103,7 +103,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
             //                "lte" : 20,
             //            }
             //        }
-            query = new ObjectNode("range", new ObjectNode(field, new ObjectNode(token, value)));
+            query = new JsonMap("range", new JsonMap(field, new JsonMap(token, value)));
             break;
          case "eq": // equal
          case "ne": // not equal
@@ -114,7 +114,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                      "wildcard" : { "user" : "ki*y" }
                //                  }
                //              }               
-               query = new ObjectNode("wildcard", new ObjectNode(field, value));
+               query = new JsonMap("wildcard", new JsonMap(field, value));
             }
             else
             {
@@ -123,7 +123,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                    "term" : { "user" : "Kimchy" } 
                //                  }
                //                }
-               query = new ObjectNode("term", new ObjectNode(field, value));
+               query = new JsonMap("term", new JsonMap(field, value));
             }
 
             if ("ne".equals(token))
@@ -135,7 +135,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
                //                    }
                //                  }
                //                }
-               query = new ObjectNode("bool", new ObjectNode("must_not", query));
+               query = new JsonMap("bool", new JsonMap("must_not", query));
             }
             break;
          //         case "and":
@@ -149,13 +149,13 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
          //               ((BoolQuery) elastic).addShould(eq);
          //            break;
          case "sw":
-            query = new ObjectNode("wildcard", new ObjectNode(field, value + "*"));
+            query = new JsonMap("wildcard", new JsonMap(field, value + "*"));
             break;
          case "ew":
-            query = new ObjectNode("wildcard", new ObjectNode(field, "*" + value));
+            query = new JsonMap("wildcard", new JsonMap(field, "*" + value));
             break;
          case "w":
-            query = new ObjectNode("wildcard", new ObjectNode(field, "*" + value + "*"));
+            query = new JsonMap("wildcard", new JsonMap(field, "*" + value + "*"));
             break;
          case "wo":
 
@@ -208,7 +208,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, 
             //            "query": {
             //               "fuzzy" : { "user" : "ki" }
             //            }
-            query = new ObjectNode("fuzzy", new ObjectNode(field, value));
+            query = new JsonMap("fuzzy", new JsonMap(field, value));
             break;
          default :
             throw new RuntimeException("unexpected rql token: " + token);

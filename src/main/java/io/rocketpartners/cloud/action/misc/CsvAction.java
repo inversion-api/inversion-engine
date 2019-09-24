@@ -23,13 +23,13 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * Converts a JSON object/array response value into CSV format.  
@@ -42,7 +42,7 @@ import io.rocketpartners.cloud.service.Service;
 public class CsvAction extends BatchAction<CsvAction>
 {
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null)
       {
@@ -52,13 +52,13 @@ public class CsvAction extends BatchAction<CsvAction>
       if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(chain.getConfig("format", null)))
          return;
 
-      ObjectNode arr = res.getJson();
-      if (!(arr instanceof ArrayNode))
+      JsonMap arr = res.getJson();
+      if (!(arr instanceof JsonArray))
       {
-         arr = new ArrayNode(arr);
+         arr = new JsonArray(arr);
       }
 
-      byte[] bytes = toCsv((ArrayNode) arr).getBytes();
+      byte[] bytes = toCsv((JsonArray) arr).getBytes();
 
       res.withHeader("Content-Length", bytes.length + "");
       res.debug("Content-Length " + bytes.length + "");
@@ -68,7 +68,7 @@ public class CsvAction extends BatchAction<CsvAction>
       res.withJson(null);
    }
 
-   public String toCsv(ArrayNode arr) throws Exception
+   public String toCsv(JsonArray arr) throws Exception
    {
       StringBuffer buff = new StringBuffer();
 
@@ -76,13 +76,13 @@ public class CsvAction extends BatchAction<CsvAction>
 
       for (int i = 0; i < arr.length(); i++)
       {
-         ObjectNode obj = (ObjectNode) arr.get(i);
+         JsonMap obj = (JsonMap) arr.get(i);
          if (obj != null)
          {
             for (String key : obj.keySet())
             {
                Object val = obj.get(key);
-               if (!(val instanceof ArrayNode) && !(val instanceof ObjectNode))
+               if (!(val instanceof JsonArray) && !(val instanceof JsonMap))
                   keys.add(key);
             }
          }
@@ -101,7 +101,7 @@ public class CsvAction extends BatchAction<CsvAction>
       {
          for (String key : keysList)
          {
-            Object val = ((ObjectNode) arr.get(i)).get(key);
+            Object val = ((JsonMap) arr.get(i)).get(key);
             if (val != null)
             {
                printer.print(val);

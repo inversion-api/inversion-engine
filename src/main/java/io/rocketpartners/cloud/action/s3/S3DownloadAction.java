@@ -36,16 +36,16 @@ import ch.qos.logback.classic.Logger;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Request.Upload;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * Accepts RQL parameters and responds with json or files to the client.
@@ -80,7 +80,7 @@ public class S3DownloadAction extends Action
 //   int    maxRows = 100;
 //
 //   @Override
-//   public void service(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+//   public void service(Engine service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
 //   {
 //      String method = req.getMethod();
 //      if ("GET".equalsIgnoreCase(method))
@@ -120,7 +120,7 @@ public class S3DownloadAction extends Action
 //    * parameter must be included.
 //    * 
 //    */
-//   public void doGet(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+//   public void doGet(Engine service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
 //   {
 //
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
@@ -223,7 +223,7 @@ public class S3DownloadAction extends Action
 //    * content-type applied to the s3 object.  ex: headerPrefix = "s3-";  The request header would include:
 //    * s3-Content-Type=application/json if you wanted an object stored with a json content type.
 //    */
-//   private void doPost(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+//   private void doPost(Engine service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
 //   {
 //
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
@@ -294,7 +294,7 @@ public class S3DownloadAction extends Action
 //      res.setStatus(SC.SC_200_OK);
 //   }
 //
-//   private void doPut(Service service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
+//   private void doPut(Engine service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
 //   {
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
 //      Table table = collection.getEntity().getTable();

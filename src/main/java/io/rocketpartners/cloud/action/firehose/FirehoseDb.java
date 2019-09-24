@@ -32,7 +32,7 @@ import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Db;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
@@ -157,7 +157,7 @@ public class FirehoseDb extends Db<FirehoseDb>
       List<Record> batch = new ArrayList();
       for (int i = 0; i < rows.size(); i++)
       {
-         String string = new ObjectNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
+         String string = new JsonMap(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
 
          if (jsonSeparator != null && !string.endsWith(jsonSeparator))
             string += jsonSeparator;

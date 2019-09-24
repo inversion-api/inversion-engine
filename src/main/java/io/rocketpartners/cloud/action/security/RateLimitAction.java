@@ -21,12 +21,12 @@ import java.util.Map;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * Provides a blank or client specific request rate limit of <code>limitRequests</code> per 
@@ -56,7 +56,7 @@ public class RateLimitAction extends Action<RateLimitAction>
    Map<String, Bucket> buckets        = new Hashtable();
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       int limitMinutes = chain.getConfig("limitMinutes", this.limitMinutes);;
       int limitUserHits = chain.getConfig("limitUserHits", this.limitUserHits);
@@ -77,7 +77,7 @@ public class RateLimitAction extends Action<RateLimitAction>
 
       if (!bucket.hit(clientId))
       {
-         ObjectNode error = new ObjectNode("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
+         JsonMap error = new JsonMap("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
          res.withJson(error);
          res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
 

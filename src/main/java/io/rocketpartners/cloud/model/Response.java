@@ -29,7 +29,7 @@ import java.util.List;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Response
@@ -47,7 +47,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected ObjectNode                             json              = new ObjectNode("meta", new ObjectNode("createdOn", Utils.formatIso8601(new Date())), "data", new ArrayNode());
+   protected JsonMap                             json              = new JsonMap("meta", new JsonMap("createdOn", Utils.formatIso8601(new Date())), "data", new JsonArray());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -85,7 +85,7 @@ public class Response
 
    public Response withMeta(String key, String value)
    {
-      json.getNode("meta").put(key, value);
+      json.getMap("meta").put(key, value);
       return this;
    }
 
@@ -170,9 +170,9 @@ public class Response
       return chain;
    }
 
-   public Service getService()
+   public Engine getEngine()
    {
-      return chain != null ? chain.getService() : null;
+      return chain != null ? chain.getEngine() : null;
    }
 
    public Response withChain(Chain chain)
@@ -240,10 +240,10 @@ public class Response
    /**
     * @return the json
     */
-   public ObjectNode getJson()
+   public JsonMap getJson()
    {
       if (file != null && file.length() > 0)
-         return Utils.parseObjectNode(getContent());
+         return Utils.parseJsonMap(getContent());
       else
          return json;
    }
@@ -254,7 +254,7 @@ public class Response
     * 
     * @param json the json to set
     */
-   public Response withJson(ObjectNode json)
+   public Response withJson(JsonMap json)
    {
       this.json = json;
       return this;
@@ -275,12 +275,12 @@ public class Response
       return getJson().findBoolean(path);
    }
 
-   public ObjectNode findNode(String path)
+   public JsonMap findNode(String path)
    {
-      return getJson().findNode(path);
+      return getJson().findMap(path);
    }
 
-   public ArrayNode findArray(String path)
+   public JsonArray findArray(String path)
    {
       return getJson().findArray(path);
    }
@@ -290,12 +290,12 @@ public class Response
       return getJson().find(path);
    }
 
-   public ArrayNode data()
+   public JsonArray data()
    {
       return json.getArray("data");
    }
 
-   public Response withData(ArrayNode data)
+   public Response withData(JsonArray data)
    {
       json.put("data", data);
       return this;
@@ -314,9 +314,9 @@ public class Response
       return this;
    }
 
-   public ObjectNode meta()
+   public JsonMap meta()
    {
-      return json.getNode("meta");
+      return json.getMap("meta");
    }
 
    public Response withMeta(String key, Object value)
@@ -363,9 +363,9 @@ public class Response
       if (pageSize < 0)
       {
          Object arr = json.find("data.0.name");
-         if (arr instanceof ArrayNode)
+         if (arr instanceof JsonArray)
          {
-            pageSize = ((ArrayNode) arr).size();
+            pageSize = ((JsonArray) arr).size();
          }
       }
       return pageSize;

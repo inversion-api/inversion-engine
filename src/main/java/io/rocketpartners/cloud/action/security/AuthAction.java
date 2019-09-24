@@ -32,15 +32,15 @@ import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -69,7 +69,7 @@ public class AuthAction extends Action<AuthAction>
    }
    
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
       //one time init
       if (sessionCache == null)
@@ -242,26 +242,26 @@ public class AuthAction extends Action<AuthAction>
             updateSessionCache = true;
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
-            ObjectNode obj = new ObjectNode();
+            JsonMap obj = new JsonMap();
             obj.put("id", user.getId());
             obj.put("username", username);
             obj.put("displayname", user.getDisplayName());
 
-            ArrayNode perms = new ArrayNode();
+            JsonArray perms = new JsonArray();
             for (String perm : user.getPermissions())
             {
                perms.add(perm);
             }
             obj.put("perms", perms);
 
-            ArrayNode roles = new ArrayNode();
+            JsonArray roles = new JsonArray();
             for (String role : user.getRoles())
             {
                roles.add(role);
             }
             obj.put("roles", roles);
 
-            resp.withJson(new ObjectNode("data", obj));
+            resp.withJson(new JsonMap("data", obj));
          }
 
          if (updateSessionCache)

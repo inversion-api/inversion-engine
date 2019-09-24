@@ -7,10 +7,10 @@ import java.util.Map;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -18,7 +18,7 @@ import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.rql.Parser;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
@@ -40,11 +40,11 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String entityKey = req.getEntityKey();
       String subcollectionKey = req.getSubCollectionKey();
-      ObjectNode json = req.getJson();
+      JsonMap json = req.getJson();
 
       int count = Utils.empty(entityKey) ? 0 : 1;
       count += Utils.empty(req.getQuery()) ? 0 : 1;
@@ -60,12 +60,12 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 
       if (req.getJson() != null)
       {
-         if (!(json instanceof ArrayNode))
+         if (!(json instanceof JsonArray))
          {
             throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
          }
 
-         for (Object o : (ArrayNode) json)
+         for (Object o : (JsonArray) json)
          {
             if (!(o instanceof String))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
@@ -183,7 +183,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          //that need to be deleted and make sure the uses has read access to the key
          //
          //TODO: need to do more tests here
-         Response res = req.getService().get(url).statusOk();
+         Response res = req.getEngine().get(url).statusOk();
 
          if (res.data().size() == 0)
             break;
@@ -191,7 +191,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          deleted += res.data().size();
 
          List<String> entityKeys = new ArrayList();
-         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((ObjectNode) o).getString("href")))));
+         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((JsonMap) o).getString("href")))));
          req.getCollection().getDb().delete(collection.getTable(), entityKeys);
       }
 

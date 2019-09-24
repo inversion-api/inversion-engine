@@ -29,14 +29,14 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -51,7 +51,7 @@ public class LogAction extends Action<LogAction>
    protected Set<String> logMaskFields  = new HashSet<>();
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (chain.getParent() != null)
       {
@@ -96,7 +96,7 @@ public class LogAction extends Action<LogAction>
                   logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
                   logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
 
-                  ObjectNode bodyJson = maskFields(req.getJson(), logMask);
+                  JsonMap bodyJson = maskFields(req.getJson(), logMask);
                   if (bodyJson != null)
                   {
                      logParams.put("body", bodyJson.toString());
@@ -139,17 +139,17 @@ public class LogAction extends Action<LogAction>
       }
    }
 
-   ObjectNode maskFields(ObjectNode json, String mask)
+   JsonMap maskFields(JsonMap json, String mask)
    {
       if (json != null)
       {
-         if (json instanceof ArrayNode)
+         if (json instanceof JsonArray)
          {
-            for (Object o : (ArrayNode) json)
+            for (Object o : (JsonArray) json)
             {
-               if (o instanceof ObjectNode)
+               if (o instanceof JsonMap)
                {
-                  maskFields((ObjectNode) o, mask);
+                  maskFields((JsonMap) o, mask);
                }
             }
          }

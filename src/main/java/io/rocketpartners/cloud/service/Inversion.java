@@ -9,35 +9,38 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.service.Servlet;
 import io.rocketpartners.cloud.utils.Utils;
 
+/**
+ * A simple Spring Boot based launcher.
+ */
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 public class Inversion
 {
-   static Service service = null;
+   static Engine engine = null;
 
    public static void main(String[] args)
    {
-      run(new Service());
+      run(new Engine());
    }
 
    /**
-    * Convenience method for launching a Service with a single API.
+    * Convenience method for launching a Engine with a single API.
     * @param api
     */
    public static void run(Api api)
    {
-      run(new Service().withApi(api));
+      run(new Engine().withApi(api));
    }
 
-   public static void run(Service inService)
+   public static void run(Engine engine)
    {
       try
       {
-         service = inService;
+         Inversion.engine = engine;
          SpringApplication.run(Inversion.class);
       }
       catch (Throwable e)
@@ -57,7 +60,7 @@ public class Inversion
             msg += "\n Spring Boot. Using H2 db before Spring Boot starts Tomcat seems to ";
             msg += "\n be one known cause of this error.";
             msg += "\n";
-            msg += "\n SOLUTION: Override Service.startup0() and place all of your Api wiring";
+            msg += "\n SOLUTION: Override Engine.startup0() and place all of your Api wiring";
             msg += "\n and other setup code there.  That way Tomcat will load before ";
             msg += "\n the part of your code that is causing this unintended side effect.";
             msg += "\n\n\n";
@@ -75,9 +78,9 @@ public class Inversion
       try
       {
          Servlet servlet = new io.rocketpartners.cloud.service.Servlet();
-         servlet.setService(service);
+         servlet.setEngine(engine);
 
-         String servletMapping = service.getServletMapping();
+         String servletMapping = engine.getServletMapping();
          if (servletMapping == null)
             servletMapping = "/*";
 

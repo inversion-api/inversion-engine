@@ -55,7 +55,7 @@ import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Rule;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Wirer.Includer;
 import io.rocketpartners.cloud.utils.Wirer.Namer;
 
@@ -63,16 +63,16 @@ public class Configurator
 {
    public static final String ROOT_BEAN_NAME = "inversion";
 
-   Logger                     log            = LoggerFactory.getLogger(Service.class.getName() + ".configuration");
+   Logger                     log            = LoggerFactory.getLogger(Engine.class.getName() + ".configuration");
 
-   Service                    service        = null;
+   Engine                     engine         = null;
 
-   public synchronized void loadConfig(Service service)
+   public synchronized void loadConfig(Engine engine)
    {
-      if (this.service != null)
+      if (this.engine != null)
          return;
 
-      this.service = service;
+      this.engine = engine;
 
       try
       {
@@ -81,12 +81,12 @@ public class Configurator
          if (config.files.size() == 0)
             return;
 
-         //all this does is set inversion.* properties on the service class
+         //all this does is set inversion.* properties on the engine class
          Wirer w = new Wirer();
-         w.putBean(ROOT_BEAN_NAME, service);
+         w.putBean(ROOT_BEAN_NAME, engine);
          w.load(config.props);
 
-         loadConfig(config, true, service.isConfigFast());
+         loadConfig(config, true, engine.isConfigFast());
       }
       catch (Exception e)
       {
@@ -136,7 +136,7 @@ public class Configurator
             if (Utils.empty(api.getApiCode()))
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
 
-            Api existingApi = service.getApi(api.getApiCode());
+            Api existingApi = engine.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                doLoad = true;
@@ -161,9 +161,9 @@ public class Configurator
             
             autoWireApi(wire);
 
-            if (!Utils.empty(service.getConfigOut()))
+            if (!Utils.empty(engine.getConfigOut()))
             {
-               String fileName = "./" + service.getConfigOut().trim();
+               String fileName = "./" + engine.getConfigOut().trim();
 
                File file = new File(fileName);
 
@@ -219,12 +219,12 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = service.getApi(api.getApiCode());
+            Api existingApi = engine.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.withHash(config.hash);
                api.removeExcludes();
-               service.addApi(api);
+               engine.addApi(api);
             }
          }
 
@@ -430,7 +430,7 @@ public class Configurator
    {
       Config config = new Config();
 
-      String configPath = service.getConfigPath();
+      String configPath = engine.getConfigPath();
 
       if (configPath.length() > 0 && !(configPath.endsWith("/") || configPath.endsWith("\\")))
          configPath += "/";
@@ -438,12 +438,12 @@ public class Configurator
       for (int i = -1; i <= 100; i++)
       {
          String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = service.getResource(fileName);
+         InputStream is = engine.getResource(fileName);
 
          if (is == null)
          {
             fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + ".properties";
-            is = service.getResource(fileName);
+            is = engine.getResource(fileName);
          }
 
          if (is != null)
@@ -453,30 +453,30 @@ public class Configurator
          }
       }
 
-      if (service.getProfile() != null)
+      if (engine.getProfile() != null)
       {
          for (int i = -1; i <= 100; i++)
          {
             InputStream is = null;
             String fileName = null;
 
-            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
-            is = service.getResource(fileName);
+            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + engine.getProfile() + ".properties";
+            is = engine.getResource(fileName);
 
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + service.getProfile() + ".properties";
-               is = service.getResource(fileName);
+               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + engine.getProfile() + ".properties";
+               is = engine.getResource(fileName);
             }
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + service.getProfile() + (i < 0 ? "" : i) + ".properties";
-               is = service.getResource(fileName);
+               fileName = configPath + "inversion" + "-" + engine.getProfile() + (i < 0 ? "" : i) + ".properties";
+               is = engine.getResource(fileName);
             }
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + service.getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
-               is = service.getResource(fileName);
+               fileName = configPath + "inversion" + "-" + engine.getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
+               is = engine.getResource(fileName);
             }
 
             if (is != null)
@@ -487,7 +487,7 @@ public class Configurator
          }
       }
 
-      if (service.getApis().size() == 0 && config.files.isEmpty())
+      if (engine.getApis().size() == 0 && config.files.isEmpty())
       {
          log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
       }

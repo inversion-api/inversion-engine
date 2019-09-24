@@ -17,20 +17,20 @@ package io.rocketpartners.cloud.action.security;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 public class PasswordAction extends Action<PasswordAction>
 {
    String passwordField = "password";
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (chain.getParent() != null)
       {
@@ -39,12 +39,12 @@ public class PasswordAction extends Action<PasswordAction>
          return;
       }
 
-      ObjectNode json = req.getJson();
+      JsonMap json = req.getJson();
 
       if (json == null)
          return;
 
-      if (json instanceof ArrayNode)
+      if (json instanceof JsonArray)
          return;
 
       String password = (String) json.remove(passwordField);
@@ -63,16 +63,16 @@ public class PasswordAction extends Action<PasswordAction>
       }
       finally
       {
-         ObjectNode js = res.getJson().getNode("data");
-         if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
+         JsonMap js = res.getJson().getMap("data");
+         if (js instanceof JsonArray && ((JsonArray) js).length() == 1)
          {
-            ObjectNode user = (ObjectNode) ((ArrayNode) js).get(0);
+            JsonMap user = (JsonMap) ((JsonArray) js).get(0);
             if (user.get("id") != null)
             {
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
-               ObjectNode body = new ObjectNode(passwordField, encryptedPassword, "href", user.getString("href"));
+               JsonMap body = new JsonMap(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Chain.buildLink(req.getCollection(), user.get("id"), null);
-               service.put(url, body.toString());
+               engine.put(url, body.toString());
             }
          }
       }

@@ -25,16 +25,16 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -53,10 +53,10 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    boolean isOneSrcArray = true;
 
    /**
-    * @see io.rocketpartners.cloud.service.Handler#run(io.rocketpartners.cloud.service.Service, io.rocketpartners.cloud.model.Api, io.rocketpartners.cloud.model.Endpoint, io.rocketpartners.cloud.service.Chain, io.rocketpartners.cloud.model.Request, io.rocketpartners.cloud.model.Response)
+    * @see io.rocketpartners.cloud.service.Handler#run(io.rocketpartners.cloud.service.Engine, io.rocketpartners.cloud.model.Api, io.rocketpartners.cloud.model.Endpoint, io.rocketpartners.cloud.service.Chain, io.rocketpartners.cloud.model.Request, io.rocketpartners.cloud.model.Response)
     */
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
 
       Collection collection = findCollectionOrThrow404(api, chain, req);
@@ -158,16 +158,16 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         ObjectNode jsObj = Utils.parseObjectNode(r.getContent());
+         JsonMap jsObj = Utils.parseJsonMap(r.getContent());
 
-         int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
-         ArrayNode hits = jsObj.getNode("hits").getArray("hits");
+         int totalHits = Integer.parseInt(jsObj.getMap("hits").getProperty("total").getValue().toString());
+         JsonArray hits = jsObj.getMap("hits").getArray("hits");
 
          //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
          //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
          //
          //         ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-         ArrayNode data = new ArrayNode();
+         JsonArray data = new JsonArray();
          //
          //         // if the query contains a wantedPage and it differs from the pagenum 
          //         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
@@ -200,7 +200,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         ObjectNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
          //ObjectNode wrapper = new ObjectNode("meta", meta, "data", data);
-         ObjectNode wrapper = new ObjectNode("meta", new ObjectNode(), "data", data);
+         JsonMap wrapper = new JsonMap("meta", new JsonMap(), "data", data);
          res.withJson(wrapper);
 
       }
@@ -231,11 +231,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
-      ObjectNode context = null;
+      JsonMap context = null;
       if (req.getApi().isMultiTenant())
       {
          tenantId = req.removeParam("tenantId");
-         context = new ObjectNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+         context = new JsonMap("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
       }
 
       String field = null;
@@ -247,23 +247,23 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          value = entry.getValue();
       }
 
-      ObjectNode completion = null;
-      ObjectNode autoSuggest = null;
-      ObjectNode payload = null;
+      JsonMap completion = null;
+      JsonMap autoSuggest = null;
+      JsonMap payload = null;
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         completion = new ObjectNode("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new ObjectNode("prefix", value, "completion", completion);
-         payload = new ObjectNode("_source", new ArrayNode(field), "suggest", new ObjectNode("auto-suggest", autoSuggest));
+         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JsonMap("prefix", value, "completion", completion);
+         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new ObjectNode("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new ObjectNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new ObjectNode("_source", new ArrayNode(field), "suggest", new ObjectNode("auto-suggest", autoSuggest));
+         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JsonMap("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
       }
 
       if (context != null)
@@ -280,18 +280,18 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         ObjectNode jsObj = Utils.parseObjectNode(r.getContent());
-         ObjectNode auto = (ObjectNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
-         ArrayNode resultArray = new ArrayNode();
-         for (ObjectNode obj : (List<ObjectNode>) auto.getArray("options").asList())
+         JsonMap jsObj = Utils.parseJsonMap(r.getContent());
+         JsonMap auto = (JsonMap) jsObj.getMap("suggest").getArray("auto-suggest").get(0);
+         JsonArray resultArray = new JsonArray();
+         for (JsonMap obj : (List<JsonMap>) auto.getArray("options").asList())
          {
             if (context != null)
             {
-               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
+               resultArray.add(obj.getMap("_source").getMap(field).get("input"));
             }
             else
             {
-               resultArray.add(obj.getNode("_source").get(field));
+               resultArray.add(obj.getMap("_source").get(field));
             }
          }
 
@@ -306,9 +306,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          }
          else
          {
-            ObjectNode data = new ObjectNode("field", field, "results", resultArray);
-            ObjectNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new ObjectNode("meta", meta, "data", data));
+            JsonMap data = new JsonMap("field", field, "results", resultArray);
+            JsonMap meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+            res.withJson(new JsonMap("meta", meta, "data", data));
          }
       }
       else
@@ -350,9 +350,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param totalHits
     * @return
     */
-   private ObjectNode buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
+   private JsonMap buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
    {
-      ObjectNode meta = new ObjectNode();
+      JsonMap meta = new JsonMap();
 
       //      pageNum = (pageNum == -1) ? 1 : pageNum;
       //      int prevPageNum = pageNum - 1;
@@ -481,9 +481,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       for (String field : sortList)
       {
-         if (sourceObj instanceof ObjectNode && ((ObjectNode) sourceObj).get(field) != null)
+         if (sourceObj instanceof JsonMap && ((JsonMap) sourceObj).get(field) != null)
          {
-            list.add(((ObjectNode) sourceObj).get(field).toString().toLowerCase());
+            list.add(((JsonMap) sourceObj).get(field).toString().toLowerCase());
          }
          else if (sourceObj instanceof String)
          {
@@ -496,9 +496,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       return String.join(",", list);
    }
 
-   private ArrayNode createDataJsArray(boolean isAll, boolean isOneSrcArr, ArrayNode hits, ElasticsearchQuery dsl)
+   private JsonArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JsonArray hits, ElasticsearchQuery dsl)
    {
-      ArrayNode data = new ArrayNode();
+      JsonArray data = new JsonArray();
 
       //      for (ObjectNode obj : (List<ObjectNode>) hits.asList())
       //      {

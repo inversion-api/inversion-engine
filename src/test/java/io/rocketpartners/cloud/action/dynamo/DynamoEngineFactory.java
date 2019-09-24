@@ -28,106 +28,106 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 
 import io.rocketpartners.cloud.action.rest.RestAction;
-import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
+import io.rocketpartners.cloud.action.sql.SqlEngineFactory;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Response;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class DynamoServiceFactory
+public class DynamoEngineFactory
 {
-   public static String                  northwind    = "test-northwind";
-   public static boolean                 relaodDynamo = false;
-   protected static Map<String, Service> services     = new HashMap();
+   public static String                 northwind    = "test-northwind";
+   public static boolean                relaodDynamo = false;
+   protected static Map<String, Engine> engines      = new HashMap();
 
-   public static synchronized Service service() throws Exception
+   public static synchronized Engine service() throws Exception
    {
       return service("northwind", "northwind");
    }
 
-   public static synchronized Service service(String apiName, final String ddl) throws Exception
+   public static synchronized Engine service(String apiName, final String ddl) throws Exception
    {
-      Service service = services.get(apiName.toLowerCase());
-      if (service != null)
-         return service;
+      Engine engine = engines.get(apiName.toLowerCase());
+      if (engine != null)
+         return engine;
 
-      service = buildService(apiName, ddl, "test-" + ddl);
+      engine = buildEngine(apiName, ddl, "test-" + ddl);
 
-      services.put(apiName, service);
+      engines.put(apiName, engine);
 
-      return service;
+      return engine;
    }
 
-   protected static Service buildService(String apiCode, final String ddl, String dynamoTbl) throws Exception
+   protected static Engine buildEngine(String apiCode, final String ddl, String dynamoTbl) throws Exception
    {
       buildTables();
 
-      Service service = SqlServiceFactory.service();
+      Engine engine = SqlEngineFactory.service();
 
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);
-//      //--
-//      //--
-//      //--
-//
-//      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
-//
-//      Map nameMap = new HashMap();
-//      nameMap.put("#var1", "shipregion");
-//
-//      Map valueMap = new HashMap();
-//      valueMap.put(":val1", null);
-//
-//      ScanSpec scanSpec = new ScanSpec();
-//      scanSpec.withMaxPageSize(1000);
-//      scanSpec.withMaxResultSize(1000);
-//      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
-//      scanSpec.withFilterExpression("(#var1 = :val1)");
-//      scanSpec.withNameMap(nameMap);
-//      scanSpec.withValueMap(valueMap);
-//
-//      
-//
-//      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
-//      int num = 0;
-//      for (Item item : scanResult)
-//      {
-//         num += 1;
-//         String val = item.getString("shipRegion");
-//         if (val == null)
-//            val = item.getString("shipregion");
-//         val += "";
-//
-//         System.out.println(val + " - " + item.asMap());
-//         if (!"null".equalsIgnoreCase(val))
-//         {
-//            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
-//            throw new RuntimeException("WRONG!!!");
-//         }
-//      }
-//
-//      if (num == 0)
-//         throw new RuntimeException("WRONG!!!");
-//
-//      System.out.println("done");
+      //      //--
+      //      //--
+      //      //--
+      //
+      //      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
+      //
+      //      Map nameMap = new HashMap();
+      //      nameMap.put("#var1", "shipregion");
+      //
+      //      Map valueMap = new HashMap();
+      //      valueMap.put(":val1", null);
+      //
+      //      ScanSpec scanSpec = new ScanSpec();
+      //      scanSpec.withMaxPageSize(1000);
+      //      scanSpec.withMaxResultSize(1000);
+      //      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
+      //      scanSpec.withFilterExpression("(#var1 = :val1)");
+      //      scanSpec.withNameMap(nameMap);
+      //      scanSpec.withValueMap(valueMap);
+      //
+      //      
+      //
+      //      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
+      //      int num = 0;
+      //      for (Item item : scanResult)
+      //      {
+      //         num += 1;
+      //         String val = item.getString("shipRegion");
+      //         if (val == null)
+      //            val = item.getString("shipregion");
+      //         val += "";
+      //
+      //         System.out.println(val + " - " + item.asMap());
+      //         if (!"null".equalsIgnoreCase(val))
+      //         {
+      //            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
+      //            throw new RuntimeException("WRONG!!!");
+      //         }
+      //      }
+      //
+      //      if (num == 0)
+      //         throw new RuntimeException("WRONG!!!");
+      //
+      //      System.out.println("done");
 
       //--
       //--
       //--
 
-      final Api api = service.getApi(apiCode);
+      final Api api = engine.getApi(apiCode);
       api.withDb(dynamoDb);
       api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
 
       dynamoDb.startup();
 
-      //      service.withListener(new ServiceListener()
+      //      service.withListener(new EngineListener()
       //         {
       //            @Override
-      //            public void onStartup(Service service)
+      //            public void onStartup(Engine service)
       //            {
       Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
       orders.withName("orders");
@@ -164,10 +164,10 @@ public class DynamoServiceFactory
          int deletedCount = 0;
          while (iterator.hasNext())
          {
-            deletedCount +=1;
-            if(deletedCount % 100 == 0)
+            deletedCount += 1;
+            if (deletedCount % 100 == 0)
                System.out.print(deletedCount + " ");
-            
+
             Item item = iterator.next();
             Object hk = item.get("hk");
             Object sk = item.get("sk");
@@ -175,7 +175,7 @@ public class DynamoServiceFactory
          }
 
          //--confirm all deleted
-         res = service.get("northwind/dynamodb/orders");
+         res = engine.get("northwind/dynamodb/orders");
          res.statusOk();
          Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
 
@@ -188,9 +188,9 @@ public class DynamoServiceFactory
          String next = start;
          do
          {
-            ArrayNode toPost = new ArrayNode();
+            JsonArray toPost = new JsonArray();
 
-            res = service.get(next);
+            res = engine.get(next);
             if (res.data().size() == 0)
                break;
 
@@ -201,7 +201,7 @@ public class DynamoServiceFactory
             for (Object o : res.data())
             {
                total += 1;
-               ObjectNode js = (ObjectNode) o;
+               JsonMap js = (JsonMap) o;
 
                js.remove("href");
                js.put("type", "ORDER");
@@ -223,7 +223,7 @@ public class DynamoServiceFactory
                toPost.add(js);
             }
 
-            res = service.post("northwind/dynamodb/orders", toPost);
+            res = engine.post("northwind/dynamodb/orders", toPost);
             Utils.assertEq(201, res.getStatusCode());
             System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
          }
@@ -233,7 +233,7 @@ public class DynamoServiceFactory
          Utils.assertEq(830, total);
       }
 
-      return service;
+      return engine;
    }
 
    public static void main(String[] args) throws Exception

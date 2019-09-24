@@ -32,7 +32,7 @@ public class Url implements Cloneable
    protected int        port     = 0;
    protected Path       path     = null;
    protected String     query    = null;
-   protected ObjectNode params   = new ObjectNode();
+   protected JsonMap params   = new JsonMap();
 
    public Url copy()
    {
@@ -44,7 +44,7 @@ public class Url implements Cloneable
       u.path = path;
       u.query = query;
       if (params.size() > 0)
-         Utils.parseObjectNode(params.toString());
+         Utils.parseJsonMap(params.toString());
 
       return u;
    }
@@ -117,7 +117,6 @@ public class Url implements Cloneable
             url = url.substring(0, queryIndex);
 
             withQuery(query);
-            //this.params = new ObjectNode(Utils.parseQueryString(query));
          }
 
          //replace slashes after stripping off query to leave query as it was found
@@ -362,7 +361,7 @@ public class Url implements Cloneable
    public Url withQuery(String query)
    {
       this.query = query;
-      params = new ObjectNode();
+      params = new JsonMap();
       if (query != null)
       {
          params.putAll(Utils.parseQueryString(query));

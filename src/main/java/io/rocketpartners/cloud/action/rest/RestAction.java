@@ -6,7 +6,7 @@ import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 public class RestAction extends Action<RestAction>
 {
@@ -30,19 +30,19 @@ public class RestAction extends Action<RestAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (req.isMethod("GET"))
       {
-         get.run(service, api, endpoint, chain, req, res);
+         get.run(engine, api, endpoint, chain, req, res);
       }
       else if (req.isMethod("POST", "PUT"))
       {
-         post.run(service, api, endpoint, chain, req, res);
+         post.run(engine, api, endpoint, chain, req, res);
       }
       else if (req.isMethod("DELETE"))
       {
-         delete.run(service, api, endpoint, chain, req, res);
+         delete.run(engine, api, endpoint, chain, req, res);
       }
    }
 

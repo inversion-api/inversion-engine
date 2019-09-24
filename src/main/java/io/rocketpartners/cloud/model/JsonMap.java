@@ -29,27 +29,27 @@ import java.util.Set;
 
 import io.rocketpartners.cloud.utils.Utils;
 
-public class ObjectNode implements Map<String, Object>
+public class JsonMap implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
 
-   public ObjectNode()
+   public JsonMap()
    {
 
    }
 
-   public ObjectNode(Object... nvPairs)
+   public JsonMap(Object... nvPairs)
    {
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
-         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof ObjectNode)))
-            throw new RuntimeException("Incorrect constructor called.  Should have called ObjectNode(Map)");
+         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JsonMap)))
+            throw new RuntimeException("Incorrect constructor called.  Should have called JSMap(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
       }
    }
 
-   public ObjectNode(Map map)
+   public JsonMap(Map map)
    {
       for (Object key : map.keySet())
       {
@@ -57,14 +57,19 @@ public class ObjectNode implements Map<String, Object>
       }
    }
 
-   public ObjectNode getNode(String name)
+   public boolean isArray()
    {
-      return (ObjectNode) get(name);
+      return false;
    }
 
-   public ArrayNode getArray(String name)
+   public JsonMap getMap(String name)
    {
-      return (ArrayNode) get(name);
+      return (JsonMap) get(name);
+   }
+
+   public JsonArray getArray(String name)
+   {
+      return (JsonArray) get(name);
    }
 
    public String getString(String name)
@@ -73,6 +78,16 @@ public class ObjectNode implements Map<String, Object>
       if (value != null)
          return value.toString();
       return null;
+   }
+
+   public int getInt(String name)
+   {
+      return findInt(name);
+   }
+
+   public boolean getBoolean(String name)
+   {
+      return findBoolean(name);
    }
 
    public String findString(String path)
@@ -102,14 +117,14 @@ public class ObjectNode implements Map<String, Object>
       return false;
    }
 
-   public ObjectNode findNode(String path)
+   public JsonMap findMap(String path)
    {
-      return (ObjectNode) find(path);
+      return (JsonMap) find(path);
    }
 
-   public ArrayNode findArray(String path)
+   public JsonArray findArray(String path)
    {
-      return (ArrayNode) find(path);
+      return (JsonArray) find(path);
    }
 
    public Object find(String path)
@@ -121,7 +136,7 @@ public class ObjectNode implements Map<String, Object>
       {
          if (obj == null)
             break;
-         obj = ((ObjectNode) obj).get(prop);
+         obj = ((JsonMap) obj).get(prop);
       }
       return obj;
    }
@@ -261,9 +276,9 @@ public class ObjectNode implements Map<String, Object>
          String name = p.name;
          Object value = p.value;
 
-         if (value instanceof ArrayNode)
+         if (value instanceof JsonArray)
          {
-            map.put(name, ((ArrayNode) p.getValue()).asList());
+            map.put(name, ((JsonArray) p.getValue()).asList());
          }
          else
          {
@@ -277,17 +292,17 @@ public class ObjectNode implements Map<String, Object>
    @Override
    public String toString()
    {
-      return Utils.toJson((ObjectNode) this);
+      return Utils.toJson((JsonMap) this);
    }
 
    public String toString(boolean pretty)
    {
-      return Utils.toJson((ObjectNode) this, pretty, false);
+      return Utils.toJson((JsonMap) this, pretty, false);
    }
 
    public String toString(boolean pretty, boolean tolowercase)
    {
-      return Utils.toJson((ObjectNode) this, pretty, tolowercase);
+      return Utils.toJson((JsonMap) this, pretty, tolowercase);
    }
 
    @Override

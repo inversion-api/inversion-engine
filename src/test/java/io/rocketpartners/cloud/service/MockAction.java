@@ -2,15 +2,15 @@ package io.rocketpartners.cloud.service;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 
 public class MockAction extends Action<MockAction>
 {
-   ObjectNode json = null;
+   JsonMap json = null;
 
    public MockAction()
    {
@@ -19,7 +19,7 @@ public class MockAction extends Action<MockAction>
    
    public MockAction(String name)
    {
-      this(null, null, name, new ObjectNode("name", name));
+      this(null, null, name, new JsonMap("name", name));
    }
 
    public MockAction(String methods, String includePaths, String name)
@@ -27,7 +27,7 @@ public class MockAction extends Action<MockAction>
       this(methods, includePaths, name, null);
    }
 
-   public MockAction(String methods, String includePaths, String name, ObjectNode json)
+   public MockAction(String methods, String includePaths, String name, JsonMap json)
    {
       withMethods(methods);
       withIncludePaths(includePaths);
@@ -36,18 +36,18 @@ public class MockAction extends Action<MockAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (json != null)
       {
-         if (json instanceof ArrayNode)
-            res.withData((ArrayNode) json);
+         if (json instanceof JsonArray)
+            res.withData((JsonArray) json);
          else
-            res.withData(new ArrayNode(json));
+            res.withData(new JsonArray(json));
       }
    }
 
-   public MockAction withJson(ObjectNode json)
+   public MockAction withJson(JsonMap json)
    {
       this.json = json;
       return null;

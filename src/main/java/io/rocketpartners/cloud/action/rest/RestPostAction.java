@@ -26,19 +26,19 @@ import ch.qos.logback.classic.net.SyslogAppender;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Change;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -65,7 +65,7 @@ public class RestPostAction extends Action<RestPostAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       if (strictRest)
       {
@@ -78,7 +78,7 @@ public class RestPostAction extends Action<RestPostAction>
       Collection collection = req.getCollection();
       List<Change> changes = new ArrayList();
       List<String> entityKeys = new ArrayList();
-      ObjectNode obj = req.getJson();
+      JsonMap obj = req.getJson();
 
       if (obj == null)
          throw new ApiException(SC.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
@@ -88,19 +88,19 @@ public class RestPostAction extends Action<RestPostAction>
 
       if (collapseAll || collapses.size() > 0)
       {
-         obj = Utils.parseObjectNode(obj.toString());
+         obj = Utils.parseJsonMap(obj.toString());
          collapse(obj, collapseAll, collapses, "");
       }
 
       try
       {
-         if (obj instanceof ArrayNode)
+         if (obj instanceof JsonArray)
          {
             if (!Utils.empty(req.getEntityKey()))
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
             }
-            entityKeys = upsert(req, collection, (ArrayNode) obj);
+            entityKeys = upsert(req, collection, (JsonArray) obj);
          }
          else
          {
@@ -110,7 +110,7 @@ public class RestPostAction extends Action<RestPostAction>
                throw new ApiException(SC.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
             }
 
-            entityKeys = upsert(req, collection, new ArrayNode(obj));
+            entityKeys = upsert(req, collection, new JsonArray(obj));
          }
 
          res.withChanges(changes);
@@ -118,7 +118,7 @@ public class RestPostAction extends Action<RestPostAction>
          //-- take all of the hrefs and combine into a 
          //-- single href for the "Location" header
 
-         ArrayNode array = new ArrayNode();
+         JsonArray array = new JsonArray();
          res.getJson().put("data", array);
 
          res.withStatus(SC.SC_201_CREATED);
@@ -130,35 +130,10 @@ public class RestPostAction extends Action<RestPostAction>
             String href = Chain.buildLink(collection, entityKey, null);
 
             boolean added = false;
-            //            if (expandResponse)
-            //            {
-            //               Response resp = service.get(href);
-            //               if (resp != null)
-            //               {
-            //                  ObjectNode js = resp.getJson();
-            //                  if (js != null)
-            //                  {
-            //                     js = js.getNode("data");
-            //                     if (js instanceof ArrayNode && ((ArrayNode) js).length() == 1)
-            //                     {
-            //                        array.add(((ArrayNode) js).get(0));
-            //                        added = true;
-            //                     }
-            //                  }
-            //                  else
-            //                  {
-            //                     System.out.println("what?");
-            //                  }
-            //               }
-            //               else
-            //               {
-            //                  System.out.println("what?");
-            //               }
-            //            }
 
             if (!added)
             {
-               array.add(new ObjectNode("href", href));
+               array.add(new JsonMap("href", href));
             }
 
             String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
@@ -174,18 +149,18 @@ public class RestPostAction extends Action<RestPostAction>
       }
       finally
       {
-         // don't do this anymore, connection will be committed/rollbacked and closed in the Service class
+         // don't do this anymore, connection will be committed/rollbacked and closed in the Engine class
          //SqlUtils.close(conn);
       }
 
    }
 
-   protected List<String> upsert(Request req, Collection collection, ArrayNode nodes) throws Exception
+   protected List<String> upsert(Request req, Collection collection, JsonArray nodes) throws Exception
    {
       Map<String, Object> mapped;
       Set copied = new HashSet();
       List<Map<String, Object>> maps = new ArrayList<Map<String, Object>>();
-      for (ObjectNode node : (List<ObjectNode>) ((ArrayNode) nodes).asList())
+      for (JsonMap node : (List<JsonMap>) ((JsonArray) nodes).asList())
       {
          mapped = new HashMap();
          for (Attribute attr : collection.getEntity().getAttributes())
@@ -274,7 +249,7 @@ public class RestPostAction extends Action<RestPostAction>
     * a client does not want to scrub their json model before posting changes to
     * the parent document back to the parent collection.
     */
-   public static void collapse(ObjectNode parent, boolean collapseAll, Set collapses, String path)
+   public static void collapse(JsonMap parent, boolean collapseAll, Set collapses, String path)
    {
       for (String key : (List<String>) new ArrayList(parent.keySet()))
       {
@@ -282,9 +257,9 @@ public class RestPostAction extends Action<RestPostAction>
 
          if (collapseAll || collapses.contains(nextPath(path, key)))
          {
-            if (value instanceof ArrayNode)
+            if (value instanceof JsonArray)
             {
-               ArrayNode children = (ArrayNode) value;
+               JsonArray children = (JsonArray) value;
                if (children.length() == 0)
                   parent.remove(key);
 
@@ -297,14 +272,14 @@ public class RestPostAction extends Action<RestPostAction>
                      continue;
                   }
 
-                  if (children.get(i) instanceof ArrayNode || !(children.get(i) instanceof ObjectNode))
+                  if (children.get(i) instanceof JsonArray || !(children.get(i) instanceof JsonMap))
                   {
                      children.remove(i);
                      i--;
                      continue;
                   }
 
-                  ObjectNode child = children.getObject(i);
+                  JsonMap child = children.getObject(i);
                   for (String key2 : (List<String>) new ArrayList(child.keySet()))
                   {
                      if (!key2.equalsIgnoreCase("href"))
@@ -325,9 +300,9 @@ public class RestPostAction extends Action<RestPostAction>
                   parent.remove(key);
 
             }
-            else if (value instanceof ObjectNode)
+            else if (value instanceof JsonMap)
             {
-               ObjectNode child = (ObjectNode) value;
+               JsonMap child = (JsonMap) value;
                for (String key2 : (List<String>) new ArrayList(child.keySet()))
                {
                   if (!key2.equalsIgnoreCase("href"))
@@ -339,20 +314,20 @@ public class RestPostAction extends Action<RestPostAction>
                   parent.remove(key);
             }
          }
-         else if (value instanceof ArrayNode)
+         else if (value instanceof JsonArray)
          {
-            ArrayNode children = (ArrayNode) value;
+            JsonArray children = (JsonArray) value;
             for (int i = 0; i < children.length(); i++)
             {
-               if (children.get(i) instanceof ObjectNode && !(children.get(i) instanceof ArrayNode))
+               if (children.get(i) instanceof JsonMap && !(children.get(i) instanceof JsonArray))
                {
                   collapse(children.getObject(i), collapseAll, collapses, nextPath(path, key));
                }
             }
          }
-         else if (value instanceof ObjectNode)
+         else if (value instanceof JsonMap)
          {
-            collapse((ObjectNode) value, collapseAll, collapses, nextPath(path, key));
+            collapse((JsonMap) value, collapseAll, collapses, nextPath(path, key));
          }
 
       }

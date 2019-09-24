@@ -19,32 +19,32 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 public class Api
 {
-   transient volatile boolean  started     = false;
-   transient volatile boolean  starting    = false;
-   transient long              loadTime    = 0;
-   transient Hashtable         cache       = new Hashtable();
-   transient protected String  hash        = null;
+   transient volatile boolean started     = false;
+   transient volatile boolean starting    = false;
+   transient long             loadTime    = 0;
+   transient Hashtable        cache       = new Hashtable();
+   transient protected String hash        = null;
 
-   protected transient Service service     = null;
+   protected transient Engine engine      = null;
 
-   protected boolean           debug       = false;
+   protected boolean          debug       = false;
 
-   protected int               id          = 0;
+   protected int              id          = 0;
 
-   protected String            name        = null;
-   protected String            apiCode     = null;
-   protected boolean           multiTenant = false;
-   protected String            url         = null;
+   protected String           name        = null;
+   protected String           apiCode     = null;
+   protected boolean          multiTenant = false;
+   protected String           url         = null;
 
-   protected List<Db>          dbs         = new ArrayList();
-   protected List<Endpoint>    endpoints   = new ArrayList();
-   protected List<Action>      actions     = new ArrayList();
+   protected List<Db>         dbs         = new ArrayList();
+   protected List<Endpoint>   endpoints   = new ArrayList();
+   protected List<Action>     actions     = new ArrayList();
 
-   protected List<Collection>  collections = new ArrayList();
+   protected List<Collection> collections = new ArrayList();
 
    public Api()
    {
@@ -140,19 +140,19 @@ public class Api
       }
    }
 
-   public Api withService(Service service)
+   public Api withEngine(Engine engine)
    {
-      if (this.service != service)
+      if (this.engine != engine)
       {
-         this.service = service;
-         service.addApi(this);
+         this.engine = engine;
+         engine.addApi(this);
       }
       return this;
    }
 
-   public Service getService()
+   public Engine getEngine()
    {
-      return service;
+      return engine;
    }
 
    public int getId()

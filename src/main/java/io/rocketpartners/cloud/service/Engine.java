@@ -33,9 +33,9 @@ import io.rocketpartners.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -45,7 +45,7 @@ import io.rocketpartners.cloud.utils.Configurator;
 import io.rocketpartners.cloud.utils.English;
 import io.rocketpartners.cloud.utils.Utils;
 
-public class Service
+public class Engine
 {
    transient volatile boolean                started        = false;
    transient volatile boolean                starting       = false;
@@ -98,27 +98,27 @@ public class Service
     */
    protected transient volatile Response     lastResponse   = null;
 
-   protected transient List<ServiceListener> listeners      = new ArrayList();
+   protected transient List<EngineListener> listeners      = new ArrayList();
 
    /**
-    * Service reflects all request headers along with those supplied in <code>allowHeaders</code> as 
+    * Engine reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
    protected String                          allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
-   public static interface ServiceListener
+   public static interface EngineListener
    {
-      public void onStartup(Service service);
+      public void onStartup(Engine service);
 
    }
 
-   public Service()
+   public Engine()
    {
 
    }
 
-   public Service(Api api)
+   public Engine(Api api)
    {
       withApi(api);
    }
@@ -137,7 +137,7 @@ public class Service
 
    }
 
-   public synchronized Service startup()
+   public synchronized Engine startup()
    {
       if (started || starting) //initing is an accidental recursion guard
          return this;
@@ -154,11 +154,11 @@ public class Service
             api.startup();
          }
 
-         for (ServiceListener listener : listeners)
+         for (EngineListener listener : listeners)
          {
             try
             {
-               listener.onStartup(Service.this);
+               listener.onStartup(Engine.this);
             }
             catch (Exception ex)
             {
@@ -236,7 +236,7 @@ public class Service
       return started;
    }
 
-   public Service withListener(ServiceListener listener)
+   public Engine withListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
@@ -258,12 +258,12 @@ public class Service
       return service("POST", url, (body != null ? body.toString() : null));
    }
 
-   public Response put(String url, ObjectNode body)
+   public Response put(String url, JsonMap body)
    {
       return service("PUT", url, body.toString());
    }
 
-   public Response post(String url, ObjectNode body)
+   public Response post(String url, JsonMap body)
    {
       return service("POST", url, body.toString());
    }
@@ -283,7 +283,7 @@ public class Service
       return service("DELETE", url, (String) null);
    }
 
-   public Response delete(String url, ArrayNode hrefs)
+   public Response delete(String url, JsonArray hrefs)
    {
       return service("DELETE", url, hrefs.toString());
    }
@@ -296,13 +296,13 @@ public class Service
    public Request request(String method, String url, String body)
    {
       Request req = new Request(method, url, body);
-      req.withService(this);
+      req.withEngine(this);
 
       return req;
    }
 
    /**
-    * @return the last response serviced by this Service.
+    * @return the last response serviced by this Engine.
     */
    public Response response()
    {
@@ -312,7 +312,7 @@ public class Service
    public Response service(String method, String url, String body)
    {
       Request req = new Request(method, url, body);
-      req.withService(this);
+      req.withEngine(this);
 
       Response res = new Response();
 
@@ -323,7 +323,7 @@ public class Service
    public Response forward(String method, String url)
    {
       Request req = new Request(method, url, null);
-      req.withService(this);
+      req.withEngine(this);
 
       Response res = Chain.peek().getResponse();
 
@@ -597,7 +597,7 @@ public class Service
          {
             if (req != null && req.isDebug() && ((ApiException) ex).getStatus().startsWith("5"))
             {
-               log.error("Error in Service", ex);
+               log.error("Error in Engine", ex);
             }
 
             status = ((ApiException) ex).getStatus();
@@ -611,11 +611,11 @@ public class Service
          }
          else
          {
-            log.error("Error in Service", ex);
+            log.error("Error in Engine", ex);
          }
 
          res.withStatus(status);
-         ObjectNode response = new ObjectNode("message", ex.getMessage());
+         JsonMap response = new JsonMap("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
@@ -638,7 +638,7 @@ public class Service
          }
          catch (Throwable ex)
          {
-            log.error("Error in Service", ex);
+            log.error("Error in Engine", ex);
          }
 
          Chain.pop();
@@ -688,7 +688,7 @@ public class Service
                res.withContentType("application/json");
          }
 
-         ObjectNode headers = new ObjectNode();
+         JsonMap headers = new JsonMap();
          for (String key : res.getHeaders().keySet())
          {
             List values = res.getHeaders().get(key);
@@ -766,7 +766,7 @@ public class Service
       return api;
    }
 
-   public Service withApi(Api api)
+   public Engine withApi(Api api)
    {
       addApi(api);
       return this;
@@ -800,7 +800,7 @@ public class Service
          existingApi.shutdown();
       }
 
-      api.withService(this);
+      api.withEngine(this);
    }
 
    public synchronized void removeApi(Api api)
@@ -862,7 +862,7 @@ public class Service
       this.servletMapping = servletMapping;
    }
 
-   public Service withServletMapping(String servletMapping)
+   public Engine withServletMapping(String servletMapping)
    {
       setServletMapping(servletMapping);
       return this;

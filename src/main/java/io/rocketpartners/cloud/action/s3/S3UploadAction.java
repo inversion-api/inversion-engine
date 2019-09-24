@@ -36,14 +36,14 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Request.Upload;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.utils.Utils;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * Sends browser multi-part file uploads to a defined S3 location
@@ -83,7 +83,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String requestPath = null;
       String fileName = null;
@@ -129,7 +129,7 @@ public class S3UploadAction extends Action<S3UploadAction>
 
          responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
          responseContent.put("fileSizeBytes", fileSize);
-         res.withJson(new ObjectNode(responseContent));
+         res.withJson(new JsonMap(responseContent));
       }
       finally
       {
@@ -149,7 +149,7 @@ public class S3UploadAction extends Action<S3UploadAction>
       Map<String, String> content = new HashMap<>();
       content.put("message", message);
       content.put("error", "Bad Request Exception");
-      res.withJson(new ObjectNode(content));
+      res.withJson(new JsonMap(content));
 
    }
 

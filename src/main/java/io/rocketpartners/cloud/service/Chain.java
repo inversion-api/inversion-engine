@@ -76,9 +76,9 @@ public class Chain
 
    }
 
-   public static Chain push(Service service, Request req, Response res)
+   public static Chain push(Engine engine, Request req, Response res)
    {
-      Chain child = new Chain(service, req, res);
+      Chain child = new Chain(engine, req, res);
 
       Chain parent = peek();
       if (parent != null)
@@ -194,7 +194,7 @@ public class Chain
       return url;
    }
 
-   protected Service            service  = null;
+   protected Engine             engine   = null;
    protected List<Action>       actions  = new ArrayList();
    protected Request            request  = null;
    protected Response           response = null;
@@ -206,9 +206,9 @@ public class Chain
 
    protected Chain              parent   = null;
 
-   private Chain(Service service, Request req, Response res)
+   private Chain(Engine engine, Request req, Response res)
    {
-      this.service = service;
+      this.engine = engine;
       this.request = req;
       this.response = res;
    }
@@ -416,7 +416,7 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
-         action.run(service, request.getApi(), request.getEndpoint(), this, request, response);
+         action.run(engine, request.getApi(), request.getEndpoint(), this, request, response);
          return true;
       }
       return false;
@@ -432,9 +432,9 @@ public class Chain
       this.canceled = true;
    }
 
-   public Service getService()
+   public Engine getEngine()
    {
-      return service;
+      return engine;
    }
 
    public Api getApi()

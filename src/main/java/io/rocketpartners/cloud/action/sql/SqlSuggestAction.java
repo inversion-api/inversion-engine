@@ -30,7 +30,7 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.SqlUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -42,7 +42,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
    protected String          searchProp   = "value";
    protected String          tenantCol    = "tenantId";
 
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
             String propertyProp = chain.getConfig("propertyProp", this.propertyProp);
             String searchProp = chain.getConfig("searchProp", this.searchProp);

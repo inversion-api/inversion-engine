@@ -29,7 +29,7 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.User;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Inversion;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 public class Demo002AclRules
 {
@@ -47,7 +47,7 @@ public class Demo002AclRules
             //generally you would use AuthAction or a custom subclass to do authentication and authorization
             //and pull credentials from a dirctory or db etc.  This is here as a trivial example showing how
             //a user with permissions is attached to the request
-            public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+            public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
             {
                String username = req.getParam("username");
 

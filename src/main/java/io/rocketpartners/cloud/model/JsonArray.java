@@ -25,11 +25,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ArrayNode extends ObjectNode implements Iterable
+public class JsonArray extends JsonMap implements Iterable
 {
    List objects = new ArrayList();
 
-   public ArrayNode(Object... objects)
+   public JsonArray(Object... objects)
    {
       if (objects != null && objects.length == 1 && objects[0].getClass().isArray())
       {
@@ -42,6 +42,11 @@ public class ArrayNode extends ObjectNode implements Iterable
 
       for (int i = 0; objects != null && i < objects.length; i++)
          add(objects[i]);
+   }
+
+   public boolean isArray()
+   {
+      return true;
    }
 
    public Object get(int index)
@@ -84,7 +89,7 @@ public class ArrayNode extends ObjectNode implements Iterable
       return remove(Integer.parseInt(index.toString().trim()));
    }
 
-   public void addAll(ArrayNode array)
+   public void addAll(JsonArray array)
    {
       objects.addAll(array.asList());
    }
@@ -99,9 +104,9 @@ public class ArrayNode extends ObjectNode implements Iterable
       return (String) get(index);
    }
 
-   public ObjectNode getObject(int index)
+   public JsonMap getObject(int index)
    {
-      return (ObjectNode) get(index);
+      return (JsonMap) get(index);
    }
 
    public void setObject(int index, Object o)
@@ -109,9 +114,9 @@ public class ArrayNode extends ObjectNode implements Iterable
       objects.set(index, o);
    }
 
-   public ArrayNode getArray(int index)
+   public JsonArray getArray(int index)
    {
-      return (ArrayNode) get(index);
+      return (JsonArray) get(index);
    }
 
    public boolean contains(Object object)
@@ -144,10 +149,10 @@ public class ArrayNode extends ObjectNode implements Iterable
 
    public void sort(final String key)
    {
-      Collections.sort(objects, new Comparator<ObjectNode>()
+      Collections.sort(objects, new Comparator<JsonMap>()
          {
             @Override
-            public int compare(ObjectNode o1, ObjectNode o2)
+            public int compare(JsonMap o1, JsonMap o2)
             {
                Object val1 = o1.get(key);
                Object val2 = o2.get(key);

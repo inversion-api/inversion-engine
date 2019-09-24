@@ -12,12 +12,12 @@ import org.junit.Test;
 
 import io.rocketpartners.cloud.action.security.AuthAction;
 import io.rocketpartners.cloud.action.sql.SqlDb;
-import io.rocketpartners.cloud.action.sql.SqlServiceFactory;
+import io.rocketpartners.cloud.action.sql.SqlEngineFactory;
 import io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Relationship;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Configurator;
 import io.rocketpartners.cloud.utils.Utils;
 import io.rocketpartners.cloud.utils.Wirer;
@@ -34,7 +34,7 @@ public class TestConfigurator extends TestCase
    @Test
    public void testConfigSimple()
    {
-      Service dev = new Service();
+      Engine dev = new Engine();
       dev.setProfile("dev");
       dev.setConfigPath("io/rocketpartners/cloud/service/config/");
       dev.startup();
@@ -43,7 +43,7 @@ public class TestConfigurator extends TestCase
       assertEquals(20, ((SqlDb) devApi.getDb("db")).getPoolMax());
       assertEquals(0, devApi.getActions().size());
 
-      Service prod = new Service();
+      Engine prod = new Engine();
       prod.setProfile("prod");
       prod.setConfigPath("io/rocketpartners/cloud/service/config/");
       prod.startup();
@@ -67,8 +67,8 @@ public class TestConfigurator extends TestCase
    @Test
    public void testEncodeDecodeEncodeAccuracy1() throws Exception
    {
-      Service service = SqlServiceFactory.service();
-      Api source = service.getApi("northwind");
+      Engine engine = SqlEngineFactory.service();
+      Api source = engine.getApi("northwind");
       Properties props1 = Configurator.encode(source);
 
       Wirer w = new Wirer();

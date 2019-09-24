@@ -25,7 +25,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import io.rocketpartners.cloud.rql.Term;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.HttpUtils;
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -40,7 +40,7 @@ public class Request
    Url                                    url                    = null;
    String                                 method                 = null;
 
-   Service                                service                = null;
+   Engine                                 engine                 = null;
    Api                                    api                    = null;
    Path                                   apiPath                = null;
    String                                 apiCode                = null;
@@ -57,7 +57,7 @@ public class Request
    String                                 subCollectionKey       = null;
 
    String                                 body                   = null;
-   ObjectNode                             json                   = null;
+   JsonMap                             json                   = null;
 
    boolean                                browse                 = false;
 
@@ -78,9 +78,9 @@ public class Request
       withBody(body);
    }
 
-   public Request(Service service, String method, String url, Object body)
+   public Request(Engine engine, String method, String url, Object body)
    {
-      withService(service);
+      withEngine(engine);
       withMethod(method);
       withUrl(url);
       if (body != null)
@@ -118,9 +118,9 @@ public class Request
 
    public Response go()
    {
-      if (service != null)
+      if (engine != null)
       {
-         return service.service(this, new Response()).getResponse();
+         return engine.service(this, new Response()).getResponse();
       }
       else
       {
@@ -159,14 +159,14 @@ public class Request
       //      }
    }
 
-   public Service getService()
+   public Engine getEngine()
    {
-      return service;
+      return engine;
    }
 
-   public Request withService(Service service)
+   public Request withEngine(Engine service)
    {
-      this.service = service;
+      this.engine = service;
       return this;
    }
 
@@ -245,7 +245,7 @@ public class Request
       return this;
    }
 
-   public ObjectNode getJson() throws ApiException
+   public JsonMap getJson() throws ApiException
    {
       if (json != null)
          return json;
@@ -256,7 +256,7 @@ public class Request
 
       try
       {
-         json = Utils.parseObjectNode(body);
+         json = Utils.parseJsonMap(body);
       }
       catch (Exception ex)
       {
@@ -636,9 +636,9 @@ public class Request
     */
    boolean prune(Object parent)
    {
-      if (parent instanceof ArrayNode)
+      if (parent instanceof JsonArray)
       {
-         ArrayNode arr = ((ArrayNode) parent);
+         JsonArray arr = ((JsonArray) parent);
          for (int i = 0; i < arr.length(); i++)
          {
             if (prune(arr.get(i)))
@@ -649,10 +649,10 @@ public class Request
          }
          return arr.length() == 0;
       }
-      else if (parent instanceof ObjectNode)
+      else if (parent instanceof JsonMap)
       {
          boolean prune = true;
-         ObjectNode js = (ObjectNode) parent;
+         JsonMap js = (JsonMap) parent;
          for (String key : js.keySet())
          {
             Object child = js.get(key);

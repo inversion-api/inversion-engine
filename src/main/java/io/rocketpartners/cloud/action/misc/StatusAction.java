@@ -7,7 +7,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * This endpoint does not do anything but return the configured HTTP status, defaulted to 200.
@@ -39,7 +39,7 @@ public class StatusAction extends Action<StatusAction>
       super(inludePaths, excludePaths, config);
    }
 
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       res.withStatus(status);
       res.withStatusCode(statusCode);

@@ -26,7 +26,7 @@ import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
 import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Entity;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Results;
 import io.rocketpartners.cloud.model.SC;
@@ -117,9 +117,9 @@ public class ElasticDb extends Db<ElasticDb>
       {
          // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-         ObjectNode jsObj = allResp.getJson();
+         JsonMap jsObj = allResp.getJson();
 
-         Map<String, ObjectNode> jsContentMap = jsObj.asMap();
+         Map<String, JsonMap> jsContentMap = jsObj.asMap();
 
          // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
          Map<String, Table> tableMap = new HashMap<String, Table>();
@@ -129,7 +129,7 @@ public class ElasticDb extends Db<ElasticDb>
             // we now have the index and with it, it's aliases and mappings
             Object t = jsContentMap.get(key);
 
-            buildAliasTables(key, (ObjectNode) t, tableMap);
+            buildAliasTables(key, (JsonMap) t, tableMap);
          }
       }
       else
@@ -165,16 +165,16 @@ public class ElasticDb extends Db<ElasticDb>
     * @param jsIndex
     * @return
     */
-   private void buildAliasTables(String elasticName, ObjectNode jsIndex, Map<String, Table> tableMap)
+   private void buildAliasTables(String elasticName, JsonMap jsIndex, Map<String, Table> tableMap)
    {
 
       String aliasName = null;
-      ObjectNode jsMappingsDocPropsNode = jsIndex.findNode("mappings._doc.properties");
+      JsonMap jsMappingsDocPropsNode = jsIndex.findMap("mappings._doc.properties");
       if (jsMappingsDocPropsNode != null)
       {
-         Map<String, ObjectNode> jsMappingsDocProps = jsMappingsDocPropsNode.asMap();
-         Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
-         for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
+         Map<String, JsonMap> jsMappingsDocProps = jsMappingsDocPropsNode.asMap();
+         Map<String, JsonMap> jsAliasProps = jsIndex.getMap("aliases").asMap();
+         for (Map.Entry<String, JsonMap> propEntry : jsAliasProps.entrySet())
          {
             aliasName = propEntry.getKey();
 
@@ -203,12 +203,12 @@ public class ElasticDb extends Db<ElasticDb>
     * @param jsPropsMap - contains the parent's nested properties
     * @param parentPrefix - necessary for 'nested' column names.
     */
-   private void addColumns(Table table, boolean nullable, Map<String, ObjectNode> jsPropsMap, String parentPrefix)
+   private void addColumns(Table table, boolean nullable, Map<String, JsonMap> jsPropsMap, String parentPrefix)
    {
-      for (Map.Entry<String, ObjectNode> propEntry : jsPropsMap.entrySet())
+      for (Map.Entry<String, JsonMap> propEntry : jsPropsMap.entrySet())
       {
          String colName = parentPrefix + propEntry.getKey();
-         ObjectNode propValue = propEntry.getValue();
+         JsonMap propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
          if (propValue.hasProperty("type") && table.getColumn(colName) == null)

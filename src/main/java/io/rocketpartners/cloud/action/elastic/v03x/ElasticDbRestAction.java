@@ -23,7 +23,7 @@ import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 
 /**
  * 
@@ -37,12 +37,12 @@ public class ElasticDbRestAction extends Action
    //   ElasticDbPostHandler   post   = new ElasticDbPostHandler();
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       String method = req.getMethod();
       if ("GET".equalsIgnoreCase(method))
       {
-         get.run(service, api, endpoint, chain, req, res);
+         get.run(engine, api, endpoint, chain, req, res);
       }
       //      else if ("DELETE".equalsIgnoreCase(method))
       //      {

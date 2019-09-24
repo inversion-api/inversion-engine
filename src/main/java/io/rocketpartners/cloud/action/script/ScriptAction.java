@@ -55,14 +55,14 @@ import io.rocketpartners.cloud.action.script.velocity.VelocityResourceLoader;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 import net.jodah.expiringmap.ExpiringMap;
 
@@ -79,7 +79,7 @@ public class ScriptAction extends Action<ScriptAction>
    String                           scriptsCollection  = "scripts";
 
    long                             cacheExpireSeconds = 60 * 30;
-   Map<String, ObjectNode>            CACHE;
+   Map<String, JsonMap>            CACHE;
 
    boolean                          inited             = false;
 
@@ -96,7 +96,7 @@ public class ScriptAction extends Action<ScriptAction>
       scriptTypes.put("vm", "velocity");
    }
 
-   synchronized void init(Service service)
+   synchronized void init(Engine service)
    {
       if (!inited)
       {
@@ -156,24 +156,24 @@ public class ScriptAction extends Action<ScriptAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       scriptLocal.set(this);
       chainLocal.set(chain);
 
       if (!inited)
       {
-         init(service);
+         init(engine);
       }
 
-      LinkedHashMap<String, ObjectNode> scripts = findScripts(service, chain, req);
+      LinkedHashMap<String, JsonMap> scripts = findScripts(engine, chain, req);
       if (scripts.size() > 0)
       {
-         runScripts(service, api, endpoint, chain, req, res, scripts);
+         runScripts(engine, api, endpoint, chain, req, res, scripts);
       }
    }
 
-   void runScripts(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, ObjectNode> scripts) throws Exception
+   void runScripts(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, JsonMap> scripts) throws Exception
    {
       Map<String, Object> contexts = new HashMap();
 
@@ -183,7 +183,7 @@ public class ScriptAction extends Action<ScriptAction>
 
          for (String path : scripts.keySet())
          {
-            ObjectNode script = scripts.get(path);
+            JsonMap script = scripts.get(path);
             String type = script.getString("type");
 
             List<String> parts = Utils.explode("/", path);
@@ -204,7 +204,7 @@ public class ScriptAction extends Action<ScriptAction>
 
                   Value bindings = context.getBindings("js");
 
-                  bindings.putMember("service", service);
+                  bindings.putMember("engine", engine);
                   bindings.putMember("api", api);
                   bindings.putMember("endpoint", endpoint);
                   bindings.putMember("action", this);
@@ -232,7 +232,7 @@ public class ScriptAction extends Action<ScriptAction>
                   contexts.put("velocity", context);
 
                   context.put("method", req.getMethod());
-                  context.put("service", service);
+                  context.put("engine", engine);
                   context.put("api", api);
                   context.put("endpoint", endpoint);
                   context.put("action", this);
@@ -271,7 +271,7 @@ public class ScriptAction extends Action<ScriptAction>
             {
                try
                {
-                  ObjectNode obj = Utils.parseObjectNode(content);
+                  JsonMap obj = Utils.parseJsonMap(content);
                   res.withJson(obj);
                   setText = false;
                }
@@ -297,16 +297,16 @@ public class ScriptAction extends Action<ScriptAction>
       }
    }
 
-   public LinkedHashMap<String, ObjectNode> findScripts(Service service, Chain chain, Request req) throws Exception
+   public LinkedHashMap<String, JsonMap> findScripts(Engine engine, Chain chain, Request req) throws Exception
    {
-      Map<ObjectNode, String> paths = new HashMap();
-      List<ObjectNode> scripts = new ArrayList();
+      Map<JsonMap, String> paths = new HashMap();
+      List<JsonMap> scripts = new ArrayList();
 
       String subpath = req.getSubpath().toString();
 
       List<String> parts = Utils.explode("/", subpath);
 
-      ObjectNode script = null;
+      JsonMap script = null;
       String path = null;
 
       List<String> guesses = new ArrayList();
@@ -343,7 +343,7 @@ public class ScriptAction extends Action<ScriptAction>
 
          parts = Utils.explode("/", path);
 
-         List<ObjectNode> settings = new ArrayList();
+         List<JsonMap> settings = new ArrayList();
 
          for (int i = 0; i < parts.size(); i++)
          {
@@ -377,7 +377,7 @@ public class ScriptAction extends Action<ScriptAction>
       }
 
       LinkedHashMap ordered = new LinkedHashMap();
-      for (ObjectNode aScript : scripts)
+      for (JsonMap aScript : scripts)
       {
          ordered.put(paths.get(aScript), aScript);
       }
@@ -385,7 +385,7 @@ public class ScriptAction extends Action<ScriptAction>
       return ordered;
    }
 
-   public static ObjectNode findScript(final String path) throws Exception
+   public static JsonMap findScript(final String path) throws Exception
    {
       ScriptAction handler = scriptLocal.get();
       Chain chain = chainLocal.get();
@@ -419,16 +419,16 @@ public class ScriptAction extends Action<ScriptAction>
             paths.add(path + "." + e);
       }
 
-      ObjectNode script = null;
+      JsonMap script = null;
 
       for (String p : paths)
       {
 
          ext = handler.ext(p);
-         InputStream is = chain.getService().getResource(Utils.implode("/", scriptsDir, p));
+         InputStream is = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
          if (is != null)
          {
-            script = new ObjectNode("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
+            script = new JsonMap("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
             break;
          }
       }
@@ -436,10 +436,10 @@ public class ScriptAction extends Action<ScriptAction>
       if (script == null && !Utils.empty(scriptsCollection))
       {
          String url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
-         Response r = chain.getService().get(url);
+         Response r = chain.getEngine().get(url);
          if (r.getStatusCode() == 200)
          {
-            ArrayNode dataArr = r.getJson().getArray("data");
+            JsonArray dataArr = r.getJson().getArray("data");
             if (!dataArr.isEmpty())
             {
                script = dataArr.getObject(0);
@@ -463,7 +463,7 @@ public class ScriptAction extends Action<ScriptAction>
       return null;
    }
 
-   //   ObjectNode findScriptJson(Service service, String scriptName, Chain chain, Request req) throws Exception
+   //   ObjectNode findScriptJson(Engine service, String scriptName, Chain chain, Request req) throws Exception
    //   {
    //      String noScriptCache = req.removeParam("noScriptCache");
    //      String clearScriptCache = req.removeParam("clearScriptCache");
@@ -490,7 +490,7 @@ public class ScriptAction extends Action<ScriptAction>
    //         }
    //
    //         String url = req.getApiUrl() + scriptsCollection + "?name=" + scriptName;
-   //         Response r = chain.getService().include(chain, "GET", url, null);
+   //         Response r = chain.getEngine().include(chain, "GET", url, null);
    //         if (r.getStatusCode() == 200)
    //         {
    //            ArrayNode dataArr = r.getJson().getArray("data");

@@ -114,47 +114,6 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
          withTerms(terms);
    }
 
-   //   public QueryResults runQuery() throws Exception
-   //   {
-   //      TableResults tableResults = doSelect();
-   //      QueryResults queryResutls = transformResults(tableResults);
-   //      return queryResutls;
-   //   }
-   //
-   //   protected TableResults doSelect() throws Exception
-   //   {
-   //      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "You must implement Query.doSelect()");
-   //   }
-   //
-   //   protected QueryResults transformResults(TableResults tableResults) throws Exception
-   //   {
-   //      QueryResults queryResults = new QueryResults(this, tableResults.getRowCount());
-   //
-   //      for (Map row : tableResults)
-   //      {
-   //         queryResults.withRow(transformRow(row));
-   //      }
-   //
-   //      return queryResults;
-   //   }
-   //
-   //   protected ObjectNode transformRow(Map<String, Object> row)
-   //   {
-   //      ObjectNode node = new ObjectNode();
-   //      if (collection == null)
-   //         return new ObjectNode(row);
-   //
-   //      for (Attribute attr : collection.getEntity().getAttributes())
-   //      {
-   //         String attrName = attr.getName();
-   //         String colName = attr.getColumn().getName();
-   //         Object val = row.get(colName);
-   //         node.put(attrName, val);
-   //      }
-   //
-   //      return node;
-   //   }
-
    @Override
    public Parser getParser()
    {

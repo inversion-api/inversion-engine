@@ -77,26 +77,26 @@ public class Servlet extends HttpServlet
       }
    }
 
-   Service service = null;//new Service();
+   Engine engine = null;//new Engine();
 
    public void destroy()
    {
-      service.destroy();
+      engine.destroy();
    }
 
    public void init(ServletConfig config)
    {
-      service.startup();
+      engine.startup();
    }
 
-   public Service getService()
+   public Engine getEngine()
    {
-      return service;
+      return engine;
    }
 
-   public void setService(Service service)
+   public void setEngine(Engine engine)
    {
-      this.service = service;
+      this.engine = engine;
    }
 
    @Override
@@ -194,7 +194,7 @@ public class Servlet extends HttpServlet
 
          res = new Response();
 
-         service.service(req, res);
+         engine.service(req, res);
          writeResponse(req, res, httpResp);
       }
       catch (Exception ex)

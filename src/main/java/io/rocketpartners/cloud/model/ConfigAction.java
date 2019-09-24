@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -39,7 +39,7 @@ public class ConfigAction extends Action<ConfigAction>
       super(includePaths, excludePaths, config);
    }
 
-   public final void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public final void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
       //does nothing on purpose!
    }

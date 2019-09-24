@@ -28,14 +28,14 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.ArrayNode;
+import io.rocketpartners.cloud.model.JsonArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -96,7 +96,7 @@ public class AclAction extends Action<AclAction>
    }
 
    @Override
-   public void run(Service service, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
+   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
       List<AclRule> matched = new ArrayList<>();
       boolean allowed = false;
@@ -162,15 +162,15 @@ public class AclAction extends Action<AclAction>
       }
       finally
       {
-         ObjectNode json = resp.getJson();
+         JsonMap json = resp.getJson();
          if (json != null)
          {
-            List toClean = json instanceof ArrayNode ? ((ArrayNode) json).asList() : Arrays.asList(json);
+            List toClean = json instanceof JsonArray ? ((JsonArray) json).asList() : Arrays.asList(json);
             for (Object parent : toClean)
             {
-               if (parent instanceof ObjectNode)
+               if (parent instanceof JsonMap)
                {
-                  cleanJson(chain, (ObjectNode) parent, restricts, Collections.EMPTY_SET, true);
+                  cleanJson(chain, (JsonMap) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
@@ -266,15 +266,15 @@ public class AclAction extends Action<AclAction>
       }
    }
 
-   void cleanJson(Chain chain, ObjectNode json, Set<String> restricts, Set<String> requires, boolean silent)
+   void cleanJson(Chain chain, JsonMap json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
-         List objs = json instanceof ArrayNode ? ((ArrayNode) json).asList() : Arrays.asList(json);
+         List objs = json instanceof JsonArray ? ((JsonArray) json).asList() : Arrays.asList(json);
 
          for (String path : restricts)
          {
-            List<ObjectNode> found = new ArrayList();
+            List<JsonMap> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -291,7 +291,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (ObjectNode target : found)
+            for (JsonMap target : found)
             {
                target.remove(targetProp);
                if (!silent)
@@ -304,7 +304,7 @@ public class AclAction extends Action<AclAction>
 
          for (String path : requires)
          {
-            List<ObjectNode> found = new ArrayList();
+            List<JsonMap> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -321,7 +321,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (ObjectNode target : found)
+            for (JsonMap target : found)
             {
                if (target.keySet().size() == 1 && target.containsKey("href"))
                {

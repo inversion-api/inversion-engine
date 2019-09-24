@@ -27,12 +27,12 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.service.Chain;
-import io.rocketpartners.cloud.service.Service;
+import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
 
 /**
@@ -40,7 +40,7 @@ import io.rocketpartners.cloud.utils.Utils;
  */
 public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
-   Service service = null;
+   Engine engine = null;
    boolean debug   = false;
 
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
@@ -54,13 +54,13 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       String input = Utils.read(new BufferedInputStream(inputStream));
 
-      ObjectNode responseBody = new ObjectNode();
-      ObjectNode config = null;
+      JsonMap responseBody = new JsonMap();
+      JsonMap config = null;
       Exception ex = null;
 
       try
       {
-         ObjectNode json = Utils.parseObjectNode(input);
+         JsonMap json = Utils.parseJsonMap(input);
 
          debug("Request Event");
          debug(json.toString(false));
@@ -85,16 +85,16 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
          }
 
-         config = new ObjectNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
+         config = new JsonMap("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
-         if (service == null)
+         if (engine == null)
          {
             synchronized (this)
             {
-               if (service == null)
+               if (engine == null)
                {
-                  service = buildService(profile, servletPath);
-                  service.startup();
+                  engine = buildEngine(profile, servletPath);
+                  engine.startup();
                }
             }
          }
@@ -103,12 +103,12 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          Request req = null;
 
          Map headers = new HashMap();
-         ObjectNode jsonHeaders = json.getNode("headers");
+         JsonMap jsonHeaders = json.getMap("headers");
          if (jsonHeaders != null)
             headers = jsonHeaders.asMap();
 
          Map params = new HashMap();
-         ObjectNode jsonParams = json.getNode("queryStringParameters");
+         JsonMap jsonParams = json.getMap("queryStringParameters");
          if (jsonParams != null)
          {
             params = jsonParams.asMap();
@@ -125,7 +125,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          req = new Request(url.toString(), method, headers, params, body);
          res = new Response();
 
-         chain = service.service(req, res);
+         chain = engine.service(req, res);
 
          if (outputStream != null)
          {
@@ -146,12 +146,12 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("error", Utils.getShortCause(ex));
 
-            responseBody.put("request", Utils.parseObjectNode(input));
+            responseBody.put("request", Utils.parseJsonMap(input));
 
-            ObjectNode responseJson = new ObjectNode();
+            JsonMap responseJson = new JsonMap();
             responseJson.put("isBase64Encoded", false);
             responseJson.put("statusCode", "500");
-            responseJson.put("headers", new ObjectNode("Access-Control-Allow-Origin", "*"));
+            responseJson.put("headers", new JsonMap("Access-Control-Allow-Origin", "*"));
 
             responseJson.put("body", responseBody.toString());
             OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
@@ -167,27 +167,26 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
     * This method is here as a hook for sub classes to override.
     * @return
     */
-   protected Service buildService(String profile, String servletPath)
+   protected Engine buildEngine(String profile, String servletPath)
    {
-      Service service = new Service();
+      Engine engine = new Engine();
 
       if (!Utils.empty(profile))
-         service.setProfile(profile);
+         engine.setProfile(profile);
 
       if (!Utils.empty(servletPath))
-         service.setServletMapping(servletPath);
+         engine.setServletMapping(servletPath);
 
-      return service;
+      return engine;
    }
 
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
    {
-      ObjectNode responseJson = new ObjectNode();
+      JsonMap responseJson = new JsonMap();
 
       responseJson.put("isBase64Encoded", false);
       responseJson.put("statusCode", res.getStatusCode());
-      //responseJson.put("headers", new ObjectNode("Access-Control-Allow-Origin", "*"));
-      ObjectNode headers = new ObjectNode();
+      JsonMap headers = new JsonMap();
       responseJson.put("headers", headers);
 
       for (String key : res.getHeaders().keySet())

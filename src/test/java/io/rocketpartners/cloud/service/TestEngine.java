@@ -5,12 +5,12 @@ import org.junit.Test;
 import io.rocketpartners.cloud.action.misc.StatusAction;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.ObjectNode;
+import io.rocketpartners.cloud.model.JsonMap;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Response;
 import junit.framework.TestCase;
 
-public class TestService extends TestCase
+public class TestEngine extends TestCase
 {
 
    @Test
@@ -91,84 +91,84 @@ public class TestService extends TestCase
    @Test
    public void testEndpointMatching2()
    {
-      Service service = null;
+      Engine engine = null;
 
-      service = new Service()//
-                             .withApi("northwind")//
-                             .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
-                             .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
-                             .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
-                             .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction"))//
-                             .getService();
+      engine = new Engine()//
+                           .withApi("northwind")//
+                           .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
+                           .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
+                           .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
+                           .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction"))//
+                           .getEngine();
 
-      service.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
-      service.get("northwind/source").assertDebug("Action:", "sourceAction");
-      service.get("northwind/h2/collection").assertDebug("Actio:n", "h2Action");
-      service.get("northwind/mysql/collection/entity/subcollection").assertDebug("Action:", "mysqlAction");
-      service.get("northwind/dynamo/collection").assertDebug("Action:", "dynamoAction");
+      engine.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
+      engine.get("northwind/source").assertDebug("Action:", "sourceAction");
+      engine.get("northwind/h2/collection").assertDebug("Actio:n", "h2Action");
+      engine.get("northwind/mysql/collection/entity/subcollection").assertDebug("Action:", "mysqlAction");
+      engine.get("northwind/dynamo/collection").assertDebug("Action:", "dynamoAction");
    }
 
    @Test
    public void test1()
    {
-      Service service = null;
+      Engine engine = null;
 
-      service = new Service()//
-                             .withApi((String) null)//
-                             .withEndpoint("get", "/*")//
-                             .withAction(new MockActionA())//
-                             .withDb(new MockDb()).getService();
+      engine = new Engine()//
+                           .withApi((String) null)//
+                           .withEndpoint("get", "/*")//
+                           .withAction(new MockActionA())//
+                           .withDb(new MockDb()).getEngine();
 
-      Response resp = service.get("users");
+      Response resp = engine.get("users");
       resp.dump();
       assertEquals(200, resp.getStatusCode());
       assertEquals("tester1", resp.find("data.0.firstName"));
 
       //action is placed on the endpoint instead of the api
-      service = new Service()//
-                             .withApi((String) null)//
-                             .withEndpoint("get", "/*", new MockActionA())//
-                             .withDb(new MockDb()).getService();
+      engine = new Engine()//
+                           .withApi((String) null)//
+                           .withEndpoint("get", "/*", new MockActionA())//
+                           .withDb(new MockDb()).getEngine();
 
-      resp = service.get("users");
+      resp = engine.get("users");
       assertEquals("tester1", resp.find("data.0.firstName"));
 
-      service = new Service()//
-                             .withApi("testApi")//
-                             .withEndpoint("get", "*", new MockActionA())//
-                             .withDb(new MockDb()).getService();
+      engine = new Engine()//
+                           .withApi("testApi")//
+                           .withEndpoint("get", "*", new MockActionA())//
+                           .withDb(new MockDb()).getEngine();
 
-      resp = service.get("users");
+      resp = engine.get("users");
       assertEquals(404, resp.getStatusCode());
 
-      resp = service.get("testApi/users");
+      resp = engine.get("testApi/users");
       assertEquals(200, resp.getStatusCode());
       assertEquals("tester1", resp.find("data.0.firstName"));
 
-      assertEquals(200, service.get("/testApi/users").getStatusCode());
-      assertEquals(200, service.get("http://localhost/testApi/users").getStatusCode());
-      assertEquals(200, service.get("http://whateverhost:12345/testApi/users").getStatusCode());
+      assertEquals(200, engine.get("/testApi/users").getStatusCode());
+      assertEquals(200, engine.get("http://localhost/testApi/users").getStatusCode());
+      assertEquals(200, engine.get("http://whateverhost:12345/testApi/users").getStatusCode());
    }
 
    @Test
    public void test2()
    {
-      Service service = null;
+      Engine engine = null;
 
-      service = new Service()//
-                             .withApi((String) null)//
-                             .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
-                             .withEndpoint("get", "actionB/*", new MockActionB("get", "*"))//
-                             .getService();
+      engine = new Engine()//
+                           .withApi((String) null)//
+                           .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
+                           .withEndpoint("get", "actionB/*", new MockActionB("get", "*"))//
+                           .getEngine();
 
       Response resp = null;
-      ObjectNode data = null;
+      JsonMap data = null;
 
-      resp = service.get("/actionA/helloworld");
+      resp = engine.get("/actionA/helloworld");
       data = resp.getJson();
       assertEquals("MockActionA", data.find("data.0.className"));
 
-      resp = service.get("/actionB/hellomoon");
+      resp = engine.get("/actionB/hellomoon");
       data = resp.getJson();
       assertEquals("MockActionB", data.find("data.0.className"));
 
@@ -183,18 +183,18 @@ public class TestService extends TestCase
    @Test
    public void testSimpleEndpoint2()
    {
-      Service service = null;
+      Engine engine = null;
 
-      service = new Service()//
-                             .withApi((String) null)//
-                             .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*"))//
-                             .getService();
+      engine = new Engine()//
+                           .withApi((String) null)//
+                           .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*"))//
+                           .getEngine();
 
       Response resp = null;
-      resp = service.get("/actionA");
+      resp = engine.get("/actionA");
       assertEquals(200, resp.getStatusCode());
 
-      resp = service.get("actionA");
+      resp = engine.get("actionA");
       assertEquals(200, resp.getStatusCode());
 
    }
@@ -209,7 +209,7 @@ public class TestService extends TestCase
       Endpoint ep = new Endpoint("GET", "/", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
       Action actionA = new StatusAction()
          {
-            public void run(Service service, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, io.rocketpartners.cloud.service.Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
+            public void run(Engine engine, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionA_overriddenParam " + chain.getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionA_endpointParam " + chain.getConfig("endpointParam"));
@@ -221,7 +221,7 @@ public class TestService extends TestCase
 
       Action actionB = new StatusAction()
          {
-            public void run(Service service, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, io.rocketpartners.cloud.service.Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
+            public void run(Engine engine, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionB_overriddenParam " + chain.getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionB_endpointParam " + chain.getConfig("endpointParam"));
@@ -234,7 +234,7 @@ public class TestService extends TestCase
 
       Action actionC = new StatusAction()
          {
-            public void run(Service service, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, io.rocketpartners.cloud.service.Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
+            public void run(Engine engine, io.rocketpartners.cloud.model.Api api, Endpoint endpoint, Chain chain, io.rocketpartners.cloud.model.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionC_overriddenParam " + chain.getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionC_endpointParam " + chain.getConfig("endpointParam"));
@@ -249,12 +249,12 @@ public class TestService extends TestCase
       ep.withAction(actionB);
       ep.withAction(actionC);
 
-      Service service = new Service()//
-                                     .withApi("test")//
-                                     .withEndpoint(ep)//
-                                     .getService();
+      Engine engine = new Engine()//
+                                  .withApi("test")//
+                                  .withEndpoint(ep)//
+                                  .getEngine();
 
-      Response res = service.get("test/test");
+      Response res = engine.get("test/test");
       res.dump();
 
       res.assertDebug("Endpoint_actionA_overriddenParam", "actionAOverride");
