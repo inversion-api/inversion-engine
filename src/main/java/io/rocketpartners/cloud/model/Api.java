@@ -412,38 +412,26 @@ public class Api
    public Api withEndpoint(Endpoint endpoint)
    {
       if (!endpoints.contains(endpoint))
-         endpoints.add(endpoint);
+      {
+         boolean inserted = false;
+         for (int i = 0; i < endpoints.size(); i++)
+         {
+            if (endpoint.getOrder() < endpoints.get(i).getOrder())
+            {
+               endpoints.add(i, endpoint);
+               inserted = true;
+               break;
+            }
+         }
 
-      if (endpoint.getApi() != this)
-         endpoint.withApi(this);
+         if (!inserted)
+            endpoints.add(endpoint);
 
+         if (endpoint.getApi() != this)
+            endpoint.withApi(this);
+      }
       return this;
    }
-
-   //   public Endpoint makeEndpoint(String method, String includePaths)
-   //   {
-   //      return makeEndpoint(method, null, includePaths);
-   //   }
-   //
-   //   public Endpoint makeEndpoint(String method, String path, String includePaths)
-   //   {
-   //      Endpoint endpoint = new Endpoint(method, path, includePaths);
-   //      withEndpoint(endpoint);
-   //      return endpoint;
-   //   }
-   //
-   //   public Endpoint makeEndpoint(Action action, String method, String includePaths)
-   //   {
-   //      return makeEndpoint(action, method, null, includePaths);
-   //   }
-   //
-   //   public Endpoint makeEndpoint(Action action, String method, String path, String includePaths)
-   //   {
-   //      Endpoint endpoint = new Endpoint(method, path, includePaths);
-   //      endpoint.withAction(action);
-   //      withEndpoint(endpoint);
-   //      return endpoint;
-   //   }
 
    public List<Action> getActions()
    {

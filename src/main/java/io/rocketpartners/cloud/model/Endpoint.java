@@ -78,7 +78,7 @@ public class Endpoint extends Rule<Endpoint>
       if (isMethod(method))
       {
          int index = 0;
-         for (index = 0; index < path.size(); index++)
+         for (index = 0; path != null && index < path.size(); index++)
          {
             if (!path.matches(index, toMatch))
                return false;
@@ -177,32 +177,6 @@ public class Endpoint extends Rule<Endpoint>
       return this;
    }
 
-   //   /**
-   //    * @param classNames comma separated list of Handler classes that will be instantiated and passed to addHandler
-   //    * @throws ClassNotFoundException 
-   //    * @throws IllegalAccessException 
-   //    * @throws InstantiationException 
-   //    */
-   //   public void setHandlerClass(String classNames) throws InstantiationException, IllegalAccessException, ClassNotFoundException
-   //   {
-   //      for (String name : Utils.explode(",", classNames))
-   //      {
-   //         addHandler((Handler) Class.forName(name).newInstance());
-   //      }
-   //   }
-   //
-   //   public void addHandler(Handler handler)
-   //   {
-   //      Action a = new Action();
-   //      a.setHandler(handler);
-   //      addAction(a);
-   //   }
-
-   public List<Action> getActions()
-   {
-      return new ArrayList(actions);
-   }
-
    public List<Action> getActions(Request req)
    {
       List<Action> filtered = new ArrayList();
@@ -216,16 +190,20 @@ public class Endpoint extends Rule<Endpoint>
       return filtered;
    }
 
-   public Endpoint withActions(List<Action> actions)
+   public List<Action> getActions()
    {
-      this.actions.clear();
+      return new ArrayList(actions);
+   }
+
+   public Endpoint withActions(Action... actions)
+   {
       for (Action action : actions)
          withAction(action);
 
       return this;
    }
 
-   public <T extends Action> Endpoint withAction(T action)
+   public Endpoint withAction(Action action)
    {
       if (actions.contains(action))
          return this;
@@ -246,22 +224,7 @@ public class Endpoint extends Rule<Endpoint>
 
       if (action.getApi() != getApi())
          action.withApi(getApi());
-      
-      return this;
-   }
 
-   public <T extends Action> Endpoint withAction(int order, T action)
-   {
-      action.withOrder(order);
-      withAction(action);
-      return this;
-   }
-
-   public Endpoint withAction(Action action, String methods, String includePaths)
-   {
-      action.withMethods(methods);
-      action.withIncludePaths(includePaths);
-      withAction(action);
       return this;
    }
 

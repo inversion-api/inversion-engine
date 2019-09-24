@@ -47,7 +47,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected JsonMap                             json              = new JsonMap("meta", new JsonMap("createdOn", Utils.formatIso8601(new Date())), "data", new JsonArray());
+   protected JsonMap                                json              = new JsonMap("meta", new JsonMap("createdOn", Utils.formatIso8601(new Date())), "data", new JsonArray());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -85,7 +85,7 @@ public class Response
 
    public Response withMeta(String key, String value)
    {
-      json.getMap("meta").put(key, value);
+      getJson().getMap("meta").put(key, value);
       return this;
    }
 
@@ -132,7 +132,7 @@ public class Response
       try
       {
          statusCode = Integer.parseInt(status.substring(0, 3));
-         
+
          if (statusMesg.length() > 4)
          {
             statusMesg = status.substring(4, status.length());
@@ -143,7 +143,6 @@ public class Response
          //the status message did not start with numeric status code. 
          //this can be ignored.
       }
-      
 
       return this;
    }
@@ -242,10 +241,12 @@ public class Response
     */
    public JsonMap getJson()
    {
-      if (file != null && file.length() > 0)
-         return Utils.parseJsonMap(getContent());
-      else
-         return json;
+      if (json == null && file != null && file.length() > 0)
+      {
+         json = Utils.parseJsonMap(getContent());
+      }
+
+      return json;
    }
 
    /**
@@ -292,12 +293,12 @@ public class Response
 
    public JsonArray data()
    {
-      return json.getArray("data");
+      return getJson().getArray("data");
    }
 
    public Response withData(JsonArray data)
    {
-      json.put("data", data);
+      getJson().put("data", data);
       return this;
    }
 
@@ -316,7 +317,7 @@ public class Response
 
    public JsonMap meta()
    {
-      return json.getMap("meta");
+      return getJson().getMap("meta");
    }
 
    public Response withMeta(String key, Object value)
@@ -359,10 +360,10 @@ public class Response
 
    public int getPageSize()
    {
-      int pageSize = json.findInt("meta.pageSize");
+      int pageSize = getJson().findInt("meta.pageSize");
       if (pageSize < 0)
       {
-         Object arr = json.find("data.0.name");
+         Object arr = getJson().find("data.0.name");
          if (arr instanceof JsonArray)
          {
             pageSize = ((JsonArray) arr).size();
@@ -384,7 +385,7 @@ public class Response
 
    public int getPageCount()
    {
-      return json.findInt("meta.pageCount");
+      return getJson().findInt("meta.pageCount");
    }
 
    public String next()
@@ -421,12 +422,14 @@ public class Response
 
    public Response withText(String text)
    {
+      this.json = null;
       this.text = text;
       return this;
    }
 
    public String getEntityKey()
    {
+      JsonMap json = getJson();
       if (json != null)
       {
          String href = json.getString("href");
@@ -549,9 +552,13 @@ public class Response
             String string = Utils.read(getInputStream());
             return string;
          }
-         else if (json != null)
+         else if (getJson() != null)
          {
-            return json.toString();
+            return getJson().toString();
+         }
+         else if (text != null)
+         {
+            return text;
          }
       }
       catch (Exception ex)
@@ -592,6 +599,7 @@ public class Response
 
    public Response withFile(File file) throws Exception
    {
+      this.json = null;
       this.file = file;
       return this;
    }

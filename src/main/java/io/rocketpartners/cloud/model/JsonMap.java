@@ -141,6 +141,53 @@ public class JsonMap implements Map<String, Object>
       return obj;
    }
 
+   public List collect(String pathStr)
+   {
+      List<String> path = Utils.explode("\\.", pathStr);
+      return collect(path, new ArrayList());
+   }
+
+   protected List collect(List<String> path, List collected)
+   {
+      String nextSegment = path.get(0);
+
+      if ("*".equals(nextSegment))
+      {
+         if (path.size() == 1)
+         {
+            collected.addAll(values());
+         }
+         else
+         {
+            List<String> nextPath = path.subList(1, path.size());
+            for (Object value : values())
+            {
+               if (value instanceof JsonMap)
+               {
+                  ((JsonMap) value).collect(nextPath, collected);
+               }
+            }
+         }
+      }
+      else
+      {
+         Object found = get(nextSegment);
+         if (found != null)
+         {
+            if (path.size() == 1)
+            {
+               collected.add(found);
+            }
+            else if (found instanceof JsonMap)
+            {
+               ((JsonMap) found).collect(path.subList(1, path.size()), collected);
+            }
+         }
+      }
+
+      return collected;
+   }
+
    @Override
    public Object get(Object name)
    {

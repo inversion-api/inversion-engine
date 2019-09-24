@@ -64,6 +64,9 @@ public class JsonArray extends JsonMap implements Iterable
 
    public Object set(int index, Object o)
    {
+      while (objects.size() < index + 1)
+         objects.add(null);
+
       return objects.set(index, o);
    }
 
@@ -92,6 +95,14 @@ public class JsonArray extends JsonMap implements Iterable
    public void addAll(JsonArray array)
    {
       objects.addAll(array.asList());
+   }
+
+   public void add(int index, Object object)
+   {
+      while (objects.size() < index + 1)
+         objects.add(null);
+
+      objects.add(index, object);
    }
 
    public void add(Object object)

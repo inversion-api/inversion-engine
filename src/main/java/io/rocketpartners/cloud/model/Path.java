@@ -125,6 +125,10 @@ public class Path
    {
       if (index < path.size())
          return matches(index, path.lc.get(index));
+      
+      //matches a 'dir/*' to 'dir/'
+      if(index >= path.size() && lc.get(lc.size()-1).equals("*"))
+         return true;
 
       return false;
    }
