@@ -19,10 +19,13 @@
 package io.rocketpartners.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class JsonArray extends JsonMap implements Iterable
@@ -54,6 +57,22 @@ public class JsonArray extends JsonMap implements Iterable
       if (index >= objects.size())
          return null;
       return objects.get(index);
+   }
+
+   public Set<String> keySet()
+   {
+      //TODO make more efficient!!!!
+      LinkedHashSet set = new LinkedHashSet();
+      for (int i = 0; i < objects.size(); i++)
+      {
+         set.add(i + "");
+      }
+      return set;
+   }
+
+   public JsonMap getMap(int index)
+   {
+      return (JsonMap) get(index + "");
    }
 
    @Override
@@ -191,6 +210,12 @@ public class JsonArray extends JsonMap implements Iterable
    public Stream stream()
    {
       return asList().stream();
+   }
+
+   @Override
+   public Collection values()
+   {
+      return asList();
    }
 
 }

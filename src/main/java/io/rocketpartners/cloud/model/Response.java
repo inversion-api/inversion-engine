@@ -293,7 +293,12 @@ public class Response
 
    public JsonArray data()
    {
-      return getJson().getArray("data");
+      JsonMap json = getJson();
+      if (json != null)
+      {
+         return json.getArray("data");
+      }
+      return null;
    }
 
    public Response withData(JsonArray data)

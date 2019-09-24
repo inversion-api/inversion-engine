@@ -57,6 +57,68 @@ public class JsonMap implements Map<String, Object>
       }
    }
 
+   public List<JsonMap> diff(JsonMap diffAgainst)
+   {
+      return diff(diffAgainst, "", new ArrayList());
+   }
+
+   protected List<JsonMap> diff(JsonMap diffAgainst, String path, ArrayList<JsonMap> patches)
+   {
+      for (String key : keySet())
+      {
+         String nextPath = Utils.implode(".", path, key);
+
+         Object myVal = get(key);
+         Object theirVal = diffAgainst.get(key);
+
+         diff(nextPath, myVal, theirVal, patches);
+      }
+      
+      for(String key : diffAgainst.keySet())
+      {
+         Object myVal = get(key);
+         Object theirVal = diffAgainst.get(key);
+         
+         if(myVal == null && theirVal != null)
+            patches.add(new JsonMap("op", "remove", "path", Utils.implode(".", path, key), myVal));
+      }
+
+      return patches;
+   }
+
+   protected void diff(String path, Object myVal, Object theirVal, ArrayList<JsonMap> patches)
+   {
+      if(myVal == null && theirVal == null)
+      {
+         
+      }
+      else if (myVal != null && theirVal == null)
+      {
+         patches.add(new JsonMap("op", "add", "path", path, "value", myVal));
+      }
+      else if (myVal == null && theirVal != null)
+      {
+         patches.add(new JsonMap("op", "remove", "path", path, myVal));
+      }
+      else if (!myVal.getClass().equals(theirVal.getClass()))
+      {
+         patches.add(new JsonMap("op", "replace", "path", path, myVal));
+      }
+      else if (myVal instanceof JsonMap)
+      {
+         ((JsonMap) myVal).diff((JsonMap) theirVal, path, patches);
+      }
+      else if (!myVal.toString().equals(theirVal.toString()))
+      {
+         patches.add(new JsonMap("op", "replace", "path", path, myVal));
+      }
+   }
+
+   public void patch(List<JsonMap> path)
+   {
+
+   }
+
    public boolean isArray()
    {
       return false;

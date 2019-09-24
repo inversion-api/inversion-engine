@@ -63,7 +63,7 @@ public class MockAction extends Action<MockAction>
          if (json instanceof JsonArray)
             res.withData((JsonArray) json);
          else
-            res.withData(new JsonArray(json));
+            res.withJson(json);
       }
 
       if (cancelRequest)

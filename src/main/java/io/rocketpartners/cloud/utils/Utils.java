@@ -40,6 +40,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.text.ParseException;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -462,6 +464,9 @@ public class Utils
     */
    public static List<String> explode(String delim, String... pieces)
    {
+      if (".".equals(delim))
+         delim = "\\.";
+
       List exploded = new ArrayList();
       for (int i = 0; pieces != null && i < pieces.length; i++)
       {
@@ -2167,6 +2172,33 @@ public class Utils
       }
 
       return out.toString();
+   }
+
+   public static String getAscii85Uuid()
+   {
+      try
+      {
+         UUID uuid = UUID.randomUUID();
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         ASCII85OutputStream os = new ASCII85OutputStream(baos);
+         os.write(getBytes(uuid));
+         os.flush();
+         String encoded = new String(baos.toByteArray(), "UTF-8");
+         os.close();
+         return encoded;
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException(ex);
+      }
+   }
+
+   public static byte[] getBytes(UUID uuid)
+   {
+      ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+      bb.putLong(uuid.getMostSignificantBits());
+      bb.putLong(uuid.getLeastSignificantBits());
+      return bb.array();
    }
 
 }
