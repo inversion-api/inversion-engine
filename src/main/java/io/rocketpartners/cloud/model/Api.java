@@ -383,6 +383,9 @@ public class Api
 
    public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
    {
+      if (methods != null && "*".equals(methods.trim()))
+         methods = "GET,PUT,POST,DELETE";
+
       Endpoint endpoint = new Endpoint(methods, pathExpression);
 
       for (Action action : actions)

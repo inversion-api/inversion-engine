@@ -118,9 +118,6 @@ public class JsonArray extends JsonMap implements Iterable
 
    public void add(int index, Object object)
    {
-      while (objects.size() < index + 1)
-         objects.add(null);
-
       objects.add(index, object);
    }
 
