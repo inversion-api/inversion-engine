@@ -73,13 +73,13 @@ public class JsonMap implements Map<String, Object>
 
          diff(nextPath, myVal, theirVal, patches);
       }
-      
-      for(String key : diffAgainst.keySet())
+
+      for (String key : diffAgainst.keySet())
       {
          Object myVal = get(key);
          Object theirVal = diffAgainst.get(key);
-         
-         if(myVal == null && theirVal != null)
+
+         if (myVal == null && theirVal != null)
             patches.add(new JsonMap("op", "remove", "path", Utils.implode(".", path, key), myVal));
       }
 
@@ -88,9 +88,9 @@ public class JsonMap implements Map<String, Object>
 
    protected void diff(String path, Object myVal, Object theirVal, ArrayList<JsonMap> patches)
    {
-      if(myVal == null && theirVal == null)
+      if (myVal == null && theirVal == null)
       {
-         
+
       }
       else if (myVal != null && theirVal == null)
       {
@@ -100,7 +100,8 @@ public class JsonMap implements Map<String, Object>
       {
          patches.add(new JsonMap("op", "remove", "path", path, myVal));
       }
-      else if (!myVal.getClass().equals(theirVal.getClass()))
+      else if (!myVal.getClass()
+                     .equals(theirVal.getClass()))
       {
          patches.add(new JsonMap("op", "replace", "path", path, myVal));
       }
@@ -108,15 +109,42 @@ public class JsonMap implements Map<String, Object>
       {
          ((JsonMap) myVal).diff((JsonMap) theirVal, path, patches);
       }
-      else if (!myVal.toString().equals(theirVal.toString()))
+      else if (!myVal.toString()
+                     .equals(theirVal.toString()))
       {
          patches.add(new JsonMap("op", "replace", "path", path, myVal));
       }
    }
 
-   public void patch(List<JsonMap> path)
+   public void patch(List<JsonMap> diffs)
    {
+      for (JsonMap diff : diffs)
+      {
+         String op = diff.getString("op");
+         String path = diff.getString("path");
+         String prop = null;
+         int idx = path.lastIndexOf(".");
+         if (idx < 0)
+         {
+            path = null;
+            prop = path;
+         }
+         else
+         {
+            prop = path.substring(idx + 1, path.length());
+            path = path.substring(0, idx);
+         }
 
+         JsonMap parent = path == null || path.length() == 0 ? this : findMap(path);
+         if ("remove".equals(op))
+         {
+            parent.remove(prop);
+         }
+         else
+         {
+            parent.put(prop, diff.get("value"));
+         }
+      }
    }
 
    public boolean isArray()
@@ -281,7 +309,8 @@ public class JsonMap implements Map<String, Object>
       if (name == null)
          return false;
 
-      return properties.containsKey(name.toString().toLowerCase());
+      return properties.containsKey(name.toString()
+                                        .toLowerCase());
    }
 
    @Override
