@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.SqlUtils;
@@ -37,7 +37,7 @@ public class TestDynamoDbPostActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       //-- find 5 orders that are in dynamo that we can delete and repost
       res = engine.get("northwind/dynamodb/orders?type=ORDER&limit=5");
@@ -45,8 +45,8 @@ public class TestDynamoDbPostActions extends TestCase
       List<String> hrefs = new ArrayList();
       List orderIds = new ArrayList();
 
-      res.data().forEach(o -> orderIds.add(((JsonMap) o).get("orderid")));
-      res.data().forEach(o -> hrefs.add(((JsonMap) o).getString("href")));
+      res.data().forEach(o -> orderIds.add(((JSNode) o).get("orderid")));
+      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
       //-- make sure the orders were deleted
       for (String href : hrefs)
@@ -67,7 +67,7 @@ public class TestDynamoDbPostActions extends TestCase
       List<String> posted = new ArrayList();
       for (Object obj : res.data())
       {
-         JsonMap node = (JsonMap) obj;
+         JSNode node = (JSNode) obj;
 
          url = "northwind/dynamodb/orders?type=ORDER&orderid=" + node.get("orderid");
          posted.add(url);
@@ -89,7 +89,7 @@ public class TestDynamoDbPostActions extends TestCase
       //-- http://localhost/northwind/dynamodb/orders/102680~ORDER
       for (Object o : res.data())
       {
-         String key = ((JsonMap) o).getString("href");
+         String key = ((JSNode) o).getString("href");
          key = key.substring(key.lastIndexOf("/") + 1, key.length());
          List<String> parts = Utils.explode("~", key);
          assertTrue(parts.size() == 2);
@@ -118,9 +118,9 @@ public class TestDynamoDbPostActions extends TestCase
       Response res = null;
       res = engine.get("northwind/dynamodb/orders?type=ORDER&limit=1");
 
-      JsonMap orig = res.findNode("data.0");
+      JSNode orig = res.findNode("data.0");
 
-      JsonMap clone = Utils.parseJsonMap(orig.toString());
+      JSNode clone = Utils.parseJsonMap(orig.toString());
 
       clone.put("gs2hk", "testing");
       res = engine.put(clone.getString("href"), clone);

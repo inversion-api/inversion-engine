@@ -6,7 +6,7 @@ import io.rocketpartners.cloud.action.misc.MockAction;
 import io.rocketpartners.cloud.action.misc.StatusAction;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Response;
 import junit.framework.TestCase;
@@ -163,7 +163,7 @@ public class TestEngine extends TestCase
                            .getEngine();
 
       Response resp = null;
-      JsonMap data = null;
+      JSNode data = null;
 
       resp = engine.get("/actionA/helloworld");
       data = resp.getJson();

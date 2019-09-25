@@ -3,7 +3,7 @@ package io.rocketpartners.cloud.action.dynamo;
 import org.junit.Test;
 
 import io.rocketpartners.cloud.action.rest.TestRestGetActions;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 
@@ -63,7 +63,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
       String href = null;
 
       String url = url("orders?limit=2&type=ORDER");
@@ -90,7 +90,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?limit=5").statusOk();
       json = res.getJson();
@@ -117,7 +117,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?shipname=Blauer See Delikatessen").statusOk();
       json = res.getJson();
@@ -130,7 +130,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.service("GET", "northwind/dynamodb/orders?orderid=11058").statusOk();
       json = res.getJson();
@@ -144,7 +144,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?orderid=11058&type=ORDER").statusOk();
       json = res.getJson();
@@ -168,7 +168,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?eq(OrderId, 11058)&gt(type, 'AAAAA')").statusOk();
       json = res.getJson();
@@ -182,7 +182,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?eq(OrderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,A)").statusOk();
       json = res.getJson();
@@ -195,7 +195,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')");
       json = res.getJson();
@@ -223,7 +223,7 @@ public class TestDynamoDbGetActions extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get("northwind/source/orders?eq(OrderId, 11058)").statusOk();
       res = engine.get("northwind/dynamodb/orders?eq(OrderId, 11058)").statusOk();

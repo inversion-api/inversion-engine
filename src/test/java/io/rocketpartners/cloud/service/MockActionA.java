@@ -3,7 +3,7 @@ package io.rocketpartners.cloud.service;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 
@@ -27,7 +27,7 @@ public class MockActionA extends Action<MockActionA>
    {
       if (req.isMethod("get"))
       {
-         res.withRecord(new JsonMap("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
+         res.withRecord(new JSNode("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
       }
       else if (req.isMethod("put", "post"))
       {

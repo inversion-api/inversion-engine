@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -162,15 +162,15 @@ public class AclAction extends Action<AclAction>
       }
       finally
       {
-         JsonMap json = resp.getJson();
+         JSNode json = resp.getJson();
          if (json != null)
          {
-            List toClean = json instanceof JsonArray ? ((JsonArray) json).asList() : Arrays.asList(json);
+            List toClean = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
             for (Object parent : toClean)
             {
-               if (parent instanceof JsonMap)
+               if (parent instanceof JSNode)
                {
-                  cleanJson(chain, (JsonMap) parent, restricts, Collections.EMPTY_SET, true);
+                  cleanJson(chain, (JSNode) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
@@ -266,15 +266,15 @@ public class AclAction extends Action<AclAction>
       }
    }
 
-   void cleanJson(Chain chain, JsonMap json, Set<String> restricts, Set<String> requires, boolean silent)
+   void cleanJson(Chain chain, JSNode json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
-         List objs = json instanceof JsonArray ? ((JsonArray) json).asList() : Arrays.asList(json);
+         List objs = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
 
          for (String path : restricts)
          {
-            List<JsonMap> found = new ArrayList();
+            List<JSNode> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -291,7 +291,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (JsonMap target : found)
+            for (JSNode target : found)
             {
                target.remove(targetProp);
                if (!silent)
@@ -304,7 +304,7 @@ public class AclAction extends Action<AclAction>
 
          for (String path : requires)
          {
-            List<JsonMap> found = new ArrayList();
+            List<JSNode> found = new ArrayList();
 
             String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
             String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
@@ -321,7 +321,7 @@ public class AclAction extends Action<AclAction>
                find(parent, found, parentPath, "body.");
             }
 
-            for (JsonMap target : found)
+            for (JSNode target : found)
             {
                if (target.keySet().size() == 1 && target.containsKey("href"))
                {

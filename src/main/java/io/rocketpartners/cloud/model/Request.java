@@ -57,7 +57,7 @@ public class Request
    String                                 subCollectionKey       = null;
 
    String                                 body                   = null;
-   JsonMap                             json                   = null;
+   JSNode                             json                   = null;
 
    boolean                                browse                 = false;
 
@@ -245,7 +245,7 @@ public class Request
       return this;
    }
 
-   public JsonMap getJson() throws ApiException
+   public JSNode getJson() throws ApiException
    {
       if (json != null)
          return json;
@@ -636,9 +636,9 @@ public class Request
     */
    boolean prune(Object parent)
    {
-      if (parent instanceof JsonArray)
+      if (parent instanceof JSArray)
       {
-         JsonArray arr = ((JsonArray) parent);
+         JSArray arr = ((JSArray) parent);
          for (int i = 0; i < arr.length(); i++)
          {
             if (prune(arr.get(i)))
@@ -649,10 +649,10 @@ public class Request
          }
          return arr.length() == 0;
       }
-      else if (parent instanceof JsonMap)
+      else if (parent instanceof JSNode)
       {
          boolean prune = true;
-         JsonMap js = (JsonMap) parent;
+         JSNode js = (JSNode) parent;
          for (String key : js.keySet())
          {
             Object child = js.get(key);

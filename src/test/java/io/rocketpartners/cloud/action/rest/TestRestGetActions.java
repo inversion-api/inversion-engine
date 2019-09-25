@@ -10,8 +10,8 @@ import java.util.Set;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.junit.Test;
 
-import io.rocketpartners.cloud.model.JsonArray;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSArray;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
@@ -60,7 +60,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get(url("orders?limit=5")).statusOk();
       json = res.getJson();
@@ -108,7 +108,7 @@ public abstract class TestRestGetActions extends TestCase
       //-- gets a sorted list of all hrefs
       res = engine.get(url("orders?type=ORDER&sort=orderId&includes=href&limit=1000"));
       List<String> hrefs = new ArrayList();
-      res.data().forEach(o -> hrefs.add(((JsonMap) o).getString("href")));
+      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
       //makes sure they are all unqique
       Set uniqueHrefs = new HashSet(hrefs);
@@ -184,7 +184,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
       res = engine.get(url("orders?eq(orderid,10257)"));
       res.dump();
       json = res.getJson();
@@ -206,11 +206,11 @@ public abstract class TestRestGetActions extends TestCase
       res = engine.get(url("orders?limit=5&like(customerId,*VI*)")).statusOk();
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 5' args=[%VI%]");
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       assertTrue(data.length() > 0);
       for (Object o : data)
       {
-         assertTrue(((JsonMap) o).getString("customerid").contains("VI"));
+         assertTrue(((JSNode) o).getString("customerid").contains("VI"));
       }
 
       res = engine.get(url("orders?limit=5&like(customerId,VI)")).statusOk();
@@ -223,7 +223,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
+      JSNode json = null;
 
       res = engine.get(url("orders?limit=5&like(customerId,*ZZ*)")).statusOk();
       json = res.getJson();
@@ -242,7 +242,7 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(4, res.data().length());
       for (Object obj : res.data())
       {
-         assertTrue(((JsonMap) obj).getString("city").contains("ondon"));
+         assertTrue(((JSNode) obj).getString("city").contains("ondon"));
       }
 
       res = engine.get(url("employees?w(city,*ondon*)")).statusOk();
@@ -254,8 +254,8 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
-      JsonArray data = null;
+      JSNode json = null;
+      JSArray data = null;
 
       res = engine.get(url("orders?eq(employeeid,5)"));
       //Utils.assertDebug(res, "DynamoDb", "");
@@ -276,7 +276,7 @@ public abstract class TestRestGetActions extends TestCase
       assertEquals(41, json.find("meta.foundRows"));
       for (Object o : data)
       {
-         assertFalse(((JsonMap) o).getString("shipcountry").contains("witze"));
+         assertFalse(((JSNode) o).getString("shipcountry").contains("witze"));
       }
    }
 
@@ -290,11 +290,11 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={#var1=customerId} valueMap={:val1=VI} keyConditionExpression='' filterExpression='begins_with(#var1,:val1)'");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 5' args=[VI%]");
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       assertTrue(data.length() > 0);
       for (Object o : data)
       {
-         assertTrue(((JsonMap) o).getString("customerid").startsWith("VI"));
+         assertTrue(((JSNode) o).getString("customerid").startsWith("VI"));
       }
 
       //check that the trailing * is not doubled
@@ -326,11 +326,11 @@ public abstract class TestRestGetActions extends TestCase
       res = engine.get(url("orders?ew(shipname,Chevalier)"));
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"SHIPNAME\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 100' args=[%Chevalier]");
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         assertTrue(((JsonMap) o).getString("shipname").endsWith("Chevalier"));
+         assertTrue(((JSNode) o).getString("shipname").endsWith("Chevalier"));
       }
 
       //check that the leading * is not doubled
@@ -343,8 +343,8 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
-      JsonArray data = null;
+      JSNode json = null;
+      JSArray data = null;
       res = engine.get(url("orders?limit=500&n(shipregion)"));
 
       //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipregion, #var2=shipregion} valueMap={:val1=null} keyConditionExpression='' filterExpression='(attribute_not_exists(#var1) or (#var2 = :val1))' projectionExpression=''
@@ -358,7 +358,7 @@ public abstract class TestRestGetActions extends TestCase
       assertTrue(data.length() > 0);
       for (Object o : data)
       {
-         String shipRegion = ((JsonMap) o).getString("shipRegion");
+         String shipRegion = ((JSNode) o).getString("shipRegion");
          if (!"null".equalsIgnoreCase(shipRegion + ""))
          {
             System.out.println("should be null: '" + StringEscapeUtils.escapeJava(shipRegion) + "'");
@@ -386,8 +386,8 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipregion, #var2=shipregion} valueMap={:val1=null} keyConditionExpression='' filterExpression='attribute_exists(#var1) and (#var2 <> :val1)' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE (\"ORDERS\".\"SHIPREGION\" IS NOT NULL AND \"ORDERS\".\"SHIPREGION\" != '') ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 500'");
 
-      List<JsonMap> list = res.data().asList();
-      for (JsonMap result : list)
+      List<JSNode> list = res.data().asList();
+      for (JSNode result : list)
       {
          String shipregion = result.getString("shipregion");
          assertTrue("shipregion not supposed to be empty but was: '" + shipregion + "'", !Utils.empty(shipregion));
@@ -398,7 +398,7 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE (\"ORDERS\".\"SHIPREGION\" IS NULL OR \"ORDERS\".\"SHIPREGION\" = '') ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 500'");
 
       list = res.data().asList();
-      for (JsonMap result : list)
+      for (JSNode result : list)
       {
          String shipregion = result.getString("shipregion");
          assertTrue("shipregion was supposed to be empty but was: '" + shipregion + "'", Utils.empty(shipregion));
@@ -410,8 +410,8 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      JsonMap json = null;
-      JsonArray data = null;
+      JSNode json = null;
+      JSArray data = null;
 
       res = engine.get(url("orders?limit=500&nn(shipregion)")).statusOk();
 
@@ -423,7 +423,7 @@ public abstract class TestRestGetActions extends TestCase
       assertTrue(data.length() > 0);
       for (Object o : data)
       {
-         assertNotNull(((JsonMap) o).getString("shipregion"));
+         assertNotNull(((JSNode) o).getString("shipregion"));
       }
    }
 
@@ -444,8 +444,8 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipregion, #var2=shipregion} valueMap={:val1=null} keyConditionExpression='' filterExpression='attribute_exists(#var1) and (#var2 <> :val1)' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE (\"ORDERS\".\"SHIPREGION\" IS NOT NULL AND \"ORDERS\".\"SHIPREGION\" != '') ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 500' args=[] error=''");
 
-      List<JsonMap> list = res.data().asList();
-      for (JsonMap result : list)
+      List<JSNode> list = res.data().asList();
+      for (JSNode result : list)
       {
          String shipregion = result.getString("shipregion");
          assertFalse("shipregion was not supposed to be empty but was: '" + shipregion + "'", Utils.empty(shipregion));
@@ -463,12 +463,12 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=10249, :val2=10258, :val3=10252} keyConditionExpression='' filterExpression='(#var1 IN (:val1, :val2, :val3))' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"ORDERID\" IN(?, ?, ?) ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 100' args=[10249, 10258, 10252]");
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       List<String> list = Arrays.asList("10249", "10258", "10252");
       assertEquals(3, data.length());
       for (Object obj : data)
       {
-         assertTrue(list.contains(((JsonMap) obj).getString("orderId")));
+         assertTrue(list.contains(((JSNode) obj).getString("orderId")));
       }
    }
 
@@ -483,7 +483,7 @@ public abstract class TestRestGetActions extends TestCase
       Set ids = new HashSet(Utils.explode(",", "10249,10258,10252"));
       for (Object obj : res.data())
       {
-         assertFalse(ids.contains(((JsonMap) obj).find("orderId").toString()));
+         assertFalse(ids.contains(((JSNode) obj).find("orderId").toString()));
       }
    }
 
@@ -502,11 +502,11 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=1000 scanIndexForward=true nameMap={#var1=freight} valueMap={:val1=2} keyConditionExpression='' filterExpression='(#var1 < :val1)' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"FREIGHT\" < ? ORDER BY \"ORDERS\".\"ORDERID\" ASC OFFSET 0 LIMIT 1000' args=[2]");
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         assertTrue(Float.parseFloat(((JsonMap) o).getString("freight")) < 2);
+         assertTrue(Float.parseFloat(((JSNode) o).getString("freight")) < 2);
       }
    }
 
@@ -529,11 +529,11 @@ public abstract class TestRestGetActions extends TestCase
       res.dump();
       assertEquals(found + found2, found3);
 
-      JsonArray data = res.data();
+      JSArray data = res.data();
       assertTrue(data.size() > 0);
       for (Object o : data)
       {
-         float val = Float.parseFloat(((JsonMap) o).getString("freight"));
+         float val = Float.parseFloat(((JSNode) o).getString("freight"));
          if (val > 2.94f)
          {
             fail("Value is greater than threshold: " + val);

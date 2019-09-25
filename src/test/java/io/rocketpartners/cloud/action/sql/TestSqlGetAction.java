@@ -343,7 +343,7 @@ public class TestSqlGetAction extends TestRestGetActions
       Response res = null;
       res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).statusOk();
 
-      assertTrue((Integer) res.getJson().getMap("meta").get("foundRows") == 1);
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
       String debug = res.getDebug().toLowerCase();
       if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
@@ -353,7 +353,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       res = engine.get(url("indexlogs?w(error,ERROR MSG)")).statusOk();
 
-      assertTrue((Integer) res.getJson().getMap("meta").get("foundRows") == 1);
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
       debug = res.getDebug().toLowerCase();
       if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
@@ -363,7 +363,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       res = engine.get(url("indexlogs?eq(error,ERROR_MSG foo)")).statusOk();
 
-      assertTrue((Integer) res.getJson().getMap("meta").get("foundRows") == 1);
+      assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
       debug = res.getDebug().toLowerCase();
       if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements

@@ -27,7 +27,7 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Url;
@@ -54,13 +54,13 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       String input = Utils.read(new BufferedInputStream(inputStream));
 
-      JsonMap responseBody = new JsonMap();
-      JsonMap config = null;
+      JSNode responseBody = new JSNode();
+      JSNode config = null;
       Exception ex = null;
 
       try
       {
-         JsonMap json = Utils.parseJsonMap(input);
+         JSNode json = Utils.parseJsonMap(input);
 
          debug("Request Event");
          debug(json.toString(false));
@@ -85,7 +85,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
          }
 
-         config = new JsonMap("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
+         config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
          if (engine == null)
          {
@@ -103,12 +103,12 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
          Request req = null;
 
          Map headers = new HashMap();
-         JsonMap jsonHeaders = json.getMap("headers");
+         JSNode jsonHeaders = json.getNode("headers");
          if (jsonHeaders != null)
             headers = jsonHeaders.asMap();
 
          Map params = new HashMap();
-         JsonMap jsonParams = json.getMap("queryStringParameters");
+         JSNode jsonParams = json.getNode("queryStringParameters");
          if (jsonParams != null)
          {
             params = jsonParams.asMap();
@@ -148,10 +148,10 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("request", Utils.parseJsonMap(input));
 
-            JsonMap responseJson = new JsonMap();
+            JSNode responseJson = new JSNode();
             responseJson.put("isBase64Encoded", false);
             responseJson.put("statusCode", "500");
-            responseJson.put("headers", new JsonMap("Access-Control-Allow-Origin", "*"));
+            responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
 
             responseJson.put("body", responseBody.toString());
             OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
@@ -182,11 +182,11 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
    {
-      JsonMap responseJson = new JsonMap();
+      JSNode responseJson = new JSNode();
 
       responseJson.put("isBase64Encoded", false);
       responseJson.put("statusCode", res.getStatusCode());
-      JsonMap headers = new JsonMap();
+      JSNode headers = new JSNode();
       responseJson.put("headers", headers);
 
       for (String key : res.getHeaders().keySet())

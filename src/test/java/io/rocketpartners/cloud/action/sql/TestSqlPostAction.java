@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Rows;
@@ -131,7 +131,7 @@ public class TestSqlPostAction extends TestCase
       assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
       //post one new bogus order
-      res = engine.post(url("orders"), new JsonMap("orderid", 100, "shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
+      res = engine.post(url("orders"), new JSNode("orderid", 100, "shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
       res.dump();
       assertEquals(res.find("data.0.href"), url("orders/100"));
 

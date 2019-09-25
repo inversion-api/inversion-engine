@@ -39,7 +39,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    /**
     * JSMap is used because it implements a case insensitive map without modifying the keys
     */
-   protected transient JsonMap configMap    = new JsonMap();
+   protected transient JSNode configMap    = new JSNode();
    protected String          configStr    = null;
 
    @Override

@@ -7,10 +7,10 @@ import java.util.Map;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -44,7 +44,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    {
       String entityKey = req.getEntityKey();
       String subcollectionKey = req.getSubCollectionKey();
-      JsonMap json = req.getJson();
+      JSNode json = req.getJson();
 
       int count = Utils.empty(entityKey) ? 0 : 1;
       count += Utils.empty(req.getQuery()) ? 0 : 1;
@@ -60,12 +60,12 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 
       if (req.getJson() != null)
       {
-         if (!(json instanceof JsonArray))
+         if (!(json instanceof JSArray))
          {
             throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
          }
 
-         for (Object o : (JsonArray) json)
+         for (Object o : (JSArray) json)
          {
             if (!(o instanceof String))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
@@ -191,7 +191,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          deleted += res.data().size();
 
          List<String> entityKeys = new ArrayList();
-         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((JsonMap) o).getString("href")))));
+         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((JSNode) o).getString("href")))));
          req.getCollection().getDb().delete(collection.getTable(), entityKeys);
       }
 

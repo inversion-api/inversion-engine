@@ -70,9 +70,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
-import io.rocketpartners.cloud.model.JsonArray;
-import io.rocketpartners.cloud.model.JsonMap;
-import io.rocketpartners.cloud.model.JsonMap.Property;
+import io.rocketpartners.cloud.model.JSArray;
+import io.rocketpartners.cloud.model.JSNode;
+import io.rocketpartners.cloud.model.JSNode.Property;
 
 /**
  * Collection of utility methods designed to make
@@ -97,12 +97,12 @@ public class Utils
 
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-   public static String toJson(JsonMap node)
+   public static String toJson(JSNode node)
    {
       return toJson(node, true, false);
    }
 
-   public static String toJson(JsonMap node, boolean pretty, boolean lowercaseNames)
+   public static String toJson(JSNode node, boolean pretty, boolean lowercaseNames)
    {
       try
       {
@@ -123,7 +123,7 @@ public class Utils
       }
    }
 
-   static void writeNode(JsonMap node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
       Property href = node.getProperty("href");
 
@@ -140,9 +140,9 @@ public class Utils
       }
       visited.add(node);
 
-      if (node instanceof JsonArray)
+      if (node instanceof JSArray)
       {
-         writeArrayNode(((JsonArray) node), json, visited, lowercaseNames);
+         writeArrayNode(((JSArray) node), json, visited, lowercaseNames);
          return;
       }
 
@@ -164,14 +164,14 @@ public class Utils
          {
             json.writeNullField(name);
          }
-         else if (value instanceof JsonMap)
+         else if (value instanceof JSNode)
          {
             if (!lowercaseNames)
                json.writeFieldName(name);
             else
                json.writeFieldName(name.toLowerCase());
 
-            writeNode((JsonMap) value, json, visited, lowercaseNames);
+            writeNode((JSNode) value, json, visited, lowercaseNames);
          }
          else if (value instanceof Date)
          {
@@ -226,14 +226,14 @@ public class Utils
       json.writeEndObject();
    }
 
-   public static JsonArray parseJsonArray(String json)
+   public static JSArray parseJsonArray(String json)
    {
-      return ((JsonArray) parseJson(json));
+      return ((JSArray) parseJson(json));
    }
 
-   public static JsonMap parseJsonMap(String json)
+   public static JSNode parseJsonMap(String json)
    {
-      return ((JsonMap) parseJson(json));
+      return ((JSNode) parseJson(json));
    }
 
    public static Object parseJson(String json)
@@ -294,8 +294,8 @@ public class Utils
 
       if (json.isArray())
       {
-         JsonArray retVal = null;
-         retVal = new JsonArray();
+         JSArray retVal = null;
+         retVal = new JSArray();
 
          for (JsonNode child : json)
          {
@@ -306,8 +306,8 @@ public class Utils
       }
       else if (json.isObject())
       {
-         JsonMap retVal = null;
-         retVal = new JsonMap();
+         JSNode retVal = null;
+         retVal = new JSNode();
 
          Iterator<String> it = json.fieldNames();
          while (it.hasNext())
@@ -322,7 +322,7 @@ public class Utils
       throw new RuntimeException("unparsable json:" + json);
    }
 
-   static void writeArrayNode(JsonArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
       json.writeStartArray();
       for (Object obj : array.asList())
@@ -331,9 +331,9 @@ public class Utils
          {
             json.writeNull();
          }
-         else if (obj instanceof JsonMap)
+         else if (obj instanceof JSNode)
          {
-            writeNode((JsonMap) obj, json, visited, lowercaseNames);
+            writeNode((JSNode) obj, json, visited, lowercaseNames);
          }
          else if (obj instanceof BigDecimal)
          {

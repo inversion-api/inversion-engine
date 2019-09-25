@@ -7,8 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import io.rocketpartners.cloud.model.JsonArray;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSArray;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import junit.framework.TestCase;
@@ -88,9 +88,9 @@ public class TestSqlDeleteAction extends TestCase
 
       res = engine.get(url("orderdetails?limit=10&sort=orderid")).statusOk();
 
-      JsonArray hrefs = new JsonArray();
+      JSArray hrefs = new JSArray();
 
-      res.data().forEach(o -> hrefs.add(((JsonMap) o).getString("href")));
+      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
       assertEquals(10, hrefs.size());
 
@@ -106,7 +106,7 @@ public class TestSqlDeleteAction extends TestCase
       Response res = null;
       Engine engine = service();
 
-      JsonArray hrefs = new JsonArray(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
+      JSArray hrefs = new JSArray(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
 
       for (int i = 0; i < hrefs.size(); i++)
          assertTrue(engine.get(hrefs.getString(i)).statusOk().getFoundRows() > 0);
@@ -131,10 +131,10 @@ public class TestSqlDeleteAction extends TestCase
       // select * from `Order Details` where Quantity = 60 and UnitPrice > 10;
       String url = url("orderdetails?Quantity=60&gt(UnitPrice,10)");
 
-      JsonArray data = engine.get(url).getJson().findArray("data");
+      JSArray data = engine.get(url).getJson().findArray("data");
       assertTrue("data should contain two records", data.size() == 2);
 
-      Response res = engine.delete(url("orderdetails"), new JsonArray(url));
+      Response res = engine.delete(url("orderdetails"), new JSArray(url));
       assertTrue("bulk delete should succeed", res.isSuccess());
 
       data = engine.get(url).getJson().findArray("data");
@@ -161,10 +161,10 @@ public class TestSqlDeleteAction extends TestCase
       String url = url("indexlogs?tenantCode=us&n(error)&lt(modifiedAt,2019-04-01 00:00:00)");
       res = engine.get(url);
 
-      JsonArray data = res.getJson().findArray("data");
+      JSArray data = res.getJson().findArray("data");
       assertTrue("data should contain three records", data.size() == 3);
 
-      res = engine.delete(url("indexlogs"), new JsonArray(url));
+      res = engine.delete(url("indexlogs"), new JSArray(url));
       res.dump();
       assertTrue("bulk delete should succeed", res.isSuccess());
 

@@ -78,9 +78,9 @@ public abstract class Action<A extends Action> extends Rule<A>
       return (A) this;
    }
 
-   public static List<JsonMap> find(Object parent, String... paths)
+   public static List<JSNode> find(Object parent, String... paths)
    {
-      List<JsonMap> found = new ArrayList();
+      List<JSNode> found = new ArrayList();
       for (String apath : paths)
       {
          for (String path : (List<String>) Utils.explode(",", apath))
@@ -91,26 +91,26 @@ public abstract class Action<A extends Action> extends Rule<A>
       return found;
    }
 
-   public static void find(Object parent, List<JsonMap> found, String targetPath, String currentPath)
+   public static void find(Object parent, List<JSNode> found, String targetPath, String currentPath)
    {
-      if (parent instanceof JsonArray)
+      if (parent instanceof JSArray)
       {
-         for (Object child : (JsonArray) parent)
+         for (Object child : (JSArray) parent)
          {
-            if (child instanceof JsonMap)
+            if (child instanceof JSNode)
                find(child, found, targetPath, currentPath);
          }
       }
-      else if (parent instanceof JsonMap)
+      else if (parent instanceof JSNode)
       {
          if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
          {
-            found.add((JsonMap) parent);
+            found.add((JSNode) parent);
          }
 
-         for (String key : ((JsonMap) parent).keySet())
+         for (String key : ((JSNode) parent).keySet())
          {
-            Object child = ((JsonMap) parent).get(key);
+            Object child = ((JSNode) parent).get(key);
             String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
             find(child, found, targetPath, nextPath);
          }

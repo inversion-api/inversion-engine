@@ -17,9 +17,9 @@ package io.rocketpartners.cloud.action.security;
 
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Chain;
@@ -39,12 +39,12 @@ public class PasswordAction extends Action<PasswordAction>
          return;
       }
 
-      JsonMap json = req.getJson();
+      JSNode json = req.getJson();
 
       if (json == null)
          return;
 
-      if (json instanceof JsonArray)
+      if (json instanceof JSArray)
          return;
 
       String password = (String) json.remove(passwordField);
@@ -63,14 +63,14 @@ public class PasswordAction extends Action<PasswordAction>
       }
       finally
       {
-         JsonMap js = res.getJson().getMap("data");
-         if (js instanceof JsonArray && ((JsonArray) js).length() == 1)
+         JSNode js = res.getJson().getNode("data");
+         if (js instanceof JSArray && ((JSArray) js).length() == 1)
          {
-            JsonMap user = (JsonMap) ((JsonArray) js).get(0);
+            JSNode user = (JSNode) ((JSArray) js).get(0);
             if (user.get("id") != null)
             {
                String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
-               JsonMap body = new JsonMap(passwordField, encryptedPassword, "href", user.getString("href"));
+               JSNode body = new JSNode(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Chain.buildLink(req.getCollection(), user.get("id"), null);
                engine.put(url, body.toString());
             }

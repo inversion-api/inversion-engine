@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -90,7 +90,7 @@ public class RedisAction extends Action<RedisAction>
             String key = getCacheKey(chain);
 
             // request should include a json object
-            JsonMap resJson = null;
+            JSNode resJson = null;
 
             String value = null;
             try
@@ -123,7 +123,7 @@ public class RedisAction extends Action<RedisAction>
                // see class header for explanation on setex()  
                // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
 
-               JsonMap json = res.getJson();
+               JSNode json = res.getJson();
 
                if (res.getStatusCode() == 200 && json != null && json.getProperties().size() > 0)
                {

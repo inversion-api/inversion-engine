@@ -33,9 +33,9 @@ import io.rocketpartners.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -258,12 +258,12 @@ public class Engine
       return service("POST", url, (body != null ? body.toString() : null));
    }
 
-   public Response put(String url, JsonMap body)
+   public Response put(String url, JSNode body)
    {
       return service("PUT", url, body.toString());
    }
 
-   public Response post(String url, JsonMap body)
+   public Response post(String url, JSNode body)
    {
       return service("POST", url, body.toString());
    }
@@ -283,7 +283,7 @@ public class Engine
       return service("DELETE", url, (String) null);
    }
 
-   public Response delete(String url, JsonArray hrefs)
+   public Response delete(String url, JSArray hrefs)
    {
       return service("DELETE", url, hrefs.toString());
    }
@@ -615,7 +615,7 @@ public class Engine
          }
 
          res.withStatus(status);
-         JsonMap response = new JsonMap("message", ex.getMessage());
+         JSNode response = new JSNode("message", ex.getMessage());
          if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
@@ -688,7 +688,7 @@ public class Engine
                res.withContentType("application/json");
          }
 
-         JsonMap headers = new JsonMap();
+         JSNode headers = new JSNode();
          for (String key : res.getHeaders().keySet())
          {
             List values = res.getHeaders().get(key);

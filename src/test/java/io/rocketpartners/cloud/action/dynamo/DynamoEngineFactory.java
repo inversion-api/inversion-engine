@@ -30,9 +30,9 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import io.rocketpartners.cloud.action.rest.RestAction;
 import io.rocketpartners.cloud.action.sql.SqlEngineFactory;
 import io.rocketpartners.cloud.model.Api;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Collection;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
@@ -188,7 +188,7 @@ public class DynamoEngineFactory
          String next = start;
          do
          {
-            JsonArray toPost = new JsonArray();
+            JSArray toPost = new JSArray();
 
             res = engine.get(next);
             if (res.data().size() == 0)
@@ -201,7 +201,7 @@ public class DynamoEngineFactory
             for (Object o : res.data())
             {
                total += 1;
-               JsonMap js = (JsonMap) o;
+               JSNode js = (JSNode) o;
 
                js.remove("href");
                js.put("type", "ORDER");

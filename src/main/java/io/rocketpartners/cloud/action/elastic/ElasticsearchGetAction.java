@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -158,16 +158,16 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         JsonMap jsObj = Utils.parseJsonMap(r.getContent());
+         JSNode jsObj = Utils.parseJsonMap(r.getContent());
 
-         int totalHits = Integer.parseInt(jsObj.getMap("hits").getProperty("total").getValue().toString());
-         JsonArray hits = jsObj.getMap("hits").getArray("hits");
+         int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
+         JSArray hits = jsObj.getNode("hits").getArray("hits");
 
          //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
          //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
          //
          //         ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-         JsonArray data = new JsonArray();
+         JSArray data = new JSArray();
          //
          //         // if the query contains a wantedPage and it differs from the pagenum 
          //         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
@@ -200,7 +200,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          //         ObjectNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
          //ObjectNode wrapper = new ObjectNode("meta", meta, "data", data);
-         JsonMap wrapper = new JsonMap("meta", new JsonMap(), "data", data);
+         JSNode wrapper = new JSNode("meta", new JSNode(), "data", data);
          res.withJson(wrapper);
 
       }
@@ -231,11 +231,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
-      JsonMap context = null;
+      JSNode context = null;
       if (req.getApi().isMultiTenant())
       {
          tenantId = req.removeParam("tenantId");
-         context = new JsonMap("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
       }
 
       String field = null;
@@ -247,23 +247,23 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          value = entry.getValue();
       }
 
-      JsonMap completion = null;
-      JsonMap autoSuggest = null;
-      JsonMap payload = null;
+      JSNode completion = null;
+      JSNode autoSuggest = null;
+      JSNode payload = null;
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JsonMap("prefix", value, "completion", completion);
-         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
+         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSNode("prefix", value, "completion", completion);
+         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JsonMap("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
+         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
       }
 
       if (context != null)
@@ -280,18 +280,18 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         JsonMap jsObj = Utils.parseJsonMap(r.getContent());
-         JsonMap auto = (JsonMap) jsObj.getMap("suggest").getArray("auto-suggest").get(0);
-         JsonArray resultArray = new JsonArray();
-         for (JsonMap obj : (List<JsonMap>) auto.getArray("options").asList())
+         JSNode jsObj = Utils.parseJsonMap(r.getContent());
+         JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
+         JSArray resultArray = new JSArray();
+         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
          {
             if (context != null)
             {
-               resultArray.add(obj.getMap("_source").getMap(field).get("input"));
+               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
             }
             else
             {
-               resultArray.add(obj.getMap("_source").get(field));
+               resultArray.add(obj.getNode("_source").get(field));
             }
          }
 
@@ -306,9 +306,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          }
          else
          {
-            JsonMap data = new JsonMap("field", field, "results", resultArray);
-            JsonMap meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new JsonMap("meta", meta, "data", data));
+            JSNode data = new JSNode("field", field, "results", resultArray);
+            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+            res.withJson(new JSNode("meta", meta, "data", data));
          }
       }
       else
@@ -350,9 +350,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param totalHits
     * @return
     */
-   private JsonMap buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
+   private JSNode buildMeta(int size, int pageNum, int totalHits, String apiUrl, ElasticsearchQuery dsl, Object sources, String elasticUrl, List<String> headers)
    {
-      JsonMap meta = new JsonMap();
+      JSNode meta = new JSNode();
 
       //      pageNum = (pageNum == -1) ? 1 : pageNum;
       //      int prevPageNum = pageNum - 1;
@@ -481,9 +481,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       for (String field : sortList)
       {
-         if (sourceObj instanceof JsonMap && ((JsonMap) sourceObj).get(field) != null)
+         if (sourceObj instanceof JSNode && ((JSNode) sourceObj).get(field) != null)
          {
-            list.add(((JsonMap) sourceObj).get(field).toString().toLowerCase());
+            list.add(((JSNode) sourceObj).get(field).toString().toLowerCase());
          }
          else if (sourceObj instanceof String)
          {
@@ -496,9 +496,9 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       return String.join(",", list);
    }
 
-   private JsonArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JsonArray hits, ElasticsearchQuery dsl)
+   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, ElasticsearchQuery dsl)
    {
-      JsonArray data = new JsonArray();
+      JSArray data = new JSArray();
 
       //      for (ObjectNode obj : (List<ObjectNode>) hits.asList())
       //      {

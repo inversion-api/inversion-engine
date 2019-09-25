@@ -17,10 +17,10 @@ public class TestArrayNode
    @Test
    public void testIsEmpty()
    {
-      assertTrue(new JsonArray().isEmpty());
-      assertFalse(new JsonArray("a", "b").isEmpty());
+      assertTrue(new JSArray().isEmpty());
+      assertFalse(new JSArray("a", "b").isEmpty());
 
-      JsonArray a = new JsonArray();
+      JSArray a = new JSArray();
       a.add("1");
       assertFalse(a.isEmpty());
    }
@@ -28,7 +28,7 @@ public class TestArrayNode
    @Test
    public void testClearAndIsEmpty()
    {
-      JsonArray a = new JsonArray();
+      JSArray a = new JSArray();
       a.add("1");
       a.clear();
       assertTrue(a.isEmpty());

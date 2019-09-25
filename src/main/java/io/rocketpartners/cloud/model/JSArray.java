@@ -28,11 +28,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class JsonArray extends JsonMap implements Iterable
+public class JSArray extends JSNode implements Iterable
 {
    List objects = new ArrayList();
 
-   public JsonArray(Object... objects)
+   public JSArray(Object... objects)
    {
       if (objects != null && objects.length == 1 && objects[0].getClass().isArray())
       {
@@ -70,9 +70,9 @@ public class JsonArray extends JsonMap implements Iterable
       return set;
    }
 
-   public JsonMap getMap(int index)
+   public JSNode getMap(int index)
    {
-      return (JsonMap) get(index + "");
+      return (JSNode) get(index + "");
    }
 
    @Override
@@ -111,7 +111,7 @@ public class JsonArray extends JsonMap implements Iterable
       return remove(Integer.parseInt(index.toString().trim()));
    }
 
-   public void addAll(JsonArray array)
+   public void addAll(JSArray array)
    {
       objects.addAll(array.asList());
    }
@@ -131,9 +131,9 @@ public class JsonArray extends JsonMap implements Iterable
       return (String) get(index);
    }
 
-   public JsonMap getObject(int index)
+   public JSNode getObject(int index)
    {
-      return (JsonMap) get(index);
+      return (JSNode) get(index);
    }
 
    public void setObject(int index, Object o)
@@ -141,9 +141,9 @@ public class JsonArray extends JsonMap implements Iterable
       objects.set(index, o);
    }
 
-   public JsonArray getArray(int index)
+   public JSArray getArray(int index)
    {
-      return (JsonArray) get(index);
+      return (JSArray) get(index);
    }
 
    public boolean contains(Object object)
@@ -176,10 +176,10 @@ public class JsonArray extends JsonMap implements Iterable
 
    public void sort(final String key)
    {
-      Collections.sort(objects, new Comparator<JsonMap>()
+      Collections.sort(objects, new Comparator<JSNode>()
          {
             @Override
-            public int compare(JsonMap o1, JsonMap o2)
+            public int compare(JSNode o1, JSNode o2)
             {
                Object val1 = o1.get(key);
                Object val2 = o2.get(key);

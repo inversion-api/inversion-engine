@@ -29,27 +29,27 @@ import java.util.Set;
 
 import io.rocketpartners.cloud.utils.Utils;
 
-public class JsonMap implements Map<String, Object>
+public class JSNode implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
 
-   public JsonMap()
+   public JSNode()
    {
 
    }
 
-   public JsonMap(Object... nvPairs)
+   public JSNode(Object... nvPairs)
    {
       for (int i = 0; i < nvPairs.length - 1; i += 2)
       {
-         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JsonMap)))
+         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JSNode)))
             throw new RuntimeException("Incorrect constructor called.  Should have called JSMap(Map)");
 
          put(nvPairs[i] + "", nvPairs[i + 1]);
       }
    }
 
-   public JsonMap(Map map)
+   public JSNode(Map map)
    {
       for (Object key : map.keySet())
       {
@@ -57,12 +57,12 @@ public class JsonMap implements Map<String, Object>
       }
    }
 
-   public List<JsonMap> diff(JsonMap diffAgainst)
+   public List<JSNode> diff(JSNode diffAgainst)
    {
       return diff(diffAgainst, "", new ArrayList());
    }
 
-   protected List<JsonMap> diff(JsonMap diffAgainst, String path, ArrayList<JsonMap> patches)
+   protected List<JSNode> diff(JSNode diffAgainst, String path, ArrayList<JSNode> patches)
    {
       for (String key : keySet())
       {
@@ -80,13 +80,13 @@ public class JsonMap implements Map<String, Object>
          Object theirVal = diffAgainst.get(key);
 
          if (myVal == null && theirVal != null)
-            patches.add(new JsonMap("op", "remove", "path", Utils.implode(".", path, key), myVal));
+            patches.add(new JSNode("op", "remove", "path", Utils.implode(".", path, key), myVal));
       }
 
       return patches;
    }
 
-   protected void diff(String path, Object myVal, Object theirVal, ArrayList<JsonMap> patches)
+   protected void diff(String path, Object myVal, Object theirVal, ArrayList<JSNode> patches)
    {
       if (myVal == null && theirVal == null)
       {
@@ -94,31 +94,31 @@ public class JsonMap implements Map<String, Object>
       }
       else if (myVal != null && theirVal == null)
       {
-         patches.add(new JsonMap("op", "add", "path", path, "value", myVal));
+         patches.add(new JSNode("op", "add", "path", path, "value", myVal));
       }
       else if (myVal == null && theirVal != null)
       {
-         patches.add(new JsonMap("op", "remove", "path", path, myVal));
+         patches.add(new JSNode("op", "remove", "path", path, myVal));
       }
       else if (!myVal.getClass()
                      .equals(theirVal.getClass()))
       {
-         patches.add(new JsonMap("op", "replace", "path", path, myVal));
+         patches.add(new JSNode("op", "replace", "path", path, myVal));
       }
-      else if (myVal instanceof JsonMap)
+      else if (myVal instanceof JSNode)
       {
-         ((JsonMap) myVal).diff((JsonMap) theirVal, path, patches);
+         ((JSNode) myVal).diff((JSNode) theirVal, path, patches);
       }
       else if (!myVal.toString()
                      .equals(theirVal.toString()))
       {
-         patches.add(new JsonMap("op", "replace", "path", path, myVal));
+         patches.add(new JSNode("op", "replace", "path", path, myVal));
       }
    }
 
-   public void patch(List<JsonMap> diffs)
+   public void patch(List<JSNode> diffs)
    {
-      for (JsonMap diff : diffs)
+      for (JSNode diff : diffs)
       {
          String op = diff.getString("op");
          String path = diff.getString("path");
@@ -135,7 +135,7 @@ public class JsonMap implements Map<String, Object>
             path = path.substring(0, idx);
          }
 
-         JsonMap parent = path == null || path.length() == 0 ? this : findMap(path);
+         JSNode parent = path == null || path.length() == 0 ? this : findMap(path);
          if ("remove".equals(op))
          {
             parent.remove(prop);
@@ -152,14 +152,14 @@ public class JsonMap implements Map<String, Object>
       return false;
    }
 
-   public JsonMap getMap(String name)
+   public JSNode getNode(String name)
    {
-      return (JsonMap) get(name);
+      return (JSNode) get(name);
    }
 
-   public JsonArray getArray(String name)
+   public JSArray getArray(String name)
    {
-      return (JsonArray) get(name);
+      return (JSArray) get(name);
    }
 
    public String getString(String name)
@@ -207,14 +207,14 @@ public class JsonMap implements Map<String, Object>
       return false;
    }
 
-   public JsonMap findMap(String path)
+   public JSNode findMap(String path)
    {
-      return (JsonMap) find(path);
+      return (JSNode) find(path);
    }
 
-   public JsonArray findArray(String path)
+   public JSArray findArray(String path)
    {
-      return (JsonArray) find(path);
+      return (JSArray) find(path);
    }
 
    public Object find(String path)
@@ -226,7 +226,7 @@ public class JsonMap implements Map<String, Object>
       {
          if (obj == null)
             break;
-         obj = ((JsonMap) obj).get(prop);
+         obj = ((JSNode) obj).get(prop);
       }
       return obj;
    }
@@ -252,9 +252,9 @@ public class JsonMap implements Map<String, Object>
             List<String> nextPath = path.subList(1, path.size());
             for (Object value : values())
             {
-               if (value instanceof JsonMap)
+               if (value instanceof JSNode)
                {
-                  ((JsonMap) value).collect(nextPath, collected);
+                  ((JSNode) value).collect(nextPath, collected);
                }
             }
          }
@@ -268,9 +268,9 @@ public class JsonMap implements Map<String, Object>
             {
                collected.add(found);
             }
-            else if (found instanceof JsonMap)
+            else if (found instanceof JSNode)
             {
-               ((JsonMap) found).collect(path.subList(1, path.size()), collected);
+               ((JSNode) found).collect(path.subList(1, path.size()), collected);
             }
          }
       }
@@ -414,9 +414,9 @@ public class JsonMap implements Map<String, Object>
          String name = p.name;
          Object value = p.value;
 
-         if (value instanceof JsonArray)
+         if (value instanceof JSArray)
          {
-            map.put(name, ((JsonArray) p.getValue()).asList());
+            map.put(name, ((JSArray) p.getValue()).asList());
          }
          else
          {
@@ -430,17 +430,17 @@ public class JsonMap implements Map<String, Object>
    @Override
    public String toString()
    {
-      return Utils.toJson((JsonMap) this);
+      return Utils.toJson((JSNode) this);
    }
 
    public String toString(boolean pretty)
    {
-      return Utils.toJson((JsonMap) this, pretty, false);
+      return Utils.toJson((JSNode) this, pretty, false);
    }
 
    public String toString(boolean pretty, boolean tolowercase)
    {
-      return Utils.toJson((JsonMap) this, pretty, tolowercase);
+      return Utils.toJson((JSNode) this, pretty, tolowercase);
    }
 
    @Override

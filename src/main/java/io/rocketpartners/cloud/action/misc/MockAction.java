@@ -10,8 +10,8 @@ import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonArray;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSArray;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -21,7 +21,7 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class MockAction extends Action<MockAction>
 {
-   protected JsonMap json          = null;
+   protected JSNode json          = null;
    protected String  jsonUrl       = null;
    protected int     statusCode    = 200;
    protected String  status        = SC.SC_200_OK;
@@ -34,7 +34,7 @@ public class MockAction extends Action<MockAction>
 
    public MockAction(String name)
    {
-      this(null, null, name, new JsonMap("name", name));
+      this(null, null, name, new JSNode("name", name));
    }
 
    public MockAction(String methods, String includePaths, String name)
@@ -42,7 +42,7 @@ public class MockAction extends Action<MockAction>
       this(methods, includePaths, name, null);
    }
 
-   public MockAction(String methods, String includePaths, String name, JsonMap json)
+   public MockAction(String methods, String includePaths, String name, JSNode json)
    {
       withMethods(methods);
       withIncludePaths(includePaths);
@@ -56,12 +56,12 @@ public class MockAction extends Action<MockAction>
       res.withStatus(status);
       res.withStatusCode(statusCode);
 
-      JsonMap json = getJson();
+      JSNode json = getJson();
 
       if (json != null)
       {
-         if (json instanceof JsonArray)
-            res.withData((JsonArray) json);
+         if (json instanceof JSArray)
+            res.withData((JSArray) json);
          else
             res.withJson(json);
       }
@@ -70,7 +70,7 @@ public class MockAction extends Action<MockAction>
          chain.cancel();
    }
 
-   public MockAction withJson(JsonMap json)
+   public MockAction withJson(JSNode json)
    {
       this.json = json;
       return null;
@@ -87,7 +87,7 @@ public class MockAction extends Action<MockAction>
       return this;
    }
 
-   public JsonMap getJson()
+   public JSNode getJson()
    {
       if (json == null && jsonUrl != null)
       {

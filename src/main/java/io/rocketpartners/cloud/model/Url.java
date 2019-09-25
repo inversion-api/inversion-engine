@@ -32,7 +32,7 @@ public class Url implements Cloneable
    protected int        port     = 0;
    protected Path       path     = null;
    protected String     query    = null;
-   protected JsonMap params   = new JsonMap();
+   protected JSNode params   = new JSNode();
 
    public Url copy()
    {
@@ -361,7 +361,7 @@ public class Url implements Cloneable
    public Url withQuery(String query)
    {
       this.query = query;
-      params = new JsonMap();
+      params = new JSNode();
       if (query != null)
       {
          params.putAll(Utils.parseQueryString(query));

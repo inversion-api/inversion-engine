@@ -19,7 +19,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Attribute;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Column;
@@ -27,7 +27,7 @@ import io.rocketpartners.cloud.model.Db;
 import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Entity;
 import io.rocketpartners.cloud.model.Index;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Relationship;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
@@ -168,7 +168,7 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<JsonMap> results = select(req, req.getCollection(), req.getParams(), api);
+      Results<JSNode> results = select(req, req.getCollection(), req.getParams(), api);
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
@@ -243,7 +243,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    }
 
-   protected Results<JsonMap> select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
+   protected Results<JSNode> select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
    {
       //------------------------------------------------
       // Normalize all of the params and convert attribute
@@ -354,12 +354,12 @@ public class RestGetAction extends Action<RestGetAction>
 
             if (collection == null)
             {
-               JsonMap node = new JsonMap(row);
+               JSNode node = new JSNode(row);
                results.setRow(i, node);
             }
             else
             {
-               JsonMap node = new JsonMap();
+               JSNode node = new JSNode();
                results.setRow(i, node);
 
                String entityKey = req.getCollection().getTable().encodeKey(row);
@@ -441,21 +441,21 @@ public class RestGetAction extends Action<RestGetAction>
       return results;
    }
 
-   public void exclude(List<JsonMap> nodes)
+   public void exclude(List<JSNode> nodes)
    {
       Set includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
       Set excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
 
       if (includes.size() > 0 || excludes.size() > 0)
       {
-         for (JsonMap node : nodes)
+         for (JSNode node : nodes)
          {
             exclude(node, includes, excludes, null);
          }
       }
    }
 
-   public void exclude(JsonMap node, Set includes, Set excludes, String path)
+   public void exclude(JSNode node, Set includes, Set excludes, String path)
    {
       for (String key : node.keySet())
       {
@@ -468,20 +468,20 @@ public class RestGetAction extends Action<RestGetAction>
          {
             Object value = node.get(key);
 
-            if (value instanceof JsonArray)
+            if (value instanceof JSArray)
             {
-               JsonArray arr = (JsonArray) value;
+               JSArray arr = (JSArray) value;
                for (int i = 0; i < arr.size(); i++)
                {
-                  if (arr.get(i) instanceof JsonMap)
+                  if (arr.get(i) instanceof JSNode)
                   {
-                     exclude((JsonMap) arr.get(i), includes, excludes, attrPath);
+                     exclude((JSNode) arr.get(i), includes, excludes, attrPath);
                   }
                }
             }
-            else if (value instanceof JsonMap)
+            else if (value instanceof JSNode)
             {
-               exclude((JsonMap) value, includes, excludes, attrPath);
+               exclude((JSNode) value, includes, excludes, attrPath);
             }
          }
       }
@@ -496,7 +496,7 @@ public class RestGetAction extends Action<RestGetAction>
     * not increase with the number of results at any level of the expansion.
     */
 
-   protected void expand(Request request, Collection collection, List<JsonMap> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
+   protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
    {
       if (parentObjs.size() == 0)
          return;
@@ -541,7 +541,7 @@ public class RestGetAction extends Action<RestGetAction>
                      //               }
                   };
 
-               for (JsonMap node : parentObjs)
+               for (JSNode node : parentObjs)
                {
                   pkCache.put(collection, getEntityKey(node), node);
                }
@@ -577,7 +577,7 @@ public class RestGetAction extends Action<RestGetAction>
                idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
 
                relatedEks = new ArrayList();
-               for (JsonMap parentObj : parentObjs)
+               for (JSNode parentObj : parentObjs)
                {
                   String parentEk = getEntityKey(parentObj);
                   String childEk = parentObj.getString(rel.getName());
@@ -606,12 +606,12 @@ public class RestGetAction extends Action<RestGetAction>
             if (relatedEks == null)
             {
                List toMatchEks = new ArrayList();
-               for (JsonMap parentObj : parentObjs)
+               for (JSNode parentObj : parentObjs)
                {
                   String parentEk = getEntityKey(parentObj);
                   if (!toMatchEks.contains(parentEk))
                   {
-                     if (parentObj.get(rel.getName()) instanceof JsonArray)
+                     if (parentObj.get(rel.getName()) instanceof JSArray)
                         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
@@ -622,7 +622,7 @@ public class RestGetAction extends Action<RestGetAction>
                      }
                      else
                      {
-                        parentObj.put(rel.getName(), new JsonArray());
+                        parentObj.put(rel.getName(), new JSArray());
                      }
                   }
                }
@@ -649,15 +649,15 @@ public class RestGetAction extends Action<RestGetAction>
             }
 
             //this recursive call populates the pkCache
-            List<JsonMap> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
+            List<JSNode> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
 
             for (KeyValue<String, String> row : relatedEks)
             {
                String parentEk = row.getKey();
                String relatedEk = row.getValue();
 
-               JsonMap parentObj = (JsonMap) pkCache.get(collection, parentEk);
-               JsonMap childObj = (JsonMap) pkCache.get(relatedCollection, relatedEk);
+               JSNode parentObj = (JSNode) pkCache.get(collection, parentEk);
+               JSNode childObj = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
                if (rel.isOneToMany())
                {
@@ -708,7 +708,7 @@ public class RestGetAction extends Action<RestGetAction>
       return related;
    }
 
-   protected List<JsonMap> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection entityKeys, String expandsPath) throws Exception
+   protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection entityKeys, String expandsPath) throws Exception
    {
       if (entityKeys.size() == 0)
          return Collections.EMPTY_LIST;
@@ -758,11 +758,11 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else if (sc == 200)
       {
-         List<JsonMap> nodes = (List<JsonMap>) res.data().asList();
+         List<JSNode> nodes = (List<JSNode>) res.data().asList();
 
-         for (JsonMap node : nodes)
+         for (JSNode node : nodes)
          {
-            Object entityKey = getEntityKey((JsonMap) node);
+            Object entityKey = getEntityKey((JSNode) node);
             if (pkCache.containsKey(collection, entityKey))
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
 
@@ -795,8 +795,8 @@ public class RestGetAction extends Action<RestGetAction>
       if (obj == null)
          return null;
 
-      if (obj instanceof JsonMap)
-         obj = ((JsonMap) obj).get("href");
+      if (obj instanceof JSNode)
+         obj = ((JSNode) obj).get("href");
 
       String str = (String) obj;
       int idx = str.lastIndexOf('/');

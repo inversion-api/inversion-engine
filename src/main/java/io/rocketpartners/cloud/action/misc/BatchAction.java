@@ -3,9 +3,9 @@ package io.rocketpartners.cloud.action.misc;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -35,10 +35,10 @@ public class BatchAction<T extends BatchAction> extends Action<T>
    {
       try
       {
-         JsonArray arr = (JsonArray) req.getJson().getArray("data");
+         JSArray arr = (JSArray) req.getJson().getArray("data");
          for (int i = 0; i < arr.length(); i++)
          {
-            JsonMap json = arr.getObject(i);
+            JSNode json = arr.getObject(i);
             
             //TODO use streaming parsers to avoid extra encoding/decoding of the json bodies
             Response batchResponse = engine.service(json.getString("method"), json.getString("url"), json.getString("body"));

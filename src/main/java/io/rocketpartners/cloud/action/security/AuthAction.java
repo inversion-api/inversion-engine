@@ -32,9 +32,9 @@ import io.rocketpartners.cloud.action.sql.SqlDb;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -242,26 +242,26 @@ public class AuthAction extends Action<AuthAction>
             updateSessionCache = true;
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
-            JsonMap obj = new JsonMap();
+            JSNode obj = new JSNode();
             obj.put("id", user.getId());
             obj.put("username", username);
             obj.put("displayname", user.getDisplayName());
 
-            JsonArray perms = new JsonArray();
+            JSArray perms = new JSArray();
             for (String perm : user.getPermissions())
             {
                perms.add(perm);
             }
             obj.put("perms", perms);
 
-            JsonArray roles = new JsonArray();
+            JSArray roles = new JSArray();
             for (String role : user.getRoles())
             {
                roles.add(role);
             }
             obj.put("roles", roles);
 
-            resp.withJson(new JsonMap("data", obj));
+            resp.withJson(new JSNode("data", obj));
          }
 
          if (updateSessionCache)

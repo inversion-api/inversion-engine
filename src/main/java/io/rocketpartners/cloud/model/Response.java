@@ -47,7 +47,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected JsonMap                                json              = new JsonMap("meta", new JsonMap("createdOn", Utils.formatIso8601(new Date())), "data", new JsonArray());
+   protected JSNode                                json              = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -85,7 +85,7 @@ public class Response
 
    public Response withMeta(String key, String value)
    {
-      getJson().getMap("meta").put(key, value);
+      getJson().getNode("meta").put(key, value);
       return this;
    }
 
@@ -239,7 +239,7 @@ public class Response
    /**
     * @return the json
     */
-   public JsonMap getJson()
+   public JSNode getJson()
    {
       if (json == null && file != null && file.length() > 0)
       {
@@ -255,7 +255,7 @@ public class Response
     * 
     * @param json the json to set
     */
-   public Response withJson(JsonMap json)
+   public Response withJson(JSNode json)
    {
       this.json = json;
       return this;
@@ -276,12 +276,12 @@ public class Response
       return getJson().findBoolean(path);
    }
 
-   public JsonMap findNode(String path)
+   public JSNode findNode(String path)
    {
       return getJson().findMap(path);
    }
 
-   public JsonArray findArray(String path)
+   public JSArray findArray(String path)
    {
       return getJson().findArray(path);
    }
@@ -291,9 +291,9 @@ public class Response
       return getJson().find(path);
    }
 
-   public JsonArray data()
+   public JSArray data()
    {
-      JsonMap json = getJson();
+      JSNode json = getJson();
       if (json != null)
       {
          return json.getArray("data");
@@ -301,7 +301,7 @@ public class Response
       return null;
    }
 
-   public Response withData(JsonArray data)
+   public Response withData(JSArray data)
    {
       getJson().put("data", data);
       return this;
@@ -320,9 +320,9 @@ public class Response
       return this;
    }
 
-   public JsonMap meta()
+   public JSNode meta()
    {
-      return getJson().getMap("meta");
+      return getJson().getNode("meta");
    }
 
    public Response withMeta(String key, Object value)
@@ -369,9 +369,9 @@ public class Response
       if (pageSize < 0)
       {
          Object arr = getJson().find("data.0.name");
-         if (arr instanceof JsonArray)
+         if (arr instanceof JSArray)
          {
-            pageSize = ((JsonArray) arr).size();
+            pageSize = ((JSArray) arr).size();
          }
       }
       return pageSize;
@@ -434,7 +434,7 @@ public class Response
 
    public String getEntityKey()
    {
-      JsonMap json = getJson();
+      JSNode json = getJson();
       if (json != null)
       {
          String href = json.getString("href");

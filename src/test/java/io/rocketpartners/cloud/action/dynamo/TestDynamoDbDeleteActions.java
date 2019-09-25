@@ -5,7 +5,7 @@ import java.util.Collection;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.service.Engine;
 import io.rocketpartners.cloud.utils.Utils;
@@ -26,7 +26,7 @@ public class TestDynamoDbDeleteActions extends TestCase
       assertNotNull(href);
 
       //delete that random record
-      JsonMap record = res.findNode("data.0");
+      JSNode record = res.findNode("data.0");
       engine.delete(href).hasStatus(204);
 
       //make sure it was deleted
@@ -47,7 +47,7 @@ public class TestDynamoDbDeleteActions extends TestCase
       assertEquals(1, res.data().length());
 
       //makes sure the orig and the written back record match
-      JsonMap updatedRecord = res.findNode("data.0");
+      JSNode updatedRecord = res.findNode("data.0");
       for (String key : record.keySet())
       {
          assertTrue(Utils.equal(record.get(key), updatedRecord.get(key)));

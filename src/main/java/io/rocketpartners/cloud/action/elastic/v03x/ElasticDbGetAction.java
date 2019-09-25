@@ -33,10 +33,10 @@ import io.rocketpartners.cloud.action.elastic.v03x.rql.Rql;
 import io.rocketpartners.cloud.model.Action;
 import io.rocketpartners.cloud.model.Api;
 import io.rocketpartners.cloud.model.ApiException;
-import io.rocketpartners.cloud.model.JsonArray;
+import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.Collection;
 import io.rocketpartners.cloud.model.Endpoint;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
@@ -163,15 +163,15 @@ public class ElasticDbGetAction extends Action
 
          // TODO how do we want to handle a failed elastic result?
 
-         JsonMap jsObj = r.getJson();
+         JSNode jsObj = r.getJson();
 
          int totalHits = jsObj.findInt("hits.total");
-         JsonArray hits = jsObj.findArray("hits.hits");
+         JSArray hits = jsObj.findArray("hits.hits");
 
          boolean isAll = "all".equalsIgnoreCase(table.getName());//paths[paths.length - 1].toLowerCase().equals("no-type");
          boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
 
-         JsonArray data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
+         JSArray data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
 
          // if the query contains a wantedPage and it differs from the pagenum 
          // loop until pagenum==wantedPage.  Use the query, and only adjust the 
@@ -183,7 +183,7 @@ public class ElasticDbGetAction extends Action
          while (wantedPage != null && wantedPage != pageNum)
          {
             // get the last object
-            JsonMap lastHit = data.getObject(data.length() - 1);
+            JSNode lastHit = data.getObject(data.length() - 1);
 
             // get that object's 'sort' values
             String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
@@ -194,16 +194,16 @@ public class ElasticDbGetAction extends Action
 
             r = HttpUtils.rest("POST", url, json, headers, -1).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
             jsObj = r.getJson();
-            hits = jsObj.getMap("hits").getArray("hits");
+            hits = jsObj.getNode("hits").getArray("hits");
 
             data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
 
             pageNum++;
          }
 
-         JsonMap meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
+         JSNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
 
-         JsonMap wrapper = new JsonMap("meta", meta, "data", data);
+         JSNode wrapper = new JSNode("meta", meta, "data", data);
          res.withJson(wrapper);
 
       }
@@ -234,11 +234,11 @@ public class ElasticDbGetAction extends Action
 
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
-      JsonMap context = null;
+      JSNode context = null;
       if (req.getApi().isMultiTenant())
       {
          tenantId = req.removeParam("tenantId");
-         context = new JsonMap("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
       }
 
       String field = null;
@@ -250,23 +250,23 @@ public class ElasticDbGetAction extends Action
          value = entry.getValue();
       }
 
-      JsonMap completion = null;
-      JsonMap autoSuggest = null;
-      JsonMap payload = null;
+      JSNode completion = null;
+      JSNode autoSuggest = null;
+      JSNode payload = null;
 
       if (type == null || (type != null && !type.equals("wildcard")))
       {
-         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JsonMap("prefix", value, "completion", completion);
-         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
+         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSNode("prefix", value, "completion", completion);
+         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
 
       }
       else
       {
          // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new JsonMap("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JsonMap("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new JsonMap("_source", new JsonArray(field), "suggest", new JsonMap("auto-suggest", autoSuggest));
+         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
       }
 
       if (context != null)
@@ -283,18 +283,18 @@ public class ElasticDbGetAction extends Action
 
       if (r.isSuccess())
       {
-         JsonMap jsObj = r.getJson();
-         JsonMap auto = (JsonMap) jsObj.findMap("suggest.auto-suggest.0");
-         JsonArray resultArray = new JsonArray();
-         for (JsonMap obj : (List<JsonMap>) auto.getArray("options").asList())
+         JSNode jsObj = r.getJson();
+         JSNode auto = (JSNode) jsObj.findMap("suggest.auto-suggest.0");
+         JSArray resultArray = new JSArray();
+         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
          {
             if (context != null)
             {
-               resultArray.add(obj.getMap("_source").getMap(field).get("input"));
+               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
             }
             else
             {
-               resultArray.add(obj.getMap("_source").get(field));
+               resultArray.add(obj.getNode("_source").get(field));
             }
          }
 
@@ -309,9 +309,9 @@ public class ElasticDbGetAction extends Action
          }
          else
          {
-            JsonMap data = new JsonMap("field", field, "results", resultArray);
-            JsonMap meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new JsonMap("meta", meta, "data", data));
+            JSNode data = new JSNode("field", field, "results", resultArray);
+            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+            res.withJson(new JSNode("meta", meta, "data", data));
          }
       }
       else
@@ -350,9 +350,9 @@ public class ElasticDbGetAction extends Action
     * @param totalHits
     * @return
     */
-   private JsonMap buildMeta(int size, int pageNum, int totalHits, String apiUrl, QueryDsl dsl, Object sources, String elasticUrl, ArrayListValuedHashMap<String, String> headers)
+   private JSNode buildMeta(int size, int pageNum, int totalHits, String apiUrl, QueryDsl dsl, Object sources, String elasticUrl, ArrayListValuedHashMap<String, String> headers)
    {
-      JsonMap meta = new JsonMap();
+      JSNode meta = new JSNode();
 
       pageNum = (pageNum == -1) ? 1 : pageNum;
       int prevPageNum = pageNum - 1;
@@ -447,11 +447,11 @@ public class ElasticDbGetAction extends Action
 
                      if (r.isSuccess())
                      {
-                        JsonMap jsObj = r.getJson();
-                        JsonArray hits = jsObj.getArray("hits.hits");
-                        JsonMap prevLastHit = hits.getObject(hits.length() - 1);
+                        JSNode jsObj = r.getJson();
+                        JSArray hits = jsObj.getArray("hits.hits");
+                        JSNode prevLastHit = hits.getObject(hits.length() - 1);
 
-                        prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getMap("_source"), sortList);
+                        prevStartString = srcObjectFieldsToStringBySortList(prevLastHit.getNode("_source"), sortList);
 
                         meta.put("prev", (pageNum == 1) ? null : url + "&pageNum=" + prevPageNum + "&start=" + prevStartString);
                      }
@@ -481,9 +481,9 @@ public class ElasticDbGetAction extends Action
 
       for (String field : sortList)
       {
-         if (sourceObj instanceof JsonMap && ((JsonMap) sourceObj).get(field) != null)
+         if (sourceObj instanceof JSNode && ((JSNode) sourceObj).get(field) != null)
          {
-            list.add(((JsonMap) sourceObj).get(field).toString().toLowerCase());
+            list.add(((JSNode) sourceObj).get(field).toString().toLowerCase());
          }
          else if (sourceObj instanceof String)
          {
@@ -496,18 +496,18 @@ public class ElasticDbGetAction extends Action
       return String.join(",", list);
    }
 
-   private JsonArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JsonArray hits, QueryDsl dsl)
+   private JSArray createDataJsArray(boolean isAll, boolean isOneSrcArr, JSArray hits, QueryDsl dsl)
    {
-      JsonArray data = new JsonArray();
+      JSArray data = new JSArray();
 
-      for (JsonMap obj : (List<JsonMap>) hits.asList())
+      for (JSNode obj : (List<JSNode>) hits.asList())
       {
-         JsonMap src = obj.getMap("_source");
+         JSNode src = obj.getNode("_source");
 
          // for 'all' requests, add the _meta
          if (isAll)
          {
-            JsonMap src_meta = new JsonMap();
+            JSNode src_meta = new JSNode();
             src_meta.put("index", obj.get("_index"));
             src_meta.put("type", obj.get("_type"));
             src.put("_meta", src_meta);

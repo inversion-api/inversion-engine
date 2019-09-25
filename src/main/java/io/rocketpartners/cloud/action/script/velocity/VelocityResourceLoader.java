@@ -27,7 +27,7 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 
 import io.rocketpartners.cloud.action.script.ScriptAction;
-import io.rocketpartners.cloud.model.JsonMap;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.service.Engine;
 
 public class VelocityResourceLoader extends ResourceLoader
@@ -44,7 +44,7 @@ public class VelocityResourceLoader extends ResourceLoader
    {
       try
       {
-         JsonMap script = ScriptAction.findScript(source);
+         JSNode script = ScriptAction.findScript(source);
          if (script != null)
          {
             return new InputStreamReader(new ByteArrayInputStream(script.getString("script").getBytes()));
