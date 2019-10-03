@@ -6,53 +6,57 @@ Inversion is the fastest way to deliver full featured and secure REST APIs.
 
 With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
 
-Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against 
-multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.  
+Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
 
 ## Contents
-1. [Features and Benefits](#features-and-benefits)
-1. [Quick Start](#quick-start)
-   * [Coding Your Own API](#coding-your-own-api)
-   * [Configuration Instead of Code](#configuration-instead-of-code)   
-1. [URL Structure](#url-structure)
-1. [Configuring Your Api](#configuring-your-api)
-   * [Configuration File Loading](#configuration-file-loading)
-   * [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
-1. [Resource Query Language (RQL)](#resource-query-language-rql)
-   * [Query Functions](#query-functions)
-   * [Sorting and Ordering](#sorting-and-ordering)
-   * [Pagination, Offset and Limit](#pagination-offset-and-limit)
-   * [Aggregations](#aggregations)
-   * [Nested Document Expansion](#nested-document-expansion)
-   * [Property Inclusion / Exclusion](#property-inclusion--exclusion)
-   * [Reserved Query String Parameters](#reserved-query-string-parameters)
-   * [Restricted and Required Parameters](#restricted-and-required-query-parameters)
-   * [Miscellaneous](#miscellaneous)
-1. [Core Object Model Concepts](#core-object-model-concepts)
-   * [Apis](#apis)
-   * [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexs)
-   * [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
-   * [Endpoints and Actions](#endpoints-and-actions)
-   * [AclActions and AclRules](#aclaction-and-aclrules)
-   * [Path Matching](#path-matching)
-1. [Security Model](#security-model)
-   * [Account Roles](#account-roles)
-   * [Api Permissions](#api-permissions)
-   * [Authentication](#authentication)
-   * [Authorization](#authorization)
-   * [Multi-Tenant APIs](#multi-tenant-apis)
-   * [Row Level Security](#row-level-security)   
-1. [Elasticsearch Specifics](#elasticsearch-specifics)
-1. [DynamoDB Specifics](#dynamodb-specifics)  
-1. [Developer Notes](#developer-notes)
-   * [Javadocs](#Javadocs)
-   * [Logging](#logging)
-   * [Gradle, Maven, etc.](#gradle-maven-etc)    
-1. [REST API Design Resources](#rest-api-design-resources)
-   * [HTTP Status Codes](#http-status-codes)
-   * [Standards-ish](#standards-ish)
-   * [Web Query Languages](#web-query-languages)
-   * [Best Practices and Design Resources](#best-dractices-and-design-resources)
+- [Inversion Cloud API Engine](#inversion-cloud-api-engine)
+  - [Contents](#contents)
+  - [Features and Benefits](#features-and-benefits)
+  - [Quick Start](#quick-start)
+    - [Coding Your Own API](#coding-your-own-api)
+    - [Configuration Instead of Code](#configuration-instead-of-code)
+  - [URL Structure](#url-structure)
+  - [Configuring Your API](#configuring-your-api)
+    - [Configuration File Loading](#configuration-file-loading)
+  - [Keeping Passwords out of Config Files](#keeping-passwords-out-of-config-files)
+  - [Resource Query Language (RQL)](#resource-query-language-rql)
+    - [General](#general)
+    - [Query Functions](#query-functions)
+    - [Pagination, Offset and Limit](#pagination-offset-and-limit)
+    - [Property Inclusion / Exclusion](#property-inclusion--exclusion)
+    - [Aggregations](#aggregations)
+    - [Nested Document Expansion](#nested-document-expansion)
+    - [Reserved Query String Parameters](#reserved-query-string-parameters)
+    - [Restricted and Required Query Parameters](#restricted-and-required-query-parameters)
+    - [Miscellaneous](#miscellaneous)
+  - [Core Object Model Concepts](#core-object-model-concepts)
+    - [Apis](#apis)
+    - [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexs)
+    - [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
+    - [Endpoints and Actions](#endpoints-and-actions)
+    - [AclAction and AclRules](#aclaction-and-aclrules)
+    - [Path Matching](#path-matching)
+  - [Security Model](#security-model)
+    - [Account Roles](#account-roles)
+    - [Api Permissions](#api-permissions)
+    - [Authentication](#authentication)
+    - [Authorization](#authorization)
+    - [Multi-Tenant APIs](#multi-tenant-apis)
+    - [Row Level Security](#row-level-security)
+  - [Elasticsearch Specifics](#elasticsearch-specifics)
+      - [Elasticsearch RQL Examples](#elasticsearch-rql-examples)
+  - [DynamoDB Specifics](#dynamodb-specifics)
+  - [Developer Notes](#developer-notes)
+    - [Javadocs](#javadocs)
+    - [Logging](#logging)
+    - [Gradle, Maven, etc.](#gradle-maven-etc)
+  - [REST API Design Resources](#rest-api-design-resources)
+    - [HTTP Status Codes](#http-status-codes)
+    - [Standards-ish](#standards-ish)
+    - [Web Query Languages](#web-query-languages)
+    - [Best Practices and Design Resources](#best-practices-and-design-resources)
+    - [REST APIs in the Wild](#rest-apis-in-the-wild)
  
    
 ## Features and Benefits
@@ -63,10 +67,10 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Database foreign key relationships result in nested documents that can be retrieved in a single request to eliminate over fetching.
  * Elegant "beautification" and pluralization of "ugly" table and column names.  All collection and attribute names are converted to JSON friendly camelCase.  "MY_COLUMN_NAME" gets converted to "myColumnName".
  * Smart pagination and ordering with a consistent document envelope.
- * Powerful Resource Query Language (RQL) lets you select the exact resrouces you are looking for.
- * For complex nested document PUT/POSTS, all resources are "upserted" with new or updated foreign key dependencies updated first and relationships resolved automatically.  You can compose a rich client side JSON model mixing existing and new resources and PUT/POST the entire object in one request. 
+ * Powerful Resource Query Language (RQL) lets you select the exact resources you are looking for.
+ * For complex nested document PUT/POSTS, all resources are "upserted" with new or updated foreign key dependencies updated first and relationships resolved automatically.  You can compose a rich client side JSON model mixing existing and new resources and PUT/POST the entire object in one request.
  * Sql Injection proof through the use of prepared statements instead of dynamic sql.
- * Permission and roll based declarative security model.
+ * Permission and role based declarative security model.
  * Always CORS cross site enabled.
  * Expose multiple backends in a single API.
  * Designed to support single and multi tenant API usage patterns.
@@ -255,79 +259,79 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
 ### Query Functions
 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- column=value                     | :heavy_check_mark:  | :grey_question:     | :grey_question:    | translates as expected into a sql column equality check "column = value" 
- column='singleTicks'             | :heavy_check_mark:  | :grey_question:     | :grey_question:    | 'values can have spaces with encapsulated in quotes'
- column="doubleQuotes"            | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "double or single quotes work"
- column=" ' "                     | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "the first quote type wins so a single quote like ' inside of double quotes is considered a literal"
- column=" \" "                    | :heavy_check_mark:  | :grey_question:     | :grey_question:    | "you can also \" escape quotes with a backslash"
- column=wild*card                 | :heavy_check_mark:  | :grey_question:     | :grey_question:    | something*blah - translates into "column LIKE 'something%blah'"
- eq(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | alternate form of column=value
- gt(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | greater than query filter eg: "column < value"
- ge(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | greater than or equal to
- lt(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | less than filter
- le(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | less than or equal to
- ne(column,value)                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | not equal
- in(column,val1,[val2...valN])    | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column in (val1,....valN)"
- out(column,val1,[val2...valN])   | :heavy_check_mark:  | :heavy_check_mark:  |                    | translates into "where column NOT in (val1,....valN)"
- and(clause1,clause2,[...clauseN) | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | ANDs multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))
- or(clause1,clause2,[...clauseN)  | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | ORs multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))
- emp(column)                      | :grey_question:     | :heavy_check_mark:  |                    | retrieves empty rows for a column value. null or empty string values will be retrieved
- nemp(column)                     | :grey_question:     | :heavy_check_mark:  |                    | retrieves all rows that do not contain an empty string or null value for a specified column
- n(column)                        | :grey_question:     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that contain a null value for a specified column
- nn(column)                       | :grey_question:     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that do not contain a null value for a specified column
- w(column,[value])                |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows 'with' that wildcarded value in the specified column
- ew(column,[value])               |                     | :heavy_check_mark:  |                    | retrieves all rows that 'end with' that wildcarded value in the specified column
- sw(column,[value])               |                     | :heavy_check_mark:  | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column
+ | RQL Function                     |      Database      |      Elastic       |       Dynamo       | Description                                                                                          |
+ | -------------------------------- | :----------------: | :----------------: | :----------------: | ---------------------------------------------------------------------------------------------------- |
+ | column=value                     | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | translates as expected into a sql column equality check "column = value"                             |
+ | column='singleTicks'             | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | 'values can have spaces with encapsulated in quotes'                                                 |
+ | column="doubleQuotes"            | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "double or single quotes work"                                                                       |
+ | column=" ' "                     | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "the first quote type wins so a single quote like ' inside of double quotes is considered a literal" |
+ | column=" \" "                    | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "you can also \" escape quotes with a backslash"                                                     |
+ | column=wild*card                 | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | something*blah - translates into "column LIKE 'something%blah'"                                      |
+ | eq(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | alternate form of column=value                                                                       |
+ | gt(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | greater than query filter eg: "column < value"                                                       |
+ | ge(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | greater than or equal to                                                                             |
+ | lt(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | less than filter                                                                                     |
+ | le(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | less than or equal to                                                                                |
+ | ne(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | not equal                                                                                            |
+ | in(column,val1,[val2...valN])    | :heavy_check_mark: | :heavy_check_mark: |                    | translates into "where column in (val1,....valN)"                                                    |
+ | out(column,val1,[val2...valN])   | :heavy_check_mark: | :heavy_check_mark: |                    | translates into "where column NOT in (val1,....valN)"                                                |
+ | and(clause1,clause2,[...clauseN) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ANDs multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))                             |
+ | or(clause1,clause2,[...clauseN)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ORs multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))                               |
+ | emp(column)                      |  :grey_question:   | :heavy_check_mark: |                    | retrieves empty rows for a column value. null or empty string values will be retrieved               |
+ | nemp(column)                     |  :grey_question:   | :heavy_check_mark: |                    | retrieves all rows that do not contain an empty string or null value for a specified column          |
+ | n(column)                        |  :grey_question:   | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that contain a null value for a specified column                                  |
+ | nn(column)                       |  :grey_question:   | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that do not contain a null value for a specified column                           |
+ | w(column,[value])                |                    | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows 'with' that wildcarded value in the specified column                              |
+ | ew(column,[value])               |                    | :heavy_check_mark: |                    | retrieves all rows that 'end with' that wildcarded value in the specified column                     |
+ | sw(column,[value])               |                    | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column                   |
 
  
  ### Sorting and Ordering
 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- sort=col1,+col2,-col3,colN       | :heavy_check_mark:  |                     | :grey_exclamation: | use of the + operator is the implied default.  Prefixing with "-" sorts descending.
- sort(col1,[...colN])             | :heavy_check_mark:  |                     |                    | same as sort= but with "function format"
- order	                          | :heavy_check_mark:  |                     |                    | an overloaded synonym for "sort", the two are equivelant.
+ | RQL Function               |      Database      | Elastic |       Dynamo       | Description                                                                         |
+ | -------------------------- | :----------------: | :-----: | :----------------: | ----------------------------------------------------------------------------------- |
+ | sort=col1,+col2,-col3,colN | :heavy_check_mark: |         | :grey_exclamation: | use of the + operator is the implied default.  Prefixing with "-" sorts descending. |
+ | sort(col1,[...colN])       | :heavy_check_mark: |         |                    | same as sort= but with "function format"                                            |
+ | order                      | :heavy_check_mark: |         |                    | an overloaded synonym for "sort", the two are equivelant.                           |
 
 
 ### Pagination, Offset and Limit
 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- page=N                           | :heavy_check_mark:  |                     |                    | translates into an offset clause using pagesize (or the default page size) as the multiplier 
- pagenum=N                        | :heavy_check_mark:  |                     |                    | an overloaded synonym for "page", the two are equivelant.
- pagesize=N                       | :heavy_check_mark:  |                     |                    | the number of results to return
- offset=N                         | :heavy_check_mark:  |                     |                    | directly translates into a sql offset clause, overrides any page/pagenum params supplied
- limit=N                          | :heavy_check_mark:  |                     |                    | directly translates into a SQL limit clause, overrides any pagesize params supplied
+ | RQL Function |      Database      | Elastic | Dynamo | Description                                                                                  |
+ | ------------ | :----------------: | :-----: | :----: | -------------------------------------------------------------------------------------------- |
+ | page=N       | :heavy_check_mark: |         |        | translates into an offset clause using pagesize (or the default page size) as the multiplier |
+ | pagenum=N    | :heavy_check_mark: |         |        | an overloaded synonym for "page", the two are equivelant.                                    |
+ | pagesize=N   | :heavy_check_mark: |         |        | the number of results to return                                                              |
+ | offset=N     | :heavy_check_mark: |         |        | directly translates into a sql offset clause, overrides any page/pagenum params supplied     |
+ | limit=N      | :heavy_check_mark: |         |        | directly translates into a SQL limit clause, overrides any pagesize params supplied          |
   
 
 ### Property Inclusion / Exclusion
 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- includes=col1,col2,colN          | :heavy_check_mark:  |                     |                    | restricts the properties returned in the document to the ones specified.  All others will be excluded. 
- includes(col1...colN)            | :heavy_check_mark:  |                     |                    | same as above
- excludes=col1,col2,colN          | :heavy_check_mark:  |                     |                    | specifically excludes the supplied props.  All others will be included.   
- excludes(col1...colN)            | :heavy_check_mark:  |                     |                    | same as above
+ | RQL Function            |      Database      | Elastic | Dynamo | Description                                                                                            |
+ | ----------------------- | :----------------: | :-----: | :----: | ------------------------------------------------------------------------------------------------------ |
+ | includes=col1,col2,colN | :heavy_check_mark: |         |        | restricts the properties returned in the document to the ones specified.  All others will be excluded. |
+ | includes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
+ | excludes=col1,col2,colN | :heavy_check_mark: |         |        | specifically excludes the supplied props.  All others will be included.                                |
+ | excludes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
 
 
 
 
 ### Aggregations  
 
- RQL Function                       | Database            | Elastic             | Dynamo             | Description  
- ---                                | :---:               | :---:               | :---:              | ---
- group(col1, [...colN])             | :heavy_check_mark:  |                     |                    | adds cols to a GROUP BY clause
- sum(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
- count(col, [renamedAs])            | :heavy_check_mark:  |                     |                    | counts the given column and optionally names the resulting JSON property
- min(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
- max(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
- sum(col, [renamedAs])              | :heavy_check_mark:  |                     |                    | sums the given column and optionally names the resulting JSON property
-countascol(col, value, [...valueN]) | :heavy_check_mark:  |                     |                    | Roughly translates to "select sum(if(eq(col, value), 1, 0)) as value
-distinct                            | :heavy_check_mark:  |                     |                    | filters out duplicate rows
-distinct(column)                    | :heavy_check_mark:  |                     |                    | filters out duplicates based on the given column
-if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |                     |                    |
+ | RQL Function                                        |      Database      | Elastic | Dynamo | Description                                                              |
+ | --------------------------------------------------- | :----------------: | :-----: | :----: | ------------------------------------------------------------------------ |
+ | group(col1, [...colN])                              | :heavy_check_mark: |         |        | adds cols to a GROUP BY clause                                           |
+ | sum(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
+ | count(col, [renamedAs])                             | :heavy_check_mark: |         |        | counts the given column and optionally names the resulting JSON property |
+ | min(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
+ | max(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
+ | sum(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
+ | countascol(col, value, [...valueN])                 | :heavy_check_mark: |         |        | Roughly translates to "select sum(if(eq(col, value), 1, 0)) as value     |
+ | distinct                                            | :heavy_check_mark: |         |        | filters out duplicate rows                                               |
+ | distinct(column)                                    | :heavy_check_mark: |         |        | filters out duplicates based on the given column                         |
+ | if(column OR expression, valwhentrue, valwhenfalse) | :heavy_check_mark: |         |        |
 
 
   
@@ -338,9 +342,9 @@ if(column OR expression, valwhentrue, valwhenfalse)| :heavy_check_mark:  |      
   
 ### Nested Document Expansion
 
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- expands=collection.property[...property][,table2.property2...]         | :heavy_check_mark:  |                     |                    | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value
+ | RQL Function                                                   |      Database      | Elastic | Dynamo | Description                                                                                                                                     |
+ | -------------------------------------------------------------- | :----------------: | :-----: | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+ | expands=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value |
   
 
 ### Reserved Query String Parameters
@@ -362,9 +366,9 @@ RQL query params as well as for JSON properties.
 
 * as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
  
- RQL Function                     | Database            | Elastic             | Dynamo             | Description  
- ---                              | :---:               | :---:               | :---:              | ---
- as(col, renamed)                 | :heavy_check_mark:  |                     |                    | change the name of the property in the return JSON, works just like SQL 'as' operator.
+ | RQL Function     |      Database      | Elastic | Dynamo | Description                                                                            |
+ | ---------------- | :----------------: | :-----: | :----: | -------------------------------------------------------------------------------------- |
+ | as(col, renamed) | :heavy_check_mark: |         |        | change the name of the property in the return JSON, works just like SQL 'as' operator. |
 
 
 ## Core Object Model Concepts
@@ -403,7 +407,7 @@ Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc
  * AuthAction - Logs a user in and puts a User object in the Request
  * AclAction - Processes AclRules to secure your Endpoints
  * LogAction - Logs requests and the JSON payloads
- * S3UploadAction - Allows you to do a HTTP multi-part post uplaod to an S3 bucket
+ * S3UploadAction - Allows you to do a HTTP multi-part post upload to an S3 bucket
  * RateLimitAction - Protecs Endpoints from accidental or intentional DoS type traffic
 
 
@@ -498,13 +502,13 @@ authorization (see below) is the process of determining if a users can access re
 
 ### Authorization
 
-Authorization is managed by the AclHandler.  If you want to use Role and Permission based authorization 
+Authorization is managed by the AclHandler. If you want to use Role and Permission based authorization
 you must configure an instance of the AclHandler (or create your own implementation) and associate it to
 the desired Endpoints through an Action.
 
 The AclHandler matches configured AclRules objects against the Url path and HTTP method of the request.
 
-AclHandler processes AclRules in sorted order and the first rule to allow access "wins".  If no rule allows access, 
+AclHandler processes AclRules in sorted order and the first rule to allow access "wins".  If no rule allows access,
 then a 403 Forbidden HTTP status code is returned.
 
 
@@ -519,7 +523,7 @@ If the AuthAction is being used, it will enforce that the Url tenantCode matches
 
 IMPORTANT: this Url match restriction alone will not prevent access to cross tenant data. To fully
 restrict and require the tenantId and tenantCode query string parameters and JSON body properties
-with the following configuration.
+with the following configuration:
 
 ```properties
 
@@ -533,15 +537,14 @@ tenantAcl.methods=GET,PUT,POST,DELETE
 
 ```
 
-Including this configuration will ensure that tenantId is always considered in queries (if it exists on the target Table) and can not be supplied by the caller, it will be pulled from the logged in 
+Including this configuration will ensure that tenantId is always considered in queries (if it exists on the target Table) and can not be supplied by the caller, it will be pulled from the logged in
 user.
-  
 
 
-### Row Level Security 
+### Row Level Security
 
-The simplest way to restrict a users interaction with a row is to provide a "userId" column on the 
-table in question.  Then use an AclRule to "require/restrict" userId.  This way a user can only 
+The simplest way to restrict a user's interaction with a row is to provide a "userId" column on the
+table in question.  Then use an AclRule to "require/restrict" userId.  This way a user can only
 read and write the rows they 'own'.  You could user a different combination of AclRules to achieve
 permission based read and owner based write/delete.
 
@@ -556,13 +559,13 @@ userAcl.requires=*.userId
 userAcl.methods=GET,PUT,POST,DELETE
 
 ```
- 
+
 If you need to implement a row level security feature that can not be mapped to a userId column, 
 you can configure JOIN filters that will limit a users access to the desired rows.
 
 TODO: add more specific doco here.
- 
-  
+
+
 ## Elasticsearch Specifics
 Currently, the following functions are available for use:
 
