@@ -131,7 +131,7 @@ test {
 
 task demo1(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = "io.rocketpartners.cloud.demo.Demo001SqlDbNorthwind"
+    main = "io.inversion.cloud.demo.Demo001SqlDbNorthwind"
 }
 
 

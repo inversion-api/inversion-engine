@@ -133,20 +133,20 @@ The properties file below will create an identical API to the Java coded example
 Place the example below into a file "./inversion.properties". 
 
 ```properties
-demo.class=io.rocketpartners.cloud.model.Api
+demo.class=io.inversion.cloud.model.Api
 
-db.class=io.rocketpartners.cloud.action.sql.SqlDb
+db.class=io.inversion.cloud.action.sql.SqlDb
 db.driver=${YOUR_JDBC_DRIVER}
 db.url=${YOUR_JDBC_URL}
 db.user=${YOUR_JDBC_USERNAME}
 db.pass=${YOUR_JDBC_PASSWORD}
 
-ep.class=io.rocketpartners.cloud.model.Endpoint
+ep.class=io.inversion.cloud.model.Endpoint
 ep.methods=GET,PUT,POST,DELETE
 ep.path=/*
 ep.actions=rest
 
-rest.class=io.rocketpartners.cloud.action.rest.RestAction
+rest.class=io.inversion.cloud.action.rest.RestAction
 ```
 
 Then launch Inversion and it will wire up your API from the configuration.  If 
