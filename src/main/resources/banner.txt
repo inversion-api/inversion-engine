@@ -7,4 +7,4 @@
 Inversion - Create More, Code Less
 
 https://github.com/RocketPartners/rocket-inversion
-Copyright (c) 2019 Rocket Partners, LLC
+Copyright (c) 2019 Inversion.org, LLC
