@@ -35,8 +35,8 @@ public class TestConfigurator extends TestCase
    public void testConfigSimple()
    {
       Engine dev = new Engine();
-      dev.setProfile("dev");
-      dev.setConfigPath("io/rocketpartners/cloud/service/config/");
+      dev.withProfile("dev");
+      dev.withConfigPath("io/rocketpartners/cloud/service/config/");
       dev.startup();
 
       Api devApi = dev.getApi("northwind");
@@ -44,8 +44,8 @@ public class TestConfigurator extends TestCase
       assertEquals(0, devApi.getActions().size());
 
       Engine prod = new Engine();
-      prod.setProfile("prod");
-      prod.setConfigPath("io/rocketpartners/cloud/service/config/");
+      prod.withProfile("prod");
+      prod.withConfigPath("io/rocketpartners/cloud/service/config/");
       prod.startup();
 
       Api prodApi = prod.getApi("northwind");

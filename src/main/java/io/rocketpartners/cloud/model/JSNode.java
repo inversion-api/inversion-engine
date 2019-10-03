@@ -18,14 +18,27 @@
  */
 package io.rocketpartners.cloud.model;
 
+import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.rocketpartners.cloud.utils.Utils;
 
@@ -100,8 +113,7 @@ public class JSNode implements Map<String, Object>
       {
          patches.add(new JSNode("op", "remove", "path", path, myVal));
       }
-      else if (!myVal.getClass()
-                     .equals(theirVal.getClass()))
+      else if (!myVal.getClass().equals(theirVal.getClass()))
       {
          patches.add(new JSNode("op", "replace", "path", path, myVal));
       }
@@ -109,8 +121,7 @@ public class JSNode implements Map<String, Object>
       {
          ((JSNode) myVal).diff((JSNode) theirVal, path, patches);
       }
-      else if (!myVal.toString()
-                     .equals(theirVal.toString()))
+      else if (!myVal.toString().equals(theirVal.toString()))
       {
          patches.add(new JSNode("op", "replace", "path", path, myVal));
       }
@@ -291,6 +302,26 @@ public class JSNode implements Map<String, Object>
       return null;
    }
 
+   /**
+    * Vanity method to make sure the attributes prints out first
+    * 
+    * @param name
+    * @param value
+    * @return
+    */
+   public Object putFirst(String name, Object value)
+   {
+      LinkedHashMap<String, Property> temp = new LinkedHashMap();
+
+      Property prop = temp.put(name.toLowerCase(), new Property(name, value));
+
+      this.properties.remove(name.toLowerCase());
+      temp.putAll(this.properties);
+      this.properties = temp;
+
+      return prop;
+   }
+
    @Override
    public Object put(String name, Object value)
    {
@@ -309,8 +340,7 @@ public class JSNode implements Map<String, Object>
       if (name == null)
          return false;
 
-      return properties.containsKey(name.toString()
-                                        .toLowerCase());
+      return properties.containsKey(name.toString().toLowerCase());
    }
 
    @Override
@@ -430,17 +460,17 @@ public class JSNode implements Map<String, Object>
    @Override
    public String toString()
    {
-      return Utils.toJson((JSNode) this);
+      return JSNode.toJson((JSNode) this, true, false);
    }
 
    public String toString(boolean pretty)
    {
-      return Utils.toJson((JSNode) this, pretty, false);
+      return JSNode.toJson((JSNode) this, pretty, false);
    }
 
    public String toString(boolean pretty, boolean tolowercase)
    {
-      return Utils.toJson((JSNode) this, pretty, tolowercase);
+      return JSNode.toJson((JSNode) this, pretty, tolowercase);
    }
 
    @Override
@@ -493,6 +523,284 @@ public class JSNode implements Map<String, Object>
       {
          put(key.toString(), map.get(key.toString()));
       }
+   }
+
+   //--------------------------------------------------------------------------------------
+   //--------------------------------------------------------------------------------------
+   //--------------------------------------------------------------------------------------
+   //-- The following methods are static parse/print related
+
+   public static Object parseJson(String json)
+   {
+      try
+      {
+         ObjectMapper mapper = new ObjectMapper();
+         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
+
+         Object parsed = JSNode.mapNode(rootNode);
+         return parsed;
+      }
+      catch (Exception ex)
+      {
+         String msg = "Error parsing JSON:" + ex.getMessage();
+
+         if (!(ex instanceof JsonParseException))
+         {
+            msg += "\r\nSource:" + json;
+         }
+
+         throw new RuntimeException("400 Bad Request: '" + json + "'");
+      }
+   }
+
+   public static JSNode parseJsonNode(String json)
+   {
+      return ((JSNode) JSNode.parseJson(json));
+   }
+
+   public static JSArray parseJsonArray(String json)
+   {
+      return ((JSArray) JSNode.parseJson(json));
+   }
+
+   static String toJson(JSNode node, boolean pretty, boolean lowercaseNames)
+   {
+      try
+      {
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         JsonGenerator json = new JsonFactory().createGenerator(baos);
+         if (pretty)
+            json.useDefaultPrettyPrinter();
+
+         JSNode.writeNode(node, json, new HashSet(), lowercaseNames);
+         json.flush();
+         baos.flush();
+
+         return new String(baos.toByteArray());
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException(ex);
+      }
+   }
+
+   static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   {
+      json.writeStartArray();
+      for (Object obj : array.asList())
+      {
+         if (obj == null)
+         {
+            json.writeNull();
+         }
+         else if (obj instanceof JSNode)
+         {
+            writeNode((JSNode) obj, json, visited, lowercaseNames);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof Double)
+         {
+            json.writeNumber((Double) obj);
+         }
+         else if (obj instanceof Float)
+         {
+            json.writeNumber((Float) obj);
+         }
+         else if (obj instanceof Integer)
+         {
+            json.writeNumber((Integer) obj);
+         }
+         else if (obj instanceof Long)
+         {
+            json.writeNumber((Long) obj);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof BigDecimal)
+         {
+            json.writeNumber((BigDecimal) obj);
+         }
+         else if (obj instanceof Boolean)
+         {
+            json.writeBoolean((Boolean) obj);
+         }
+         else
+         {
+            json.writeString(encodeJson(obj + ""));
+         }
+      }
+      json.writeEndArray();
+   }
+
+   static Object mapNode(JsonNode json)
+   {
+      if (json == null)
+         return null;
+
+      if (json.isNull())
+         return null;
+
+      if (json.isValueNode())
+      {
+         if (json.isNumber())
+            return json.numberValue();
+
+         if (json.isBoolean())
+            return json.booleanValue();
+
+         return json.asText();
+      }
+
+      if (json.isArray())
+      {
+         JSArray retVal = null;
+         retVal = new JSArray();
+
+         for (JsonNode child : json)
+         {
+            retVal.add(mapNode(child));
+         }
+
+         return retVal;
+      }
+      else if (json.isObject())
+      {
+         JSNode retVal = null;
+         retVal = new JSNode();
+
+         Iterator<String> it = json.fieldNames();
+         while (it.hasNext())
+         {
+            String field = it.next();
+            JsonNode value = json.get(field);
+            retVal.put(field, mapNode(value));
+         }
+         return retVal;
+      }
+
+      throw new RuntimeException("unparsable json:" + json);
+   }
+
+   /**
+    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
+    * @param str
+    * @return
+    */
+   static String encodeJson(String str)
+   {
+      if (str == null)
+         return null;
+
+      str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
+      return str;
+   }
+
+   static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
+   {
+      Property href = node.getProperty("href");
+
+      if (visited.contains(node))
+      {
+         json.writeStartObject();
+         if (href != null)
+         {
+            json.writeStringField("@link", href.getValue() + "");
+         }
+
+         json.writeEndObject();
+         return;
+      }
+      visited.add(node);
+
+      if (node instanceof JSArray)
+      {
+         JSNode.writeArrayNode(((JSArray) node), json, visited, lowercaseNames);
+         return;
+      }
+
+      json.writeStartObject();
+
+      if (href != null)
+         json.writeStringField("href", href.getValue() + "");
+
+      for (String key : node.keySet())
+      {
+         Property p = node.getProperty(key);
+         if (p == href)
+            continue;
+
+         String name = p.getName();
+         Object value = p.getValue();
+
+         if (value == null)
+         {
+            json.writeNullField(name);
+         }
+         else if (value instanceof JSNode)
+         {
+            if (!lowercaseNames)
+               json.writeFieldName(name);
+            else
+               json.writeFieldName(name.toLowerCase());
+
+            writeNode((JSNode) value, json, visited, lowercaseNames);
+         }
+         else if (value instanceof Date)
+         {
+            json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+         }
+         else if (value instanceof BigDecimal)
+         {
+            json.writeNumberField(name, (BigDecimal) value);
+         }
+         else if (value instanceof Double)
+         {
+            json.writeNumberField(name, (Double) value);
+         }
+         else if (value instanceof Float)
+         {
+            json.writeNumberField(name, (Float) value);
+         }
+         else if (value instanceof Integer)
+         {
+            json.writeNumberField(name, (Integer) value);
+         }
+         else if (value instanceof Long)
+         {
+            json.writeNumberField(name, (Long) value);
+         }
+         else if (value instanceof BigDecimal)
+         {
+            json.writeNumberField(name, (BigDecimal) value);
+         }
+         else if (value instanceof BigInteger)
+         {
+            json.writeNumberField(name, ((BigInteger) value).intValue());
+         }
+         else if (value instanceof Boolean)
+         {
+            json.writeBooleanField(name, (Boolean) value);
+         }
+         else
+         {
+            String strVal = value + "";
+            if ("null".equals(strVal))
+            {
+               json.writeNullField(name);
+            }
+            else
+            {
+               strVal = JSNode.encodeJson(strVal);
+               json.writeStringField(name, strVal);
+            }
+         }
+      }
+      json.writeEndObject();
    }
 
 }

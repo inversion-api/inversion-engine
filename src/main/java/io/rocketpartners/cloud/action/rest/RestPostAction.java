@@ -88,7 +88,7 @@ public class RestPostAction extends Action<RestPostAction>
 
       if (collapseAll || collapses.size() > 0)
       {
-         obj = Utils.parseJsonMap(obj.toString());
+         obj = JSNode.parseJsonNode(obj.toString());
          collapse(obj, collapseAll, collapses, "");
       }
 

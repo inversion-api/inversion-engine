@@ -35,7 +35,6 @@ import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Engine;
-import io.rocketpartners.cloud.utils.Utils;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client
@@ -158,7 +157,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          // TODO how do we want to handle a failed elastic result?
 
-         JSNode jsObj = Utils.parseJsonMap(r.getContent());
+         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
 
          int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
          JSArray hits = jsObj.getNode("hits").getArray("hits");
@@ -280,7 +279,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (r.isSuccess())
       {
-         JSNode jsObj = Utils.parseJsonMap(r.getContent());
+         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
          JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
          JSArray resultArray = new JSArray();
          for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())

@@ -60,7 +60,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
       try
       {
-         JSNode json = Utils.parseJsonMap(input);
+         JSNode json = JSNode.parseJsonNode(input);
 
          debug("Request Event");
          debug(json.toString(false));
@@ -146,7 +146,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 
             responseBody.put("error", Utils.getShortCause(ex));
 
-            responseBody.put("request", Utils.parseJsonMap(input));
+            responseBody.put("request", JSNode.parseJsonNode(input));
 
             JSNode responseJson = new JSNode();
             responseJson.put("isBase64Encoded", false);
@@ -172,10 +172,10 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
       Engine engine = new Engine();
 
       if (!Utils.empty(profile))
-         engine.setProfile(profile);
+         engine.withProfile(profile);
 
       if (!Utils.empty(servletPath))
-         engine.setServletMapping(servletPath);
+         engine.withServletMapping(servletPath);
 
       return engine;
    }

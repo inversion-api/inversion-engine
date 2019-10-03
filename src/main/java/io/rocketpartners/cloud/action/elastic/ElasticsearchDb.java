@@ -95,7 +95,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          {
             // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-            JSNode jsObj = Utils.parseJsonMap(allResp.getContent());
+            JSNode jsObj = JSNode.parseJsonNode(allResp.getContent());
 
             Map<String, JSNode> jsContentMap = jsObj.asMap();
 

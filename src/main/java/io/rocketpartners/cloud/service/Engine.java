@@ -47,24 +47,24 @@ import io.rocketpartners.cloud.utils.Utils;
 
 public class Engine
 {
-   transient volatile boolean                started        = false;
-   transient volatile boolean                starting       = false;
-   transient volatile boolean                destroyed      = false;
+   transient volatile boolean               started        = false;
+   transient volatile boolean               starting       = false;
+   transient volatile boolean               destroyed      = false;
 
-   protected Logger                          log            = LoggerFactory.getLogger(getClass());
-   protected Logger                          requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected Logger                         log            = LoggerFactory.getLogger(getClass());
+   protected Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   protected List<Api>                       apis           = new Vector();
+   protected List<Api>                      apis           = new Vector();
 
-   protected ResourceLoader                  resourceLoader = null;
+   protected ResourceLoader                 resourceLoader = null;
 
-   protected Configurator                    configurator   = new Configurator();
+   protected Configurator                   configurator   = new Configurator();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected String                          servletMapping = null;
+   protected Path                           servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -72,31 +72,31 @@ public class Engine
     * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
     * profile specific settings files.
     */
-   protected String                          profile        = null;
+   protected String                         profile        = null;
 
    /**
     * The path to inversion*.properties files
     */
-   protected String                          configPath     = "";
+   protected String                         configPath     = "";
 
    /**
     * The number of milliseconds between background reloads of the Api config
     */
-   protected int                             configTimeout  = 10000;
+   protected int                            configTimeout  = 10000;
 
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
     * will not be reflectively configured as it otherwise would.
     */
-   protected boolean                         configFast     = false;
-   protected boolean                         configDebug    = false;
-   protected String                          configOut      = null;
+   protected boolean                        configFast     = false;
+   protected boolean                        configDebug    = false;
+   protected String                         configOut      = null;
 
    /**
     * The last response returned.  Not that useful in concurrent 
     * production environments but useful for writing test cases.
     */
-   protected transient volatile Response     lastResponse   = null;
+   protected transient volatile Response    lastResponse   = null;
 
    protected transient List<EngineListener> listeners      = new ArrayList();
 
@@ -105,7 +105,7 @@ public class Engine
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String                          allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public static interface EngineListener
    {
@@ -397,9 +397,9 @@ public class Engine
 
          List<String> apiPath = new ArrayList();
 
-         if (!Utils.empty(servletMapping))
+         if (servletMapping != null)
          {
-            for (String servletPathPart : Utils.explode("/", servletMapping))
+            for (String servletPathPart : servletMapping.parts())
             {
                if (!servletPathPart.equalsIgnoreCase(parts.get(0)))
                {
@@ -827,9 +827,10 @@ public class Engine
       return profile;
    }
 
-   public void setProfile(String profile)
+   public Engine withProfile(String profile)
    {
       this.profile = profile;
+      return this;
    }
 
    public String getConfigPath()
@@ -837,9 +838,10 @@ public class Engine
       return configPath;
    }
 
-   public void setConfigPath(String configPath)
+   public Engine withConfigPath(String configPath)
    {
       this.configPath = configPath;
+      return this;
    }
 
    public Configurator getConfigurator()
@@ -847,30 +849,31 @@ public class Engine
       return configurator;
    }
 
-   public void setConfigurator(Configurator configurator)
+   public Engine withConfigurator(Configurator configurator)
    {
       this.configurator = configurator;
+      return this;
    }
 
-   public String getServletMapping()
+   public Path getServletMapping()
    {
       return servletMapping;
    }
 
-   public void setServletMapping(String servletMapping)
-   {
-      this.servletMapping = servletMapping;
-   }
-
    public Engine withServletMapping(String servletMapping)
    {
-      setServletMapping(servletMapping);
+      if (servletMapping != null)
+         this.servletMapping = new Path(servletMapping);
+      else
+         this.servletMapping = null;
+
       return this;
    }
 
-   public void setAllowHeaders(String allowedHeaders)
+   public Engine withAllowHeaders(String allowedHeaders)
    {
       this.allowedHeaders = allowedHeaders;
+      return this;
    }
 
    public interface ResourceLoader
@@ -883,9 +886,10 @@ public class Engine
       return resourceLoader;
    }
 
-   public void setResourceLoader(ResourceLoader resourceLoader)
+   public Engine withResourceLoader(ResourceLoader resourceLoader)
    {
       this.resourceLoader = resourceLoader;
+      return this;
    }
 
    public InputStream getResource(String name)
@@ -921,9 +925,10 @@ public class Engine
       return configFast;
    }
 
-   public void setConfigFast(boolean configFast)
+   public Engine withConfigFast(boolean configFast)
    {
       this.configFast = configFast;
+      return this;
    }
 
    public boolean isConfigDebug()
@@ -931,9 +936,10 @@ public class Engine
       return configDebug;
    }
 
-   public void setConfigDebug(boolean configDebug)
+   public Engine withConfigDebug(boolean configDebug)
    {
       this.configDebug = configDebug;
+      return this;
    }
 
    public String getConfigOut()
@@ -941,9 +947,10 @@ public class Engine
       return configOut;
    }
 
-   public void setConfigOut(String configOut)
+   public Engine withConfigOut(String configOut)
    {
       this.configOut = configOut;
+      return this;
    }
 
    public int getConfigTimeout()
@@ -951,9 +958,10 @@ public class Engine
       return configTimeout;
    }
 
-   public void setConfigTimeout(int configTimeout)
+   public Engine withConfigTimeout(int configTimeout)
    {
       this.configTimeout = configTimeout;
+      return this;
    }
 
 }

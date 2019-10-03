@@ -126,7 +126,7 @@ public class MockAction extends Action<MockAction>
 
          if (stream != null)
          {
-            json = Utils.parseJsonMap(Utils.read(stream));
+            json = JSNode.parseJsonNode(Utils.read(stream));
          }
          else
          {

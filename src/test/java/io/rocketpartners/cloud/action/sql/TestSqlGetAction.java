@@ -12,10 +12,10 @@ import org.junit.runners.Parameterized;
 
 import io.rocketpartners.cloud.action.rest.TestRestGetActions;
 import io.rocketpartners.cloud.model.Api;
+import io.rocketpartners.cloud.model.JSNode;
 import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.Table;
 import io.rocketpartners.cloud.service.Engine;
-import io.rocketpartners.cloud.utils.Utils;
 
 @RunWith(Parameterized.class)
 public class TestSqlGetAction extends TestRestGetActions
@@ -277,7 +277,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       res.dump();
 
-      String toMatch = Utils.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/5/territories") + "\"}}} ]").toString();
+      String toMatch = JSNode.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/5/territories") + "\"}}} ]").toString();
       assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
    }
 

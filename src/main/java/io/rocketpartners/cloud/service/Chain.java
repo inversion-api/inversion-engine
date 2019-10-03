@@ -15,7 +15,6 @@
  */
 package io.rocketpartners.cloud.service;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -34,6 +33,7 @@ import io.rocketpartners.cloud.model.Endpoint;
 import io.rocketpartners.cloud.model.Path;
 import io.rocketpartners.cloud.model.Request;
 import io.rocketpartners.cloud.model.Response;
+import io.rocketpartners.cloud.model.Url;
 import io.rocketpartners.cloud.utils.Utils;
 
 public class Chain
@@ -192,6 +192,47 @@ public class Chain
          }
       }
       return url;
+   }
+
+   public static String buildLink(String collectionKey, String entityKey)
+   {
+      Request req = Chain.peek().getRequest();
+      String url = req.getUrl().toString();
+      if(url.indexOf("?") >= 0)
+         url = url.substring(0, url.indexOf("?"));
+
+      if (req.getSubCollectionKey() != null)
+      {
+         url = url.substring(0, url.lastIndexOf("/"));
+      }
+
+      if (req.getEntityKey() != null)
+      {
+         url = url.substring(0, url.lastIndexOf("/"));
+      }
+
+      if (collectionKey != null && req.getCollectionKey() != null)
+      {
+         url = url.substring(0, url.lastIndexOf("/"));
+      }
+
+      if (collectionKey != null)
+         url += "/" + collectionKey;
+
+      if (entityKey != null)
+         url += "/" + entityKey;
+
+      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
+      {
+         String newUrl = req.getApi().getUrl();
+         while (newUrl.endsWith("/"))
+            newUrl = newUrl.substring(0, newUrl.length() - 1);
+
+         url = newUrl + url.substring(url.indexOf("/", 8));
+      }
+
+      return url;
+
    }
 
    protected Engine             engine   = null;

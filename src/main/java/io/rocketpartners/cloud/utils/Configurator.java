@@ -110,6 +110,15 @@ public class Configurator
             // that should not be set directly on bean fields but should be passed the approperiate setter
             public boolean handleProp(Object bean, String prop, String value) throws Exception
             {
+               if (bean instanceof Endpoint && "path".equalsIgnoreCase(value))
+               {
+                  //this is done as a special case because of the 
+                  //special business logic in the setter
+                  ((Endpoint) bean).withPath(value);
+
+                  return true;
+               }
+
                return false;
             }
 
@@ -122,7 +131,7 @@ public class Configurator
             }
          };
       wire.load(config.props);
-      
+
       //-- this just loads the bare bones config supplied  
       //-- in inversion*.properties files by the users.  
       autoWireApi(wire);
@@ -137,7 +146,8 @@ public class Configurator
                throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
 
             Api existingApi = engine.getApi(api.getApiCode());
-            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
+            if (forceReload || existingApi == null || !existingApi.getHash()
+                                                                  .equals(config.hash))
             {
                doLoad = true;
 
@@ -153,23 +163,25 @@ public class Configurator
             //-- this serializes out the object model that was bootsrapped off of the
             //-- configuration files.  At this point the db.startup() has been called
             //-- on all of the DBs and they configured collections on the Api.  
-            Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), wire.getBeans(Api.class).toArray());
+            Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), wire.getBeans(Api.class)
+                                                                                                               .toArray());
             autoProps.putAll(config.props);
             wire.clear();
             wire.load(autoProps);
-            
-            
+
             autoWireApi(wire);
 
             if (!Utils.empty(engine.getConfigOut()))
             {
-               String fileName = "./" + engine.getConfigOut().trim();
+               String fileName = "./" + engine.getConfigOut()
+                                              .trim();
 
                File file = new File(fileName);
 
                log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
 
-               file.getParentFile().mkdirs();
+               file.getParentFile()
+                   .mkdirs();
                BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
                //properties are sorted based on the number of "." segments they contain so that "shallow"
@@ -220,7 +232,8 @@ public class Configurator
          for (Api api : wire.getBeans(Api.class))
          {
             Api existingApi = engine.getApi(api.getApiCode());
-            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
+            if (forceReload || existingApi == null || !existingApi.getHash()
+                                                                  .equals(config.hash))
             {
                api.withHash(config.hash);
                api.removeExcludes();
@@ -261,12 +274,14 @@ public class Configurator
 
          Api api = apis.get(0);
 
-         if (api.getDbs().size() == 0)
+         if (api.getDbs()
+                .size() == 0)
             api.withDbs((Db[]) found.toArray(new Db[found.size()]));
 
          Set<Action> privateActions = new HashSet();
          found = wire.getBeans(Endpoint.class);
-         if (api.getEndpoints().size() == 0)
+         if (api.getEndpoints()
+                .size() == 0)
          {
             for (Endpoint ep : (List<Endpoint>) found)
             {
@@ -276,7 +291,8 @@ public class Configurator
          }
 
          found = wire.getBeans(Action.class);
-         if (api.getActions().size() == 0)
+         if (api.getActions()
+                .size() == 0)
          {
             for (Action action : (List<Action>) found)
             {
@@ -371,27 +387,44 @@ public class Configurator
          }
          else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
          {
-            name = Utils.getField("name", clazz).get(o);
+            name = Utils.getField("name", clazz)
+                        .get(o);
          }
          else if (o instanceof Table)
          {
             Table t = (Table) o;
-            name = t.getDb().getName() + ".tables." + t.getName();
+            name = t.getDb()
+                    .getName()
+                  + ".tables." + t.getName();
          }
          else if (o instanceof Column)
          {
             Column col = (Column) o;
-            name = col.getTable().getDb().getName() + ".tables." + col.getTable().getName() + ".columns." + col.getName();
+            name = col.getTable()
+                      .getDb()
+                      .getName()
+                  + ".tables." + col.getTable()
+                                    .getName()
+                  + ".columns." + col.getName();
          }
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            name = index.getTable().getDb().getName() + ".tables." + index.getTable().getName() + ".indexes." + index.getName();
+            name = index.getTable()
+                        .getDb()
+                        .getName()
+                  + ".tables." + index.getTable()
+                                      .getName()
+                  + ".indexes." + index.getName();
          }
          else if (o instanceof Collection)
          {
             Collection col = (Collection) o;
-            name = col.getApi().getName() + ".collections." + col.getDb().getName() + "_" + col.getName();
+            name = col.getApi()
+                      .getName()
+                  + ".collections." + col.getDb()
+                                         .getName()
+                  + "_" + col.getName();
          }
          else if (o instanceof Entity)
          {
@@ -487,7 +520,9 @@ public class Configurator
          }
       }
 
-      if (engine.getApis().size() == 0 && config.files.isEmpty())
+      if (engine.getApis()
+                .size() == 0
+            && config.files.isEmpty())
       {
          log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
       }
@@ -504,10 +539,12 @@ public class Configurator
       StringBuffer buff = new StringBuffer();
       for (Object key : config.props.keySet())
       {
-         buff.append(key).append(config.props.get(key));
+         buff.append(key)
+             .append(config.props.get(key));
       }
 
-      config.hash = Utils.md5(buff.toString().getBytes());
+      config.hash = Utils.md5(buff.toString()
+                                  .getBytes());
 
       return config;
    }

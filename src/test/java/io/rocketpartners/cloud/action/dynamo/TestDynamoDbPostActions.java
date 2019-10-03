@@ -120,7 +120,7 @@ public class TestDynamoDbPostActions extends TestCase
 
       JSNode orig = res.findNode("data.0");
 
-      JSNode clone = Utils.parseJsonMap(orig.toString());
+      JSNode clone = JSNode.parseJsonNode(orig.toString());
 
       clone.put("gs2hk", "testing");
       res = engine.put(clone.getString("href"), clone);

@@ -243,7 +243,7 @@ public class Response
    {
       if (json == null && file != null && file.length() > 0)
       {
-         json = Utils.parseJsonMap(getContent());
+         json = JSNode.parseJsonNode(getContent());
       }
 
       return json;

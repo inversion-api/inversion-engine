@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import io.rocketpartners.cloud.model.JSArray;
 import io.rocketpartners.cloud.model.JSNode;
-import io.rocketpartners.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestCollapse extends TestCase
@@ -29,12 +28,12 @@ public class TestCollapse extends TestCase
       child2.put("href", "http://child2");
       child2.put("name", "child2");
 
-      JSNode collapsed = Utils.parseJsonMap(parent.toString());
+      JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
       RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
 
-      JSNode benchmark = Utils.parseJsonMap(parent.toString());
-      benchmark = Utils.parseJsonMap(parent.toString());
+      JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+      benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark.remove("child2");
       benchmark.put("child2", new JSNode("href", "http://child2"));
 
@@ -61,12 +60,12 @@ public class TestCollapse extends TestCase
 
       parent.put("arrChildren", arrChildren);
 
-      JSNode collapsed = Utils.parseJsonMap(parent.toString());
+      JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
       RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
 
-      JSNode benchmark = Utils.parseJsonMap(parent.toString());
-      benchmark = Utils.parseJsonMap(parent.toString());
+      JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+      benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark.remove("arrChildren");
       arrChildren = new JSArray();
       for (int i = 0; i < 5; i++)
@@ -100,12 +99,12 @@ public class TestCollapse extends TestCase
       child3.put("href", "http://child3");
       child3.put("name", "child3");
 
-      JSNode collapsed = Utils.parseJsonMap(parent.toString());
+      JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
       RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
 
-      JSNode benchmark = Utils.parseJsonMap(parent.toString());
-      benchmark = Utils.parseJsonMap(parent.toString());
+      JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+      benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark.getNode("child2").getNode("child3").remove("name");
 
       assertTrue(benchmark.toString().equals(collapsed.toString()));

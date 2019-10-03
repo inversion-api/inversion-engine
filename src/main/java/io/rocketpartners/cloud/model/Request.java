@@ -256,7 +256,7 @@ public class Request
 
       try
       {
-         json = Utils.parseJsonMap(body);
+         json = JSNode.parseJsonNode(body);
       }
       catch (Exception ex)
       {

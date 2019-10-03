@@ -80,7 +80,7 @@ public class Inversion
          Servlet servlet = new io.rocketpartners.cloud.service.Servlet();
          servlet.setEngine(engine);
 
-         String servletMapping = engine.getServletMapping();
+         String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
          if (servletMapping == null)
             servletMapping = "/*";
 

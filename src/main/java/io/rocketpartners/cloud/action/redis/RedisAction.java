@@ -30,7 +30,6 @@ import io.rocketpartners.cloud.model.Response;
 import io.rocketpartners.cloud.model.SC;
 import io.rocketpartners.cloud.service.Chain;
 import io.rocketpartners.cloud.service.Engine;
-import io.rocketpartners.cloud.utils.Utils;
 import redis.clients.jedis.Jedis;
 
 /**
@@ -107,7 +106,7 @@ public class RedisAction extends Action<RedisAction>
             {
                log.debug("CACHE HIT : " + key);
 
-               resJson = Utils.parseJsonMap(value);
+               resJson = JSNode.parseJsonNode(value);
                res.withJson(resJson);
                res.withStatus(SC.SC_200_OK);
                chain.cancel();
