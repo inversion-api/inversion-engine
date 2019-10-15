@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Inversion.org, LLC
+ * Copyright (c) 2015-2018 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * This program is free software: you can redistribute it and/or modify

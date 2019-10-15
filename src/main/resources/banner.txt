@@ -6,5 +6,5 @@
 ============================================
 Inversion - Create More, Code Less
 
-https://github.com/RocketPartners/rocket-inversion
+https://github.com/inversion-api/
 Copyright (c) 2019 Inversion.org, LLC

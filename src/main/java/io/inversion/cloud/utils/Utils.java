@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Inversion.org, LLC
+ * Copyright (c) 2016-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  * 
  * Copyright 2008-2016 Wells Burke
