@@ -198,6 +198,16 @@ public class JSArray extends JSNode implements Iterable
       return new ArrayList(objects);
    }
 
+   public List<JSNode> asNodeList()
+   {
+      return new ArrayList(objects);
+   }
+
+   public List<JSArray> asArrayList()
+   {
+      return new ArrayList(objects);
+   }
+
    @Override
    public Iterator iterator()
    {

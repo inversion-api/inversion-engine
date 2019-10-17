@@ -31,7 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -70,12 +69,12 @@ public class JSNode implements Map<String, Object>
       }
    }
 
-   public List<JSNode> diff(JSNode diffAgainst)
+   public JSArray diff(JSNode diffAgainst)
    {
-      return diff(diffAgainst, "", new ArrayList());
+      return diff(diffAgainst, "", new JSArray());
    }
 
-   protected List<JSNode> diff(JSNode diffAgainst, String path, ArrayList<JSNode> patches)
+   protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
    {
       for (String key : keySet())
       {
@@ -99,7 +98,7 @@ public class JSNode implements Map<String, Object>
       return patches;
    }
 
-   protected void diff(String path, Object myVal, Object theirVal, ArrayList<JSNode> patches)
+   protected void diff(String path, Object myVal, Object theirVal, JSArray patches)
    {
       if (myVal == null && theirVal == null)
       {
@@ -146,7 +145,10 @@ public class JSNode implements Map<String, Object>
             path = path.substring(0, idx);
          }
 
-         JSNode parent = path == null || path.length() == 0 ? this : findMap(path);
+         JSNode parent = path == null || path.length() == 0 ? this : findNode(path);
+
+         if (parent == null)
+            throw new RuntimeException("Unable to find parent path for patch '" + path + "'");
          if ("remove".equals(op))
          {
             parent.remove(prop);
@@ -218,7 +220,7 @@ public class JSNode implements Map<String, Object>
       return false;
    }
 
-   public JSNode findMap(String path)
+   public JSNode findNode(String path)
    {
       return (JSNode) find(path);
    }
@@ -240,6 +242,11 @@ public class JSNode implements Map<String, Object>
          obj = ((JSNode) obj).get(prop);
       }
       return obj;
+   }
+
+   public List<JSNode> collectNodes(String pathStr)
+   {
+      return (List<JSNode>) collect(pathStr);
    }
 
    public List collect(String pathStr)
@@ -270,9 +277,37 @@ public class JSNode implements Map<String, Object>
             }
          }
       }
+      else if ("**".equals(nextSegment))
+      {
+         if (path.size() == 1)
+         {
+            //** does not collect anything.  **/* would collect everything
+            //collected.addAll(values());
+         }
+         else
+         {
+            List<String> nextPath = path.subList(1, path.size());
+            for (Object value : values())
+            {
+               if (value instanceof JSNode)
+               {
+                  ((JSNode) value).collect(path, collected);
+                  ((JSNode) value).collect(nextPath, collected);
+               }
+            }
+         }
+      }
       else
       {
-         Object found = get(nextSegment);
+         Object found = null;
+         try
+         {
+            found = get(nextSegment);
+         }
+         catch (NumberFormatException ex)
+         {
+            //trying to access an array with a prop name...ignore
+         }
          if (found != null)
          {
             if (path.size() == 1)
@@ -446,7 +481,8 @@ public class JSNode implements Map<String, Object>
 
          if (value instanceof JSArray)
          {
-            map.put(name, ((JSArray) p.getValue()).asList());
+            //map.put(name, ((JSArray) p.getValue()).asList());
+            map.put(name, value);
          }
          else
          {

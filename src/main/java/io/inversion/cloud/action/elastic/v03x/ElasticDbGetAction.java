@@ -284,7 +284,7 @@ public class ElasticDbGetAction extends Action
       if (r.isSuccess())
       {
          JSNode jsObj = r.getJson();
-         JSNode auto = (JSNode) jsObj.findMap("suggest.auto-suggest.0");
+         JSNode auto = (JSNode) jsObj.findNode("suggest.auto-suggest.0");
          JSArray resultArray = new JSArray();
          for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
          {

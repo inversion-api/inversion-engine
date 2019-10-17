@@ -169,7 +169,7 @@ public class ElasticDb extends Db<ElasticDb>
    {
 
       String aliasName = null;
-      JSNode jsMappingsDocPropsNode = jsIndex.findMap("mappings._doc.properties");
+      JSNode jsMappingsDocPropsNode = jsIndex.findNode("mappings._doc.properties");
       if (jsMappingsDocPropsNode != null)
       {
          Map<String, JSNode> jsMappingsDocProps = jsMappingsDocPropsNode.asMap();

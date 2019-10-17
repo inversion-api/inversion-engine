@@ -278,7 +278,7 @@ public class Response
 
    public JSNode findNode(String path)
    {
-      return getJson().findMap(path);
+      return getJson().findNode(path);
    }
 
    public JSArray findArray(String path)

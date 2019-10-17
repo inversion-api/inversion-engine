@@ -3,7 +3,6 @@ package io.inversion.cloud.service;
 import org.junit.Test;
 
 import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.action.misc.StatusAction;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
@@ -208,7 +207,7 @@ public class TestEngine extends TestCase
    {
       //includes/excludes, expands, requires/restricts
       Endpoint ep = new Endpoint("GET", "/", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
-      Action actionA = new StatusAction()
+      Action actionA = new MockAction()
          {
             public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
             {
@@ -220,7 +219,7 @@ public class TestEngine extends TestCase
             }
          }.withConfig("overriddenParam=actionAOverride&actionAParam=actionAValue");
 
-      Action actionB = new StatusAction()
+      Action actionB = new MockAction()
          {
             public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
             {
@@ -233,7 +232,7 @@ public class TestEngine extends TestCase
             }
          }.withConfig("overriddenParam=actionBOverride&actionBParam=actionBValue");
 
-      Action actionC = new StatusAction()
+      Action actionC = new MockAction()
          {
             public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
             {

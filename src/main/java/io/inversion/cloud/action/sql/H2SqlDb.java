@@ -45,7 +45,7 @@ public class H2SqlDb extends SqlDb
    String        h2Dir;
    String        h2File;
    String        ddlUrl;
-   boolean       resetDb;
+   boolean       resetDb = true;
 
    public H2SqlDb()
    {
