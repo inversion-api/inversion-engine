@@ -1,0 +1,78 @@
+{
+  "meta" : {
+    "href" : "http://localhost:8080/demo/orchestrator/baskets/CeMypT1fQeXNnty6jMQ5F_v1",
+    "id" : "CeMypT1fQeXNnty6jMQ5F",
+    "revision" : 1,
+    "previous" : null,
+    "next" : null,
+    "events" : [ {
+      "id" : "1xEJs62GihFWWIo5Ip4v7B",
+      "actor" : "api",
+      "method" : "POST",
+      "path" : "demo/orchestrator/baskets",
+      "startAt" : 1571344181827,
+      "query" : "explain=true",
+      "body" : {
+        "basket" : {
+          "lineItems" : [ {
+            "code" : "049000044836"
+          } ]
+        }
+      },
+      "endAt" : 1571344181892
+    }, {
+      "id" : "5EfPZxgErmiamTFAtAciMv",
+      "actor" : "itemAttribute",
+      "parentId" : "1xEJs62GihFWWIo5Ip4v7B",
+      "endAt" : 1571344181890,
+      "patches" : [ {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.itemId",
+        "value" : 434
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.size",
+        "value" : "1.5L"
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.minage",
+        "value" : 0
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.name",
+        "value" : "Coke Black Cherry Vanilla 1.5L"
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.category",
+        "value" : "Packaged Beverages"
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.subcategory",
+        "value" : "Carbonated Soft Drinks"
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.brandfamily",
+        "value" : "Coke"
+      }, {
+        "op" : "add",
+        "path" : "0.basket.lineItems.0.pack",
+        "value" : "each"
+      } ]
+    } ]
+  },
+  "data" : [ {
+    "basket" : {
+      "lineItems" : [ {
+        "code" : "049000044836",
+        "itemId" : 434,
+        "size" : "1.5L",
+        "minage" : 0,
+        "name" : "Coke Black Cherry Vanilla 1.5L",
+        "category" : "Packaged Beverages",
+        "subcategory" : "Carbonated Soft Drinks",
+        "brandfamily" : "Coke",
+        "pack" : "each"
+      } ]
+    }
+  } ]
+}

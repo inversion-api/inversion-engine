@@ -25,15 +25,14 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.utils.FutureResponse;
 import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.HttpUtils.FutureResponse;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 

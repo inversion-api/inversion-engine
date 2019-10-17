@@ -71,7 +71,13 @@ public class JSNode implements Map<String, Object>
 
    public JSArray diff(JSNode diffAgainst)
    {
-      return diff(diffAgainst, "", new JSArray());
+      JSArray diffs = diff(diffAgainst, "", new JSArray());
+
+      //we do this to prevent unintended consequences of copying in the same object references
+      if (diffs.size() > 0)
+         diffs = parseJsonArray(diffs.toString());
+
+      return diffs;
    }
 
    protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
@@ -126,9 +132,12 @@ public class JSNode implements Map<String, Object>
       }
    }
 
-   public void patch(List<JSNode> diffs)
+   public void patch(JSArray diffs)
    {
-      for (JSNode diff : diffs)
+      //we do this to prevent unintended consequences of copying in the same object references
+      diffs = parseJsonArray(diffs.toString());
+
+      for (JSNode diff : diffs.asNodeList())
       {
          String op = diff.getString("op");
          String path = diff.getString("path");
@@ -151,7 +160,16 @@ public class JSNode implements Map<String, Object>
             throw new RuntimeException("Unable to find parent path for patch '" + path + "'");
          if ("remove".equals(op))
          {
-            parent.remove(prop);
+            try
+            {
+               parent.remove(prop);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();
+               System.err.println("You are trying to apply a property patch to an array: " + diff);
+               throw e;
+            }
          }
          else
          {
