@@ -47,7 +47,7 @@ public class Response
 
    protected String                                 contentType       = null;
    protected StringBuffer                           out               = new StringBuffer();
-   protected JSNode                                json              = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
+   protected JSNode                                 json              = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
    protected String                                 text              = null;
 
    protected String                                 fileName          = null;
@@ -100,12 +100,16 @@ public class Response
       if (msgs != null && msgs.length == 0)
          return;
 
-      if (msgs != null && msgs.length == 1 && msgs[0].getClass().isArray())
+      if (msgs != null && msgs.length == 1 && msgs[0] != null && msgs[0].getClass().isArray())
          msgs = (Object[]) msgs[0];
 
       for (int i = 0; msgs != null && i < msgs.length; i++)
       {
          Object msg = msgs[i];
+         
+         if(msg == null)
+            return;
+         
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 

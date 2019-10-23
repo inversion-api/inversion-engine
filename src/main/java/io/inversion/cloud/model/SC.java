@@ -27,7 +27,11 @@ public class SC
    public static final String         SC_200_OK                    = "200 OK";
    public static final String         SC_201_CREATED               = "201 Created";
    public static final String         SC_204_NO_CONTENT            = "204 No Content";
-   public static final String         SC_302_FOUND                 = "302 Found";
+
+   //@see https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+   //public static final String         SC_302_FOUND                 = "302 Found";
+   public static final String         SC_308_PERMANENT_REDIRECT    = "308 Permanent Redirect";
+
    public static final String         SC_400_BAD_REQUEST           = "400 Bad Request";
    public static final String         SC_401_UNAUTHORIZED          = "401 Unauthorized";
    public static final String         SC_403_FORBIDDEN             = "403 Forbidden";
@@ -40,7 +44,8 @@ public class SC
    {
       SC_MAP.put(200, SC_200_OK);
       SC_MAP.put(201, SC_201_CREATED);
-      SC_MAP.put(302, SC_302_FOUND);
+      //SC_MAP.put(302, SC_302_FOUND);
+      SC_MAP.put(302, SC_308_PERMANENT_REDIRECT);
       SC_MAP.put(400, SC_400_BAD_REQUEST);
       SC_MAP.put(401, SC_401_UNAUTHORIZED);
       SC_MAP.put(403, SC_403_FORBIDDEN);

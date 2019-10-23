@@ -678,7 +678,7 @@ public class Engine
          else if (!Utils.empty(res.getRedirect()))
          {
             res.withHeader("Location", res.getRedirect());
-            res.withStatus(SC.SC_302_FOUND);
+            res.withStatus(SC.SC_308_PERMANENT_REDIRECT);
          }
          else if (output == null && res.getJson() != null)
          {

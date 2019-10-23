@@ -705,6 +705,7 @@ dependencies {
  * http://msdn.microsoft.com/en-us/library/azure/dd179357.aspx
  * http://www.restapitutorial.com/httpstatuscodes.html
  * http://www.restapitutorial.com/lessons/httpmethods.html 
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
 
 
 ### Standards-ish
