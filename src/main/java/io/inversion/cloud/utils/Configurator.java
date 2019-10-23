@@ -83,11 +83,11 @@ public class Configurator
 
          if (engine.getApis().size() > 0)
          {
+            System.out.println("NOTICE: Api have been wired up already in code.  Settings from your inversion*.properties files will be loaded into System.properties instead of being used to reflectively wire the Api model");
             //-- if there are already APIs loaded, we will not try to rebootstrap the core model from
             //-- the properties files.  Instead, we will just put all properties in the env so that 
             //-- lazy loading methods from individual classes can pull them.
             config.props.entrySet().forEach(entry -> {
-               System.out.println(entry);
                System.setProperty(entry.getKey() + "", entry.getValue() + "");
             });
          }
