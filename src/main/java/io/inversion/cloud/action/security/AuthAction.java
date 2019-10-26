@@ -126,6 +126,39 @@ public class AuthAction extends Action<AuthAction>
             username = token.substring(0, token.indexOf(":"));
             password = token.substring(token.indexOf(":") + 1, token.length());
          }
+//         else if (token != null && token.toLowerCase().startsWith("bearer "))
+//         {
+//            token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
+//
+//            JWT jwt = JWT.decode(token);
+//
+//            String accessKey = jwt.getSubject();
+//
+//            conn = db.getDs().getConnection();
+//            User user = getUser(conn, req.getApi(), null, accessKey);
+//
+//            if (user == null)
+//               throw new ApiException(SC.SC_401_UNAUTHORIZED);
+//
+//            authorized = true;
+//
+//            String secretKey = (String) user.getSecretKey();
+//
+//            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).acceptLeeway(1).build();
+//
+//            //this will throw an exception if the signatures don't match
+//            DecodedJWT verified = verifier.verify(token);
+//
+//            Claim c = jwt.getClaim("perms");
+//            List<String> perms = c != null ? c.asList(String.class) : null;
+//
+//            user = new User();
+//            user.setUsername(jwt.getSubject());
+//            user.setPerms(perms);
+//            req.setUser(user);
+//         }
+         
+         
       }
 
       if (req.isPost() && sessionReq && (Utils.empty(username, password)))
