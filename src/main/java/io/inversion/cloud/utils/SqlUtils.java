@@ -935,9 +935,9 @@ public class SqlUtils
                   }
                   catch (SQLException ex)
                   {
-                     System.out.println("Error trying to run statement: " + ex.getMessage());
-                     System.out.println(sql[i]);
-                     //ex.printStackTrace();
+                     //System.out.println("Error trying to run statement: " + ex.getMessage());
+                     System.err.println("Error trying to run sql statement: \r\n" + sql[i] + "\r\n\r\n");
+                     ex.printStackTrace();
                      throw ex;
                   }
                }

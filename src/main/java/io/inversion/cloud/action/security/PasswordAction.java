@@ -69,7 +69,7 @@ public class PasswordAction extends Action<PasswordAction>
             JSNode user = (JSNode) ((JSArray) js).get(0);
             if (user.get("id") != null)
             {
-               String encryptedPassword = AuthAction.hashPassword(user.get("id"), password);
+               String encryptedPassword = AuthAction.strongHash(user.get("id"), password);
                JSNode body = new JSNode(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Chain.buildLink(req.getCollection(), user.get("id"), null);
                engine.put(url, body.toString());

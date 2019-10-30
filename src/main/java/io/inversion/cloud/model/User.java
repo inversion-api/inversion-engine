@@ -30,8 +30,9 @@ public class User
 
    protected String      displayName = null;
 
-   protected Set<String> permissions = new HashSet();
+   protected Set<String> groups      = new HashSet();
    protected Set<String> roles       = new HashSet();
+   protected Set<String> permissions = new HashSet();
 
    protected String      accessKey   = null;
    protected String      secretKey   = null;
@@ -190,6 +191,38 @@ public class User
          {
             if (!this.permissions.contains(permission))
                this.permissions.add(permission);
+         }
+      }
+
+      return this;
+   }
+
+   public boolean hasGroups(String... groups)
+   {
+      if (groups == null)
+         return true;
+
+      for (String group : groups)
+      {
+         if (!this.groups.contains(group))
+            return false;
+      }
+      return true;
+   }
+
+   public List<String> getGroups()
+   {
+      return new ArrayList(groups);
+   }
+
+   public User withGroups(String... groups)
+   {
+      if (groups != null)
+      {
+         for (String group : Utils.explode(",", groups))
+         {
+            if (!this.groups.contains(group))
+               this.groups.add(group);
          }
       }
 

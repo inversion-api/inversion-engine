@@ -106,10 +106,10 @@ public class Response
       for (int i = 0; msgs != null && i < msgs.length; i++)
       {
          Object msg = msgs[i];
-         
-         if(msg == null)
+
+         if (msg == null)
             return;
-         
+
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
@@ -426,6 +426,11 @@ public class Response
 
    public String getText()
    {
+      if (json == null && file != null && file.length() > 0)
+      {
+         text = getContent();
+      }
+
       return text;
    }
 

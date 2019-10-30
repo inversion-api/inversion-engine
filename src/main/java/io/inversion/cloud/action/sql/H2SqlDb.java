@@ -19,6 +19,8 @@ import java.io.File;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -39,12 +41,12 @@ import io.inversion.cloud.utils.Utils;
  */
 public class H2SqlDb extends SqlDb
 {
-   static Object LOCK   = new Object();
-   static Server server = null;
+   static Object LOCK    = new Object();
+   static Server server  = null;
 
-   String        h2Dir;
+   String        h2Dir   = new File(System.getProperty("user.home"), ".inversion").toString();
    String        h2File;
-   String        ddlUrl;
+   List<String>  ddlUrls = new ArrayList();
    boolean       resetDb = true;
 
    public H2SqlDb()
@@ -52,23 +54,13 @@ public class H2SqlDb extends SqlDb
       this(null, null, null, null);
    }
 
-   public H2SqlDb(String name, String h2File, String ddlUrl)
-   {
-      this(name, null, h2File, ddlUrl);
-   }
-
-   public H2SqlDb(String name, String h2Dir, String h2File, String ddlUrl)
+   public H2SqlDb(String name, String h2File, String... ddlUrl)
    {
       withName(name);
       withType("h2");
       withDriver("org.h2.Driver");
       withUser("sa");
       withPass("");
-
-      if (h2Dir == null)
-         h2Dir = new File(System.getProperty("user.home"), ".inversion").toString();
-
-      withH2Dir(h2Dir);
       withH2File(h2File);
       withDdlUrl(ddlUrl);
    }
@@ -101,16 +93,27 @@ public class H2SqlDb extends SqlDb
             }
          }
 
-         if (getDdlUrl() != null)
+         File f = new File(getH2Dir(), h2File + ".mv.db");
+         if (!f.exists())
          {
-            File f = new File(getH2Dir(), h2File + ".mv.db");
-            if (!f.exists())
+            if (ddlUrls.size() > 0)
             {
+
                Class.forName(getDriver());
                Connection conn = DriverManager.getConnection(getUrl(), getUser(), getPass());
-               SqlUtils.runDdl(conn, new URL(getDdlUrl()).openStream());
-               conn.commit();
-               conn.close();
+
+               try
+               {
+                  for (String ddlUrl : ddlUrls)
+                  {
+                     SqlUtils.runDdl(conn, new URL(ddlUrl).openStream());
+                  }
+                  conn.commit();
+               }
+               finally
+               {
+                  conn.close();
+               }
             }
          }
 
@@ -118,6 +121,7 @@ public class H2SqlDb extends SqlDb
       }
       catch (Exception ex)
       {
+         ex.printStackTrace();
          Utils.rethrow(ex);
       }
       return null;
@@ -141,9 +145,13 @@ public class H2SqlDb extends SqlDb
       return this;
    }
 
-   public H2SqlDb withDdlUrl(String ddlUrl)
+   public H2SqlDb withDdlUrl(String... ddlUrl)
    {
-      this.ddlUrl = ddlUrl;
+      for (int i = 0; ddlUrl != null && i < ddlUrl.length; i++)
+      {
+         ddlUrls.add(ddlUrl[i]);
+      }
+
       return this;
    }
 
@@ -168,9 +176,9 @@ public class H2SqlDb extends SqlDb
       return h2File;
    }
 
-   public String getDdlUrl()
+   public List<String> getDdlUrls()
    {
-      return ddlUrl;
+      return new ArrayList(ddlUrls);
    }
 
    public boolean isResetDb()

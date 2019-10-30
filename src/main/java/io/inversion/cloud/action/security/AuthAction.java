@@ -16,7 +16,6 @@
 package io.inversion.cloud.action.security;
 
 import java.security.MessageDigest;
-import java.security.Permission;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,12 +27,19 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import io.inversion.cloud.action.sql.SqlDb;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -41,6 +47,8 @@ import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Rows;
+import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
@@ -59,15 +67,17 @@ public class AuthAction extends Action<AuthAction>
 
    protected AuthSessionCache sessionCache            = null;
 
-   protected SqlDb            db                      = null;
+   protected UserDao          dao                     = null;
 
    protected boolean          shouldTrackRequestTimes = true;
+
+   protected String           salt                    = "CHANGE_ME";
 
    public AuthAction()
    {
       withOrder(100);
    }
-   
+
    @Override
    public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
    {
@@ -95,6 +105,10 @@ public class AuthAction extends Action<AuthAction>
       long failedMax = Long.parseLong(getConfig("failedMax", this.failedMax + ""));
       long sessionExp = Long.parseLong(getConfig("sessionExp", this.sessionExp + ""));
 
+      String accountCode = req.getApi().getAccountCode();
+      String apiCode = req.getApi().getApiCode();
+      String tenantCode = req.getTenantCode();
+
       //-- END CONFIG
 
       long now = System.currentTimeMillis();
@@ -114,114 +128,162 @@ public class AuthAction extends Action<AuthAction>
 
       if (token != null)
       {
-         token = token.trim().toLowerCase();
-         if (token.startsWith("session "))
+         token = token.trim();
+         if (token.toLowerCase().startsWith("session "))
          {
-            sessionKey = token.toLowerCase().substring(8, token.length()).trim();
+            sessionKey = token.substring(8, token.length()).trim();
          }
-         else if (token.startsWith("basic "))
+         else if (token.toLowerCase().startsWith("basic "))
          {
             token = token.substring(token.indexOf(" ") + 1, token.length());
             token = new String(Base64.decodeBase64(token));
             username = token.substring(0, token.indexOf(":"));
             password = token.substring(token.indexOf(":") + 1, token.length());
          }
-      }
-
-      if (req.isPost() && sessionReq && (Utils.empty(username, password)))
-      {
-         username = req.getJson().getString("username");
-         password = req.getJson().getString("password");
-      }
-
-      if (sessionKey == null && Utils.empty(username, password))
-      {
-         username = req.removeParam("x-auth-username");
-         password = req.removeParam("x-auth-password");
-      }
-
-      if (sessionKey == null && Utils.empty(username, password))
-      {
-         username = req.getHeader("username");
-         password = req.getHeader("password");
-      }
-
-      if (sessionKey == null && Utils.empty(username, password))
-      {
-         username = req.removeParam("username");
-         password = req.removeParam("password");
-      }
-
-      if (sessionReq && req.isDelete())
-      {
-         //this is a logout
-
-         //delete to http[s]://{host}/{collection}/{sessionKey}
-         if (sessionKey == null)
-            sessionKey = url.substring(url.lastIndexOf("/") + 1, url.length());
-
-         if (sessionKey == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
-
-         sessionCache.remove(sessionKey);
-      }
-      else if (!Utils.empty(username, password))
-      {
-         Connection conn = db.getConnection();
-
-         User tempUser = getUser(conn, api, req.getTenantCode(), username, null);
-         boolean authorized = false;
-         if (tempUser != null)
+         else if (token != null && token.toLowerCase().startsWith("bearer "))
          {
-            long requestAt = tempUser.getRequestAt();
-            int failedNum = tempUser.getFailedNum();
-            if (failedNum < failedMax || now - requestAt > failedExp)
+            token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
+            DecodedJWT jwt = null;
+            for (String secret : getJwtSecrets())
             {
-               //only attempt to validate password and log the attempt 
-               //if the user has failed login fewer than failedMax times
-               String remoteAddr = req.getRemoteAddr();
-               authorized = checkPassword(conn, tempUser, password);
-
-               if (shouldTrackRequestTimes)
+               try
                {
-                  String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
-                  SqlUtils.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
+                  JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).acceptLeeway(1).build();
+                  //this will throw an exception if the signatures don't match
+                  jwt = verifier.verify(token);
+                  break;
+               }
+               catch (Exception ex)
+               {
                }
 
-               if (authorized)
-               {
-                  tempUser.withRequestAt(now);
-                  tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
-                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
-                  if (!Utils.empty(authenticatedPerm))
-                  {
-                     tempUser.withPermissions(authenticatedPerm);
-                  }
-
-                  user = tempUser;
-               }
+               if (jwt == null)
+                  throw new ApiException(SC.SC_401_UNAUTHORIZED);
             }
+
+            user = createUserFromValidJwt(jwt);
          }
-
-         if (tempUser == null || !authorized)
-            throw new ApiException(SC.SC_401_UNAUTHORIZED);
-
       }
 
-      if (sessionKey != null)
+      if (user == null)
       {
-         user = sessionCache.get(sessionKey);
-         if (user != null && sessionExp > 0)
+
+         if (req.isPost() && sessionReq && (Utils.empty(username, password)))
          {
-            if (now - user.getRequestAt() > sessionExp)
-            {
-               sessionCache.remove(sessionKey);
-               user = null;
-            }
+            username = req.getJson().getString("username");
+            password = req.getJson().getString("password");
          }
 
-         if (user == null)
-            throw new ApiException(SC.SC_401_UNAUTHORIZED);
+         if (sessionKey == null && Utils.empty(username, password))
+         {
+            username = req.removeParam("x-auth-username");
+            password = req.removeParam("x-auth-password");
+         }
+
+         if (sessionKey == null && Utils.empty(username, password))
+         {
+            username = req.getHeader("username");
+            password = req.getHeader("password");
+         }
+
+         if (sessionKey == null && Utils.empty(username, password))
+         {
+            username = req.removeParam("username");
+            password = req.removeParam("password");
+         }
+
+         if (sessionReq && req.isDelete())
+         {
+            //this is a logout
+
+            //delete to http[s]://{host}/{collection}/{sessionKey}
+            if (sessionKey == null)
+               sessionKey = url.substring(url.lastIndexOf("/") + 1, url.length());
+
+            if (sessionKey == null)
+               throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
+
+            sessionCache.remove(sessionKey);
+         }
+         else if (!Utils.empty(username, password))
+         {
+            String salt = getSalt();
+            if (salt == null)
+            {
+               log.warn("You must configure a salt value for password hashing.");
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR);
+            }
+
+            user = dao.getUser(username, accountCode, apiCode, tenantCode);
+
+            if (user != null)
+            {
+               String strongHash = strongHash(salt, password);
+               String weakHash = weakHash(password);
+
+               if (!(user.getPassword().equals(strongHash) || user.getPassword().equals(weakHash)))
+                  user = null;
+            }
+
+            //         Connection conn = db.getConnection();
+            //
+            //         User tempUser = getUser(conn, api, req.getTenantCode(), username, null);
+            //         boolean authorized = false;
+            //         if (tempUser != null)
+            //         {
+            //            long requestAt = tempUser.getRequestAt();
+            //            int failedNum = tempUser.getFailedNum();
+            //            if (failedNum < failedMax || now - requestAt > failedExp)
+            //            {
+            //               //only attempt to validate password and log the attempt 
+            //               //if the user has failed login fewer than failedMax times
+            //               String remoteAddr = req.getRemoteAddr();
+            //               authorized = checkPassword(conn, tempUser, password);
+            //
+            //               if (shouldTrackRequestTimes)
+            //               {
+            //                  String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
+            //                  SqlUtils.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
+            //               }
+            //
+            //               if (authorized)
+            //               {
+            //                  tempUser.withRequestAt(now);
+            //                  tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
+            //                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
+            //                  if (!Utils.empty(authenticatedPerm))
+            //                  {
+            //                     tempUser.withPermissions(authenticatedPerm);
+            //                  }
+            //
+            //                  user = tempUser;
+            //               }
+            //            }
+            //         }
+            //
+            //         if (tempUser == null || !authorized)
+            //            throw new ApiException(SC.SC_401_UNAUTHORIZED);
+
+         }
+      }
+
+      if (user == null)
+      {
+         if (sessionKey != null)
+         {
+            user = sessionCache.get(sessionKey);
+            if (user != null && sessionExp > 0)
+            {
+               if (now - user.getRequestAt() > sessionExp)
+               {
+                  sessionCache.remove(sessionKey);
+                  user = null;
+               }
+            }
+
+            if (user == null)
+               throw new ApiException(SC.SC_401_UNAUTHORIZED);
+         }
       }
 
       if (user != null)
@@ -283,125 +345,114 @@ public class AuthAction extends Action<AuthAction>
 
          if (api.isMultiTenant())
          {
-            String tenantCode = req.getTenantCode();
-
-            Integer tenantId = (Integer) api.getCache("TENANT_ID_" + tenantCode);
-            if (tenantId == null)
-            {
-               Connection conn = db.getConnection();
-
-               Object tenant = SqlUtils.selectValue(conn, "SELECT id FROM Tenant WHERE tenantCode = ?", tenantCode);
-               if (tenant == null)
-                  throw new ApiException(SC.SC_404_NOT_FOUND);
-
-               tenantId = Integer.parseInt(tenant + "");
-               api.putCache("TENANT_ID_" + tenantCode, tenantId);
-            }
-
-            user.withTenantCode(tenantCode);
-            user.withTenantId(tenantId);
+            //            String tenantCode = req.getTenantCode();
+            //
+            //            Integer tenantId = (Integer) api.getCache("TENANT_ID_" + tenantCode);
+            //            if (tenantId == null)
+            //            {
+            //               Connection conn = dao.getConnection();
+            //
+            //               Object tenant = SqlUtils.selectValue(conn, "SELECT id FROM Tenant WHERE tenantCode = ?", tenantCode);
+            //               if (tenant == null)
+            //                  throw new ApiException(SC.SC_404_NOT_FOUND);
+            //
+            //               tenantId = Integer.parseInt(tenant + "");
+            //               api.putCache("TENANT_ID_" + tenantCode, tenantId);
+            //            }
+            //
+            //            user.withTenantCode(tenantCode);
+            //            user.withTenantId(tenantId);
          }
          req.withUser(user);
       }
-
    }
 
-   protected User getUser(Connection conn, Api api, String tenantCode, String username, String accessKey) throws Exception
+   User createUserFromValidJwt(DecodedJWT jwt)
    {
-      if (Utils.empty(username, accessKey))
-         throw new ApiException(SC.SC_401_UNAUTHORIZED);
+      User user = new User();
+      user.withUsername(jwt.getSubject());
 
-      if (api.isMultiTenant() && Utils.empty(tenantCode))
-         throw new ApiException(SC.SC_401_UNAUTHORIZED);
+      Claim c = null;
 
-      String sql = "";
-      List params = new ArrayList();
-      if (api.isMultiTenant())
+      c = jwt.getClaim("groups");
+      if (c != null)
       {
-         sql += " SELECT DISTINCT u.*, t.id AS tenantId, t.tenantCode ";
-         sql += " FROM User u   ";
-         sql += " JOIN Tenant t ON t.tenantCode = ? ";
-         params.add(tenantCode);
-      }
-      else
-      {
-         sql += " SELECT DISTINCT u.*";
-         sql += " FROM User u   ";
+         List<String> groups = c.asList(String.class);
+         user.withRoles(groups.toArray(new String[groups.size()]));
       }
 
-      sql += " WHERE (u.revoked IS NULL OR u.revoked != 1) ";
-
-      if (!Utils.empty(username))
+      c = jwt.getClaim("roles");
+      if (c != null)
       {
-         sql += " AND u.username = ? ";
-         params.add(username);
+         List<String> roles = c.asList(String.class);
+         user.withRoles(roles.toArray(new String[roles.size()]));
       }
-      else
-      {
-         sql += " AND u.accessKey = ? ";
-         params.add(accessKey);
-      }
-      sql += " LIMIT 1 ";
 
-      return SqlUtils.selectObject(conn, sql, User.class, params);
+      c = jwt.getClaim("perms");
+      if (c != null)
+      {
+         List<String> perms = c.asList(String.class);
+         user.withPermissions(perms.toArray(new String[perms.size()]));
+      }
+
+      return user;
    }
 
-   boolean checkPassword(Connection conn, User user, String password)
+   /**
+    * Looks gwt signing secrets up as environment vars or sysprops.
+    * 
+    * Finds the most specific keys keys first
+    * 
+    * @param accountCode
+    * @param apiCode
+    * @param tenantCode
+    * @return
+    */
+   List<String> getJwtSecrets()
    {
-      boolean matched = false;
+      Request req = Chain.peek().getRequest();
+      String accountCode = req.getApi().getAccountCode();
+      String apiCode = req.getApi().getApiCode();
+      String tenantCode = req.getTenantCode();
 
-      String savedHash = user.getPassword();
-      String newHash = hashPassword(user.getId(), password);
+      List secrets = new ArrayList();
 
-      if (savedHash.equals(newHash))
+      for (int i = 10; i >= 0; i--)
       {
-         matched = true;
+
+         for (int j = 2; j >= 0; j--)
+         {
+            String key = (getName() != null ? getName() : "") + ".jwt" + (i == 0 ? "" : ("." + i));
+
+            if (j > 0 && accountCode != null)
+               key += "." + accountCode;
+
+            if (j > 1 && apiCode != null)
+               key += "." + apiCode;
+
+            if (j > 2 && tenantCode != null)
+               key += "." + tenantCode;
+
+            key += ".secret";
+
+            String secret = Utils.findSysEnvPropStr(key, null);
+            if (secret != null)
+            {
+               secrets.add(secret);
+            }
+         }
       }
-      else if (savedHash.equalsIgnoreCase(md5(password.getBytes())))
-      {
-         //this allows for manual password recovery by manually putting an
-         //md5 of the password into the password col in the db
-         matched = true;
-      }
 
-      return matched;
+      return secrets;
    }
 
-   protected String[] getRoles(Connection conn, Api api, User user) throws Exception
+   public String signJwt(JWTCreator.Builder jwtBuilder) throws Exception
    {
-      String sql = "";
-      sql += " SELECT DISTINCT r.name ";
-      sql += " FROM Role r JOIN UserRole ur ON ur.roleId = r.id AND ur.userId = ?";
-      List roles = SqlUtils.selectList(conn, sql, user.getId());
-      return (String[]) roles.toArray(new String[roles.size()]);
+      String secret = getJwtSecrets().get(0);
+      return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 
-   protected String[] getPermissions(Connection conn, Api api, User user) throws Exception
-   {
-      String sql = "";
-      sql += "\r\n SELECT DISTINCT name ";
-      sql += "\r\n  FROM ";
-      sql += "\r\n  ( ";
-      sql += "\r\n    SELECT p.name ";
-      sql += "\r\n    FROM Permission p";
-      sql += "\r\n    JOIN UserPermission up ON p.id = up.permissionId";
-      sql += "\r\n    WHERE up.userId = ? AND up.apiId = ? AND up.tenantId = ? ";
-      sql += "\r\n                                                           ";
-      sql += "\r\n    UNION";
-      sql += "\r\n                                                           ";
-      sql += "\r\n    SELECT p.name";
-      sql += "\r\n    FROM Permission p";
-      sql += "\r\n    JOIN GroupPermission gp ON p.id = gp.permissionId";
-      sql += "\r\n    JOIN UserGroup ug ON ug.groupId = gp.groupId ";
-      sql += "\r\n    WHERE ug.userId = ? and gp.apiId = ? AND gp.tenantId = ? ";
-      sql += "\r\n  ) as perms";
-
-      List args = Arrays.asList(user.getId(), api.getId(), user.getTenantId(), user.getId(), api.getId(), user.getTenantId());
-      List<String> perms = SqlUtils.selectObjects(conn, sql, Permission.class, args);
-      return perms.toArray(new String[perms.size()]);
-   }
-
-   public static String hashPassword(Object salt, String password) throws ApiException
+   public static String strongHash(Object salt, String password) throws ApiException
    {
       try
       {
@@ -425,10 +476,11 @@ public class AuthAction extends Action<AuthAction>
       }
    }
 
-   private String md5(byte[] byteArr)
+   public static String weakHash(String password)
    {
       try
       {
+         byte[] byteArr = password.getBytes();
          MessageDigest digest = MessageDigest.getInstance("MD5");
          digest.update(byteArr);
          byte[] bytes = digest.digest();
@@ -442,21 +494,6 @@ public class AuthAction extends Action<AuthAction>
          throw new RuntimeException(ex);
       }
    }
-
-   //   void close(Connection conn)
-   //   {
-   //      if (conn != null)
-   //      {
-   //         try
-   //         {
-   //            conn.close();
-   //         }
-   //         catch (Exception ex)
-   //         {
-   //            ex.printStackTrace();
-   //         }
-   //      }
-   //   }
 
    protected String newSessionId()
    {
@@ -513,10 +550,21 @@ public class AuthAction extends Action<AuthAction>
       return this;
    }
 
-   public AuthAction withDb(SqlDb db)
+   public AuthAction withDao(UserDao dao)
    {
-      this.db = db;
+      this.dao = dao;
       return this;
+   }
+
+   public SqlDbUserDao withSalt(String salt)
+   {
+      this.salt = salt;
+      return null;
+   }
+
+   public String getSalt()
+   {
+      return Utils.findSysEnvPropStr(getName() + ".salt", salt);
    }
 
    class LRUAuthSessionCache implements AuthSessionCache
@@ -545,6 +593,229 @@ public class AuthAction extends Action<AuthAction>
       public void remove(String sessionKey)
       {
          map.remove(sessionKey);
+      }
+
+   }
+
+   public static interface UserDao
+   {
+      User getUser(String username, String accountCode, String apiCode, String tenantCode) throws Exception;
+   }
+
+   public static class SqlDbUserDao implements UserDao
+   {
+      SqlDb db = null;
+
+      public SqlDbUserDao()
+      {
+
+      }
+
+      public SqlDbUserDao(SqlDb db)
+      {
+         withDb(db);
+      }
+
+      public SqlDbUserDao withDb(SqlDb db)
+      {
+         this.db = db;
+         return this;
+      }
+
+      public SqlDb getDb()
+      {
+         return db;
+      }
+
+      public User getUser(String username, String accountCode, String apiCode, String tenantCode) throws Exception
+      {
+         Connection conn = null;
+         User user = null;
+         try
+         {
+            List params = new ArrayList();
+            String sql = "";
+
+            if (username != null)
+            {
+               params.add(username);
+               sql += " SELECT DISTINCT u.*";
+               sql += " FROM User u   ";
+               sql += " WHERE (u.revoked IS NULL OR u.revoked != 1) ";
+               sql += " AND u.username = ? ";
+               //sql += " AND (u.password = ? OR u.password = ?)";
+               sql += " LIMIT 1 ";
+            }
+            //            else
+            //            {
+            //               params.add(apiCode);
+            //               sql += " SELECT DISTINCT u.*";
+            //               sql += " FROM User u   ";
+            //               sql += " JOIN ApiKey a ON a.userId = u.id";
+            //               sql += " WHERE (u.revoked IS NULL OR u.revoked != 1) ";
+            //               sql += " AND (a.revoked IS NULL OR a.revoked != 1) ";
+            //               sql += " AND a.accessKey = ? ";
+            //               sql += " AND (a.secretKey = ? OR a.secretKey = ?)";
+            //               sql += " LIMIT 1 ";
+            //            }
+
+            conn = db.getConnection();
+            user = SqlUtils.selectObject(conn, sql, User.class, username);
+
+            if (user != null)
+            {
+               Rows rows = findGRP(conn, user.getId(), accountCode, apiCode, tenantCode);
+               if (rows == null)
+               {
+                  //-- there is a users with the given username but the don't have any association to this accountCoce/apiCode/tenantCode
+                  user = null;
+               }
+               else
+               {
+                  populateGRP(user, rows);
+               }
+            }
+         }
+         finally
+         {
+            conn.close();
+         }
+
+         return user;
+      }
+
+      void populateGRP(User user, Rows rows)
+      {
+         for (Row row : rows)
+         {
+            String type = row.getString("type");
+            String name = row.getString("name");
+            if (name != null)
+            {
+               switch (type)
+               {
+                  case "group":
+                     user.withGroups(name);
+                     break;
+                  case "role":
+                     user.withRoles(name);
+                     break;
+                  case "permission":
+                     user.withPermissions(name);
+                     break;
+               }
+            }
+         }
+      }
+
+      /**
+       * user -> permission
+       * user -> group -> permission
+       * user -> role -> permission
+       * user -> group -> role -> permission
+      
+       * UserPermission
+       * GroupPermission
+       * RolePermission
+       * UserGroup
+       * UserRole
+       * GroupRole
+       * 
+       * 
+       * 
+       */
+      Rows findGRP(Connection conn, int userId, String accountCode, String apiCode, String tenantCode) throws Exception
+      {
+         List vals = new ArrayList();
+
+         String sql = "";
+
+         sql += "SELECT * FROM (";
+
+         //-- user -> permission
+         sql += "\r\n    SELECT 'permission' as type, p.name, 'user->permission' as via";
+         sql += "\r\n    FROM Permission p";
+         sql += "\r\n    JOIN UserPermission u ON p.id = u.permissionId";
+         sql += "\r\n    WHERE u.userId = ?";
+         vals.add(userId);
+
+         sql += "\r\n     AND ((p.accountCode is null OR p.accountCode = ? ) AND (p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+         vals.addAll(Arrays.asList(accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode));
+
+         //-- user -> group -> permission
+         sql += "\r\n                                                           ";
+         sql += "\r\n    UNION";
+         sql += "\r\n                                                           ";
+         sql += "\r\n    SELECT 'permission' as type, p.name, 'user->group->permission' as via";
+         sql += "\r\n    FROM Permission p";
+         sql += "\r\n    JOIN GroupPermission g ON p.id = g.permissionId";
+         sql += "\r\n    JOIN UserGroup u ON u.groupId = g.groupId ";
+         sql += "\r\n    WHERE u.userId = ?";
+         sql += "\r\n     AND ((p.accountCode is null OR p.accountCode = ? ) AND (p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
+         sql += "\r\n     AND ((g.accountCode is null OR g.accountCode = ? ) AND (g.apiCode is null OR g.apiCode = ?) AND (g.tenantCode is null OR g.tenantCode = ?))";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+
+         vals.addAll(Arrays.asList(userId, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode));
+
+         //-- user -> role -> permission
+         sql += "\r\n                                                           ";
+         sql += "\r\n    UNION";
+         sql += "\r\n                                                           ";
+         sql += "\r\n    SELECT 'permission' as type, p.name, 'user->role->permission' as via";
+         sql += "\r\n    FROM Permission p";
+         sql += "\r\n    JOIN RolePermission r ON p.id = r.permissionId";
+         sql += "\r\n    JOIN UserRole u ON u.roleId = r.roleId ";
+         sql += "\r\n    WHERE u.userId = ?";
+         sql += "\r\n     AND ((p.accountCode is null OR p.accountCode = ? ) AND (p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
+         sql += "\r\n     AND ((r.accountCode is null OR r.accountCode = ? ) AND (r.apiCode is null OR r.apiCode = ?) AND (r.tenantCode is null OR r.tenantCode = ?))";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+
+         vals.addAll(Arrays.asList(userId, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode));
+
+         //-- user -> group -> role -> permission
+         sql += "\r\n                                                           ";
+         sql += "\r\n    UNION";
+         sql += "\r\n                                                           ";
+         sql += "\r\n    SELECT 'permission' as type, p.name, 'user->group->role->permission' as via";
+         sql += "\r\n    FROM Permission p";
+         sql += "\r\n    JOIN RolePermission r ON p.id = r.permissionId";
+         sql += "\r\n    JOIN GroupRole g ON r.roleID = g.roleId";
+         sql += "\r\n    JOIN UserGroup u ON g.groupId = u.groupId";
+         sql += "\r\n    WHERE u.userId = ?";
+
+         sql += "\r\n     AND ((p.accountCode is null OR p.accountCode = ? ) AND (p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
+         sql += "\r\n     AND ((r.accountCode is null OR r.accountCode = ? ) AND (r.apiCode is null OR r.apiCode = ?) AND (r.tenantCode is null OR r.tenantCode = ?))";
+         sql += "\r\n     AND ((g.accountCode is null OR g.accountCode = ? ) AND (g.apiCode is null OR g.apiCode = ?) AND (g.tenantCode is null OR g.tenantCode = ?))";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+
+         vals.addAll(Arrays.asList(userId, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode, accountCode, apiCode, tenantCode));
+
+         //-- user -> group
+         sql += "\r\n                                                           ";
+         sql += "\r\n    UNION";
+         sql += "\r\n                                                           ";
+         sql += "\r\n    SELECT 'group' as type, g.name, '' as via";
+         sql += "\r\n    FROM `Group` g";
+         sql += "\r\n    JOIN UserGroup u ON g.id = u.groupId";
+         sql += "\r\n    WHERE u.userId = ?";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+         vals.addAll(Arrays.asList(userId, accountCode, apiCode, tenantCode));
+
+         //-- user -> role
+         sql += "\r\n                                                           ";
+         sql += "\r\n    UNION";
+         sql += "\r\n                                                           ";
+         sql += "\r\n    SELECT 'role' as type, r.name, '' as via";
+         sql += "\r\n    FROM Role r";
+         sql += "\r\n    JOIN UserRole u ON r.id = u.roleId";
+         sql += "\r\n    WHERE u.userId = ?";
+         sql += "\r\n     AND ((u.accountCode is null OR u.accountCode = ? ) AND (u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+         vals.addAll(Arrays.asList(userId, accountCode, apiCode, tenantCode));
+
+         sql += " ) as q ORDER BY type, name, via";
+
+         return SqlUtils.selectRows(conn, sql, vals);
       }
 
    }

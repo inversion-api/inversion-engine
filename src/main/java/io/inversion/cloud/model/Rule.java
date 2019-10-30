@@ -22,25 +22,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected Api             api          = null;
+   protected Logger           log          = LoggerFactory.getLogger(getClass().getName());
 
-   protected String          name         = null;
-   protected int             order        = 1000;
+   protected Api              api          = null;
 
-   protected Set<String>     methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected String           name         = null;
+   protected int              order        = 1000;
 
-   protected List<Path>      excludePaths = new ArrayList();
-   protected List<Path>      includePaths = new ArrayList();
+   protected Set<String>      methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+   protected List<Path>       excludePaths = new ArrayList();
+   protected List<Path>       includePaths = new ArrayList();
 
    /**
     * JSMap is used because it implements a case insensitive map without modifying the keys
     */
    protected transient JSNode configMap    = new JSNode();
-   protected String          configStr    = null;
+   protected String           configStr    = null;
 
    @Override
    public int compareTo(Rule a)
