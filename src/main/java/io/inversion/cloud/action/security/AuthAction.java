@@ -128,12 +128,12 @@ public class AuthAction extends Action<AuthAction>
 
       if (token != null)
       {
-         token = token.trim().toLowerCase();
-         if (token.startsWith("session "))
+         token = token.trim();
+         if (token.toLowerCase().startsWith("session "))
          {
-            sessionKey = token.toLowerCase().substring(8, token.length()).trim();
+            sessionKey = token.substring(8, token.length()).trim();
          }
-         else if (token.startsWith("basic "))
+         else if (token.toLowerCase().startsWith("basic "))
          {
             token = token.substring(token.indexOf(" ") + 1, token.length());
             token = new String(Base64.decodeBase64(token));
@@ -143,9 +143,7 @@ public class AuthAction extends Action<AuthAction>
          else if (token != null && token.toLowerCase().startsWith("bearer "))
          {
             token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
-
             DecodedJWT jwt = null;
-
             for (String secret : getJwtSecrets())
             {
                try
@@ -157,7 +155,6 @@ public class AuthAction extends Action<AuthAction>
                }
                catch (Exception ex)
                {
-
                }
 
                if (jwt == null)
@@ -437,8 +434,6 @@ public class AuthAction extends Action<AuthAction>
                key += "." + tenantCode;
 
             key += ".secret";
-
-            System.out.println("key: " + key);
 
             String secret = Utils.findSysEnvPropStr(key, null);
             if (secret != null)

@@ -99,6 +99,17 @@ public class HttpUtils
       return rest("DELETE", url, null, null, -1);
    }
 
+   public static FutureResponse rest(String method, String url, String body, int retryAttempts, String... headers)
+   {
+      ArrayListValuedHashMap h = new ArrayListValuedHashMap();
+      for (int i = 0; i < headers.length - 1; i += 2)
+      {
+         h.put(headers[i], headers[i + 1]);
+      }
+
+      return rest(method, url, body, h, retryAttempts);
+   }
+
    public static FutureResponse rest(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
    {
       return rest(new Request(method, url, body, headers, retryAttempts));
