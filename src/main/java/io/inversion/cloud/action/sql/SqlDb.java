@@ -82,6 +82,8 @@ public class SqlDb extends Db<SqlDb>
    {
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
       logger.setLevel(Level.WARN);
+      
+      
       //      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari.pool.PoolBase");
       //      logger.setLevel(Level.INFO);
 
@@ -508,6 +510,7 @@ public class SqlDb extends Db<SqlDb>
       }
       catch (Exception ex)
       {
+         ex.printStackTrace();
          Utils.rethrow(ex);
       }
    }

@@ -36,6 +36,7 @@ public class Api
    protected int              id          = 0;
 
    protected String           name        = null;
+   protected String           accountCode = null;
    protected String           apiCode     = null;
    protected boolean          multiTenant = false;
    protected String           url         = null;
@@ -495,6 +496,18 @@ public class Api
       this.apiCode = apiCode;
       return this;
    }
+   
+   public Api withAccountCode(String accountCode)
+   {
+      this.accountCode = accountCode;
+      return this;
+   }
+   
+   public String getAccountCode()
+   {
+      return accountCode != null ? accountCode : getApiCode();
+   }
+   
 
    public String getName()
    {
