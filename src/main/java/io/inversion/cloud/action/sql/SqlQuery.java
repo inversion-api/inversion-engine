@@ -18,8 +18,10 @@ package io.inversion.cloud.action.sql;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Index;
@@ -41,14 +43,14 @@ import io.inversion.cloud.utils.Utils;
 
 public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
-   protected char stringQuote = '\'';
-   protected char columnQuote = '"';
+   protected char              stringQuote = '\'';
+   protected char              columnQuote = '"';
 
-   String         selectSql   = null;
+   String                      selectSql   = null;
 
-   String         type        = null;
+   String                      type        = null;
 
-   List<Term>     joins;
+   LinkedHashMap<String, Term> joins;
 
    public SqlQuery(Table table, List<Term> terms)
    {
@@ -60,8 +62,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       if (term.hasToken("eq"))
       {
          String name = term.getToken(0);
-         
-         if(name.endsWith(".select"))
+
+         if (name.endsWith(".select"))
             return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
@@ -70,11 +72,16 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
 
       if (joins == null)
-         joins = new ArrayList();
+         joins = new LinkedHashMap();
 
       if (term.hasToken("join"))
       {
-         joins.add(term);
+         //a map is used to avoid adding duplicate joins
+         String key = term.toString();
+         if (!joins.containsKey(key))
+         {
+            joins.put(key, term);
+         }
          return true;
       }
 
@@ -160,9 +167,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
             select = "SELECT DISTINCT " + qt + ".* FROM " + qt;
 
-            for (int i = 0; i < joins.size(); i++)
+            for (Entry<String, Term> joinEntry : joins.entrySet())
             {
-               Term join = joins.get(i);
+               Term join = joinEntry.getValue();
                String tableName = join.getToken(0);
                String tableAlias = join.getToken(1);
 
@@ -267,27 +274,30 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       //               
       //            }
 
-      for (int i = 0; joins != null && i < joins.size(); i++)
+      if (joins != null)
       {
-         Term join = joins.get(i);
-
-         String where = "";
-
-         for (int j = 2; j < join.size(); j += 4)//the first token is the related name, the second token is the table alias
+         for (Entry<String, Term> joinTerm : joins.entrySet())
          {
-            if (j > 2)
-               where += " AND ";
-            where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j + 1)) + " = " + quoteCol(join.getToken(j + 2)) + "." + quoteCol(join.getToken(j + 3));
-         }
+            Term join = joinTerm.getValue();
 
-         if (where != null)
-         {
-            where = "(" + where + ")";
+            String where = "";
 
-            if (empty(parts.where))
-               parts.where = " WHERE " + where;
-            else
-               parts.where += " AND " + where;
+            for (int j = 2; j < join.size(); j += 4)//the first token is the related name, the second token is the table alias
+            {
+               if (j > 2)
+                  where += " AND ";
+               where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j + 1)) + " = " + quoteCol(join.getToken(j + 2)) + "." + quoteCol(join.getToken(j + 3));
+            }
+
+            if (where != null)
+            {
+               where = "(" + where + ")";
+
+               if (empty(parts.where))
+                  parts.where = " WHERE " + where;
+               else
+                  parts.where += " AND " + where;
+            }
          }
       }
 
@@ -438,7 +448,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       withColValue(col, val);
       return "?";
    }
-
 
    protected String print(Term term, String col, boolean preparedStmt)
    {
