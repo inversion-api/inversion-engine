@@ -539,11 +539,12 @@ public class SqlDb extends Db<SqlDb>
       //-- that caputres all of the foreign key relationships.  You
       //-- have to do the fk loop second becuase the reference pk
       //-- object needs to exist so that it can be set on the fk Col
-      ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
+      ResultSet rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
+      //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
       boolean hasNext = rs.next();
       if (!hasNext)
       {
-         rs = dbmd.getTables(null, null, "%", new String[]{"TABLE", "VIEW"});
+         rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
          hasNext = rs.next();
       }
       if (hasNext)
@@ -624,17 +625,28 @@ public class SqlDb extends Db<SqlDb>
       //-- so that all of the tbls/cols are
       //-- created first and are there to
       //-- be connected
-      rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE"});
+      rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE"});
       hasNext = rs.next();
       if (!hasNext)
       {
-         rs = dbmd.getTables(null, null, "%", new String[]{"TABLE"});
+         rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE"});
          hasNext = rs.next();
       }
       if (hasNext)
          do
          {
             String tableName = rs.getString("TABLE_NAME");
+
+            //            System.out.println(tableName);
+            //            
+            //            ResultSetMetaData rsmd = rs.getMetaData();
+            //            for(int i = 1; i<= rsmd.getColumnCount(); i++)
+            //            {
+            //               String name = rsmd.getColumnName(i);
+            //               System.out.println(name + " = " + rs.getObject(name)); 
+            //               
+            //            }
+
             ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
             while (keyMd.next())
             {
