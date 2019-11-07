@@ -58,9 +58,14 @@ public class TestSqlPostAction extends TestCase
       return "northwind/" + db + "/";
    }
 
+   Engine engine = null;
    protected Engine service() throws Exception
    {
-      return SqlEngineFactory.service();
+      if(engine == null)
+      {
+         engine = SqlEngineFactory.service(true, false);
+      }
+      return engine;
    }
 
    public TestSqlPostAction(String db) throws Exception

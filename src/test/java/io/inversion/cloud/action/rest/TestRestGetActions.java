@@ -107,6 +107,9 @@ public abstract class TestRestGetActions extends TestCase
       //--
       //-- gets a sorted list of all hrefs
       res = engine.get(url("orders?type=ORDER&sort=orderId&includes=href&limit=1000"));
+      
+      res.dump();
+      
       List<String> hrefs = new ArrayList();
       res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
@@ -147,7 +150,7 @@ public abstract class TestRestGetActions extends TestCase
          if (!shouldBe.equals(found)// 
                || alreadyFound.contains(found))
          {
-            http : //localhost/northwind/dynamodb/orders?limit=127&sort=orderId&after(type,ORDER,orderId,10374)
+            //http://localhost/northwind/dynamodb/orders?limit=127&sort=orderId&after(type,ORDER,orderId,10374)
             //GET: http://localhost/northwind/dynamodb/orders?limit=127&sort=orderId&after(type,ORDER,orderId,10374)&after(type,ORDER,orderId,10501)&after(type,ORDER,orderId,10628)&after(type,ORDER,orderId,10755)
 
             System.out.println("Request  : " + next);

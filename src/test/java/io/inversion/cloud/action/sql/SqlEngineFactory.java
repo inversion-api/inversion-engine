@@ -70,14 +70,14 @@ public class SqlEngineFactory
       //SpringBoot.run(service(false));
    }
 
-   public static synchronized Engine service() throws Exception
-   {
-      return service(true);
-   }
+//   public static synchronized Engine service() throws Exception
+//   {
+//      return service(true);
+//   }
 
-   public static synchronized Engine service(boolean startup) throws Exception
+   public static synchronized Engine service(boolean startup, boolean newCopy) throws Exception
    {
-      if (engine != null)
+      if (!newCopy && engine != null)
          return engine;
 
       try
@@ -95,7 +95,9 @@ public class SqlEngineFactory
                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
                            .withDb(sourceDb);
 
-                     Connection conn = sourceDb.getConnection();
+                     //Connection conn = sourceDb.getConnection();
+                     //System.out.println(SqlUtils.selectInt(conn,  "SELECT count(*) from Orders"));
+                     
 
                      if (shouldLoad("h2"))
                      {
@@ -104,6 +106,10 @@ public class SqlEngineFactory
                         engine.getApi("northwind")//
                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
                               .withDb(h2Db);
+                        
+                        
+                        //Connection conn2 = h2Db.getConnection();
+                        //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders"));
                      }
 
                      if (shouldLoad("mysql"))
@@ -225,7 +231,7 @@ public class SqlEngineFactory
     */
    public static void prepData(String db) throws Exception
    {
-      Engine engine = service();
+      Engine engine = service(true, false);
       SqlDb destDb = ((SqlDb) engine.getApi("northwind").getDb(db));
       Connection destCon = destDb.getConnection();
 

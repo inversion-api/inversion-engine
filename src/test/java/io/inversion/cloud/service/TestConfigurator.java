@@ -67,7 +67,7 @@ public class TestConfigurator extends TestCase
    @Test
    public void testEncodeDecodeEncodeAccuracy1() throws Exception
    {
-      Engine engine = SqlEngineFactory.service();
+      Engine engine = SqlEngineFactory.service(true, true);
       Api source = engine.getApi("northwind");
       Properties props1 = Configurator.encode(source);
 
