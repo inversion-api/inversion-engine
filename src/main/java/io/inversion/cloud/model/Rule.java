@@ -114,6 +114,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       if (this.methods.size() == 0)
          return true;
 
+      if(this.methods.contains("*"))
+         return true;
+      
       for (String method : methods)
       {
          if (method != null && this.methods.contains(method))

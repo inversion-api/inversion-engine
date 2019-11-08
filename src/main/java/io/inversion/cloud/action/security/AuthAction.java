@@ -15,6 +15,7 @@
  */
 package io.inversion.cloud.action.security;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
@@ -375,21 +377,21 @@ public class AuthAction extends Action<AuthAction>
       Claim c = null;
 
       c = jwt.getClaim("groups");
-      if (c != null)
+      if (c != null && !c.isNull())
       {
          List<String> groups = c.asList(String.class);
          user.withRoles(groups.toArray(new String[groups.size()]));
       }
 
       c = jwt.getClaim("roles");
-      if (c != null)
+      if (c != null && !c.isNull())
       {
          List<String> roles = c.asList(String.class);
          user.withRoles(roles.toArray(new String[roles.size()]));
       }
 
       c = jwt.getClaim("perms");
-      if (c != null)
+      if (c != null && !c.isNull())
       {
          List<String> perms = c.asList(String.class);
          user.withPermissions(perms.toArray(new String[perms.size()]));
@@ -414,7 +416,11 @@ public class AuthAction extends Action<AuthAction>
       String accountCode = req.getApi().getAccountCode();
       String apiCode = req.getApi().getApiCode();
       String tenantCode = req.getTenantCode();
+      return getJwtSecrets(accountCode, apiCode, tenantCode);
+   }
 
+   List<String> getJwtSecrets(String accountCode, String apiCode, String tenantCode)
+   {
       List secrets = new ArrayList();
 
       for (int i = 10; i >= 0; i--)
@@ -446,9 +452,19 @@ public class AuthAction extends Action<AuthAction>
       return secrets;
    }
 
-   public String signJwt(JWTCreator.Builder jwtBuilder) throws Exception
+   public String signJwt(JWTCreator.Builder jwtBuilder) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
-      String secret = getJwtSecrets().get(0);
+      Request req = Chain.peek().getRequest();
+      String accountCode = req.getApi().getAccountCode();
+      String apiCode = req.getApi().getApiCode();
+      String tenantCode = req.getTenantCode();
+
+      return signJwt(jwtBuilder, accountCode, apiCode, tenantCode);
+   }
+
+   public String signJwt(JWTCreator.Builder jwtBuilder, String accountCode, String apiCode, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
+   {
+      String secret = getJwtSecrets(accountCode, apiCode, tenantCode).get(0);
       return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 

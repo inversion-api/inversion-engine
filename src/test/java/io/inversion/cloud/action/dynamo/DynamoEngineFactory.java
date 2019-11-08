@@ -65,7 +65,7 @@ public class DynamoEngineFactory
    {
       buildTables();
 
-      Engine engine = SqlEngineFactory.service();
+      Engine engine = SqlEngineFactory.service(true, true);
 
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);

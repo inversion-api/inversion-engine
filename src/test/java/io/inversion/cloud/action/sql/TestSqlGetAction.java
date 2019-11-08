@@ -10,7 +10,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.rest.TestRestGetActions;
+import io.inversion.cloud.demo.Demo001SqlDbNorthwind;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
@@ -39,10 +41,15 @@ public class TestSqlGetAction extends TestRestGetActions
       //return "northwind/h2/";
    }
 
-   @Override
+   Engine engine = null;
+
    protected Engine service() throws Exception
    {
-      return SqlEngineFactory.service();
+      if (engine == null)
+      {
+         engine = SqlEngineFactory.service(true, true);
+      }
+      return engine;
    }
 
    @Test
@@ -184,6 +191,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       res = engine.get(url("orders?limit=5&sort=orderid"));
+      res.dump();
       assertEquals(5, res.data().size());
       assertTrue(res.findString("data.0.customer").endsWith("/customers/VINET"));
       assertTrue(res.findString("data.0.orderdetails").toLowerCase().endsWith("/orders/10248/orderdetails"));
@@ -318,23 +326,23 @@ public class TestSqlGetAction extends TestRestGetActions
       assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
    }
 
-   @Test
-   public void testMtmRelationshipWithCompoundForeignKey11() throws Exception
-   {
-      Engine engine = service();
-      Response res = null;
-
-      res = engine.get(url("employees/5?expands=orderdetails"));
-      res.dump();
-      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
-
-      res = engine.get(url("employees/5/orderdetails"));
-      assertTrue(res.findString("data.0.employees").toLowerCase().endsWith("/orderdetails/10248~11/employees"));
-      assertTrue(res.findString("data.0.order").toLowerCase().endsWith("/orders/10248"));
-
-      res = engine.get(url("orderdetails/10248~11/employees"));
-      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/employees/5"));
-   }
+   //   @Test
+   //   public void testMtmRelationshipWithCompoundForeignKey11() throws Exception
+   //   {
+   //      Engine engine = service();
+   //      Response res = null;
+   //
+   //      res = engine.get(url("employees/5?expands=orderdetails"));
+   //      res.dump();
+   //      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
+   //
+   //      res = engine.get(url("employees/5/orderdetails"));
+   //      assertTrue(res.findString("data.0.employees").toLowerCase().endsWith("/orderdetails/10248~11/employees"));
+   //      assertTrue(res.findString("data.0.order").toLowerCase().endsWith("/orders/10248"));
+   //
+   //      res = engine.get(url("orderdetails/10248~11/employees"));
+   //      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/employees/5"));
+   //   }
 
    @Test
    public void testWildcardAndUnderscores() throws Exception

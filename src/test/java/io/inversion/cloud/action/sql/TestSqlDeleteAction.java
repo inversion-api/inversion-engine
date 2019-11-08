@@ -16,6 +16,8 @@ import junit.framework.TestCase;
 @RunWith(Parameterized.class)
 public class TestSqlDeleteAction extends TestCase
 {
+   
+   
    @Parameterized.Parameters
    public static Collection input()
    {
@@ -44,9 +46,14 @@ public class TestSqlDeleteAction extends TestCase
       return "http://localhost/" + cp + path;
    }
 
+   Engine engine = null;
    protected Engine service() throws Exception
    {
-      return SqlEngineFactory.service();
+      if(engine == null)
+      {
+         engine = SqlEngineFactory.service(true, false);
+      }
+      return engine;
    }
 
    String db = null;
