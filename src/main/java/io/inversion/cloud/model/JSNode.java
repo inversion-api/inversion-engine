@@ -145,8 +145,8 @@ public class JSNode implements Map<String, Object>
          int idx = path.lastIndexOf(".");
          if (idx < 0)
          {
-            path = null;
             prop = path;
+            path = null;
          }
          else
          {
