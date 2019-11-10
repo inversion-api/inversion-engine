@@ -16,6 +16,29 @@ apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 
 
+task writeNewPom {
+    doLast {
+        pom {
+            project {
+                inceptionYear '2015',
+                organization {
+                	name 'Rocket Partners, LLC'
+                	url 'https://github.com/inversion-api/inversion-engine'
+                }
+                licenses {
+                    license {
+                        name 'GNU AFFERO GENERAL PUBLIC LICENSE'
+                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
+                        distribution 'repo'
+                    }
+                }
+            }
+        }.writeTo("$buildDir/newpom.xml")
+    }
+}
+
+
+
 //README uncomment the line below to use 'gradle build' to package a war.
 //This file is shipped as a java plugin project not a war plugin project because
 //other projects use jitpack to include the snooze api as a dependency.  If
@@ -29,7 +52,7 @@ configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 
 
 version = 'master'
-group = 'com.github.RocketPartners'
+group = 'com.github.inversion-api'
 sourceCompatibility = 1.8
 
 repositories {
@@ -66,7 +89,8 @@ dependencies {
 
     //drivers for supportd DBs
 	compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.1' //required connection pool libs
-	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
+	//compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
+	compile group: 'mysql', name: 'mysql-connector-java', version: '8.+'
 	compile group: 'com.h2database', name: 'h2', version: '1.4.197'
 	compile 'org.postgresql:postgresql:42.1.4'
 	compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.10.1009'
