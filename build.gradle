@@ -1,46 +1,28 @@
+plugins {
+  id "io.toolebox.git-versioner" version "1.3.0"
+}
+
+versioner {
+  pattern {
+    pattern = "%M.%m.%p.%h"
+  }
+  
+  startFrom {
+    major = 0
+    minor = 5
+    patch = 1
+  }
+}
+
 
 apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'java'
 
 
-
-task writeNewPom {
-    doLast {
-        pom {
-            project {
-                inceptionYear '2015',
-                organization {
-                	name 'Rocket Partners, LLC'
-                	url 'https://github.com/inversion-api/inversion-engine'
-                }
-                licenses {
-                    license {
-                        name 'GNU AFFERO GENERAL PUBLIC LICENSE'
-                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
-                        distribution 'repo'
-                    }
-                }
-            }
-        }.writeTo("$buildDir/newpom.xml")
-    }
-}
-
-
-
-//README uncomment the line below to use 'gradle build' to package a war.
-//This file is shipped as a java plugin project not a war plugin project because
-//other projects use jitpack to include the snooze api as a dependency.  If
-//it were a war project by default jipack would serve the war not the jar which
-//would be useless.
-//apply plugin: 'war'
-
-project.docsDirName='../docs/master/'
-
 configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 
 
-version = 'master'
 group = 'com.github.inversion-api'
 sourceCompatibility = 1.8
 
@@ -57,17 +39,17 @@ dependencies {
 	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.+'
 	
 	compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
-	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'	
+	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.+'	
 	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
 
-	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.5'
-	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.5'
+	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.+'
+	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.+'
 
 	//jwt support
-	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
+	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
 
-	compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.1'   
-    compile group: 'com.h2database', name: 'h2', version: '1.4.197'
+	compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.+'   
+    compile group: 'com.h2database', name: 'h2', version: '1.4.+'
 
 	testCompile 'junit:junit:4.12'
 }
@@ -120,4 +102,23 @@ task demo1(type: JavaExec) {
 }
 
 
-
+task writeNewPom {
+    doLast {
+        pom {
+            project {
+                inceptionYear '2015',
+                organization {
+                	name 'Rocket Partners, LLC'
+                	url 'https://github.com/inversion-api/inversion-engine'
+                }
+                licenses {
+                    license {
+                        name 'GNU AFFERO GENERAL PUBLIC LICENSE'
+                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
+                        distribution 'repo'
+                    }
+                }
+            }
+        }.writeTo("$buildDir/newpom.xml")
+    }
+}
