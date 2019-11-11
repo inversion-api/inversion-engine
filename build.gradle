@@ -1,3 +1,4 @@
+
 buildscript {
 	ext {
 		springBootVersion = '1.5.6.RELEASE'
@@ -16,103 +17,79 @@ apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 
 
-task writeNewPom {
-    doLast {
-        pom {
-            project {
-                inceptionYear '2015',
-                organization {
-                	name 'Rocket Partners, LLC'
-                	url 'https://github.com/inversion-api/inversion-engine'
-                }
-                licenses {
-                    license {
-                        name 'GNU AFFERO GENERAL PUBLIC LICENSE'
-                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
-                        distribution 'repo'
-                    }
-                }
-            }
-        }.writeTo("$buildDir/newpom.xml")
-    }
+def main_class = "io.inversion.cloud.quickstart.ApiMain";
+def app_name = project.name
+def build_date = new Date()
+def build_time = build_date.getTime()
+def image_tag = "unknown"
+if(project.hasProperty('imageTagName')){
+	image_tag = "${imageTagName}"
 }
 
-
-
-//README uncomment the line below to use 'gradle build' to package a war.
-//This file is shipped as a java plugin project not a war plugin project because
-//other projects use jitpack to include the snooze api as a dependency.  If
-//it were a war project by default jipack would serve the war not the jar which
-//would be useless.
-//apply plugin: 'war'
-
-project.docsDirName='../docs/master/'
-
-configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
-
-
-version = 'master'
-group = 'com.github.inversion-api'
+description = "Inversion REST API"
+version = '0.0.1'
 sourceCompatibility = 1.8
 
 repositories {
-   mavenLocal()
-   mavenCentral()
-   maven { url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release" }
+	mavenLocal()
+	mavenCentral()
+	maven { url 'https://jitpack.io' }
+}
+
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 dependencies {
-
-	compile 'org.springframework.boot:spring-boot-starter-web'
+	
+	compile("com.github.inversion-api:inversion-engine:master-SNAPSHOT") { changing = true }
+    
+    compile 'org.springframework.boot:spring-boot-starter-web'
 	compile 'org.springframework.boot:spring-boot-starter-actuator'
 	compile 'org.springframework.boot:spring-boot-starter-jdbc'
 	compile 'org.springframework.boot:spring-boot-starter-test'
 	compile 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.6.0'
-
-	compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
-	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'	
-	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
-
-	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.5'
-	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.5'
-   
-	//aws libs
-    //compile 'com.amazonaws:aws-java-sdk:1.11.547'
-	compile 'com.amazonaws:aws-java-sdk-s3:1.11.390'
-	compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.390'
-	compile 'com.amazonaws:aws-java-sdk-kinesis:1.11.390'
-	compile 'com.amazonaws:aws-lambda-java-core:1.2.0'
-	compile 'com.amazonaws:aws-java-sdk-rds:1.11.542'
-
-	// required for the Redis client
-	compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
-
-    //drivers for supportd DBs
-	compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.1' //required connection pool libs
-	//compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.34'
-	compile group: 'mysql', name: 'mysql-connector-java', version: '8.+'
-	compile group: 'com.h2database', name: 'h2', version: '1.4.197'
-	compile 'org.postgresql:postgresql:42.1.4'
-	compile group: 'com.amazon.redshift', name: 'redshift-jdbc42-no-awssdk', version: '1.2.10.1009'
-	// Beware of changing the redshift driver version. Newer versions of this driver are not thread-safe
-	// Version 1.2.10.1009 is thread-safe
-	// https://stackoverflow.com/questions/52884036/java-sql-sqlnontransientexception-amazonjdbc10900-not-all-parameters-have
-
-  	//scripting with javascript via graalvm (from oracle and newer than rhino/nashorn)
-	compile 'net.jodah:expiringmap:0.5.8'
-	compile group: 'org.graalvm', name: 'graal-sdk', version: '1.0.0-rc7'
-	compile group: 'com.oracle.truffle', name: 'truffle-api', version: '1.0.0-rc7'
-	compile files('libs/graaljs.jar') //does not appear to be in maven yet
-	compile files('libs/tregex.jar')  //does not appear to be in maven yet
-
-	//scripting with velocity engine
-	compile group: 'org.apache.velocity', name: 'velocity-engine-core', version: '2.0'
 	
-	//jwt support
-	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.0'
-
 	testCompile 'junit:junit:4.12'
+	
+	
 }
+
+
+springBoot {
+    mainClass = main_class
+    executable = true
+
+    buildInfo {
+        additionalProperties = [
+            'app_name': app_name,
+            'buildtime' : build_time,
+            'image_tag' : image_tag
+        ]
+    }
+
+    // Set values for variable placeholders in the service launch script.
+    embeddedLaunchScriptProperties =
+        [initInfoDescription: project.description,
+         initInfoShortDescription: app_name,
+         initInfoProvides: app_name,
+         mode: 'auto']
+}
+
+jar {
+	archiveName = "inversion-app.jar"
+}
+
+
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources              
+    into('lib') {
+        from configurations.compileClasspath
+    }           
+}
+
 
 
 /************************************************************
@@ -142,24 +119,5 @@ task "create-dirs" {
       sourceSets*.resources.srcDirs*.each { it.mkdirs() }
    }
 }
-
-javadoc {
-//   exclude "**/utils/**"
-}
-
-test {
-    //test are not run for now because we can't figure out how to 
-    //run tests that require live data backends and credentials
-    //as part of a portable automaoted build/test process
-    //there are many many test but right now, the easiest way
-    //to run them is from eclipse.
-    exclude '**/*'
-}
-
-task demo1(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    main = "io.inversion.cloud.demo.Demo001SqlDbNorthwind"
-}
-
 
 
