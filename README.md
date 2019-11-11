@@ -9,6 +9,8 @@ With Inversion, you can connect your web application front end directly to your 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
 
+[![](https://jitpack.io/v/inversion-api/inversion-engine.svg)](https://jitpack.io/#inversion-api/inversion-engine)
+
 ## Contents
 - [Inversion Cloud API Engine](#inversion-cloud-api-engine)
   - [Contents](#contents)
