@@ -44,7 +44,7 @@ public class Wirer
 {
    @Retention(RetentionPolicy.RUNTIME)
    @Target(ElementType.FIELD)
-   public @interface Ignore1 {
+   public @interface Ignore {
       //public String value() default "";
    }
 

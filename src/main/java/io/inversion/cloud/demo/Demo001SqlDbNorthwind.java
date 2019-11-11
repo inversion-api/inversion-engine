@@ -17,9 +17,7 @@ package io.inversion.cloud.demo;
 
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.sql.H2SqlDb;
-import io.inversion.cloud.action.sql.SqlDb;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Inversion;
 
 /**
  * This simple demo launches an API that exposes SQL database tables 
@@ -65,25 +63,25 @@ public class Demo001SqlDbNorthwind
                       .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction());
    }
 
-   public static void main(String[] args) throws Exception
-   {
-      Inversion.run(buildApi());
-      
-      System.out.println("\r\n");
-      System.out.println("Your API is running at 'http://localhost:8080/northwind'.");
-      System.out.println("REST collection endpoints have been created for each db entity");
-      System.out.println("");
-      System.out.println("You can get started by exploring some of these urls:");
-      System.out.println("  - GET http://localhost:8080/northwind/products");
-      System.out.println("  - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2");
-      System.out.println("  - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10");
-      System.out.println("  - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim");
-      System.out.println("");
-      System.out.println("Append '&explain=true' to any query string to see an explanation of what is happening under the covers");
-      System.out.println("  - GET http://localhost:8080/northwind/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true");
-      System.out.println("");
-      System.out.println("See https://github.com/RocketPartners/rocket-inversion for more information on building awesome APIs with Inversion");
-
-   }
+//   public static void main(String[] args) throws Exception
+//   {
+//      Inversion.run(buildApi());
+//
+//      System.out.println("\r\n");
+//      System.out.println("Your API is running at 'http://localhost:8080/northwind'.");
+//      System.out.println("REST collection endpoints have been created for each db entity");
+//      System.out.println("");
+//      System.out.println("You can get started by exploring some of these urls:");
+//      System.out.println("  - GET http://localhost:8080/northwind/products");
+//      System.out.println("  - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2");
+//      System.out.println("  - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10");
+//      System.out.println("  - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim");
+//      System.out.println("");
+//      System.out.println("Append '&explain=true' to any query string to see an explanation of what is happening under the covers");
+//      System.out.println("  - GET http://localhost:8080/northwind/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true");
+//      System.out.println("");
+//      System.out.println("See https://github.com/RocketPartners/rocket-inversion for more information on building awesome APIs with Inversion");
+//
+//   }
 
 }

@@ -33,8 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
-import com.amazonaws.util.IOUtils;
-
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Request.Upload;
@@ -170,7 +168,7 @@ public class Servlet extends HttpServlet
                         }
                         else if (part.getName().equals("requestPath"))
                         {
-                           requestPath = IOUtils.toString(part.getInputStream());
+                           requestPath = Utils.read(part.getInputStream());
                            if (requestPath.indexOf("/") == 0)
                               requestPath = requestPath.substring(1);
                         }

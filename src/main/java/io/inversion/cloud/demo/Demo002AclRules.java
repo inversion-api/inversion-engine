@@ -28,15 +28,14 @@ import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Inversion;
 import io.inversion.cloud.service.Engine;
 
 public class Demo002AclRules
 {
-   public static void main(String[] args) throws Exception
-   {
-      Inversion.run(buildApi());
-   }
+//   public static void main(String[] args) throws Exception
+//   {
+//      Inversion.run(buildApi());
+//   }
 
    public static Api buildApi()
    {

@@ -36,7 +36,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +55,7 @@ import io.inversion.cloud.model.Rule;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Wirer.Ignore;
 import io.inversion.cloud.utils.Wirer.Includer;
 import io.inversion.cloud.utils.Wirer.Namer;
 
