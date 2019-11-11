@@ -4,7 +4,7 @@ plugins {
 
 versioner {
   pattern {
-    pattern = "%M.%m.%p.%h"
+    pattern = "%M.%m.%p(.%c)"
   }
   
   startFrom {
