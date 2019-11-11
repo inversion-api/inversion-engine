@@ -19,6 +19,7 @@ versioner {
 }
 
 
+
 apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'java'
