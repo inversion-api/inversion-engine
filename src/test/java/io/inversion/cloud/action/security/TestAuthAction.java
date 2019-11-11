@@ -6,8 +6,6 @@ import java.util.Arrays;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 
-import com.mysql.jdbc.jdbc2.optional.SuspendableXAConnection;
-
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.security.AuthAction.SqlDbUserDao;
 import io.inversion.cloud.action.sql.H2SqlDb;
