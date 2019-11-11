@@ -12,6 +12,10 @@ versioner {
     minor = 5
     patch = 1
   }
+  
+  tag {
+    prefix = ''
+  }
 }
 
 
