@@ -16,8 +16,7 @@ import junit.framework.TestCase;
 @RunWith(Parameterized.class)
 public class TestSqlDeleteAction extends TestCase
 {
-   
-   
+
    @Parameterized.Parameters
    public static Collection input()
    {
@@ -47,9 +46,10 @@ public class TestSqlDeleteAction extends TestCase
    }
 
    Engine engine = null;
+
    protected Engine service() throws Exception
    {
-      if(engine == null)
+      if (engine == null)
       {
          engine = SqlEngineFactory.service(true, false);
       }

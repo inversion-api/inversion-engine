@@ -31,29 +31,29 @@ public class TestConfigurator extends TestCase
     * profile in the correct order allowing keys to be
     * overridden. 
     */
-   @Test
-   public void testConfigSimple()
-   {
-      Engine dev = new Engine();
-      dev.withProfile("dev");
-      dev.withConfigPath("io/rocketpartners/cloud/service/config/");
-      dev.startup();
-
-      Api devApi = dev.getApi("northwind");
-      assertEquals(20, ((SqlDb) devApi.getDb("db")).getPoolMax());
-      assertEquals(0, devApi.getActions().size());
-
-      Engine prod = new Engine();
-      prod.withProfile("prod");
-      prod.withConfigPath("io/rocketpartners/cloud/service/config/");
-      prod.startup();
-
-      Api prodApi = prod.getApi("northwind");
-
-      assertEquals(70, ((SqlDb) prodApi.getDb("db")).getPoolMax());
-      assertEquals(1, prodApi.getActions().size());
-      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
-   }
+//   @Test
+//   public void testConfigSimple()
+//   {
+//      Engine dev = new Engine();
+//      dev.withProfile("dev");
+//      dev.withConfigPath("io/rocketpartners/cloud/service/config/");
+//      dev.startup();
+//
+//      Api devApi = dev.getApi("northwind");
+//      assertEquals(20, ((SqlDb) devApi.getDb("db")).getPoolMax());
+//      assertEquals(0, devApi.getActions().size());
+//
+//      Engine prod = new Engine();
+//      prod.withProfile("prod");
+//      prod.withConfigPath("io/rocketpartners/cloud/service/config/");
+//      prod.startup();
+//
+//      Api prodApi = prod.getApi("northwind");
+//
+//      assertEquals(70, ((SqlDb) prodApi.getDb("db")).getPoolMax());
+//      assertEquals(1, prodApi.getActions().size());
+//      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
+//   }
 
    /**
     * Test the stability of properties file encoding/decoding
@@ -80,20 +80,20 @@ public class TestConfigurator extends TestCase
       assertTrue(compare(props1, props2));
    }
 
-   @Test
-   public void testEncodeDecodeEncodeAccuracy2() throws Exception
-   {
-      Api source = Demo001SqlDbNorthwind.buildApi();
-      Properties props1 = Configurator.encode(source);
-
-      Wirer w = new Wirer();
-      w.load(props1);
-
-      Api copy1 = (Api) w.getBean(source.getName());
-      Properties props2 = Configurator.encode(copy1);
-
-      assertTrue(compare(props1, props2));
-   }
+//   @Test
+//   public void testEncodeDecodeEncodeAccuracy2() throws Exception
+//   {
+//      Api source = Demo001SqlDbNorthwind.buildApi();
+//      Properties props1 = Configurator.encode(source);
+//
+//      Wirer w = new Wirer();
+//      w.load(props1);
+//
+//      Api copy1 = (Api) w.getBean(source.getName());
+//      Properties props2 = Configurator.encode(copy1);
+//
+//      assertTrue(compare(props1, props2));
+//   }
 
    protected boolean compare(Properties props1, Properties props2) throws IOException
    {
