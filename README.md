@@ -1,5 +1,6 @@
 # Inversion Cloud API Engine
-[![](https://jitpack.io/v/inversion-api/inversion-engine.svg)](https://jitpack.io/#inversion-api/inversion-engine)
+[![](https://jitpack.io/v/inversion-api/inversion-engine.svg)](https://jitpack.io/#inversion-api/inversion-engine)  [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)
+
 
 Create more, code less with Inversion.
 
