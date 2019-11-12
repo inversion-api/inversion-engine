@@ -19,9 +19,9 @@ import io.inversion.cloud.utils.Utils;
 
 public class SqlEngineFactory
 {
-   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
+   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
-   //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
+   public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}});
 
    public static final boolean        CONFIG_REBUILD_MYSQL = false;
 
@@ -109,7 +109,11 @@ public class SqlEngineFactory
                         
                         
                         //Connection conn2 = h2Db.getConnection();
-                        //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders"));
+                        //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders OFFSET 0 LIMIT 100"));
+                        //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders LIMIT 0 OFFSET 100"));
+                        //System.out.println(SqlUtils.selectRows(conn2,  "SELECT \"EMPLOYEES\".* FROM \"EMPLOYEES\" WHERE \"EMPLOYEES\".\"EMPLOYEEID\" = ? ORDER BY \"EMPLOYEES\".\"EMPLOYEEID\" ASC  OFFSET 0 LIMIT 100", 5));
+                        //conn2.close();
+                        
                      }
 
                      if (shouldLoad("mysql"))

@@ -41,7 +41,7 @@ public class TestSqlGetAction extends TestRestGetActions
       //return "northwind/h2/";
    }
 
-   Engine engine = null;
+   static Engine engine = null;
 
    protected Engine service() throws Exception
    {
@@ -235,6 +235,7 @@ public class TestSqlGetAction extends TestRestGetActions
       Response res = null;
 
       res = engine.get(url("employees/5?expands=employees"));
+      res.dump();
       assertEquals(3, res.findArray("data.0.employees").length());
       assertNotNull(res.find("data.0.employees.0.lastname"));
    }

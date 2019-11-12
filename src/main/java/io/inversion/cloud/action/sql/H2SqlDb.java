@@ -74,7 +74,7 @@ public class H2SqlDb extends SqlDb
          {
             if (server == null)
             {
-               server = Server.createTcpServer();
+               server = Server.createTcpServer("-ifNotExists");
                server.start();
             }
          }
@@ -161,6 +161,10 @@ public class H2SqlDb extends SqlDb
       String url = super.getUrl();
       if (url == null && getH2Dir() != null && h2File != null)
       {
+         File file = new File(getH2Dir(), getH2File());
+         if(!file.getParentFile().exists())
+            file.getParentFile().mkdirs();
+         
          url = "jdbc:h2:tcp://localhost:9092/nio:" + getH2Dir() + "/" + getH2File() + ";AUTO_SERVER=TRUE";
       }
       return url;

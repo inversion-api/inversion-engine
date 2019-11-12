@@ -1,7 +1,10 @@
-plugins {
-  id "io.toolebox.git-versioner" version "1.3.0"
-}
 
+plugins {
+  id 'eclipse'
+  id 'maven'
+  id 'java'
+  id 'io.toolebox.git-versioner' version "1.3.0"
+}
 versioner {
   pattern {
     pattern = "%M.%m.%p(.%c)"
@@ -12,16 +15,11 @@ versioner {
     minor = 5
     patch = 1
   }
+  
+  tag {
+    prefix = ''
+  }
 }
-
-
-apply plugin: 'eclipse'
-apply plugin: 'maven'
-apply plugin: 'java'
-
-
-configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
-
 
 group = 'com.github.inversion-api'
 sourceCompatibility = 1.8
@@ -29,36 +27,13 @@ sourceCompatibility = 1.8
 repositories {
    mavenLocal()
    mavenCentral()
+   maven { url 'https://jitpack.io' }
 }
 
-dependencies {
+configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 
-	compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.+'
+apply from: 'build.prj.gradle'
 
-	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
-	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.+'
-	
-	compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
-	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.+'	
-	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
-
-	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.+'
-	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.+'
-
-	//jwt support
-	compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
-
-	compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.+'   
-    compile group: 'com.h2database', name: 'h2', version: '1.4.+'
-
-	testCompile 'junit:junit:4.12'
-}
-
-
-/************************************************************
- * Ensuring source directories are created if they do not 
- * already exist when running 'gradle eclipse'
- */
 eclipse {
    classpath {
       file {
@@ -68,37 +43,11 @@ eclipse {
    }
 }
 
-
-
-/************************************************************
- * This task should be used when creating a new project as
- * it will create all source and resource directories.  This
- * task is automatically executed during the 
- * 'gradle eclipse' command.
- */
 task "create-dirs" {
    doLast {
       sourceSets*.java.srcDirs*.each { it.mkdirs() }
       sourceSets*.resources.srcDirs*.each { it.mkdirs() }
    }
-}
-
-javadoc {
-//   exclude "**/utils/**"
-}
-
-test {
-    //test are not run for now because we can't figure out how to 
-    //run tests that require live data backends and credentials
-    //as part of a portable automaoted build/test process
-    //there are many many test but right now, the easiest way
-    //to run them is from eclipse.
-    exclude '**/*'
-}
-
-task demo1(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    main = "io.inversion.cloud.demo.Demo001SqlDbNorthwind"
 }
 
 
@@ -109,7 +58,7 @@ task writeNewPom {
                 inceptionYear '2015',
                 organization {
                 	name 'Rocket Partners, LLC'
-                	url 'https://github.com/inversion-api/inversion-engine'
+                	url 'https://github.com/inversion-api/' + project.name
                 }
                 licenses {
                     license {
@@ -119,6 +68,10 @@ task writeNewPom {
                     }
                 }
             }
-        }.writeTo("$buildDir/newpom.xml")
+        }.writeTo("pom.xml")
     }
 }
+
+
+
+    

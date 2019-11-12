@@ -422,13 +422,12 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          else
          {
             s = "";
-            if (offset >= 0)
-               s += "OFFSET " + offset;
-
+            
             if (limit >= 0)
-            {
                s += " LIMIT " + limit;
-            }
+            
+            if (offset >= 0)
+               s += " OFFSET " + offset;
          }
       }
       return s;
