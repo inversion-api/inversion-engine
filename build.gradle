@@ -50,15 +50,6 @@ task "create-dirs" {
    }
 }
 
-test {
-    //test are not run for now because we can't figure out how to 
-    //run tests that require live data backends and credentials
-    //as part of a portable automaoted build/test process
-    //there are many many test but right now, the easiest way
-    //to run them is from eclipse.
-    exclude '**/*'
-}
-
 
 task writeNewPom {
     doLast {
