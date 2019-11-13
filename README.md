@@ -11,7 +11,19 @@ With Inversion, you can connect your web application front end directly to your 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
 
+## Build Status
 
+| Project | Latest Build | Test Status |
+|---|---|---| 
+| [Inversion Engine](https://github.com/inversion-api/inversion-engine) | [![](https://jitpack.io/v/inversion-api/inversion-engine.svg)](https://jitpack.io/#inversion-api/inversion-engine)  | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine) | 
+| [Inversion Quick Start](https://github.com/inversion-api/inversion-quick-start) | [![](https://jitpack.io/v/inversion-api/inversion-quick-start.svg)](https://jitpack.io/#inversion-api/inversion-quick-start)  | [![](https://travis-ci.org/inversion-api/inversion-quick-start.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quick-start) |
+| [Inversion Starter for DynamoDB](https://github.com/inversion-api/inversion-starter-dynamodb) | [![](https://jitpack.io/v/inversion-api/inversion-starter-dynamodb.svg)](https://jitpack.io/#inversion-api/inversion-starter-dynamodb)  | [![](https://travis-ci.org/inversion-api/inversion-starter-dynamodb.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-dynamodb) |
+| [Inversion Starter for Elasticsearch](https://github.com/inversion-api/inversion-starter-elasticsearch) | [![](https://jitpack.io/v/inversion-api/inversion-starter-elasticsearch.svg)](https://jitpack.io/#inversion-api/inversion-starter-elasticsearch)  | [![](https://travis-ci.org/inversion-api/inversion-starter-elasticsearch.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-elasticsearch) |
+| [Inversion Starter for Kinesis](https://github.com/inversion-api/inversion-starter-kinesis) | [![](https://jitpack.io/v/inversion-api/inversion-starter-kinesis.svg)](https://jitpack.io/#inversion-api/inversion-starter-kinesis)  | [![](https://travis-ci.org/inversion-api/inversion-starter-kinesis.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-kinesis) |
+| [Inversion Starter for Redis](https://github.com/inversion-api/inversion-starter-redis) | [![](https://jitpack.io/v/inversion-api/inversion-starter-redis.svg)](https://jitpack.io/#inversion-api/inversion-starter-redis)  | [![](https://travis-ci.org/inversion-api/inversion-starter-redis.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-redis) |
+| [Inversion Starter for S3](https://github.com/inversion-api/inversion-starter-s3) | [![](https://jitpack.io/v/inversion-api/inversion-starter-s3.svg)](https://jitpack.io/#inversion-api/inversion-starter-s3)  | [![](https://travis-ci.org/inversion-api/inversion-starter-s3.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-s3) |
+| [Inversion Starter for Script](https://github.com/inversion-api/inversion-starter-script) | [![](https://jitpack.io/v/inversion-api/inversion-starter-script.svg)](https://jitpack.io/#inversion-api/inversion-starter-script)  | [![](https://travis-ci.org/inversion-api/inversion-starter-script.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-script) |
+| [Inversion Starter for Spring Boot](https://github.com/inversion-api/inversion-starter-spring-boot) | [![](https://jitpack.io/v/inversion-api/inversion-starter-spring-boot.svg)](https://jitpack.io/#inversion-api/inversion-starter-spring-boot)  | [![](https://travis-ci.org/inversion-api/inversion-starter-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-spring-boot) |
 
 ## Contents
 - [Inversion Cloud API Engine](#inversion-cloud-api-engine)
