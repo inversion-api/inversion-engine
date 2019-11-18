@@ -16,8 +16,10 @@
 package io.inversion.cloud.action.sql;
 
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -70,7 +72,7 @@ public class SqlDb extends Db<SqlDb>
    protected String               pass                     = null;
    protected int                  poolMin                  = 3;
    protected int                  poolMax                  = 10;
-   protected int                  idleConnectionTestPeriod = 3600;         // in seconds
+   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
@@ -78,12 +80,13 @@ public class SqlDb extends Db<SqlDb>
 
    protected int                  relatedMax               = 500;
 
+   protected List<String>         ddlUrls                  = new ArrayList();
+
    static
    {
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
       logger.setLevel(Level.WARN);
-      
-      
+
       //      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari.pool.PoolBase");
       //      logger.setLevel(Level.INFO);
 
@@ -148,13 +151,14 @@ public class SqlDb extends Db<SqlDb>
       withName(name);
    }
 
-   public SqlDb(String name, String driver, String url, String user, String pass)
+   public SqlDb(String name, String driver, String url, String user, String pass, String... ddlUrls)
    {
       withName(name);
       withDriver(driver);
       withUrl(url);
       withUser(user);
       withPass(pass);
+      withDdlUrl(ddlUrls);
    }
 
    @Override
@@ -337,7 +341,7 @@ public class SqlDb extends Db<SqlDb>
                synchronized (pools)
                {
                   //System.out.println("CREATING CONNECTION POOL: " + dsKey);
-                  
+
                   pool = pools.get(getName());
 
                   if (pool == null && !isShutdown())
@@ -363,8 +367,45 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   protected DataSource createConnectionPool()
+   protected DataSource createConnectionPool() throws Exception
    {
+      if (ddlUrls.size() > 0)
+      {
+         //createConnectionPool() should only be called once per DB
+         //ddlUrls are used to initialize the db...this is really 
+         //useful for things like embedded H2 db that are used for
+         //unit tests.  It could also be used for db upgrade scripts etc.
+         //
+         //it might seem logical to create the pool and then use the
+         //connection from the pool and close it but in practice that 
+         //was found to potentially introduce unintended closed 
+         //connection errors for some dbs...specifically h2 in testing
+         //so the initialization does not use the pool.
+
+         Class.forName(getDriver());
+         Connection conn = null;
+         try
+         {
+            conn = DriverManager.getConnection(getUrl(), getUser(), getPass());
+            conn.setAutoCommit(false);
+            for (String ddlUrl : ddlUrls)
+            {
+               SqlUtils.runDdl(conn, new URL(ddlUrl).openStream());
+            }
+            conn.commit();
+         }
+         catch (Exception ex)
+         {
+            conn.rollback();
+            log.warn("Error initializing db with supplied ddl.", ex);
+            throw ex;
+         }
+         finally
+         {
+            SqlUtils.close(conn);
+         }
+      }
+
       HikariConfig config = new HikariConfig();
       String driver = getDriver();
       config.setDriverClassName(driver);
@@ -1078,6 +1119,16 @@ public class SqlDb extends Db<SqlDb>
    public SqlDb withRelatedMax(int relatedMax)
    {
       this.relatedMax = relatedMax;
+      return this;
+   }
+
+   public SqlDb withDdlUrl(String... ddlUrl)
+   {
+      for (int i = 0; ddlUrl != null && i < ddlUrl.length; i++)
+      {
+         ddlUrls.add(ddlUrl[i]);
+      }
+
       return this;
    }
 
