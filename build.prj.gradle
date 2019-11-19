@@ -1,6 +1,7 @@
 dependencies {
 
 	compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.+'
+	compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.+'
 
 	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
 	compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.+'
