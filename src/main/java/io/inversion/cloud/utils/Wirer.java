@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.SortedSet;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
 
@@ -49,6 +51,7 @@ public class Wirer
    }
 
    Properties          props = new Properties();
+   TreeSet<String>          propKeys = new TreeSet<String>();
 
    Map<String, Object> beans = new HashMap();
 
@@ -68,11 +71,13 @@ public class Wirer
    {
       props.clear();
       beans.clear();
+      propKeys.clear();
    }
 
    public void add(Properties props)
    {
       this.props.putAll(props);
+      this.propKeys.addAll((Set)props.keySet());
    }
 
    public void add(String propsStr)
@@ -92,6 +97,7 @@ public class Wirer
    public void add(String key, String value)
    {
       props.put(key, value);
+      propKeys.add(key);
    }
 
    public void load(Properties props) throws Exception
@@ -124,12 +130,16 @@ public class Wirer
 
    List<String> getKeys(String beanName)
    {
-      List keys = new ArrayList();
-      for (Object p : props.keySet())
+      Set<String> keys = new HashSet<String>();
+      String beanPrefix = beanName + ".";
+      SortedSet<String> keySet = propKeys.tailSet(beanPrefix);
+      for (String key : keySet)
       {
-         String key = (String) p;
-
-         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         if (!key.startsWith(beanPrefix))
+         {
+            break;
+         }
+         if (!(key.endsWith(".class") || key.endsWith(".className")))
          {
             if (!keys.contains(beanName))
                keys.add(key);
@@ -139,7 +149,7 @@ public class Wirer
       for (Object p : System.getProperties().keySet())
       {
          String key = (String) p;
-         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className")))
          {
             if (!keys.contains(beanName))
                keys.add(key);
@@ -149,14 +159,14 @@ public class Wirer
       for (Object p : System.getenv().keySet())
       {
          String key = (String) p;
-         if (key.startsWith(beanName + ".") && !(key.endsWith(".class") || key.endsWith(".className")))
+         if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className")))
          {
             if (!keys.contains(beanName))
                keys.add(key);
          }
       }
 
-      return keys;
+      return new ArrayList(keys);
    }
 
    /**
