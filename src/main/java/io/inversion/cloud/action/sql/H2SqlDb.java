@@ -165,7 +165,7 @@ public class H2SqlDb extends SqlDb
          if(!file.getParentFile().exists())
             file.getParentFile().mkdirs();
          
-         url = "jdbc:h2:tcp://localhost:9092/nio:" + getH2Dir() + "/" + getH2File() + ";AUTO_SERVER=TRUE";
+         url = "jdbc:h2:tcp://localhost:9092/nio:" + getH2Dir() + "/" + getH2File() + ";AUTO_SERVER=TRUE;IFEXISTS=false";
       }
       return url;
    }
