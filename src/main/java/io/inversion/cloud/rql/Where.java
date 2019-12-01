@@ -188,7 +188,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
    public T gt(Object... terms)
    {
-      return withTerm("eq", terms);
+      return withTerm("gt", terms);
    }
 
    public T in(Object... terms)
