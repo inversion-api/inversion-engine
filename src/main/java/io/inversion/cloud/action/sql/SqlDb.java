@@ -204,15 +204,9 @@ public class SqlDb extends Db<SqlDb>
          db = (SqlDb) table.getDb();
       }
 
-      String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
+      String selectKey = (table != null ? table.getName() + "." : "") + "select";
 
       String selectSql = (String) Chain.peek().remove(selectKey);
-      //      if (Utils.empty(sql))
-      //      {
-      //         if (table == null)
-      //            throw new ApiException(SC.SC_400_BAD_REQUEST, "Table missing");
-      //         sql = " SELECT * FROM " + quoteCol(table.getName());
-      //      }
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
       query.withDb(db);
@@ -261,8 +255,8 @@ public class SqlDb extends Db<SqlDb>
       }
       else
       {
-         String keyCol = table.getKeyName();
-         SqlUtils.upsert(getConnection(), table.getName(), keyCol, row);
+         //String keyCol = table.getKeyName();
+         SqlUtils.h2Upsert(getConnection(), table.getName(), table.getPrimaryIndex(), row);
       }
 
       if (key == null)
@@ -276,20 +270,23 @@ public class SqlDb extends Db<SqlDb>
       return key.toString();
    }
 
-   public void delete(Table table, List<String> entityKeys) throws Exception
+   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
    {
-      Index pk = table.getPrimaryIndex();
+      if (columnMappedIndexValues.size() == 0)
+         return;
 
-      if (pk.getColumns().size() == 1)
+      if (index.getColumns().size() == 1)
       {
-         List castKeys = new ArrayList();
-         for (String key : entityKeys)
-            castKeys.add(cast(pk.getColumn(0), key));
+         List values = new ArrayList();
+         for (Map entityKey : columnMappedIndexValues)
+         {
+            values.add(entityKey.values().iterator().next());
+         }
 
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
-         sql += " WHERE " + quoteCol(pk.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(entityKeys.size()) + ")";
-         SqlUtils.execute(getConnection(), sql, castKeys.toArray());
+         sql += " WHERE " + quoteCol(index.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
+         SqlUtils.execute(getConnection(), sql, values.toArray());
       }
       else
       {
@@ -298,25 +295,40 @@ public class SqlDb extends Db<SqlDb>
          sql += " WHERE ";
 
          List values = new ArrayList();
-         for (String entityKey : entityKeys)
+         for (Map<String, Object> entityKey : columnMappedIndexValues)
          {
             if (values.size() > 0)
                sql += " OR ";
             sql += "(";
-            Row row = table.decodeKey(entityKey);
+
             int i = 0;
-            for (String key : row.keySet())
+            for (String key : entityKey.keySet())
             {
                i++;
                if (i > 1)
                   sql += "AND ";
                sql += quoteCol(key) + " = ? ";
-               values.add(row.get(key));
+               values.add(entityKey.get(key));
             }
             sql += ")";
          }
          SqlUtils.execute(getConnection(), sql, values.toArray());
       }
+
+   }
+
+   public void delete(Table table, List<String> entityKeys) throws Exception
+   {
+      if (entityKeys.size() == 0)
+         return;
+
+      List<Map<String, Object>> keyMaps = new ArrayList();
+      for (String entityKey : entityKeys)
+      {
+         keyMaps.add(table.decodeKey(entityKey));
+      }
+
+      delete(table, table.getPrimaryIndex(), keyMaps);
    }
 
    @Override
@@ -652,6 +664,9 @@ public class SqlDb extends Db<SqlDb>
                   column.withUnique(unique);
                }
 
+               //this looks like it only supports single column indexes but if
+               //an index with this name already exists, that means this is another
+               //column in that index.
                table.makeIndex(column, idxName, idxType, unique);
 
             }
