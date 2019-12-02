@@ -1,0 +1,14 @@
+{
+	"employeeID": "99999991",
+	"FirstName": "John",
+	"lastName": "Doe",
+	"Notes": "this is some note",
+	"territories": [
+		{
+			"TerritoryID": "30346",
+			"region": {
+				"RegionDescription": "HotLanta"
+			}
+		}
+	]
+}
