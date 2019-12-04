@@ -154,6 +154,11 @@ public class Index
    {
       return new ArrayList(columns);
    }
+   
+   public int size()
+   {
+      return columns.size();
+   }
 
    public Index withColumns(List<Column> columns)
    {

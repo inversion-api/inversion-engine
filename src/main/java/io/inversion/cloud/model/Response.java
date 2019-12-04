@@ -599,7 +599,7 @@ public class Response
       {
          Utils.rethrow(ex);
       }
-      return null;
+      return getContent();
    }
 
    public long getFileLength()
