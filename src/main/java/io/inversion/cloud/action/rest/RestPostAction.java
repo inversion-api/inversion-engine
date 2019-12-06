@@ -221,8 +221,6 @@ public class RestPostAction extends Action<RestPostAction>
             String path = Chain.buildLink(rel.getRelated().getCollection(), null, null);
 
             Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
-            res.dump();
-
             if (!res.isSuccess() || res.data().length() != childNodes.size())
             {
                throw new ApiException(SC.SC_400_BAD_REQUEST, res.getErrorContent());
@@ -295,7 +293,8 @@ public class RestPostAction extends Action<RestPostAction>
          //-- new records need their newly assigned id/href assigned back on them
          if (nodes.getNode(i).get("href") == null)
          {
-            nodes.getNode(i).put("href", Chain.buildLink(collection, returnList.get(i) + "", null));
+            String newHref = Chain.buildLink(collection, returnList.get(i) + "", null);
+            nodes.getNode(i).put("href", newHref);
          }
       }
 

@@ -341,6 +341,7 @@ public class Engine
       try
       {
          chain = Chain.push(this, req, res);
+         req.withEngine(this);
          req.withChain(chain);
          res.withChain(chain);
 
