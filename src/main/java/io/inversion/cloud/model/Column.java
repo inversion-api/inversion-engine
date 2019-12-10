@@ -64,6 +64,17 @@ public class Column implements Comparable<Column>
       return 0;
    }
 
+   public boolean equals(Object object)
+   {
+      if (object instanceof Column)
+      {
+         Column column = (Column) object;
+         if (table.equals(column.table) && name.equals(column.name))
+            return true;
+      }
+      return false;
+   }
+
    public String toString()
    {
       return hint == null ? super.toString() : hint;

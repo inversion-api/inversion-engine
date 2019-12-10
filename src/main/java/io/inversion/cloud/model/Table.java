@@ -80,6 +80,16 @@ public class Table
       return null;
    }
 
+   public boolean equals(Object object)
+   {
+      if (object instanceof Table)
+      {
+         Table table = (Table) object;
+         return table.getDb().equals(db) && name.equals(table.getName());
+      }
+      return false;
+   }
+
    public String toString()
    {
       return name != null ? name : super.toString();

@@ -50,6 +50,26 @@ public class Index
       withType(type);
       withUnique(unique);
    }
+   
+   public boolean equals(Object object)
+   {
+      if(object instanceof Index)
+      {
+         Index index = ((Index)object);
+         
+         if(table.equals(index.table) && columns.size() == index.columns.size())
+         {
+            for(int i=0; i<columns.size(); i++)
+            {
+               if(!columns.get(i).equals(index.columns.get(i)))
+                  return false;
+            }
+            return true;
+         }
+         
+      }
+      return false;
+   }
 
    public String toString()
    {
