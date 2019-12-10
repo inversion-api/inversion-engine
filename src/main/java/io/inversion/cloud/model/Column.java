@@ -16,6 +16,8 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 public class Column implements Comparable<Column>
 {
    protected Table   table    = null;
@@ -69,10 +71,10 @@ public class Column implements Comparable<Column>
       if (object instanceof Column)
       {
          Column column = (Column) object;
-         if (table.equals(column.table) && name.equals(column.name))
+         if ((table != null && table.equals(column.table)) && Utils.equal(name, column.name))
             return true;
       }
-      return false;
+      return object == this;
    }
 
    public String toString()
