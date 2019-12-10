@@ -17,6 +17,7 @@ package io.inversion.cloud.action.rest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -158,23 +159,26 @@ public class RestPostAction extends Action<RestPostAction>
     * README README README README
     * 
     * Algorithm:
-    * Step 1: For each relationship POST back through the "front door".  This is the primary
-    *         recursion that enables nested documents to submitted all at once by client.  Putting
-    *         this step first ensure that all new objects are POSTed, with their newly created hrefs
-    *         placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
     *
-    * Step 2: Upsert all <code>nodes</code> in this generation...meaning not recursively including
+    * Step 1: Upsert all <code>nodes</code> in this generation...meaning not recursively including
     *         key values for all one-to-many foreign keys but excluding all many-to-one and many-to-many
     *         key changes...those many-to-x relationships involve modifying other tables, the many to many 
     *         link tables and the many-to-one table that have foreign keys back to this collections 
     *         table, not the direct modification of the single table underlying this collection.
+    *         
+    * Step 2: For each relationship POST back through the "front door".  This is the primary
+    *         recursion that enables nested documents to submitted all at once by client.  Putting
+    *         this step first ensure that all new objects are POSTed, with their newly created hrefs
+    *         placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
+   
+    * Step 3: Set child foreign keys back on parent generation.       
     *        
-    * Step 3: Find the key values for all new/kept many-to-one and many-to-many relationships
+    * Step 4: Find the key values for all new/kept many-to-one and many-to-many relationships
     *
-    * Step 4.1 Upsert all of those new/kept relationships and create the RQL queries needed find
+    * Step 5.1 Upsert all of those new/kept relationships and create the RQL queries needed find
     *          all relationships NOT in the upserts.
     * 
-    * Step 4.2 Null out all now invalid many-to-one foreign keys back to these notes
+    * Step 5.2 Null out all now invalid many-to-one foreign keys back to these notes
     *          and delete all now invalid many-to-many relationships rows.
     *   
     * @param req
@@ -187,66 +191,22 @@ public class RestPostAction extends Action<RestPostAction>
    {
       //--
       //--
-      //-- Step 1. recurse by relationship in batch batch
-      //-- 
-      //-- THIS IS THE ONLY RECURSION IN THE ALGORITHM.  IT IS NOT DIRECTLY RECURSIVE. IT
-      //-- SENDS THE "CHILD GENERATION" AS A POST BACK TO THE ENGINE WHICH WOULD LAND AT
-      //-- AND ACTION (MAYGE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD GENERATION
-      //-- AND ITS DESCENDANTS.
-      for (Relationship rel : collection.getEntity().getRelationships())
-      {
-         List childNodes = new ArrayList();
-
-         for (JSNode node : (List<JSNode>) ((JSArray) nodes).asList())
-         {
-            Object value = node.get(rel.getName());
-            if (value instanceof JSArray)
-            {
-               for (Object child : ((JSArray) value).asList())
-               {
-                  if (child instanceof JSNode)
-                  {
-                     childNodes.add(child);
-                  }
-               }
-            }
-            else if (value instanceof JSNode)
-            {
-               childNodes.add((JSNode) value);
-            }
-         }
-
-         if (childNodes.size() > 0)
-         {
-            String path = Chain.buildLink(rel.getRelated().getCollection(), null, null);
-
-            Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
-            if (!res.isSuccess() || res.data().length() != childNodes.size())
-            {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, res.getErrorContent());
-            }
-
-            //now get response URLS and set them BACK on the source from this generation
-            JSArray data = res.data();
-            for (int i = 0; i < data.length(); i++)
-            {
-               String childHref = ((JSNode) data.get(i)).getString("href");
-               ((JSNode) childNodes.get(i)).put("href", childHref);
-            }
-         }
-      }
-
+      //-- Step 1. Upsert this generation including one to many relationships where the fk is known
       //--
-      //--
-      //-- Step 2. now upsert this generation including one to many relationships
-      //--
-
       List<Map> upsertMaps = new ArrayList();
       for (JSNode node : nodes.asArrayList())
       {
          Map<String, Object> mapped = new HashMap();
          upsertMaps.add(mapped);
 
+         String href = node.getString("href");
+         if (href != null)
+         {
+            Row decodedKey = collection.getTable().decodeKey(href);
+            mapped.putAll(decodedKey);
+         }
+
+         HashSet copied = new HashSet();
          for (Attribute attr : collection.getEntity().getAttributes())
          {
             String attrName = attr.getName();
@@ -259,8 +219,8 @@ public class RestPostAction extends Action<RestPostAction>
             String colName = attr.getColumn().getName();
             if (node.containsKey(attrName))
             {
-               //copied.add(attrName.toLowerCase());
-               //copied.add(colName.toLowerCase());
+               copied.add(attrName.toLowerCase());
+               copied.add(colName.toLowerCase());
 
                Object attrValue = node.get(attrName);
                Object colValue = collection.getDb().cast(attr, attrValue);
@@ -269,20 +229,28 @@ public class RestPostAction extends Action<RestPostAction>
          }
          for (Relationship rel : collection.getEntity().getRelationships())
          {
+            copied.add(rel.getName().toLowerCase());
+            
             if (rel.isOneToMany() && node.hasProperty(rel.getName()))
             {
-               Column column = rel.getFk1Col1();
-               String colName = column.getName();
+               for (Column col : rel.getFkIndex1().getColumns())
+                  copied.add(col.getName().toLowerCase());
 
-               Object child = node.get(rel.getName());
-               Object value = child instanceof String ? child : child instanceof JSNode ? ((JSNode) child).get("href") : null;
+               Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
+               mapped.putAll(foreignKey);
+            }
+         }
 
-               if (!Utils.empty(value))
-               {
-                  value = Utils.last(Utils.explode("/", value.toString()));
-               }
-               Object colValue = collection.getDb().cast(column, value);
-               mapped.put(colName, colValue);
+         //-- this pulls in any properties that were supplied in the submitted document 
+         //-- but are unknown to the collection/table.  This is necessary to support
+         //-- document stores like dynamo/elastic where all columns are not necessarily
+         //-- known.
+         for (String key : node.keySet())
+         {
+            if (!copied.contains(key.toLowerCase()))
+            {
+               if (!key.equals("href"))
+                  mapped.put(key, node.get(key));
             }
          }
 
@@ -300,20 +268,142 @@ public class RestPostAction extends Action<RestPostAction>
 
       //--
       //--
-      //-- Step 3: Now find all key values to keep for many-to-* relationships
+      //-- Step 2. recurse by relationship in batch
+      //-- 
+      //-- THIS IS THE ONLY RECURSION IN THE ALGORITHM.  IT IS NOT DIRECTLY RECURSIVE. IT
+      //-- SENDS THE "CHILD GENERATION" AS A POST BACK TO THE ENGINE WHICH WOULD LAND AT
+      //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD GENERATION
+      //-- AND ITS DESCENDANTS.
+      for (Relationship rel : collection.getEntity().getRelationships())
+      {
+         Relationship inverse = rel.getInverse();
+         List childNodes = new ArrayList();
+
+         for (JSNode node : (List<JSNode>) ((JSArray) nodes).asList())
+         {
+            Object value = node.get(rel.getName());
+            if (value instanceof JSArray) //this is a many-to-*
+            {
+               JSArray childArr = ((JSArray) value);
+               for (int i = 0; i < childArr.size(); i++)
+               {
+                  //-- removals will be handled in the next section, not this recursion
+                  Object child = childArr.get(i);
+                  if (child == null)
+                     continue;
+
+                  if (child instanceof String)
+                  {
+                     //-- this was passed in as an href reference, not as an object
+                     if (rel.isManyToOne())
+                     {
+                        //-- the child inverse of this a one-to-many that modifies the child row.  
+                        child = new JSArray(child);
+                        childArr.set(i, child);
+                     }
+                     else
+                     {
+                        //-- don't do anything..the many-to-many section below will update this
+                     }
+                  }
+
+                  if (child instanceof JSNode)
+                  {
+                     JSNode childNode = (JSNode) child;
+                     if (rel.isManyToOne())
+                     {
+                        //-- this generations many-to-one, are the next generation's one-to-manys
+                        //-- the child generation receives an implicity relationship via nesting
+                        //-- under the parent, have to set the inverse prop on the child so 
+                        //-- its one-to-many FK gets set to this parent.
+
+                        childNode.put(inverse.getName(), node.getString("href"));
+                     }
+                     childNodes.add(childNode);
+
+                  }
+               }
+            }
+            else if (value instanceof JSNode)
+            {
+               //-- this must be a one-to-many...the FK is in this generation, not the child
+               JSNode childNode = ((JSNode) value);
+               childNodes.add(childNode);
+            }
+         }
+
+         if (childNodes.size() > 0)
+         {
+            String path = Chain.buildLink(rel.getRelated().getCollection(), null, null);
+            Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
+            if (!res.isSuccess() || res.data().length() != childNodes.size())
+            {
+               throw new ApiException(SC.SC_400_BAD_REQUEST, res.getErrorContent());
+            }
+
+            //-- now get response URLS and set them BACK on the source from this generation
+            JSArray data = res.data();
+            for (int i = 0; i < data.length(); i++)
+            {
+               String childHref = ((JSNode) data.get(i)).getString("href");
+               ((JSNode) childNodes.get(i)).put("href", childHref);
+            }
+         }
+      }
+
+      //--
+      //--
+      //-- Step 3. sets foreign keys on parent entities
+      //-- 
+      //-- ...important for when 
+      //-- new child entities are passed in...they won't have an href 
+      //-- on the initial record submit..the recursion has to happen to 
+      //-- give them an href
+      //--
+      //-- TODO: can optimize this to not upsert if the key was available
+      //-- in the first pass
+      for (Relationship rel : collection.getEntity().getRelationships())
+      {
+         List<Map> updatedRows = new ArrayList();
+         if (rel.isOneToMany())
+         {
+            //GOAL: set the value of the FK on this one record..then done
+
+            for (JSNode node : nodes.asArrayList())
+            {
+               Map primaryKey = getKey(collection.getTable(), node);
+               Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
+
+               Map updatedRow = new HashMap();
+               updatedRow.putAll(primaryKey);
+               updatedRow.putAll(foreignKey);
+
+               updatedRows.add(updatedRow);
+            }
+
+            if (updatedRows.size() > 0)
+            {
+               collection.getDb().upsert(collection.getTable(), updatedRows);
+            }
+         }
+      }
+
+      //--
+      //--
+      //-- Step 4: Now find all key values to keep for many-to-* relationships
       //-- ... this step just collects them...then next steps updates new and removed relationships
       //--
 
-      MultiKeyMap keepRels = new MultiKeyMap<>(); //-- relationship, parentKey, list of child keys
+      MultiKeyMap keepRels = new MultiKeyMap<>(); //-- relationship, table, parentKey, list of childKeys
 
       for (Relationship rel : collection.getEntity().getRelationships())
       {
-         if (rel.isOneToMany())
+         if (rel.isOneToMany())//these were handled above
             continue;
 
          for (JSNode node : nodes.asArrayList())
          {
-            if (!node.hasProperty(rel.getName()) || (node.get(rel.getName()) instanceof String))
+            if (!node.hasProperty(rel.getName()) || node.get(rel.getName()) instanceof String)
                continue;//-- this property was not passed back in...if it is string it is the link to expand the relationship
 
             String href = node.getString("href");
@@ -324,9 +414,11 @@ public class RestPostAction extends Action<RestPostAction>
             Table parentTbl = collection.getEntity().getTable();
             Row parentPk = parentTbl.decodeKey(href);
             Map parentKey = mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
+
             keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
 
             JSArray childNodes = node.getArray(rel.getName());
+
             for (int i = 0; childNodes != null && i < childNodes.length(); i++)
             {
                Object childHref = childNodes.get(i);
@@ -347,12 +439,13 @@ public class RestPostAction extends Action<RestPostAction>
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childFk);
                   }
                }
+
             }
          }
       }
 
       //--
-      //-- Step 4 - 
+      //-- Step 5 - 
       //--   1. upsert all new and kept relationships
       //--   2. null out all now invalid many-to-one relationships
       //--      AND delete all now invalid many-to-many relationships
@@ -369,7 +462,7 @@ public class RestPostAction extends Action<RestPostAction>
       //--        and(eq(parentFKY, nodeY.href), not(or(eq(childPk2.1, child.href2.1), eq(childPk2.2, child.href2.2)))),
       //--     )
       //--
-      Term findOr = Term.term(null, "or");
+
       for (MultiKey mkey : (Set<MultiKey>) keepRels.keySet())
       {
          Relationship rel = (Relationship) mkey.getKey(0);
@@ -382,6 +475,7 @@ public class RestPostAction extends Action<RestPostAction>
          Set includesKeys = new HashSet();
          includesKeys.addAll(parentKey.keySet());
 
+         Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
 
@@ -396,9 +490,13 @@ public class RestPostAction extends Action<RestPostAction>
             childOr.withTerm(asTerm(childKey));
          }
 
+         //I don't think you need to do this...the recursive generation already did it...
          Table table = rel.isManyToOne() ? rel.getRelated().getTable() : rel.getFk1Col1().getTable();
-         log.debug("updating relationship: " + rel + " -> " + table + " -> " + upserts);
-         table.getDb().upsert(table, upserts);
+         if (rel.isManyToMany() || rel.isManyToOne())
+         {
+            log.debug("updating relationship: " + rel + " -> " + table + " -> " + upserts);
+            table.getDb().upsert(table, upserts);
+         }
 
          //-- now find all relationships that are NOT in the group that we just upserted
          //-- they need to be nulled out if many-to-one and deleted if many-to-many
@@ -449,8 +547,33 @@ public class RestPostAction extends Action<RestPostAction>
       return returnList;
    }
 
+   String getHref(Object hrefOrNode)
+   {
+      if (hrefOrNode instanceof JSNode)
+         hrefOrNode = ((JSNode) hrefOrNode).get("href");
+
+      if (hrefOrNode instanceof String)
+         return (String) hrefOrNode;
+
+      return null;
+   }
+
+   Map getKey(Table table, Object node)
+   {
+      if (node instanceof JSNode)
+         node = ((JSNode) node).getString("href");
+
+      if (node instanceof String)
+         return table.decodeKey((String) node);
+
+      return null;
+   }
+
    Map mapTo(Map srcRow, Index srcCols, Index destCols)
    {
+      if (srcRow == null)
+         return Collections.EMPTY_MAP;
+
       if (srcCols != destCols)
       {
          for (int i = 0; i < srcCols.size(); i++)

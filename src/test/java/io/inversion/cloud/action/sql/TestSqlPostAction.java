@@ -4,10 +4,8 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -157,6 +155,24 @@ public class TestSqlPostAction extends TestCase
    }
 
    @Test
+   public void testDuplicate1() throws Exception
+   {
+      Response res = null;
+      Engine engine = service();
+
+      res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
+
+      JSNode employee5 = res.findNode("data.0");
+
+      engine.put(employee5.getString("href"), employee5.toString()).statusOk();
+
+      res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
+      JSNode updated5 = res.findNode("data.0");
+
+      assertEquals(employee5.toString(), updated5.toString());
+   }
+
+   @Test
    public void testNestedPost1() throws Exception
    {
       Response res = null;
@@ -173,7 +189,7 @@ public class TestSqlPostAction extends TestCase
       steve.findArray("employees").add(john);
 
       System.out.println(steve);
-      res = engine.put(steve.getString("href"), steve);
+      res = engine.put(steve.getString("href"), steve).statusOk();
       res.dump();
 
       res = engine.get(url("employees?employeeId=5&expands=employees"));
@@ -240,5 +256,124 @@ public class TestSqlPostAction extends TestCase
 
       res.dump();
    }
+
+   //   @Test
+   //   public void testNestedPutPost_oneToMany() throws Exception
+   //   {
+   //      Engine engine = new Engine(new Api()//
+   //                                          .withName("crm")//
+   //                                          .withApiCode("crm")//
+   //                                          .withDb(new SqlDb("crm", //the database name used as the properties key prefix when 
+   //                                                            "org.h2.Driver", //-- jdbc driver
+   //                                                            "jdbc:h2:mem:crm;DB_CLOSE_DELAY=-1", //-- jdbc url 
+   //                                                            "sa", //-- jdbc user
+   //                                                            "", //jdbc password
+   //                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+   //      engine.startup();
+   //      Response res = null;
+   //
+   //      JSNode cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/01-POST-customers.json")));
+   //
+   //      res = engine.post("crm/customers", cust3);
+   //
+   //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+   //      res.dump();
+   //
+   //      assertEquals("Tester1", (res.find("data.0.lastName")));
+   //      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+   //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+   //      assertEquals("new_one_val_1", (res.find("data.0.identifiers.0.identifier")));
+   //
+   //      //creates identifier 11
+   //      cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/02-PUT-customers.json")));
+   //      engine.put(cust3.getString("href"), cust3).isSuccess();
+   //
+   //      //verify new identifier 11 values
+   //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+   //
+   //      res.dump();
+   //      assertEquals(1, res.data().size());
+   //      assertEquals("Tester1", (res.find("data.0.lastName")));
+   //      assertEquals("11", (res.find("data.0.identifiers.0.id") + ""));
+   //      assertEquals("new_one_2", (res.find("data.0.identifiers.0.providerCode")));
+   //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+   //      assertEquals("new_one_val_2", (res.find("data.0.identifiers.0.identifier")));
+   //
+   //      res = engine.get("crm/identifiers/11");
+   //      assertEquals("3", res.find("data.0.customerid") + "");
+   //
+   //      //make sure old identifier 11 was unhooked
+   //      res = engine.get("crm/identifiers/10");
+   //      assertEquals("null", res.find("data.0.customerid") + "");
+   //
+   //      //puts identifier 10 back on 
+   //      cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/03-PUT-customers.json")));
+   //      engine.put(cust3.getString("href"), cust3).isSuccess();
+   //
+   //      res = engine.get("crm/identifiers/10");
+   //      assertEquals("3", res.find("data.0.customerid") + "");
+   //      assertEquals("new_one_val_1_updated", res.find("data.0.identifier"));
+   //
+   //      res = engine.get("crm/identifiers");
+   //      res.dump();
+   //
+   //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+   //      res.dump();
+   //
+   //      assertEquals(1, res.data().size());
+   //      assertEquals("Tester1", (res.find("data.0.lastName")));
+   //      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+   //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+   //      assertEquals("new_one_val_1_updated", (res.find("data.0.identifiers.0.identifier")));
+   //
+   //      //res = engine.get("crm/customers?expands=identifiers&properties");
+   //      res = engine.get(cust3.getString("href") + "?expands=identifiers&properties");
+   //
+   //      res.dump();
+   //
+   //      res = engine.get("crm/identifiers");
+   //      res.dump();
+   //   }
+   //
+   //   @Test
+   //   public void testNestedPutPost_manyToOne() throws Exception
+   //   {
+   //      Engine engine = new Engine(new Api()//
+   //                                          .withName("crm")//
+   //                                          .withApiCode("crm")//
+   //                                          .withDb(new SqlDb("crm2", //the database name used as the properties key prefix when 
+   //                                                            "org.h2.Driver", //-- jdbc driver
+   //                                                            "jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1", //-- jdbc url 
+   //                                                            "sa", //-- jdbc user
+   //                                                            "", //jdbc password
+   //                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+   //      engine.startup();
+   //      Response res = null;
+   //
+   //      JSNode id10 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert003/01-POST-identifiers.json")));
+   //      res = engine.post("crm/identifiers", id10);
+   //      res = engine.get("crm/identifiers?id=10&expands=customer");
+   //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+   //
+   //      assertEquals("Tester1", (res.find("data.0.lastName")));
+   //      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+   //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+   //      assertEquals("new_one_val_1", (res.find("data.0.identifiers.0.identifier")));
+   //
+   //      JSNode id11 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert003/02-PUT-identifiers.json")));
+   //      res = engine.post("crm/identifiers", id11);
+   //      res = engine.get("crm/customers?lastName=Tester2&expands=identifiers");
+   //
+   //      assertEquals(1, res.findArray("data.0.identifiers").size());
+   //      assertEquals("Tester2", (res.find("data.0.lastName")));
+   //      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+   //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+   //      assertEquals("new_one_val_1_updated", (res.find("data.0.identifiers.0.identifier")));
+   //
+   //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+   //      assertEquals(0, res.findArray("data.0.identifiers").size());
+   //   }
 
 }

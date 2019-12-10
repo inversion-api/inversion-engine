@@ -1,0 +1,8 @@
+{
+	"providerCode": "new_one_1",
+	"type": "customerId",
+	"identifier": "new_one_val_1",
+	"customer": {
+		"lastName": "Tester1"
+	}
+}
