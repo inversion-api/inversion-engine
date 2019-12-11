@@ -51,6 +51,26 @@ public class Index
       withUnique(unique);
    }
 
+   public boolean equals(Object object)
+   {
+      if (object instanceof Index)
+      {
+         Index index = ((Index) object);
+
+         if (table.equals(index.table) && columns.size() == index.columns.size())
+         {
+            for (int i = 0; i < columns.size(); i++)
+            {
+               if (!columns.get(i).equals(index.columns.get(i)))
+                  return false;
+            }
+            return true;
+         }
+
+      }
+      return false;
+   }
+
    public String toString()
    {
       //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
@@ -154,7 +174,7 @@ public class Index
    {
       return new ArrayList(columns);
    }
-   
+
    public int size()
    {
       return columns.size();

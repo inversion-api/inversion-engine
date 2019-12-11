@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `Customer` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Identifier` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `customerId` BIGINT UNSIGNED NOT NULL,
+  `customerId` BIGINT UNSIGNED  NULL,
   `providerCode` VARCHAR(255) NULL,
   `type` VARCHAR(255) NULL,
   `identifier` VARCHAR(255) NULL,
@@ -35,7 +35,7 @@ ALTER TABLE `Identifier` ADD CONSTRAINT `fk_Identifier_Customer1` FOREIGN KEY (`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Properties` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `customerId` BIGINT UNSIGNED NOT NULL,
+  `customerId` BIGINT UNSIGNED  NULL,
   `name` VARCHAR(255) NULL,
   `value` VARCHAR(1024) NULL,
   PRIMARY KEY (`id`),

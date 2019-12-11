@@ -73,6 +73,42 @@ public class Relationship
       return related;
    }
 
+   public Relationship getInverse()
+   {
+      if (isManyToMany())
+      {
+         for (Relationship other : related.getRelationships())
+         {
+            if (!other.isManyToMany())
+               continue;
+
+            if (getFkIndex1().equals(other.getFkIndex2()))
+            {
+               return other;
+            }
+         }
+      }
+      else
+      {
+         for (Relationship other : related.getRelationships())
+         {
+            if (isOneToMany() && !other.isManyToOne())
+               continue;
+
+            if (isManyToMany() && !other.isOneToMany())
+               continue;
+
+            if (getFkIndex1().equals(other.getFkIndex1()) //
+                  && getPrimaryKeyTable1().getPrimaryIndex().equals(other.getPrimaryKeyTable1().getPrimaryIndex()))
+            {
+               return other;
+            }
+         }
+      }
+
+      return null;
+   }
+
    /**
     * @param related the related to set
     */
@@ -122,7 +158,6 @@ public class Relationship
       if (obj == this)
          return true;
 
-      
       return toString().equals(obj.toString());
    }
 

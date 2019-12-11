@@ -1,0 +1,10 @@
+{
+	"lastName": "Tester1",
+	"identifiers": [
+		{
+			"providerCode": "new_one_1",
+			"type": "customerId",
+			"identifier": "new_one_val_1"
+		}
+	]
+}

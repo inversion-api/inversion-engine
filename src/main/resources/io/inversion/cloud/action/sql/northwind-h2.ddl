@@ -171,7 +171,7 @@ CREATE INDEX `SuppliersPostalCode` ON `Suppliers` (`PostalCode`);
 CREATE TABLE `Territories` (
     `TerritoryID` VARCHAR(20) NOT NULL,
     `TerritoryDescription` VARCHAR(50) NOT NULL,
-    `RegionID` INTEGER NOT NULL,
+    `RegionID` INTEGER NULL,
     CONSTRAINT `PK_Territories` PRIMARY KEY (`TerritoryID`)
 );
 

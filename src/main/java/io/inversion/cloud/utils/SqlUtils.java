@@ -23,9 +23,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -291,6 +293,20 @@ public class SqlUtils
                try
                {
                   o = rs.getObject(i + 1);
+
+                  if (o instanceof Clob)
+                  {
+                     Reader reader = ((Clob) o).getCharacterStream();
+                     char[] arr = new char[8 * 1024];
+                     StringBuilder buffer = new StringBuilder();
+                     int numCharsRead;
+                     while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1)
+                     {
+                        buffer.append(arr, 0, numCharsRead);
+                     }
+                     reader.close();
+                     o = buffer.toString();
+                  }
                }
                catch (Exception e)
                {
@@ -726,14 +742,12 @@ public class SqlUtils
       {
          ex = e;
          notifyError("upsert", sql, row, ex);
+         throw e;
       }
       finally
       {
          notifyAfter("upsert", sql, row, ex, null);
       }
-
-      return null;
-
    }
 
    public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
