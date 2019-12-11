@@ -87,7 +87,7 @@ public class Table
          Table table = (Table) object;
          return table.getDb().equals(db) && name.equals(table.getName());
       }
-      return object == this;
+      return false;
    }
 
    public String toString()

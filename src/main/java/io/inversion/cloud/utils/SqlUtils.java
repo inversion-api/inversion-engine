@@ -49,8 +49,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.h2.util.IOUtils;
-
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.utils.Rows.Row;
 

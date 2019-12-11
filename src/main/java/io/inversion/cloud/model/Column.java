@@ -74,7 +74,7 @@ public class Column implements Comparable<Column>
          if ((table != null && table.equals(column.table)) && Utils.equal(name, column.name))
             return true;
       }
-      return object == this;
+      return false;
    }
 
    public String toString()

@@ -68,7 +68,7 @@ public class Index
          }
 
       }
-      return object == this;
+      return false;
    }
 
    public String toString()

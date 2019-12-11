@@ -75,7 +75,20 @@ public class Relationship
 
    public Relationship getInverse()
    {
-      if (!isManyToMany())
+      if (isManyToMany())
+      {
+         for (Relationship other : related.getRelationships())
+         {
+            if (!other.isManyToMany())
+               continue;
+
+            if (getFkIndex1().equals(other.getFkIndex2()))
+            {
+               return other;
+            }
+         }
+      }
+      else
       {
          for (Relationship other : related.getRelationships())
          {
@@ -87,19 +100,6 @@ public class Relationship
 
             if (getFkIndex1().equals(other.getFkIndex1()) //
                   && getPrimaryKeyTable1().getPrimaryIndex().equals(other.getPrimaryKeyTable1().getPrimaryIndex()))
-            {
-               return other;
-            }
-         }
-      }
-      else if (isManyToMany())
-      {
-         for (Relationship other : related.getRelationships())
-         {
-            if (!other.isManyToMany())
-               continue;
-
-            if (getFkIndex1().equals(other.getFkIndex2()))
             {
                return other;
             }
