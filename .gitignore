@@ -28,7 +28,8 @@ output/
 /.settings/
 /.classpath
 /.project
-/build/
+/.idea
+build/
 /logs/
 
 snooze99.properties
