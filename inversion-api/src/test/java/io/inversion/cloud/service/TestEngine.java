@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import io.inversion.cloud.action.misc.MockAction;
 import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
@@ -110,12 +111,12 @@ public class TestEngine extends TestCase
       Engine engine = null;
 
       engine = new Engine()//
-                           .withApi("northwind")//
+                           .withApi(new Api("northwind")//
                            .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
                            .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
                            .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
-                           .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction"))//
-                           .getEngine();
+                           .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction")));
+                           
 
       engine.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
       engine.get("northwind/source").assertDebug("Action:", "sourceAction");
@@ -130,10 +131,10 @@ public class TestEngine extends TestCase
       Engine engine = null;
 
       engine = new Engine()//
-                           .withApi((String) null)//
-                           .withEndpoint("get", "/*")//
-                           .withAction(new MockActionA())//
-                           .withDb(new MockDb()).getEngine();
+                           .withApi(new Api()//
+                                             .withEndpoint("get", "/*")//
+                                             .withAction(new MockActionA())//
+                                             .withDb(new MockDb()));
 
       Response resp = engine.get("users");
       resp.dump();
@@ -142,17 +143,17 @@ public class TestEngine extends TestCase
 
       //action is placed on the endpoint instead of the api
       engine = new Engine()//
-                           .withApi((String) null)//
-                           .withEndpoint("get", "/*", new MockActionA())//
-                           .withDb(new MockDb()).getEngine();
+                           .withApi(new Api()//
+                                             .withEndpoint("get", "/*", new MockActionA())//
+                                             .withDb(new MockDb()));
 
       resp = engine.get("users");
       assertEquals("tester1", resp.find("data.0.firstName"));
 
       engine = new Engine()//
-                           .withApi("testApi")//
-                           .withEndpoint("get", "*", new MockActionA())//
-                           .withDb(new MockDb()).getEngine();
+                           .withApi(new Api("testApi")//
+                                                      .withEndpoint("get", "*", new MockActionA())//
+                                                      .withDb(new MockDb()));
 
       resp = engine.get("users");
       assertEquals(404, resp.getStatusCode());
@@ -172,10 +173,9 @@ public class TestEngine extends TestCase
       Engine engine = null;
 
       engine = new Engine()//
-                           .withApi((String) null)//
-                           .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
-                           .withEndpoint("get", "actionB/*", new MockActionB("get", "*"))//
-                           .getEngine();
+                           .withApi(new Api()//
+                                             .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
+                                             .withEndpoint("get", "actionB/*", new MockActionB("get", "*")));
 
       Response resp = null;
       JSNode data = null;
@@ -202,9 +202,8 @@ public class TestEngine extends TestCase
       Engine engine = null;
 
       engine = new Engine()//
-                           .withApi((String) null)//
-                           .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*"))//
-                           .getEngine();
+                           .withApi(new Api()//
+                                             .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*")));
 
       Response resp = null;
       resp = engine.get("/actionA");
@@ -266,9 +265,8 @@ public class TestEngine extends TestCase
       ep.withAction(actionC);
 
       Engine engine = new Engine()//
-                                  .withApi("test")//
-                                  .withEndpoint(ep)//
-                                  .getEngine();
+                                  .withApi(new Api("test")//
+                                                          .withEndpoint(ep));
 
       Response res = engine.get("test/test");
       res.dump();

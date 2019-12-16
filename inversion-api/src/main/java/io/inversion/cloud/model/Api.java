@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
-import io.inversion.cloud.service.Engine;
-
 public class Api
 {
    transient volatile boolean started     = false;
@@ -30,7 +28,7 @@ public class Api
    transient Hashtable        cache       = new Hashtable();
    transient protected String hash        = null;
 
-   protected transient Engine engine      = null;
+   //   protected transient Engine engine      = null;
 
    protected boolean          debug       = false;
 
@@ -140,21 +138,6 @@ public class Api
             }
          }
       }
-   }
-
-   public Api withEngine(Engine engine)
-   {
-      if (this.engine != engine)
-      {
-         this.engine = engine;
-         engine.addApi(this);
-      }
-      return this;
-   }
-
-   public Engine getEngine()
-   {
-      return engine;
    }
 
    public int getId()
@@ -497,18 +480,17 @@ public class Api
       this.apiCode = apiCode;
       return this;
    }
-   
+
    public Api withAccountCode(String accountCode)
    {
       this.accountCode = accountCode;
       return this;
    }
-   
+
    public String getAccountCode()
    {
       return accountCode != null ? accountCode : getApiCode();
    }
-   
 
    public String getName()
    {

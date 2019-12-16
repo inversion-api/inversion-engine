@@ -801,8 +801,6 @@ public class Engine
       {
          existingApi.shutdown();
       }
-
-      api.withEngine(this);
    }
 
    public synchronized void removeApi(Api api)
