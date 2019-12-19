@@ -26,6 +26,16 @@ import junit.framework.TestCase;
 public class TestJSNode extends TestCase
 {
    @Test
+   public void testWith()
+   {
+      JSArray arr = new JSArray(1,2,3,4);
+      JSNode node = new JSNode().with("name", "value", "name2", "value2", "arr", arr);
+      assertEquals("value", node.find("name"));
+      assertEquals("value2", node.find("name2"));
+      assertEquals(arr, node.find("arr"));
+   }
+   
+   @Test
    public void testCollectNodes1()
    {
       List found = null;

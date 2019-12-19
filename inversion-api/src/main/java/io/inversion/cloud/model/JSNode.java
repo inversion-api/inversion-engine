@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,13 +50,7 @@ public class JSNode implements Map<String, Object>
 
    public JSNode(Object... nvPairs)
    {
-      for (int i = 0; i < nvPairs.length - 1; i += 2)
-      {
-         if (i == 0 && (nvPairs[i] instanceof Map && !(nvPairs[i] instanceof JSNode)))
-            throw new RuntimeException("Incorrect constructor called.  Should have called JSMap(Map)");
-
-         put(nvPairs[i] + "", nvPairs[i + 1]);
-      }
+      with(nvPairs);
    }
 
    public JSNode(Map map)
@@ -371,6 +365,30 @@ public class JSNode implements Map<String, Object>
       this.properties = temp;
 
       return prop;
+   }
+
+   public JSNode with(Object... nvPairs)
+   {
+      if(nvPairs == null || nvPairs.length == 0)
+         return this;
+      
+      if(nvPairs.length % 2 != 0)
+         throw new RuntimeException("You must supply an even number of arguments to JSNode.with()");
+      
+      for (int i = 0; i < nvPairs.length - 1; i += 2)
+      {
+         Object value = nvPairs[i + 1];
+         
+         if(value instanceof Map && !(value instanceof JSNode))
+               throw new RuntimeException("Invalid map value");
+               
+         if(value instanceof List && !(value instanceof JSArray))
+            throw new RuntimeException("Invalid list value");
+
+         put(nvPairs[i] + "", value);
+      }
+      
+      return this;
    }
 
    @Override
