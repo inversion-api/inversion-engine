@@ -87,6 +87,11 @@ public abstract class Db<T extends Db>
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select()");
    }
 
+   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
+   {
+      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
+   }
+   
    public void delete(Table table, List<String> entityKeys) throws Exception
    {
       for (String entityKey : entityKeys)
@@ -100,15 +105,15 @@ public abstract class Db<T extends Db>
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
    }
 
-   public String upsert(Table table, Map<String, Object> row) throws Exception
+   public String upsert(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
    {
       throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert()");
    }
 
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> columnMappedTermsRows) throws Exception
    {
       List keys = new ArrayList();
-      for (Map<String, Object> row : rows)
+      for (Map<String, Object> row : columnMappedTermsRows)
       {
          keys.add(upsert(table, row));
       }

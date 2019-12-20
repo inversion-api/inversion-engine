@@ -12,12 +12,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
+import io.inversion.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
@@ -59,9 +63,10 @@ public class TestSqlPostAction extends TestCase
    }
 
    Engine engine = null;
+
    protected Engine service() throws Exception
    {
-      if(engine == null)
+      if (engine == null)
       {
          engine = SqlEngineFactory.service(true, false);
       }
@@ -151,68 +156,226 @@ public class TestSqlPostAction extends TestCase
       assertEquals(res.find("data.0.href"), url("orders/100"));
    }
 
-   public void testAddUpdateMultipleRecords() throws Exception
+   @Test
+   public void testDuplicate1() throws Exception
    {
       Response res = null;
       Engine engine = service();
 
-      //some of the selected records are already in the target db (from the pre test config)
-      //and some are not.  This will cause some records to insert and some to update.
-      res = engine.get("http://localhost/northwind/source/orders?limit=25&sort=orderid&page=2&excludes=href");
-      assertEquals(10273, res.find("data.0.orderid"));
-      assertEquals(10297, res.find("data.24.orderid"));
+      res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
 
-      //now dump what we just selected into the new db (some will insert some will update)
-      String putVal = res.data().toString();
-      res = engine.post(url("orders"), putVal);
-      assertTrue(res.findString("data.0.href").endsWith("10273"));
-      assertTrue(res.findString("data.24.href").endsWith("10297"));
+      JSNode employee5 = res.findNode("data.0");
 
-      String location = res.getHeader("Location");
+      engine.put(employee5.getString("href"), employee5.toString()).statusOk();
 
-      assertEquals(url("orders/10273,10274,10275,10276,10277,10278,10279,10280,10281,10282,10283,10284,10285,10286,10287,10288,10289,10290,10291,10292,10293,10294,10295,10296,10297"), //
-            location);
+      res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
+      JSNode updated5 = res.findNode("data.0");
 
-      assertEquals(51, engine.get(url("orders?limit=1")).find("meta.foundRows"));
+      assertEquals(employee5.toString(), updated5.toString());
+   }
 
-      //correcting for the differencees in the hrefs, we should be able to get the inserted
-      //rows from the source and dest and they should match
-      String srcLocation = location.replace("/" + db + "/", "/source/");
-      String src = engine.get(srcLocation).data().toString();
-      String copy = engine.get(location).data().toString();
-      src = src.replace("/source/", "/" + db + "/");
-      assertEquals(src, copy);
+   @Test
+   public void testNestedPost1() throws Exception
+   {
+      Response res = null;
+      Engine engine = service();
 
-      //we did not insert any order details
-      res = engine.get("http://localhost/northwind/h2/orderdetails");
-      res.dump();
-      assertEquals(0, res.findInt("meta.foundRows"));
+      JSNode john = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert001/upsert001-1.json")));
 
-      //now we are going to reselect the copied rows and expand the orderdetails relationship
-      //and then post those
-      srcLocation += "?expands=orderdetails&excludes=orderdetails.href,orderdetails.employees";
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+      JSNode steve = res.findNode("data.0");
 
-      res = engine.get(srcLocation);
-      assertNull(res.findString("data.0.orderdetails.0.href"));
-      assertNull(res.findString("data.0.orderdetails.0.employees"));
-      assertTrue(res.findString("data.0.orderdetails.0.order").endsWith("/orders/10273"));
-      assertTrue(res.findString("data.0.orderdetails.0.product").endsWith("/products/10"));
+      assertEquals(3, res.findArray("data.0.employees").size());
 
-      putVal = res.data().toString().replace("/source/", "/h2/");
+      //steve.findArray("employees").clear();
+      steve.findArray("employees").add(john);
 
-      res = engine.post(url("orders"), putVal);
-      location = res.getHeader("Location");
-
-      assertEquals(51, engine.get(url("orders?limit=1")).find("meta.foundRows"));
-
-      res = engine.get(url("orderdetails"));
-      res.dump();
-      assertEquals(0, res.findInt("meta.foundRows"));
-
+      System.out.println(steve);
+      res = engine.put(steve.getString("href"), steve).statusOk();
       res.dump();
 
-      //    res = get("http://localhost/northwind/source/orders?limit=25&sort=orderid&page=4&excludes=href,orderid,shipname,orderdetails,customer,employee,shipvia");
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+      res.dump();
 
+      assertEquals("the new employee was not related to its parent", 4, res.findArray("data.0.employees").size());
+
+      //-- make sure the new employee was POSTED
+      res = engine.get(url("employees/99999991?expands=reportsTo,territories"));
+      assertEquals(1, res.data().size());
+      assertTrue(res.findString("data.0.href").contains("/99999991"));
+      assertTrue(res.findString("data.0.reportsTo.href").contains("employees/5"));
+      assertTrue(res.findString("data.0.territories.0.TerritoryID").equals("30346"));
+
+      res = engine.get(res.findString("data.0.territories.0.href") + "?expands=region");
+
+      //-- confirms that a the new region was created and assigned to territory 30346
+      assertEquals("http://localhost/northwind/h2/regions/5", res.findString("data.0.region.href"));
+      assertEquals("HotLanta", res.findString("data.0.region.regiondescription"));
+
+      //--now go back to steve and unhook several many-to-one reportsTo relationships
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+      steve = res.findNode("data.0");
+
+      JSArray employees = steve.findArray("employees");
+
+      for (int i = 0; i < employees.length(); i++)
+      {
+         if (!"99999991".equals(employees.getNode(i).getString("employeeId")))
+         {
+            employees.remove(i);
+            i--;
+         }
+      }
+
+      res = engine.put(steve.getString("href"), steve);
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+
+      assertEquals(1, res.findArray("data.0.employees").size());
+      assertTrue(res.findString("data.0.employees.0.href").contains("/99999991"));
+      res.dump();
+
+      //-- now unhook all many-to-one employees...this a different case than unhooking some but not all  
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+      steve = res.findNode("data.0");
+
+      employees = steve.findArray("employees");
+      employees.clear();
+
+      res = engine.put(steve.getString("href"), steve);
+      res = engine.get(url("employees?employeeId=5&expands=employees"));
+
+      assertEquals(0, res.findArray("data.0.employees").size());
+
+      //-- now unhook all many-to-many employee->territories...this a different case than unhooking some but not all  
+      res = engine.get(url("employees?employeeId=5&expands=territories"));
+      assertEquals(7, res.findArray("data.0.territories").size());
+      JSNode manager = res.findNode("data.0");
+      manager.findArray("territories").clear();
+
+      res = engine.put(manager.getString("href"), manager);
+      res = engine.get(url("employees?employeeId=5&expands=territories"));
+      assertEquals(0, res.findArray("data.0.territories").size());
+
+      res.dump();
+   }
+
+   @Test
+   public void testNestedPutPost_oneToMany() throws Exception
+   {
+      Engine engine = new Engine(new Api()//
+                                          .withName("crm")//
+                                          .withApiCode("crm")//
+                                          .withDb(new SqlDb("crm", //the database name used as the properties key prefix when 
+                                                            "org.h2.Driver", //-- jdbc driver
+                                                            "jdbc:h2:mem:crm;DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                                            "sa", //-- jdbc user
+                                                            "", //jdbc password
+                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+      engine.startup();
+      Response res = null;
+
+      JSNode cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/01-POST-customers.json")));
+
+      res = engine.post("crm/customers", cust3);
+
+      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+      res.dump();
+
+      assertEquals("Tester1", (res.find("data.0.lastName")));
+      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+      assertEquals("new_one_val_1", (res.find("data.0.identifiers.0.identifier")));
+
+      //creates identifier 11
+      cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/02-PUT-customers.json")));
+      engine.put(cust3.getString("href"), cust3).isSuccess();
+
+      //verify new identifier 11 values
+      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+
+      res.dump();
+      assertEquals(1, res.data().size());
+      assertEquals("Tester1", (res.find("data.0.lastName")));
+      assertEquals("11", (res.find("data.0.identifiers.0.id") + ""));
+      assertEquals("new_one_2", (res.find("data.0.identifiers.0.providerCode")));
+      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+      assertEquals("new_one_val_2", (res.find("data.0.identifiers.0.identifier")));
+
+      res = engine.get("crm/identifiers/11");
+      assertEquals("3", res.find("data.0.customerid") + "");
+
+      //make sure old identifier 11 was unhooked
+      res = engine.get("crm/identifiers/10");
+      assertEquals("null", res.find("data.0.customerid") + "");
+
+      //puts identifier 10 back on 
+      cust3 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert002/03-PUT-customers.json")));
+      engine.put(cust3.getString("href"), cust3).isSuccess();
+
+      res = engine.get("crm/identifiers/10");
+      assertEquals("3", res.find("data.0.customerid") + "");
+      assertEquals("new_one_val_1_updated", res.find("data.0.identifier"));
+
+      res = engine.get("crm/identifiers");
+      res.dump();
+
+      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+      res.dump();
+
+      assertEquals(1, res.data().size());
+      assertEquals("Tester1", (res.find("data.0.lastName")));
+      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+      assertEquals("new_one_val_1_updated", (res.find("data.0.identifiers.0.identifier")));
+
+      //res = engine.get("crm/customers?expands=identifiers&properties");
+      res = engine.get(cust3.getString("href") + "?expands=identifiers&properties");
+
+      res.dump();
+
+      res = engine.get("crm/identifiers");
+      res.dump();
+   }
+
+   @Test
+   public void testNestedPutPost_manyToOne() throws Exception
+   {
+      Engine engine = new Engine(new Api()//
+                                          .withName("crm")//
+                                          .withApiCode("crm")//
+                                          .withDb(new SqlDb("crm2", //the database name used as the properties key prefix when 
+                                                            "org.h2.Driver", //-- jdbc driver
+                                                            "jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                                            "sa", //-- jdbc user
+                                                            "", //jdbc password
+                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+      engine.startup();
+      Response res = null;
+
+      JSNode id10 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert003/01-POST-identifiers.json")));
+      res = engine.post("crm/identifiers", id10);
+      res = engine.get("crm/identifiers?id=10&expands=customer");
+      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+
+      assertEquals("Tester1", (res.find("data.0.lastName")));
+      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+      assertEquals("new_one_val_1", (res.find("data.0.identifiers.0.identifier")));
+
+      JSNode id11 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert003/02-PUT-identifiers.json")));
+      res = engine.post("crm/identifiers", id11);
+      res = engine.get("crm/customers?lastName=Tester2&expands=identifiers");
+
+      assertEquals(1, res.findArray("data.0.identifiers").size());
+      assertEquals("Tester2", (res.find("data.0.lastName")));
+      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
+      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
+      assertEquals("new_one_val_1_updated", (res.find("data.0.identifiers.0.identifier")));
+
+      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
+      assertEquals(0, res.findArray("data.0.identifiers").size());
    }
 
 }

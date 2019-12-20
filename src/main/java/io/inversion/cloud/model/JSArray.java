@@ -70,7 +70,7 @@ public class JSArray extends JSNode implements Iterable
       return set;
    }
 
-   public JSNode getMap(int index)
+   public JSNode getNode(int index)
    {
       return (JSNode) get(index + "");
    }

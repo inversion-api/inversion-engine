@@ -631,6 +631,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
          sql.append(")");
       }
+      else if ("not".equalsIgnoreCase(token))
+      {
+         sql.append("NOT (");
+         for (int i = 0; i < strings.size(); i++)
+         {
+            sql.append(strings.get(i).trim());
+            if (i < strings.size() - 1)
+               sql.append(" ");
+         }
+         sql.append(")");
+      }
       else if ("sum".equalsIgnoreCase(token) || "count".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token) || "distinct".equalsIgnoreCase(token))
       {
          String acol = strings.get(0);

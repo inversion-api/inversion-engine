@@ -134,7 +134,7 @@ CREATE INDEX `ProductName` ON `Products` (`ProductName`);
 
 
 CREATE TABLE `Region` (
-    `RegionID` INTEGER NOT NULL,
+    `RegionID` INTEGER NOT NULL AUTO_INCREMENT,
     `RegionDescription` VARCHAR(52) NOT NULL,
     CONSTRAINT `PK_Region` PRIMARY KEY (`RegionID`)
 );
@@ -171,7 +171,7 @@ CREATE INDEX `SuppliersPostalCode` ON `Suppliers` (`PostalCode`);
 CREATE TABLE `Territories` (
     `TerritoryID` VARCHAR(20) NOT NULL,
     `TerritoryDescription` VARCHAR(50) NOT NULL,
-    `RegionID` INTEGER NOT NULL,
+    `RegionID` INTEGER NULL,
     CONSTRAINT `PK_Territories` PRIMARY KEY (`TerritoryID`)
 );
 
@@ -3963,3 +3963,17 @@ INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `
 INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (18, 'us', 21, 'ads', NULL, 0, '2019-03-02 13:21:44'); 
 INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (19, 'us', 23, 'ads', 'ERROR_MSG foo', 0, '2019-05-02 05:05:18'); 
 INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (20, 'us', 567, 'ads', 'some ERROR MSG', 0, '2019-03-02 12:21:22'); 
+
+
+
+/* This table was added to support test cases for keys that have non url save characters in them */	
+CREATE TABLE `Urls` (
+    `url` VARCHAR(512) NOT NULL,
+    `short` VARCHAR(100) NOT NULL,
+    `text` VARCHAR(500) NOT NULL,
+     CONSTRAINT `PK_Urls` PRIMARY KEY (`url`, `short`)
+);
+
+INSERT INTO `Urls` (`url`, `short`, `text`) VALUES ('http://www.rocketpartners.com/inversion', '74593jd1', 'some description');
+
+

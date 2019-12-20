@@ -80,6 +80,16 @@ public class Table
       return null;
    }
 
+   public boolean equals(Object object)
+   {
+      if (object instanceof Table)
+      {
+         Table table = (Table) object;
+         return table.getDb().equals(db) && name.equals(table.getName());
+      }
+      return false;
+   }
+
    public String toString()
    {
       return name != null ? name : super.toString();
@@ -178,20 +188,6 @@ public class Table
    public void removeColumn(Column column)
    {
       columns.remove(column);
-   }
-
-   /**
-    * @depricated all code should really consider compound key cases
-    * 
-    * @return
-    */
-   public String getKeyName()
-   {
-      Index index = getPrimaryIndex();
-      if (index != null && index.getColumns().size() == 1)
-         return index.getColumns().get(0).getName();
-
-      return null;
    }
 
    public String encodeKey(Map<String, Object> values)
@@ -299,6 +295,10 @@ public class Table
    //parses val1~val2,val3~val4,val5~valc6
    public Rows decodeKeys(Index index, String inKeys)
    {
+      //someone passed in the whole href...no problem, just strip it out.
+      if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
+         inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
+
       List<Column> columns = index.getColumns();
 
       List colNames = new ArrayList();

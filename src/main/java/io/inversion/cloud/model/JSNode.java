@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
- * 
+ *
  * Copyright 2008-2016 Wells Burke
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,7 +120,7 @@ public class JSNode implements Map<String, Object>
       }
       else if (!myVal.getClass().equals(theirVal.getClass()))
       {
-         patches.add(new JSNode("op", "replace", "path", path, myVal));
+         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
       }
       else if (myVal instanceof JSNode)
       {
@@ -128,7 +128,7 @@ public class JSNode implements Map<String, Object>
       }
       else if (!myVal.toString().equals(theirVal.toString()))
       {
-         patches.add(new JSNode("op", "replace", "path", path, myVal));
+         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
       }
    }
 
@@ -357,7 +357,7 @@ public class JSNode implements Map<String, Object>
 
    /**
     * Vanity method to make sure the attributes prints out first
-    * 
+    *
     * @param name
     * @param value
     * @return

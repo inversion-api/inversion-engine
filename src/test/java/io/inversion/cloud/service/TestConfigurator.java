@@ -10,14 +10,8 @@ import java.util.Properties;
 
 import org.junit.Test;
 
-import io.inversion.cloud.action.security.AuthAction;
-import io.inversion.cloud.action.sql.SqlDb;
 import io.inversion.cloud.action.sql.SqlEngineFactory;
-import io.inversion.cloud.demo.Demo001SqlDbNorthwind;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Configurator;
 import io.inversion.cloud.utils.Utils;
 import io.inversion.cloud.utils.Wirer;

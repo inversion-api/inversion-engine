@@ -11,10 +11,26 @@ With Inversion, you can connect your web application front end directly to your 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
 
+#### Build Status
 
+| Project                                                                                                 | Latest Build                                                                                                                                       | Test Status                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Inversion Engine](https://github.com/inversion-api/inversion-engine)                                   | [![](https://jitpack.io/v/inversion-api/inversion-engine.svg)](https://jitpack.io/#inversion-api/inversion-engine)                                 | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
+| [Inversion Demos](https://github.com/inversion-api/inversion-demos)                                     | [![](https://jitpack.io/v/inversion-api/inversion-demos.svg)](https://jitpack.io/#inversion-api/inversion-demos)                                   | [![](https://travis-ci.org/inversion-api/inversion-demos.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-demos)                                   |
+| [Inversion Quickstart Lambda](https://github.com/inversion-api/inversion-quickstart-lambda)              | [![](https://jitpack.io/v/inversion-api/inversion-quickstart-lambda.svg)](https://jitpack.io/#inversion-api/inversion-quickstart-lambda)           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-lambda)           |
+| [Inversion Quickstart Spring Boot](https://github.com/inversion-api/inversion-quickstart-spring-boot)   | [![](https://jitpack.io/v/inversion-api/inversion-quickstart-spring-boot.svg)](https://jitpack.io/#inversion-api/inversion-quickstart-spring-boot) | [![](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot) |
+| [Inversion Starter for DynamoDB](https://github.com/inversion-api/inversion-starter-dynamodb)           | [![](https://jitpack.io/v/inversion-api/inversion-starter-dynamodb.svg)](https://jitpack.io/#inversion-api/inversion-starter-dynamodb)             | [![](https://travis-ci.org/inversion-api/inversion-starter-dynamodb.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-dynamodb)             |
+| [Inversion Starter for Elasticsearch](https://github.com/inversion-api/inversion-starter-elasticsearch) | [![](https://jitpack.io/v/inversion-api/inversion-starter-elasticsearch.svg)](https://jitpack.io/#inversion-api/inversion-starter-elasticsearch)   | [![](https://travis-ci.org/inversion-api/inversion-starter-elasticsearch.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-elasticsearch)   |
+| [Inversion Starter for Kinesis](https://github.com/inversion-api/inversion-starter-kinesis)             | [![](https://jitpack.io/v/inversion-api/inversion-starter-kinesis.svg)](https://jitpack.io/#inversion-api/inversion-starter-kinesis)               | [![](https://travis-ci.org/inversion-api/inversion-starter-kinesis.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-kinesis)               |
+| [Inversion Starter for Lambda](https://github.com/inversion-api/inversion-starter-lambda)               | [![](https://jitpack.io/v/inversion-api/inversion-starter-lambda.svg)](https://jitpack.io/#inversion-api/inversion-starter-lambda)                 | [![](https://travis-ci.org/inversion-api/inversion-starter-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-lambda)                 |
+| [Inversion Starter for Redis](https://github.com/inversion-api/inversion-starter-redis)                 | [![](https://jitpack.io/v/inversion-api/inversion-starter-redis.svg)](https://jitpack.io/#inversion-api/inversion-starter-redis)                   | [![](https://travis-ci.org/inversion-api/inversion-starter-redis.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-redis)                   |
+| [Inversion Starter for S3](https://github.com/inversion-api/inversion-starter-s3)                       | [![](https://jitpack.io/v/inversion-api/inversion-starter-s3.svg)](https://jitpack.io/#inversion-api/inversion-starter-s3)                         | [![](https://travis-ci.org/inversion-api/inversion-starter-s3.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-s3)                         |
+| [Inversion Starter for Script](https://github.com/inversion-api/inversion-starter-script)               | [![](https://jitpack.io/v/inversion-api/inversion-starter-script.svg)](https://jitpack.io/#inversion-api/inversion-starter-script)                 | [![](https://travis-ci.org/inversion-api/inversion-starter-script.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-script)                 |
+| [Inversion Starter for Spring Boot](https://github.com/inversion-api/inversion-starter-spring-boot)     | [![](https://jitpack.io/v/inversion-api/inversion-starter-spring-boot.svg)](https://jitpack.io/#inversion-api/inversion-starter-spring-boot)       | [![](https://travis-ci.org/inversion-api/inversion-starter-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-starter-spring-boot)       |
 
 ## Contents
 - [Inversion Cloud API Engine](#inversion-cloud-api-engine)
+  - [Build Status](#build-status)
   - [Contents](#contents)
   - [Features and Benefits](#features-and-benefits)
   - [Quick Start](#quick-start)
@@ -27,6 +43,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
   - [Resource Query Language (RQL)](#resource-query-language-rql)
     - [General](#general)
     - [Query Functions](#query-functions)
+    - [Sorting and Ordering](#sorting-and-ordering)
     - [Pagination, Offset and Limit](#pagination-offset-and-limit)
     - [Property Inclusion / Exclusion](#property-inclusion--exclusion)
     - [Aggregations](#aggregations)
@@ -36,7 +53,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
     - [Miscellaneous](#miscellaneous)
   - [Core Object Model Concepts](#core-object-model-concepts)
     - [Apis](#apis)
-    - [Dbs, Tables, Columns and Indexs](#dbs-tables-columns-and-indexs)
+    - [Dbs, Tables, Columns and Indexes](#dbs-tables-columns-and-indexes)
     - [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
     - [Endpoints and Actions](#endpoints-and-actions)
     - [AclAction and AclRules](#aclaction-and-aclrules)
@@ -85,7 +102,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 
 ## Quick Start
 
-With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/RocketPartners/rocket-inversion/blob/master/src/main/java/io/rocketpartners/cloud/demo/Demo001SqlDbNorthwind.java)
+With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/inversion-api/inversion-demos/blob/master/src/main/java/io/rocketpartners/cloud/demo/demo001/Demo001SqlDbNorthwind.java)
 launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  The demo 
 supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
  
@@ -381,17 +398,15 @@ RQL query params as well as for JSON properties.
 
 An Api exposes a set of Endpoints offering access to Collections backed by Db Tables.  
 
-### Dbs, Tables, Columns and Indexs
+### Dbs, Tables, Columns and Indexes
 
-The Db, Table, Column and Index objects are modeled off of RDBMS systems but are not specifically bound to RDBMS or SQL based systems.  For example, there are DynamoDb and ElasticsearchDB subclasses of Db.  As would be expected, Tables are composed of Columns and a Db can have one or more Tables. Tables are optomized, related to each other, and constrained through Indexes. 
+The Db, Table, Column and Index objects are modeled off of RDBMS systems but are not specifically bound to RDBMS or SQL based systems.  For example, there are DynamoDb and ElasticsearchDB subclasses of Db.  As would be expected, Tables are composed of Columns and a Db can have one or more Tables. Tables are optimized, related to each other, and constrained through Indexes. 
 
-Implementing support for a new backend datasource is simpley a matter of implementing a new Db subclass.  The data source specific Db/Table/Column/Index implementation should absract all backend details away so that datasource agnostic Actions can work transparently with Collections that may be backed by completely different backend types.
+Implementing support for a new backend datasource is simply a matter of implementing a new Db subclass.  The data source specific Db/Table/Column/Index implementation should abstract all backend details away so that datasource agnostic Actions can work transparently with Collections that may be backed by completely different backend types.
 
 ### Collections, Entities, Attributes and Relationships
 
-Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requets
-to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well
-in a URL or as a JSON property name.
+Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requests to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well in a URL or as a JSON property name.
 
 Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
@@ -407,7 +422,7 @@ An Action can be set directly on an Endpoint to be 'private' to that endpoint, o
 Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
  * RestGetAction - Returns a Collection listing matching RQL criteria or can return a single requested Entity from a Db Table.
  * RestPostAction - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
- * RestDeleteDelete - Deletes Collection Entites from the underlying Db Table.
+ * RestDeleteDelete - Deletes Collection Entities from the underlying Db Table.
  * AuthAction - Logs a user in and puts a User object in the Request
  * AclAction - Processes AclRules to secure your Endpoints
  * LogAction - Logs requests and the JSON payloads
@@ -425,13 +440,10 @@ be setup (in that order) to protect resources according to configed AclRules.  A
     
 ### Path Matching
 
-Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" 
-configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used match any arbitrary path ending and 
-regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
+Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary path ending.  Regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
 Leading and trailing '/' characters are not considered when path matching.
 
-Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex
-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
 path parts optional.  Regular expression matches can not match across a '/'.
 
 Here are some examples: 
@@ -447,8 +459,8 @@ One easy way to restrict the underlying tables exposed by an Api is to use regex
 If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
 have been supplied by the query string.
 
-The names "component", "entity", and "relationship" are special.  If you configure a path match them, the Inversion will use those values when configuring the Request object.
-If you don't supply them but the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
+The names "component", "entity", and "relationship" are special.  If you configure a path match to them, Inversion will use those values when configuring the Request object.
+If you don't supply them the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
 
 
 ## Security Model
@@ -459,16 +471,16 @@ An Api is associated with a single Account
 
 Users have a system level Role relationship with one or more Accounts.  
 
-Roles are not designed to have a functional relationship to an Api being served.  Genarally, Roles should not
-be used by Api designers to provide application level entitlements, they are designed to provide Inversion system level entitlements.
+Roles are not designed to have a functional relationship to an Api being served.  Generally, Roles should not
+be used by Api designers to provide application level entitlements.  Roles are designed to provide Inversion system level entitlements.
  
 
 Roles:
  * Owner - The person who can delete a Inversion account.  
- * Administrator - Someone who can configure an account including changing changing security and managing Users.
-   (Owner and Administrator are not designed to be functionally useful for Api clients but there is nothing stopping you from
+ * Administrator - Someone who can configure an account including changing security and managing Users.
+   (Owner and Administrator are not designed to be functionally useful for Api clients.  However, there is nothing stopping you from
    requiring Owner or Administrator Roles to access various Api Endpoints, see below)
- * Member - Generally, someone who will be calling the Api.  An admin user of an end application, may only have the 
+ * Member - Generally, someone who will be calling the Api.  An admin user of an end application may only have the 
    Inversion Member role.
  * Guest - Represents an unauthenticated caller.
 
@@ -476,37 +488,37 @@ Roles are hierarchical by privilege.  Ex. having the Owner role gives you Admini
 
 ### Api Permissions
 
-For each Api a User can be assigned Api defined named Permissions.  Permissions are simple string tokens.  They do
+For each Api, a User can be assigned Api-defined named Permissions.  Permissions are simple string tokens.  They do
 not confer hierarchical privilege like roles.  An Api designer might define a Permission string such as "ADMINISTRATOR"
 or "SOMECOLLECTION_SOMEHTTPMETHOD".  This is a total designers choice free for all.  
 
 Groups of Users can be created at the Account level and each Group can be given Roles and Permissions 
-that the Users inherit.  In this way, you could create a functional "Admin" Group (different from Administrtor Role) 
-and give that Group all of the Permissions desired and then assign Users to that Admin Group. 
+that the Users inherit.  In this way, you could create a functional "Admin" Group (different from Administrator Role) 
+and give that Group all of the Permissions desired.  Users assigned to this "Admin" group would then inherit all those assigned Roles and Permissions. 
 
 
 ### Authentication
 
 As far as the framework is concerned, authentication involves populating a User object with their entitled
-Roles and Permissions and placing the User object on the Request.  Session management, barer tokens etc. are left up 
-to the handler implementation.  Authentication does not consider Rolls and Permissions it just validates the username/password. 
+Roles and Permissions and placing the User object on the Request.  Session management, barer tokens, etc. are left up 
+to the handler implementation.  Authentication does not consider Roles and Permissions: it only validates the username/password. 
 
-AuthHandler is the default authentication provider.  It currently supports HTTP basic auth along with, username/password 
-query string params and session tokens.  Additionally if an application chooses to provide a JWT signed with a User's
+AuthHandler is the default authentication provider.  It currently supports HTTP basic auth along with username/password 
+query string params and session tokens.  Additionally, if an application chooses to provide a JWT signed with a User's
 secretKey, the roles and permissions defined in the JWT will become the roles and permissions assigned to the 
-User for that request and any roles and permissions defined in the DB will not be used.  
+User for that request.  Any roles and permissions defined in the DB will not be used.  
  
 If you want to secure your Api, you have to configure an instance of the AuthHandler (or create your own custom authentication handler)
 and map it to the desired Endpoints through an Action. 
  
 Failing Authentication should return a 401 Unauthorized HTTP response code. (There is a longstanding gripe with HTTP status
-codes that 401 should be called something other than 'Unauthorized' because generally elswehere in software development
-authorization (see below) is the process of determining if a users can access requrested resources, NOT validating a users credentials.)
+codes that 401 should be called something other than 'Unauthorized' because generally elsewhere in software development
+authorization (see below) is the process of determining if a users can access requested resources, NOT validating a users credentials.)
  
 
 ### Authorization
 
-Authorization is managed by the AclHandler. If you want to use Role and Permission based authorization
+Authorization is managed by the AclHandler. If you want to use Role and Permission based authorization,
 you must configure an instance of the AclHandler (or create your own implementation) and associate it to
 the desired Endpoints through an Action.
 
@@ -519,7 +531,7 @@ then a 403 Forbidden HTTP status code is returned.
 
 ### Multi-Tenant APIs
 
-Api's can be flagged as 'multiTenant'.  If so, a tenantCode must immediately follow the apiCode in the URL.
+Apis can be flagged as 'multiTenant'.  If so, a tenantCode must immediately follow the apiCode in the URL.
 
 Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectionKey/[entityKey]```
 
@@ -541,15 +553,14 @@ tenantAcl.methods=GET,PUT,POST,DELETE
 
 ```
 
-Including this configuration will ensure that tenantId is always considered in queries (if it exists on the target Table) and can not be supplied by the caller, it will be pulled from the logged in
-user.
+Including this configuration will ensure that tenantId is always considered in queries (if it exists on the target Table) and can not be supplied by the caller, it will be pulled from the logged in user.
 
 
 ### Row Level Security
 
 The simplest way to restrict a user's interaction with a row is to provide a "userId" column on the
 table in question.  Then use an AclRule to "require/restrict" userId.  This way a user can only
-read and write the rows they 'own'.  You could user a different combination of AclRules to achieve
+read and write the rows they 'own'.  You could utilize a different combination of AclRules to achieve 
 permission based read and owner based write/delete.
 
 ```properties
@@ -660,7 +671,7 @@ dynamoEp.includePaths=dynamo*
 dynamoEp.methods=GET,POST,DELETE
 dynamoEp.handler=dynamoH
 dynamoEp.config=tableMap=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev&conditionalWriteConf=promo|attribute_not_exists(primarykey) OR enddate <= :enddate|enddate&appendTenantIdToPk=loyalty-punchcard
-```	
+```
 
 
 ## Developer Notes
@@ -765,6 +776,7 @@ dependencies {
 
   
 
+             
              
              
 

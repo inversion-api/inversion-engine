@@ -16,8 +16,10 @@
 package io.inversion.cloud.action.sql;
 
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -70,7 +72,7 @@ public class SqlDb extends Db<SqlDb>
    protected String               pass                     = null;
    protected int                  poolMin                  = 3;
    protected int                  poolMax                  = 10;
-   protected int                  idleConnectionTestPeriod = 3600;         // in seconds
+   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
@@ -78,12 +80,13 @@ public class SqlDb extends Db<SqlDb>
 
    protected int                  relatedMax               = 500;
 
+   protected List<String>         ddlUrls                  = new ArrayList();
+
    static
    {
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
       logger.setLevel(Level.WARN);
-      
-      
+
       //      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari.pool.PoolBase");
       //      logger.setLevel(Level.INFO);
 
@@ -148,13 +151,14 @@ public class SqlDb extends Db<SqlDb>
       withName(name);
    }
 
-   public SqlDb(String name, String driver, String url, String user, String pass)
+   public SqlDb(String name, String driver, String url, String user, String pass, String... ddlUrls)
    {
       withName(name);
       withDriver(driver);
       withUrl(url);
       withUser(user);
       withPass(pass);
+      withDdlUrl(ddlUrls);
    }
 
    @Override
@@ -200,15 +204,9 @@ public class SqlDb extends Db<SqlDb>
          db = (SqlDb) table.getDb();
       }
 
-      String selectKey = (table != null ? table.getKeyName() + "." : "") + "select";
+      String selectKey = (table != null ? table.getName() + "." : "") + "select";
 
       String selectSql = (String) Chain.peek().remove(selectKey);
-      //      if (Utils.empty(sql))
-      //      {
-      //         if (table == null)
-      //            throw new ApiException(SC.SC_400_BAD_REQUEST, "Table missing");
-      //         sql = " SELECT * FROM " + quoteCol(table.getName());
-      //      }
 
       SqlQuery query = new SqlQuery(table, columnMappedTerms);
       query.withDb(db);
@@ -257,8 +255,8 @@ public class SqlDb extends Db<SqlDb>
       }
       else
       {
-         String keyCol = table.getKeyName();
-         SqlUtils.upsert(getConnection(), table.getName(), keyCol, row);
+         //String keyCol = table.getKeyName();
+         SqlUtils.h2Upsert(getConnection(), table.getName(), table.getPrimaryIndex(), row);
       }
 
       if (key == null)
@@ -272,20 +270,23 @@ public class SqlDb extends Db<SqlDb>
       return key.toString();
    }
 
-   public void delete(Table table, List<String> entityKeys) throws Exception
+   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
    {
-      Index pk = table.getPrimaryIndex();
+      if (columnMappedIndexValues.size() == 0)
+         return;
 
-      if (pk.getColumns().size() == 1)
+      if (index.getColumns().size() == 1)
       {
-         List castKeys = new ArrayList();
-         for (String key : entityKeys)
-            castKeys.add(cast(pk.getColumn(0), key));
+         List values = new ArrayList();
+         for (Map entityKey : columnMappedIndexValues)
+         {
+            values.add(entityKey.values().iterator().next());
+         }
 
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
-         sql += " WHERE " + quoteCol(pk.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(entityKeys.size()) + ")";
-         SqlUtils.execute(getConnection(), sql, castKeys.toArray());
+         sql += " WHERE " + quoteCol(index.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
+         SqlUtils.execute(getConnection(), sql, values.toArray());
       }
       else
       {
@@ -294,25 +295,40 @@ public class SqlDb extends Db<SqlDb>
          sql += " WHERE ";
 
          List values = new ArrayList();
-         for (String entityKey : entityKeys)
+         for (Map<String, Object> entityKey : columnMappedIndexValues)
          {
             if (values.size() > 0)
                sql += " OR ";
             sql += "(";
-            Row row = table.decodeKey(entityKey);
+
             int i = 0;
-            for (String key : row.keySet())
+            for (String key : entityKey.keySet())
             {
                i++;
                if (i > 1)
                   sql += "AND ";
                sql += quoteCol(key) + " = ? ";
-               values.add(row.get(key));
+               values.add(entityKey.get(key));
             }
             sql += ")";
          }
          SqlUtils.execute(getConnection(), sql, values.toArray());
       }
+
+   }
+
+   public void delete(Table table, List<String> entityKeys) throws Exception
+   {
+      if (entityKeys.size() == 0)
+         return;
+
+      List<Map<String, Object>> keyMaps = new ArrayList();
+      for (String entityKey : entityKeys)
+      {
+         keyMaps.add(table.decodeKey(entityKey));
+      }
+
+      delete(table, table.getPrimaryIndex(), keyMaps);
    }
 
    @Override
@@ -337,7 +353,7 @@ public class SqlDb extends Db<SqlDb>
                synchronized (pools)
                {
                   //System.out.println("CREATING CONNECTION POOL: " + dsKey);
-                  
+
                   pool = pools.get(getName());
 
                   if (pool == null && !isShutdown())
@@ -363,8 +379,45 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   protected DataSource createConnectionPool()
+   protected DataSource createConnectionPool() throws Exception
    {
+      if (ddlUrls.size() > 0)
+      {
+         //createConnectionPool() should only be called once per DB
+         //ddlUrls are used to initialize the db...this is really 
+         //useful for things like embedded H2 db that are used for
+         //unit tests.  It could also be used for db upgrade scripts etc.
+         //
+         //it might seem logical to create the pool and then use the
+         //connection from the pool and close it but in practice that 
+         //was found to potentially introduce unintended closed 
+         //connection errors for some dbs...specifically h2 in testing
+         //so the initialization does not use the pool.
+
+         Class.forName(getDriver());
+         Connection conn = null;
+         try
+         {
+            conn = DriverManager.getConnection(getUrl(), getUser(), getPass());
+            conn.setAutoCommit(false);
+            for (String ddlUrl : ddlUrls)
+            {
+               SqlUtils.runDdl(conn, new URL(ddlUrl).openStream());
+            }
+            conn.commit();
+         }
+         catch (Exception ex)
+         {
+            conn.rollback();
+            log.warn("Error initializing db with supplied ddl.", ex);
+            throw ex;
+         }
+         finally
+         {
+            SqlUtils.close(conn);
+         }
+      }
+
       HikariConfig config = new HikariConfig();
       String driver = getDriver();
       config.setDriverClassName(driver);
@@ -611,6 +664,9 @@ public class SqlDb extends Db<SqlDb>
                   column.withUnique(unique);
                }
 
+               //this looks like it only supports single column indexes but if
+               //an index with this name already exists, that means this is another
+               //column in that index.
                table.makeIndex(column, idxName, idxType, unique);
 
             }
@@ -1078,6 +1134,16 @@ public class SqlDb extends Db<SqlDb>
    public SqlDb withRelatedMax(int relatedMax)
    {
       this.relatedMax = relatedMax;
+      return this;
+   }
+
+   public SqlDb withDdlUrl(String... ddlUrl)
+   {
+      for (int i = 0; ddlUrl != null && i < ddlUrl.length; i++)
+      {
+         ddlUrls.add(ddlUrl[i]);
+      }
+
       return this;
    }
 

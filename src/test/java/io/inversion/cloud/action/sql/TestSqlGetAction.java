@@ -10,9 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.rest.TestRestGetActions;
-import io.inversion.cloud.demo.Demo001SqlDbNorthwind;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;

@@ -67,7 +67,7 @@ public class TestJSNode extends TestCase
    /**
     * This test was developed for an error in diff/patch that could result in the same JSNode
     * appearing multiple times in the object graph and causing serialization problems.
-    * 
+    *
     * The fix was to copy the patches before applying or after computing inside to the JSNode methods
     */
    @Test
@@ -110,6 +110,24 @@ public class TestJSNode extends TestCase
 
       array2.patch(patches);
 
+   }
+
+   /**
+    * This test was developed to test the patch replace behavior, which caused a replacement of
+    * a value in a json package to be set to null instead of the new value
+    */
+   @Test
+   public void testDiff5()
+   {
+      List found = null;
+      JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
+      JSNode doc2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
+
+      JSArray patches = doc2.diff(doc1);
+
+      doc1.patch(patches);
+
+      assertTrue(doc1.toString().equals(doc2.toString()));
    }
 
 }

@@ -319,6 +319,11 @@ public class Request
       return "post".equalsIgnoreCase(method);
    }
 
+   public boolean isPatch()
+   {
+      return "patch".equalsIgnoreCase(method);
+   }
+
    public boolean isGet()
    {
       return "get".equalsIgnoreCase(method);

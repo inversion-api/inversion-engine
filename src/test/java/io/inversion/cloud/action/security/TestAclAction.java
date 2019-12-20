@@ -5,10 +5,6 @@ package io.inversion.cloud.action.security;
 
 import org.junit.Test;
 
-import io.inversion.cloud.demo.Demo002AclRules;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.service.MockActionA;
 import junit.framework.TestCase;
 
 /**

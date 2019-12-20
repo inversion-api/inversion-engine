@@ -23,9 +23,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -47,6 +49,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.inversion.cloud.model.Index;
 import io.inversion.cloud.utils.Rows.Row;
 
 /**
@@ -290,6 +293,20 @@ public class SqlUtils
                try
                {
                   o = rs.getObject(i + 1);
+
+                  if (o instanceof Clob)
+                  {
+                     Reader reader = ((Clob) o).getCharacterStream();
+                     char[] arr = new char[8 * 1024];
+                     StringBuilder buffer = new StringBuilder();
+                     int numCharsRead;
+                     while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1)
+                     {
+                        buffer.append(arr, 0, numCharsRead);
+                     }
+                     reader.close();
+                     o = buffer.toString();
+                  }
                }
                catch (Exception e)
                {
@@ -438,70 +455,6 @@ public class SqlUtils
       sql.append(getQuestionMarkStr(columnNameArray)).append(")");
 
       return sql.toString();
-   }
-
-   public static String buildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
-   {
-      StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
-      sql.append(" ON DUPLICATE KEY UPDATE ");
-      for (int i = 0; i < columnNameArray.length; i++)
-      {
-         Object col = columnNameArray[i];
-         sql.append("\r\n`").append(col).append("`= values(`").append(col).append("`)");
-         if (i < columnNameArray.length - 1)
-            sql.append(", ");
-      }
-      return sql.toString();
-   }
-
-   public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
-   {
-      LinkedHashSet keySet = new LinkedHashSet();
-      List<String> primaryKeys = new ArrayList<String>();
-
-      for (Map row : rows)
-      {
-         keySet.addAll(row.keySet());
-      }
-
-      List<String> keys = new ArrayList(keySet);
-      String sql = buildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
-
-      Exception ex = null;
-      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-      try
-      {
-         notifyBefore("upsert", sql, rows);
-
-         for (Map<String, Object> row : rows)
-         {
-            for (int i = 0; i < keys.size(); i++)
-            {
-               Object value = row.get(keys.get(i));
-               ((PreparedStatement) stmt).setObject(i + 1, value);
-            }
-            stmt.addBatch();
-         }
-         stmt.executeBatch();
-      }
-      catch (Exception e)
-      {
-         ex = e;
-         notifyError("upsert", sql, rows, ex);
-      }
-      finally
-      {
-         ResultSet rs = stmt.getGeneratedKeys();
-         while (rs.next())
-         {
-
-            String key = rs.getString(1);
-            primaryKeys.add(key);
-         }
-         SqlUtils.close(stmt);
-         notifyAfter("upsert", sql, rows, ex, null);
-      }
-      return primaryKeys;
    }
 
    public static Object insertMap(Connection conn, String tableName, Map row) throws Exception
@@ -757,7 +710,7 @@ public class SqlUtils
    +------------------------------------------------------------------------------+
     */
 
-   public static Object upsert(Connection conn, String tableName, String keyCol, Map<String, Object> row) throws Exception
+   public static Object h2Upsert(Connection conn, String tableName, Index index, Map<String, Object> row) throws Exception
    {
       String sql = "";
 
@@ -769,10 +722,97 @@ public class SqlUtils
          vals.add(row.get(col));
       }
 
-      sql += " MERGE INTO " + quote(conn, tableName) + " (" + SqlUtils.getColumnStr(conn, cols) + ")  KEY(" + keyCol + ") VALUES (" + getQuestionMarkStr(vals.size()) + ")";
+      String keyCols = "";
+      for (int i = 0; i < index.size(); i++)
+      {
+         keyCols += quote(conn, index.getColumn(i).getName());
+         if (i < index.size() - 1)
+            keyCols += ", ";
+      }
 
-      return execute(conn, sql, vals);
+      sql += " MERGE INTO " + quote(conn, tableName) + " (" + SqlUtils.getColumnStr(conn, cols) + ")  KEY(" + keyCols + ") VALUES (" + getQuestionMarkStr(vals.size()) + ")";
 
+      Exception ex = null;
+      try
+      {
+         notifyBefore("upsert", sql, row);
+         return execute(conn, sql, vals);
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("upsert", sql, row, ex);
+         throw e;
+      }
+      finally
+      {
+         notifyAfter("upsert", sql, row, ex, null);
+      }
+   }
+
+   public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
+   {
+      LinkedHashSet keySet = new LinkedHashSet();
+      List<String> primaryKeys = new ArrayList<String>();
+
+      for (Map row : rows)
+      {
+         keySet.addAll(row.keySet());
+      }
+
+      List<String> keys = new ArrayList(keySet);
+      String sql = buildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
+
+      Exception ex = null;
+      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+      try
+      {
+         notifyBefore("upsert", sql, rows);
+
+         for (Map<String, Object> row : rows)
+         {
+            for (int i = 0; i < keys.size(); i++)
+            {
+               Object value = row.get(keys.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1, value);
+            }
+            stmt.addBatch();
+         }
+         stmt.executeBatch();
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("upsert", sql, rows, ex);
+         throw e;
+      }
+      finally
+      {
+         ResultSet rs = stmt.getGeneratedKeys();
+         while (rs.next())
+         {
+
+            String key = rs.getString(1);
+            primaryKeys.add(key);
+         }
+         SqlUtils.close(stmt);
+         notifyAfter("upsert", sql, rows, ex, null);
+      }
+      return primaryKeys;
+   }
+
+   public static String buildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
+   {
+      StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
+      sql.append(" ON DUPLICATE KEY UPDATE ");
+      for (int i = 0; i < columnNameArray.length; i++)
+      {
+         Object col = columnNameArray[i];
+         sql.append("\r\n`").append(col).append("`= values(`").append(col).append("`)");
+         if (i < columnNameArray.length - 1)
+            sql.append(", ");
+      }
+      return sql.toString();
    }
 
    /*
@@ -1292,6 +1332,8 @@ public class SqlUtils
             case Types.LONGVARCHAR:
             case Types.LONGNVARCHAR:
                return object.toString();
+            case Types.CLOB:
+               return object.toString().trim();
             case Types.NUMERIC:
             case Types.DECIMAL:
                return new BigDecimal(object.toString());
