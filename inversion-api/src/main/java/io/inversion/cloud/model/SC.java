@@ -39,6 +39,7 @@ public class SC
    public static final String         SC_404_NOT_FOUND             = "404 Not Found";
    public static final String         SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
    public static final String         SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
+   public static final String         SC_501_NOT_IMPLEMENTED       = "501 Not Implemented";
 
    public static Map<Integer, String> SC_MAP                       = new HashMap<>();
    static
@@ -53,6 +54,7 @@ public class SC
       SC_MAP.put(404, SC_404_NOT_FOUND);
       SC_MAP.put(429, SC_429_TOO_MANY_REQUESTS);
       SC_MAP.put(500, SC_500_INTERNAL_SERVER_ERROR);
+      SC_MAP.put(501, SC_501_NOT_IMPLEMENTED);
    }
 
    public static boolean matches(Object responseCode, int... choices)
