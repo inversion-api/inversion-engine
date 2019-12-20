@@ -100,6 +100,16 @@ public class Utils
       return obj1.toString().equals(obj2.toString());
    }
 
+   public static boolean in(Object toFind, Object... values)
+   {
+      for (Object val : values)
+      {
+         if (equal(toFind, val))
+            return true;
+      }
+      return false;
+   }
+
    /**
     * @return true if any args are not null with a toString().length() > 0 
     */
