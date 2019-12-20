@@ -1,4 +1,4 @@
-rootProject.name = 'inversion-framework'
+rootProject.name = 'inversion'
 
 include 'inversion-api'
 include 'inversion-demos'
