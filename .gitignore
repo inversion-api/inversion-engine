@@ -20,23 +20,21 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+
+.classpath
 .DS_Store
-classes/
-output/
-/.gradle/
-/bin/
-/.settings/
-/.classpath
-/.project
-/build/
-/logs/
+.env
+.gradle
+.h2
+.idea
+.project
+.settings
+bin
+build
+classes
+output
+logs
 
-snooze99.properties
-/northwind.mv.db
-/northwind.trace.db
-/.h2/
-/.env
-
-.*.md.html
-/inversion.properties
-/inversion.properties.merged
+inversion99.properties
+northwind.mv.db
+northwind.trace.db

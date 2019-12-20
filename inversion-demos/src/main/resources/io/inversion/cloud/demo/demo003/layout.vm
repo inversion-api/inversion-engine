@@ -1,0 +1,14 @@
+
+--- START ROOT/layout.vm
+
+root wrapper
+<table border="1">
+	<tr>
+		<td>
+			$content
+		</td>
+	</tr>
+</table>
+
+
+--- END ROOT/layout.vm

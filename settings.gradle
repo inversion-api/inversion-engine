@@ -1,0 +1,13 @@
+rootProject.name = 'inversion-framework'
+
+include 'inversion-api'
+include 'inversion-demos'
+include 'inversion-dynamodb'
+include 'inversion-elasticsearch'
+include 'inversion-kinesis'
+include 'inversion-lambda'
+include 'inversion-redis'
+include 'inversion-s3'
+include 'inversion-script'
+include 'inversion-spring-boot'
+

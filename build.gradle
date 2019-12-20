@@ -1,75 +1,125 @@
 buildscript {
-  repositories {
-    maven {
-      url 'https://plugins.gradle.org/m2/'
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
     }
-  }
-  dependencies {
-    classpath 'net.researchgate:gradle-release:2.6.0'
-  }
+
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.+'
+    }
 }
 
 plugins {
-  id 'eclipse'
-  id 'maven'
-  id 'java'
-}
-apply plugin: 'net.researchgate.release'
-
-
-
-group = 'com.github.inversion-api'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-   mavenLocal()
-   mavenCentral()
-   maven { url 'https://jitpack.io' }
+  id "java-library"
+  id "maven-publish"
+  id "net.researchgate.release" version "2.8.1"
 }
 
-configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
-
-apply from: 'build.prj.gradle'
-
-eclipse {
-   classpath {
-      file {
-         tasks.eclipse.dependsOn(cleanEclipseClasspath)
-         tasks.eclipse.dependsOn("create-dirs")
-      }
-   }
-}
-
-task "create-dirs" {
-   doLast {
-      sourceSets*.java.srcDirs*.each { it.mkdirs() }
-      sourceSets*.resources.srcDirs*.each { it.mkdirs() }
-   }
+allprojects {
 }
 
 
-task writeNewPom {
-    doLast {
-        pom {
-            project {
-                inceptionYear '2015',
-                organization {
-                	name 'Rocket Partners, LLC'
-                	url 'https://github.com/inversion-api/' + project.name
-                }
-                licenses {
-                    license {
-                        name 'GNU AFFERO GENERAL PUBLIC LICENSE'
-                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
-                        distribution 'repo'
-                    }
-                }
-            }
-        }.writeTo("pom.xml")
-    }
+subprojects {
+	
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+
+	group = 'io.inversion'
+
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+	
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven { url 'https://jitpack.io' }
+	}
+
+	dependencies {
+		testCompile 'junit:junit:4.12'
+	}
+	
+	task sourcesJar(type: Jar) {
+	    from sourceSets.main.allJava
+	    archiveClassifier = 'sources'
+	}
+	
+	javadoc.failOnError = false
+	task javadocJar(type: Jar) {
+	    from javadoc
+	    archiveClassifier = 'javadoc'
+	}
+	
+	publishing {
+	    publications {
+	        mavenJava(MavenPublication) {
+	            artifactId = project.name
+	            from components.java
+	            artifact sourcesJar
+	            artifact javadocJar
+	            versionMapping {
+	                usage('java-api') {
+	                    fromResolutionOf('runtimeClasspath')
+	                }
+	                usage('java-runtime') {
+	                    fromResolutionResult()
+	                }
+	            }
+	            pom {
+	                name = project.name
+	                description = 'Inversion Cloud API Engine'
+	                url = 'http://inversion.io'
+	                //properties = [
+	                //    myProp: "value",
+	                //    "prop.with.dots": "anotherValue"
+	                //]
+	                licenses {
+	                    license {
+	                        name = 'The Apache License, Version 2.0'
+	                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+	                    }
+	                }
+	                developers {
+	                    developer {
+	                        id = 'inversion'
+	                        name = 'Rocket Partners'
+	                        email = 'hello@rocketpartners.io'
+	                    }
+	                }
+	                scm {
+	                    connection = 'https://github.com/inversion-api/inversion-engine.git'
+	                    developerConnection = 'https://github.com/inversion-api/inversion-engine.git'
+	                    url = 'http://inversion.io'
+	                }
+	            }
+	        }
+	    }
+	}
+	
+	//https://github.com/bintray/gradle-bintray-plugin#plugin-dsl
+	bintray {
+		user = System.getProperty('bintray.user')
+		key = System.getProperty('bintray.key')
+		publications = ['mavenJava']
+	    publish = true
+	
+		pkg {
+			repo = 'repo'
+			name = project.name
+			licenses = ['Apache-2.0']
+			websiteUrl = 'http://inversion.io'
+	        issueTrackerUrl = 'https://github.com/inversion-api/inversion-engine/issues'
+	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
+	
+	        licenses = ['Apache-2.0']
+	        labels = ['rest', 'api', 'mysql', 'dynamodb']
+			
+			version {
+				name = project.version
+				released  = new Date()
+			}
+		}
+	}
 }
-
-
-
-    

@@ -1,0 +1,12 @@
+--- START reportA/list.vm
+
+#set($orders = $engine.get("/northwind/db/orders").data())
+
+<ul>
+#foreach( $order in $orders )
+    <li>$order.href</li>
+#end
+</ul>
+
+--- END reportA/list.vm
+
