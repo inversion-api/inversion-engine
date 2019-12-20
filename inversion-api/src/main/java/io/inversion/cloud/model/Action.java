@@ -51,7 +51,41 @@ public abstract class Action<A extends Action> extends Rule<A>
 
    public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
+      if (req.isGet())
+         doGet(engine, api, endpoint, chain, req, res);
+      else if (req.isPost())
+         doPost(engine, api, endpoint, chain, req, res);
+      else if (req.isPut())
+         doPut(engine, api, endpoint, chain, req, res);
+      else if (req.isPatch())
+         doPatch(engine, api, endpoint, chain, req, res);
+      else if (req.isDebug())
+         doDelete(engine, api, endpoint, chain, req, res);
+   }
 
+   public void doGet(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+   }
+
+   public void doPost(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+   }
+
+   public void doPut(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+   }
+
+   public void doPatch(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+   }
+
+   public void doDelete(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   {
+      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }
 
    @Override
