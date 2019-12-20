@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.inversion.cloud.utils.SimpleTokenizer;
 import io.inversion.cloud.utils.Utils;
 
 public class JSNode implements Map<String, Object>
@@ -240,40 +241,139 @@ public class JSNode implements Map<String, Object>
       return (JSArray) find(path);
    }
 
-   public Object find(String path)
+   /**
+    * Calls collect(jsonPath, 1) and returns
+    * the first element of the response JSArray
+    * or returns null it nothing was found. 
+    * 
+    * @see collect(jsonPath, qty);
+    * @param jsonPath
+    * @return
+    */
+   public Object find(String jsonPath)
    {
-      List<String> props = Utils.explode("\\.", path);
-
-      Object obj = this;
-      for (String prop : props)
-      {
-         if (obj == null)
-            break;
-         obj = ((JSNode) obj).get(prop);
-      }
-      return obj;
+      JSArray found = collect(jsonPath, 1);
+      if(found.size() > 0)
+         return found.get(0);
+      
+      return null;
    }
 
-   public List<JSNode> collectNodes(String pathStr)
+   public List<JSNode> collectNodes(String jsonPath)
    {
-      return (List<JSNode>) collect(pathStr);
+      return (List<JSNode>) collect(jsonPath);
    }
 
-   public List collect(String pathStr)
+   /**
+    * @see collect(jsonPath, quantity)
+    */
+   public JSArray collect(String jsonPath)
    {
-      List<String> path = Utils.explode("\\.", pathStr);
-      return collect(path, new ArrayList());
+      return collect(jsonPath, -1);
    }
 
-   protected List collect(List<String> path, List collected)
+   /**
+    * Runs the JsonPath expression against this node and
+    * its children and returns any matching values.
+    *
+    * For an json path reference see:
+    * <ul>
+    *   <li> https://goessner.net/articles/JsonPath/
+    *   <li> https://github.com/json-path/JsonPath
+    * </ul>
+    * 
+    * Below is the implementation status of various JsonPath features:
+    * <ul>
+    *  <li>SUPPORTED $.store.book[*].author
+    *  <li>SUPPORTED $..author
+    *  <li>SUPPORTED $.store..price
+    *  <li>SUPPORTED $..book[2]
+    *  <li>SUPPORTED $..book[?(@.price<10)]
+    *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]
+    *  <li>SUPPORTED $..*
+    *  <li>TODO      $..book[(@.length-1)]
+    *  <li>TODO      $..book[-1:]
+    *  <li>TODO      $..book[0,1]
+    *  <li>TODO      $..book[:2]
+    *  <li>TODO      $..book[?(@.isbn)]
+    * </ul>
+    * 
+    * The following boolean comparison operators are supported: 
+    * <ul>
+    *  <li> =
+    *  <li>>
+    *  <li><
+    *  <li>>=
+    *  <li><=
+    *  <li>!=
+    * </ul>
+    * 
+    * <p>
+    * In addition to the above JsonPath syntax, a "relaxed" wildcard
+    * syntax is also supported. '*' is used to represent a single level
+    * of freedom and '**' is used to represent freedom to match at any
+    * depth.  Additionally, JsonPath uses array[idx] or array[*] notation
+    * and the simplified wildcard supports array.${idxNum}.property 
+    * or array.*.property or array.**.property
+    * 
+    */
+   public JSArray collect(String jsonPath, int qty)
    {
+      jsonPath = fromJsonPath(jsonPath);
+      return new JSArray(collect0(jsonPath, qty));
+   }
+
+   public static String fromJsonPath(String jsonPath)
+   {
+      if (jsonPath.charAt(0) == '$')
+         jsonPath = jsonPath.substring(1, jsonPath.length());
+
+      jsonPath = jsonPath.replace("@.", "@_"); //from jsonpath spec..switching to "_" to make parsing easier
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[", "$1.["); //from json path spec array[index] converted to array.[index]. to support arra.index.value legacy format.
+      jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
+      jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
+      jsonPath = jsonPath.replace("[*]", "*");
+
+      //System.out.println(pathStr);
+      return jsonPath;
+   }
+
+   protected List collect0(String jsonPath, int qty)
+   {
+      SimpleTokenizer tok = new SimpleTokenizer(//
+                                                "['\"", //openQuoteStr
+                                                "]'\"", //closeQuoteStr
+                                                "]", //breakIncludedChars
+                                                ".", //breakExcludedChars
+                                                "", //unquuotedIgnoredChars
+                                                ". \t", //leadingIgoredChars
+                                                jsonPath //chars
+      );
+
+      List<String> path = tok.asList();
+      return collect0(path, qty, new ArrayList());
+   }
+
+   protected List collect0(List<String> path, int qty, List collected)
+   {
+      if (qty > 1 && collected.size() >= qty)
+         return collected;
+
       String nextSegment = path.get(0);
 
       if ("*".equals(nextSegment))
       {
          if (path.size() == 1)
          {
-            collected.addAll(values());
+            Collection values = values();
+
+            for (Object value : values)
+            {
+               if (qty < 1 || collected.size() < qty)
+                  collected.add(value);
+            }
          }
          else
          {
@@ -282,7 +382,7 @@ public class JSNode implements Map<String, Object>
             {
                if (value instanceof JSNode)
                {
-                  ((JSNode) value).collect(nextPath, collected);
+                  ((JSNode) value).collect0(nextPath, qty, collected);
                }
             }
          }
@@ -292,17 +392,87 @@ public class JSNode implements Map<String, Object>
          if (path.size() == 1)
          {
             //** does not collect anything.  **/* would collect everything
-            //collected.addAll(values());
          }
          else
          {
             List<String> nextPath = path.subList(1, path.size());
+
+            this.collect0(nextPath, qty, collected);
+
             for (Object value : values())
             {
                if (value instanceof JSNode)
                {
-                  ((JSNode) value).collect(path, collected);
-                  ((JSNode) value).collect(nextPath, collected);
+                  ((JSNode) value).collect0(path, qty, collected);
+               }
+            }
+         }
+      }
+      //      else if (this instanceof JSArray && nextSegment.startsWith("[") && nextSegment.endsWith("]"))
+      else if (nextSegment.startsWith("[") && nextSegment.endsWith("]"))
+      {
+         //this is a JSONPath filter that is not just an array index
+         String expr = nextSegment.substring(1, nextSegment.length() - 1).trim();
+         if (expr.startsWith("?(") && expr.endsWith(")"))
+         {
+            SimpleTokenizer tokenizer = new SimpleTokenizer(//
+                                                            "'\"", //openQuoteStr
+                                                            "'\"", //closeQuoteStr
+                                                            "]?", //breakIncludedChars
+                                                            " ", //breakExcludedChars
+                                                            "()", //unquuotedIgnoredChars
+                                                            ". \t", //leadingIgoredChars
+                                                            expr //chars
+            );
+
+            String token = null;
+            String func = null;
+            String subpath = null;
+            String op = null;
+            String value = null;
+
+            while ((token = tokenizer.next()) != null)
+            {
+               if (token.equals("?"))
+               {
+                  func = "?";
+                  continue;
+               }
+
+               if ("?".equals(func))
+               {
+                  if (token.startsWith("@_"))
+                  {
+                     subpath = token.substring(2);
+                  }
+                  else if (op == null && Utils.in(token, "=", ">", "<", ">=", "<=", "!="))
+                  {
+                     op = token;
+                  }
+                  else if (subpath != null && op != null && value == null)
+                  {
+                     value = token;
+
+                     for (Object child : values())
+                     {
+                        if (child instanceof JSNode)
+                        {
+                           List found = ((JSNode) child).collect0(subpath, -1);
+                           for (Object val : found)
+                           {
+                              if (eval(val, op, value))
+                              {
+                                 if (qty < 1 || collected.size() < qty)
+                                    collected.add(child);
+                              }
+                           }
+                        }
+                     }
+                     func = null;
+                     subpath = null;
+                     op = null;
+                     value = null;
+                  }
                }
             }
          }
@@ -322,16 +492,66 @@ public class JSNode implements Map<String, Object>
          {
             if (path.size() == 1)
             {
-               collected.add(found);
+               if (qty < 1 || collected.size() < qty)
+                  collected.add(found);
             }
             else if (found instanceof JSNode)
             {
-               ((JSNode) found).collect(path.subList(1, path.size()), collected);
+               ((JSNode) found).collect0(path.subList(1, path.size()), qty, collected);
             }
          }
       }
 
       return collected;
+   }
+
+   boolean eval(Object var, String op, Object value)
+   {
+      value = Utils.dequote(value.toString());
+
+      if (var instanceof Number)
+      {
+         try
+         {
+            value = Double.parseDouble(value.toString());
+         }
+         catch (Exception ex)
+         {
+            //ok, value was not a number...ignore
+         }
+      }
+
+      if (var instanceof Boolean)
+      {
+         try
+         {
+            value = Boolean.parseBoolean(value.toString());
+         }
+         catch (Exception ex)
+         {
+            //ok, value was not a boolean...ignore
+         }
+      }
+
+      int comp = ((Comparable) var).compareTo(value);
+
+      switch (op)
+      {
+         case "=":
+            return comp == 0;
+         case ">":
+            return comp > 0;
+         case ">=":
+            return comp >= 0;
+         case "<":
+            return comp < 0;
+         case "<=":
+            return comp <= 0;
+         case "!=":
+            return comp != 0;
+         default :
+            throw new UnsupportedOperationException("Unknown operator '" + op + "'");
+      }
    }
 
    @Override
@@ -367,35 +587,44 @@ public class JSNode implements Map<String, Object>
       return prop;
    }
 
-   public JSNode with(Object... nvPairs)
-   {
-      if(nvPairs == null || nvPairs.length == 0)
-         return this;
-      
-      if(nvPairs.length % 2 != 0)
-         throw new RuntimeException("You must supply an even number of arguments to JSNode.with()");
-      
-      for (int i = 0; i < nvPairs.length - 1; i += 2)
-      {
-         Object value = nvPairs[i + 1];
-         
-         if(value instanceof Map && !(value instanceof JSNode))
-               throw new RuntimeException("Invalid map value");
-               
-         if(value instanceof List && !(value instanceof JSArray))
-            throw new RuntimeException("Invalid list value");
-
-         put(nvPairs[i] + "", value);
-      }
-      
-      return this;
-   }
-
    @Override
    public Object put(String name, Object value)
    {
       Property prop = properties.put(name.toLowerCase(), new Property(name, value));
       return prop;
+   }
+
+   @Override
+   public void putAll(Map map)
+   {
+      for (Object key : map.keySet())
+      {
+         put(key.toString(), map.get(key.toString()));
+      }
+   }
+
+   public JSNode with(Object... nvPairs)
+   {
+      if (nvPairs == null || nvPairs.length == 0)
+         return this;
+
+      if (nvPairs.length % 2 != 0)
+         throw new RuntimeException("You must supply an even number of arguments to JSNode.with()");
+
+      for (int i = 0; i < nvPairs.length - 1; i += 2)
+      {
+         Object value = nvPairs[i + 1];
+
+         if (value instanceof Map && !(value instanceof JSNode))
+            throw new RuntimeException("Invalid map value");
+
+         if (value instanceof List && !(value instanceof JSArray))
+            throw new RuntimeException("Invalid list value");
+
+         put(nvPairs[i] + "", value);
+      }
+
+      return this;
    }
 
    public Property getProperty(String name)
@@ -584,15 +813,6 @@ public class JSNode implements Map<String, Object>
    public Set entrySet()
    {
       return asMap().entrySet();
-   }
-
-   @Override
-   public void putAll(Map map)
-   {
-      for (Object key : map.keySet())
-      {
-         put(key.toString(), map.get(key.toString()));
-      }
    }
 
    //--------------------------------------------------------------------------------------
@@ -872,5 +1092,4 @@ public class JSNode implements Map<String, Object>
       }
       json.writeEndObject();
    }
-
 }

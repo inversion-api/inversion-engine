@@ -18,6 +18,7 @@ package io.inversion.cloud.model;
 
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 
 import io.inversion.cloud.utils.Utils;
@@ -25,20 +26,102 @@ import junit.framework.TestCase;
 
 public class TestJSNode extends TestCase
 {
+
+   @Test
+   public void testJsonPath1()
+   {
+
+      assertEquals("**.book.[(@_length-1)]", JSNode.fromJsonPath("$..book[(@.length-1)]"));
+      assertEquals("**.book.[0,1]", JSNode.fromJsonPath("$..book[0,1]"));
+      assertEquals("book.0.asdf", JSNode.fromJsonPath("book[0].asdf"));
+      assertEquals(".store.**.price", JSNode.fromJsonPath(".store..price"));
+
+      JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+      JSArray found1 = null;
+      JSArray found2 = null;
+
+      found1 = doc.collect("$..book[?(@.author = 'Herman Melville')]");
+
+      assertEquals(1, found1.size());
+      assertEquals("Herman Melville", found1.find("0.author"));
+
+      found1 = doc.collect("$.store..price");
+      assertEquals(5, found1.size());
+
+      found2 = doc.collect("**.store.**.price");
+      assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
+
+      found1 = doc.collect("$..book[2]");
+      found2 = doc.collect("**.book.2");
+
+      assertEquals("Herman Melville", found1.find("0.author"));
+      assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
+
+      found1 = doc.collect("$..*");
+      found2 = doc.collect("**.*");
+      assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
+
+      found1 = doc.collect("$.store.book[*].author");
+      found2 = doc.collect("store.book.*.author");
+      assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
+
+      assertEquals(0, CollectionUtils.disjunction(found1, doc.collect("**.store.book.*.author")).size());
+
+      assertEquals(0, doc.collect("*.store.book.*.author").size());
+
+      found1 = doc.collect("$..book[?(@.price = 12.99)]");
+      assertEquals(1, found1.size());
+
+      
+      found1 = doc.collect("$..book[?(@.price >= 12.99)]");
+      System.out.println(found1);
+      assertEquals(2, found1.size());
+
+      found1 = doc.collect("$..book[?(@.price != 8.99)]");
+      System.out.println(found1);
+      assertEquals(3, found1.size());
+
+      
+      found1 = doc.collect("$..book[?(@.price != 100)]");
+      System.out.println(found1);
+      assertEquals(4, found1.size());
+      
+      found1 = doc.collect("**.bicycle");
+      System.out.println(found1);
+      assertEquals(1, found1.size());
+      
+      found1 = doc.collect("**.*.[?(@.price != 100)]");
+      System.out.println(found1);
+      assertEquals(5, found1.size());
+      
+      found1 = doc.collect("$..[?(@.price != 100)]");
+      System.out.println(found1);
+      assertEquals(5, found1.size());
+      
+      
+      found1 = doc.collect("$..[?(@.price != 100)]", 1);
+      System.out.println(found1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.collect("$..[?(@.price != 100)]", 3);
+      System.out.println(found1);
+      assertEquals(3, found1.size());
+   }
+
    @Test
    public void testWith()
    {
-      JSArray arr = new JSArray(1,2,3,4);
+      JSArray arr = new JSArray(1, 2, 3, 4);
       JSNode node = new JSNode().with("name", "value", "name2", "value2", "arr", arr);
       assertEquals("value", node.find("name"));
       assertEquals("value2", node.find("name2"));
       assertEquals(arr, node.find("arr"));
    }
-   
+
    @Test
    public void testCollectNodes1()
    {
-      List found = null;
+      JSArray found = null;
       JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
       found = doc.collect("data.*.basket.lineItems.code");
@@ -78,18 +161,7 @@ public class TestJSNode extends TestCase
       System.out.println(found);
    }
 
-   //   @Test
-   //   public void testDiff2()
-   //   {
-   //
-   //      JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff2.1.json")));
-   //      JSArray patches = JSNode.parseJsonArray(Utils.read(getClass().getResourceAsStream("testDiff2.2.json")));
-   //
-   //      doc1.patch(patches);
-   //      System.out.println(doc1);
-   //      assertEquals("028000003647", doc1.findString("0.basket.lineItems.1.code"));
-   //   }
-   //
+
    /**
     * This test was developed for an error in diff/patch that could result in the same JSNode
     * appearing multiple times in the object graph and causing serialization problems.
