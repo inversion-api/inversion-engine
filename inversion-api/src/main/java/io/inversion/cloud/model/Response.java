@@ -295,6 +295,17 @@ public class Response
    {
       return getJson().find(path);
    }
+   
+   public Validation validate(String jsonPath)
+   {
+      return validate(jsonPath, null);
+   }
+
+   public Validation validate(String jsonPath, String customErrorMessage)
+   {
+      return new Validation(this, jsonPath, customErrorMessage);
+   }
+   
 
    public JSArray data()
    {
