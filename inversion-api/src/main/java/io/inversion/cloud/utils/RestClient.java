@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,6 +54,8 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 
+import com.zaxxer.hikari.util.ConcurrentBag.IBagStateListener;
+
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -78,7 +80,8 @@ public class RestClient
    protected String                                 name           = null;
    protected String                                 version        = "1";
    protected String                                 url            = null;
-   protected ArrayListValuedHashMap<String, String> headers        = new ArrayListValuedHashMap();
+   protected ArrayListValuedHashMap<String, String> forcedHeaders  = new ArrayListValuedHashMap();
+   protected boolean                                forwardHeaders = false;
 
    //-- networking and pooling specific properties
    protected Executor                               pool           = null;
@@ -109,6 +112,11 @@ public class RestClient
 
    public FutureResponse call(String method, String path, String query, JSNode body, int retries)
    {
+      return call(method, path, query, body, retries, null);
+   }
+
+   public FutureResponse call(String method, String path, String query, JSNode body, int retries, ArrayListValuedHashMap<String, String> headers)
+   {
       String url = getUrl();
       if (path != null)
       {
@@ -127,7 +135,6 @@ public class RestClient
          //TODO: this internal 'shortcut' is not actually multi threaded
          FutureResponse future = new FutureResponse()
             {
-
                @Override
                public void run()
                {
@@ -176,33 +183,29 @@ public class RestClient
       return this;
    }
 
-   public ArrayListValuedHashMap<String, String> getHeaders()
+   public ArrayListValuedHashMap<String, String> getForcedHeaders()
    {
-      return headers;
+      return forcedHeaders;
    }
 
-   public RestClient withHeader(String name, String value)
+   public RestClient withForcedHeader(String name, String value)
    {
-      headers.put(name, value);
+      forcedHeaders.put(name, value);
       return this;
    }
-   
-   public RestClient withForwardedHeaders()
 
-   {
-
-      headers.putAll(Chain.peek().getRequest().getHeaders());
-
-      return this;
-
-   }
-
-   public RestClient withHeaders(String... headers)
+   public RestClient withForcedHeaders(String... headers)
    {
       for (int i = 0; i < headers.length - 1; i += 2)
       {
-         withHeader(headers[i], headers[i + 1]);
+         withForcedHeader(headers[i], headers[i + 1]);
       }
+      return this;
+   }
+
+   public RestClient withForwardedHeaders(boolean forwardHeaders)
+   {
+      this.forwardHeaders = forwardHeaders;
       return this;
    }
 
@@ -337,24 +340,52 @@ public class RestClient
    //---------------------------------------------------------------------------------------------------------------------
    //---------------------------------------------------------------------------------------------------------------------
 
-   private FutureResponse rest(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
+   private FutureResponse rest(String method, String url, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
    {
-      return rest(new Request(method, url, body, headers, retryAttempts));
+      return rest(new Request(method, url, body, callHeaders, retryAttempts));
    }
 
-   private FutureResponse rest(final Request request)
+   private FutureResponse rest(final Request outboundRequest)
    {
       final FutureResponse future = new FutureResponse()
          {
             public void run()
             {
-               String m = request.getMethod();
-               String url = request.getUrl().toString();
-               ArrayListValuedHashMap<String, String> headers = request.getHeaders();
+               String m = outboundRequest.getMethod();
+               String url = outboundRequest.getUrl().toString();
 
-               if (headers == null)
+               ArrayListValuedHashMap<String, String> outboundHeaders = new ArrayListValuedHashMap();
+
+               if (outboundRequest.getHeaders() != null)
                {
-                  headers = new ArrayListValuedHashMap();
+                  outboundHeaders.putAll(outboundRequest.getHeaders());
+               }
+
+               if (forcedHeaders.size() > 0)
+               {
+                  for (String key : forcedHeaders.keySet())
+                  {
+                     outboundHeaders.remove(key);
+                     outboundHeaders.putAll(key, forcedHeaders.get(key));
+                  }
+               }
+
+               if (forwardHeaders)
+               {
+                  Chain chain = Chain.first();//gets the root chain
+                  if (chain != null)
+                  {
+                     Request originalInboundRequest = chain.getRequest();
+                     ArrayListValuedHashMap<String, String> inboundHeaders = originalInboundRequest.getHeaders();
+                     if (inboundHeaders != null)
+                     {
+                        for (String key : inboundHeaders.keySet())
+                        {
+                           if (!outboundHeaders.containsKey(key))
+                              outboundHeaders.putAll(key, inboundHeaders.get(key));
+                        }
+                     }
+                  }
                }
 
                boolean retryable = true;
@@ -388,15 +419,15 @@ public class RestClient
                      if (this.getRetryFile() != null && this.getRetryFile().length() > 0)
                      {
                         long range = this.getRetryFile().length();
-                        headers.remove("Range");
-                        headers.put("Range", "bytes=" + range + "-");
+                        outboundHeaders.remove("Range");
+                        outboundHeaders.put("Range", "bytes=" + range + "-");
 
                         debug("RANGE REQUEST HEADER ** " + range);
                      }
                   }
                   else if ("delete".equalsIgnoreCase(m))
                   {
-                     if (request.getBody() != null)
+                     if (outboundRequest.getBody() != null)
                      {
                         req = new HttpDeleteWithBody(url);
                      }
@@ -406,19 +437,19 @@ public class RestClient
                      }
                   }
 
-                  for (String key : headers.keySet())
+                  for (String key : outboundHeaders.keySet())
                   {
-                     List<String> values = headers.get(key);
+                     List<String> values = outboundHeaders.get(key);
                      for (String value : values)
                      {
                         req.setHeader(key, value);
                         response.debug(key, value);
                      }
                   }
-                  if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
+                  if (outboundRequest.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
                   {
                      response.debug("\r\n--request body--------");
-                     ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
+                     ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(outboundRequest.getBody(), "UTF-8"));
                   }
 
                   RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout).setConnectTimeout(timeout).setConnectionRequestTimeout(timeout).build();
@@ -529,7 +560,7 @@ public class RestClient
 
                   // If this is a retryable response, submit it later
                   // Since we resetRetryCount upon any successful response, we are still guarding against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
-                  if (retryable && this.getRetryCount() < request.getRetryAttempts() && !response.isSuccess() && this.getTotalRetries() < totalRetryMax)
+                  if (retryable && this.getRetryCount() < outboundRequest.getRetryAttempts() && !response.isSuccess() && this.getTotalRetries() < totalRetryMax)
                   {
                      this.incrementRetryCount();
 
