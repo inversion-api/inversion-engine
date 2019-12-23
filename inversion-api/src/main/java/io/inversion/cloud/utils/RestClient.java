@@ -186,6 +186,16 @@ public class RestClient
       headers.put(name, value);
       return this;
    }
+   
+   public RestClient withForwardedHeaders()
+
+   {
+
+      headers.putAll(Chain.peek().getRequest().getHeaders());
+
+      return this;
+
+   }
 
    public RestClient withHeaders(String... headers)
    {
