@@ -34,22 +34,31 @@ public class TestSimpleTokenizer extends TestCase
                                                     ". \t" //leadingIgoredChars
       );
 
-      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
+//      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
 
       SimpleTokenizer exprTok = new SimpleTokenizer(//
                                                     "'\"", //openQuoteStr
                                                     "'\"", //closeQuoteStr
-                                                    "?", //breakIncludedChars
-                                                    "] ", //breakExcludedChars
+                                                    "?=<>!", //breakIncludedChars...breakAfter
+                                                    "]=<>! ", //breakExcludedChars...breakBefore
                                                     "[()", //unquuotedIgnoredChars
-                                                    ". \t" //leadingIgoredChars
+                                                    "]. \t" //leadingIgoredChars
       );
 
       assertEquals(exprTok, "[?(@.author = 'Herman Melville')]", "[?, @.author, =, 'Herman Melville']");
-      
-      assertEquals(exprTok, "[?(@_price > 8.99)]", "[?, @_price, >, 8.99]");
-      assertEquals(exprTok, "[?(@_price >= 8.99)]", "[?, @_price, >=, 8.99]");
 
+      assertEquals(exprTok, "[?(@_price > 8.99)]", "[?, @_price, >, 8.99]");
+      //      assertEquals(exprTok, "[?(@_price >= 8.99)]", "[?, @_price, >=, 8.99]");
+
+      assertEquals(exprTok, "[(@.length-1)]", "[@.length-1]");
+      assertEquals(exprTok, "[-1:]", "[-1:]");
+      assertEquals(exprTok, "[0,1]", "[0,1]");
+      assertEquals(exprTok, "[:2]", "[:2]");
+      assertEquals(exprTok, "[?(@.isbn)]", "[?, @.isbn]");
+
+      assertEquals(exprTok, "[?(@.price < 10)]", "[?, @.price, <, 10]");
+      assertEquals(exprTok, "[?(@.price<10)]", "[?, @.price, <, 10]");
+      assertEquals(exprTok, "[?(@.price<=10)]", "[?, @.price, <, =, 10]");
 
    }
 
