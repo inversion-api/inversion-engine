@@ -199,6 +199,11 @@ public class JSNode implements Map<String, Object>
       return findInt(name);
    }
 
+   public double getDouble(String name)
+   {
+      return findDouble(name);
+   }
+
    public boolean getBoolean(String name)
    {
       return findBoolean(name);
@@ -218,6 +223,15 @@ public class JSNode implements Map<String, Object>
       Object found = find(path);
       if (found != null)
          return Utils.atoi(found);
+
+      return -1;
+   }
+
+   public double findDouble(String path)
+   {
+      Object found = find(path);
+      if (found != null)
+         return Utils.atod(found);
 
       return -1;
    }
@@ -253,9 +267,9 @@ public class JSNode implements Map<String, Object>
    public Object find(String jsonPath)
    {
       JSArray found = collect(jsonPath, 1);
-      if(found.size() > 0)
+      if (found.size() > 0)
          return found.get(0);
-      
+
       return null;
    }
 
