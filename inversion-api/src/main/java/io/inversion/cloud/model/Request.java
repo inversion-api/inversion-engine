@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,7 +56,7 @@ public class Request
    String                                 subCollectionKey       = null;
 
    String                                 body                   = null;
-   JSNode                             json                   = null;
+   JSNode                                 json                   = null;
 
    boolean                                browse                 = false;
 
@@ -565,6 +565,17 @@ public class Request
    {
       this.uploader = uploader;
       return this;
+   }
+
+
+   public Validation validate(String propOrJsonPath)
+   {
+      return validate(propOrJsonPath, null);
+   }
+
+   public Validation validate(String propOrJsonPath, String customErrorMessage)
+   {
+      return new Validation(this, propOrJsonPath, customErrorMessage);
    }
 
    public static interface Uploader

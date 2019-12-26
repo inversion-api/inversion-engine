@@ -1,0 +1,8 @@
+{
+	"username" : "tester",
+	"amount"   : 5,
+	"books" : { 
+				"author" : "Jane Doe", 
+				"price" : 50.00
+			  }
+}
