@@ -287,7 +287,7 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * Runs the JsonPath expression against this node and
+    * Runs the JsonPath dot-notation expression against this node and
     * its children and returns any matching values.
     *
     * For an json path reference see:
@@ -298,18 +298,18 @@ public class JSNode implements Map<String, Object>
     * 
     * Below is the implementation status of various JsonPath features:
     * <ul>
-    *  <li>SUPPORTED $.store.book[*].author
-    *  <li>SUPPORTED $..author
-    *  <li>SUPPORTED $.store..price
-    *  <li>SUPPORTED $..book[2]
-    *  <li>SUPPORTED $..book[?(@.price<10)]
-    *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]
-    *  <li>SUPPORTED $..*
-    *  <li>TODO      $..book[(@.length-1)]
-    *  <li>TODO      $..book[-1:]
-    *  <li>TODO      $..book[0,1]
-    *  <li>TODO      $..book[:2]
-    *  <li>TODO      $..book[?(@.isbn)]
+    *  <li>SUPPORTED $.store.book[*].author                     //the authors of all books in the store
+    *  <li>SUPPORTED $..author                                  //all authors
+    *  <li>SUPPORTED $.store..price                             //the prices of all books
+    *  <li>SUPPORTED $..book[2]                                 //the third book
+    *  <li>SUPPORTED $..book[?(@.price<10)]                     //all books priced < 10
+    *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]   //all books where 'Herman Melville' is the author
+    *  <li>SUPPORTED $..*                                       //all members of JSON structure.
+    *  <li>TODO      $..book[(@.length-1)]                      //the last book in order
+    *  <li>TODO      $..book[-1:]                               //the last book in order
+    *  <li>TODO      $..book[0,1]                               //the first two books
+    *  <li>TODO      $..book[:2]                                //the first two books
+    *  <li>TODO      $..book[?(@.isbn)]                         //filter all books with isbn number
     * </ul>
     * 
     * The following boolean comparison operators are supported: 
@@ -321,6 +321,11 @@ public class JSNode implements Map<String, Object>
     *  <li><=
     *  <li>!=
     * </ul>
+    * 
+    * <p>
+    * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
+    * is currently not supported.
+    * 
     * 
     * <p>
     * In addition to the above JsonPath syntax, a "relaxed" wildcard
@@ -429,21 +434,40 @@ public class JSNode implements Map<String, Object>
          String expr = nextSegment.substring(1, nextSegment.length() - 1).trim();
          if (expr.startsWith("?(") && expr.endsWith(")"))
          {
+            //            SimpleTokenizer tokenizer = new SimpleTokenizer(//
+            //                                                            "'\"", //openQuoteStr
+            //                                                            "'\"", //closeQuoteStr
+            //                                                            "]?", //breakIncludedChars
+            //                                                            " ", //breakExcludedChars
+            //                                                            "()", //unquuotedIgnoredChars
+            //                                                            ". \t", //leadingIgoredChars
+            //                                                            expr //chars
+            //            );
+
             SimpleTokenizer tokenizer = new SimpleTokenizer(//
                                                             "'\"", //openQuoteStr
                                                             "'\"", //closeQuoteStr
-                                                            "]?", //breakIncludedChars
-                                                            " ", //breakExcludedChars
-                                                            "()", //unquuotedIgnoredChars
-                                                            ". \t", //leadingIgoredChars
-                                                            expr //chars
-            );
+                                                            "?=<>!", //breakIncludedChars...breakAfter
+                                                            "]=<>! ", //breakExcludedChars...breakBefore
+                                                            "[()", //unquuotedIgnoredChars
+                                                            "]. \t", //leadingIgoredChars
+                                                            expr);
 
             String token = null;
             String func = null;
             String subpath = null;
             String op = null;
             String value = null;
+
+            //-- Choices after tokenization
+            //-- $..book[2]  -> 2
+            //-- $..book[author] -> author
+            //-- $..book[(@.length-1)] -> @_length-1
+            //-- $..book[-1:] -> -1:
+            //-- $..book[0,1] -> 0,1
+            //-- $..book[:2] -> :2
+            //-- $..book[?(@.isbn)] -> ? @_isbn
+            //-- $..book[?(@.price<10)] -> ?
 
             while ((token = tokenizer.next()) != null)
             {
@@ -453,42 +477,43 @@ public class JSNode implements Map<String, Object>
                   continue;
                }
 
-               if ("?".equals(func))
+               if (token.startsWith("@_"))
                {
-                  if (token.startsWith("@_"))
-                  {
-                     subpath = token.substring(2);
-                  }
-                  else if (op == null && Utils.in(token, "=", ">", "<", ">=", "<=", "!="))
-                  {
+                  subpath = token.substring(2);
+               }
+               else if (Utils.in(token, "=", ">", "<", "!"))
+               {
+                  if (op == null)
                      op = token;
-                  }
-                  else if (subpath != null && op != null && value == null)
-                  {
-                     value = token;
+                  else
+                     op += token;
+               }
+               else if (subpath != null && op != null && value == null)
+               {
+                  value = token;
 
-                     for (Object child : values())
+                  for (Object child : values())
+                  {
+                     if (child instanceof JSNode)
                      {
-                        if (child instanceof JSNode)
+                        List found = ((JSNode) child).collect0(subpath, -1);
+                        for (Object val : found)
                         {
-                           List found = ((JSNode) child).collect0(subpath, -1);
-                           for (Object val : found)
+                           if (eval(val, op, value))
                            {
-                              if (eval(val, op, value))
-                              {
-                                 if (qty < 1 || collected.size() < qty)
-                                    collected.add(child);
-                              }
+                              if (qty < 1 || collected.size() < qty)
+                                 collected.add(child);
                            }
                         }
                      }
-                     func = null;
-                     subpath = null;
-                     op = null;
-                     value = null;
                   }
+                  func = null;
+                  subpath = null;
+                  op = null;
+                  value = null;
                }
             }
+
          }
       }
       else

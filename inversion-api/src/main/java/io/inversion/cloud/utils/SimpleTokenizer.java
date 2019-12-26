@@ -105,7 +105,7 @@ public class SimpleTokenizer
          char c = chars[head];
          head += 1;
 
-         //         System.out.println("c = '" + c + "'");
+         //System.out.println("c = '" + c + "'");
 
          if (next.length() == 0 && leadingIgnored.contains(c))
             continue;
@@ -133,8 +133,9 @@ public class SimpleTokenizer
             quoted = false;
          }
 
-         if (!quoted && breakExcluded.contains(c))
+         if (!quoted && breakExcluded.contains(c) && next.length() > 0)
          {
+            head--;
             break;
          }
 
@@ -155,6 +156,10 @@ public class SimpleTokenizer
 
       String str = next.toString().trim();
       next = new StringBuffer();
+      
+      if(str.length() == 0)
+         str = null;
+
       return str;
    }
 
