@@ -420,15 +420,24 @@ public class JSNode implements Map<String, Object>
          String expr = nextSegment.substring(1, nextSegment.length() - 1).trim();
          if (expr.startsWith("?(") && expr.endsWith(")"))
          {
+            //            SimpleTokenizer tokenizer = new SimpleTokenizer(//
+            //                                                            "'\"", //openQuoteStr
+            //                                                            "'\"", //closeQuoteStr
+            //                                                            "]?", //breakIncludedChars
+            //                                                            " ", //breakExcludedChars
+            //                                                            "()", //unquuotedIgnoredChars
+            //                                                            ". \t", //leadingIgoredChars
+            //                                                            expr //chars
+            //            );
+
             SimpleTokenizer tokenizer = new SimpleTokenizer(//
                                                             "'\"", //openQuoteStr
                                                             "'\"", //closeQuoteStr
-                                                            "]?", //breakIncludedChars
-                                                            " ", //breakExcludedChars
-                                                            "()", //unquuotedIgnoredChars
-                                                            ". \t", //leadingIgoredChars
-                                                            expr //chars
-            );
+                                                            "?=<>!", //breakIncludedChars...breakAfter
+                                                            "]=<>! ", //breakExcludedChars...breakBefore
+                                                            "[()", //unquuotedIgnoredChars
+                                                            "]. \t", //leadingIgoredChars
+                                                            expr);
 
             String token = null;
             String func = null;
@@ -458,7 +467,7 @@ public class JSNode implements Map<String, Object>
                {
                   subpath = token.substring(2);
                }
-               else if (Utils.in(token, "=", ">", "<", ">=", "<=", "!="))
+               else if (Utils.in(token, "=", ">", "<", "!"))
                {
                   if (op == null)
                      op = token;

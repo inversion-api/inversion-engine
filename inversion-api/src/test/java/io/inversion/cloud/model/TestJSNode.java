@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,6 @@ public class TestJSNode extends TestCase
    @Test
    public void testJsonPath1()
    {
-
       assertEquals("**.book.[(@_length-1)]", JSNode.fromJsonPath("$..book[(@.length-1)]"));
       assertEquals("**.book.[0,1]", JSNode.fromJsonPath("$..book[0,1]"));
       assertEquals("book.0.asdf", JSNode.fromJsonPath("book[0].asdf"));
@@ -72,33 +71,30 @@ public class TestJSNode extends TestCase
       found1 = doc.collect("$..book[?(@.price = 12.99)]");
       assertEquals(1, found1.size());
 
-      
       found1 = doc.collect("$..book[?(@.price >= 12.99)]");
       System.out.println(found1);
       assertEquals(2, found1.size());
 
-      found1 = doc.collect("$..book[?(@.price != 8.99)]");
+      found1 = doc.collect("$..book[?(@.price!=8.99)]");
       System.out.println(found1);
       assertEquals(3, found1.size());
 
-      
       found1 = doc.collect("$..book[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(4, found1.size());
-      
+
       found1 = doc.collect("**.bicycle");
       System.out.println(found1);
       assertEquals(1, found1.size());
-      
+
       found1 = doc.collect("**.*.[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(5, found1.size());
-      
+
       found1 = doc.collect("$..[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(5, found1.size());
-      
-      
+
       found1 = doc.collect("$..[?(@.price != 100)]", 1);
       System.out.println(found1);
       assertEquals(1, found1.size());
@@ -106,6 +102,11 @@ public class TestJSNode extends TestCase
       found1 = doc.collect("$..[?(@.price != 100)]", 3);
       System.out.println(found1);
       assertEquals(3, found1.size());
+
+      found1 = doc.collect("$..[?(@.price!=100)]", 3);
+      System.out.println(found1);
+      assertEquals(3, found1.size());
+
    }
 
    @Test
@@ -160,7 +161,6 @@ public class TestJSNode extends TestCase
 
       System.out.println(found);
    }
-
 
    /**
     * This test was developed for an error in diff/patch that could result in the same JSNode

@@ -59,6 +59,9 @@ public class TestSimpleTokenizer extends TestCase
       assertEquals(exprTok, "[?(@.price < 10)]", "[?, @.price, <, 10]");
       assertEquals(exprTok, "[?(@.price<10)]", "[?, @.price, <, 10]");
       assertEquals(exprTok, "[?(@.price<=10)]", "[?, @.price, <, =, 10]");
+      
+      assertEquals(exprTok, "[?(@.price!=8.99)]", "[?, @.price, !, =, 8.99]");
+      
 
    }
 
