@@ -13,14 +13,6 @@ buildscript {
 plugins {
   id "java-library"
   id "maven-publish"
-  id "net.researchgate.release" version "2.8.1"
-}
-
-release {
-	pushReleaseVersionBranch = 'release-0.6.x'
-	git {
-		requireBranch = 'master'
-	}
 }
 
 
