@@ -17,8 +17,12 @@ plugins {
 }
 
 release {
-	pushReleaseVersionBranch="release-0.6.x"
+	pushReleaseVersionBranch = 'release-0.6.x'
+	git {
+		requireBranch = 'master'
+	}
 }
+
 
 allprojects {
 }
