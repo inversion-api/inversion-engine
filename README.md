@@ -695,6 +695,29 @@ dependencies {
 
 ### Gradle, Maven, etc.
 
+#### Publishing Releases
+1. Checkout the master branch
+1. Update the version property in gradle.properties
+1. Commit your changes
+1. Tag the repo ex: git tag -a 1.4 -m "version 1.4"
+1. Merge your code into the current release branch to have Travis CI publish the built assets to Bintray
+
+
+#### Maven Repo for Releases
+
+```gradle
+repositories {
+	maven { url 'https://dl.bintray.com/inversion/repo' }
+}
+
+dependencies {
+    compile "io.inversion:inversion-spring-boot:${inversionVersion}"
+}
+```
+
+
+#### Maven Repo for SNAPSHOTS
+
 If you want to extend Inversion as part of a custom application, you can use jitpack to pull your preferred branch directly from GitHub into your project.   
 
 ```gradle
@@ -707,7 +730,7 @@ configurations.all {
 }
 
 dependencies {
-    compile 'com.github.RocketPartners:rckt_inversion:master-SNAPSHOT'
+    compile 'com.github.inversion-api.inversion-engine:inversion-spring-boot:master-SNAPSHOT'
 } 
 ```   
 
