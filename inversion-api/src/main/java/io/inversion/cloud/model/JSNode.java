@@ -535,7 +535,7 @@ public class JSNode implements Map<String, Object>
                   value = null;
                }
             }
-            //$..book[?(@.isbn)] -- checks for the existance of a property
+            //$..book[?(@.isbn)] -- checks for the existence of a property
             if ("?".equals(func) && subpath != null)
             {
                if (op != null || value != null)
