@@ -330,7 +330,7 @@ public class JSNode implements Map<String, Object>
     *  <li>TODO      $..book[-1:]                               //the last book in order
     *  <li>TODO      $..book[0,1]                               //the first two books
     *  <li>TODO      $..book[:2]                                //the first two books
-    *  <li>TODO      $..book[?(@.isbn)]                         //filter all books with isbn number
+    *  <li>SUPPORTED $..book[?(@.isbn)]                         //filter all books with isbn number
     * </ul>
     * 
     * The following boolean comparison operators are supported: 
@@ -535,7 +535,7 @@ public class JSNode implements Map<String, Object>
                   value = null;
                }
             }
-            //$..book[?(@.isbn)]
+            //$..book[?(@.isbn)] -- checks for the existance of a property
             if ("?".equals(func) && subpath != null)
             {
                if (op != null || value != null)
