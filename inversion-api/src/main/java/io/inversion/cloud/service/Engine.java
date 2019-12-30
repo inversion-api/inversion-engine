@@ -34,8 +34,9 @@ import io.inversion.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.StartupListener;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
@@ -99,7 +100,7 @@ public class Engine
     */
    protected transient volatile Response    lastResponse   = null;
 
-   protected transient List<EngineListener> listeners      = new ArrayList();
+   protected transient List<StartupListener<Engine>> listeners      = new ArrayList();
 
    /**
     * Engine reflects all request headers along with those supplied in <code>allowHeaders</code> as 
@@ -108,11 +109,7 @@ public class Engine
     */
    protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
-   public static interface EngineListener
-   {
-      public void onStartup(Engine service);
 
-   }
 
    public Engine()
    {
@@ -155,7 +152,7 @@ public class Engine
             api.startup();
          }
 
-         for (EngineListener listener : listeners)
+         for (StartupListener listener : listeners)
          {
             try
             {
@@ -237,7 +234,7 @@ public class Engine
       return started;
    }
 
-   public Engine withListener(EngineListener listener)
+   public Engine withStartupListener(StartupListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
@@ -460,7 +457,7 @@ public class Engine
 
                         for (io.inversion.cloud.model.Collection collection : a.getCollections())
                         {
-                           if (collectionKey.equalsIgnoreCase(collection.getName())//
+                           if (collection.hasName(collectionKey)//
                                  && (collection.getIncludePaths().size() > 0 //
                                        || collection.getExcludePaths().size() > 0))
                            {
@@ -476,7 +473,7 @@ public class Engine
                         {
                            for (io.inversion.cloud.model.Collection collection : a.getCollections())
                            {
-                              if (collectionKey.equalsIgnoreCase(collection.getName()) //
+                              if (collection.hasName(collectionKey) //
                                     && collection.getIncludePaths().size() == 0 //
                                     && collection.getExcludePaths().size() == 0)
                               {

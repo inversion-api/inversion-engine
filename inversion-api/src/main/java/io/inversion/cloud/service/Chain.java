@@ -126,9 +126,12 @@ public class Chain
 
    public static String buildLink(Collection collection, Object entityKey, String subCollectionKey)
    {
-      String collectionKey = collection.getName();
-
       Request req = peek().getRequest();
+
+      String collectionKey = collection.getName();
+      
+      if(req.getCollection() == collection)
+         collectionKey = req.getCollectionKey();
 
       String url = req.getApiUrl();
 

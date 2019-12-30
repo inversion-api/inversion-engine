@@ -20,31 +20,40 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.inversion.cloud.service.Engine;
+
 public class Api
 {
-   transient volatile boolean started     = false;
-   transient volatile boolean starting    = false;
-   transient long             loadTime    = 0;
-   transient Hashtable        cache       = new Hashtable();
-   transient protected String hash        = null;
+   protected Logger                              log         = LoggerFactory.getLogger(getClass());
+
+   transient volatile boolean                    started     = false;
+   transient volatile boolean                    starting    = false;
+   transient long                                loadTime    = 0;
+   transient Hashtable                           cache       = new Hashtable();
+   transient protected String                    hash        = null;
 
    //   protected transient Engine engine      = null;
 
-   protected boolean          debug       = false;
+   protected boolean                             debug       = false;
 
-   protected int              id          = 0;
+   protected int                                 id          = 0;
 
-   protected String           name        = null;
-   protected String           accountCode = null;
-   protected String           apiCode     = null;
-   protected boolean          multiTenant = false;
-   protected String           url         = null;
+   protected String                              name        = null;
+   protected String                              accountCode = null;
+   protected String                              apiCode     = null;
+   protected boolean                             multiTenant = false;
+   protected String                              url         = null;
 
-   protected List<Db>         dbs         = new ArrayList();
-   protected List<Endpoint>   endpoints   = new ArrayList();
-   protected List<Action>     actions     = new ArrayList();
+   protected List<Db>                            dbs         = new ArrayList();
+   protected List<Endpoint>                      endpoints   = new ArrayList();
+   protected List<Action>                        actions     = new ArrayList();
 
-   protected List<Collection> collections = new ArrayList();
+   protected List<Collection>                    collections = new ArrayList();
+
+   protected transient List<StartupListener<Api>> listeners   = new ArrayList();
 
    public Api()
    {
@@ -71,6 +80,19 @@ public class Api
 
          //removeExcludes();
          started = true;
+
+         for (StartupListener listener : listeners)
+         {
+            try
+            {
+               listener.onStartup(this);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifing api startup listener: " + listener, ex);
+            }
+         }
+
          return this;
       }
       finally
@@ -532,6 +554,13 @@ public class Api
    public Api withUrl(String url)
    {
       this.url = url;
+      return this;
+   }
+
+   public Api withStartupListener(StartupListener<Api> listener)
+   {
+      if (!listeners.contains(listener))
+         listeners.add(listener);
       return this;
    }
 

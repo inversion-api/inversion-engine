@@ -39,73 +39,77 @@ public class TestJSNode extends TestCase
       JSArray found1 = null;
       JSArray found2 = null;
 
-      found1 = doc.collect("$..book[?(@.author = 'Herman Melville')]");
+      found1 = doc.findAll("$..book[?(@.author = 'Herman Melville')]");
 
       assertEquals(1, found1.size());
       assertEquals("Herman Melville", found1.find("0.author"));
 
-      found1 = doc.collect("$.store..price");
+      found1 = doc.findAll("$.store..price");
       assertEquals(5, found1.size());
 
-      found2 = doc.collect("**.store.**.price");
+      found2 = doc.findAll("**.store.**.price");
       assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
 
-      found1 = doc.collect("$..book[2]");
-      found2 = doc.collect("**.book.2");
+      found1 = doc.findAll("$..book[2]");
+      found2 = doc.findAll("**.book.2");
 
       assertEquals("Herman Melville", found1.find("0.author"));
       assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
 
-      found1 = doc.collect("$..*");
-      found2 = doc.collect("**.*");
+      found1 = doc.findAll("$..*");
+      found2 = doc.findAll("**.*");
       assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
 
-      found1 = doc.collect("$.store.book[*].author");
-      found2 = doc.collect("store.book.*.author");
+      found1 = doc.findAll("$.store.book[*].author");
+      found2 = doc.findAll("store.book.*.author");
       assertEquals(0, CollectionUtils.disjunction(found1, found2).size());
 
-      assertEquals(0, CollectionUtils.disjunction(found1, doc.collect("**.store.book.*.author")).size());
+      assertEquals(0, CollectionUtils.disjunction(found1, doc.findAll("**.store.book.*.author")).size());
 
-      assertEquals(0, doc.collect("*.store.book.*.author").size());
+      assertEquals(0, doc.findAll("*.store.book.*.author").size());
 
-      found1 = doc.collect("$..book[?(@.price = 12.99)]");
+      found1 = doc.findAll("$..book[?(@.price = 12.99)]");
       assertEquals(1, found1.size());
 
-      found1 = doc.collect("$..book[?(@.price >= 12.99)]");
+      found1 = doc.findAll("$..book[?(@.price >= 12.99)]");
       System.out.println(found1);
       assertEquals(2, found1.size());
 
-      found1 = doc.collect("$..book[?(@.price!=8.99)]");
+      found1 = doc.findAll("$..book[?(@.price!=8.99)]");
       System.out.println(found1);
       assertEquals(3, found1.size());
 
-      found1 = doc.collect("$..book[?(@.price != 100)]");
+      found1 = doc.findAll("$..book[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(4, found1.size());
 
-      found1 = doc.collect("**.bicycle");
+      found1 = doc.findAll("**.bicycle");
       System.out.println(found1);
       assertEquals(1, found1.size());
 
-      found1 = doc.collect("**.*.[?(@.price != 100)]");
+      found1 = doc.findAll("**.*.[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(5, found1.size());
 
-      found1 = doc.collect("$..[?(@.price != 100)]");
+      found1 = doc.findAll("$..[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(5, found1.size());
 
-      found1 = doc.collect("$..[?(@.price != 100)]", 1);
+      found1 = doc.findAll("$..[?(@.price != 100)]", 1);
       System.out.println(found1);
       assertEquals(1, found1.size());
 
-      found1 = doc.collect("$..[?(@.price != 100)]", 3);
+      found1 = doc.findAll("$..[?(@.price != 100)]", 3);
       System.out.println(found1);
       assertEquals(3, found1.size());
 
-      found1 = doc.collect("$..[?(@.price!=100)]", 3);
+      found1 = doc.findAll("$..[?(@.price!=100)]", 3);
       System.out.println(found1);
       assertEquals(3, found1.size());
+      
+      found1 = doc.findAll("$..book[?(@.isbn)]", 2);
+      System.out.println(found1);
+      assertEquals(2, found1.size());
 
    }
 

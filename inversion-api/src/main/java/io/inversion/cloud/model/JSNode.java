@@ -266,24 +266,45 @@ public class JSNode implements Map<String, Object>
     */
    public Object find(String jsonPath)
    {
-      JSArray found = collect(jsonPath, 1);
+      JSArray found = findAll(jsonPath, 1);
       if (found.size() > 0)
          return found.get(0);
 
       return null;
    }
 
-   public List<JSNode> collectNodes(String jsonPath)
-   {
-      return (List<JSNode>) collect(jsonPath);
-   }
-
    /**
-    * @see collect(jsonPath, quantity)
+    * @deprecated Use {@link #findAll()} instead.
     */
    public JSArray collect(String jsonPath)
    {
-      return collect(jsonPath, -1);
+      return findAll(jsonPath, -1);
+   }
+
+   /**
+    * @deprecated Use {@link #findAllNodes()} instead.
+    */
+   public JSArray collect(String jsonPath, int qty)
+   {
+      return findAll(jsonPath, qty);
+   }
+
+   /**
+    * @deprecated Use {@link #findAllNodes()} instead.
+    */
+   public List<JSNode> collectNodes(String jsonPath)
+   {
+      return (List<JSNode>) findAll(jsonPath).asList();
+   }
+
+   public JSArray findAll(String jsonPath)
+   {
+      return findAll(jsonPath, -1);
+   }
+
+   public List<JSNode> findAllNodes(String jsonPath)
+   {
+      return (List<JSNode>) findAll(jsonPath).asList();
    }
 
    /**
@@ -335,8 +356,9 @@ public class JSNode implements Map<String, Object>
     * and the simplified wildcard supports array.${idxNum}.property 
     * or array.*.property or array.**.property
     * 
+    * 
     */
-   public JSArray collect(String jsonPath, int qty)
+   public JSArray findAll(String jsonPath, int qty)
    {
       jsonPath = fromJsonPath(jsonPath);
       return new JSArray(collect0(jsonPath, qty));
@@ -512,6 +534,28 @@ public class JSNode implements Map<String, Object>
                   op = null;
                   value = null;
                }
+            }
+            //$..book[?(@.isbn)]
+            if ("?".equals(func) && subpath != null)
+            {
+               if (op != null || value != null)
+               {
+                  //unparseable...do nothing
+               }
+
+               for (Object child : values())
+               {
+                  if (child instanceof JSNode)
+                  {
+                     List found = ((JSNode) child).collect0(subpath, -1);
+                     for (Object val : found)
+                     {
+                        if (qty < 1 || collected.size() < qty)
+                           collected.add(child);
+                     }
+                  }
+               }
+
             }
 
          }
