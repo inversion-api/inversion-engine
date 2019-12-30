@@ -178,18 +178,9 @@ public class Collection extends Rule<Collection>
       if (nameOrAlias == null)
          return false;
 
-      if (nameOrAlias.equalsIgnoreCase(this.name))
-      {
+      if (nameOrAlias.equalsIgnoreCase(this.name) //
+            || this.aliases.stream().anyMatch(nameOrAlias::equalsIgnoreCase))
          return true;
-      }
-
-      for (String alias : this.aliases)
-      {
-         if (nameOrAlias.equalsIgnoreCase(alias))
-         {
-            return true;
-         }
-      }
 
       return false;
    }
