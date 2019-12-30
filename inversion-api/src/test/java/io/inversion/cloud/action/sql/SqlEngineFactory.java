@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,8 +25,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.StartupListener;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
@@ -86,10 +89,10 @@ public class SqlEngineFactory
       //SpringBoot.run(service(false));
    }
 
-//   public static synchronized Engine service() throws Exception
-//   {
-//      return service(true);
-//   }
+   //   public static synchronized Engine service() throws Exception
+   //   {
+   //      return service(true);
+   //   }
 
    public static synchronized Engine service(boolean startup, boolean newCopy) throws Exception
    {
@@ -109,11 +112,20 @@ public class SqlEngineFactory
 
                      engine.withApi("northwind")//
                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
-                           .withDb(sourceDb);
+                           .withDb(sourceDb)//
+                           .withStartupListener(new StartupListener<Api>()
+                              {
+                                 public void onStartup(Api started)
+                                 {
+                                    for(Collection col : started.getCollections())
+                                    {
+                                       col.withAlias("aliased_" + col.getName());
+                                    }
+                                 }
+                              });
 
                      //Connection conn = sourceDb.getConnection();
                      //System.out.println(SqlUtils.selectInt(conn,  "SELECT count(*) from Orders"));
-                     
 
                      if (shouldLoad("h2"))
                      {
@@ -122,14 +134,13 @@ public class SqlEngineFactory
                         engine.getApi("northwind")//
                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
                               .withDb(h2Db);
-                        
-                        
+
                         //Connection conn2 = h2Db.getConnection();
                         //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders OFFSET 0 LIMIT 100"));
                         //System.out.println(SqlUtils.selectInt(conn2,  "SELECT count(*) from Orders LIMIT 0 OFFSET 100"));
                         //System.out.println(SqlUtils.selectRows(conn2,  "SELECT \"EMPLOYEES\".* FROM \"EMPLOYEES\" WHERE \"EMPLOYEES\".\"EMPLOYEEID\" = ? ORDER BY \"EMPLOYEES\".\"EMPLOYEEID\" ASC  OFFSET 0 LIMIT 100", 5));
                         //conn2.close();
-                        
+
                      }
 
                      if (shouldLoad("mysql"))
@@ -230,9 +241,7 @@ public class SqlEngineFactory
             engine.startup();
          }
       }
-      catch (
-
-      Exception ex)
+      catch (Exception ex)
       {
          ex.printStackTrace();
          throw ex;

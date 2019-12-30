@@ -72,6 +72,22 @@ public abstract class TestRestGetActions extends TestCase
    }
 
    @Test
+   public void testAliasedOrders() throws Exception
+   {
+      Engine engine = service();
+      Response res = null;
+      JSNode json = null;
+
+      res = engine.get(url("aliased_orders?limit=5")).statusOk();
+      json = res.getJson();
+      assertEquals(5, json.find("meta.pageSize"));
+      assertEquals(5, res.data().length());
+
+      res.assertDebug("[1]: SQL ->", "'SELECT \"ORDERS\".* FROM \"ORDERS\" ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[] error=''");
+      res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
+   }
+   
+   @Test
    public void testLimit01() throws Exception
    {
       Engine engine = service();

@@ -699,7 +699,9 @@ dependencies {
 1. Checkout the master branch
 1. Update the version property in gradle.properties
 1. Commit your changes
-1. Tag the repo ex: git tag -a 1.4 -m "version 1.4"
+1. Tag the repo:
+  * git tag -a 1.4 -m "version 1.4"
+  * git push --tags
 1. Merge your code into the current release branch to have Travis CI publish the built assets to Bintray
 
 
