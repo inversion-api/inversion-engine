@@ -266,6 +266,12 @@ public class Request
       return json;
    }
 
+   public Request withJson(JSNode json)
+   {
+      this.json = json;
+      return this;
+   }
+
    public String getParam(String name)
    {
       return url.getParam(name);
@@ -566,7 +572,6 @@ public class Request
       this.uploader = uploader;
       return this;
    }
-
 
    public Validation validate(String propOrJsonPath)
    {
