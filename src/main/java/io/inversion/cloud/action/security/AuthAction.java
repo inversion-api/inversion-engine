@@ -237,7 +237,7 @@ public class AuthAction extends Action<AuthAction>
             //            int failedNum = tempUser.getFailedNum();
             //            if (failedNum < failedMax || now - requestAt > failedExp)
             //            {
-            //               //only attempt to validate password and log the attempt 
+            //               //only attempt to validate password and log the attempt
             //               //if the user has failed login fewer than failedMax times
             //               String remoteAddr = req.getRemoteAddr();
             //               authorized = checkPassword(conn, tempUser, password);
@@ -290,7 +290,7 @@ public class AuthAction extends Action<AuthAction>
 
       if (user != null)
       {
-         // update the session cache if this is a session request OR 
+         // update the session cache if this is a session request OR
          // if the session update time has passed.
          boolean updateSessionCache = false;
          long previousReqTime = user.getRequestAt();
@@ -390,21 +390,27 @@ public class AuthAction extends Action<AuthAction>
          user.withRoles(roles.toArray(new String[roles.size()]));
       }
 
-      c = jwt.getClaim("perms");
+      addPermsToUser(user, jwt.getClaim("perms"));
+      addPermsToUser(user, jwt.getClaim("actions"));
+
+      return user;
+   }
+
+   void addPermsToUser(User user, Claim c)
+   {
       if (c != null && !c.isNull())
       {
          List<String> perms = c.asList(String.class);
          user.withPermissions(perms.toArray(new String[perms.size()]));
       }
-
-      return user;
    }
+
 
    /**
     * Looks gwt signing secrets up as environment vars or sysprops.
-    * 
+    *
     * Finds the most specific keys keys first
-    * 
+    *
     * @param accountCode
     * @param apiCode
     * @param tenantCode
@@ -729,16 +735,16 @@ public class AuthAction extends Action<AuthAction>
        * user -> group -> permission
        * user -> role -> permission
        * user -> group -> role -> permission
-      
+
        * UserPermission
        * GroupPermission
        * RolePermission
        * UserGroup
        * UserRole
        * GroupRole
-       * 
-       * 
-       * 
+       *
+       *
+       *
        */
       Rows findGRP(Connection conn, int userId, String accountCode, String apiCode, String tenantCode) throws Exception
       {
