@@ -48,8 +48,6 @@ public class Request
    Path                                   endpointPath           = null;
    Endpoint                               endpoint               = null;
 
-   User                                   user                   = null;
-
    Collection                             collection             = null;
    String                                 collectionKey          = null;
    String                                 entityKey              = null;
@@ -478,17 +476,6 @@ public class Request
    public Request withEndpointPath(Path endpointPath)
    {
       this.endpointPath = endpointPath;
-      return this;
-   }
-
-   public User getUser()
-   {
-      return user;
-   }
-
-   public Request withUser(User user)
-   {
-      this.user = user;
       return this;
    }
 

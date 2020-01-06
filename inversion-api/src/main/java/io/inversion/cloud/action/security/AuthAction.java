@@ -94,7 +94,7 @@ public class AuthAction extends Action<AuthAction>
          }
       }
 
-      User user = req.getUser();
+      User user = Chain.peek().getUser();
 
       if (user != null && !req.isDelete())
       {
@@ -299,7 +299,7 @@ public class AuthAction extends Action<AuthAction>
             updateSessionCache = true;
 
          user.withRequestAt(now);
-         req.withUser(user);
+         Chain.peek().withUser(user);
 
          if (sessionReq && req.isPost())
          {
@@ -333,9 +333,9 @@ public class AuthAction extends Action<AuthAction>
             sessionCache.put(sessionKey, user);
       }
 
-      if (req.getUser() != null)
+      if (Chain.peek().getUser() != null)
       {
-         User loggedIn = req.getUser();
+         User loggedIn = Chain.getUser();
          if (api.isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
             throw new ApiException(SC.SC_401_UNAUTHORIZED);
       }
@@ -366,7 +366,7 @@ public class AuthAction extends Action<AuthAction>
             //            user.withTenantCode(tenantCode);
             //            user.withTenantId(tenantId);
          }
-         req.withUser(user);
+         Chain.peek().withUser(user);
       }
    }
 

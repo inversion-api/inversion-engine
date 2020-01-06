@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,7 +55,11 @@ import io.inversion.cloud.utils.Utils;
 public class RestPostAction extends Action<RestPostAction>
 {
    protected boolean collapseAll    = false;
-   protected boolean strictRest     = true;
+   
+   /**
+    * When true, forces PUTs to have an entityKey in the URL
+    */
+   protected boolean strictRest     = false;
    protected boolean expandResponse = true;
 
    public RestPostAction()
@@ -231,7 +235,7 @@ public class RestPostAction extends Action<RestPostAction>
          for (Relationship rel : collection.getEntity().getRelationships())
          {
             copied.add(rel.getName().toLowerCase());
-            
+
             if (rel.isOneToMany() && node.hasProperty(rel.getName()))
             {
                for (Column col : rel.getFkIndex1().getColumns())

@@ -169,23 +169,23 @@ public abstract class Action<A extends Action> extends Rule<A>
       //      }
       else if ("tenantId".equalsIgnoreCase(key))
       {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getTenantId() + "";
+         if (Chain.getUser() != null)
+            return Chain.getUser().getTenantId() + "";
       }
       else if ("tenantCode".equalsIgnoreCase(key))
       {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getTenantCode();
+         if (Chain.getUser() != null)
+            return Chain.getUser().getTenantCode();
       }
       else if ("userId".equalsIgnoreCase(key))
       {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getId() + "";
+         if (Chain.getUser() != null)
+            return Chain.getUser().getId() + "";
       }
       else if ("username".equalsIgnoreCase(key))
       {
-         if (chain.getRequest().getUser() != null)
-            return chain.getRequest().getUser().getUsername();
+         if (Chain.getUser() != null)
+            return Chain.getUser().getUsername();
       }
 
       Object val = chain.get(key);

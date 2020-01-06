@@ -22,6 +22,7 @@ import java.util.List;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Rule;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
 public class AclRule extends Rule<AclRule>
@@ -104,13 +105,13 @@ public class AclRule extends Rule<AclRule>
          return false;
 
       //short cut 
-      if (req.getUser() == null && (roles.size() > 0 || permissions.size() > 0))
+      if (Chain.getUser() == null && (roles.size() > 0 || permissions.size() > 0))
          return false;
 
       int matches = 0;
       for (String requiredRole : roles)
       {
-         boolean matched = req.getUser().hasRoles(requiredRole);
+         boolean matched = Chain.getUser().hasRoles(requiredRole);
 
          if (matched)
          {
@@ -137,7 +138,7 @@ public class AclRule extends Rule<AclRule>
       {
          for (String requiredPerm : permissions)
          {
-            boolean matched = req.getUser().hasPermissions(requiredPerm);
+            boolean matched = Chain.getUser().hasPermissions(requiredPerm);
 
             if (matched)
             {

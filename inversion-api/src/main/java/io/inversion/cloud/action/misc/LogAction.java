@@ -79,9 +79,9 @@ public class LogAction extends Action<LogAction>
                int tenantId = 0;
                if (api.isMultiTenant())
                {
-                  if (req.getUser() != null)
+                  if (Chain.getUser() != null)
                   {
-                     tenantId = req.getUser().getTenantId();
+                     tenantId = Chain.getUser().getTenantId();
                   }
                   else if (req.getParams().containsKey("tenantid"))
                   {
@@ -94,8 +94,8 @@ public class LogAction extends Action<LogAction>
                   Connection conn = ((SqlDb)req.getCollection().getDb()).getConnection();
                   Map<String, Object> logParams = new HashMap<>();
                   logParams.put("method", req.getMethod());
-                  logParams.put("userId", req.getUser() == null ? null : req.getUser().getId());
-                  logParams.put("username", req.getUser() == null ? null : req.getUser().getUsername());
+                  logParams.put("userId", Chain.getUser() == null ? null : Chain.getUser().getId());
+                  logParams.put("username", Chain.getUser() == null ? null : Chain.getUser().getUsername());
 
                   JSNode bodyJson = maskFields(req.getJson(), logMask);
                   if (bodyJson != null)
