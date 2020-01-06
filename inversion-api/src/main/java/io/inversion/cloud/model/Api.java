@@ -23,8 +23,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.service.Engine;
-
 public class Api
 {
    protected Logger                              log         = LoggerFactory.getLogger(getClass());
@@ -390,10 +388,15 @@ public class Api
 
    public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
    {
+      return makeEndpoint(methods, pathExpression, actions);
+   }
+   
+   public Endpoint makeEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+   {
       if (methods != null && "*".equals(methods.trim()))
          methods = "GET,PUT,POST,DELETE";
 
-      Endpoint endpoint = new Endpoint(methods, pathExpression);
+      Endpoint endpoint = new Endpoint(methods, basePathStr, includeRelativeSubPathsStr);
 
       for (Action action : actions)
       {
@@ -408,6 +411,12 @@ public class Api
    public Api withEndpoint(String methods, String path, Action... actions)
    {
       makeEndpoint(methods, path, actions);
+      return this;
+   }
+   
+   public Api withEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+   {
+      makeEndpoint(methods, basePathStr, includeRelativeSubPathsStr, actions);
       return this;
    }
 
