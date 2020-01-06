@@ -388,7 +388,7 @@ public class Api
 
    public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
    {
-      return makeEndpoint(methods, pathExpression, actions);
+      return makeEndpoint(methods, pathExpression, null, actions);
    }
    
    public Endpoint makeEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
