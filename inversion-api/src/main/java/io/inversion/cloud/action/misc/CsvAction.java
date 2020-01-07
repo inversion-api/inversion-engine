@@ -51,12 +51,19 @@ public class CsvAction extends BatchAction<CsvAction>
       }
 
       if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(chain.getConfig("format", null)))
+      {
          return;
+      }
 
+      //support result being an array, a single object, or an inversion state object where we will pull results from the data field.
       JSNode arr = res.getJson();
       if (!(arr instanceof JSArray))
       {
-         arr = new JSArray(arr);
+         if(res.getJson().hasProperty("data")){
+            arr = res.getJson().getArray("data");
+         } else {
+            arr = new JSArray(arr);
+         }
       }
 
       byte[] bytes = toCsv((JSArray) arr).getBytes();
@@ -66,7 +73,6 @@ public class CsvAction extends BatchAction<CsvAction>
       //res.setContentType("text/csv");
 
       res.withText(new String(bytes));
-      res.withJson(null);
    }
 
    public String toCsv(JSArray arr) throws Exception
