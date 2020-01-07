@@ -25,31 +25,31 @@ import org.slf4j.LoggerFactory;
 
 public class Api
 {
-   protected Logger                              log         = LoggerFactory.getLogger(getClass());
+   protected Logger                               log         = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean                    started     = false;
-   transient volatile boolean                    starting    = false;
-   transient long                                loadTime    = 0;
-   transient Hashtable                           cache       = new Hashtable();
-   transient protected String                    hash        = null;
+   transient volatile boolean                     started     = false;
+   transient volatile boolean                     starting    = false;
+   transient long                                 loadTime    = 0;
+   transient Hashtable                            cache       = new Hashtable();
+   transient protected String                     hash        = null;
 
    //   protected transient Engine engine      = null;
 
-   protected boolean                             debug       = false;
+   protected boolean                              debug       = false;
 
-   protected int                                 id          = 0;
+   protected int                                  id          = 0;
 
-   protected String                              name        = null;
-   protected String                              accountCode = null;
-   protected String                              apiCode     = null;
-   protected boolean                             multiTenant = false;
-   protected String                              url         = null;
+   protected String                               name        = null;
+   protected String                               accountCode = null;
+   protected String                               apiCode     = null;
+   protected boolean                              multiTenant = false;
+   protected String                               url         = null;
 
-   protected List<Db>                            dbs         = new ArrayList();
-   protected List<Endpoint>                      endpoints   = new ArrayList();
-   protected List<Action>                        actions     = new ArrayList();
+   protected List<Db>                             dbs         = new ArrayList();
+   protected List<Endpoint>                       endpoints   = new ArrayList();
+   protected List<Action>                         actions     = new ArrayList();
 
-   protected List<Collection>                    collections = new ArrayList();
+   protected List<Collection>                     collections = new ArrayList();
 
    protected transient List<StartupListener<Api>> listeners   = new ArrayList();
 
@@ -390,13 +390,18 @@ public class Api
    {
       return makeEndpoint(methods, pathExpression, null, actions);
    }
-   
-   public Endpoint makeEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+
+   public Endpoint makeEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
+   {
+      return makeEndpoint(methods, endpointPath, collectionPaths, null, actions);
+   }
+
+   public Endpoint makeEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
    {
       if (methods != null && "*".equals(methods.trim()))
          methods = "GET,PUT,POST,DELETE";
 
-      Endpoint endpoint = new Endpoint(methods, basePathStr, includeRelativeSubPathsStr);
+      Endpoint endpoint = new Endpoint(name, methods, endpointPath, collectionPaths);
 
       for (Action action : actions)
       {
@@ -408,15 +413,19 @@ public class Api
       return endpoint;
    }
 
-   public Api withEndpoint(String methods, String path, Action... actions)
+   public Api withEndpoint(String methods, String pathExpression, Action... actions)
    {
-      makeEndpoint(methods, path, actions);
-      return this;
+      return withEndpoint(methods, pathExpression, null, null, actions);
    }
-   
-   public Api withEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+
+   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
    {
-      makeEndpoint(methods, basePathStr, includeRelativeSubPathsStr, actions);
+      return withEndpoint(methods, endpointPath, collectionPaths, null, actions);
+   }
+
+   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
+   {
+      makeEndpoint(methods, endpointPath, collectionPaths, name, actions);
       return this;
    }
 

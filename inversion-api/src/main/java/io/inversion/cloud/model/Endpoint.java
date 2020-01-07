@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,11 +40,26 @@ public class Endpoint extends Rule<Endpoint>
 
    }
 
-   public Endpoint(String method, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+   public Endpoint(String method, String endpointPath, String collectionPaths, Action... actions)
    {
+      this(null, method, endpointPath, collectionPaths, actions);
+   }
+
+   public Endpoint(String name, String method, String endpointPath, String collectionPaths, Action... actions)
+   {
+      if (!Utils.empty(endpointPath) && !Utils.empty(collectionPaths))
+      {
+         Path ep = new Path(endpointPath);
+         if (ep.matchesLast("*"))
+         {
+            endpointPath = ep.subpath(0, ep.size() - 1).toString();
+         }
+      }
+
+      withName(name);
       withMethods(method);
-      withPath(basePathStr);
-      withIncludePaths(includeRelativeSubPathsStr);
+      withPath(endpointPath);
+      withIncludePaths(collectionPaths);
 
       if (actions != null)
       {
@@ -79,28 +94,24 @@ public class Endpoint extends Rule<Endpoint>
       if (isMethod(method))
       {
          int index = 0;
-         for (index = 0; path != null && index < path.size(); index++)
+         for (index = 0; path != null && path.size() > 0 && index < path.size(); index++)
          {
             if (!path.matches(index, toMatch))
                return false;
          }
 
-         if (includePaths.size() == 0)
+         if (index == toMatch.size())
+            return true;
+
+         for (Path includePath : includePaths)
          {
-            included = true;
-         }
-         else
-         {
-            for (Path includePath : includePaths)
+            if (includePath.matchesRest(index, toMatch))
             {
-               if (includePath.matchesRest(index, toMatch))
-               {
-                  included = true;
-                  break;
-               }
+               included = true;
+               break;
             }
          }
-
+         
          if (included && toMatch.size() > index)
          {
             for (Path excludePath : excludePaths)
