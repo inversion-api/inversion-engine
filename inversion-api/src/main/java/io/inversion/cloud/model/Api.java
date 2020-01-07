@@ -25,31 +25,31 @@ import org.slf4j.LoggerFactory;
 
 public class Api
 {
-   protected Logger                              log         = LoggerFactory.getLogger(getClass());
+   protected Logger                               log         = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean                    started     = false;
-   transient volatile boolean                    starting    = false;
-   transient long                                loadTime    = 0;
-   transient Hashtable                           cache       = new Hashtable();
-   transient protected String                    hash        = null;
+   transient volatile boolean                     started     = false;
+   transient volatile boolean                     starting    = false;
+   transient long                                 loadTime    = 0;
+   transient Hashtable                            cache       = new Hashtable();
+   transient protected String                     hash        = null;
 
    //   protected transient Engine engine      = null;
 
-   protected boolean                             debug       = false;
+   protected boolean                              debug       = false;
 
-   protected int                                 id          = 0;
+   protected int                                  id          = 0;
 
-   protected String                              name        = null;
-   protected String                              accountCode = null;
-   protected String                              apiCode     = null;
-   protected boolean                             multiTenant = false;
-   protected String                              url         = null;
+   protected String                               name        = null;
+   protected String                               accountCode = null;
+   protected String                               apiCode     = null;
+   protected boolean                              multiTenant = false;
+   protected String                               url         = null;
 
-   protected List<Db>                            dbs         = new ArrayList();
-   protected List<Endpoint>                      endpoints   = new ArrayList();
-   protected List<Action>                        actions     = new ArrayList();
+   protected List<Db>                             dbs         = new ArrayList();
+   protected List<Endpoint>                       endpoints   = new ArrayList();
+   protected List<Action>                         actions     = new ArrayList();
 
-   protected List<Collection>                    collections = new ArrayList();
+   protected List<Collection>                     collections = new ArrayList();
 
    protected transient List<StartupListener<Api>> listeners   = new ArrayList();
 
@@ -206,45 +206,6 @@ public class Api
       return null;
    }
 
-   //   public Collection getCollection(String name)
-   //   {
-   //      return getCollection(name, null);
-   //   }
-   //
-   ////   public Collection getCollection(String name, Class dbClass) throws ApiException
-   //   {
-   //      for (Collection collection : collections)
-   //      {
-   //         if (collection.getName().equalsIgnoreCase(name))
-   //         {
-   //            if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
-   //               return collection;
-   //         }
-   //      }
-   //
-   //      for (Collection collection : collections)
-   //      {
-   //         // This loop is done separately from the one above to allow 
-   //         // collections to have precedence over aliases
-   //         for (String alias : collection.getAliases())
-   //         {
-   //            if (name.equalsIgnoreCase(alias))
-   //            {
-   //               if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
-   //                  return collection;
-   //            }
-   //         }
-   //      }
-   //
-   //      if (dbClass != null)
-   //      {
-   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
-   //      }
-   //      else
-   //      {
-   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
-   //      }
-   //   }
 
    public Collection getCollection(String name)
    {
@@ -386,37 +347,20 @@ public class Api
       return new ArrayList(endpoints);
    }
 
-   public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
+   public Api withEndpoint(String methods, String pathExpression, Action... actions)
    {
-      return makeEndpoint(methods, pathExpression, null, actions);
+      return withEndpoint(methods, pathExpression, null, null, actions);
    }
-   
-   public Endpoint makeEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+
+   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
    {
-      if (methods != null && "*".equals(methods.trim()))
-         methods = "GET,PUT,POST,DELETE";
+      return withEndpoint(methods, endpointPath, collectionPaths, null, actions);
+   }
 
-      Endpoint endpoint = new Endpoint(methods, basePathStr, includeRelativeSubPathsStr);
-
-      for (Action action : actions)
-      {
-         endpoint.withAction(action);
-      }
-
+   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
+   {
+      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, name, actions);
       withEndpoint(endpoint);
-
-      return endpoint;
-   }
-
-   public Api withEndpoint(String methods, String path, Action... actions)
-   {
-      makeEndpoint(methods, path, actions);
-      return this;
-   }
-   
-   public Api withEndpoint(String methods, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
-   {
-      makeEndpoint(methods, basePathStr, includeRelativeSubPathsStr, actions);
       return this;
    }
 
