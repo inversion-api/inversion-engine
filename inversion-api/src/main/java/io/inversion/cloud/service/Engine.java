@@ -569,7 +569,7 @@ public class Engine
             Chain.debug("Actions: " + actions);
          }
 
-         service(chain, actions);
+         run(chain, actions);
 
          ConnectionLocal.commit();
 
@@ -642,8 +642,16 @@ public class Engine
 
       return chain;
    }
-
-   protected void service(Chain chain, List<Action> actions) throws Exception
+   
+   /**
+    * This is specifically pulled out so you can mock Engine invocations
+    * in test cases.
+    * 
+    * @param chain
+    * @param actions
+    * @throws Exception
+    */
+   protected void run(Chain chain, List<Action> actions) throws Exception
    {
       chain.withActions(actions).go();
    }

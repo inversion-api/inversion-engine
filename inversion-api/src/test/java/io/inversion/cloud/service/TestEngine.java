@@ -321,7 +321,7 @@ public class TestEngine extends TestCase
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
          {
-            protected void service(Chain chain, List<Action> actions) throws Exception
+            protected void run(Chain chain, List<Action> actions) throws Exception
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
                   fail(chain, "endpoints don't match");
