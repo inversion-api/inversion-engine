@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,22 +16,25 @@
  */
 package io.inversion.cloud.service.spring;
 
+import org.apache.catalina.Context;
+import org.apache.catalina.core.StandardContext;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
+
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.service.Servlet;
 import io.inversion.cloud.utils.Utils;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.ServletRegistrationBean;
-import org.springframework.context.annotation.Bean;
 
 /**
  * A simple Spring Boot based launcher.
  * @deprecated Please use {@link io.inversion.cloud.service.spring.config.EnableInversion}.
  */
 @Deprecated
-@SpringBootApplication
-//@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 public class InversionApp
 {
    static Engine engine = null;
@@ -91,7 +94,7 @@ public class InversionApp
    {
       try
       {
-         Servlet servlet = new io.inversion.cloud.service.Servlet();
+         Servlet servlet = new Servlet();
          servlet.setEngine(engine);
 
          String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
@@ -121,22 +124,20 @@ public class InversionApp
 
    }
 
-//   @Bean
-//    public EmbeddedServletContainerCustomizer enableMultipart() {
-//      return new EmbeddedServletContainerCustomizer() {
-//         @Override
-//         public void customize(ConfigurableEmbeddedServletContainer container) {
-//            if (container instanceof TomcatEmbeddedServletContainerFactory) {
-//               ((TomcatEmbeddedServletContainerFactory) container)
-//                     .addContextCustomizers(new TomcatContextCustomizer() {
-//                        @Override
-//                        public void customize(Context context) {
-//                           ((StandardContext) context).setAllowCasualMultipartParsing(true);
-//                        }
-//                     });
-//            }
-//         }
-//      };
-//   }
+   @Bean
+   public ConfigurableServletWebServerFactory servletContainer()
+   {
+      TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+      tomcat.addContextCustomizers(new TomcatContextCustomizer()
+         {
+            @Override
+            public void customize(Context context)
+            {
+               ((StandardContext) context).setAllowCasualMultipartParsing(true);
+            }
+         });
+
+      return tomcat;
+   }
 
 }
