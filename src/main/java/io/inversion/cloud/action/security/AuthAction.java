@@ -16,7 +16,13 @@
 package io.inversion.cloud.action.security;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +85,7 @@ public class AuthAction extends Action<AuthAction>
    {
       withOrder(100);
    }
+
 
    @Override
    public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
@@ -151,7 +158,6 @@ public class AuthAction extends Action<AuthAction>
                try
                {
                   JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).acceptLeeway(1).build();
-                  //this will throw an exception if the signatures don't match
                   jwt = verifier.verify(token);
                   break;
                }
@@ -390,6 +396,20 @@ public class AuthAction extends Action<AuthAction>
          user.withRoles(roles.toArray(new String[roles.size()]));
       }
 
+      c = jwt.getClaim("tenantId");
+      if (c != null && !c.isNull())
+      {
+         int tenantId = c.asInt();
+         user.withTenantId(tenantId);
+      }
+
+      c = jwt.getClaim("tenantCode");
+      if (c != null && !c.isNull())
+      {
+         String tenantCode = c.asString();
+         user.withTenantCode(tenantCode);
+      }
+
       addPermsToUser(user, jwt.getClaim("perms"));
       addPermsToUser(user, jwt.getClaim("actions"));
 
@@ -411,10 +431,6 @@ public class AuthAction extends Action<AuthAction>
     *
     * Finds the most specific keys keys first
     *
-    * @param accountCode
-    * @param apiCode
-    * @param tenantCode
-    * @return
     */
    List<String> getJwtSecrets()
    {
@@ -470,8 +486,8 @@ public class AuthAction extends Action<AuthAction>
 
    public String signJwt(JWTCreator.Builder jwtBuilder, String accountCode, String apiCode, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
-      String secret = getJwtSecrets(accountCode, apiCode, tenantCode).get(0);
-      return jwtBuilder.sign(Algorithm.HMAC256(secret));
+         String secret = getJwtSecrets(accountCode, apiCode, tenantCode).get(0);
+         return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 
    public static String strongHash(Object salt, String password) throws ApiException
