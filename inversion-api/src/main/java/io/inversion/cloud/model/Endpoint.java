@@ -36,16 +36,16 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint(String method, String pathExpression, Action... actions)
    {
-      this(method, pathExpression, null, actions);
+      this(method, pathExpression, null, null, actions);
 
    }
 
    public Endpoint(String method, String endpointPath, String collectionPaths, Action... actions)
    {
-      this(null, method, endpointPath, collectionPaths, actions);
+      this(method, endpointPath, collectionPaths, null, actions);
    }
 
-   public Endpoint(String name, String method, String endpointPath, String collectionPaths, Action... actions)
+   public Endpoint(String method, String endpointPath, String collectionPaths, String name, Action... actions)
    {
       if (!Utils.empty(endpointPath) && !Utils.empty(collectionPaths))
       {
@@ -76,56 +76,45 @@ public class Endpoint extends Rule<Endpoint>
       return (!Utils.empty(name) ? name + " " : "") + methods + " '/" + (!Utils.empty(path) ? path : "") + "' " + includePaths + " - " + excludePaths;
    }
 
-   public boolean matches(String method, String toMatch)
+   public boolean matches(String method, String fullPath)
    {
-      return matches(method, new Path(toMatch));
+      Path path = new Path(fullPath);
+      for (int i = 0; i <= path.size(); i++)
+      {
+         Path endpointPath = path.subpath(0, i);
+         Path collectionPath = path.subpath(i, path.size());
+         if (matches(method, endpointPath, collectionPath))
+            return true;
+      }
+      return false;
    }
 
-   public boolean matches(String method, Path toMatch)
+   public boolean matches(String method, String endpointPath, String collectionPath)
+   {
+      return matches(method, new Path(endpointPath), new Path(collectionPath));
+   }
+
+   public boolean matches(String method, Path endpointPath, Path collectionPath)
    {
       if (internal && Chain.getDepth() < 2)
       {
          return false;
       }
 
-      boolean included = false;
-      boolean excluded = false;
-
       if (isMethod(method))
       {
-         int index = 0;
-         for (index = 0; path != null && path.size() > 0 && index < path.size(); index++)
+         if (path == null || !path.matches(endpointPath))
          {
-            if (!path.matches(index, toMatch))
+            if (!path.matches(endpointPath))
                return false;
          }
 
-         if (index == toMatch.size())
-            return true;
-
-         for (Path includePath : includePaths)
-         {
-            if (includePath.matchesRest(index, toMatch))
-            {
-               included = true;
-               break;
-            }
-         }
+         if(collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
+            return false;
          
-         if (included && toMatch.size() > index)
-         {
-            for (Path excludePath : excludePaths)
-            {
-               if (excludePath.matchesRest(index, toMatch))
-               {
-                  excluded = true;
-                  break;
-               }
-            }
-         }
+         return super.matchesPath(collectionPath);
       }
-      return included && !excluded;
-
+      return false;
    }
 
    public Endpoint withApi(Api api)

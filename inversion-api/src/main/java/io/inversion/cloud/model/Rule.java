@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -73,41 +73,48 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    public boolean matches(String method, Path path)
    {
+      if (isMethod(method))
+      {
+         return matchesPath(path);
+      }
+      return false;
+   }
+
+   public boolean matchesPath(Path path)
+   {
       boolean included = false;
       boolean excluded = false;
 
-      if (isMethod(method))
+      if (includePaths.size() == 0)
       {
-         if (includePaths.size() == 0)
-         {
+         if (excludePaths.size() ==  0 || path.size() == 0)
             included = true;
-         }
-         else
+      }
+      else
+      {
+         for (Path includePath : includePaths)
          {
-            for (Path includePath : includePaths)
+            if (includePath.matches(path))
             {
-               if (includePath.matches(path))
-               {
-                  included = true;
-                  break;
-               }
-            }
-         }
-
-         if (included)
-         {
-            for (Path excludePath : excludePaths)
-            {
-               if (excludePath.matches(path))
-               {
-                  excluded = true;
-                  break;
-               }
+               included = true;
+               break;
             }
          }
       }
-      return included && !excluded;
 
+      if (included && path.size() > 0)
+      {
+         for (Path excludePath : excludePaths)
+         {
+            if (excludePath.matches(path))
+            {
+               excluded = true;
+               break;
+            }
+         }
+      }
+
+      return included && !excluded;
    }
 
    public boolean isMethod(String... methods)
@@ -115,9 +122,9 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       if (this.methods.size() == 0)
          return true;
 
-      if(this.methods.contains("*"))
+      if (this.methods.contains("*"))
          return true;
-      
+
       for (String method : methods)
       {
          if (method != null && this.methods.contains(method))
@@ -138,6 +145,24 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
       for (String method : Utils.explode(",", methods))
       {
+         if ("*".equals(method))
+         {
+            withMethods("GET,PUT,POST,DELETE,PATCH");
+            continue;
+         }
+
+         if ("read".equalsIgnoreCase(method))
+         {
+            withMethods("GET");
+            continue;
+         }
+
+         if ("write".equalsIgnoreCase(method))
+         {
+            withMethods("PUT,POST,DELETE,PATCH");
+            continue;
+         }
+
          if (!this.methods.contains(method))
             this.methods.add(method);
       }

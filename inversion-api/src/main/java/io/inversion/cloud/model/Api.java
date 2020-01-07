@@ -206,45 +206,6 @@ public class Api
       return null;
    }
 
-   //   public Collection getCollection(String name)
-   //   {
-   //      return getCollection(name, null);
-   //   }
-   //
-   ////   public Collection getCollection(String name, Class dbClass) throws ApiException
-   //   {
-   //      for (Collection collection : collections)
-   //      {
-   //         if (collection.getName().equalsIgnoreCase(name))
-   //         {
-   //            if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
-   //               return collection;
-   //         }
-   //      }
-   //
-   //      for (Collection collection : collections)
-   //      {
-   //         // This loop is done separately from the one above to allow 
-   //         // collections to have precedence over aliases
-   //         for (String alias : collection.getAliases())
-   //         {
-   //            if (name.equalsIgnoreCase(alias))
-   //            {
-   //               if (dbClass == null || dbClass.isAssignableFrom(collection.getDb().getClass()))
-   //                  return collection;
-   //            }
-   //         }
-   //      }
-   //
-   //      if (dbClass != null)
-   //      {
-   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' configured with Db class '" + dbClass.getSimpleName() + "' could not be found");
-   //      }
-   //      else
-   //      {
-   //         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + name + "' could not be found");
-   //      }
-   //   }
 
    public Collection getCollection(String name)
    {
@@ -386,33 +347,6 @@ public class Api
       return new ArrayList(endpoints);
    }
 
-   public Endpoint makeEndpoint(String methods, String pathExpression, Action... actions)
-   {
-      return makeEndpoint(methods, pathExpression, null, actions);
-   }
-
-   public Endpoint makeEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
-   {
-      return makeEndpoint(methods, endpointPath, collectionPaths, null, actions);
-   }
-
-   public Endpoint makeEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
-   {
-      if (methods != null && "*".equals(methods.trim()))
-         methods = "GET,PUT,POST,DELETE";
-
-      Endpoint endpoint = new Endpoint(name, methods, endpointPath, collectionPaths);
-
-      for (Action action : actions)
-      {
-         endpoint.withAction(action);
-      }
-
-      withEndpoint(endpoint);
-
-      return endpoint;
-   }
-
    public Api withEndpoint(String methods, String pathExpression, Action... actions)
    {
       return withEndpoint(methods, pathExpression, null, null, actions);
@@ -425,7 +359,8 @@ public class Api
 
    public Api withEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
    {
-      makeEndpoint(methods, endpointPath, collectionPaths, name, actions);
+      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, name, actions);
+      withEndpoint(endpoint);
       return this;
    }
 

@@ -16,6 +16,8 @@
  */
 package io.inversion.cloud.service;
 
+import java.util.List;
+
 import org.junit.Test;
 
 import io.inversion.cloud.action.misc.MockAction;
@@ -31,98 +33,116 @@ public class TestEngine extends TestCase
 {
 
    @Test
-   public void testEndpointMatching1()
-   {
-      Endpoint ep = null;
-
-      ep = new Endpoint("GET", "actionA*", new MockActionA("GET", "*"));
-      assertEquals("actionA*", ep.getIncludePaths().get(0).toString());
-      assertTrue(ep.matches("GET", "actionA"));
-      assertFalse(ep.matches("PUT", "actionA"));
-      assertFalse(ep.matches("GET", "actionB"));
-      assertTrue(ep.matches("GET", "actionAasdf"));
-      assertTrue(ep.matches("GET", "actionA/asdasdf"));
-
-      ep = new Endpoint("GET", "actionA", new MockActionA("GET", "*"));
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals(0, ep.getIncludePaths().size());
-      assertTrue(ep.matches("GET", "actionA"));
-      assertTrue(ep.matches("GET", "actionA/asdf"));
-
-      ep = new Endpoint("GET", "actionA/*", new MockActionA("GET", "*"));
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals("*", ep.getIncludePaths().get(0).toString());
-      assertTrue(ep.matches("GET", "actionA/asdf"));
-
-      ep = new Endpoint("GET", "actionA/asdf*", new MockActionA("GET", "*"));
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals("asdf*", ep.getIncludePaths().get(0).toString());
-      assertTrue(ep.matches("GET", "actionA/asdf"));
-      assertFalse(ep.matches("GET", "actionA/zxcvasdf"));
-
-      ep = new Endpoint("GET", "actionA", new MockActionA("GET", "*")).withExcludePaths("*");
-      assertEquals("actionA", ep.getPath().toString());
-      assertTrue(ep.matches("GET", "actionA/"));
-      assertTrue(ep.matches("GET", "actionA"));
-      assertFalse(ep.matches("GET", "actionA/zxcvasdf"));
-
-      ep = new Endpoint("GET", "actionA", new MockActionA("GET", "*")).withExcludePaths("asdf*");
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals("asdf*", ep.getExcludePaths().get(0).toString());
-      assertFalse(ep.matches("GET", "actionA/asdf"));
-      assertTrue(ep.matches("GET", "actionA/zxcvasdf"));
-
-      ep = new Endpoint("GET", "actionA/*", new MockActionA("GET", "*")).withExcludePaths("bbb*,ccc*,ddd,aaa");
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals("*", ep.getIncludePaths().get(0).toString());
-      assertEquals("bbb*", ep.getExcludePaths().get(0).toString());
-      assertEquals("ccc*", ep.getExcludePaths().get(1).toString());
-      assertEquals("ddd", ep.getExcludePaths().get(2).toString());
-      assertEquals("aaa", ep.getExcludePaths().get(3).toString());
-      assertFalse(ep.matches("GET", "actionA/aaa"));
-      assertTrue(ep.matches("GET", "actionA/aaaxyz"));
-      assertFalse(ep.matches("GET", "actionA/ddd"));
-      assertTrue(ep.matches("GET", "actionA/dddxyz"));
-
-      assertFalse(ep.matches("GET", "actionA/bbb"));
-      assertFalse(ep.matches("GET", "actionA/bbbsdfbshtgzdsfg"));
-      assertFalse(ep.matches("GET", "actionA/ccc"));
-      assertFalse(ep.matches("GET", "actionA/cccccccasdfasdf"));
-      assertTrue(ep.matches("GET", "actionA/dddddd"));
-
-      ep = new Endpoint("GET", "actionA/aaa*", new MockActionA("GET", "*")).withExcludePaths("bbb*,ccc*,ddd,aaa");
-      assertEquals("actionA", ep.getPath().toString());
-      assertEquals("aaa*", ep.getIncludePaths().get(0).toString());
-      assertEquals("bbb*", ep.getExcludePaths().get(0).toString());
-      assertEquals("ccc*", ep.getExcludePaths().get(1).toString());
-      assertEquals("ddd", ep.getExcludePaths().get(2).toString());
-      assertEquals("aaa", ep.getExcludePaths().get(3).toString());
-      assertFalse(ep.matches("GET", "actionA/aaa"));
-      assertTrue(ep.matches("GET", "actionA/aaaxyz"));
-      assertFalse(ep.matches("GET", "actionA/"));//not allowed or denied so denied
-      assertFalse(ep.matches("GET", "actionA/abcd"));//not allowed or denied so denied
-      assertFalse(ep.matches("GET", "actionA/bb"));//not allowed or denied so denied
-      assertFalse(ep.matches("GET", "actionA/ccc"));//specifically denied
-   }
-
-   @Test
    public void testEndpointMatching2()
    {
       Engine engine = null;
 
       engine = new Engine()//
                            .withApi(new Api("northwind")//
-                           .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
-                           .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
-                           .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
-                           .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction")));
-                           
+                                                        .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
+                                                        .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
+                                                        .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
+                                                        .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction")));
 
       engine.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
       engine.get("northwind/source").assertDebug("Action:", "sourceAction");
       engine.get("northwind/h2/collection").assertDebug("Actio:n", "h2Action");
       engine.get("northwind/mysql/collection/entity/subcollection").assertDebug("Action:", "mysqlAction");
       engine.get("northwind/dynamo/collection").assertDebug("Action:", "dynamoAction");
+   }
+
+   @Test
+   public void test_endpoints_without_paths()
+   {
+      Api api = null;
+
+      api = new Api("test")//
+                           .withAction(new MockAction("mock1").withIncludePaths("*"))//
+                           .withEndpoint(new Endpoint("GET", "*", null, "ep1").withExcludePaths("subpath/*"))//
+                           .withEndpoint("GET", "subpath/*", null, "ep2")//
+      ;
+
+      assertEndpointMatch("GET", "http://localhost/test/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api);
+      assertEndpointMatch("GET", "http://localhost/test/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api);
+
+      api = new Api("test")//
+                           .withAction(new MockAction("mock1").withIncludePaths("*"))//
+                           .withEndpoint(new Endpoint("GET", "/", null, "ep1").withIncludePaths("collection1/*,collection2/*"))//
+                           .withEndpoint("GET", "subpath3/*", null, "ep2")//
+      ;
+
+      assertEndpointMatch("GET", "http://localhost/test/collection1/entKey/relKey", 200, "ep1", "", "collection1", "entKey", "relKey", api);
+      assertEndpointMatch("GET", "http://localhost/test/collection2/entKey/relKey", 200, "ep1", "", "collection2", "entKey", "relKey", api);
+      assertEndpointMatch("GET", "http://localhost/test/subpath3/colKey/entKey/relKey", 200, "ep2", "subpath3", "colKey", "entKey", "relKey", api);
+
+   }
+
+   @Test
+   public void test_endpoint_matches()
+   {
+      Api api0 = new Api()//
+                          .withEndpoint("GET", "endpoint_path/*", null, "ep0", new MockAction("all"));
+
+      //if you only have one API, you can leave the API code null...you can only really do this from code configured APIs not prop wired APIs
+      assertEndpointMatch("GET", "http://localhost/endpoint_path/12345", 200, "ep0", "endpoint_path", "12345", null, null, api0);
+
+      Api api1 = new Api("test")//
+                                .withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint("GET", "ep1/*", null, "ep1")//
+                                .withEndpoint("GET", "ep2/", null, "ep2")//
+                                .withEndpoint("GET", "bookstore/", "books/*,categories,authors", "ep3")//
+                                .withEndpoint("GET", "other/data", "table1,table2/*,other/data/*,data/*", "ep4")//
+                                .withEndpoint("GET", "cardealer", "ford/*,gm/*", "ep5")//
+                                .withEndpoint(new Endpoint("GET", "petstore/*", null, "ep6").withExcludePaths("rat", "snakes/bad", "cats/*"))//
+                                .withEndpoint("GET", "gamestop/*", "nintendo,xbox/*", "ep7")//
+                                .withEndpoint("GET", "carwash", "regular,delux/*", "ep8");
+
+      Api api2 = new Api("other");
+
+      assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
+      assertEndpointMatch("GET", "/test/ep1", 200, api1);
+      assertEndpointMatch("GET", "test/ep1", 200, api1);
+      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 404, api1);
+      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 404, api1, api2);
+
+      assertEndpointMatch("GET", "http://localhost/test/ep1/collKey/entKey/relKey", 200, "ep1", "ep1", "collKey", "entKey", "relKey", api1);
+      assertEndpointMatch("GET", "http://localhost/test/ep1/collKey/entKey/relKey", 500, "ep1", "ep1", "collKey", "entKey", "asdfasd", api1);
+      assertEndpointMatch("DELETE", "http://localhost/test/ep1/collKey/entKey/relKey", 404, api1);
+
+      assertEndpointMatch("GET", "test/ep2", 200, api1);
+      assertEndpointMatch("GET", "http://localhost/test/ep2/", 200, api1);
+      assertEndpointMatch("GET", "http://localhost/test/ep2/asdf", 404, api1);
+
+      assertEndpointMatch("GET", "http://localhost/test/bookstore/books/1/author", 200, "ep3", "bookstore", "books", "1", "author", api1);
+      assertEndpointMatch("GET", "http://localhost/test/bookstore/categories/fiction/books", 404, "ep3", "bookstore", "categories", "fiction", "books", api1);
+      assertEndpointMatch("GET", "http://localhost/test/bookstore/cars/", 404, api1);
+
+      assertEndpointMatch("GET", "/test/other/data/table1/", 200, "ep4", "other/data", "table1", null, null, api1);
+      assertEndpointMatch("GET", "http://localhost/test/other/data/table1/asdfa/", 404, api1);
+      assertEndpointMatch("GET", "http://localhost/test/other/data/table2/keyCol/relCol", 200, "ep4", "other/data", "table2", "keyCol", "relCol", api1);
+      assertEndpointMatch("GET", "test/other/data/data/keyCol/relCol", 200, "ep4", "other/data", "data", "keyCol", "relCol", api1);
+      assertEndpointMatch("GET", "http://localhost/test/other/data/other/data/relCol", 200, "ep4", "other/data", "other", "data", "relCol", api1);
+
+      assertEndpointMatch("GET", "/test/cardealer/ford/explorer", 200, "ep5", "cardealer", "ford", "explorer", null, api1);
+      assertEndpointMatch("GET", "/test/cardealer/gm", 200, "ep5", "cardealer", "gm", null, null, api1);
+      assertEndpointMatch("GET", "/test/cardealer/ford/toyota", 404);
+
+      assertEndpointMatch("GET", "/test/petstore/dogs/1234/breed", 200, "ep6", "petstore", "dogs", "1234", "breed", api1);
+      assertEndpointMatch("GET", "/test/petstore/rat/", 404, api1);
+      assertEndpointMatch("GET", "/test/petstore/rat/a_rat", 200, "ep6", "petstore", "rat", "a_rat", null, api1);
+      assertEndpointMatch("GET", "/test/petstore/snakes/good", 200, "ep6", "petstore", "snakes", "good", null, api1);
+      assertEndpointMatch("GET", "/test/petstore/snakes/bad/", 404, api1);
+      assertEndpointMatch("GET", "/test/petstore/snakes/bad/butgood", 200, "ep6", "petstore", "snakes", "bad", "butgood", api1);
+      assertEndpointMatch("GET", "/test/petstore/cats/", 404, api1);
+      assertEndpointMatch("GET", "/test/petstore/cats/nope", 404, api1);
+      assertEndpointMatch("GET", "/test/petstore/cats/nope/none", 404, api1);
+
+      //the Endpoint constructor will strip /* from gamestop/* because it conflicts with having passed in includePaths
+      assertEndpointMatch("GET", "/test/gamestop/nintendo", 200, "ep7", "gamestop", "nintendo", null, null, api1);
+      assertEndpointMatch("GET", "/test/gamestop/nintendo/game", 404, api1);
+      assertEndpointMatch("GET", "/test/gamestop/xbox/somegame", 200, "ep7", "gamestop", "xbox", "somegame", null, api1);
+      assertEndpointMatch("GET", "/test/gamestop/nintendo/sega", 404, api1);
+
    }
 
    @Test
@@ -289,6 +309,74 @@ public class TestEngine extends TestCase
       res.assertDebug("Endpoint_actionC_actionBParam", "actionBValue");
       res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
 
+   }
+
+   public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
+   {
+      assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
+   }
+
+   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String entityKey, String subCollectionKey, Api... apis)
+   {
+      final boolean[] success = new boolean[]{false};
+      Engine e = new Engine()
+         {
+            protected void service(Chain chain, List<Action> actions) throws Exception
+            {
+               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
+                  fail(chain, "endpoints don't match");
+
+               if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString()))
+               {
+                  fail(chain, "endpoint path doesn't match");
+               }
+
+               if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
+                  fail(chain, "collectionKey don't match");
+
+               if (entityKey != null && !entityKey.equals(chain.getRequest().getEntityKey()))
+                  fail(chain, "entityKey don't match");
+
+               if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getSubCollectionKey()))
+                  fail(chain, "subCollectionKey don't match");
+
+               success[0] = true;
+            }
+
+            protected void fail(Chain chain, String message, Object... vals)
+            {
+               System.err.print(message);
+               for (int i = 0; vals != null && i < vals.length; i++)
+                  System.err.print(vals[i] + " ");
+               System.err.println("");
+               System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + entityKey + "," + subCollectionKey);
+               System.err.println("url              :" + chain.getRequest().getUrl());
+               System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
+               System.err.println("endpoint         :" + chain.getRequest().getEndpoint());
+               System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
+               System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
+               System.err.println("entityKey        :" + chain.getRequest().getEntityKey());
+               System.err.println("subCollectionKey :" + chain.getRequest().getSubCollectionKey());
+               System.err.println("subPath          :" + chain.getRequest().getSubpath());
+
+               throw new RuntimeException(message);
+            }
+         };
+
+      for (Api api : apis)
+      {
+         if (api != null)
+            e.withApi(api);//without this additional API, any apiCode will match
+      }
+
+      Response resp = e.service(method, url);
+      resp.dump();
+
+      if (statusCode != resp.getStatusCode())
+         fail("status code mismatch");
+
+      if (statusCode < 400 && !success[0])
+         fail("status code mismatch");
    }
 
 }

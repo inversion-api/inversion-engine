@@ -123,6 +123,9 @@ public class Path
       {
          String myPart = lc.get(i);
 
+         if ("*".equals(myPart) && i == lc.size() - 1)
+            return true;
+
          if (i + matchFrom >= toMatch.size())
          {
             if (myPart.equals("*"))

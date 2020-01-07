@@ -439,8 +439,7 @@ public class Engine
                Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
                for (Endpoint e : a.getEndpoints())
                {
-                  if (e.matches(req.getMethod(), endpointPath) //
-                        && e.matches(req.getMethod(), remainingPath))
+                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i,  remainingPath.size())))
                   {
                      req.withEndpointPath(endpointPath);
                      req.withEndpoint(e);
