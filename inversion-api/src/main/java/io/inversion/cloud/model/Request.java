@@ -84,6 +84,7 @@ public class Request
          withBody(body.toString());
    }
 
+   //todo url come first here but after method in other constructors.
    public Request(String url, String method, Map<String, String> headers, Map<String, String> params, String body)
    {
       withMethod(method);
