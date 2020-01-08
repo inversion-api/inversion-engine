@@ -133,8 +133,8 @@ Append '&explain=true' to any query string to see an explanation of what is happ
 ### Maven Repos
 
 This project uses Travis CI to publish master branch commits as snapshot builds to 
-the [oss.jfrog.org (aka OJO) maven repository](https://bintray.com/inversion/repo) and 
-release branch commits to to the [Inversion bintray maven repository](https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/) 
+the [oss.jfrog.org (aka OJO) maven repository](https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/) and 
+release branch commits to to the [Inversion bintray maven repository](https://bintray.com/inversion/repo) 
 which syncs to jcenter. 
 
 If you are a Java developer comfortable with maven, you can include the following repos 
@@ -169,6 +169,24 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 
 	}
     
+```
+
+If OJO snapshots are not cutting edge enough for you, you can also pull snapshots directly from GitHub 
+via [Jitpack](https://jitpack.io/#inversion-api/inversion-engine).  While you can pull tagged releases 
+from Jitpack, it is not recommended.  Please consider only use Jitpack for pulling snapshots of branches.
+
+```
+	repositories {
+		jcenter()
+		maven { url 'https://jitpack.io' }
+		}
+		
+	dependencies {
+		
+		compile 'compile 'com.github.inversion-api.inversion-engine:inversion-api:master-SNAPSHOT'
+		compile 'compile 'com.github.inversion-api.inversion-engine:inversion-dynamodb:master-SNAPSHOT'
+		
+	}
 ```
 
 

@@ -55,7 +55,11 @@ buildscript {
 
     dependencies {
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.13.0"
+        
+        //WARNING artifactory plugin 4.13.0 was the lastest as of 1/8/20
+        //but artifactoryPublish was hanging, never completing.  Downgrading
+        //seemed to fix the problem
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
     }
     
     configurations.classpath {
