@@ -51,6 +51,8 @@
 buildscript {
     repositories {
         jcenter()
+        mavenLocal()
+		mavenCentral()
     }
 
     dependencies {
