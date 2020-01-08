@@ -1,12 +1,68 @@
+/**
+ * This is a gradle multi project build that works with Travis CI to publish:
+ *
+ *   - Github master branch commits as snapshot builds to oss.jfrog.org 
+ *     (aka OJO found @ https://oss.jfrog.org/artifactory/oss-snapshot-local/)
+ *       
+ *   - Github release-x.x.x branch commits as releases to the inversion
+ *     bintray repo which syncs with jcenter
+ *           
+ * We are using two different repos because at the time of writing, bintray 
+ * did not accept snapshots and OJO is their specific solution to hosting snapshots.  
+ * 
+ * Both the bintray and artifactory plugins have had varing support for
+ * different gradle versions and gradle multi project builds specifically.  
+ * Most of the OJO examples around the web are for single projects what
+ * works for bintray in mutli projects does not work exactly the same way for
+ * artifactory.
+ *
+ * Repos:
+ *  - Bintray  - https://dl.bintray.com/inversion/repo/io/inversion/
+ *             - https://bintray.com/inversion/repo
+ *
+ *  - OJO Repo - https://oss.jfrog.org/artifactory/oss-snapshot-local/io/inversion/
+ *             - https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/
+ * 
+ *  - JCenter mirror - https://jcenter.bintray.com/io/inversion/
+ *
+ * Projects that want to pull both releases and snapshot dependencies should include the
+ * following repos in their gradle config:
+ *    
+ *  repositories {
+ *		jcenter()
+ *		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
+ *   }
+ *
+ * The following examples/articles were super helpful in figuring all fo this out
+ *   - https://github.com/jfrog/project-examples/blob/master/gradle-examples/gradle-example-multi-repos/build.gradle
+ *   - https://github.com/bintray/bintray-examples/tree/master/gradle-multi-example
+ *   - https://github.com/bintray/bintray-examples/tree/master/gradle-bintray-plugin-examples
+ *   - https://reflectoring.io/guide-publishing-to-bintray-with-gradle/
+ *   - https://reflectoring.io/bintray-jcenter-maven-central/
+ *   - https://reflectoring.io/fully-automated-open-source-release-chain/
+ *   - https://reflectoring.io/spring-boot-gradle-multi-module/
+ *   - https://github.com/jfrog/build-info/issues/145
+ *   - https://stackoverflow.com/questions/35851251/gradle-artifactory-plugin-how-to-publish-artifacts-from-multiple-modules-in-a
+ *
+ */
+ 
+
+
 buildscript {
     repositories {
-        mavenLocal()
-        mavenCentral()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.+'
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.13.0"
+    }
+    
+    configurations.classpath {
+        resolutionStrategy {
+            cacheDynamicVersionsFor 0, 'seconds'
+            cacheChangingModulesFor 0, 'seconds'
+        }
     }
 }
 
@@ -14,9 +70,21 @@ plugins {
   id "java-library"
   id "maven-publish"
 }
+	
+
+def bintrayUser = System.getProperty("bintray.user")
+def bintrayKey = System.getProperty("bintray.key")
+def buildNumber = System.getProperty("build.number")
 
 
 allprojects {
+
+	apply plugin: 'com.jfrog.artifactory'
+    
+
+	group = 'io.inversion'
+	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
+	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")    
 }
 
 
@@ -25,10 +93,8 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
-
-	group = 'io.inversion'
-
-	sourceCompatibility = 1.8
+    
+    sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	
 	repositories {
@@ -71,10 +137,6 @@ subprojects {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'
 	                url = 'http://inversion.io'
-	                //properties = [
-	                //    myProp: "value",
-	                //    "prop.with.dots": "anotherValue"
-	                //]
 	                licenses {
 	                    license {
 	                        name = 'The Apache License, Version 2.0'
@@ -97,14 +159,12 @@ subprojects {
 	        }
 	    }
 	}
-	
-	//https://github.com/bintray/gradle-bintray-plugin#plugin-dsl
+
 	bintray {
-		user = System.getProperty('bintray.user')
-		key = System.getProperty('bintray.key')
+		user = bintrayUser
+		key = bintrayKey
 		publications = ['mavenJava']
 	    publish = true
-	
 		pkg {
 			repo = 'repo'
 			name = project.name
@@ -122,4 +182,37 @@ subprojects {
 			}
 		}
 	}
+	
+	artifactoryPublish {
+        publications(publishing.publications.mavenJava)
+    }
+}
+
+
+artifactoryPublish.skip=true
+
+	
+artifactory {
+    contextUrl = 'http://oss.jfrog.org'
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = bintrayUser
+            password = bintrayKey
+        }
+        defaults {
+            publications('mavenJava')
+            publishArtifacts = true
+            publishPom = true
+            properties = [
+                    'build.number': buildNumber,
+                    'build.name': project.name
+            ]
+        }
+    }
+    resolve {
+        repoKey = 'jcenter'
+    }
+    clientConfig.info.setBuildNumber(buildNumber)
+    clientConfig.info.setBuildName(project.name)
 }
