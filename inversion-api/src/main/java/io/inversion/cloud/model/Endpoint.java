@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,15 +36,30 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint(String method, String pathExpression, Action... actions)
    {
-      this(method, pathExpression, null, actions);
+      this(method, pathExpression, null, null, actions);
 
    }
 
-   public Endpoint(String method, String basePathStr, String includeRelativeSubPathsStr, Action... actions)
+   public Endpoint(String method, String endpointPath, String collectionPaths, Action... actions)
    {
+      this(method, endpointPath, collectionPaths, null, actions);
+   }
+
+   public Endpoint(String method, String endpointPath, String collectionPaths, String name, Action... actions)
+   {
+      if (!Utils.empty(endpointPath) && !Utils.empty(collectionPaths))
+      {
+         Path ep = new Path(endpointPath);
+         if (ep.matchesLast("*"))
+         {
+            endpointPath = ep.subpath(0, ep.size() - 1).toString();
+         }
+      }
+
+      withName(name);
       withMethods(method);
-      withPath(basePathStr);
-      withIncludePaths(includeRelativeSubPathsStr);
+      withPath(endpointPath);
+      withIncludePaths(collectionPaths);
 
       if (actions != null)
       {
@@ -61,60 +76,45 @@ public class Endpoint extends Rule<Endpoint>
       return (!Utils.empty(name) ? name + " " : "") + methods + " '/" + (!Utils.empty(path) ? path : "") + "' " + includePaths + " - " + excludePaths;
    }
 
-   public boolean matches(String method, String toMatch)
+   public boolean matches(String method, String fullPath)
    {
-      return matches(method, new Path(toMatch));
+      Path path = new Path(fullPath);
+      for (int i = 0; i <= path.size(); i++)
+      {
+         Path endpointPath = path.subpath(0, i);
+         Path collectionPath = path.subpath(i, path.size());
+         if (matches(method, endpointPath, collectionPath))
+            return true;
+      }
+      return false;
    }
 
-   public boolean matches(String method, Path toMatch)
+   public boolean matches(String method, String endpointPath, String collectionPath)
+   {
+      return matches(method, new Path(endpointPath), new Path(collectionPath));
+   }
+
+   public boolean matches(String method, Path endpointPath, Path collectionPath)
    {
       if (internal && Chain.getDepth() < 2)
       {
          return false;
       }
 
-      boolean included = false;
-      boolean excluded = false;
-
       if (isMethod(method))
       {
-         int index = 0;
-         for (index = 0; path != null && index < path.size(); index++)
+         if (path == null || !path.matches(endpointPath))
          {
-            if (!path.matches(index, toMatch))
+            if (!path.matches(endpointPath))
                return false;
          }
 
-         if (includePaths.size() == 0)
-         {
-            included = true;
-         }
-         else
-         {
-            for (Path includePath : includePaths)
-            {
-               if (includePath.matchesRest(index, toMatch))
-               {
-                  included = true;
-                  break;
-               }
-            }
-         }
-
-         if (included && toMatch.size() > index)
-         {
-            for (Path excludePath : excludePaths)
-            {
-               if (excludePath.matchesRest(index, toMatch))
-               {
-                  excluded = true;
-                  break;
-               }
-            }
-         }
+         if(collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
+            return false;
+         
+         return super.matchesPath(collectionPath);
       }
-      return included && !excluded;
-
+      return false;
    }
 
    public Endpoint withApi(Api api)

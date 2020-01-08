@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -102,6 +102,16 @@ public class Path
       return true;
    }
 
+   public boolean matchFirst(String toMatch)
+   {
+      return matches(0, toMatch);
+   }
+
+   public boolean matchesLast(String toMatch)
+   {
+      return matches(size() - 1, toMatch);
+   }
+
    public boolean matches(Path toMatch)
    {
       return matchesRest(0, toMatch);
@@ -113,6 +123,9 @@ public class Path
       {
          String myPart = lc.get(i);
 
+         if ("*".equals(myPart) && i == lc.size() - 1)
+            return true;
+
          if (i + matchFrom >= toMatch.size())
          {
             if (myPart.equals("*"))
@@ -123,6 +136,10 @@ public class Path
 
          String theirPart = toMatch.lc.get(i + matchFrom);
 
+         if (i == lc.size() - 1 && myPart.equals("*"))
+         {
+            return true;
+         }
          if (myPart.indexOf("*") > -1)
          {
             if (!Utils.wildcardMatch(myPart, theirPart))
@@ -134,16 +151,16 @@ public class Path
                return false;
          }
       }
-      return true;
+      return toMatch.size() - matchFrom == lc.size();
    }
 
    public boolean matches(int index, Path path)
    {
       if (index < path.size())
          return matches(index, path.lc.get(index));
-      
+
       //matches a 'dir/*' to 'dir/'
-      if(index >= path.size() && lc.get(lc.size()-1).equals("*"))
+      if (index >= path.size() && lc.get(lc.size() - 1).equals("*"))
          return true;
 
       return false;
@@ -151,7 +168,7 @@ public class Path
 
    private boolean matches(int index, String part)
    {
-      if (index < lc.size())
+      if (index > -1 && index < lc.size())
       {
          String myPart = lc.get(index);
          if (myPart.indexOf("*") > -1)

@@ -94,7 +94,7 @@ public class AuthAction extends Action<AuthAction>
          }
       }
 
-      User user = req.getUser();
+      User user = Chain.peek().getUser();
 
       if (user != null && !req.isDelete())
       {
@@ -299,7 +299,7 @@ public class AuthAction extends Action<AuthAction>
             updateSessionCache = true;
 
          user.withRequestAt(now);
-         req.withUser(user);
+         Chain.peek().withUser(user);
 
          if (sessionReq && req.isPost())
          {
@@ -333,9 +333,9 @@ public class AuthAction extends Action<AuthAction>
             sessionCache.put(sessionKey, user);
       }
 
-      if (req.getUser() != null)
+      if (Chain.getUser() != null)
       {
-         User loggedIn = req.getUser();
+         User loggedIn = Chain.getUser();
          if (api.isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
             throw new ApiException(SC.SC_401_UNAUTHORIZED);
       }
@@ -366,7 +366,7 @@ public class AuthAction extends Action<AuthAction>
             //            user.withTenantCode(tenantCode);
             //            user.withTenantId(tenantId);
          }
-         req.withUser(user);
+         Chain.peek().withUser(user);
       }
    }
 
@@ -391,16 +391,35 @@ public class AuthAction extends Action<AuthAction>
          user.withRoles(roles.toArray(new String[roles.size()]));
       }
 
-      c = jwt.getClaim("perms");
+      c = jwt.getClaim("tenantId");
+      if (c != null && !c.isNull())
+      {
+         int tenantId = c.asInt();
+         user.withTenantId(tenantId);
+      }
+
+      c = jwt.getClaim("tenantCode");
+      if (c != null && !c.isNull())
+      {
+         String tenantCode = c.asString();
+         user.withTenantCode(tenantCode);
+      }
+
+      addPermsToUser(user, jwt.getClaim("perms"));
+      addPermsToUser(user, jwt.getClaim("actions"));
+
+      return user;
+   }
+
+   void addPermsToUser(User user, Claim c)
+   {
       if (c != null && !c.isNull())
       {
          List<String> perms = c.asList(String.class);
          user.withPermissions(perms.toArray(new String[perms.size()]));
       }
-
-      return user;
    }
-
+   
    /**
     * Looks gwt signing secrets up as environment vars or sysprops.
     * 

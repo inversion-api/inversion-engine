@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,24 +49,24 @@ import io.inversion.cloud.utils.Utils;
 
 public class Engine
 {
-   transient volatile boolean               started        = false;
-   transient volatile boolean               starting       = false;
-   transient volatile boolean               destroyed      = false;
+   transient volatile boolean                        started        = false;
+   transient volatile boolean                        starting       = false;
+   transient volatile boolean                        destroyed      = false;
 
-   protected Logger                         log            = LoggerFactory.getLogger(getClass());
-   protected Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected Logger                                  log            = LoggerFactory.getLogger(getClass());
+   protected Logger                                  requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   protected List<Api>                      apis           = new Vector();
+   protected List<Api>                               apis           = new Vector();
 
-   protected ResourceLoader                 resourceLoader = null;
+   protected ResourceLoader                          resourceLoader = null;
 
-   protected Configurator                   configurator   = new Configurator();
+   protected Configurator                            configurator   = new Configurator();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected Path                           servletMapping = null;
+   protected Path                                    servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -74,31 +74,31 @@ public class Engine
     * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
     * profile specific settings files.
     */
-   protected String                         profile        = null;
+   protected String                                  profile        = null;
 
    /**
     * The path to inversion*.properties files
     */
-   protected String                         configPath     = "";
+   protected String                                  configPath     = "";
 
    /**
     * The number of milliseconds between background reloads of the Api config
     */
-   protected int                            configTimeout  = 10000;
+   protected int                                     configTimeout  = 10000;
 
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
     * will not be reflectively configured as it otherwise would.
     */
-   protected boolean                        configFast     = false;
-   protected boolean                        configDebug    = false;
-   protected String                         configOut      = null;
+   protected boolean                                 configFast     = false;
+   protected boolean                                 configDebug    = false;
+   protected String                                  configOut      = null;
 
    /**
     * The last response returned.  Not that useful in concurrent 
     * production environments but useful for writing test cases.
     */
-   protected transient volatile Response    lastResponse   = null;
+   protected transient volatile Response             lastResponse   = null;
 
    protected transient List<StartupListener<Engine>> listeners      = new ArrayList();
 
@@ -107,9 +107,7 @@ public class Engine
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
-
-
+   protected String                                  allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public Engine()
    {
@@ -201,7 +199,7 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + e.getPath() + " - " + e.getIncludePaths() + " - " + e.getExcludePaths());
+               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
@@ -415,7 +413,7 @@ public class Engine
          for (Api a : apis)
          {
             if (!((parts.size() == 0 && apis.size() == 1) //
-                  || (apis.size() == 1 && a.getApiCode() == null) //
+                  || (apis.size() == 1 && a.getApiCode() == null) //if you only have 1 API, you don't have to have an API code
                   || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
                continue;
 
@@ -439,11 +437,9 @@ public class Engine
             for (int i = 0; i <= parts.size(); i++)
             {
                Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
-
                for (Endpoint e : a.getEndpoints())
                {
-                  if (e.matches(req.getMethod(), endpointPath) //
-                        && e.matches(req.getMethod(), remainingPath))
+                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i,  remainingPath.size())))
                   {
                      req.withEndpointPath(endpointPath);
                      req.withEndpoint(e);
@@ -573,7 +569,7 @@ public class Engine
             Chain.debug("Actions: " + actions);
          }
 
-         chain.withActions(actions).go();
+         run(chain, actions);
 
          ConnectionLocal.commit();
 
@@ -645,6 +641,19 @@ public class Engine
       }
 
       return chain;
+   }
+   
+   /**
+    * This is specifically pulled out so you can mock Engine invocations
+    * in test cases.
+    * 
+    * @param chain
+    * @param actions
+    * @throws Exception
+    */
+   protected void run(Chain chain, List<Action> actions) throws Exception
+   {
+      chain.withActions(actions).go();
    }
 
    protected void writeResponse(Request req, Response res) throws Exception

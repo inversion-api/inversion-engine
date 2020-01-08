@@ -107,7 +107,7 @@ public class SqlSuggestAction extends Action<SqlSuggestAction>
                sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + SqlUtils.check(value) + "%' AND " + column + " != ''";
       
                if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
-                  sql += " AND " + tenantCol + "=" + req.getUser().getTenantId();
+                  sql += " AND " + tenantCol + "=" + Chain.peek().getUser().getTenantId();
       
                if (i + 1 < propertyList.size())
                   sql += " \r\nUNION ";

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,7 @@ import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Url;
+import io.inversion.cloud.model.User;
 import io.inversion.cloud.utils.Utils;
 
 public class Chain
@@ -95,6 +95,21 @@ public class Chain
       return get().pop();
    }
 
+   public static User getUser()
+   {
+      Chain chain = peek();
+      if (chain != null)
+      {
+         do
+         {
+            if (chain.user != null)
+               return chain.user;
+         }
+         while ((chain = chain.parent) != null);
+      }
+      return null;
+   }
+
    public static int size()
    {
       return get().size();
@@ -129,8 +144,8 @@ public class Chain
       Request req = peek().getRequest();
 
       String collectionKey = collection.getName();
-      
-      if(req.getCollection() == collection)
+
+      if (req.getCollection() == collection)
          collectionKey = req.getCollectionKey();
 
       String url = req.getApiUrl();
@@ -202,7 +217,7 @@ public class Chain
    {
       Request req = Chain.peek().getRequest();
       String url = req.getUrl().toString();
-      if(url.indexOf("?") >= 0)
+      if (url.indexOf("?") >= 0)
          url = url.substring(0, url.indexOf("?"));
 
       if (req.getSubCollectionKey() != null)
@@ -247,6 +262,8 @@ public class Chain
    protected int                next     = 0;
    protected boolean            canceled = false;
 
+   protected User               user     = null;
+
    protected CaseInsensitiveMap vars     = new CaseInsensitiveMap();
 
    protected Chain              parent   = null;
@@ -258,10 +275,11 @@ public class Chain
       this.response = res;
    }
 
-   //   public void debug(Object... msgs)
-   //   {
-   //      response.debug(msgs);
-   //   }
+   public Chain withUser(User user)
+   {
+      this.user = user;
+      return this;
+   }
 
    public Chain getParent()
    {

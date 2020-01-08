@@ -48,8 +48,6 @@ public class Request
    Path                                   endpointPath           = null;
    Endpoint                               endpoint               = null;
 
-   User                                   user                   = null;
-
    Collection                             collection             = null;
    String                                 collectionKey          = null;
    String                                 entityKey              = null;
@@ -86,6 +84,7 @@ public class Request
          withBody(body.toString());
    }
 
+   //todo url come first here but after method in other constructors.
    public Request(String url, String method, Map<String, String> headers, Map<String, String> params, String body)
    {
       withMethod(method);
@@ -478,17 +477,6 @@ public class Request
    public Request withEndpointPath(Path endpointPath)
    {
       this.endpointPath = endpointPath;
-      return this;
-   }
-
-   public User getUser()
-   {
-      return user;
-   }
-
-   public Request withUser(User user)
-   {
-      this.user = user;
       return this;
    }
 
