@@ -112,7 +112,7 @@ you restart that data will be back in its original demo state.
 To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
 
 ```
-git clone https://github.com/RocketPartners/rocket-inversion.git
+git clone https://github.com/inversion-api/inversion-engine.git
 ./gradlew build
 ./gradlew demo1
 ```

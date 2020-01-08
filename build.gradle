@@ -1,11 +1,14 @@
 /**
- * This is a gradle multi project build that is designed to publish releases
- * to a bintray maven repo which sync to JCenter, and to publish snapshots
- * to oss.jfrog.org (aka OJO found @ https://oss.jfrog.org/artifactory/oss-snapshot-local/) 
- * which is also mirrored in JCenter. 
- *  
- * At the time of writing, bintray did not accept snapshots and OJO is their
- * specific solution to hosting snapshots.  
+ * This is a gradle multi project build that works with Travis CI to publish:
+ *
+ *   - Github master branch commits as snapshot builds to oss.jfrog.org 
+ *     (aka OJO found @ https://oss.jfrog.org/artifactory/oss-snapshot-local/)
+ *       
+ *   - Github release-x.x.x branch commits as releases to the inversion
+ *     bintray repo which syncs with jcenter
+ *           
+ * We are using two different repos because at the time of writing, bintray 
+ * did not accept snapshots and OJO is their specific solution to hosting snapshots.  
  * 
  * Both the bintray and artifactory plugins have had varing support for
  * different gradle versions and gradle multi project builds specifically.  
@@ -18,15 +21,18 @@
  *             - https://bintray.com/inversion/repo
  *
  *  - OJO Repo - https://oss.jfrog.org/artifactory/oss-snapshot-local/io/inversion/
- *             - https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/inversion-api 
+ *             - https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/
  * 
  *  - JCenter mirror - https://jcenter.bintray.com/io/inversion/
  *
- * Projects that want to pull snapshot dependencies should include :
- *     maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
+ * Projects that want to pull both releases and snapshot dependencies should include the
+ * following repos in their gradle config:
+ *    
+ *  repositories {
+ *		jcenter()
+ *		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
+ *   }
  *
- * Repo Web I
- * 
  * The following examples/articles were super helpful in figuring all fo this out
  *   - https://github.com/jfrog/project-examples/blob/master/gradle-examples/gradle-example-multi-repos/build.gradle
  *   - https://github.com/bintray/bintray-examples/tree/master/gradle-multi-example
@@ -79,17 +85,6 @@ allprojects {
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")    
-    
-        
-    //group = 'org.jfrog.test.gradle.publish'
-    //version = currentVersion
-    //status = 'Integration'
-    //
-    //repositories {
-    //    maven {
-    //        url "http://127.0.0.1:8081/artifactory/jcenter"
-    //    }
-    //}
 }
 
 
