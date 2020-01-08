@@ -178,7 +178,7 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 You can build an API that connects to your own DB backend with just a few lines of Java code.
 
 ```java
-Inversion.run(new Api()
+InversionApp.run(new Api()
             .withName("demo")
             .withDb(new SqlDb("dbNickname", 
                               "${YOUR_JDBC_DRIVER}", 
