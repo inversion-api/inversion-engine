@@ -333,7 +333,7 @@ public class AuthAction extends Action<AuthAction>
             sessionCache.put(sessionKey, user);
       }
 
-      if (Chain.peek().getUser() != null)
+      if (Chain.getUser() != null)
       {
          User loggedIn = Chain.getUser();
          if (api.isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
@@ -391,16 +391,35 @@ public class AuthAction extends Action<AuthAction>
          user.withRoles(roles.toArray(new String[roles.size()]));
       }
 
-      c = jwt.getClaim("perms");
+      c = jwt.getClaim("tenantId");
+      if (c != null && !c.isNull())
+      {
+         int tenantId = c.asInt();
+         user.withTenantId(tenantId);
+      }
+
+      c = jwt.getClaim("tenantCode");
+      if (c != null && !c.isNull())
+      {
+         String tenantCode = c.asString();
+         user.withTenantCode(tenantCode);
+      }
+
+      addPermsToUser(user, jwt.getClaim("perms"));
+      addPermsToUser(user, jwt.getClaim("actions"));
+
+      return user;
+   }
+
+   void addPermsToUser(User user, Claim c)
+   {
       if (c != null && !c.isNull())
       {
          List<String> perms = c.asList(String.class);
          user.withPermissions(perms.toArray(new String[perms.size()]));
       }
-
-      return user;
    }
-
+   
    /**
     * Looks gwt signing secrets up as environment vars or sysprops.
     * 
