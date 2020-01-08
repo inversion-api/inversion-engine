@@ -27,11 +27,11 @@ jobs:
 
     # publish snapshot to oss.jfrog.org
     - stage: snapshot
-      script: ./gradlew artifactoryPublish -x test -Dsnapshot=true -Dbintray.user=inversion -Dbintray.key=$BINTRAY_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER --refresh-dependencies
+      script: ./gradlew artifactoryPublish -x test -Dbintray.user=inversion -Dbintray.key=$BINTRAY_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER -Dsnapshot=true --refresh-dependencies
 
     # release a new stable version to bintray
     - stage: release
-      script: ./gradlew bintrayUpload -x test -Dbintray.user=inversion -Dbintray.key=$BINTRAY_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER  --refresh-dependencies
+      script: ./gradlew bintrayUpload -x test -Dbintray.user=inversion -Dbintray.key=$BINTRAY_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER --refresh-dependencies
 
 
 before_cache:
