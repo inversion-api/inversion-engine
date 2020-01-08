@@ -32,6 +32,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
   - [Contents](#contents)
   - [Features and Benefits](#features-and-benefits)
   - [Quick Start](#quick-start)
+    - [Maven Repos](#maven-repos)
     - [Coding Your Own API](#coding-your-own-api)
     - [Configuration Instead of Code](#configuration-instead-of-code)
   - [URL Structure](#url-structure)
@@ -127,6 +128,46 @@ You can get started by exploring some of these urls:
       
 Append '&explain=true' to any query string to see an explanation of what is happening under the covers
  - GET http://localhost:8080/northwind/employees?title='Sales%20Representative'&sort=employeeid&pageSize=2&page=2&explain=true
+
+
+### Maven Repos
+
+If you are a Java developer comfortable with maven, you can include the following repos in your gradle config 
+to pull release or snapshot builds:
+
+```
+   repositories {
+ 		jcenter()
+ 		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
+    }
+    
+    dependencies {
+
+		//change to pull the version you want 
+		compile "io.inversion:inversion-api:0.6+"
+		
+		//you can pin to a specific release build like ths
+		//these come from jcenter / bintray
+		//compile "io.inversion:inversion-api:0.6.18"
+		
+		//any version that includes "-SNAPSHOT" will pull
+		//from the oss.jfrog.org repo, not jcenter
+		//compile "io.inversion:inversion-api:0.6.18-SNAPSHOT"
+		
+		//if you are including inversion multiple libs, it is a good 
+		//idea to set a variable such as "inversionVersion=0.6.18" in your 
+		//gradle.properties file and use that to import your dependencies 
+		//compile "io.inversion:inversion-api:${inversionVersion}"
+		//compile "io.inversion:inversion-dynamodb:${inversionVersion}"
+		//compile "io.inversion:inversion-s3:${inversionVersion}"
+		//compile "io.inversion:inversion-elasticsearch:${inversionVersion}"
+
+	}
+    
+```
+
+This project uses Travis CI to publish master branch commits as snapshot builds to OJO 
+and release branch commits to to the Inversion bintray repo which synch to jcenter. 
 
 
 ### Coding Your Own API
