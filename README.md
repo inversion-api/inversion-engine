@@ -132,8 +132,13 @@ Append '&explain=true' to any query string to see an explanation of what is happ
 
 ### Maven Repos
 
-If you are a Java developer comfortable with maven, you can include the following repos in your gradle config 
-to pull release or snapshot builds:
+This project uses Travis CI to publish master branch commits as snapshot builds to 
+the [oss.jfrog.org (aka OJO) maven repository](https://bintray.com/inversion/repo) and 
+release branch commits to to the [Inversion bintray maven repository](https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/) 
+which syncs to jcenter. 
+
+If you are a Java developer comfortable with maven, you can include the following repos 
+in your project pull release or snapshot builds.  Here is a gradle config example.
 
 ```
    repositories {
@@ -166,8 +171,6 @@ to pull release or snapshot builds:
     
 ```
 
-This project uses Travis CI to publish master branch commits as snapshot builds to OJO 
-and release branch commits to to the Inversion bintray repo which synch to jcenter. 
 
 
 ### Coding Your Own API
