@@ -15,9 +15,11 @@ CREATE TABLE `User` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL,
   `password` varchar(255) DEFAULT NULL,
+  `tenantId` bigint(20) default 0,
+  `tenantCode` varchar(255) default null,
   `requestAt` bigint(20) DEFAULT 0,
   `failedNum` smallint(2) DEFAULT 0,
-  `remoteAddr` varchar(255) DEFAULT NULL,  
+  `remoteAddr` varchar(255) DEFAULT NULL,
   `revoked` tinyint(1) DEFAULT 0,
   CONSTRAINT `PK_User` PRIMARY KEY (`id`)
 );
@@ -29,7 +31,7 @@ CREATE TABLE `ApiKey` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `userId` int(11) UNSIGNED NOT NULL,
   `accessKey` varchar(255) DEFAULT NULL,
-  `secretKey` varchar(255) DEFAULT NULL,  
+  `secretKey` varchar(255) DEFAULT NULL,
   `revoked` tinyint(1) DEFAULT NULL,
   CONSTRAINT `PK_ApiKey` PRIMARY KEY (`id`),
   CONSTRAINT `fk_apikey_userid` FOREIGN KEY (`userId`) REFERENCES `User` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -149,4 +151,3 @@ CREATE TABLE `RolePermission` (
   CONSTRAINT `fk_RolePermission_permission1` FOREIGN KEY (`permissionId`) REFERENCES `Permission` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX `RolePermission_upatc` ON `RolePermission` (`roleId`,`permissionId`,`accountCode`,`apiCode`,`tenantCode`);
-
