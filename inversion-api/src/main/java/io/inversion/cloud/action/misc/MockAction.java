@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,10 +37,10 @@ import io.inversion.cloud.utils.Utils;
 
 public class MockAction extends Action<MockAction>
 {
-   protected JSNode json          = null;
+   protected JSNode  json          = null;
    protected String  jsonUrl       = null;
-   protected int     statusCode    = 200;
-   protected String  status        = SC.SC_200_OK;
+   protected int     statusCode    = -1;
+   protected String  status        = null;
    protected boolean cancelRequest = true;
 
    public MockAction()
@@ -48,9 +48,15 @@ public class MockAction extends Action<MockAction>
 
    }
 
+   public MockAction(String status, JSNode json)
+   {
+      withStatus(status);
+      withJson(json);
+   }
+
    public MockAction(String name)
    {
-      this(null, null, name, new JSNode("name", name));
+      this(null, null, name, null);
    }
 
    public MockAction(String methods, String includePaths, String name)
@@ -60,17 +66,25 @@ public class MockAction extends Action<MockAction>
 
    public MockAction(String methods, String includePaths, String name, JSNode json)
    {
+      if (name != null && json == null)
+         json = new JSNode("name", name);
+
+      withName(name);
       withMethods(methods);
       withIncludePaths(includePaths);
-      withName(name);
       withJson(json);
    }
 
    @Override
    public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
    {
-      res.withStatus(status);
-      res.withStatusCode(statusCode);
+      if (statusCode > 0)
+         res.withStatus(status);
+
+      if (status != null)
+         res.withStatus(status);
+      else if (statusCode < 0)
+         withStatus(SC.SC_200_OK);
 
       JSNode json = getJson();
 
@@ -89,7 +103,7 @@ public class MockAction extends Action<MockAction>
    public MockAction withJson(JSNode json)
    {
       this.json = json;
-      return null;
+      return this;
    }
 
    public String getJsonUrl()
@@ -160,7 +174,7 @@ public class MockAction extends Action<MockAction>
       return statusCode;
    }
 
-   public MockAction StatusCode(int statusCode)
+   public MockAction wihtStatusCode(int statusCode)
    {
       this.statusCode = statusCode;
       return this;
