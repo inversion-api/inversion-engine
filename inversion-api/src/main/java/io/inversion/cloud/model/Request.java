@@ -109,7 +109,10 @@ public class Request
       withMethod(method);
       withUrl(url);
       withBody(body);
-      this.headers = headers;
+      
+      if(headers != null && headers.size() > 0)
+         this.headers = new ArrayListValuedHashMap(headers);
+      
       if (retryAttempts > 0)
          this.retryAttempts = retryAttempts;
    }

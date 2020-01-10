@@ -54,16 +54,11 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 
-import com.zaxxer.hikari.util.ConcurrentBag.IBagStateListener;
-
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Executor;
-import io.inversion.cloud.utils.FutureResponse;
-import io.inversion.cloud.utils.Utils;
 
 /**
  * This file was forked from the Inversion HttpUtils class to 
@@ -98,6 +93,24 @@ public class RestClient
    protected HttpClient                             httpClient     = null;
 
    protected Timer                                  timer          = null;
+
+   public static ArrayListValuedHashMap asHeaderMap(String... keyValueList)
+   {
+      ArrayListValuedHashMap headers = new ArrayListValuedHashMap();
+      addToHeaderMap(headers, keyValueList);
+      return headers;
+   }
+
+   public static void addToHeaderMap(ArrayListValuedHashMap headers, String... keyValueList)
+   {
+      for (int i = 0; i < keyValueList.length - 1; i += 2)
+         headers.put(keyValueList[i], keyValueList[i + 1]);
+   }
+
+   public RestClient()
+   {
+
+   }
 
    public RestClient(String name)
    {
@@ -147,7 +160,9 @@ public class RestClient
       }
       else
       {
-         return rest(method, url, (body != null ? body.toString() : null), headers, retries);
+         FutureResponse future = buildFuture(method, url, (body != null ? body.toString() : null), headers, retries);
+         submit(future);
+         return future;
       }
    }
 
@@ -336,263 +351,263 @@ public class RestClient
       return this;
    }
 
-   //---------------------------------------------------------------------------------------------------------------------
-   //---------------------------------------------------------------------------------------------------------------------
-   //---------------------------------------------------------------------------------------------------------------------
-
-   private FutureResponse rest(String method, String url, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
+   protected FutureResponse buildFuture(String method, String url, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
    {
-      return rest(new Request(method, url, body, callHeaders, retryAttempts));
-   }
+      //we are going to change outboundHeaders so make a copy.
+      callHeaders = callHeaders != null ? new ArrayListValuedHashMap(callHeaders) : new ArrayListValuedHashMap();
 
-   private FutureResponse rest(final Request outboundRequest)
-   {
-      final FutureResponse future = new FutureResponse()
+      if (forcedHeaders.size() > 0)
+      {
+         for (String key : forcedHeaders.keySet())
+         {
+            callHeaders.remove(key);
+            callHeaders.putAll(key, forcedHeaders.get(key));
+         }
+      }
+
+      if (forwardHeaders)
+      {
+         Chain chain = Chain.first();//gets the root chain
+         if (chain != null)
+         {
+            Request originalInboundRequest = chain.getRequest();
+            ArrayListValuedHashMap<String, String> inboundHeaders = originalInboundRequest.getHeaders();
+            if (inboundHeaders != null)
+            {
+               for (String key : inboundHeaders.keySet())
+               {
+                  if (!callHeaders.containsKey(key))
+                     callHeaders.putAll(key, inboundHeaders.get(key));
+               }
+            }
+         }
+      }
+
+      Request request = new Request(method, url, body, callHeaders, retryAttempts);
+
+      final FutureResponse future = new FutureResponse(request)
          {
             public void run()
             {
-               String m = outboundRequest.getMethod();
-               String url = outboundRequest.getUrl().toString();
-
-               ArrayListValuedHashMap<String, String> outboundHeaders = new ArrayListValuedHashMap();
-
-               if (outboundRequest.getHeaders() != null)
-               {
-                  outboundHeaders.putAll(outboundRequest.getHeaders());
-               }
-
-               if (forcedHeaders.size() > 0)
-               {
-                  for (String key : forcedHeaders.keySet())
-                  {
-                     outboundHeaders.remove(key);
-                     outboundHeaders.putAll(key, forcedHeaders.get(key));
-                  }
-               }
-
-               if (forwardHeaders)
-               {
-                  Chain chain = Chain.first();//gets the root chain
-                  if (chain != null)
-                  {
-                     Request originalInboundRequest = chain.getRequest();
-                     ArrayListValuedHashMap<String, String> inboundHeaders = originalInboundRequest.getHeaders();
-                     if (inboundHeaders != null)
-                     {
-                        for (String key : inboundHeaders.keySet())
-                        {
-                           if (!outboundHeaders.containsKey(key))
-                              outboundHeaders.putAll(key, inboundHeaders.get(key));
-                        }
-                     }
-                  }
-               }
-
-               boolean retryable = true;
-
-               Response response = new Response(url);
-               HttpRequestBase req = null;
-               File tempFile = null;
-
-               try
-               {
-                  int timeout = 30000;
-
-                  HttpClient h = getHttpClient();
-                  HttpResponse hr = null;
-
-                  response.debug("--request header------");
-                  response.debug(m + " " + url);
-
-                  if ("post".equalsIgnoreCase(m))
-                  {
-                     req = new HttpPost(url);
-                  }
-                  if ("put".equalsIgnoreCase(m))
-                  {
-                     req = new HttpPut(url);
-                  }
-                  else if ("get".equalsIgnoreCase(m))
-                  {
-                     req = new HttpGet(url);
-
-                     if (this.getRetryFile() != null && this.getRetryFile().length() > 0)
-                     {
-                        long range = this.getRetryFile().length();
-                        outboundHeaders.remove("Range");
-                        outboundHeaders.put("Range", "bytes=" + range + "-");
-
-                        debug("RANGE REQUEST HEADER ** " + range);
-                     }
-                  }
-                  else if ("delete".equalsIgnoreCase(m))
-                  {
-                     if (outboundRequest.getBody() != null)
-                     {
-                        req = new HttpDeleteWithBody(url);
-                     }
-                     else
-                     {
-                        req = new HttpDelete(url);
-                     }
-                  }
-
-                  for (String key : outboundHeaders.keySet())
-                  {
-                     List<String> values = outboundHeaders.get(key);
-                     for (String value : values)
-                     {
-                        req.setHeader(key, value);
-                        response.debug(key, value);
-                     }
-                  }
-                  if (outboundRequest.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
-                  {
-                     response.debug("\r\n--request body--------");
-                     ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(outboundRequest.getBody(), "UTF-8"));
-                  }
-
-                  RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout).setConnectTimeout(timeout).setConnectionRequestTimeout(timeout).build();
-                  req.setConfig(requestConfig);
-
-                  hr = h.execute(req);
-
-                  HttpEntity e = hr.getEntity();
-
-                  response.withStatusMesg(hr.getStatusLine().toString());
-                  response.withStatusCode(hr.getStatusLine().getStatusCode());
-
-                  response.debug("-response headers -----");
-                  response.debug("status: " + response.getStatus());
-                  for (Header header : hr.getAllHeaders())
-                  {
-                     response.debug("\r\n" + header.getName() + ": " + header.getValue());
-                     response.withHeader(header.getName(), header.getValue());
-                  }
-
-                  debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
-                  debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
-
-                  InputStream is = e.getContent();
-
-                  // We had a successful response, so let's reset the retry count to give the best chance of success
-                  if (response.getStatusCode() >= 200 && response.getStatusCode() <= 300)
-                  {
-                     debug("Resetting retry count");
-                     this.resetRetryCount();
-                  }
-
-                  Url u = new Url(url);
-                  String fileName = u.getFile();
-                  if (fileName == null)
-                     fileName = Utils.slugify(u.toString());
-
-                  // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
-                  if (response.getStatusCode() == 404)
-                  {
-                     retryable = false; // do not allow this to retry on a 404
-                     return; //will go to finally block
-                  }
-                  else if (this.getRetryFile() != null && this.getRetryFile().length() == response.getContentRangeStart() && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
-                  {
-                     tempFile = this.getRetryFile();
-                     debug("## Using existing file .. " + tempFile);
-                  }
-                  else if (response.getStatusCode() == 206)
-                  {
-                     // status code is 206 Partial Content, but we don't want to use the existing file for some reason, so abort this and force it to fail
-                     retryable = false; // do not allow this to retry
-                     throw new Exception("Partial content without valid values, aborting this request");
-                  }
-                  else
-                  {
-                     if (fileName.length() < 3)
-                     {
-                        // if fileName is only 2 characters long, createTempFile will blow up
-                        fileName += "_ext";
-                     }
-
-                     tempFile = Utils.createTempFile(fileName);
-                     tempFile.deleteOnExit();
-                     debug("## Creating temp file .. " + tempFile);
-                  }
-
-                  // stream to the temp file with append set to true (this is crucial for resumable downloads)
-                  Utils.pipe(is, new FileOutputStream(tempFile, true));
-
-                  response.withFile(tempFile);
-
-                  if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize())
-                  {
-                     // Something is wrong.. The server is saying the file should be X, but the actual file is larger than X, abort this
-                     retryable = false; // do not allow this to retry
-                     throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
-                  }
-
-               }
-               catch (Exception ex)
-               {
-                  response.withError(ex);
-
-                  if (isNetworkException(ex))
-                  {
-                     log.debug("Network exception " + ex.getClass().getName() + " - " + ex.getMessage() + " - " + url);
-                  }
-                  else
-                  {
-                     log.warn("Exception in rest call. " + url, ex);
-                  }
-
-               }
-               finally
-               {
-                  if (req != null)
-                  {
-                     try
-                     {
-                        req.releaseConnection();
-                     }
-                     catch (Exception ex)
-                     {
-                        log.info("Exception trying to release the request connection", ex);
-                     }
-                  }
-
-                  // If this is a retryable response, submit it later
-                  // Since we resetRetryCount upon any successful response, we are still guarding against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
-                  if (retryable && this.getRetryCount() < outboundRequest.getRetryAttempts() && !response.isSuccess() && this.getTotalRetries() < totalRetryMax)
-                  {
-                     this.incrementRetryCount();
-
-                     long timeout = (1000 * this.getRetryCount() * this.getRetryCount()) + (int) (1000 * Math.random() * this.getRetryCount());
-
-                     debug("retrying: " + this.getRetryCount() + " - " + timeout + " - " + url);
-
-                     // Set this for possible resumable download on the next try
-                     if (this.getRetryFile() == null && response.getStatusCode() == 200)
-                     {
-                        this.setRetryFile(response.getFile());
-                     }
-
-                     submitLater(this, timeout);
-                     return;
-                  }
-                  else
-                  {
-                     if (!response.isSuccess() && response.getError() != null && !(isNetworkException(response.getError())))
-                     {
-                        log.warn("Error in Web.rest() . " + m + " : " + url, response.getError());
-                     }
-
-                     setResponse(response);
-                  }
-               }
+               doCall(this);
             }
          };
 
-      submit(future);
       return future;
 
+   }
+
+   protected void doCall(FutureResponse future)
+   {
+      String m = future.request.getMethod();
+      String url = future.request.getUrl().toString();
+
+      ArrayListValuedHashMap<String, String> outboundHeaders = new ArrayListValuedHashMap();
+
+      if (future.request.getHeaders() != null)
+      {
+         outboundHeaders.putAll(future.request.getHeaders());
+      }
+
+      boolean retryable = true;
+
+      Response response = new Response(url);
+      HttpRequestBase req = null;
+      File tempFile = null;
+
+      try
+      {
+         int timeout = 30000;
+
+         HttpClient h = getHttpClient();
+         HttpResponse hr = null;
+
+         response.debug("--request header------");
+         response.debug(m + " " + url);
+
+         if ("post".equalsIgnoreCase(m))
+         {
+            req = new HttpPost(url);
+         }
+         if ("put".equalsIgnoreCase(m))
+         {
+            req = new HttpPut(url);
+         }
+         else if ("get".equalsIgnoreCase(m))
+         {
+            req = new HttpGet(url);
+
+            if (future.getRetryFile() != null && future.getRetryFile().length() > 0)
+            {
+               long range = future.getRetryFile().length();
+               outboundHeaders.remove("Range");
+               outboundHeaders.put("Range", "bytes=" + range + "-");
+
+               debug("RANGE REQUEST HEADER ** " + range);
+            }
+         }
+         else if ("delete".equalsIgnoreCase(m))
+         {
+            if (future.request.getBody() != null)
+            {
+               req = new HttpDeleteWithBody(url);
+            }
+            else
+            {
+               req = new HttpDelete(url);
+            }
+         }
+
+         for (String key : outboundHeaders.keySet())
+         {
+            List<String> values = outboundHeaders.get(key);
+            for (String value : values)
+            {
+               req.setHeader(key, value);
+               response.debug(key, value);
+            }
+         }
+         if (future.request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
+         {
+            response.debug("\r\n--request body--------");
+            ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(future.request.getBody(), "UTF-8"));
+         }
+
+         RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout).setConnectTimeout(timeout).setConnectionRequestTimeout(timeout).build();
+         req.setConfig(requestConfig);
+
+         hr = h.execute(req);
+
+         HttpEntity e = hr.getEntity();
+
+         response.withStatusMesg(hr.getStatusLine().toString());
+         response.withStatusCode(hr.getStatusLine().getStatusCode());
+
+         response.debug("-response headers -----");
+         response.debug("status: " + response.getStatus());
+         for (Header header : hr.getAllHeaders())
+         {
+            response.debug("\r\n" + header.getName() + ": " + header.getValue());
+            response.withHeader(header.getName(), header.getValue());
+         }
+
+         debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
+         debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
+
+         InputStream is = e.getContent();
+
+         // We had a successful response, so let's reset the retry count to give the best chance of success
+         if (response.getStatusCode() >= 200 && response.getStatusCode() <= 300)
+         {
+            debug("Resetting retry count");
+            future.resetRetryCount();
+         }
+
+         Url u = new Url(url);
+         String fileName = u.getFile();
+         if (fileName == null)
+            fileName = Utils.slugify(u.toString());
+
+         // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
+         if (response.getStatusCode() == 404)
+         {
+            retryable = false; // do not allow this to retry on a 404
+            return; //will go to finally block
+         }
+         else if (future.getRetryFile() != null && future.getRetryFile().length() == response.getContentRangeStart() && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
+         {
+            tempFile = future.getRetryFile();
+            debug("## Using existing file .. " + tempFile);
+         }
+         else if (response.getStatusCode() == 206)
+         {
+            // status code is 206 Partial Content, but we don't want to use the existing file for some reason, so abort this and force it to fail
+            retryable = false; // do not allow this to retry
+            throw new Exception("Partial content without valid values, aborting this request");
+         }
+         else
+         {
+            if (fileName.length() < 3)
+            {
+               // if fileName is only 2 characters long, createTempFile will blow up
+               fileName += "_ext";
+            }
+
+            tempFile = Utils.createTempFile(fileName);
+            tempFile.deleteOnExit();
+            debug("## Creating temp file .. " + tempFile);
+         }
+
+         // stream to the temp file with append set to true (this is crucial for resumable downloads)
+         Utils.pipe(is, new FileOutputStream(tempFile, true));
+
+         response.withFile(tempFile);
+
+         if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize())
+         {
+            // Something is wrong.. The server is saying the file should be X, but the actual file is larger than X, abort this
+            retryable = false; // do not allow this to retry
+            throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
+         }
+
+      }
+      catch (Exception ex)
+      {
+         response.withError(ex);
+
+         if (isNetworkException(ex))
+         {
+            log.debug("Network exception " + ex.getClass().getName() + " - " + ex.getMessage() + " - " + url);
+         }
+         else
+         {
+            log.warn("Exception in rest call. " + url, ex);
+         }
+
+      }
+      finally
+      {
+         if (req != null)
+         {
+            try
+            {
+               req.releaseConnection();
+            }
+            catch (Exception ex)
+            {
+               log.info("Exception trying to release the request connection", ex);
+            }
+         }
+
+         // If this is a retryable response, submit it later
+         // Since we resetRetryCount upon any successful response, we are still guarding against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
+         if (retryable && future.getRetryCount() < future.request.getRetryAttempts() && !response.isSuccess() && future.getTotalRetries() < totalRetryMax)
+         {
+            future.incrementRetryCount();
+
+            long timeout = (1000 * future.getRetryCount() * future.getRetryCount()) + (int) (1000 * Math.random() * future.getRetryCount());
+
+            debug("retrying: " + future.getRetryCount() + " - " + timeout + " - " + url);
+
+            // Set this for possible resumable download on the next try
+            if (future.getRetryFile() == null && response.getStatusCode() == 200)
+            {
+               future.setRetryFile(response.getFile());
+            }
+
+            submitLater(future, timeout);
+            return;
+         }
+         else
+         {
+            if (!response.isSuccess() && response.getError() != null && !(isNetworkException(response.getError())))
+            {
+               log.warn("Error in Web.rest() . " + m + " : " + url, response.getError());
+            }
+
+            future.setResponse(response);
+         }
+      }
    }
 
    public boolean isNetworkException(Exception ex)
