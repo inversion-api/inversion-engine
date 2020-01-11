@@ -1,6 +1,5 @@
 ![Inversion Logo Title](docs/images/logoheader.png)
 
-Create more, code less with Inversion.
 
 Inversion is the fastest way to deliver full featured and secure REST APIs.
 
