@@ -95,7 +95,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
-         req.putParam("source", defaultSource);
+         req.withParam("source", defaultSource);
       }
 
       Collection collection = req.getCollectionKey() != null ? req.getCollection() : null;//getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
@@ -302,7 +302,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          {
             if (req.getApi().isMultiTenant())
             {
-               req.putParam("tenantId", tenantId);
+               req.withParam("tenantId", tenantId);
             }
             handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
          }

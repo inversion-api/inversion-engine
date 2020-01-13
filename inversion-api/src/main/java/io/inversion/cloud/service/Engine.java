@@ -114,9 +114,11 @@ public class Engine
 
    }
 
-   public Engine(Api api)
+   public Engine(Api... apis)
    {
-      withApi(api);
+      if (apis != null)
+         for (Api api : apis)
+            withApi(api);
    }
 
    public void destroy()
@@ -414,7 +416,7 @@ public class Engine
          {
             if (!((parts.size() == 0 && apis.size() == 1) //
                   || (apis.size() == 1 && a.getApiCode() == null) //if you only have 1 API, you don't have to have an API code
-                  || (parts.get(0).equalsIgnoreCase(a.getApiCode()))))
+                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getApiCode()))))
                continue;
 
             req.withApi(a);
@@ -439,7 +441,7 @@ public class Engine
                Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
                for (Endpoint e : a.getEndpoints())
                {
-                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i,  remainingPath.size())))
+                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i, remainingPath.size())))
                   {
                      req.withEndpointPath(endpointPath);
                      req.withEndpoint(e);
@@ -642,7 +644,7 @@ public class Engine
 
       return chain;
    }
-   
+
    /**
     * This is specifically pulled out so you can mock Engine invocations
     * in test cases.

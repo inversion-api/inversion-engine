@@ -691,6 +691,7 @@ public class SqlUtils
       }
       catch (Exception e)
       {
+         ex = e;
          notifyError("update", sql.toString(), o, ex);
          throw ex;
       }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,20 +16,23 @@
  */
 package io.inversion.cloud.model;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.inversion.cloud.utils.Utils;
 
 public class Url implements Cloneable
 {
-   protected String     original = null;
-   protected String     protocol = "http";
-   protected String     host     = null;
-   protected int        port     = 0;
-   protected Path       path     = null;
-   protected String     query    = null;
+   protected String original = null;
+   protected String protocol = "http";
+   protected String host     = null;
+   protected int    port     = 0;
+   protected Path   path     = null;
+   protected String query    = null;
    protected JSNode params   = new JSNode();
 
    public Url copy()
@@ -441,6 +444,28 @@ public class Url implements Cloneable
    {
       this.original = url;
       return this;
+   }
+
+   public static String toQueryString(Map<String, String> params)
+   {
+      String query = "";
+      if (params != null)
+      {
+         for (String key : params.keySet())
+         {
+            try
+            {
+               query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+            }
+            catch (UnsupportedEncodingException e)
+            {
+               Utils.rethrow(e);
+            }
+         }
+         if (query.length() > 0)
+            query = query.substring(0, query.length() - 1);
+      }
+      return query;
    }
 
 }

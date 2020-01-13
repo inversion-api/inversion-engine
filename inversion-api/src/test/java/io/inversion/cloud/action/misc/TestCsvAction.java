@@ -71,7 +71,7 @@ public class TestCsvAction
       Map<String, String> params = new HashMap<>();
       params.put("format", "csv");
 
-      action.run(null, null, null, null, new Request("/", "POST", null, params, null), res);
+      action.run(null, null, null, null, new Request("POST", "/", null, params, null), res);
       assertEquals(singleObject, res.getJson());
    }
 
@@ -86,7 +86,7 @@ public class TestCsvAction
          singleObject.put("key2", "value2");
          res.withJson(singleObject);
          Map<String, String> params = new HashMap<>();
-         Request req = new Request("/", "GET", null, params, null);
+         Request req = new Request("GET", "/", null, params, null);
          req.withEndpoint(new Endpoint());
          action.run(null, null, null, Chain.push(null, req, res), req, res);
          assertEquals(singleObject, res.getJson());
@@ -101,6 +101,6 @@ public class TestCsvAction
    {
       Map<String, String> params = new HashMap<>();
       params.put("format", "csv");
-      return new Request("/", "GET", null, params, null);
+      return new Request("GET", "/", null, params, null);
    }
 }

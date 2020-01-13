@@ -198,7 +198,7 @@ public class AclAction extends Action<AclAction>
             }
             else
             {
-               req.putParam(key1, value);
+               req.withParam(key1, value);
             }
             continue;
          }
@@ -239,7 +239,7 @@ public class AclAction extends Action<AclAction>
                {
                   value = getValue(chain, key);
                   if (value != null)
-                     req.putParam(key, value);
+                     req.withParam(key, value);
                }
 
                if (value != null)
@@ -255,7 +255,7 @@ public class AclAction extends Action<AclAction>
             String value = getValue(chain, required);
             if (value != null)
             {
-               req.putParam(required, value);
+               req.withParam(required, value);
                found = true;
             }
          }

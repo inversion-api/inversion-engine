@@ -1,6 +1,5 @@
-# Inversion Cloud API Engine
+![Inversion Logo Title](docs/images/logoheader.png)
 
-Create more, code less with Inversion.
 
 Inversion is the fastest way to deliver full featured and secure REST APIs.
 
@@ -13,8 +12,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 
 | Project                                                                                                                    | Latest Build                                                                                                                                                                              | Test Status                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Inversion Quickstart Spring Boot](https://github.com/inversion-api/inversion-quickstart-spring-boot)                      | [![](https://jitpack.io/v/inversion-api/inversion-quickstart-spring-boot.svg)](https://jitpack.io/#inversion-api/inversion-quickstart-spring-boot)                                        | [![](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot) |
-| [Inversion Quickstart Lambda](https://github.com/inversion-api/inversion-quickstart-lambda)                                | [![](https://jitpack.io/v/inversion-api/inversion-quickstart-lambda.svg)](https://jitpack.io/#inversion-api/inversion-quickstart-lambda)                                                  | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-lambda)           |
+| [Inversion Quickstart Spring Boot](https://github.com/inversion-api/inversion-quickstart-spring-boot)                      |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot) |
+| [Inversion Quickstart Lambda](https://github.com/inversion-api/inversion-quickstart-lambda)                                |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-lambda)           |
 | [Inversion Api Core Libs](https://github.com/inversion-api/inversion-api)                                                  | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-api/images/download.svg) ](https://bintray.com/inversion/repo/inversion-api/_latestVersion)                       | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion Demos](https://github.com/inversion-api/inversion-engine/tree/master/inversion-demos)                           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-demos/images/download.svg) ](https://bintray.com/inversion/repo/inversion-demos/_latestVersion)                   | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion DynamoDB Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-dynamodb)           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-dynamodb/images/download.svg) ](https://bintray.com/inversion/repo/inversion-dynamodb/_latestVersion)             | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
@@ -133,8 +132,8 @@ Append '&explain=true' to any query string to see an explanation of what is happ
 ### Maven Repos
 
 This project uses Travis CI to publish master branch commits as snapshot builds to 
-the [oss.jfrog.org (aka OJO) maven repository](https://bintray.com/inversion/repo) and 
-release branch commits to to the [Inversion bintray maven repository](https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/) 
+the [oss.jfrog.org (aka OJO) maven repository](https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/) and 
+release branch commits to to the [Inversion bintray maven repository](https://bintray.com/inversion/repo) 
 which syncs to jcenter. 
 
 If you are a Java developer comfortable with maven, you can include the following repos 
@@ -169,6 +168,24 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 
 	}
     
+```
+
+If OJO snapshots are not cutting edge enough for you, you can also pull snapshots directly from GitHub 
+via [Jitpack](https://jitpack.io/#inversion-api/inversion-engine).  While you can pull tagged releases 
+from Jitpack, it is not recommended.  Please consider only use Jitpack for pulling snapshots of branches.
+
+```
+	repositories {
+		jcenter()
+		maven { url 'https://jitpack.io' }
+		}
+		
+	dependencies {
+		
+		compile 'compile 'com.github.inversion-api.inversion-engine:inversion-api:master-SNAPSHOT'
+		compile 'compile 'com.github.inversion-api.inversion-engine:inversion-dynamodb:master-SNAPSHOT'
+		
+	}
 ```
 
 

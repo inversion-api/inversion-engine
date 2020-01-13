@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,12 +29,18 @@ import javax.swing.SwingUtilities;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.service.Chain;
 
 public abstract class FutureResponse implements RunnableFuture<Response>
 {
    static Log            log          = LogFactory.getLog(HttpUtils.class);
 
+   long                  createdAt    = System.currentTimeMillis();
+
+   Chain                 chain        = Chain.peek();
+   Request               request      = null;
    Response              response     = null;
    List<ResponseHandler> onSuccess    = new ArrayList();
    List<ResponseHandler> onFailure    = new ArrayList();
@@ -42,6 +48,16 @@ public abstract class FutureResponse implements RunnableFuture<Response>
    int                   retryCount   = 0;
    File                  retryFile;
    int                   totalRetries = 0;                                 // this number doesn't get reset and is the true measure of how many retries occured
+
+   public FutureResponse()
+   {
+
+   }
+
+   public FutureResponse(Request request)
+   {
+      this.request = request;
+   }
 
    public FutureResponse onSuccess(ResponseHandler handler)
    {
@@ -248,6 +264,17 @@ public abstract class FutureResponse implements RunnableFuture<Response>
       return response;
    }
 
+   public boolean isLocalRequest()
+   {
+      String url = request.getUrl().toString();
+      return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
+   }
+
+   public Request getRequest()
+   {
+      return request;
+   }
+
    @Override
    public boolean isCancelled()
    {
@@ -295,4 +322,10 @@ public abstract class FutureResponse implements RunnableFuture<Response>
    {
       public void onResponse(Response response) throws Exception;
    }
+
+   public long getCreatedAt()
+   {
+      return createdAt;
+   }
+
 }

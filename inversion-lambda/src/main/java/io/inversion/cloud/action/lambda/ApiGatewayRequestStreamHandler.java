@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -41,8 +42,16 @@ import io.inversion.cloud.utils.Utils;
  */
 public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
-   Engine engine = null;
-   boolean debug   = false;
+   Engine  engine = null;
+   boolean debug  = false;
+
+   /**
+    * Override me to supply your custom Api 
+    */
+   protected Api buildApi()
+   {
+      return null;
+   }
 
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
    {
@@ -123,7 +132,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             params.putAll(postParams);
          }
 
-         req = new Request(url.toString(), method, headers, params, body);
+         req = new Request(method, url.toString(), headers, params, body);
          res = new Response();
 
          chain = engine.service(req, res);
@@ -171,6 +180,10 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
    protected Engine buildEngine(String profile, String servletPath)
    {
       Engine engine = new Engine();
+
+      Api api = buildApi();
+      if (api != null)
+         engine.withApi(api);
 
       if (!Utils.empty(profile))
          engine.withProfile(profile);
