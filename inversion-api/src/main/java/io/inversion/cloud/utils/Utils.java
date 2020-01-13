@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,6 +58,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
@@ -203,6 +206,28 @@ public class Utils
       }
 
       return exploded;
+   }
+
+   public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs)
+   {
+      if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
+         throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
+
+      for (int i = 0; keyValuePairs != null && i < keyValuePairs.length - 1; i += 2)
+         map.put(keyValuePairs[i], keyValuePairs[i + 1]);
+
+      return map;
+   }
+
+   public static <M extends Map> M addToMap(M map, String... keyValuePairs)
+   {
+      if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
+         throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
+
+      for (int i = 0; keyValuePairs != null && i < keyValuePairs.length - 1; i += 2)
+         map.put(keyValuePairs[i], keyValuePairs[i + 1]);
+
+      return map;
    }
 
    public static List deconstructed(List found, Object... terms)

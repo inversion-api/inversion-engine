@@ -140,7 +140,7 @@ public class Servlet extends HttpServlet
 
          String body = readBody(httpReq);
 
-         req = new Request(urlstr, method, headers, params, body);
+         req = new Request(method, urlstr, headers, params, body);
          req.withRemoteAddr(httpReq.getRemoteAddr());
 
          req.withUploader(new Uploader()

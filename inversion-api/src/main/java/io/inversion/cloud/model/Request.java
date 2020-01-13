@@ -84,8 +84,7 @@ public class Request
          withBody(body.toString());
    }
 
-   //todo url come first here but after method in other constructors.
-   public Request(String url, String method, Map<String, String> headers, Map<String, String> params, String body)
+   public Request(String method, String url, Map<String, String> headers, Map<String, String> params, String body)
    {
       withMethod(method);
       withUrl(url);
@@ -99,20 +98,29 @@ public class Request
 
       if (params != null)
       {
-         for (String key : params.keySet())
-            this.url.withParams(key, params.get(key));
+         this.url.withParams(params);
       }
    }
 
    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
    {
+      this(method, url, body, null, headers, retryAttempts);
+   }
+
+   public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
+   {
       withMethod(method);
       withUrl(url);
       withBody(body);
-      
-      if(headers != null && headers.size() > 0)
+
+      if (params != null)
+      {
+         this.url.withParams(params);
+      }
+
+      if (headers != null && headers.size() > 0)
          this.headers = new ArrayListValuedHashMap(headers);
-      
+
       if (retryAttempts > 0)
          this.retryAttempts = retryAttempts;
    }
@@ -279,9 +287,10 @@ public class Request
       return url.getParam(name);
    }
 
-   public void putParam(String name, String value)
+   public Request withParam(String name, String value)
    {
       url.withParam(name, value);
+      return this;
    }
 
    public Map<String, String> getParams()
@@ -354,6 +363,11 @@ public class Request
       if (vals != null && vals.size() > 0)
          return vals.get(0);
       return null;
+   }
+
+   public void removeHeader(String key)
+   {
+      headers.remove(key);
    }
 
    /**

@@ -99,7 +99,7 @@ public class ElasticDbGetAction extends Action
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
-         req.putParam("source", defaultSource);
+         req.withParam("source", defaultSource);
       }
 
       String dbType = db.getType();
@@ -304,7 +304,7 @@ public class ElasticDbGetAction extends Action
          {
             if (req.getApi().isMultiTenant())
             {
-               req.putParam("tenantId", tenantId);
+               req.withParam("tenantId", tenantId);
             }
             handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
          }

@@ -31,11 +31,15 @@ import org.apache.commons.logging.LogFactory;
 
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.service.Chain;
 
 public abstract class FutureResponse implements RunnableFuture<Response>
 {
    static Log            log          = LogFactory.getLog(HttpUtils.class);
 
+   long                  createdAt    = System.currentTimeMillis();
+
+   Chain                 chain        = Chain.peek();
    Request               request      = null;
    Response              response     = null;
    List<ResponseHandler> onSuccess    = new ArrayList();
@@ -260,11 +264,17 @@ public abstract class FutureResponse implements RunnableFuture<Response>
       return response;
    }
 
+   public boolean isLocalRequest()
+   {
+      String url = request.getUrl().toString();
+      return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
+   }
+
    public Request getRequest()
    {
       return request;
    }
-   
+
    @Override
    public boolean isCancelled()
    {
@@ -312,4 +322,10 @@ public abstract class FutureResponse implements RunnableFuture<Response>
    {
       public void onResponse(Response response) throws Exception;
    }
+
+   public long getCreatedAt()
+   {
+      return createdAt;
+   }
+
 }

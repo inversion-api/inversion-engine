@@ -132,7 +132,7 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
             params.putAll(postParams);
          }
 
-         req = new Request(url.toString(), method, headers, params, body);
+         req = new Request(method, url.toString(), headers, params, body);
          res = new Response();
 
          chain = engine.service(req, res);
