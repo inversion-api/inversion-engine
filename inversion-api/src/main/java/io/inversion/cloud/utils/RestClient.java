@@ -23,9 +23,12 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -61,6 +64,7 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Rows.Row.E;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an 
@@ -78,35 +82,42 @@ import io.inversion.cloud.service.Chain;
  */
 public class RestClient
 {
-   static Log                                       log             = LogFactory.getLog(RestClient.class);
+   static Log                                       log              = LogFactory.getLog(RestClient.class);
 
    //-- config properties
-   protected String                                 name            = null;
-   protected String                                 url             = null;
-   protected boolean                                remoteAsync     = true;
-   protected boolean                                localAsync      = false;
-   protected ArrayListValuedHashMap<String, String> forcedHeaders   = new ArrayListValuedHashMap();
-   protected boolean                                forwardHeaders  = false;
-   protected boolean                                forwardParams   = false;
+   protected String                                 name             = null;
+   protected String                                 url              = null;
+   protected boolean                                remoteAsync      = true;
+   protected boolean                                localAsync       = false;
+   protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
+
+   //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+   protected boolean                                forwardHeaders   = false;
+   protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+   protected Set                                    blacklistHeaders = new HashSet();
+
+   protected boolean                                forwardParams    = false;
+   protected Set<String>                            whitelistParams  = new HashSet();
+   protected Set<String>                            blacklistParams  = new HashSet();
 
    //-- networking and pooling specific properties
-   protected Executor                               pool            = null;
-   protected int                                    poolMin         = 2;
-   protected int                                    poolMax         = 100;
-   protected int                                    queueMax        = 500;
-   protected int                                    retryMax        = 5;
-   protected int                                    totalRetryMax   = 50;
+   protected Executor                               pool             = null;
+   protected int                                    poolMin          = 2;
+   protected int                                    poolMax          = 100;
+   protected int                                    queueMax         = 500;
+   protected int                                    retryMax         = 5;
+   protected int                                    totalRetryMax    = 50;
 
-   protected int                                    retryTimeoutMin = 10;
-   protected int                                    retryTimeoutMax = 1000;
+   protected int                                    retryTimeoutMin  = 10;
+   protected int                                    retryTimeoutMax  = 1000;
 
-   protected int                                    socketTimeout   = 1000;
-   protected int                                    connectTimeout  = 1000;
-   protected int                                    requestTimeout  = 5000;
+   protected int                                    socketTimeout    = 30000;
+   protected int                                    connectTimeout   = 30000;
+   protected int                                    requestTimeout   = 30000;
 
-   protected HttpClient                             httpClient      = null;
+   protected HttpClient                             httpClient       = null;
 
-   protected Timer                                  timer           = null;
+   protected Timer                                  timer            = null;
 
    public RestClient()
    {
@@ -174,7 +185,7 @@ public class RestClient
       {
          submit(future);
       }
-      
+
       return future;
    }
 
@@ -203,9 +214,12 @@ public class RestClient
             {
                for (String key : inboundHeaders.keySet())
                {
-                  if (request.getHeader(key) == null)
-                     for (String header : inboundHeaders.get(key))
-                        request.withHeader(key, header);
+                  if (forwardHeader(key))
+                  {
+                     if (request.getHeader(key) == null)
+                        for (String header : inboundHeaders.get(key))
+                           request.withHeader(key, header);
+                  }
                }
             }
          }
@@ -222,8 +236,11 @@ public class RestClient
             {
                for (String key : origionalParams.keySet())
                {
-                  if (request.getParam(key) == null)
-                     request.withParam(key, origionalParams.get(key));
+                  if (forwardParam(key))
+                  {
+                     if (request.getParam(key) == null)
+                        request.withParam(key, origionalParams.get(key));
+                  }
                }
             }
          }
@@ -782,9 +799,35 @@ public class RestClient
       return forwardHeaders;
    }
 
+   public boolean forwardHeader(String headerKey)
+   {
+      return forwardHeaders //
+            && (whitelistHeaders.size() == 0 || whitelistHeaders.contains(headerKey.toLowerCase())) //
+            && (!blacklistHeaders.contains(headerKey.toLowerCase()));
+   }
+
    public RestClient withForwardHeaders(boolean forwardHeaders)
    {
       this.forwardHeaders = forwardHeaders;
+      return this;
+   }
+
+   public Set getWhitelistHeaders()
+   {
+      return new HashSet(whitelistHeaders);
+   }
+
+   public RestClient withWhitelistedHeaders(String... headerKeys)
+   {
+      for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
+         whitelistHeaders.add(headerKeys[i].toLowerCase());
+      return this;
+   }
+
+   public RestClient removeWhitelistHeader(String headerKey)
+   {
+      if (headerKey != null)
+         whitelistHeaders.remove(headerKey.toString());
       return this;
    }
 
@@ -793,9 +836,35 @@ public class RestClient
       return forwardParams;
    }
 
+   public boolean forwardParam(String param)
+   {
+      return forwardParams //
+            && (whitelistParams.size() == 0 || whitelistParams.contains(param.toLowerCase())) //
+            && (!blacklistParams.contains(param.toLowerCase()));
+   }
+
    public RestClient withForwardParams(boolean forwardParams)
    {
       this.forwardParams = forwardParams;
+      return this;
+   }
+
+   public Set getWhitelistParams()
+   {
+      return new HashSet(whitelistParams);
+   }
+
+   public RestClient withWhitelistedParams(String... paramNames)
+   {
+      for (int i = 0; paramNames != null && i < paramNames.length; i++)
+         whitelistParams.add(paramNames[i].toLowerCase());
+      return this;
+   }
+
+   public RestClient removeWhitelistParam(String param)
+   {
+      if (param != null)
+         whitelistParams.remove(param.toString());
       return this;
    }
 
