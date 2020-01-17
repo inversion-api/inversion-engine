@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,6 +74,7 @@ public class SqlDb extends Db<SqlDb>
    protected int                  poolMin                  = 3;
    protected int                  poolMax                  = 10;
    protected int                  idleConnectionTestPeriod = 3600;           // in seconds
+   protected boolean              autoCommit               = false;
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
@@ -366,7 +367,7 @@ public class SqlDb extends Db<SqlDb>
             }
 
             conn = pool.getConnection();
-            conn.setAutoCommit(false);
+            conn.setAutoCommit(isAutoCommit());
 
             ConnectionLocal.putConnection(this, conn);
          }
@@ -1145,6 +1146,17 @@ public class SqlDb extends Db<SqlDb>
          ddlUrls.add(ddlUrl[i]);
       }
 
+      return this;
+   }
+
+   public boolean isAutoCommit()
+   {
+      return autoCommit;
+   }
+
+   public SqlDb withAutoCommit(boolean autoCommit)
+   {
+      this.autoCommit = autoCommit;
       return this;
    }
 
