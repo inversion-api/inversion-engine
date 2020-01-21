@@ -30,12 +30,11 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.StartupListener;
+import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
@@ -49,24 +48,24 @@ import io.inversion.cloud.utils.Utils;
 
 public class Engine
 {
-   transient volatile boolean                        started        = false;
-   transient volatile boolean                        starting       = false;
-   transient volatile boolean                        destroyed      = false;
+   transient volatile boolean               started        = false;
+   transient volatile boolean               starting       = false;
+   transient volatile boolean               destroyed      = false;
 
-   protected Logger                                  log            = LoggerFactory.getLogger(getClass());
-   protected Logger                                  requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected Logger                         log            = LoggerFactory.getLogger(getClass());
+   protected Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   protected List<Api>                               apis           = new Vector();
+   protected List<Api>                      apis           = new Vector();
 
-   protected ResourceLoader                          resourceLoader = null;
+   protected ResourceLoader                 resourceLoader = null;
 
-   protected Configurator                            configurator   = new Configurator();
+   protected Configurator                   configurator   = new Configurator();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected Path                                    servletMapping = null;
+   protected Path                           servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -74,40 +73,40 @@ public class Engine
     * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
     * profile specific settings files.
     */
-   protected String                                  profile        = null;
+   protected String                         profile        = null;
 
    /**
     * The path to inversion*.properties files
     */
-   protected String                                  configPath     = "";
+   protected String                         configPath     = "";
 
    /**
     * The number of milliseconds between background reloads of the Api config
     */
-   protected int                                     configTimeout  = 10000;
+   protected int                            configTimeout  = 10000;
 
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
     * will not be reflectively configured as it otherwise would.
     */
-   protected boolean                                 configFast     = false;
-   protected boolean                                 configDebug    = false;
-   protected String                                  configOut      = null;
+   protected boolean                        configFast     = false;
+   protected boolean                        configDebug    = false;
+   protected String                         configOut      = null;
 
    /**
     * The last response returned.  Not that useful in concurrent 
     * production environments but useful for writing test cases.
     */
-   protected transient volatile Response             lastResponse   = null;
+   protected transient volatile Response    lastResponse   = null;
 
-   protected transient List<StartupListener<Engine>> listeners      = new ArrayList();
+   protected transient List<EngineListener> listeners      = new ArrayList();
 
    /**
     * Engine reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String                                  allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public Engine()
    {
@@ -152,11 +151,14 @@ public class Engine
             api.startup();
          }
 
-         for (StartupListener listener : listeners)
+         for (EngineListener listener : listeners)
          {
             try
             {
-               listener.onStartup(Engine.this);
+               for (Api api : apis)
+               {
+                  listener.onStartup(this, api);
+               }
             }
             catch (Exception ex)
             {
@@ -234,7 +236,7 @@ public class Engine
       return started;
    }
 
-   public Engine withStartupListener(StartupListener listener)
+   public Engine withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
@@ -573,19 +575,34 @@ public class Engine
 
          run(chain, actions);
 
-         ConnectionLocal.commit();
+         for (EngineListener listener : listeners)
+         {
+            try
+            {
+               listener.afterRequest(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifying EngineListner.afterRequest", ex);
+            }
+
+         }
 
          return chain;
       }
       catch (Throwable ex)
       {
-         try
+         for (EngineListener listener : listeners)
          {
-            ConnectionLocal.rollback();
-         }
-         catch (Throwable t)
-         {
-            log.warn("Error rollowing back transaction", t);
+            try
+            {
+               listener.beforeError(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex2)
+            {
+               log.warn("Error notifying EngineListner.beforeError", ex);
+            }
+
          }
 
          String status = SC.SC_500_INTERNAL_SERVER_ERROR;
@@ -617,16 +634,20 @@ public class Engine
             response.put("error", Utils.getShortCause(ex));
 
          res.withJson(response);
+
       }
       finally
       {
-         try
+         for (EngineListener listener : listeners)
          {
-            ConnectionLocal.close();
-         }
-         catch (Throwable t)
-         {
-            log.warn("Error closing connections", t);
+            try
+            {
+               listener.onFinally(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifying EngineListner.onFinally", ex);
+            }
          }
 
          try
@@ -771,14 +792,19 @@ public class Engine
 
    public Api withApi(String apiCode)
    {
-      Api api = new Api(apiCode);
-      addApi(api);
+      Api api = getApi(apiCode);
+      if (api == null)
+      {
+         api = new Api(apiCode);
+         addApi(api);
+      }
       return api;
    }
 
    public Engine withApi(Api api)
    {
       addApi(api);
+      api.withEngine(this);
       return this;
    }
 

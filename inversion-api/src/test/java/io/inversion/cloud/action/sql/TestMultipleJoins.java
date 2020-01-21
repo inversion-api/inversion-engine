@@ -32,12 +32,23 @@ public class TestMultipleJoins extends TestCase
    {
       String crmDdlUrl = TestMultipleJoins.class.getResource("crm-h2.ddl").toString();
 
-      SqlDb db = new H2SqlDb("db", "crm.db", crmDdlUrl);
+      //SqlDb db = new H2SqlDb("db", "crm.db", crmDdlUrl);
 
       Engine e = new Engine(new Api()//
                                      .withName("crm")//
                                      .withApiCode("crm")//
-                                     .withDb(db).withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+                                     //.withDb(db)//
+                                     
+                                     .withDb(new SqlDb("db", //the database name used as the properties key prefix when 
+                                           "org.h2.Driver", //-- jdbc driver
+                                           "jdbc:h2:mem:" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                           "sa", //-- jdbc user
+                                           "", //jdbc password
+                                           //OPTIONAL: the demo db is an in-memory db that gets
+                                           //reinitialized each time with the data in "northwind-h2.ddl"
+                                           crmDdlUrl))
+                                     
+                                     .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
 
       e.startup();
 

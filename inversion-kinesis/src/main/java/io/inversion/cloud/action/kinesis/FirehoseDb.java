@@ -115,7 +115,7 @@ public class FirehoseDb extends Db<FirehoseDb>
                streamName = arr[1];
             }
 
-            Table table = new Table(this, streamName);
+            Table table = new Table(streamName);
             withTable(table);
 
             if (arr.length == 1)//a specific collection name was not supplied by the config

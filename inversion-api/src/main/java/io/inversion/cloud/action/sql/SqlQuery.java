@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
@@ -42,7 +43,7 @@ import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
-public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';
    protected char              columnQuote = '"';
@@ -89,9 +90,9 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return super.addTerm(token, term);
    }
 
-   protected Results<Row> doSelect() throws Exception
+   public Results<Row> doSelect() throws Exception
    {
-      SqlDb db = getDb();
+      SqlDb db = (SqlDb) getDb();
       Connection conn = db.getConnection();
       String sql = getPreparedStmt();
 
@@ -133,7 +134,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    }
 
    @Override
-   public SqlQuery withDb(SqlDb db)
+   public SqlQuery withDb(D db)
    {
       super.withDb(db);
       if (db.isType("mysql"))
@@ -160,7 +161,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
 
       if (select == null)
       {
-         String qt = quoteCol(table.getName());
+         String qt = printTable();
 
          if (joins != null && joins.size() > 0)
          {
@@ -210,7 +211,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
          else if (term.getToken().indexOf(".") < 0)
          {
-            cols.append(" " + asCol(term.getToken()));
+            cols.append(" " + printCol(term.getToken()));
          }
 
          if (i < terms.size() - 1)
@@ -236,10 +237,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                Index primaryIndex = table().getPrimaryIndex();
                if (primaryIndex != null)
                {
-                  for (Column pkCol : primaryIndex.getColumns())
+                  for (String colName : primaryIndex.getColumnNames())
                   {
-                     if (cols.indexOf(asCol(pkCol.getName())) < 0)
-                        cols.append(", ").append(asCol(pkCol.getName()));
+                     if (cols.indexOf(printCol(colName)) < 0)
+                        cols.append(", ").append(printCol(colName));
                   }
                }
             }
@@ -327,15 +328,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          {
             if (!parts.group.endsWith("GROUP BY "))
                parts.group += ", ";
-            parts.group += asCol(group.getToken());
+            parts.group += printCol(group.getToken());
          }
       }
 
       List<Sort> sorts = order().getSorts();
       if (sorts.isEmpty() && table != null && table.getPrimaryIndex() != null)
       {
-         for (Column col : table.getPrimaryIndex().getColumns())
+
+         for (int k = 0; k < table.getPrimaryIndex().size(); k++)
          {
+            Column col = table.getPrimaryIndex().getColumn(k);
             if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
             {
                Sort sort = new Sort(col.getName(), true);
@@ -364,7 +367,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          if (!parts.order.endsWith("ORDER BY "))
             parts.order += ", ";
 
-         parts.order += asCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
+         parts.order += printCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
       }
 
       //-- now setup the LIMIT clause based
@@ -423,10 +426,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          else
          {
             s = "";
-            
+
             if (limit >= 0)
                s += " LIMIT " + limit;
-            
+
             if (offset >= 0)
                s += " OFFSET " + offset;
          }
@@ -446,6 +449,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
 
       withColValue(col, val);
+      return asVariableName(values.size() - 1);
+   }
+
+   protected String asVariableName(int valuesPairIdx)
+   {
       return "?";
    }
 
@@ -458,7 +466,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          String value = null;
          if (isCol(term))
          {
-            value = asCol(token);
+            value = printCol(token);
          }
          else if (isNum(term))
          {
@@ -744,7 +752,12 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return buff.toString();//columnQuote + str + columnQuote;
    }
 
-   public String asCol(String columnName)
+   public String printTable()
+   {
+      return quoteCol(table.getName());
+   }
+
+   public String printCol(String columnName)
    {
       if (table != null && columnName.indexOf(".") < 0)
          columnName = table.getName() + "." + columnName;

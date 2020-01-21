@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -205,56 +205,6 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
       return r();
    }
-
-   //   public Collection collection()
-   //   {
-   //      return collection;
-   //   }
-   //
-   //   public T withCollection(Collection collection)
-   //   {
-   //      this.collection = collection;
-   //
-   //      if (collection != null)
-   //      {
-   //         Entity entity = collection.getEntity();
-   //         if (entity != null)
-   //         {
-   //            Table table = entity.getTable();
-   //            withTable((E) table);
-   //         }
-   //      }
-   //
-   //      return r();
-   //   }
-   //
-   //   public String getColumnName(String attributeName)
-   //   {
-   //      String name = attributeName;
-   //      if (collection != null)
-   //      {
-   //         Attribute attr = collection.getAttribute(attributeName);
-   //         if (attr != null)
-   //            name = attr.getColumn().getName();
-   //      }
-   //
-   //      if (name == null)
-   //         name = attributeName;
-   //
-   //      return name;
-   //   }
-   //
-   //   public String getAttributeName(String columnName)
-   //   {
-   //      String name = columnName;
-   //      if (collection != null)
-   //         name = collection.getAttributeName(columnName);
-   //
-   //      if (name == null)
-   //         name = columnName;
-   //
-   //      return name;
-   //   }
 
    public int getNumValues()
    {

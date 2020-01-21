@@ -1,0 +1,5 @@
+dependencies {
+    compile project(':inversion-api')
+	compile "com.microsoft.azure:azure-documentdb:${azureSdkVersion}"
+}
+

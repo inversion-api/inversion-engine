@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,8 @@ import io.inversion.cloud.utils.Utils;
 
 public class Column implements Comparable<Column>
 {
-   protected Table   table    = null;
-
-   /**
-    *  If this Col is a foreign key, this will be populated
-    *  with the refrenced primary key from the referred table
-    */
-   protected Column  pk       = null;
-
-   protected int     number   = 0;
    protected String  name     = null;
-   protected String  type     = null;
+   protected String  type     = "string";
    protected boolean nullable = false;
    protected boolean unique   = false;
 
@@ -38,22 +29,44 @@ public class Column implements Comparable<Column>
 
    protected boolean exclude  = false;
 
+   /**
+    *  If this Col is a foreign key, this will be populated
+    *  with the refrenced primary key from the referred table
+    */
+   protected Column  pk       = null;
+
+   protected Table   table    = null;
+
    public Column()
    {
 
    }
 
-   public Column(Table table, int number, String name, String type, boolean nullable)
+   public Column(String name)
    {
-      super();
-      this.table = table;
-      this.number = number;
-      this.name = name;
-      this.type = type;
-      this.nullable = nullable;
-      this.hint = table.getName() + "." + name;
+      withName(name);
    }
 
+   public Column(String name, String type, boolean nullable, boolean unique)
+   {
+      withName(name);
+      withType(type);
+      withNullable(nullable);
+      withUnique(unique);
+
+   }
+
+   //   public Column(Table table, int number, String name, String type, boolean nullable)
+   //   {
+   //      super();
+   //      this.table = table;
+   //      this.number = number;
+   //      this.name = name;
+   //      this.type = type;
+   //      this.nullable = nullable;
+   //      this.hint = table.getName() + "." + name;
+   //   }
+   //
    @Override
    public int compareTo(Column o)
    {
@@ -61,18 +74,22 @@ public class Column implements Comparable<Column>
          return 1;
 
       if (o.table == table)
-         return this.number > o.number ? 1 : -1;
+      {
+         return table.indexOf(this) > table.indexOf(o) ? 1 : -1;
+      }
 
       return 0;
    }
 
    public boolean equals(Object object)
    {
+      if(object == this)
+         return true;
+     
       if (object instanceof Column)
       {
          Column column = (Column) object;
-         if ((table != null && table.equals(column.table)) && Utils.equal(name, column.name))
-            return true;
+         return ((table == null || table == column.table) && Utils.equal(name, column.name));
       }
       return false;
    }
@@ -154,7 +171,7 @@ public class Column implements Comparable<Column>
       if (this.table != table)
       {
          this.table = table;
-         table.withColumn(this);
+         table.withColumns(this);
       }
       return this;
    }

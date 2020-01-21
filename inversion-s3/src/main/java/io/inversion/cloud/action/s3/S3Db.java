@@ -76,11 +76,11 @@ public class S3Db extends Db<S3Db>
 
       for (Bucket bucket : bucketList)
       {
-         Table table = new Table(this, bucket.getName());
+         Table table = new Table(bucket.getName());
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
          // Other core metadata includes: eTag, size, lastModified, storageClass
-         table.makeColumn("key", String.class.getName());
+         table.withColumn("key", String.class.getName(), false, true);
          withTable(table);
 
          api.makeCollection(table, beautifyCollectionName(table.getName()));

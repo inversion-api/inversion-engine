@@ -16,8 +16,29 @@
  */
 package io.inversion.cloud.model;
 
-public interface StartupListener<T>
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.service.Engine;
+
+public interface EngineListener
 {
-   public void onStartup(T started);
+   default void onStartup(Engine engine, Api api)
+   {
+
+   }
+
+   default void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+   {
+
+   }
+
+   default void beforeError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+   {
+
+   }
+
+   default void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+   {
+
+   }
 
 }

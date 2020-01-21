@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,31 +55,20 @@ import io.inversion.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
 {
-   protected String       awsAccessKey = null;
-   protected String       awsSecretKey = null;
-   protected String       awsRegion    = "us-east-1";
-
-   /**
-    * A CSV of pipe delimited collection name to table name pairs.
-    * 
-    * Example: dynamodb.tables=promo|promo-dev,loyalty-punchcard|loyalty-punchcard-dev
-    * 
-    * Or if the collection name is the name as the table name you can just send a the name
-    * 
-    * Example: dynamodb.includeTables=orders,users,events
-    */
-   protected String       includeTables;
+   protected String                   awsAccessKey = null;
+   protected String                   awsSecretKey = null;
+   protected String                   awsRegion    = "us-east-1";
 
    /**
     * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
     * 
     * FORMAT: collection name | primaryKey | sortKey (optional)
     */
-   protected String       blueprintRow;
+   protected String                   blueprintRow;
 
-   protected int          batchMax     = 20;
+   protected int                      batchMax     = 20;
 
-   private AmazonDynamoDB dynamoClient = null;
+   transient protected AmazonDynamoDB dynamoClient = null;
 
    public DynamoDb()
    {
@@ -89,8 +78,8 @@ public class DynamoDb extends Db<DynamoDb>
    public DynamoDb(String name, String includeTables)
    {
       this();
-      this.name = name;
-      this.includeTables = includeTables;
+      withName(name);
+      withIncludeTables(includeTables);
    }
 
    @Override
@@ -124,7 +113,7 @@ public class DynamoDb extends Db<DynamoDb>
          String key = table.encodeKey(row);
          keys.add(key);
 
-         for (String attr : (List<String>)new ArrayList(row.keySet()))
+         for (String attr : (List<String>) new ArrayList(row.keySet()))
          {
             if (Utils.empty(row.get(attr)))
                row.remove(attr);
@@ -177,58 +166,59 @@ public class DynamoDb extends Db<DynamoDb>
       }
    }
 
-   @Override
-   protected void startup0()
-   {
-      if (includeTables != null)
-      {
-         Map<String, String[]> blueprintRowMap = new HashMap<>();
-         if (blueprintRow != null)
-         {
-            String[] parts = blueprintRow.split(",");
-            for (String part : parts)
-            {
-               String[] arr = part.split("\\|");
-               String collection = arr[0];
-               blueprintRowMap.put(collection, arr);
-            }
-         }
-
-         String[] parts = includeTables.split(",");
-         for (String part : parts)
-         {
-            String[] arr = part.split("\\|");
-            String collectionName = arr[0];
-            String tableName = collectionName;
-            if (arr.length > 1)
-            {
-               tableName = arr[1];
-            }
-            else
-            {
-               collectionName = beautifyCollectionName(collectionName);
-            }
-
-            Table table = buildTable(tableName, blueprintRowMap.get(collectionName));
-            withTable(table);
-
-            Collection collection = buildCollection(collectionName, table);
-            api.withCollection(collection);
-         }
-
-      }
-      else
-      {
-         log.warn("DynamoDb must have 'tableMappings' configured to be used");
-      }
-
-   }
+   //   @Override
+   //   protected void startup0()
+   //   {
+   //      if (includeTables != null)
+   //      {
+   //         Map<String, String[]> blueprintRowMap = new HashMap<>();
+   //         if (blueprintRow != null)
+   //         {
+   //            String[] parts = blueprintRow.split(",");
+   //            for (String part : parts)
+   //            {
+   //               String[] arr = part.split("\\|");
+   //               String collection = arr[0];
+   //               blueprintRowMap.put(collection, arr);
+   //            }
+   //         }
+   //
+   //         String[] parts = includeTables.split(",");
+   //         for (String part : parts)
+   //         {
+   //            String[] arr = part.split("\\|");
+   //            String collectionName = arr[0];
+   //            String tableName = collectionName;
+   //            if (arr.length > 1)
+   //            {
+   //               tableName = arr[1];
+   //            }
+   //            else
+   //            {
+   //               collectionName = beautifyCollectionName(collectionName);
+   //            }
+   //
+   //            Table table = buildTable(tableName, blueprintRowMap.get(collectionName));
+   //            withTable(table);
+   //
+   //            Collection collection = buildCollection(collectionName, table);
+   //            api.withCollection(collection);
+   //         }
+   //
+   //      }
+   //      else
+   //      {
+   //         log.warn("DynamoDb must have 'tableMappings' configured to be used");
+   //      }
+   //
+   //   }
 
    Table buildTable(String tableName, String[] bluePrintArr)
    {
       AmazonDynamoDB dynamoClient = getDynamoClient();
 
-      Table table = new Table(this, tableName);
+      Table table = new Table(tableName);
+      withTable(table);
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = dynamoDB.getTable(tableName);
@@ -236,10 +226,10 @@ public class DynamoDb extends Db<DynamoDb>
 
       for (AttributeDefinition attr : tableDescription.getAttributeDefinitions())
       {
-         table.makeColumn(attr.getAttributeName(), attr.getAttributeType());
+         table.withColumn(attr.getAttributeName(), attr.getAttributeType(), true, false);
       }
 
-      DynamoDbIndex index = new DynamoDbIndex(table, DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
+      DynamoDbIndex index = new DynamoDbIndex(DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
 
       List<KeySchemaElement> keySchema = tableDescription.getKeySchema();
       for (KeySchemaElement keyInfo : keySchema)
@@ -294,13 +284,13 @@ public class DynamoDb extends Db<DynamoDb>
 
    protected void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Table table)
    {
-      DynamoDbIndex index = new DynamoDbIndex(table, indexName, type);
+      DynamoDbIndex index = new DynamoDbIndex(indexName, type);
 
       for (KeySchemaElement keyInfo : keySchemaList)
       {
          Column column = table.getColumn(keyInfo.getAttributeName());
 
-         index.withColumn(column);
+         index.withColumnNames(column.getName());
 
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
          {
@@ -313,7 +303,7 @@ public class DynamoDb extends Db<DynamoDb>
          }
       }
 
-      table.withIndex(index);
+      table.withIndexes(index);
    }
 
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(Collection collection)
@@ -329,12 +319,6 @@ public class DynamoDb extends Db<DynamoDb>
    public com.amazonaws.services.dynamodbv2.document.Table getDynamoTable(String tableName)
    {
       return new DynamoDB(getDynamoClient()).getTable(tableName);
-   }
-
-   public DynamoDb withIncludeTables(String includeTables)
-   {
-      this.includeTables = includeTables;
-      return this;
    }
 
    public DynamoDb withBlueprintRow(String blueprintRow)
@@ -389,15 +373,14 @@ public class DynamoDb extends Db<DynamoDb>
          super();
       }
 
-      public DynamoDbIndex(Table table, String name, String type)
+      public DynamoDbIndex(String name, String type)
       {
-         super(table, name, type);
+         this(name, type, null, null);
       }
 
-      public DynamoDbIndex(Table table, String name, String type, Column pk, Column sk)
+      public DynamoDbIndex(String name, String type, Column pk, Column sk)
       {
-         super(table, name, type);
-
+         super(name, type, "primary".equalsIgnoreCase(type) ? true : false, pk.getName(), sk.getName());
          this.hashKey = pk;
          this.sortKey = sk;
       }
@@ -430,7 +413,7 @@ public class DynamoDb extends Db<DynamoDb>
       public DynamoDbIndex witHashKey(Column hashKey)
       {
          this.hashKey = hashKey;
-         withColumn(hashKey);
+         withColumnNames(hashKey.getName());
          return this;
       }
 
@@ -447,7 +430,7 @@ public class DynamoDb extends Db<DynamoDb>
       public DynamoDbIndex withSortKey(Column sortKey)
       {
          this.sortKey = sortKey;
-         withColumn(sortKey);
+         withColumnNames(sortKey.getName());
          return null;
       }
 

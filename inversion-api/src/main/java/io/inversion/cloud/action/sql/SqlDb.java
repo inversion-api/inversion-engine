@@ -39,19 +39,25 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ch.qos.logback.classic.Level;
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Attribute;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Relationship;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.SqlUtils.SqlListener;
@@ -164,6 +170,71 @@ public class SqlDb extends Db<SqlDb>
    }
 
    @Override
+   protected void startup0()
+   {
+      try
+      {
+         api.withEngineListener(new EngineListener()
+            {
+
+               public void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+               {
+                  try
+                  {
+                     ConnectionLocal.commit();
+                  }
+                  catch (Exception ex)
+                  {
+                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
+                  }
+               }
+
+               public void beforeError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+               {
+
+                  try
+                  {
+                     ConnectionLocal.rollback();
+                  }
+                  catch (Throwable t)
+                  {
+                     log.warn("Error rollowing back transaction.", t);
+                  }
+
+               }
+
+               public void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+               {
+                  try
+                  {
+                     ConnectionLocal.close();
+                  }
+                  catch (Throwable t)
+                  {
+                     log.warn("Error closing connections.", t);
+                  }
+               }
+
+            });
+
+         if (isType("mysql"))
+            withColumnQuote('`');
+
+         super.startup0();
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+         Utils.rethrow(ex);
+      }
+   }
+
+   protected void shutdown0()
+   {
+      //pool.close();
+   }
+
+   @Override
    public String getType()
    {
       if (type != null)
@@ -186,11 +257,6 @@ public class SqlDb extends Db<SqlDb>
       }
 
       return null;
-   }
-
-   protected void shutdown0()
-   {
-      //pool.close();
    }
 
    @Override
@@ -277,7 +343,7 @@ public class SqlDb extends Db<SqlDb>
       if (columnMappedIndexValues.size() == 0)
          return;
 
-      if (index.getColumns().size() == 1)
+      if (index.size() == 1)
       {
          List values = new ArrayList();
          for (Map entityKey : columnMappedIndexValues)
@@ -372,6 +438,15 @@ public class SqlDb extends Db<SqlDb>
             ConnectionLocal.putConnection(this, conn);
          }
 
+         System.out.print("tables: "); 
+         
+         DatabaseMetaData dbmd = conn.getMetaData();
+         ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
+         while (rs.next())
+            System.out.print(rs.getString("TABLE_NAME") + " ");
+         SqlUtils.close(rs, dbmd);
+
+         System.out.println();
          return conn;
       }
       catch (Exception ex)
@@ -407,6 +482,17 @@ public class SqlDb extends Db<SqlDb>
                SqlUtils.runDdl(conn, new URL(ddlUrl).openStream());
             }
             conn.commit();
+            
+            
+            System.out.print("ddl tables: "); 
+            
+            DatabaseMetaData dbmd = conn.getMetaData();
+            ResultSet rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
+            while (rs.next())
+               System.out.print(rs.getString("TABLE_NAME") + " ");
+            SqlUtils.close(rs, dbmd);
+
+            System.out.println();
          }
          catch (Exception ex)
          {
@@ -550,27 +636,7 @@ public class SqlDb extends Db<SqlDb>
    }
 
    @Override
-   protected void startup0()
-   {
-      try
-      {
-         if (isType("mysql"))
-            withColumnQuote('`');
-
-         if (isBootstrap() && getTables().size() == 0)
-         {
-            reflectDb();
-            configApi();
-         }
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-         Utils.rethrow(ex);
-      }
-   }
-
-   public void reflectDb() throws Exception
+   public void configDb() throws Exception
    {
       if (!isBootstrap())
       {
@@ -610,9 +676,10 @@ public class SqlDb extends Db<SqlDb>
             String tableName = rs.getString("TABLE_NAME");
             //String tableType = rs.getString("TABLE_TYPE");
 
-            //System.out.println(tableName);
+            if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
+               continue;
 
-            Table table = new Table(this, tableName);
+            Table table = new Table(tableName);
             withTable(table);
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
@@ -627,8 +694,8 @@ public class SqlDb extends Db<SqlDb>
 
                boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
 
-               Column column = new Column(table, columnNumber, colName, colType, nullable);
-               table.withColumn(column);
+               Column column = new Column(colName, colType, nullable, false);
+               table.withColumns(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
                //               {
@@ -669,7 +736,7 @@ public class SqlDb extends Db<SqlDb>
                //this looks like it only supports single column indexes but if
                //an index with this name already exists, that means this is another
                //column in that index.
-               table.makeIndex(column, idxName, idxType, unique);
+               table.withIndex(idxName, idxType, unique, column.getName());
 
             }
             indexMd.close();
@@ -720,9 +787,13 @@ public class SqlDb extends Db<SqlDb>
                Column pk = getColumn(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               getTable(fkTableName).makeIndex(fk, fkName, "FOREIGN_KEY", false);
+               Table table = getTable(fkTableName);
+               if (table != null)
+               {
+                  //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+                  table.withIndex(fkName, "FOREIGN_KEY", false, fk.getName());
+               }
 
-               //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
             }
             keyMd.close();
          }
@@ -745,143 +816,7 @@ public class SqlDb extends Db<SqlDb>
 
    }
 
-   public void configApi() throws Exception
-   {
-      List<String> relationshipStrs = new ArrayList();
-
-      for (Table table : getTables())
-      {
-         if (table.isLinkTbl())
-            continue;
-
-         List<Column> cols = table.getColumns();
-         String name = beautifyCollectionName(table.getName());
-
-         Collection collection = api.makeCollection(table, name);
-         if (getCollectionPath() != null)
-            collection.withIncludePaths(getCollectionPath());
-
-         Entity entity = collection.getEntity();
-
-         for (Attribute attr : entity.getAttributes())
-         {
-            attr.withName(beautifyAttributeName(attr.getName()));
-         }
-
-         //         String debug = getCollectionPath();
-         //         debug = (debug == null ? "" : (debug + collection));
-         //         System.out.println("CREATING COLLECTION: " + debug);
-      }
-
-      //-- Now go back through and create relationships for all foreign keys
-      //-- two relationships objects are created for every relationship type
-      //-- representing both sides of the relationship...ONE_TO_MANY also
-      //-- creates a MANY_TO_ONE and there are always two for a MANY_TO_MANY.
-      //-- API designers may want to represent one or both directions of the
-      //-- relationship in their API and/or the names of the JSON properties
-      //-- for the relationships will probably be different
-      for (Table t : getTables())
-      {
-         if (t.isLinkTbl())
-         {
-            //create reciprocal pairs for of MANY_TO_MANY relationships
-            //for each pair combination in the link table.
-            List<Index> indexes = t.getIndexes();
-            for (int i = 0; i < indexes.size(); i++)
-            {
-               for (int j = 0; j < indexes.size(); j++)
-               {
-                  Index idx1 = indexes.get(i);
-                  Index idx2 = indexes.get(j);
-
-                  if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
-                     continue;
-
-                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
-                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
-
-                  Relationship r = new Relationship();
-                  r.withType(Relationship.REL_MANY_TO_MANY);
-
-                  r.withRelated(entity2);
-                  r.withFkIndex1(idx1);
-                  r.withFkIndex2(idx2);
-                  r.withName(makeRelationshipName(entity1, r));
-                  r.withEntity(entity1);
-                  relationshipStrs.add(r.toString());
-               }
-            }
-         }
-         else
-         {
-            for (Index fkIdx : t.getIndexes())
-            {
-               try
-               {
-                  if (!fkIdx.getType().equals("FOREIGN_KEY"))
-                     continue;
-
-                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
-                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
-
-                  //ONE_TO_MANY
-                  {
-                     Relationship r = new Relationship();
-                     //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an entity is related
-                     //to another entity twice
-                     r.withType(Relationship.REL_MANY_TO_ONE);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(fkEntity);
-                     r.withName(makeRelationshipName(pkEntity, r));
-                     r.withEntity(pkEntity);
-                     relationshipStrs.add(r.toString());
-                  }
-
-                  //MANY_TO_ONE
-                  {
-                     Relationship r = new Relationship();
-                     r.withType(Relationship.REL_ONE_TO_MANY);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(pkEntity);
-                     r.withName(makeRelationshipName(fkEntity, r));
-                     r.withEntity(fkEntity);
-                     relationshipStrs.add(r.toString());
-                  }
-               }
-               catch (Exception ex)
-               {
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
-               }
-            }
-         }
-      }
-
-      //now we need to see if any relationship names conflict and need to be made unique
-      for (Collection coll : api.getCollections())
-      {
-         Entity entity = coll.getEntity();
-
-         List<Relationship> relationships = entity.getRelationships();
-
-         for (int i = 0; i < relationships.size(); i++)
-         {
-            String nameA = relationships.get(i).getName();
-
-            for (int j = i + 1; j < relationships.size(); j++)
-            {
-               String nameB = relationships.get(j).getName();
-
-               if (nameA.equalsIgnoreCase(nameB))
-               {
-                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
-                  relationships.get(j).withName(uniqueName);
-               }
-            }
-         }
-      }
-   }
-
+   @Override
    public Set<Term> mapToColumns(Collection collection, Term term)
    {
       Set terms = new HashSet();
@@ -954,8 +889,9 @@ public class SqlDb extends Db<SqlDb>
 
                   if (rel.isOneToMany())
                   {
-                     for (Column col : idx.getColumns())
+                     for (int k = 0; k < idx.size(); k++)
                      {
+                        Column col = idx.getColumn(k);
                         joinTerms.add(col.getTable().getName());
                         joinTerms.add(col.getName());
                         joinTerms.add(tableAlias);
@@ -966,8 +902,9 @@ public class SqlDb extends Db<SqlDb>
                   {
                      if (j == 0)
                      {
-                        for (Column col : idx.getColumns())
+                        for (int k = 0; k < idx.size(); k++)
                         {
+                           Column col = idx.getColumn(k);
                            joinTerms.add(col.getPk().getTable().getName());
                            joinTerms.add(col.getPk().getName());
                            joinTerms.add(tableAlias);
@@ -976,8 +913,9 @@ public class SqlDb extends Db<SqlDb>
                      }
                      else//second time through on M2M
                      {
-                        for (Column col : idx.getColumns())
+                        for (int k = 0; k < idx.size(); k++)
                         {
+                           Column col = idx.getColumn(k);
                            String m2mTbl = join.getToken(1);
 
                            joinTerms.add(m2mTbl);

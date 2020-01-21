@@ -481,8 +481,8 @@ public class TestSqlQuery extends TestCase
                {
                   try
                   {
-                     String col = query.getColValue(i).getKey();
-                     String val = query.getColValue(i).getValue();
+                     String col = (String)query.getColValue(i).getKey();
+                     String val = (String)query.getColValue(i).getValue();
 
                      if (!(col + "").equals(test.fields[i * 2] + ""))
                         passed = false;

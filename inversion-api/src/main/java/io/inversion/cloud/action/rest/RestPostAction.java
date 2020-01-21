@@ -55,7 +55,7 @@ import io.inversion.cloud.utils.Utils;
 public class RestPostAction extends Action<RestPostAction>
 {
    protected boolean collapseAll    = false;
-   
+
    /**
     * When true, forces PUTs to have an entityKey in the URL
     */
@@ -238,8 +238,10 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (rel.isOneToMany() && node.hasProperty(rel.getName()))
             {
-               for (Column col : rel.getFkIndex1().getColumns())
-                  copied.add(col.getName().toLowerCase());
+               for (String colName : rel.getFkIndex1().getColumnNames())
+               {
+                  copied.add(colName.toLowerCase());
+               }
 
                Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
                mapped.putAll(foreignKey);
@@ -529,8 +531,9 @@ public class RestPostAction extends Action<RestPostAction>
             {
                for (Row row : results.getRows())
                {
-                  for (Column col : rel.getFkIndex1().getColumns())
+                  for (int i = 0; i < rel.getFkIndex1().size(); i++)
                   {
+                     Column col = rel.getFkIndex1().getColumn(i);
                      row.put(col.getName(), null);
                   }
                }

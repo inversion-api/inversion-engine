@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,18 +44,26 @@ public class Table
       super();
    }
 
-   public Table(Db db, String name)
+   public Table(String name)
    {
-      super();
-      this.db = db;
-      this.name = name;
+      withName(name);
    }
+
+   //   public Table(Db db, String name)
+   //   {
+   //      super();
+   //      this.db = db;
+   //      this.name = name;
+   //   }
 
    /**
     * @return the linkTbl
     */
    public boolean isLinkTbl()
    {
+      if (columns.size() == 0)
+         return false;
+
       boolean isLinkTbl = true;
       for (Column c : columns)
       {
@@ -82,10 +90,13 @@ public class Table
 
    public boolean equals(Object object)
    {
+      if(object == this)
+         return true;
+      
       if (object instanceof Table)
       {
          Table table = (Table) object;
-         return table.getDb().equals(db) && name.equals(table.getName());
+         return (db == null || db == table.db) && Utils.equal(name,  table.name);
       }
       return false;
    }
@@ -138,51 +149,38 @@ public class Table
       Collections.sort(cols);
       return cols;
    }
+   
+   public int indexOf(Column column)
+   {
+      return columns.indexOf(column);
+   }
 
    /**
-    * @param columns the columns to set
+    * @param columnNames the columns to set
     */
    public Table withColumns(Column... cols)
    {
-      for (Column col : cols)
-         withColumn(col);
-      return this;
-   }
-
-   public Table withColumn(Column column)
-   {
-      Column existing = column.getName() == null ? null : getColumn(column.getName());
-
-      if (existing != null && existing == column)
-         return this;
-
-      if (existing != null)
-         throw new ApiException("you are trying to add a column name that already exists: " + column.getName());
-
-      if (column != null && !columns.contains(column))
+      for (Column column : cols)
       {
-         columns.add(column);
+         Column existing = column.getName() == null ? null : getColumn(column.getName());
 
-         if (column.getTable() != this)
-            column.withTable(this);
+         if (existing == null)
+         {
+            columns.add(column);
+            if (column.getTable() != this)
+               column.withTable(this);
+         }
+         else
+         {
+            //TODO: should the new props be copied over?
+         }
       }
       return this;
    }
 
-   public Column makeColumn(String name, String type)
+   public Table withColumn(String name, String type, boolean nullable, boolean unique)
    {
-      Column column = getColumn(name);
-
-      if (column == null)
-      {
-         column = new Column();
-         column.withName(name);
-         column.withType(type);
-
-         withColumn(column);
-      }
-
-      return column;
+      return withColumns(new Column(name, type, nullable, unique));
    }
 
    public void removeColumn(Column column)
@@ -197,9 +195,9 @@ public class Table
          return null;
 
       StringBuffer key = new StringBuffer("");
-      for (Column col : index.getColumns())
+      for (String colName : index.getColumnNames())
       {
-         Object val = values.get(col.getName());
+         Object val = values.get(colName);
          if (Utils.empty(val))
             return null;
 
@@ -230,6 +228,15 @@ public class Table
       return entityKey.toString();
    }
 
+   /**
+    * Encodes all non alpha numeric characters in a URL friendly four digit
+    * hex code equivalent preceded by a "*".  Similar to Java's unicode
+    * escape sequences but designed for URLs.
+    * 
+    * 
+    * @param string
+    * @return
+    */
    public static String encodeStr(String string)
    {
       Pattern p = Pattern.compile("[^A-Za-z0-9]");
@@ -249,6 +256,12 @@ public class Table
       return sb.toString();
    }
 
+   /**
+    * Replaces *[0-9a-f]{4} hex sequences with the unescaped 
+    * character...this is the reciprocal to encodeStr()
+    * @param string
+    * @return
+    */
    public static String decodeStr(String string)
    {
       try
@@ -299,25 +312,23 @@ public class Table
       if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
          inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
 
-      List<Column> columns = index.getColumns();
+      List colNames = index.getColumnNames();
 
-      List colNames = new ArrayList();
-      columns.forEach(c -> colNames.add(c.getName()));
       Rows rows = new Rows(colNames);
 
       for (List row : parseKeys(inKeys))
       {
-         if (row.size() != columns.size())
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getName() + "' has " + columns.size());
+         if (row.size() != colNames.size())
+            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getName() + "' has " + index.size());
 
-         for (int i = 0; i < columns.size(); i++)
+         for (int i = 0; i < colNames.size(); i++)
          {
             Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
                throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
 
-            value = getDb().cast(columns.get(i), value);
+            value = getDb().cast(index.getColumn(i), value);
             row.set(i, value);
 
             rows.addRow(row);
@@ -394,14 +405,14 @@ public class Table
          if (!index.isUnique())
             continue;
 
-         if (index.getColumns().size() == 0)
+         if (index.size() == 0)
             return index;
 
          if (found == null)
          {
             found = index;
          }
-         else if (index.getColumns().size() < found.getColumns().size())
+         else if (index.size() < found.size())
          {
             found = index;
          }
@@ -437,39 +448,57 @@ public class Table
 
    public Table withIndexes(Index... indexes)
    {
-      for (Index index : indexes)
-         withIndex(index);
-
-      return this;
-   }
-
-   public Table withIndex(Index index)
-   {
-      if (index != null && !indexes.contains(index))
+      for(int i=0; indexes != null && i < indexes.length; i++)
       {
-         indexes.add(index);
-         if (index.getTable() != this)
-            index.withTable(this);
+         Index index = indexes[i];
+         if (index != null)
+         {
+            if (index.getTable() != this)
+               index.withTable(this);
+            
+            if(!this.indexes.contains(index))
+               this.indexes.add(index);
+         }
       }
 
       return this;
    }
 
-   public Index makeIndex(Column column, String name, String type, boolean unique)
+
+   public Table withIndex(String name, String type, boolean unique, String column1Name, String... columnsN)
    {
-      //System.out.println("WITH INDEX: " + name + " - " + column);
       Index index = getIndex(name);
-      if (index != null)
+      if (index == null)
       {
-         index.withColumn(column);
+         index = new Index(name, type, unique, column1Name, columnsN);
+         withIndexes(index);
       }
       else
       {
-         index = new Index(this, column, name, type, unique);
-         withIndex(index);
+         index.withType(type);
+         index.withUnique(unique);
+         index.withColumnNames(column1Name);
+         index.withColumnNames(columnsN);
       }
-      return index;
+
+      return this;
    }
+
+   //   public Index makeIndex(Column column, String name, String type, boolean unique)
+   //   {
+   //      //System.out.println("WITH INDEX: " + name + " - " + column);
+   //      Index index = getIndex(name);
+   //      if (index != null)
+   //      {
+   //         index.withColumn(column);
+   //      }
+   //      else
+   //      {
+   //         index = new Index(this, column, name, type, unique);
+   //         withIndex(index);
+   //      }
+   //      return index;
+   //   }
 
    public void removeIndex(Index index)
    {

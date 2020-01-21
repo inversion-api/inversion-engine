@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
@@ -32,13 +31,13 @@ public class MockDb extends Db<MockDb>
    @Override
    protected void startup0()
    {
-      Table users = makeTable("users")//
-                                      .makeColumn("primaryKey", "int").getTable()//
-                                      .makeColumn("firstName", "varchar").getTable()//
-                                      .makeColumn("lastName", "varchar").getTable();
+      Table users = new Table("users")//
+                                      .withColumn("primaryKey", "int", false, true)//
+                                      .withColumn("firstName", "varchar", true, false)//
+                                      .withColumn("lastName", "varchar", true, false);
 
+      withTable(users);
       api.makeCollection(users, "users");
-
    }
 
    @Override

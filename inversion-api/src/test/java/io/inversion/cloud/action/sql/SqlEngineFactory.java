@@ -29,7 +29,7 @@ import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.StartupListener;
+import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
@@ -113,11 +113,11 @@ public class SqlEngineFactory
                      engine.withApi("northwind")//
                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
                            .withDb(sourceDb)//
-                           .withStartupListener(new StartupListener<Api>()
+                           .withEngineListener(new EngineListener()
                               {
-                                 public void onStartup(Api started)
+                                 public void onStartup(Engine engine, Api api)
                                  {
-                                    for(Collection col : started.getCollections())
+                                    for (Collection col : api.getCollections())
                                     {
                                        col.withAlias("aliased_" + col.getName());
                                     }
@@ -235,6 +235,8 @@ public class SqlEngineFactory
                   return res;
                }
             };
+
+         engine.withApi("northwind");
 
          if (startup)
          {
