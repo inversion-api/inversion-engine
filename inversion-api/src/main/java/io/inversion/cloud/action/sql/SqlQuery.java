@@ -157,17 +157,61 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
    {
       clearValues();
 
-      String select = this.selectSql;
+      Parts parts = new Parts();
 
-      if (select == null)
+      printInitialSelect(parts, this.selectSql);
+
+      printTermsSelect(parts, preparedStmt);
+
+      printJoins(parts, joins);
+
+      printWhereClause(parts, where().filters(), preparedStmt);
+
+      printGroupClause(parts, find("group"));
+
+      printOrderClause(parts, order().getSorts());
+
+      printLimitClause(parts, page().getOffset(), page().getLimit());
+
+      return printSql(parts);
+   }
+
+   protected String printSql(Parts parts)
+   {
+      //--compose the final statement
+      String buff = parts.select;
+
+      buff += " \r\n" + parts.from;
+
+      if (parts.where != null)
+         buff += " \r\n" + parts.where;
+
+      if (parts.select.toLowerCase().startsWith("select "))
       {
-         String qt = printTable();
+         if (parts.group != null)
+            buff += " \r\n" + parts.group;
+
+         if (parts.order != null)
+            buff += " \r\n" + parts.order;
+
+         if (parts.limit != null)
+            buff += " \r\n" + parts.limit;
+      }
+
+      return buff.toString();
+   }
+
+   protected String printInitialSelect(Parts parts, String initialSelect)
+   {
+      if (initialSelect == null)
+      {
+         String quotedTable = printTable();
 
          if (joins != null && joins.size() > 0)
          {
             Map joined = new HashMap();
 
-            select = "SELECT DISTINCT " + qt + ".* FROM " + qt;
+            initialSelect = "SELECT DISTINCT " + quotedTable + ".* FROM " + quotedTable;
 
             for (Entry<String, Term> joinEntry : joins.entrySet())
             {
@@ -178,20 +222,22 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
                if (!joined.containsKey(tableAlias))
                {
                   joined.put(tableAlias, tableName);
-                  select += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
+                  initialSelect += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
                }
             }
          }
          else
          {
-
-            select = " SELECT " + qt + ".* FROM " + qt;
-            //select = " SELECT * FROM " + qt;   
+            initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
          }
       }
 
-      Parts parts = new Parts(select);
+      parts.withSql(initialSelect);
+      return initialSelect;
+   }
 
+   protected String printTermsSelect(Parts parts, boolean preparedStmt)
+   {
       StringBuffer cols = new StringBuffer();
 
       List<Term> terms = select().columns();
@@ -271,11 +317,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
       }
 
-      //            if (isCalcRowsFound() && stmt.pagenum > 0 && stmt.parts.select.toLowerCase().trim().startsWith("select"))
-      //            {
-      //               
-      //            }
+      return parts.select;
+   }
 
+   protected String printJoins(Parts parts, LinkedHashMap<String, Term> joins)
+   {
       if (joins != null)
       {
          for (Entry<String, Term> joinTerm : joins.entrySet())
@@ -302,8 +348,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             }
          }
       }
+      return parts.where;
+   }
 
-      terms = where().filters();
+   protected String printWhereClause(Parts parts, List<Term> terms, boolean preparedStmt)
+   {
       for (int i = 0; i < terms.size(); i++)
       {
          Term term = terms.get(i);
@@ -317,8 +366,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
                parts.where += " AND " + where;
          }
       }
+      return parts.where;
+   }
 
-      Term groupBy = find("group");
+   protected String printGroupClause(Parts parts, Term groupBy)
+   {
       if (groupBy != null)
       {
          if (parts.group == null)
@@ -332,10 +384,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          }
       }
 
-      List<Sort> sorts = order().getSorts();
+      return parts.group;
+   }
+
+   protected String printOrderClause(Parts parts, List<Sort> sorts)
+   {
+      //-- before printing the "order by" statement, if the users did not supply 
+      //-- any sort terms but the primary index key is being selected, sort on the 
+      //-- primary index.
+      //-- TODO: can this be moved into the Order builder?
+
       if (sorts.isEmpty() && table != null && table.getPrimaryIndex() != null)
       {
-
          for (int k = 0; k < table.getPrimaryIndex().size(); k++)
          {
             Column col = table.getPrimaryIndex().getColumn(k);
@@ -351,6 +411,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             }
          }
       }
+
       for (int i = 0; i < sorts.size(); i++)
       {
          //-- now setup the "ORDER BY" clause based on the
@@ -369,42 +430,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
          parts.order += printCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
       }
-
-      //-- now setup the LIMIT clause based
-      //-- off of the  "offset" and "limit"
-      //-- params OR the "page" and "pageSize"
-      //-- query params.  
-
-      int offset = page().getOffset();
-      int limit = page().getLimit();
-
-      parts.limit = this.buildLimitClause(offset, limit);
-
-      //--compose the final statement
-      String buff = parts.select;
-
-      buff += " \r\n" + parts.from;
-
-      if (parts.where != null)
-         buff += " \r\n" + parts.where;
-
-      if (parts.select.toLowerCase().startsWith("select "))
-      {
-         if (parts.group != null)
-            buff += " \r\n" + parts.group;
-
-         if (parts.order != null)
-            buff += " \r\n" + parts.order;
-
-         if (parts.limit != null)
-            buff += " \r\n" + parts.limit;
-      }
-
-      return buff.toString();
-
+      return parts.order;
    }
 
-   protected String buildLimitClause(int offset, int limit)
+   protected String printLimitClause(Parts parts, int offset, int limit)
    {
       String s = null;
       if (limit >= 0 || offset >= 0)
@@ -434,6 +463,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
                s += " OFFSET " + offset;
          }
       }
+
+      parts.limit = s;
       return s;
    }
 
@@ -858,7 +889,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       public String order  = null;
       public String limit  = null;
 
-      public Parts(String sql)
+      void withSql(String sql)
       {
          if (sql == null)
             return;

@@ -32,10 +32,9 @@ public class MockDb extends Db<MockDb>
    protected void startup0()
    {
       Table users = new Table("users")//
-                                      .withColumn("primaryKey", "int", false, true)//
-                                      .withColumn("firstName", "varchar", true, false)//
-                                      .withColumn("lastName", "varchar", true, false);
-
+                                      .withColumn("primaryKey", "int", false)//
+                                      .withColumn("firstName", "varchar", true)//
+                                      .withColumn("lastName", "varchar", true);
       withTable(users);
       api.makeCollection(users, "users");
    }

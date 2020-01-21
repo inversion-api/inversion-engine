@@ -68,6 +68,11 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
          {
             String json = doc.toJson();
             JSNode node = JSNode.parseJsonNode(json);
+            for (String key : node.keySet())
+            {
+               if(key.startsWith("_"))
+                  node.remove(key);
+            }
             //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
             node.sortKeys();
             results.withRow(node);
@@ -87,10 +92,13 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
    {
       String sql = super.toSql(preparedStmt);
 
-      sql = sql.replace(table.getName() + ".*", "*");
+      sql = sql.replace(columnQuote + table.getName() + columnQuote + ".*", "*");
+
       //'Orders'\.'([^']*)'
       String regex = columnQuote + table.getName() + columnQuote + "\\." + columnQuote + "([^" + columnQuote + "]*)" + columnQuote;
       sql = sql.replaceAll(regex, table.getName() + "[\"$1\"]");
+
+      sql = sql.replace(columnQuote + table.getName() + columnQuote, table.getName());
 
       sql = sql.replace("LIMIT 100 OFFSET 0", "");
 
@@ -103,10 +111,10 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       return "@" + kv.getKey() + (valuesPairIdx + 1);
    }
 
-   public String printTable()
-   {
-      return table.getName();
-   }
+   //   public String printTable()
+   //   {
+   //      return table.getName();
+   //   }
 
    //   public String printCol(String columnName)
    //   {

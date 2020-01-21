@@ -438,15 +438,6 @@ public class SqlDb extends Db<SqlDb>
             ConnectionLocal.putConnection(this, conn);
          }
 
-         System.out.print("tables: "); 
-         
-         DatabaseMetaData dbmd = conn.getMetaData();
-         ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
-         while (rs.next())
-            System.out.print(rs.getString("TABLE_NAME") + " ");
-         SqlUtils.close(rs, dbmd);
-
-         System.out.println();
          return conn;
       }
       catch (Exception ex)
@@ -482,17 +473,6 @@ public class SqlDb extends Db<SqlDb>
                SqlUtils.runDdl(conn, new URL(ddlUrl).openStream());
             }
             conn.commit();
-            
-            
-            System.out.print("ddl tables: "); 
-            
-            DatabaseMetaData dbmd = conn.getMetaData();
-            ResultSet rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
-            while (rs.next())
-               System.out.print(rs.getString("TABLE_NAME") + " ");
-            SqlUtils.close(rs, dbmd);
-
-            System.out.println();
          }
          catch (Exception ex)
          {
@@ -694,7 +674,7 @@ public class SqlDb extends Db<SqlDb>
 
                boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
 
-               Column column = new Column(colName, colType, nullable, false);
+               Column column = new Column(colName, colType, nullable);
                table.withColumns(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
@@ -723,15 +703,9 @@ public class SqlDb extends Db<SqlDb>
                      idxType = "Statistic";
                }
 
+               Column column = table.getColumn(colName);
                Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
-
-               Column column = table.getColumn(colName);
-
-               if (unique)
-               {
-                  column.withUnique(unique);
-               }
 
                //this looks like it only supports single column indexes but if
                //an index with this name already exists, that means this is another

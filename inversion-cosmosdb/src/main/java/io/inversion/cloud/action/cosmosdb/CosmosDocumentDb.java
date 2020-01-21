@@ -135,7 +135,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
 
       int statusCode = response.getStatusCode();
-      if (statusCode > 200)
+      if (statusCode > 299)
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }

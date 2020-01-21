@@ -3,8 +3,6 @@ package io.inversion.cloud.action.cosmosdb;
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.sql.SqlEngineFactory;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Column;
-import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.service.Engine;
 
@@ -70,8 +68,10 @@ public class CosmosEngineFactory
          cosmosdb.withDb("inversion-testing-cosmos1");
          cosmosdb.withIncludeTables("People|persons,Orders");
          cosmosdb.withCollectionPath("cosmosdb/");
-         cosmosdb.withTable(new Table("Order")//
-                                              .withColumn("orderid", "number", false, true)//
+         cosmosdb.withTable(new Table("Orders")//
+                                               .withColumns("id|string,orderid|number||,shipcountry||false|true")//
+                                               .withIndex("pk", "primary", true, "id")
+         //.withColumn("ShipCountry", "string", false, false)//
          ///.withColumn)
 
          );

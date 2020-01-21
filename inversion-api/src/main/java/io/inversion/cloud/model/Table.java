@@ -90,13 +90,13 @@ public class Table
 
    public boolean equals(Object object)
    {
-      if(object == this)
+      if (object == this)
          return true;
-      
+
       if (object instanceof Table)
       {
          Table table = (Table) object;
-         return (db == null || db == table.db) && Utils.equal(name,  table.name);
+         return (db == null || db == table.db) && Utils.equal(name, table.name);
       }
       return false;
    }
@@ -149,7 +149,7 @@ public class Table
       Collections.sort(cols);
       return cols;
    }
-   
+
    public int indexOf(Column column)
    {
       return columns.indexOf(column);
@@ -178,9 +178,36 @@ public class Table
       return this;
    }
 
-   public Table withColumn(String name, String type, boolean nullable, boolean unique)
+   public Table withColumns(String... nameTypePairs)
    {
-      return withColumns(new Column(name, type, nullable, unique));
+      for (int i = 0; nameTypePairs != null && i < nameTypePairs.length; i++)
+      {
+         if (nameTypePairs[i] != null)
+         {
+            for (String pair : Utils.explode(",", nameTypePairs))
+            {
+               pair = pair.replace("||", "|null|");
+
+               List<String> parts = Utils.explode("\\|", pair);
+               String name = parts.get(0);
+               String type = parts.size() > 1 ? parts.get(1) : "string";
+               boolean nullable = parts.size() < 3 || !"false".equals(parts.get(2));
+
+               withColumn(name, type, nullable);
+            }
+         }
+      }
+      return this;
+   }
+
+   public Table withColumn(String name, String type)
+   {
+      return withColumn(name, type, true);
+   }
+
+   public Table withColumn(String name, String type, boolean nullable)
+   {
+      return withColumns(new Column(name, type, nullable));
    }
 
    public void removeColumn(Column column)
@@ -448,22 +475,21 @@ public class Table
 
    public Table withIndexes(Index... indexes)
    {
-      for(int i=0; indexes != null && i < indexes.length; i++)
+      for (int i = 0; indexes != null && i < indexes.length; i++)
       {
          Index index = indexes[i];
          if (index != null)
          {
             if (index.getTable() != this)
                index.withTable(this);
-            
-            if(!this.indexes.contains(index))
+
+            if (!this.indexes.contains(index))
                this.indexes.add(index);
          }
       }
 
       return this;
    }
-
 
    public Table withIndex(String name, String type, boolean unique, String column1Name, String... columnsN)
    {

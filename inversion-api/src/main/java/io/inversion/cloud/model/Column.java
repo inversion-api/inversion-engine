@@ -23,7 +23,6 @@ public class Column implements Comparable<Column>
    protected String  name     = null;
    protected String  type     = "string";
    protected boolean nullable = false;
-   protected boolean unique   = false;
 
    protected String  hint     = null;
 
@@ -44,29 +43,21 @@ public class Column implements Comparable<Column>
 
    public Column(String name)
    {
-      withName(name);
+      this(name, "string", true);
    }
 
-   public Column(String name, String type, boolean nullable, boolean unique)
+   public Column(String name, String type)
+   {
+      this(name, type, true);
+   }
+
+   public Column(String name, String type, boolean nullable)
    {
       withName(name);
       withType(type);
       withNullable(nullable);
-      withUnique(unique);
-
    }
 
-   //   public Column(Table table, int number, String name, String type, boolean nullable)
-   //   {
-   //      super();
-   //      this.table = table;
-   //      this.number = number;
-   //      this.name = name;
-   //      this.type = type;
-   //      this.nullable = nullable;
-   //      this.hint = table.getName() + "." + name;
-   //   }
-   //
    @Override
    public int compareTo(Column o)
    {
@@ -83,9 +74,9 @@ public class Column implements Comparable<Column>
 
    public boolean equals(Object object)
    {
-      if(object == this)
+      if (object == this)
          return true;
-     
+
       if (object instanceof Column)
       {
          Column column = (Column) object;
@@ -151,7 +142,8 @@ public class Column implements Comparable<Column>
     */
    public Column withType(String type)
    {
-      this.type = type;
+      if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
+         this.type = type;
       return this;
    }
 
@@ -190,23 +182,6 @@ public class Column implements Comparable<Column>
    public Column withHint(String hint)
    {
       this.hint = hint;
-      return this;
-   }
-
-   /**
-    * @return the unique
-    */
-   public boolean isUnique()
-   {
-      return unique;
-   }
-
-   /**
-    * @param unique the unique to set
-    */
-   public Column withUnique(boolean unique)
-   {
-      this.unique = unique;
       return this;
    }
 

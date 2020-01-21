@@ -226,7 +226,7 @@ public class DynamoDb extends Db<DynamoDb>
 
       for (AttributeDefinition attr : tableDescription.getAttributeDefinitions())
       {
-         table.withColumn(attr.getAttributeName(), attr.getAttributeType(), true, false);
+         table.withColumn(attr.getAttributeName(), attr.getAttributeType(), true);
       }
 
       DynamoDbIndex index = new DynamoDbIndex(DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);

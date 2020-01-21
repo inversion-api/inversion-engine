@@ -214,7 +214,7 @@ public class ElasticDb extends Db<ElasticDb>
          // potential types include: keyword, long, nested, object, boolean
          if (propValue.hasProperty("type") && table.getColumn(colName) == null)
          {
-            table.withColumn(colName, colName, nullable, false);
+            table.withColumn(colName, colName, nullable);
          }
       }
    }
