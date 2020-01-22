@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.action.cosmosdb;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +63,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       String documentUri = "/dbs/" + db + "/colls/" + table.getName();
       return documentUri;
    }
-   
+
    /**
     * Finds the entity keys on the other side of the relationship
     * @param relationship
@@ -88,15 +89,22 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return query.doSelect();
    }
 
-   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
+   @Override
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
+      for (Map<String, Object> row : indexValues)
+      {
+         deleteRow(table, row);
+      }
+
    }
 
-   public void delete(Table table, String entityKey) throws Exception
+   public void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
    {
       //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
       //-- https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
+
+      String entityKey = table.encodeKey(indexValues);
 
       String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + entityKey;
 
@@ -107,9 +115,21 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       {
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }
+
    }
 
-   public String upsert(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
+   @Override
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   {
+      List keys = new ArrayList();
+      for (Map<String, Object> row : rows)
+      {
+         keys.add(upsertRow(table, row));
+      }
+      return keys;
+   }
+
+   public String upsertRow(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
    {
       JSNode doc = new JSNode(columnMappedTermsRow);
 

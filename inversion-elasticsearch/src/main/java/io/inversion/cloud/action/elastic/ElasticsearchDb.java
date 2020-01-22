@@ -56,7 +56,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       this.withType("elasticsearch");
 
@@ -64,19 +64,23 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       configApi();
    }
 
+   @Override
    public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
+      // TODO Auto-generated method stub
       return null;
    }
 
-   public String upsert(Table table, Map<String, Object> values) throws Exception
+   @Override
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
-      return null;
+      // TODO Auto-generated method stub
    }
 
-   public void delete(Table table, String entityKey) throws Exception
+   @Override
+   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-
+      return null;
    }
 
    private void reflectDb()

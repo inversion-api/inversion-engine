@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.English;
+import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
@@ -79,7 +81,7 @@ public abstract class Db<T extends Db>
       starting = true;
       try
       {
-         startup0();
+         doStartup();
 
          started = true;
          return this;
@@ -94,7 +96,7 @@ public abstract class Db<T extends Db>
     * Made to be overridden by subclasses 
     * or anonymous inner classes to do specific init
     */
-   protected void startup0()
+   protected void doStartup()
    {
       try
       {
@@ -116,7 +118,7 @@ public abstract class Db<T extends Db>
       if ((started || starting) && !shutdown)
       {
          shutdown = true;
-         shutdown0();
+         doShutdown();
       }
    }
 
@@ -124,252 +126,205 @@ public abstract class Db<T extends Db>
     * Made to be overridden by subclasses 
     * or anonymous inner classes to do specific init
     */
-   protected void shutdown0()
+   protected void doShutdown()
    {
 
    }
 
    /**
-    * Finds the entity keys on the other side of the relationship
-    * @param relationship
-    * @param sourceEntityKeys
-    * @return Map<sourceEntityKey, relatedEntityKey>
+    * Finds all rows that match the supplied query terms.  
+    * 
+    * IMPORTANT The Result object contains a list of Row objects. Unlike the Rows class
+    * all Row objects in the Result do not have to share the same keys. 
+    * 
+    * @param table
+    * @param queryTerms
+    * @return
     * @throws Exception
     */
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".select()");
-   }
+   public abstract Results<Row> select(Table table, List<Term> queryTerms) throws Exception;
 
-   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
-   }
+   
+   /**
+    * Upserts the key/values pairs for each row into the underlying data source.  
+    * 
+    * Each row should minimally contain key value pairs that satisfy one of the 
+    * tables unique index constraints allowing an update to take place instead  
+    * of an insert if the row already exists in the underlying data source.
+    *
+    * IMPORTANT #1 - implementors should note that the keys on each row may be different.
+    * 
+    * IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
+    * For example, a RDBMS backed implementation may choose to upsert only the supplied
+    * client supplied keys effectively making this a POST/PATCH operation.  A 
+    * document store that is simply storing the supplied JSON may not be able to do
+    * partial updates elegantly and replace existing documents entirely rendering
+    * this a POST/PUT.    
+    * 
+    * @param table
+    * @param rows
+    * @return
+    * @throws Exception
+    */
+   public abstract List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception;
 
-   public void delete(Table table, List<String> entityKeys) throws Exception
+   /**
+    * Deletes rows identified by the unique index values from the underlying data source.
+    * 
+    * IMPORTANT implementors should note that the keys on each row may be different.
+    * The keys should have come from a unique index, meaning that the key/value pairs
+    * for each row should uniquely identify the row...however there is no guarantee 
+    * that each row will reference the same index.
+    * 
+    * @param table
+    * @param indexValues
+    * @throws Exception
+    */
+   public abstract void delete(Table table, List<Map<String, Object>> indexValues) throws Exception;
+
+   public void configDb() throws Exception
    {
-      for (String entityKey : entityKeys)
+      for (String key : includeTables.keySet())
       {
-         delete(table, entityKey);
+         withTable(new Table(key));
       }
    }
 
-   public void delete(Table table, String entityKey) throws Exception
+   protected void configApi() throws Exception
    {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".delete()");
-   }
+      List<String> relationshipStrs = new ArrayList();
 
-   public String upsert(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
-   {
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unsupported Operation.  Implement " + getClass().getName() + ".upsert()");
-   }
-
-   public List<String> upsert(Table table, List<Map<String, Object>> columnMappedTermsRows) throws Exception
-   {
-      List keys = new ArrayList();
-      for (Map<String, Object> row : columnMappedTermsRows)
+      for (Table table : getTables())
       {
-         keys.add(upsert(table, row));
-      }
-      return keys;
-   }
+         if (table.isLinkTbl())
+            continue;
 
-   public boolean isStarted()
-   {
-      return started;
-   }
+         List<Column> cols = table.getColumns();
+         String name = beautifyCollectionName(table.getName());
 
-   public boolean isShutdown()
-   {
-      return shutdown;
-   }
+         Collection collection = api.makeCollection(table, name);
+         if (getCollectionPath() != null)
+            collection.withIncludePaths(getCollectionPath());
 
-   public Column getColumn(String table, String col)
-   {
-      for (Table t : tables)
-      {
-         if (t.getName().equalsIgnoreCase(table))
+         Entity entity = collection.getEntity();
+
+         for (Attribute attr : entity.getAttributes())
          {
-            for (Column c : t.getColumns())
+            attr.withName(beautifyAttributeName(attr.getName()));
+         }
+
+         //         String debug = getCollectionPath();
+         //         debug = (debug == null ? "" : (debug + collection));
+         //         System.out.println("CREATING COLLECTION: " + debug);
+      }
+
+      //-- Now go back through and create relationships for all foreign keys
+      //-- two relationships objects are created for every relationship type
+      //-- representing both sides of the relationship...ONE_TO_MANY also
+      //-- creates a MANY_TO_ONE and there are always two for a MANY_TO_MANY.
+      //-- API designers may want to represent one or both directions of the
+      //-- relationship in their API and/or the names of the JSON properties
+      //-- for the relationships will probably be different
+      for (Table t : getTables())
+      {
+         if (t.isLinkTbl())
+         {
+            //create reciprocal pairs for of MANY_TO_MANY relationships
+            //for each pair combination in the link table.
+            List<Index> indexes = t.getIndexes();
+            for (int i = 0; i < indexes.size(); i++)
             {
-               if (c.getName().equalsIgnoreCase(col))
+               for (int j = 0; j < indexes.size(); j++)
                {
-                  return c;
+                  Index idx1 = indexes.get(i);
+                  Index idx2 = indexes.get(j);
+
+                  if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
+                     continue;
+
+                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
+                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
+
+                  Relationship r = new Relationship();
+                  r.withType(Relationship.REL_MANY_TO_MANY);
+
+                  r.withRelated(entity2);
+                  r.withFkIndex1(idx1);
+                  r.withFkIndex2(idx2);
+                  r.withName(makeRelationshipName(entity1, r));
+                  r.withEntity(entity1);
+                  relationshipStrs.add(r.toString());
                }
             }
-
-            return null;
          }
-      }
-      return null;
-   }
-
-   public Table getTable(String tableName)
-   {
-      for (Table t : tables)
-      {
-         if (t.getName().equalsIgnoreCase(tableName))
-            return t;
-      }
-
-      tableName = tableName.replaceAll("\\s+", "");
-      for (Table t : tables)
-      {
-         String name = t.getName();
-
-         if (name.indexOf(" ") > -1)
+         else
          {
-            name = name.replaceAll("\\s+", "");
-            if (name.equalsIgnoreCase(tableName))
-               return t;
+            for (Index fkIdx : t.getIndexes())
+            {
+               try
+               {
+                  if (!fkIdx.getType().equals("FOREIGN_KEY"))
+                     continue;
+
+                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
+                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
+
+                  //ONE_TO_MANY
+                  {
+                     Relationship r = new Relationship();
+                     //TODO:this name may not be specific enough or certain types
+                     //of relationships. For example where an entity is related
+                     //to another entity twice
+                     r.withType(Relationship.REL_MANY_TO_ONE);
+                     r.withFkIndex1(fkIdx);
+                     r.withRelated(fkEntity);
+                     r.withName(makeRelationshipName(pkEntity, r));
+                     r.withEntity(pkEntity);
+                     relationshipStrs.add(r.toString());
+                  }
+
+                  //MANY_TO_ONE
+                  {
+                     Relationship r = new Relationship();
+                     r.withType(Relationship.REL_ONE_TO_MANY);
+                     r.withFkIndex1(fkIdx);
+                     r.withRelated(pkEntity);
+                     r.withName(makeRelationshipName(fkEntity, r));
+                     r.withEntity(fkEntity);
+                     relationshipStrs.add(r.toString());
+                  }
+               }
+               catch (Exception ex)
+               {
+                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
+               }
+            }
          }
       }
 
-      return null;
-   }
-
-   public void removeTable(Table table)
-   {
-      tables.remove(table);
-   }
-
-   /**
-    * @return the tables
-    */
-   public List<Table> getTables()
-   {
-      return tables;
-   }
-
-   public T withIncludeTables(String includeTables)
-   {
-      for (String pair : Utils.explode(",", includeTables))
+      //now we need to see if any relationship names conflict and need to be made unique
+      for (Collection coll : api.getCollections())
       {
-         String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
-         String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
-         this.includeTables.put(tableName, collectionName);
+         Entity entity = coll.getEntity();
+
+         List<Relationship> relationships = entity.getRelationships();
+
+         for (int i = 0; i < relationships.size(); i++)
+         {
+            String nameA = relationships.get(i).getName();
+
+            for (int j = i + 1; j < relationships.size(); j++)
+            {
+               String nameB = relationships.get(j).getName();
+
+               if (nameA.equalsIgnoreCase(nameB))
+               {
+                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
+                  relationships.get(j).withName(uniqueName);
+               }
+            }
+         }
       }
-      return (T) this;
-   }
-
-   /**
-    * @param tables the tables to set
-    */
-   public T withTables(Table... tbls)
-   {
-      for (Table table : tbls)
-         withTable(table);
-
-      return (T) this;
-   }
-
-   
-//   public T withTable(String name, String... columnNameTypePairs)
-//   {
-//      Table table = getTable(name);
-//      if(table == null)
-//      {
-//         table = new Table(name);
-//         withTable(table);
-//      }
-//      table.withColumns(columnNameTypePairs);
-//      
-//      return (T)this;
-//   }
-   
-   public T withTable(Table tbl)
-   {
-      if (tbl != null)
-      {
-         if(tbl.getDb() != this)
-            tbl.withDb(this);
-         
-         if(!tables.contains(tbl))
-            tables.add(tbl);
-      }
-      return (T) this;
-   }
-
-   /**
-    * @return the name
-    */
-   public String getName()
-   {
-      return name;
-   }
-
-   /**
-    * @param name the name to set
-    */
-   public T withName(String name)
-   {
-      this.name = name;
-      return (T) this;
-   }
-
-   public boolean isType(String... types)
-   {
-      String type = getType();
-      if (type == null)
-         return false;
-
-      for (String t : types)
-      {
-         if (type.equalsIgnoreCase(t))
-            return true;
-      }
-      return false;
-   }
-
-   public String getType()
-   {
-      return type;
-   }
-
-   public T withType(String type)
-   {
-      this.type = type;
-      return (T) this;
-   }
-
-   public T withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         api.withDb(this);
-      }
-      return (T) this;
-   }
-
-   public Api getApi()
-   {
-      return api;
-   }
-
-   public boolean isBootstrap()
-   {
-      return bootstrap;
-   }
-
-   public T withBootstrap(boolean bootstrap)
-   {
-      this.bootstrap = bootstrap;
-      return (T) this;
-   }
-
-   public String getCollectionPath()
-   {
-      return collectionPath;
-   }
-
-   public T withCollectionPath(String collectionPath)
-   {
-      if (collectionPath != null && !collectionPath.endsWith("/"))
-         collectionPath += "/";
-
-      this.collectionPath = collectionPath;
-      return (T) this;
    }
 
    protected String beautifyCollectionName(String name)
@@ -650,149 +605,188 @@ public abstract class Db<T extends Db>
       return terms;
    }
 
-   public void configDb() throws Exception
+   public boolean isStarted()
    {
-      for (String key : includeTables.keySet())
-      {
-         withTable(new Table(key));
-      }
+      return started;
    }
 
-   protected void configApi() throws Exception
+   public boolean isShutdown()
    {
-      List<String> relationshipStrs = new ArrayList();
+      return shutdown;
+   }
 
-      for (Table table : getTables())
+   public Column getColumn(String table, String col)
+   {
+      for (Table t : tables)
       {
-         if (table.isLinkTbl())
-            continue;
-
-         List<Column> cols = table.getColumns();
-         String name = beautifyCollectionName(table.getName());
-
-         Collection collection = api.makeCollection(table, name);
-         if (getCollectionPath() != null)
-            collection.withIncludePaths(getCollectionPath());
-
-         Entity entity = collection.getEntity();
-
-         for (Attribute attr : entity.getAttributes())
+         if (t.getName().equalsIgnoreCase(table))
          {
-            attr.withName(beautifyAttributeName(attr.getName()));
-         }
+            for (Column c : t.getColumns())
+            {
+               if (c.getName().equalsIgnoreCase(col))
+               {
+                  return c;
+               }
+            }
 
-         //         String debug = getCollectionPath();
-         //         debug = (debug == null ? "" : (debug + collection));
-         //         System.out.println("CREATING COLLECTION: " + debug);
+            return null;
+         }
+      }
+      return null;
+   }
+
+   public Table getTable(String tableName)
+   {
+      for (Table t : tables)
+      {
+         if (t.getName().equalsIgnoreCase(tableName))
+            return t;
       }
 
-      //-- Now go back through and create relationships for all foreign keys
-      //-- two relationships objects are created for every relationship type
-      //-- representing both sides of the relationship...ONE_TO_MANY also
-      //-- creates a MANY_TO_ONE and there are always two for a MANY_TO_MANY.
-      //-- API designers may want to represent one or both directions of the
-      //-- relationship in their API and/or the names of the JSON properties
-      //-- for the relationships will probably be different
-      for (Table t : getTables())
+      tableName = tableName.replaceAll("\\s+", "");
+      for (Table t : tables)
       {
-         if (t.isLinkTbl())
+         String name = t.getName();
+
+         if (name.indexOf(" ") > -1)
          {
-            //create reciprocal pairs for of MANY_TO_MANY relationships
-            //for each pair combination in the link table.
-            List<Index> indexes = t.getIndexes();
-            for (int i = 0; i < indexes.size(); i++)
-            {
-               for (int j = 0; j < indexes.size(); j++)
-               {
-                  Index idx1 = indexes.get(i);
-                  Index idx2 = indexes.get(j);
-
-                  if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
-                     continue;
-
-                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
-                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
-
-                  Relationship r = new Relationship();
-                  r.withType(Relationship.REL_MANY_TO_MANY);
-
-                  r.withRelated(entity2);
-                  r.withFkIndex1(idx1);
-                  r.withFkIndex2(idx2);
-                  r.withName(makeRelationshipName(entity1, r));
-                  r.withEntity(entity1);
-                  relationshipStrs.add(r.toString());
-               }
-            }
-         }
-         else
-         {
-            for (Index fkIdx : t.getIndexes())
-            {
-               try
-               {
-                  if (!fkIdx.getType().equals("FOREIGN_KEY"))
-                     continue;
-
-                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
-                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
-
-                  //ONE_TO_MANY
-                  {
-                     Relationship r = new Relationship();
-                     //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an entity is related
-                     //to another entity twice
-                     r.withType(Relationship.REL_MANY_TO_ONE);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(fkEntity);
-                     r.withName(makeRelationshipName(pkEntity, r));
-                     r.withEntity(pkEntity);
-                     relationshipStrs.add(r.toString());
-                  }
-
-                  //MANY_TO_ONE
-                  {
-                     Relationship r = new Relationship();
-                     r.withType(Relationship.REL_ONE_TO_MANY);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(pkEntity);
-                     r.withName(makeRelationshipName(fkEntity, r));
-                     r.withEntity(fkEntity);
-                     relationshipStrs.add(r.toString());
-                  }
-               }
-               catch (Exception ex)
-               {
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
-               }
-            }
+            name = name.replaceAll("\\s+", "");
+            if (name.equalsIgnoreCase(tableName))
+               return t;
          }
       }
 
-      //now we need to see if any relationship names conflict and need to be made unique
-      for (Collection coll : api.getCollections())
+      return null;
+   }
+
+   public void removeTable(Table table)
+   {
+      tables.remove(table);
+   }
+
+   /**
+    * @return the tables
+    */
+   public List<Table> getTables()
+   {
+      return tables;
+   }
+
+   public T withIncludeTables(String includeTables)
+   {
+      for (String pair : Utils.explode(",", includeTables))
       {
-         Entity entity = coll.getEntity();
-
-         List<Relationship> relationships = entity.getRelationships();
-
-         for (int i = 0; i < relationships.size(); i++)
-         {
-            String nameA = relationships.get(i).getName();
-
-            for (int j = i + 1; j < relationships.size(); j++)
-            {
-               String nameB = relationships.get(j).getName();
-
-               if (nameA.equalsIgnoreCase(nameB))
-               {
-                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
-                  relationships.get(j).withName(uniqueName);
-               }
-            }
-         }
+         String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
+         String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
+         this.includeTables.put(tableName, collectionName);
       }
+      return (T) this;
+   }
+
+   /**
+    * @param tables the tables to set
+    */
+   public T withTables(Table... tbls)
+   {
+      for (Table table : tbls)
+         withTable(table);
+
+      return (T) this;
+   }
+
+   public T withTable(Table tbl)
+   {
+      if (tbl != null)
+      {
+         if (tbl.getDb() != this)
+            tbl.withDb(this);
+
+         if (!tables.contains(tbl))
+            tables.add(tbl);
+      }
+      return (T) this;
+   }
+
+   /**
+    * @return the name
+    */
+   public String getName()
+   {
+      return name;
+   }
+
+   /**
+    * @param name the name to set
+    */
+   public T withName(String name)
+   {
+      this.name = name;
+      return (T) this;
+   }
+
+   public boolean isType(String... types)
+   {
+      String type = getType();
+      if (type == null)
+         return false;
+
+      for (String t : types)
+      {
+         if (type.equalsIgnoreCase(t))
+            return true;
+      }
+      return false;
+   }
+
+   public String getType()
+   {
+      return type;
+   }
+
+   public T withType(String type)
+   {
+      this.type = type;
+      return (T) this;
+   }
+
+   public T withApi(Api api)
+   {
+      if (this.api != api)
+      {
+         this.api = api;
+         api.withDb(this);
+      }
+      return (T) this;
+   }
+
+   public Api getApi()
+   {
+      return api;
+   }
+
+   public boolean isBootstrap()
+   {
+      return bootstrap;
+   }
+
+   public T withBootstrap(boolean bootstrap)
+   {
+      this.bootstrap = bootstrap;
+      return (T) this;
+   }
+
+   public String getCollectionPath()
+   {
+      return collectionPath;
+   }
+
+   public T withCollectionPath(String collectionPath)
+   {
+      if (collectionPath != null && !collectionPath.endsWith("/"))
+         collectionPath += "/";
+
+      this.collectionPath = collectionPath;
+      return (T) this;
    }
 
 }

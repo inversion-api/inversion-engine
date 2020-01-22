@@ -56,25 +56,27 @@ public class RedisDb extends Db<RedisDb>
    protected int                 readSocketTimeout             = 2500;                               // time in milliseconds
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
+
+
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Table table, List<Term> queryTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
-   {
-      // TODO Auto-generated method stub
-
-   }
-
-   @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
+   }
+
+   @Override
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
    }
 
    protected Jedis getRedisClient()

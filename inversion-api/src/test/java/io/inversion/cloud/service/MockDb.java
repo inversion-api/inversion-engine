@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ public class MockDb extends Db<MockDb>
 {
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       Table users = new Table("users")//
                                       .withColumn("primaryKey", "int", false)//
@@ -42,17 +43,17 @@ public class MockDb extends Db<MockDb>
    @Override
    public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      return null;
+      return new Results(null);
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> values) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      return null;
+      return Collections.EMPTY_LIST;
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
 
    }

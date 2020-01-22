@@ -49,6 +49,7 @@ import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
@@ -544,7 +545,9 @@ public class RestPostAction extends Action<RestPostAction>
             else if (rel.isManyToMany())
             {
                log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + table + " -> " + results.getRows());
-               table.getDb().delete(table, table.getPrimaryIndex(), results.getRows());
+               Rows rows = new Rows();
+               rows.addAll(results.getRows());
+               table.getDb().delete(table, rows);
             }
 
             if (results.size() < 100)

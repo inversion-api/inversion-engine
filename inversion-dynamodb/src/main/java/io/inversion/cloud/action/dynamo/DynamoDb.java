@@ -89,15 +89,6 @@ public class DynamoDb extends Db<DynamoDb>
       return query.doSelect();
    }
 
-   @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
-   {
-      List<String> keys = upsert(table, Arrays.asList(row));
-      if (keys != null && keys.size() > 0)
-         return keys.get(0);
-
-      return null;
-   }
 
    @Override
    public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
@@ -146,23 +137,32 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
-      Row key = table.decodeKey(entityKey);
+      for (Map<String, Object> row : indexValues)
+      {
+         deleteRow(table, row);
+      }
 
+   }
+
+   public void deleteRow(Table table, Map<String, Object> row) throws Exception
+   {
       com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
 
-      if (key.size() == 1)
+      Index pk = table.getPrimaryIndex();
+
+      if (pk.size() == 1)
       {
-         dynamo.deleteItem(key.getKey(0), key.get(0));
+         dynamo.deleteItem(pk.getColumn(0).getName(), row.get(pk.getColumn(0).getName()));
       }
-      else if (key.size() == 2)
+      else if (pk.size() == 2)
       {
-         dynamo.deleteItem(key.getKey(0), key.get(0), key.getKey(1), key.get(1));
+         dynamo.deleteItem(pk.getColumn(0).getName(), row.get(pk.getColumn(0).getName()), pk.getColumn(1).getName(), row.get(pk.getColumn(1).getName()));
       }
       else
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + entityKey + "'");
+         throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + row + "'");
       }
    }
 

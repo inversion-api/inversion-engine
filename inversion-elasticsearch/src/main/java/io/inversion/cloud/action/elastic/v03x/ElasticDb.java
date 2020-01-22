@@ -66,7 +66,7 @@ public class ElasticDb extends Db<ElasticDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       try
       {
@@ -88,16 +88,14 @@ public class ElasticDb extends Db<ElasticDb>
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
-
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
+   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      // TODO Auto-generated method stub
       return null;
    }
 

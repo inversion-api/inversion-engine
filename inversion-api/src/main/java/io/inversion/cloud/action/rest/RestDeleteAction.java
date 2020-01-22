@@ -35,6 +35,7 @@ import io.inversion.cloud.rql.Parser;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
@@ -206,9 +207,9 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 
          deleted += res.data().size();
 
-         List<String> entityKeys = new ArrayList();
-         res.data().asList().forEach(o -> entityKeys.add((String) Utils.last(Utils.explode("/", ((JSNode) o).getString("href")))));
-         req.getCollection().getDb().delete(collection.getTable(), entityKeys);
+         Rows rows = new Rows();
+         res.data().asList().forEach(o -> rows.add(collection.getTable().decodeKey((String) Utils.last(Utils.explode("/", ((JSNode) o).getString("href"))))));
+         req.getCollection().getDb().delete(collection.getTable(), rows);
       }
 
       return deleted;

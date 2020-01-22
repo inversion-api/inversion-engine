@@ -58,7 +58,7 @@ public class S3Db extends Db<S3Db>
     * @see io.rcktapp.api.Db#bootstrapApi()
     */
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       AmazonS3 client = getS3Client();
 
@@ -106,18 +106,19 @@ public class S3Db extends Db<S3Db>
       return query.doSelect();
    }
 
-   @Override
-   public void delete(Table table, String entityKey) throws Exception
-   {
-      // TODO Auto-generated method stub
-
-   }
 
    @Override
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
+   }
+
+   @Override
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
    }
 
    //   /**
@@ -171,6 +172,7 @@ public class S3Db extends Db<S3Db>
    //      // TODO if the key and newKey are not equal, (or the bucket and newBucket) delete the old key file
    //      return client.copyObject(copyReq);
    //   }
+
 
    public AmazonS3 getS3Client()
    {

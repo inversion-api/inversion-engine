@@ -47,7 +47,6 @@ import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
@@ -58,6 +57,7 @@ import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.SqlUtils.SqlListener;
@@ -170,7 +170,7 @@ public class SqlDb extends Db<SqlDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       try
       {
@@ -220,7 +220,7 @@ public class SqlDb extends Db<SqlDb>
          if (isType("mysql"))
             withColumnQuote('`');
 
-         super.startup0();
+         super.doStartup();
       }
       catch (Exception ex)
       {
@@ -229,7 +229,7 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   protected void shutdown0()
+   protected void doShutdown()
    {
       //pool.close();
    }
@@ -287,15 +287,20 @@ public class SqlDb extends Db<SqlDb>
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       if (isType("h2"))
       {
-         return h2Upsert(table, row);
+         List keys = new ArrayList();
+         for (Map<String, Object> row : rows)
+         {
+            keys.add(h2Upsert(table, row));
+         }
+         return keys;
       }
       else if (isType("mysql"))
       {
-         return StringUtils.join(mysqlUpsert(table, row), ',');
+         return mysqlUpsert(table, rows);
       }
       else
       {
@@ -303,48 +308,18 @@ public class SqlDb extends Db<SqlDb>
       }
    }
 
-   public List<String> mysqlUpsert(Table table, Map<String, Object> row) throws Exception
-   {
-      return mysqlUpsert(table, Arrays.asList(row));
-   }
-
-   public List<String> mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
-   {
-      return SqlUtils.mysqlUpsert(getConnection(), table.getName(), rows);
-   }
-
-   public String h2Upsert(Table table, Map<String, Object> row) throws Exception
-   {
-      Object key = table.encodeKey(row);
-
-      if (key == null)//this must be an insert
-      {
-         SqlUtils.insertMap(getConnection(), table.getName(), row);
-      }
-      else
-      {
-         //String keyCol = table.getKeyName();
-         SqlUtils.h2Upsert(getConnection(), table.getName(), table.getPrimaryIndex(), row);
-      }
-
-      if (key == null)
-      {
-         key = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
-      }
-
-      if (key == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
-
-      return key.toString();
-   }
-
-   public void delete(Table table, Index index, List<Map<String, Object>> columnMappedIndexValues) throws Exception
+   @Override
+   public void delete(Table table, List<Map<String, Object>> columnMappedIndexValues) throws Exception
    {
       if (columnMappedIndexValues.size() == 0)
          return;
 
-      if (index.size() == 1)
+      Map<String, Object> firstRow = columnMappedIndexValues.get(0);
+
+      if (firstRow.size() == 1)
       {
+         String keyCol = firstRow.keySet().iterator().next();
+         
          List values = new ArrayList();
          for (Map entityKey : columnMappedIndexValues)
          {
@@ -353,7 +328,7 @@ public class SqlDb extends Db<SqlDb>
 
          String sql = "";
          sql += " DELETE FROM " + quoteCol(table.getName());
-         sql += " WHERE " + quoteCol(index.getColumn(0).getName()) + " IN (" + SqlUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
+         sql += " WHERE " + quoteCol(keyCol) + " IN (" + SqlUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
          SqlUtils.execute(getConnection(), sql, values.toArray());
       }
       else
@@ -385,24 +360,34 @@ public class SqlDb extends Db<SqlDb>
 
    }
 
-   public void delete(Table table, List<String> entityKeys) throws Exception
+   public List<String> mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      if (entityKeys.size() == 0)
-         return;
-
-      List<Map<String, Object>> keyMaps = new ArrayList();
-      for (String entityKey : entityKeys)
-      {
-         keyMaps.add(table.decodeKey(entityKey));
-      }
-
-      delete(table, table.getPrimaryIndex(), keyMaps);
+      return SqlUtils.mysqlUpsert(getConnection(), table.getName(), rows);
    }
 
-   @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public String h2Upsert(Table table, Map<String, Object> row) throws Exception
    {
-      delete(table, Arrays.asList(entityKey));
+      Object key = table.encodeKey(row);
+
+      if (key == null)//this must be an insert
+      {
+         SqlUtils.insertMap(getConnection(), table.getName(), row);
+      }
+      else
+      {
+         //String keyCol = table.getKeyName();
+         SqlUtils.h2Upsert(getConnection(), table.getName(), table.getPrimaryIndex(), row);
+      }
+
+      if (key == null)
+      {
+         key = SqlUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
+      }
+
+      if (key == null)
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
+
+      return key.toString();
    }
 
    public Connection getConnection() throws ApiException
