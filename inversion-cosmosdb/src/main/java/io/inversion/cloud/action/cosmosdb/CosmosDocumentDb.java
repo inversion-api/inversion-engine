@@ -58,12 +58,6 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       withName(name);
    }
 
-   public String getCollectionUri(Table table)
-   {
-      String documentUri = "/dbs/" + db + "/colls/" + table.getName();
-      return documentUri;
-   }
-
    /**
     * Finds the entity keys on the other side of the relationship
     * @param relationship
@@ -74,48 +68,8 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
    @Override
    public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
    {
-      CosmosDocumentDb db = null;
-      if (table == null)
-      {
-         db = this;
-      }
-      else
-      {
-         db = (CosmosDocumentDb) table.getDb();
-      }
-
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
-
       return query.doSelect();
-   }
-
-   @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
-   {
-      for (Map<String, Object> row : indexValues)
-      {
-         deleteRow(table, row);
-      }
-
-   }
-
-   public void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
-   {
-      //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      //-- https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
-
-      String entityKey = table.encodeKey(indexValues);
-
-      String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + entityKey;
-
-      ResourceResponse<Document> response = getDocumentClient().deleteDocument(documentUri, new RequestOptions());
-
-      int statusCode = response.getStatusCode();
-      if (statusCode > 200)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
-      }
-
    }
 
    @Override
@@ -164,34 +118,38 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return id;
    }
 
-   public synchronized CosmosDocumentDb withDocumentClient(DocumentClient documentClient)
+   @Override
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
-      this.documentClient = documentClient;
-      return this;
+      for (Map<String, Object> row : indexValues)
+      {
+         deleteRow(table, row);
+      }
    }
 
-   public DocumentClient getDocumentClient()
+   public void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
    {
-      if (this.documentClient == null)
+      //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
+      //-- https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
+
+      String entityKey = table.encodeKey(indexValues);
+
+      String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + entityKey;
+
+      ResourceResponse<Document> response = getDocumentClient().deleteDocument(documentUri, new RequestOptions());
+
+      int statusCode = response.getStatusCode();
+      if (statusCode > 200)
       {
-         synchronized (this)
-         {
-            if (this.documentClient == null)
-            {
-               this.documentClient = buildDocumentClient(name + ".", uri, key);
-            }
-         }
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }
 
-      return documentClient;
    }
 
-   public static DocumentClient buildDocumentClient(String prefix, String uri, String key)
+   protected String getCollectionUri(Table table)
    {
-      uri = Utils.findSysEnvPropStr(prefix + ".uri", uri);
-      key = Utils.findSysEnvPropStr(prefix + ".key", key);
-
-      return new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+      String documentUri = "/dbs/" + db + "/colls/" + table.getName();
+      return documentUri;
    }
 
    public String getUri()
@@ -225,6 +183,48 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
    {
       this.key = key;
       return this;
+   }
+
+   public synchronized CosmosDocumentDb withDocumentClient(DocumentClient documentClient)
+   {
+      this.documentClient = documentClient;
+      return this;
+   }
+
+   public DocumentClient getDocumentClient()
+   {
+      if (this.documentClient == null)
+      {
+         synchronized (this)
+         {
+            if (this.documentClient == null)
+            {
+               this.documentClient = buildDocumentClient(name, uri, key);
+            }
+         }
+      }
+
+      return documentClient;
+   }
+
+   public static DocumentClient buildDocumentClient(String prefix, String uri, String key)
+   {
+      uri = Utils.findSysEnvPropStr(prefix + ".uri", uri);
+      key = Utils.findSysEnvPropStr(prefix + ".key", key);
+
+      if(Utils.empty(uri) || Utils.empty(key))
+      {
+         String error = "";
+         error += "Unable to connect to Cosmos DB because conf values for '" + prefix + ".uri' or '" + prefix + ".key' can not be found. ";
+         error += "If this is a development environment, you should probably add these key/value pairs to a '.env' properties file in your working directory. ";
+         error += "If this is a production deployment, you should probably set these as environment variables on your container.";
+         error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
+         error += "values into your code is strongly discouraged as a poor security practice.";
+         
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, error);
+      }
+      
+      return new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
    }
 
 }

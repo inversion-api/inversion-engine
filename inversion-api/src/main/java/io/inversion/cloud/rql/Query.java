@@ -25,6 +25,7 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 
@@ -49,6 +50,8 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    protected R              group  = null;
    protected O              order  = null;
    protected G              page   = null;
+
+   protected boolean        dryRun = false;
 
    //hold ordered list of columnName=literalValue pairs
    protected List<KeyValue> values = new ArrayList();
@@ -91,8 +94,18 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return super.withTerm(term);
    }
 
+   public Results doSelect() throws Exception
+   {
+      return null;
+   }
+
    //------------------------------------------------------------------
    //------------------------------------------------------------------
+
+   public Query()
+   {
+      this(null);
+   }
 
    public Query(E table)
    {
@@ -200,7 +213,8 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       this.table = table;
       if (table != null)
       {
-         withDb((D) table.getDb());
+         if (table.getDb() != null)
+            withDb((D) table.getDb());
       }
 
       return r();
@@ -269,6 +283,17 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    public List<KeyValue> getValues()
    {
       return values;
+   }
+
+   public boolean isDryRun()
+   {
+      return dryRun;
+   }
+
+   public T withDryRun(boolean dryRun)
+   {
+      this.dryRun = dryRun;
+      return r();
    }
 
 }

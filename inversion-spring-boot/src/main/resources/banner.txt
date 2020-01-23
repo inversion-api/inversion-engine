@@ -4,7 +4,7 @@
   | || | | \ V /  __/ |  \__ \ | (_) | | | |
  |___|_| |_|\_/ \___|_|  |___/_|\___/|_| |_|
 ============================================
-Inversion - Create More, Code Less
+Inversion - Create More. Code Less.
 
 https://github.com/inversion-api/
 Copyright (c) 2019 Inversion.org, LLC

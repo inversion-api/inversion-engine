@@ -31,17 +31,20 @@ public class TestCosmosSqlDb extends TestCase
       Engine e = CosmosEngineFactory.engine();
 
       Response res = null;
-      res = e.get("/northwind/source/orders?limit=5");
+      res = e.get("/northwind/source/orders?limit=100");
       for (JSNode order : res.data().asNodeList())
       {
          order.remove("href");
          order.put("id", order.get("orderid") + "");
 
+         
          e.post("/northwind/cosmosdb/orders", order);
       }
 
       res = e.get("/northwind/cosmosdb/orders?shipCountry=France");
 
+      Response r = null;
+      
       res.dump();
 
    }

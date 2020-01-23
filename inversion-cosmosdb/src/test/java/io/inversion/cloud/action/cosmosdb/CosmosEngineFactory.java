@@ -84,8 +84,8 @@ public class CosmosEngineFactory
          //         Index pk = new Index(orders, orderId, "pk_orders_orderid", "primary", true);
          //         orders.withIndex(pk);
 
-         cosmosdb.withUri("https://inversion-testing-account.documents.azure.com:443/");
-         cosmosdb.withKey("Agf752hPuJ7SXFJdIQdBVdDQFBoIzbPyqA7ZM6TvOaaYbBgRnNYLAfd1Orsq7dMDRDSoElWuA9fGHWAXdaeqMw==");
+         //cosmosdb.withUri("https://inversion-testing-account.documents.azure.com:443/");
+         //cosmosdb.withKey("Agf752hPuJ7SXFJdIQdBVdDQFBoIzbPyqA7ZM6TvOaaYbBgRnNYLAfd1Orsq7dMDRDSoElWuA9fGHWAXdaeqMw==");
 
          final Api api = engine.getApi("northwind");
 

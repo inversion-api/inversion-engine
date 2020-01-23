@@ -54,6 +54,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
    LinkedHashMap<String, Term> joins;
 
+   public SqlQuery()
+   {
+
+   }
+
    public SqlQuery(Table table, List<Term> terms)
    {
       super(table, terms);

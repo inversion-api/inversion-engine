@@ -164,7 +164,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       return this;
    }
 
-   protected Results<Row> doSelect() throws Exception
+   public Results<Row> doSelect() throws Exception
    {
       Index dynamoIndex = null;
       Results result = new Results(this);

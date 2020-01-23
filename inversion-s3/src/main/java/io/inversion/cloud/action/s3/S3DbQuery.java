@@ -58,7 +58,7 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Table, Select<Select<Selec
       where().withFunctions("eq", "sw");
    }
 
-   protected Results<Row> doSelect() throws Exception
+   public Results<Row> doSelect() throws Exception
    {
       // path == /s3/bucketName
       // path == /s3/bucketName/inner/folder
