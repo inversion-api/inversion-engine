@@ -53,7 +53,8 @@ public class RqlValidationSuite
                                     .withColumn("ShipCountry", "VARCHAR")//
                                     .withIndex("PK_Orders", "primary", true, "OrderID"));
 
-      withTest("eq_queryOnEquality", "orders?eq(OrderID, 1234)&ShipCountry=France");
+      withTest("eq_queryForEquals", "orders?eq(OrderID, 1234)&ShipCountry=France");
+      withTest("ne_queryForNotEquals", "orders?ne(ShipCountry,France)");
 
       withQueryClass(queryClass);
       withDb(db);
@@ -82,8 +83,8 @@ public class RqlValidationSuite
 
          String expected = results.get(testKey);
 
-         if (Utils.empty(""))
-            expected = "You are missing a validation for test '" + testKey + "' with RQL '" + expected + "'.  If this case is unsupported please call 'withResult(\"" + testKey + "\", \"UNSUPPORTED\") in your setup to declare that this validation should be skipped.";
+         if (Utils.empty(expected))
+            expected = "You are missing a validation for test '" + testKey + "' with RQL '" + queryString + "'.  If this case is unsupported please call 'withResult(\"" + testKey + "\", \"UNSUPPORTED\") in your setup to declare that this validation should be skipped.";
 
          Results results = query.doSelect();
          String actual = results.getTestQuery();
