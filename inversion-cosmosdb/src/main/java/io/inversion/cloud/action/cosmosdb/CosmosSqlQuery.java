@@ -92,10 +92,17 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
 
          for (int i = 0; i < values.size(); i++)
          {
-            debug += asVariableName(i) + "='" + values.get(i).getValue();
+
+            debug += asVariableName(i) + "=";
+            if (values.get(i).getValue() instanceof String)
+               debug += "\"" + values.get(i).getValue() + "\"";
+            else
+               debug += values.get(i).getValue();
+
             if (i < values.size() - 1)
-               debug += ",";
+               debug += ", ";
          }
+         debug = debug.trim();
          debug += "}";
          debug = debug.replaceAll("\r", "");
          debug = debug.replaceAll("\n", " ");
