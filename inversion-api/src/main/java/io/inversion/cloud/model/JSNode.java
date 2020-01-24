@@ -912,6 +912,31 @@ public class JSNode implements Map<String, Object>
       return asMap().entrySet();
    }
 
+   public List asList()
+   {
+      if(this instanceof JSArray)
+         return new ArrayList( ((JSArray)this).objects);
+      
+      ArrayList list = new ArrayList();
+      list.add(this);
+      return list;
+   }
+
+   public List<JSNode> asNodeList()
+   {
+      return asList();
+   }
+
+   public JSArray asArray()
+   {
+      if (this instanceof JSArray)
+         return (JSArray) this;
+
+      return new JSArray(this);
+   }
+
+
+
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------

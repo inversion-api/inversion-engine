@@ -103,12 +103,6 @@ public class Rows extends ArrayList<Row>
          arr.add(value);
       }
 
-      Row newRow = new Row(keys, arr.toArray());
-      if (index > -1)
-         super.add(index, newRow);
-      else
-         super.add(newRow);
-
       return addRow(index, arr.toArray());
    }
 

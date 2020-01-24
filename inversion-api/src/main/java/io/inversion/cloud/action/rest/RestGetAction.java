@@ -383,7 +383,10 @@ public class RestGetAction extends Action<RestGetAction>
                String entityKey = req.getCollection().getTable().encodeKey(row);
 
                if (Utils.empty(entityKey))
+               {
+                  entityKey = req.getCollection().getTable().encodeKey(row);
                   throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+               }
 
                //------------------------------------------------
                //copy over defined attributes first, if the select returned 

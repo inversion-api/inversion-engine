@@ -1,5 +1,6 @@
 package io.inversion.cloud.action.cosmosdb;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.KeyValue;
@@ -13,10 +14,13 @@ import com.microsoft.azure.documentdb.SqlParameterCollection;
 import com.microsoft.azure.documentdb.SqlQuerySpec;
 
 import io.inversion.cloud.action.sql.SqlQuery;
+import io.inversion.cloud.action.sql.SqlQuery.Parts;
+import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row;
 
@@ -39,7 +43,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
 
    public Results<Row> doSelect() throws Exception
    {
-      Results results = new Results(this);;
+      Results results = new Results(this);
       CosmosDocumentDb db = getDb();
 
       String collectionUri = db.getCollectionUri(table);
@@ -61,7 +65,22 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
             DocumentClient cosmos = db.getDocumentClient();
             SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
             FeedOptions options = new FeedOptions();
-            options.setEnableCrossPartitionQuery(true);
+
+            boolean enableCrossPartitionQuery = true;
+
+            Index partKey = table.getIndex("PartitionKey");
+            if (partKey != null)
+            {
+               String partKeyCol = partKey.getColumn(0).getName();
+               //-- the only way to turn cross partition querying off is to 
+               //-- have a single partition key identified in your query.
+               //-- If we have a pk term but it is nested in an expression
+               //-- the we can't be sure the cosmos query planner can use it.
+               Term partKeyTerm = findTerm(partKeyCol, "eq");
+               enableCrossPartitionQuery = partKeyTerm == null || partKeyTerm.getParent() != null;
+            }
+
+            options.setEnableCrossPartitionQuery(enableCrossPartitionQuery);
 
             FeedResponse<Document> queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
 
@@ -83,6 +102,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
                //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
                node.sortKeys();
                results.withRow(node);
+
             }
          }
       }
@@ -119,6 +139,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
          //TODO: how do we efficiently skip this
          results.withDebugQuery(debug);
 
+         System.out.println(debug);
+
       }
       return results;
    }
@@ -146,6 +168,19 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       sql = sql.replace(columnQuote + table.getName() + columnQuote, table.getName());
 
       return sql;
+   }
+
+   /**
+    * The inversion configured primary index should contain at least
+    * the document identifier and the partition key.  If you don't supply
+    * a sort key on the query string that would default to adding two 
+    * fields to the sort.  If you did not configure cosmos to have a compound
+    * search index, that would fail...simply solution...if you did not supply
+    * a sort on the query string, just search by the "id" field. 
+    */
+   protected List<Sort> getDefaultSorts(Parts parts)
+   {
+      return Arrays.asList(new Sort("id", true));
    }
 
    /**

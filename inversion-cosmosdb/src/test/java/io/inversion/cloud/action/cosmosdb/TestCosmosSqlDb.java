@@ -21,6 +21,7 @@ import org.junit.Test;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Utils;
 import junit.framework.TestCase;
 
 public class TestCosmosSqlDb extends TestCase
@@ -31,21 +32,19 @@ public class TestCosmosSqlDb extends TestCase
       Engine e = CosmosEngineFactory.engine();
 
       Response res = null;
-      res = e.get("/northwind/source/orders?limit=100");
-      for (JSNode order : res.data().asNodeList())
-      {
-         order.remove("href");
-         order.put("id", order.get("orderid") + "");
-
-         
-         e.post("/northwind/cosmosdb/orders", order);
-      }
 
       res = e.get("/northwind/cosmosdb/orders?shipCountry=France");
-
-      Response r = null;
-      
       res.dump();
 
+      res = e.get("http://localhost/northwind/cosmosdb/orders/order*002d10265~10265");
+      res.dump();
+      
+      assertTrue(res.data().size() == 1);
    }
+
+   public void test_multipleCollectionsBackedBySingleTable()
+   {
+
+   }
+
 }

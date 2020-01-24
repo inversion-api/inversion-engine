@@ -200,7 +200,7 @@ public class RestPostAction extends Action<RestPostAction>
       //-- Step 1. Upsert this generation including one to many relationships where the fk is known
       //--
       List<Map> upsertMaps = new ArrayList();
-      for (JSNode node : nodes.asArrayList())
+      for (JSNode node : nodes.asNodeList())
       {
          Map<String, Object> mapped = new HashMap();
          upsertMaps.add(mapped);
@@ -377,7 +377,7 @@ public class RestPostAction extends Action<RestPostAction>
          {
             //GOAL: set the value of the FK on this one record..then done
 
-            for (JSNode node : nodes.asArrayList())
+            for (JSNode node : nodes.asNodeList())
             {
                Map primaryKey = getKey(collection.getTable(), node);
                Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
@@ -409,7 +409,7 @@ public class RestPostAction extends Action<RestPostAction>
          if (rel.isOneToMany())//these were handled above
             continue;
 
-         for (JSNode node : nodes.asArrayList())
+         for (JSNode node : nodes.asNodeList())
          {
             if (!node.hasProperty(rel.getName()) || node.get(rel.getName()) instanceof String)
                continue;//-- this property was not passed back in...if it is string it is the link to expand the relationship

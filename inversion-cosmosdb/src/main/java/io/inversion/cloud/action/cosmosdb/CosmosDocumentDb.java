@@ -24,6 +24,8 @@ import com.microsoft.azure.documentdb.ConnectionPolicy;
 import com.microsoft.azure.documentdb.ConsistencyLevel;
 import com.microsoft.azure.documentdb.Document;
 import com.microsoft.azure.documentdb.DocumentClient;
+import com.microsoft.azure.documentdb.DocumentClientException;
+import com.microsoft.azure.documentdb.PartitionKey;
 import com.microsoft.azure.documentdb.RequestOptions;
 import com.microsoft.azure.documentdb.ResourceResponse;
 
@@ -127,23 +129,51 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       }
    }
 
-   public void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
+   /**
+    * Deletes a single specific resource.
+    * 
+    * Rest url format for Cosmos deletions -  https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
+    * 
+    * @see https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
+    * @see 
+    * 
+    * @param table
+    * @param indexValues
+    * @throws Exception
+    */
+   protected void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
    {
-      //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      //-- https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
+      Object id = indexValues.get("id");
+      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getName());
+      String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + id;
 
-      String entityKey = table.encodeKey(indexValues);
+      RequestOptions options = new RequestOptions();
+      options.setPartitionKey(new PartitionKey(partitionKeyValue));
 
-      String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + entityKey;
-
-      ResourceResponse<Document> response = getDocumentClient().deleteDocument(documentUri, new RequestOptions());
-
-      int statusCode = response.getStatusCode();
-      if (statusCode > 200)
+      ResourceResponse<Document> response = null;
+      try
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
-      }
+         response = getDocumentClient().deleteDocument(documentUri, options);
 
+         int statusCode = response.getStatusCode();
+         if (statusCode > 299)
+         {
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+         }
+      }
+      catch (DocumentClientException ex)
+      {
+         ex.printStackTrace();
+         int statusCode = ex.getStatusCode();
+         if (statusCode == 404)
+         {
+            //ignore attempts to delete things that don't exist
+         }
+         else
+         {
+            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+         }
+      }
    }
 
    protected String getCollectionUri(Table table)
@@ -212,7 +242,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       uri = Utils.findSysEnvPropStr(prefix + ".uri", uri);
       key = Utils.findSysEnvPropStr(prefix + ".key", key);
 
-      if(Utils.empty(uri) || Utils.empty(key))
+      if (Utils.empty(uri) || Utils.empty(key))
       {
          String error = "";
          error += "Unable to connect to Cosmos DB because conf values for '" + prefix + ".uri' or '" + prefix + ".key' can not be found. ";
@@ -220,10 +250,10 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          error += "If this is a production deployment, you should probably set these as environment variables on your container.";
          error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
          error += "values into your code is strongly discouraged as a poor security practice.";
-         
+
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, error);
       }
-      
+
       return new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
    }
 

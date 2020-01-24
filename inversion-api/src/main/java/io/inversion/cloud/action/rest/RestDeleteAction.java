@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,15 +17,17 @@
 package io.inversion.cloud.action.rest;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -36,6 +38,7 @@ import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
+import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
@@ -112,9 +115,9 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       }
 
       String collectionUrl = req.getApiUrl();
-      if(!collectionUrl.endsWith("/"))
+      if (!collectionUrl.endsWith("/"))
          collectionUrl += "/";
-      
+
       collectionUrl += Utils.implode("/", req.getEndpointPath().toString(), req.getCollectionKey().toString());
       int deleted = delete(req, req.getCollection(), collectionUrl, toDelete);
 
@@ -193,6 +196,8 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 
       String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
 
+      Set alreadyDeleted = new HashSet();
+
       for (int i = 0; i < 1000; i++)
       {
 
@@ -208,7 +213,21 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          deleted += res.data().size();
 
          Rows rows = new Rows();
-         res.data().asList().forEach(o -> rows.add(collection.getTable().decodeKey((String) Utils.last(Utils.explode("/", ((JSNode) o).getString("href"))))));
+
+         for (JSNode node : res.data().asNodeList())
+         {
+            String href = node.getString("href");
+
+            if (alreadyDeleted.contains(href))
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Deletion of '" + href + "' was not successful.");
+            else
+               alreadyDeleted.add(href);
+
+            Row key = collection.getTable().decodeKey((String) Utils.last(Utils.explode("/", href)));
+            rows.add(key);
+         }
+
+         //res.data().asList().forEach(o -> ));
          req.getCollection().getDb().delete(collection.getTable(), rows);
       }
 

@@ -368,22 +368,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       //-- primary index.
       //-- TODO: can this be moved into the Order builder?
 
-      if (sorts.isEmpty() && table != null && table.getPrimaryIndex() != null)
+      if (sorts.isEmpty())
       {
-         for (int k = 0; k < table.getPrimaryIndex().size(); k++)
-         {
-            Column col = table.getPrimaryIndex().getColumn(k);
-            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
-            {
-               Sort sort = new Sort(col.getName(), true);
-               sorts.add(sort);
-            }
-            else
-            {
-               sorts.clear();
-               break;
-            }
-         }
+         sorts = getDefaultSorts(parts);
       }
 
       for (int i = 0; i < sorts.size(); i++)
@@ -405,6 +392,30 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          parts.order += printCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
       }
       return parts.order;
+   }
+
+   protected List<Sort> getDefaultSorts(Parts parts)
+   {
+      List<Sort> sorts = new ArrayList();
+
+      if (table != null && table.getPrimaryIndex() != null)
+      {
+         for (int k = 0; k < table.getPrimaryIndex().size(); k++)
+         {
+            Column col = table.getPrimaryIndex().getColumn(k);
+            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
+            {
+               Sort sort = new Sort(col.getName(), true);
+               sorts.add(sort);
+            }
+            else
+            {
+               sorts.clear();
+               break;
+            }
+         }
+      }
+      return sorts;
    }
 
    protected String printLimitClause(Parts parts, int offset, int limit)

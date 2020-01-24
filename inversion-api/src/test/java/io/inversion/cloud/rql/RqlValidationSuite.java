@@ -36,7 +36,7 @@ public class RqlValidationSuite
 
    public RqlValidationSuite(String queryClass, Db db, Table... tables)
    {
-      withTables(new Table("orders")//
+      withTables(new Table("orders")//s
                                     .withColumn("OrderID", "VARCHAR")//
                                     .withColumn("CustomerID", "INTEGER")//
                                     .withColumn("EmployeeID", "DATETIME")//
