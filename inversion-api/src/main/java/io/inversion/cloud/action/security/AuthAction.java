@@ -158,11 +158,14 @@ public class AuthAction extends Action<AuthAction>
                }
                catch (Exception ex)
                {
+                  // TODO Why not just throw the 401 here?  With a context specific log?
+                  log.debug("Attempting to validate token failed {}  Continuing.", token, ex) ;
                }
-
-               if (jwt == null)
-                  throw new ApiException(SC.SC_401_UNAUTHORIZED);
             }
+
+            // The only reason this will be true is if there are no getJwtSecrets() or an Exception above
+            if (jwt == null)
+               throw new ApiException(SC.SC_401_UNAUTHORIZED);
 
             user = createUserFromValidJwt(jwt);
          }
