@@ -49,6 +49,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       String collectionUri = db.getCollectionUri(table);
 
       String sql = getPreparedStmt();
+      sql = sql.replaceAll("\r", "");
+      sql = sql.replaceAll("\n", " ");
 
       SqlParameterCollection params = new SqlParameterCollection();
       for (int i = 0; i < values.size(); i++)
@@ -58,90 +60,63 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
          params.add(new SqlParameter(varName, kv.getValue()));
       }
 
-      try
+      DocumentClient cosmos = db.getDocumentClient();
+      SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
+      FeedOptions options = new FeedOptions();
+
+      boolean enableCrossPartitionQuery = true;
+
+      Index partKey = table.getIndex("PartitionKey");
+      if (partKey != null)
       {
-         if (!isDryRun())
+         String partKeyCol = partKey.getColumn(0).getName();
+         //-- the only way to turn cross partition querying off is to 
+         //-- have a single partition key identified in your query.
+         //-- If we have a pk term but it is nested in an expression
+         //-- the we can't be sure the cosmos query planner can use it.
+         Term partKeyTerm = findTerm(partKeyCol, "eq");
+         enableCrossPartitionQuery = partKeyTerm == null || partKeyTerm.getParent() != null;
+      }
+
+      options.setEnableCrossPartitionQuery(enableCrossPartitionQuery);
+
+      //-- for test cases and query explain
+      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + enableCrossPartitionQuery + "}";
+      debug = debug.replaceAll("\r", "");
+      debug = debug.replaceAll("\n", " ");
+      debug = debug.replaceAll(" +", " ");
+      Chain.debug(debug);
+      results.withTestQuery(debug);
+      //-- end test case debug stuff
+
+      System.out.println();
+
+      if (!isDryRun())
+      {
+         FeedResponse<Document> queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
+
+         for (Document doc : queryResults.getQueryIterable())
          {
-            DocumentClient cosmos = db.getDocumentClient();
-            SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
-            FeedOptions options = new FeedOptions();
+            String json = doc.toJson();
+            JSNode node = JSNode.parseJsonNode(json);
 
-            boolean enableCrossPartitionQuery = true;
-
-            Index partKey = table.getIndex("PartitionKey");
-            if (partKey != null)
+            //-- removes all cosmos applied system keys that start with "_"
+            //-- TODO: might want to make this a configuration option and/or
+            //-- specifically blacklist known cosmos keys as this algorithm
+            //-- will delete any _ prefixed property even if it was supplied
+            //-- by the user
+            for (String key : node.keySet())
             {
-               String partKeyCol = partKey.getColumn(0).getName();
-               //-- the only way to turn cross partition querying off is to 
-               //-- have a single partition key identified in your query.
-               //-- If we have a pk term but it is nested in an expression
-               //-- the we can't be sure the cosmos query planner can use it.
-               Term partKeyTerm = findTerm(partKeyCol, "eq");
-               enableCrossPartitionQuery = partKeyTerm == null || partKeyTerm.getParent() != null;
+               if (key.startsWith("_"))
+                  node.remove(key);
             }
+            //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
+            node.sortKeys();
+            results.withRow(node);
 
-            options.setEnableCrossPartitionQuery(enableCrossPartitionQuery);
-
-            FeedResponse<Document> queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
-
-            for (Document doc : queryResults.getQueryIterable())
-            {
-               String json = doc.toJson();
-               JSNode node = JSNode.parseJsonNode(json);
-
-               //-- removes all cosmos applied system keys that start with "_"
-               //-- TODO: might want to make this a configuration option and/or
-               //-- specifically blacklist known cosmos keys as this algorithm
-               //-- will delete any _ prefixed property even if it was supplied
-               //-- by the user
-               for (String key : node.keySet())
-               {
-                  if (key.startsWith("_"))
-                     node.remove(key);
-               }
-               //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
-               node.sortKeys();
-               results.withRow(node);
-
-            }
          }
       }
-      finally
-      {
-         String debug = "CosmosDb '" + sql + "' args={";
 
-         for (int i = 0; i < values.size(); i++)
-         {
-
-            debug += asVariableName(i) + "=";
-            if (values.get(i).getValue() instanceof String)
-               debug += "\"" + values.get(i).getValue() + "\"";
-            else
-               debug += values.get(i).getValue();
-
-            if (i < values.size() - 1)
-               debug += ", ";
-         }
-         debug = debug.trim();
-         debug += "}";
-         debug = debug.replaceAll("\r", "");
-         debug = debug.replaceAll("\n", " ");
-         debug = debug.trim().replaceAll(" +", " ");
-         Chain.debug(debug);
-
-         results.withTestQuery(debug);
-
-         debug = getDynamicStmt();
-         debug = debug.replaceAll("\r", "");
-         debug = debug.replaceAll("\n", " ");
-         debug = debug.trim().replaceAll(" +", " ");
-
-         //TODO: how do we efficiently skip this
-         results.withDebugQuery(debug);
-
-         System.out.println(debug);
-
-      }
       return results;
    }
 

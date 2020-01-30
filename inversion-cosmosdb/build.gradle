@@ -1,8 +1,11 @@
 dependencies {
+
     compile project(':inversion-api')
-    testCompile project(':inversion-spring-boot')
 	compile "com.microsoft.azure:azure-documentdb:${azureSdkVersion}"
+
 	testCompile project(':inversion-api').sourceSets.test.output
+	testCompile project(':inversion-spring-boot')
+	
 	
 }
 
