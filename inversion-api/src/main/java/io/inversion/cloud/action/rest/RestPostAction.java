@@ -49,13 +49,14 @@ import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
 public class RestPostAction extends Action<RestPostAction>
 {
    protected boolean collapseAll    = false;
-   
+
    /**
     * When true, forces PUTs to have an entityKey in the URL
     */
@@ -199,7 +200,7 @@ public class RestPostAction extends Action<RestPostAction>
       //-- Step 1. Upsert this generation including one to many relationships where the fk is known
       //--
       List<Map> upsertMaps = new ArrayList();
-      for (JSNode node : nodes.asArrayList())
+      for (JSNode node : nodes.asNodeList())
       {
          Map<String, Object> mapped = new HashMap();
          upsertMaps.add(mapped);
@@ -238,8 +239,10 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (rel.isOneToMany() && node.hasProperty(rel.getName()))
             {
-               for (Column col : rel.getFkIndex1().getColumns())
-                  copied.add(col.getName().toLowerCase());
+               for (String colName : rel.getFkIndex1().getColumnNames())
+               {
+                  copied.add(colName.toLowerCase());
+               }
 
                Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
                mapped.putAll(foreignKey);
@@ -374,7 +377,7 @@ public class RestPostAction extends Action<RestPostAction>
          {
             //GOAL: set the value of the FK on this one record..then done
 
-            for (JSNode node : nodes.asArrayList())
+            for (JSNode node : nodes.asNodeList())
             {
                Map primaryKey = getKey(collection.getTable(), node);
                Map foreignKey = mapTo(getKey(rel.getRelated().getTable(), node.get(rel.getName())), rel.getRelated().getTable().getPrimaryIndex(), rel.getFkIndex1());
@@ -406,7 +409,7 @@ public class RestPostAction extends Action<RestPostAction>
          if (rel.isOneToMany())//these were handled above
             continue;
 
-         for (JSNode node : nodes.asArrayList())
+         for (JSNode node : nodes.asNodeList())
          {
             if (!node.hasProperty(rel.getName()) || node.get(rel.getName()) instanceof String)
                continue;//-- this property was not passed back in...if it is string it is the link to expand the relationship
@@ -529,8 +532,9 @@ public class RestPostAction extends Action<RestPostAction>
             {
                for (Row row : results.getRows())
                {
-                  for (Column col : rel.getFkIndex1().getColumns())
+                  for (int i = 0; i < rel.getFkIndex1().size(); i++)
                   {
+                     Column col = rel.getFkIndex1().getColumn(i);
                      row.put(col.getName(), null);
                   }
                }
@@ -541,7 +545,9 @@ public class RestPostAction extends Action<RestPostAction>
             else if (rel.isManyToMany())
             {
                log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + table + " -> " + results.getRows());
-               table.getDb().delete(table, table.getPrimaryIndex(), results.getRows());
+               Rows rows = new Rows();
+               rows.addAll(results.getRows());
+               table.getDb().delete(table, rows);
             }
 
             if (results.size() < 100)

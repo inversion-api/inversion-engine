@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,12 @@ import java.util.Set;
 
 import io.inversion.cloud.utils.Rows.Row;
 
+/**
+ * A list of ordered maps where all maps that all share the same keys.
+ * 
+ * @author wells
+ *
+ */
 public class Rows extends ArrayList<Row>
 {
    RowKeys keys    = null;
@@ -41,6 +47,11 @@ public class Rows extends ArrayList<Row>
       this.keys = new RowKeys();
    }
 
+   public Rows(Map row)
+   {
+      addRow(row);
+   }
+   
    public Rows(String[] keys)
    {
       this.keys = new RowKeys(Arrays.asList(keys));
@@ -69,11 +80,16 @@ public class Rows extends ArrayList<Row>
    public Row addRow()
    {
       lastRow = new Row(keys);
-      add(lastRow);
+      super.add(lastRow);
       return lastRow;
    }
 
    public Row addRow(Map map)
+   {
+      return addRow(-1, map);
+   }
+
+   public Row addRow(int index, Map map)
    {
       if (keys == null || keys.size() == 0)
       {
@@ -83,23 +99,37 @@ public class Rows extends ArrayList<Row>
       ArrayList arr = new ArrayList(keys.keys.size());
       for (int i = 0; i < keys.keys.size(); i++)
       {
-         arr.set(i, map.get(keys.keys.get(i)));
+         Object value = map.get(keys.keys.get(i)); 
+         arr.add(value);
       }
 
-      addRow(arr.toArray());
-      return lastRow;
+      return addRow(index, arr.toArray());
    }
 
-   public void addRow(List values)
+   public Row addRow(List values)
    {
-      lastRow = new Row(keys, values.toArray());
-      add(lastRow);
+      return addRow(-1, values);
    }
 
-   public void addRow(Object[] values)
+   public Row addRow(int index, List values)
+   {
+      return addRow(index, values.toArray());
+   }
+
+   public Row addRow(Object[] values)
+   {
+      return addRow(-1, values);
+   }
+
+   public Row addRow(int index, Object[] values)
    {
       lastRow = new Row(keys, values);
-      add(lastRow);
+      if (index > -1)
+         super.add(index, lastRow);
+      else
+         super.add(lastRow);
+
+      return lastRow;
    }
 
    public void put(String key, Object value)
@@ -110,6 +140,40 @@ public class Rows extends ArrayList<Row>
    public void put(Object value)
    {
       lastRow.add(value);
+   }
+
+   @Override
+   public boolean add(Row e)
+   {
+      addRow(e);
+      return true;
+   }
+
+   @Override
+   public void add(int index, Row element)
+   {
+      // TODO Auto-generated method stub
+      super.add(index, element);
+   }
+
+   @Override
+   public boolean addAll(Collection<? extends Row> rows)
+   {
+      for (Row row : rows)
+      {
+         addRow(row);
+      }
+      return true;
+   }
+
+   @Override
+   public boolean addAll(int index, Collection<? extends Row> rows)
+   {
+      for (Row row : rows)
+      {
+         addRow(index, row);
+      }
+      return true;
    }
 
    public void sortBy(final String... keys)

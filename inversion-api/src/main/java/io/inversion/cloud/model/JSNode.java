@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,6 +61,19 @@ public class JSNode implements Map<String, Object>
       {
          put(key + "", map.get(key));
       }
+   }
+
+   public void sortKeys()
+   {
+      List<String> keys = new ArrayList(properties.keySet());
+      Collections.sort(keys);
+
+      LinkedHashMap<String, Property> newProps = new LinkedHashMap();
+      for (String key : keys)
+      {
+         newProps.put(key, properties.get(key));
+      }
+      properties = newProps;
    }
 
    public JSArray diff(JSNode diffAgainst)
@@ -897,6 +911,31 @@ public class JSNode implements Map<String, Object>
    {
       return asMap().entrySet();
    }
+
+   public List asList()
+   {
+      if(this instanceof JSArray)
+         return new ArrayList( ((JSArray)this).objects);
+      
+      ArrayList list = new ArrayList();
+      list.add(this);
+      return list;
+   }
+
+   public List<JSNode> asNodeList()
+   {
+      return asList();
+   }
+
+   public JSArray asArray()
+   {
+      if (this instanceof JSArray)
+         return (JSArray) this;
+
+      return new JSArray(this);
+   }
+
+
 
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------

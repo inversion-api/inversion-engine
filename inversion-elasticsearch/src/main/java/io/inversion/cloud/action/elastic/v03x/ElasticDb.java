@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,7 +66,7 @@ public class ElasticDb extends Db<ElasticDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       try
       {
@@ -88,16 +88,14 @@ public class ElasticDb extends Db<ElasticDb>
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
-
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
+   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
-      // TODO Auto-generated method stub
       return null;
    }
 
@@ -139,7 +137,8 @@ public class ElasticDb extends Db<ElasticDb>
 
    }
 
-   private void configApi()
+   @Override
+   public void configApi()
    {
       for (Table t : getTables())
       {
@@ -185,7 +184,7 @@ public class ElasticDb extends Db<ElasticDb>
                table = tableMap.get(aliasName);
             else
             {
-               table = new Table(this, aliasName);
+               table = new Table(aliasName);
                tableMap.put(aliasName, table);
             }
 
@@ -213,7 +212,7 @@ public class ElasticDb extends Db<ElasticDb>
          // potential types include: keyword, long, nested, object, boolean
          if (propValue.hasProperty("type") && table.getColumn(colName) == null)
          {
-            table.makeColumn(colName, colName);
+            table.withColumn(colName, colName, nullable);
          }
       }
    }

@@ -23,35 +23,37 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.cloud.service.Engine;
+
 public class Api
 {
-   protected Logger                               log         = LoggerFactory.getLogger(getClass());
+   protected Logger                         log         = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean                     started     = false;
-   transient volatile boolean                     starting    = false;
-   transient long                                 loadTime    = 0;
-   transient Hashtable                            cache       = new Hashtable();
-   transient protected String                     hash        = null;
+   transient Engine                         engine      = null;
 
-   //   protected transient Engine engine      = null;
+   transient volatile boolean               started     = false;
+   transient volatile boolean               starting    = false;
+   transient long                           loadTime    = 0;
+   transient Hashtable                      cache       = new Hashtable();
+   transient protected String               hash        = null;
 
-   protected boolean                              debug       = false;
+   protected boolean                        debug       = false;
 
-   protected int                                  id          = 0;
+   protected int                            id          = 0;
 
-   protected String                               name        = null;
-   protected String                               accountCode = null;
-   protected String                               apiCode     = null;
-   protected boolean                              multiTenant = false;
-   protected String                               url         = null;
+   protected String                         name        = null;
+   protected String                         accountCode = null;
+   protected String                         apiCode     = null;
+   protected boolean                        multiTenant = false;
+   protected String                         url         = null;
 
-   protected List<Db>                             dbs         = new ArrayList();
-   protected List<Endpoint>                       endpoints   = new ArrayList();
-   protected List<Action>                         actions     = new ArrayList();
+   protected List<Db>                       dbs         = new ArrayList();
+   protected List<Endpoint>                 endpoints   = new ArrayList();
+   protected List<Action>                   actions     = new ArrayList();
 
-   protected List<Collection>                     collections = new ArrayList();
+   protected List<Collection>               collections = new ArrayList();
 
-   protected transient List<StartupListener<Api>> listeners   = new ArrayList();
+   protected transient List<EngineListener> listeners   = new ArrayList();
 
    public Api()
    {
@@ -79,11 +81,11 @@ public class Api
          //removeExcludes();
          started = true;
 
-         for (StartupListener listener : listeners)
+         for (EngineListener listener : listeners)
          {
             try
             {
-               listener.onStartup(this);
+               listener.onStartup(engine, this);
             }
             catch (Exception ex)
             {
@@ -205,7 +207,6 @@ public class Api
       }
       return null;
    }
-
 
    public Collection getCollection(String name)
    {
@@ -510,10 +511,21 @@ public class Api
       return this;
    }
 
-   public Api withStartupListener(StartupListener<Api> listener)
+   public Api withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
+      return this;
+   }
+
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   public Api withEngine(Engine engine)
+   {
+      this.engine = engine;
       return this;
    }
 

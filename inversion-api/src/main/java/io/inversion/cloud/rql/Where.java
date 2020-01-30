@@ -80,9 +80,9 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (index == null)
             throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
 
-         if (index.getColumns().size() == 1)
+         if (index.size() == 1)
          {
-            Term t = Term.term(null, "in", index.getColumns().get(0).getName());
+            Term t = Term.term(null, "in", index.getColumn(0).getName());
             List<Term> children = parent.getTerms();
             for (int i = 1; i < children.size(); i++)
             {

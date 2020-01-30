@@ -234,12 +234,12 @@ public class Relationship
 
    public Table getPrimaryKeyTable1()
    {
-      return fkIndex1.getColumns().get(0).getTable();
+      return fkIndex1.getColumn(0).getTable();
    }
 
    public Table getPrimaryKeyTable2()
    {
-      return fkIndex2.getColumns().get(0).getTable();
+      return fkIndex2.getColumn(0).getTable();
    }
 
    /**
@@ -247,7 +247,7 @@ public class Relationship
     */
    public Column getFk1Col1()
    {
-      return fkIndex1.getColumns().get(0);
+      return fkIndex1.getColumn(0);
    }
 
    //
@@ -265,7 +265,7 @@ public class Relationship
     */
    public Column getFk2Col1()
    {
-      return fkIndex2.getColumns().get(0);
+      return fkIndex2.getColumn(0);
    }
    //
    //   /**

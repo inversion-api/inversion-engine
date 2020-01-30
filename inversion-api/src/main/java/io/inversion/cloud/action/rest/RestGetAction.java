@@ -118,8 +118,9 @@ public class RestGetAction extends Action<RestGetAction>
 
             //maps query string parameter names for the main tables pk to the related tables fk
             Index fkIdx = rel.getFkIndex1();
-            for (Column fk : fkIdx.getColumns())
+            for (int i = 0; i<fkIdx.size(); i++)
             {
+               Column fk = fkIdx.getColumn(i);
                String pkName = fk.getPk().getName();
                Object pkVal = entityKeyRow.get(pkName);
 
@@ -314,8 +315,9 @@ public class RestGetAction extends Action<RestGetAction>
                      term.removeTerm(child);
 
                      Index pk = collection.getTable().getPrimaryIndex();
-                     for (Column c : pk.getColumns())
+                     for (int i = 0; i<pk.size(); i++)
                      {
+                        Column c = pk.getColumn(i);
                         boolean includesPkCol = false;
                         for (Term col : term.getTerms())
                         {
@@ -381,7 +383,10 @@ public class RestGetAction extends Action<RestGetAction>
                String entityKey = req.getCollection().getTable().encodeKey(row);
 
                if (Utils.empty(entityKey))
+               {
+                  entityKey = req.getCollection().getTable().encodeKey(row);
                   throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+               }
 
                //------------------------------------------------
                //copy over defined attributes first, if the select returned 
@@ -589,9 +594,14 @@ public class RestGetAction extends Action<RestGetAction>
                //would be exactly the same you would just end up running an extra db query
 
                List cols = new ArrayList();
-               idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
-               idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
 
+               cols.addAll(idxToMatch.getColumnNames());
+               cols.addAll(idxToRetrieve.getColumnNames());
+               
+               
+               
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
                {
@@ -703,9 +713,13 @@ public class RestGetAction extends Action<RestGetAction>
       List<KeyValue> related = new ArrayList<>();
 
       List columns = new ArrayList();
-      idxToMatch.getColumns().forEach(c -> columns.add(c.getName()));
-      idxToRetrieve.getColumns().forEach(c -> columns.add(c.getName()));
+      //idxToMatch.getColumns().forEach(c -> columnNames.add(c.getName()));
+      //idxToRetrieve.getColumns().forEach(c -> columnNames.add(c.getName()));
 
+      columns.addAll(idxToMatch.getColumnNames());
+      columns.addAll(idxToRetrieve.getColumnNames());
+      
+      
       Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
       Term includes = Term.term(null, "includes", columns);
       Term sort = Term.term(null, "sort", columns);
@@ -715,8 +729,8 @@ public class RestGetAction extends Action<RestGetAction>
       for (Row row : rows)
       {
          List keyParts = row.asList();
-         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.getColumns().size()));
-         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.getColumns().size(), keyParts.size()));
+         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.size()));
+         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }

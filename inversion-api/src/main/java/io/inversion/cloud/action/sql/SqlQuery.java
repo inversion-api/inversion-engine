@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
@@ -42,7 +43,7 @@ import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
-public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';
    protected char              columnQuote = '"';
@@ -52,6 +53,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    String                      type        = null;
 
    LinkedHashMap<String, Term> joins;
+
+   public SqlQuery()
+   {
+
+   }
 
    public SqlQuery(Table table, List<Term> terms)
    {
@@ -89,12 +95,14 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return super.addTerm(token, term);
    }
 
-   protected Results<Row> doSelect() throws Exception
+   public Results<Row> doSelect() throws Exception
    {
-      SqlDb db = getDb();
+      SqlDb db = (SqlDb) getDb();
       Connection conn = db.getConnection();
       String sql = getPreparedStmt();
 
+      //-- prepared statement variables are computing during the 
+      //-- generation of the prepared statement above
       List values = getColValues();
       Rows rows = SqlUtils.selectRows(conn, sql, values);
       int foundRows = -1;
@@ -105,41 +113,15 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          {
             foundRows = 0;
          }
-         else if (db.isType("mysql"))
-         {
-            sql = "SELECT FOUND_ROWS()";
-            foundRows = SqlUtils.selectInt(conn, sql);
-         }
          else
          {
-            if (sql.indexOf("LIMIT ") > 0)
-               sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
-
-            if (sql.indexOf("OFFSET ") > 0)
-               sql = sql.substring(0, sql.lastIndexOf("OFFSET "));
-
-            if (sql.indexOf("ORDER BY ") > 0)
-               sql = sql.substring(0, sql.lastIndexOf("ORDER BY "));
-
-            sql = "SELECT count(1) FROM ( " + sql + " ) as q";
-
-            foundRows = SqlUtils.selectInt(conn, sql, getColValues());
+            foundRows = queryFoundRows(conn, sql, values);
          }
 
          Chain.peek().put("foundRows", foundRows);
       }
 
       return new Results(this, foundRows, rows);
-   }
-
-   @Override
-   public SqlQuery withDb(SqlDb db)
-   {
-      super.withDb(db);
-      if (db.isType("mysql"))
-         withColumnQuote('`');
-
-      return this;
    }
 
    public String getPreparedStmt()
@@ -155,18 +137,55 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
    protected String toSql(boolean preparedStmt)
    {
       clearValues();
+      Parts parts = new Parts();
 
-      String select = this.selectSql;
+      printInitialSelect(parts, this.selectSql);
+      printTermsSelect(parts, preparedStmt);
+      printJoins(parts, joins);
+      printWhereClause(parts, where().filters(), preparedStmt);
+      printGroupClause(parts, find("group"));
+      printOrderClause(parts, order().getSorts());
+      printLimitClause(parts, page().getOffset(), page().getLimit());
 
-      if (select == null)
+      return printSql(parts);
+   }
+
+   protected String printSql(Parts parts)
+   {
+      //--compose the final statement
+      String buff = parts.select;
+
+      buff += " \r\n" + parts.from;
+
+      if (parts.where != null)
+         buff += " \r\n" + parts.where;
+
+      if (parts.select.toLowerCase().startsWith("select "))
       {
-         String qt = quoteCol(table.getName());
+         if (parts.group != null)
+            buff += " \r\n" + parts.group;
+
+         if (parts.order != null)
+            buff += " \r\n" + parts.order;
+
+         if (parts.limit != null)
+            buff += " \r\n" + parts.limit;
+      }
+
+      return buff.toString();
+   }
+
+   protected String printInitialSelect(Parts parts, String initialSelect)
+   {
+      if (initialSelect == null)
+      {
+         String quotedTable = printTable();
 
          if (joins != null && joins.size() > 0)
          {
             Map joined = new HashMap();
 
-            select = "SELECT DISTINCT " + qt + ".* FROM " + qt;
+            initialSelect = "SELECT DISTINCT " + quotedTable + ".* FROM " + quotedTable;
 
             for (Entry<String, Term> joinEntry : joins.entrySet())
             {
@@ -177,20 +196,22 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                if (!joined.containsKey(tableAlias))
                {
                   joined.put(tableAlias, tableName);
-                  select += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
+                  initialSelect += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
                }
             }
          }
          else
          {
-
-            select = " SELECT " + qt + ".* FROM " + qt;
-            //select = " SELECT * FROM " + qt;   
+            initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
          }
       }
 
-      Parts parts = new Parts(select);
+      parts.withSql(initialSelect);
+      return initialSelect;
+   }
 
+   protected String printTermsSelect(Parts parts, boolean preparedStmt)
+   {
       StringBuffer cols = new StringBuffer();
 
       List<Term> terms = select().columns();
@@ -200,7 +221,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          if (term.hasToken("as"))
          {
             Term function = term.getTerm(0);
-            cols.append(" ").append(print(function, null, preparedStmt));
+            cols.append(" ").append(printTerm(function, null, preparedStmt));
 
             String colName = term.getToken(1);
             if (!(empty(colName) || colName.indexOf("$$$ANON") > -1))
@@ -210,7 +231,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
          else if (term.getToken().indexOf(".") < 0)
          {
-            cols.append(" " + asCol(term.getToken()));
+            cols.append(" " + printCol(term.getToken()));
          }
 
          if (i < terms.size() - 1)
@@ -236,10 +257,10 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                Index primaryIndex = table().getPrimaryIndex();
                if (primaryIndex != null)
                {
-                  for (Column pkCol : primaryIndex.getColumns())
+                  for (String colName : primaryIndex.getColumnNames())
                   {
-                     if (cols.indexOf(asCol(pkCol.getName())) < 0)
-                        cols.append(", ").append(asCol(pkCol.getName()));
+                     if (cols.indexOf(printCol(colName)) < 0)
+                        cols.append(", ").append(printCol(colName));
                   }
                }
             }
@@ -270,11 +291,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
       }
 
-      //            if (isCalcRowsFound() && stmt.pagenum > 0 && stmt.parts.select.toLowerCase().trim().startsWith("select"))
-      //            {
-      //               
-      //            }
+      return parts.select;
+   }
 
+   protected String printJoins(Parts parts, LinkedHashMap<String, Term> joins)
+   {
       if (joins != null)
       {
          for (Entry<String, Term> joinTerm : joins.entrySet())
@@ -301,13 +322,16 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
             }
          }
       }
+      return parts.where;
+   }
 
-      terms = where().filters();
+   protected String printWhereClause(Parts parts, List<Term> terms, boolean preparedStmt)
+   {
       for (int i = 0; i < terms.size(); i++)
       {
          Term term = terms.get(i);
 
-         String where = print(term, null, preparedStmt);
+         String where = printTerm(term, null, preparedStmt);
          if (where != null)
          {
             if (empty(parts.where))
@@ -316,8 +340,11 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                parts.where += " AND " + where;
          }
       }
+      return parts.where;
+   }
 
-      Term groupBy = find("group");
+   protected String printGroupClause(Parts parts, Term groupBy)
+   {
       if (groupBy != null)
       {
          if (parts.group == null)
@@ -327,27 +354,25 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          {
             if (!parts.group.endsWith("GROUP BY "))
                parts.group += ", ";
-            parts.group += asCol(group.getToken());
+            parts.group += printCol(group.getToken());
          }
       }
 
-      List<Sort> sorts = order().getSorts();
-      if (sorts.isEmpty() && table != null && table.getPrimaryIndex() != null)
+      return parts.group;
+   }
+
+   protected String printOrderClause(Parts parts, List<Sort> sorts)
+   {
+      //-- before printing the "order by" statement, if the users did not supply 
+      //-- any sort terms but the primary index key is being selected, sort on the 
+      //-- primary index.
+      //-- TODO: can this be moved into the Order builder?
+
+      if (sorts.isEmpty())
       {
-         for (Column col : table.getPrimaryIndex().getColumns())
-         {
-            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
-            {
-               Sort sort = new Sort(col.getName(), true);
-               sorts.add(sort);
-            }
-            else
-            {
-               sorts.clear();
-               break;
-            }
-         }
+         sorts = getDefaultSorts(parts);
       }
+
       for (int i = 0; i < sorts.size(); i++)
       {
          //-- now setup the "ORDER BY" clause based on the
@@ -364,44 +389,36 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          if (!parts.order.endsWith("ORDER BY "))
             parts.order += ", ";
 
-         parts.order += asCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
+         parts.order += printCol(sort.getProperty()) + (sort.isAsc() ? " ASC" : " DESC");
       }
-
-      //-- now setup the LIMIT clause based
-      //-- off of the  "offset" and "limit"
-      //-- params OR the "page" and "pageSize"
-      //-- query params.  
-
-      int offset = page().getOffset();
-      int limit = page().getLimit();
-
-      parts.limit = this.buildLimitClause(offset, limit);
-
-      //--compose the final statement
-      String buff = parts.select;
-
-      buff += " \r\n" + parts.from;
-
-      if (parts.where != null)
-         buff += " \r\n" + parts.where;
-
-      if (parts.select.toLowerCase().startsWith("select "))
-      {
-         if (parts.group != null)
-            buff += " \r\n" + parts.group;
-
-         if (parts.order != null)
-            buff += " \r\n" + parts.order;
-
-         if (parts.limit != null)
-            buff += " \r\n" + parts.limit;
-      }
-
-      return buff.toString();
-
+      return parts.order;
    }
 
-   protected String buildLimitClause(int offset, int limit)
+   protected List<Sort> getDefaultSorts(Parts parts)
+   {
+      List<Sort> sorts = new ArrayList();
+
+      if (table != null && table.getPrimaryIndex() != null)
+      {
+         for (int k = 0; k < table.getPrimaryIndex().size(); k++)
+         {
+            Column col = table.getPrimaryIndex().getColumn(k);
+            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
+            {
+               Sort sort = new Sort(col.getName(), true);
+               sorts.add(sort);
+            }
+            else
+            {
+               sorts.clear();
+               break;
+            }
+         }
+      }
+      return sorts;
+   }
+
+   protected String printLimitClause(Parts parts, int offset, int limit)
    {
       String s = null;
       if (limit >= 0 || offset >= 0)
@@ -423,33 +440,46 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          else
          {
             s = "";
-            
+
             if (limit >= 0)
                s += " LIMIT " + limit;
-            
+
             if (offset >= 0)
                s += " OFFSET " + offset;
          }
       }
+
+      parts.limit = s;
       return s;
    }
 
-   public String replace(Term parent, Term leaf, int index, String col, String val)
+   protected int queryFoundRows(Connection conn, String sql, List values) throws Exception
    {
-      if (val == null || val.trim().equalsIgnoreCase("null"))
-         return "NULL";
-
-      if (parent.hasToken("if") && index > 0)
+      int foundRows = 0;
+      if (db.isType("mysql"))
       {
-         if (SqlQuery.isNum(leaf))
-            return val;
+         sql = "SELECT FOUND_ROWS()";
+         foundRows = SqlUtils.selectInt(conn, sql);
       }
+      else
+      {
+         if (sql.indexOf("LIMIT ") > 0)
+            sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
 
-      withColValue(col, val);
-      return "?";
+         if (sql.indexOf("OFFSET ") > 0)
+            sql = sql.substring(0, sql.lastIndexOf("OFFSET "));
+
+         if (sql.indexOf("ORDER BY ") > 0)
+            sql = sql.substring(0, sql.lastIndexOf("ORDER BY "));
+
+         sql = "SELECT count(1) FROM ( " + sql + " ) as q";
+
+         foundRows = SqlUtils.selectInt(conn, sql, values);
+      }
+      return foundRows;
    }
 
-   protected String print(Term term, String col, boolean preparedStmt)
+   protected String printTerm(Term term, String col, boolean preparedStmt)
    {
       if (term.isLeaf())
       {
@@ -458,7 +488,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          String value = null;
          if (isCol(term))
          {
-            value = asCol(token);
+            value = printCol(token);
          }
          else if (isNum(term))
          {
@@ -471,14 +501,8 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          return value;
       }
 
-      StringBuffer sql = new StringBuffer("");
-
-      List<Term> terms = term.getTerms();
-      String token = term.getToken();
-
-      for (int i = 0; i < term.size(); i++)
+      for (Term child : term.getTerms())
       {
-         Term child = term.getTerm(i);
          if (isCol(child))
          {
             col = child.token;
@@ -486,84 +510,90 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          }
       }
 
-      List<String> strings = new ArrayList();
-      for (Term t : terms)
+      List<String> dynamicSqlChildText = new ArrayList();
+      for (Term t : term.getTerms())
       {
-         strings.add(print(t, col, preparedStmt));
+         dynamicSqlChildText.add(printTerm(t, col, preparedStmt));
       }
 
-      List<String> origionals = new ArrayList(strings);
+      List<String> preparedStmtChildText = new ArrayList(dynamicSqlChildText);
 
       //allows for callers to substitute callable statement "?"s
       //and/or to account for data type conversion 
       if (preparedStmt)
       {
-         for (int i = 0; i < terms.size(); i++)
+         for (int i = 0; i < term.size(); i++)
          {
-            Term t = terms.get(i);
+            Term t = term.getTerm(i);
             if (t.isLeaf())
             {
-               String val = strings.get(i);
+               String val = preparedStmtChildText.get(i);
                if (val.charAt(0) != columnQuote)
                {
-                  val = Utils.dequote(val);//t.getToken();//go back to the unprinted/quoted version
-                  strings.set(i, replace(term, t, i, col, val));
+                  val = Utils.dequote(val);//go back to the unprinted/quoted version
+                  preparedStmtChildText.set(i, replace(term, t, i, col, val));
                }
             }
          }
       }
 
+      return printExpression(term, dynamicSqlChildText, preparedStmtChildText);
+
+   }
+
+   /**
+    * Override to handle printing additional functions or to change the 
+    * way a specific function is printed.
+    *  
+    * @param term
+    * @param dynamicSqlChildText
+    * @param preparedStmtChildText
+    * @return
+    */
+   protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText)
+   {
+      String token = term.getToken();
+
+      StringBuffer sql = new StringBuffer("");
+
       if (term.hasToken("eq", "ne", "like", "w", "sw", "ew", "wo"))
       {
          boolean negation = term.hasToken("ne", "nw", "wo");
 
-         if (terms.size() > 2 || negation)
+         if (term.size() > 2 || negation)
             sql.append("(");
 
          if (negation)
             sql.append("NOT (");
 
-         String string0 = strings.get(0);
+         String string0 = preparedStmtChildText.get(0);
 
-         for (int i = 1; i < terms.size(); i++)
+         for (int i = 1; i < term.size(); i++)
          {
-            String stringI = strings.get(i);
+            String stringI = preparedStmtChildText.get(i);
             if ("null".equalsIgnoreCase(stringI))
             {
-               //if (term.hasToken("eq", "like", "w", "sw", "ew", "wo"))
-               {
-                  sql.append(string0).append(" IS NULL ");
-               }
-               //               else
-               //               {
-               //                  sql.append(string0).append(" IS NOT NULL ");
-               //               }
+               sql.append(string0).append(" IS NULL ");
             }
             else
             {
-               boolean wildcard = origionals.get(i).indexOf('%') >= 0;
+               boolean wildcard = dynamicSqlChildText.get(i).indexOf('%') >= 0;
 
                if (wildcard)
                {
-                  //                  if (term.hasToken("ne") || term.hasToken("wo"))
-                  //                     sql.append(string0).append(" NOT LIKE ").append(stringI);
-                  //                  else
                   sql.append(string0).append(" LIKE ").append(stringI);
                }
                else
                {
-                  //                  if (term.hasToken("ne", "wo"))
-                  //                     sql.append(" NOT ").append(string0).append(" = ").append(stringI);
-                  //                  else
                   sql.append(string0).append(" = ").append(stringI);
                }
             }
 
-            if (i < terms.size() - 1)
+            if (i < term.size() - 1)
                sql.append(" OR ");
          }
 
-         if (terms.size() > 2 || negation)
+         if (term.size() > 2 || negation)
             sql.append(")");
 
          if (negation)
@@ -571,63 +601,63 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       }
       else if ("nn".equalsIgnoreCase(token))
       {
-         sql.append(concatAll(" AND ", " IS NOT NULL", strings));
+         sql.append(concatAll(" AND ", " IS NOT NULL", preparedStmtChildText));
       }
       else if ("emp".equalsIgnoreCase(token))
       {
-         sql.append("(").append(strings.get(0)).append(" IS NULL OR ").append(strings.get(0)).append(" = ").append(asString("")).append(")");
+         sql.append("(").append(preparedStmtChildText.get(0)).append(" IS NULL OR ").append(preparedStmtChildText.get(0)).append(" = ").append(asString("")).append(")");
       }
       else if ("nemp".equalsIgnoreCase(token))
       {
-         sql.append("(").append(strings.get(0)).append(" IS NOT NULL AND ").append(strings.get(0)).append(" != ").append(asString("")).append(")");
+         sql.append("(").append(preparedStmtChildText.get(0)).append(" IS NOT NULL AND ").append(preparedStmtChildText.get(0)).append(" != ").append(asString("")).append(")");
       }
       else if ("n".equalsIgnoreCase(token))
       {
-         sql.append(concatAll(" AND ", " IS NULL", strings));
+         sql.append(concatAll(" AND ", " IS NULL", preparedStmtChildText));
       }
       else if ("lt".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" < ").append(strings.get(1));
+         sql.append(preparedStmtChildText.get(0)).append(" < ").append(preparedStmtChildText.get(1));
       }
       else if ("le".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" <= ").append(strings.get(1));
+         sql.append(preparedStmtChildText.get(0)).append(" <= ").append(preparedStmtChildText.get(1));
       }
       else if ("gt".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" > ").append(strings.get(1));
+         sql.append(preparedStmtChildText.get(0)).append(" > ").append(preparedStmtChildText.get(1));
       }
       else if ("ge".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0)).append(" >= ").append(strings.get(1));
+         sql.append(preparedStmtChildText.get(0)).append(" >= ").append(preparedStmtChildText.get(1));
       }
       else if ("in".equalsIgnoreCase(token) || "out".equalsIgnoreCase(token))
       {
-         sql.append(strings.get(0));
+         sql.append(preparedStmtChildText.get(0));
 
          if ("out".equalsIgnoreCase(token))
             sql.append(" NOT");
 
          sql.append(" IN(");
-         for (int i = 1; i < strings.size(); i++)
+         for (int i = 1; i < preparedStmtChildText.size(); i++)
          {
-            sql.append(strings.get(i));
-            if (i < strings.size() - 1)
+            sql.append(preparedStmtChildText.get(i));
+            if (i < preparedStmtChildText.size() - 1)
                sql.append(", ");
          }
          sql.append(")");
       }
       else if ("if".equalsIgnoreCase(token))
       {
-         sql.append("IF(").append(strings.get(0)).append(", ").append(strings.get(1)).append(", ").append(strings.get(2)).append(")");
+         sql.append("IF(").append(preparedStmtChildText.get(0)).append(", ").append(preparedStmtChildText.get(1)).append(", ").append(preparedStmtChildText.get(2)).append(")");
       }
       else if ("and".equalsIgnoreCase(token) || "or".equalsIgnoreCase(token))
       {
          sql.append("(");
-         for (int i = 0; i < strings.size(); i++)
+         for (int i = 0; i < preparedStmtChildText.size(); i++)
          {
-            sql.append(strings.get(i).trim());
-            if (i < strings.size() - 1)
+            sql.append(preparedStmtChildText.get(i).trim());
+            if (i < preparedStmtChildText.size() - 1)
                sql.append(" ").append(token.toUpperCase()).append(" ");
          }
          sql.append(")");
@@ -635,24 +665,24 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       else if ("not".equalsIgnoreCase(token))
       {
          sql.append("NOT (");
-         for (int i = 0; i < strings.size(); i++)
+         for (int i = 0; i < preparedStmtChildText.size(); i++)
          {
-            sql.append(strings.get(i).trim());
-            if (i < strings.size() - 1)
+            sql.append(preparedStmtChildText.get(i).trim());
+            if (i < preparedStmtChildText.size() - 1)
                sql.append(" ");
          }
          sql.append(")");
       }
       else if ("sum".equalsIgnoreCase(token) || "count".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token) || "distinct".equalsIgnoreCase(token))
       {
-         String acol = strings.get(0);
+         String acol = preparedStmtChildText.get(0);
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
       }
 
       else if ("miles".equalsIgnoreCase(token))
       {
-         sql.append("point(").append(strings.get(0)).append(",").append(strings.get(1)).append(") <@> point(").append(strings.get(2)).append(",").append(strings.get(3)).append(")");
+         sql.append("point(").append(preparedStmtChildText.get(0)).append(",").append(preparedStmtChildText.get(1)).append(") <@> point(").append(preparedStmtChildText.get(2)).append(",").append(preparedStmtChildText.get(3)).append(")");
       }
       else
       {
@@ -662,13 +692,22 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return sql.toString();
    }
 
-   public SqlQuery withSelectSql(String selectSql)
+   protected String replace(Term parent, Term leaf, int index, String col, String val)
    {
-      this.selectSql = selectSql;
-      return this;
+      if (val == null || val.trim().equalsIgnoreCase("null"))
+         return "NULL";
+
+      if (parent.hasToken("if") && index > 0)
+      {
+         if (isNum(leaf))
+            return val;
+      }
+
+      withColValue(col, val);
+      return asVariableName(values.size() - 1);
    }
 
-   public String concatAll(String connector, String function, List strings)
+   protected String concatAll(String connector, String function, List strings)
    {
       StringBuffer buff = new StringBuffer((strings.size() > 1 ? "(" : ""));
       for (int i = 0; i < strings.size(); i++)
@@ -681,30 +720,6 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
          buff.append(")");
 
       return buff.toString();
-   }
-
-   public SqlQuery withType(String type)
-   {
-      this.type = type;
-      return this;
-   }
-
-   public String getType()
-   {
-      if (db != null)
-         return db.getType();
-
-      return type;
-   }
-
-   public void withStringQuote(char stringQuote)
-   {
-      this.stringQuote = stringQuote;
-   }
-
-   public void withColumnQuote(char columnQuote)
-   {
-      this.columnQuote = columnQuote;
    }
 
    protected boolean isCol(Term term)
@@ -744,7 +759,12 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return buff.toString();//columnQuote + str + columnQuote;
    }
 
-   public String asCol(String columnName)
+   public String printTable()
+   {
+      return quoteCol(table.getName());
+   }
+
+   public String printCol(String columnName)
    {
       if (table != null && columnName.indexOf(".") < 0)
          columnName = table.getName() + "." + columnName;
@@ -752,12 +772,17 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return quoteCol(columnName);
    }
 
-   public String asString(String string)
+   protected String asVariableName(int valuesPairIdx)
+   {
+      return "?";
+   }
+
+   protected String asString(String string)
    {
       return stringQuote + string + stringQuote;
    }
 
-   public String asString(Term term)
+   protected String asString(Term term)
    {
       String token = term.token;
       Term parent = term.getParent();
@@ -797,7 +822,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return stringQuote + token.toString() + stringQuote;
    }
 
-   protected static String asNum(String token)
+   protected String asNum(String token)
    {
       if ("true".equalsIgnoreCase(token))
          return "1";
@@ -808,7 +833,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       return token;
    }
 
-   protected static boolean isNum(Term term)
+   protected boolean isNum(Term term)
    {
       if (!term.isLeaf() || term.isQuoted())
          return false;
@@ -845,7 +870,7 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
       public String order  = null;
       public String limit  = null;
 
-      public Parts(String sql)
+      void withSql(String sql)
       {
          if (sql == null)
             return;
@@ -886,45 +911,47 @@ public class SqlQuery extends Query<SqlQuery, SqlDb, Table, Select<Select<Select
                   throw new RuntimeException("Unable to parse: \"" + clause + "\" - \"" + sql + "\"");
             }
          }
-
-         //         select = chopFirst(sql, "select", "from");
-         //
-         //         if (empty(select))
-         //            select = chopFirst(sql, "update", "where");
-         //
-         //         if (empty(select))
-         //            select = chopFirst(sql, "delete", "from");
-         //
-         //         if (select != null)
-         //         {
-         //            sql = sql.substring(select.length(), sql.length());
-         //
-         //            if (sql.trim().substring(4).trim().startsWith("("))
-         //            {
-         //               int end = sql.lastIndexOf("as") + 3;
-         //               String rest = sql.substring(end, sql.length());
-         //               int[] otherIdx = findFirstOfFirstOccurances(rest, "where", " group by", "order", "limit");
-         //               if (otherIdx != null)
-         //               {
-         //                  end += otherIdx[0];
-         //               }
-         //               else
-         //               {
-         //                  end = sql.length();
-         //               }
-         //
-         //               from = sql.substring(0, end);
-         //               sql = sql.substring(end, sql.length());
-         //            }
-         //            else
-         //            {
-         //               from = chopLast(sql, "from", "where", "group by", "order", "limit");
-         //            }
-         //            where = chopLast(sql, "where", "group by", "order", "limit");
-         //            group = chopLast(sql, "group by", "order", "limit");
-         //            order = chopLast(sql, "order", "limit");
-         //            limit = chopLast(sql, "limit");
-         //         }
       }
    }
+
+   public SqlQuery withSelectSql(String selectSql)
+   {
+      this.selectSql = selectSql;
+      return this;
+   }
+
+   @Override
+   public SqlQuery withDb(D db)
+   {
+      super.withDb(db);
+      if (db.isType("mysql"))
+         withColumnQuote('`');
+
+      return this;
+   }
+
+   public SqlQuery withType(String type)
+   {
+      this.type = type;
+      return this;
+   }
+
+   public String getType()
+   {
+      if (db != null)
+         return db.getType();
+
+      return type;
+   }
+
+   public void withStringQuote(char stringQuote)
+   {
+      this.stringQuote = stringQuote;
+   }
+
+   public void withColumnQuote(char columnQuote)
+   {
+      this.columnQuote = columnQuote;
+   }
+
 }

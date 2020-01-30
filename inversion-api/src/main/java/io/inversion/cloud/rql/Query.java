@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 
@@ -49,6 +50,8 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    protected R              group  = null;
    protected O              order  = null;
    protected G              page   = null;
+
+   protected boolean        dryRun = false;
 
    //hold ordered list of columnName=literalValue pairs
    protected List<KeyValue> values = new ArrayList();
@@ -91,8 +94,18 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return super.withTerm(term);
    }
 
+   public Results doSelect() throws Exception
+   {
+      return null;
+   }
+
    //------------------------------------------------------------------
    //------------------------------------------------------------------
+
+   public Query()
+   {
+      this(null);
+   }
 
    public Query(E table)
    {
@@ -200,61 +213,12 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       this.table = table;
       if (table != null)
       {
-         withDb((D) table.getDb());
+         if (table.getDb() != null)
+            withDb((D) table.getDb());
       }
 
       return r();
    }
-
-   //   public Collection collection()
-   //   {
-   //      return collection;
-   //   }
-   //
-   //   public T withCollection(Collection collection)
-   //   {
-   //      this.collection = collection;
-   //
-   //      if (collection != null)
-   //      {
-   //         Entity entity = collection.getEntity();
-   //         if (entity != null)
-   //         {
-   //            Table table = entity.getTable();
-   //            withTable((E) table);
-   //         }
-   //      }
-   //
-   //      return r();
-   //   }
-   //
-   //   public String getColumnName(String attributeName)
-   //   {
-   //      String name = attributeName;
-   //      if (collection != null)
-   //      {
-   //         Attribute attr = collection.getAttribute(attributeName);
-   //         if (attr != null)
-   //            name = attr.getColumn().getName();
-   //      }
-   //
-   //      if (name == null)
-   //         name = attributeName;
-   //
-   //      return name;
-   //   }
-   //
-   //   public String getAttributeName(String columnName)
-   //   {
-   //      String name = columnName;
-   //      if (collection != null)
-   //         name = collection.getAttributeName(columnName);
-   //
-   //      if (name == null)
-   //         name = columnName;
-   //
-   //      return name;
-   //   }
 
    public int getNumValues()
    {
@@ -319,6 +283,17 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    public List<KeyValue> getValues()
    {
       return values;
+   }
+
+   public boolean isDryRun()
+   {
+      return dryRun;
+   }
+
+   public T withDryRun(boolean dryRun)
+   {
+      this.dryRun = dryRun;
+      return r();
    }
 
 }

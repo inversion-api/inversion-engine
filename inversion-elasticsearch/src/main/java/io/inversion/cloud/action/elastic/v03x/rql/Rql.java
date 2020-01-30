@@ -48,7 +48,7 @@ public class Rql
     */
    public static final HashSet<String> EXCLUDED     = new HashSet<String>(                                                                                                                                                                     //
                                                                           Arrays.asList(                                                                                                                                                       //
-                                                                                new String[]{"q", "filter", "expands", "excludes", "format", "replace", "ignores"}                                                                             //
+                                                                                new String[]{"expands", "excludes", "format", "replace", "ignores"}                                                                             //
                                                                           ));
    /**
     * Words that translate into a filter/where condition
@@ -339,18 +339,12 @@ public class Rql
          String value = (String) params.get(key);
 
          //skip if this is a reserved keyword
-         if (!key.equalsIgnoreCase("q") && //
-               !key.equalsIgnoreCase("filter") && //
-               isExcluded(key.toLowerCase()))
+         if (isExcluded(key.toLowerCase()))
             continue;
 
          String clauseStr = null;
 
-         if (key.equalsIgnoreCase("q") || key.equalsIgnoreCase("filter"))
-         {
-            clauseStr = value;
-         }
-         else if (Utils.empty(value) && key.indexOf("(") > -1)
+         if (Utils.empty(value) && key.indexOf("(") > -1)
          {
             clauseStr = key;
          }
