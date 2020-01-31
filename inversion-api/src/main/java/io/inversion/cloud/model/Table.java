@@ -32,12 +32,14 @@ import io.inversion.cloud.utils.Utils;
 
 public class Table
 {
-   protected Db                db      = null;
-   protected String            name    = null;
-   protected ArrayList<Column> columns = new ArrayList();
-   protected ArrayList<Index>  indexes = new ArrayList();
+   protected Db                db         = null;
+   protected String            name       = null;
+   protected String            actualName = null;
 
-   protected boolean           exclude = false;
+   protected ArrayList<Column> columns    = new ArrayList();
+   protected ArrayList<Index>  indexes    = new ArrayList();
+
+   protected boolean           exclude    = false;
 
    public Table()
    {
@@ -128,7 +130,7 @@ public class Table
     */
    public String getName()
    {
-      return name;
+      return name != null ? name : actualName;
    }
 
    /**
@@ -137,6 +139,23 @@ public class Table
    public Table withName(String name)
    {
       this.name = name;
+      return this;
+   }
+
+   /**
+    * @return the name
+    */
+   public String getActualName()
+   {
+      return actualName != null ? actualName : name;
+   }
+
+   /**
+    * @param name the name to set
+    */
+   public Table withActualName(String name)
+   {
+      this.actualName = name;
       return this;
    }
 
@@ -221,6 +240,11 @@ public class Table
       if (index == null)
          return null;
 
+      return encodeKey(values, index);
+   }
+
+   public static String encodeKey(Map values, Index index)
+   {
       StringBuffer key = new StringBuffer("");
       for (String colName : index.getColumnNames())
       {
@@ -342,7 +366,6 @@ public class Table
       List colNames = index.getColumnNames();
 
       Rows rows = new Rows(colNames);
-
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
@@ -357,10 +380,10 @@ public class Table
 
             value = getDb().cast(index.getColumn(i), value);
             row.set(i, value);
-
-            rows.addRow(row);
          }
+         rows.addRow(row);
       }
+
       return rows;
    }
 

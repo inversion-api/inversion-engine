@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.cloud.rql;
 
 import java.util.HashMap;
@@ -19,7 +35,7 @@ public class RqlValidationSuite
    //   //join
    //   
    //   //where
-   //   withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+   //   withFunctions("_key", "if", "and", "or", "not", "eq", "ne", "n", "nn", "lt", "le", "gt", "ge", "like", "sw", "ew",  "in", "out", , "w", "wo", "emp", "nemp");
    //   
    //   //group
    //  
@@ -53,8 +69,63 @@ public class RqlValidationSuite
                                     .withColumn("ShipCountry", "VARCHAR")//
                                     .withIndex("PK_Orders", "primary", true, "OrderID"));
 
-      withTest("eq_queryForEquals", "orders?eq(OrderID, 1234)&ShipCountry=France");
-      withTest("ne_queryForNotEquals", "orders?ne(ShipCountry,France)");
+      withTest("eq", "orders?eq(OrderID, 1234)&eq(ShipCountry,France)");
+      withTest("ne", "orders?ne(ShipCountry,France)");
+
+      
+      
+      withTest("n", "orders?n(ShipCountry)");
+      withTest("nn", "orders?nn(ShipCountry)");
+      withTest("emp", "");
+      withTest("nemp", "");
+      
+      
+      withTest("like", "order?like(ShipCountry,anc)");
+      withTest("sw", "order?sw(ShipCountry,Franc)");
+      withTest("ew", "order?ew(ShipCountry,ance)");
+      
+      withTest("lt", "");
+      withTest("le", "");
+      withTest("gt", "");
+      withTest("ge", "");
+      withTest("in", "");
+      withTest("out", "");
+      withTest("w", "");
+      withTest("wo", "");
+      
+      withTest("if", "");
+      withTest("and", "");
+      withTest("or", "");
+      withTest("not", "");
+      withTest("_key", "");
+      withTest("_index", "");
+      
+      
+      withTest("offset", "");
+      withTest("limit", "");
+      withTest("page", "");
+      withTest("pageNum", "");
+      withTest("pageSize", "");
+      withTest("after", "");
+      
+      withTest("as", "");
+      withTest("includes", "");
+      withTest("excludes", "");
+      withTest("distinct", "");
+      withTest("count", "");
+      withTest("sum", "");
+      withTest("min", "");
+      withTest("max", "");
+      withTest("if", "");
+      withTest("aggregate", "");
+      withTest("function", "");
+      withTest("countascol", "");
+      withTest("rowcount", "");
+      
+      
+      
+      //("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
+      
 
       withQueryClass(queryClass);
       withDb(db);
@@ -82,6 +153,12 @@ public class RqlValidationSuite
          query.withDryRun(true);
 
          String expected = results.get(testKey);
+
+         if ("UNSUPPORTED".equalsIgnoreCase(expected))
+         {
+            System.err.println("SKIPPING UNSUPPORTED TEST CASE: " + testKey + " - " + queryString);
+            continue;
+         }
 
          if (Utils.empty(expected))
             expected = "You are missing a validation for test '" + testKey + "' with RQL '" + queryString + "'.  If this case is unsupported please call 'withResult(\"" + testKey + "\", \"UNSUPPORTED\") in your setup to declare that this validation should be skipped.";

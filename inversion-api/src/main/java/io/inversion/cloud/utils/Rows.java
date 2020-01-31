@@ -408,7 +408,11 @@ public class Rows extends ArrayList<Row>
          if (key instanceof Integer)
             return values.get(((Integer) key).intValue());
 
-         return values.get(keys.indexOf((String) key));
+         int idx = keys.indexOf((String) key);
+         if(idx < 0)
+            return null;
+         
+         return values.get(idx);
       }
 
       public void set(int index, Object value)

@@ -18,13 +18,11 @@ package io.inversion.cloud.action.cosmosdb;
 
 import org.junit.Test;
 
-import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
 import junit.framework.TestCase;
 
-public class TestCosmosSqlDb extends TestCase
+public class CosmosSqlDbIntegTest extends TestCase
 {
    @Test
    public void testBasicQuery() throws Exception

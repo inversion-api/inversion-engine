@@ -1,19 +1,36 @@
+/*
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.cloud.action.cosmosdb;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.sql.SqlEngineFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
@@ -23,7 +40,7 @@ public class CosmosEngineFactory
 {
    static Engine  engine        = null;
 
-   static boolean rebuildCosmos = false;
+   static boolean rebuildCosmos = true;
 
    protected static Engine engine() throws Exception
    {
@@ -31,93 +48,113 @@ public class CosmosEngineFactory
       {
          engine = SqlEngineFactory.service(false, true);
 
-         CosmosDocumentDb cosmosdb = new CosmosDocumentDb("cosmos");
+         CosmosDocumentDb cosmosdb = new CosmosDocumentDb("cosmos")
+            {
+               @Override
+               public void configDb() throws Exception
+               {
+                  withDb("inversion-testing-cosmos1");
+                  withCollectionPath("cosmosdb/");
 
-         //this is false because we are going to manually create 
-         //the tables and collections in this configuration
-         cosmosdb.withBootstrap(false);
-         cosmosdb.withDb("inversion-testing-cosmos1");
-         cosmosdb.withCollectionPath("cosmosdb/");
+                  Table customersTbl = new Table("customers").withActualName("Northwind")//
 
-         cosmosdb.withTable(new Table("People")//
+                                                             .withColumn("type", "string", false)//
+                                                             .withColumn("customerId", "string")//
+                                                             .withIndex("primaryIndex", "primary", true, "type", "customerId")//
+                                                             .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                                               .withColumn("id", "string", false)//
-                                               .withColumn("pk", "string", false)//
-                                               .withColumn("type", "string", false)//
-                                               //-- the 'href' value will be composed off of the primary index
-                                               //-- the partionKey columns need to be encoded into the entityKey on the 
-                                               //-- href...meaning make sure the partionKey field is part of the 
-                                               //-- primary index.
-                                               .withIndex("primaryIndex", "primary", true, "id", "pk")//
-                                               .withIndex("PartitionKey", "PartitionKey", false, "pk")//
+                                                             .withColumn("companyName", "string")//
+                                                             .withColumn("contactName", "string")//
+                                                             .withColumn("contactTitle", "string")//
+                                                             .withColumn("address", "string")//
+                                                             .withColumn("city", "string")//
+                                                             .withColumn("region", "string")//
+                                                             .withColumn("postalCode", "string")//
+                                                             .withColumn("country", "string")//
+                                                             .withColumn("phone", "string")//
+                                                             .withColumn("fax", "string");
 
-                                               //these are customer fields
-                                               .withColumn("CustomerId", "string")//
-                                               .withColumn("CompanyName", "string")//
-                                               .withColumn("ContactName", "string")//
-                                               .withColumn("ContactTitle", "string")//
-                                               .withColumn("Address", "string")//
-                                               .withColumn("City", "string")//
-                                               .withColumn("Region", "string")//
-                                               .withColumn("PostalCode", "string")//
-                                               .withColumn("Country", "string")//
-                                               .withColumn("Phone", "string")//
-                                               .withColumn("Fax", "string")//
+                  Table employeesTbl = new Table("employees").withActualName("Northwind")//
 
-                                               //these are employee fields
-                                               .withColumn("EmployeeID", "number")//
-                                               .withColumn("LastName", "string")//
-                                               .withColumn("FirstName", "string")//
-                                               .withColumn("Title", "string")//
-                                               .withColumn("TitleOfCourtesy", "string")//
-                                               .withColumn("BirthDate", "string")//
-                                               .withColumn("HireDate", "string")//
-                                               .withColumn("HomePhone", "string")//
-                                               .withColumn("Extension", "string")//
-                                               .withColumn("Notes", "string")//
-                                               .withColumn("ReportsTo", "number")//
-                                               .withColumn("Salary", "number")//
-         );
+                                                             .withColumn("type", "string", false)//
+                                                             .withColumn("employeeId", "number")//
+                                                             .withIndex("primaryIndex", "primary", true, "type", "employeeId")//
+                                                             .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-         cosmosdb.withTable(new Table("Orders")//
+                                                             .withColumn("lastName", "string")//
+                                                             .withColumn("firstName", "string")//
+                                                             .withColumn("title", "string")//
+                                                             .withColumn("titleOfCourtesy", "string")//
+                                                             .withColumn("birthDate", "string")//
+                                                             .withColumn("hireDate", "string")//
+                                                             .withColumn("homePhone", "string")//
+                                                             .withColumn("extension", "string")//
+                                                             .withColumn("notes", "string")//
+                                                             .withColumn("reportsTo", "string")//
+                                                             .withColumn("salary", "number");
 
-                                               .withColumn("id", "string", false)//
-                                               .withColumn("type", "string", false)//
-                                               .withColumn("pk", "string", false)//
-                                               .withIndex("primaryIndex", "primary", true, "id", "pk")//
-                                               .withIndex("PartitionKey", "PartitionKey", false, "pk")//
+                  employeesTbl.withIndex("fkIdx_Employees_reportsTo", "foreignKey", false, "type", "reportsTo");
 
-                                               //these are order fields
-                                               .withColumn("OrderID", "number")//
-                                               .withColumn("EmployeeID", "number")//
-                                               .withColumn("OrderDate", "string")//
-                                               .withColumn("RequiredDate", "string")//
-                                               .withColumn("ShippedDate", "string")//
-                                               .withColumn("ShipVia", "number")//
-                                               .withColumn("Freight", "number")//
-                                               .withColumn("ShipName", "string")//
-                                               .withColumn("ShipAddress", "string")//
-                                               .withColumn("ShipCity", "string")//
-                                               .withColumn("ShipRegion", "string")//
-                                               .withColumn("ShipPostalCode", "string")//
-                                               .withColumn("ShipCountry", "string")//
+                  Table ordersTbl = new Table("Orders").withActualName("Northwind")//
 
-                                               //these are orderdetails fields
+                                                       .withColumn("type", "string", false)//
+                                                       .withColumn("orderId", "number")//
+                                                       .withIndex("primaryIndex", "primary", true, "type", "orderId")//
+                                                       .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                                               .withColumn("ProductID", "number")//
-                                               .withColumn("UnitPrice", "number")//
-                                               .withColumn("Quantity", "number")//
-                                               .withColumn("Discount", "number")//
-         );
+                                                       //these are order fields
+                                                       .withColumn("customerId", "string")//
+                                                       .withColumn("employeeId", "number")//
+                                                       .withColumn("orderDate", "string")//
+                                                       .withColumn("requiredDate", "string")//
+                                                       .withColumn("shippedDate", "string")//
+                                                       //.withColumn("ShipVia", "number")//
+                                                       .withColumn("freight", "number")//
+                                                       .withColumn("shipName", "string")//
+                                                       .withColumn("shipAddress", "string")//
+                                                       .withColumn("shipCity", "string")//
+                                                       .withColumn("shipRegion", "string")//
+                                                       .withColumn("shipPostalCode", "string")//
+                                                       .withColumn("shipCountry", "string");
+
+                  Table orderDetailsTbl = new Table("OrderDetails").withActualName("Northwind")//
+
+                                                                   .withColumn("type", "string", false)//
+                                                                   .withColumn("orderId", "number")//
+                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
+                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
+
+                                                                   .withColumn("productId", "number")//
+                                                                   .withColumn("unitPrice", "number")//
+                                                                   .withColumn("quantity", "number")//
+                                                                   .withColumn("discount", "number");
+
+                  withTable(customersTbl);
+                  withTable(employeesTbl);
+                  withTable(ordersTbl);
+                  withTable(orderDetailsTbl);
+
+               }
+
+               @Override
+               public void configApi() throws Exception
+               {
+                  super.configApi();
+
+                  Entity employeeEntity = getApi().getCollection("employees").getEntity();
+                  employeeEntity.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employeeEntity, employeeEntity, getTable("employees").getIndex("fkIdx_Employees_reportsTo"), null));
+               }
+            };
 
          final Api api = engine.getApi("northwind");
-
          api.withDb(cosmosdb);
-         api.withCollection(new Collection(api.findTable("Orders")).withName("orders"));
-         api.withCollection(new Collection(api.findTable("Orders")).withName("orderDetails"));
 
-         api.withCollection(new Collection(api.findTable("People")).withName("customers"));
-         api.withCollection(new Collection(api.findTable("People")).withName("employees"));
+         //         api.withCollection(new Collection(customersTbl));
+         //         api.withCollection(new Collection(employeesTbl));
+         //         api.withCollection(new Collection(ordersTbl));
+         //         api.withCollection(new Collection(orderDetailsTbl));
+
+         //         
 
          api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action()
             {
@@ -126,42 +163,14 @@ public class CosmosEngineFactory
                   String collectionKey = req.getCollectionKey().toLowerCase();
 
                   if (req.isGet())
-                     req.withParam("type", collectionKey);
+                  {
+                     req.withParam("Type", collectionKey.toLowerCase());
+                  }
 
                   JSNode json = req.getJson();
                   if (json != null)
                   {
-                     json.asNodeList().forEach(node -> node.put("type", collectionKey));
-
-                     if ("orders".equals(collectionKey))
-                        json.asNodeList().forEach(node -> {
-                           node.put("id", "order-" + node.get("orderid"));
-                           node.put("pk", node.getString("orderid"));
-                        });
-
-                     else if ("orderdetails".equals(collectionKey))
-                        json.asNodeList().forEach(node -> {
-                           node.put("id", "orderdetails-" + node.get("orderid"));
-                           node.put("pk", node.getString("orderid"));
-                        });
-
-                     else if ("customers".equals(collectionKey))
-                        json.asNodeList().forEach(node -> {
-                           node.put("id", "customer-" + node.get("customerid"));
-                           node.put("pk", "customers");
-                        });
-
-                     else if ("employees".equals(collectionKey))
-                        json.asNodeList().forEach(node -> {
-                           node.put("id", "employee-" + node.get("employeeid"));
-                           node.put("pk", "employees");
-                        });
-
-                     else
-                        throw new ApiException(SC.SC_400_BAD_REQUEST, "Unsupported collection: " + collectionKey);
-
-                     System.out.println(json);
-
+                     json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
                   }
                }
             }//
@@ -173,50 +182,52 @@ public class CosmosEngineFactory
          {
             Engine e = engine;
 
-            deleteAll(e, "/northwind/cosmosdb/orders");
-            deleteAll(e, "/northwind/cosmosdb/orderDetails");
-            deleteAll(e, "/northwind/cosmosdb/customers");
-            deleteAll(e, "/northwind/cosmosdb/employees");
+//            deleteAll(e, "/northwind/cosmosdb/orders");
+//            deleteAll(e, "/northwind/cosmosdb/orderDetails");
+//            deleteAll(e, "/northwind/cosmosdb/customers");
+//            deleteAll(e, "/northwind/cosmosdb/employees");
 
             Response res = null;
 
             //-- reload cosmos
-            res = e.get("/northwind/source/orders?limit=25").statusOk();
 
+            res = e.get("/northwind/source/orders?limit=25").assertOk();
+
+            res.dump();
             Set orderIds = new HashSet();
             Set customerIds = new HashSet();
 
             for (JSNode node : res.data().asNodeList())
             {
-               cleanSourceNode(node);
+               cleanSourceNode("orders", node);
 
                orderIds.add(node.get("orderid"));
                customerIds.add(node.get("customerid"));
 
-               e.post("/northwind/cosmosdb/orders", node).statusOk();
+               //e.post("/northwind/cosmosdb/orders", node).assertOk();
             }
 
             String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
-            res = e.get(getOrderDetails).statusOk();
+            res = e.get(getOrderDetails).assertOk();
             for (JSNode node : res.data().asNodeList())
             {
-               cleanSourceNode(node);
-               e.post("/northwind/cosmosdb/orderdetails", node).statusOk();
+               cleanSourceNode("orderDetails", node);
+               //e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
             }
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
-            res = e.get(getCustomers).statusOk();
+            res = e.get(getCustomers).assertOk();
             for (JSNode node : res.data().asNodeList())
             {
-               cleanSourceNode(node);
-               e.post("/northwind/cosmosdb/customers", node).statusOk();
+               cleanSourceNode("customers", node);
+               //e.post("/northwind/cosmosdb/customers", node).assertOk();
             }
 
-            res = e.get("/northwind/source/employees").statusOk();
+            res = e.get("/northwind/source/employees").assertOk();
             for (JSNode node : res.data().asNodeList())
             {
-               cleanSourceNode(node);
-               e.post("/northwind/cosmosdb/employees", node).statusOk();
+               cleanSourceNode("employees", node);
+               e.post("/northwind/cosmosdb/employees", node).assertOk().dump();
             }
          }
 
@@ -228,9 +239,21 @@ public class CosmosEngineFactory
     * Removes 'href' and turns relationship hrefs back into their key value
     * @param node
     */
-   public static void cleanSourceNode(JSNode node)
+   public static void cleanSourceNode(String collection, JSNode node)
    {
       node.remove("href");
+
+      if ("employees".equalsIgnoreCase(collection))
+      {
+         String reportsTo = node.getString("reportsTo");
+         if (!Utils.empty(reportsTo))
+         {
+            List parts = Arrays.asList("employees", "employee-" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1));
+            reportsTo = reportsTo.substring(0, reportsTo.lastIndexOf("/") + 1) + "employees~" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1);
+
+            node.put("reportsTo", reportsTo);
+         }
+      }
 
       for (String key : node.keySet())
       {
@@ -255,11 +278,11 @@ public class CosmosEngineFactory
          if (safetyCounter > 2000)
             throw new RuntimeException("Something is not right, your delete seems to be stuck in an infinate loop.");
 
-         res = e.get(url).statusOk();
+         res = e.get(url).assertOk();
          for (JSNode order : res.data().asNodeList())
          {
-            res = engine.delete(order.getString("href")).statusOk();
-            res.dump();
+            res = engine.delete(order.getString("href"));
+            res.assertOk();
          }
          break;
 

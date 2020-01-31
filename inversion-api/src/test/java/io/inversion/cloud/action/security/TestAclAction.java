@@ -57,7 +57,7 @@ public class TestAclAction extends TestCase
    //
    //      res = engine.get("northwind/products?limit=1");
    //      res.dump();
-   //      String href = res.statusOk().findString("data.0.href");
+   //      String href = res.assertOk().findString("data.0.href");
    //      assertTrue(href != null);
    //      res.assertDebug("AclAction:", "MATCH_ALLOW rule_allow_public_read");
    //

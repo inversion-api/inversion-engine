@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,9 +18,9 @@ package io.inversion.cloud.model;
 
 public class Relationship
 {
-   public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
+   public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
 
    protected String           name             = null;
    protected String           type             = null;
@@ -31,6 +31,21 @@ public class Relationship
    protected Entity           related          = null;
 
    protected boolean          exclude          = false;
+
+   public Relationship()
+   {
+
+   }
+
+   public Relationship(String name, String type, Entity entity, Entity related, Index fkIndex1, Index fkIndex2)
+   {
+      withName(name);
+      withType(type);
+      withEntity(entity);
+      withRelated(related);
+      withFkIndex1(fkIndex1);
+      withFkIndex2(fkIndex2);
+   }
 
    public boolean isExclude()
    {
