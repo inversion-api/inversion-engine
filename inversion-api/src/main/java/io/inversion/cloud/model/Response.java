@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -295,7 +295,7 @@ public class Response
    {
       return getJson().find(path);
    }
-   
+
    public Validation validate(String jsonPath)
    {
       return validate(jsonPath, null);
@@ -305,7 +305,6 @@ public class Response
    {
       return new Validation(this, jsonPath, customErrorMessage);
    }
-   
 
    public JSArray data()
    {
@@ -830,25 +829,21 @@ public class Response
       }
    }
 
-   public Response statusOk()
-   {
-      if (statusCode < 200 || statusCode > 299)
-      {
-         dump();
-         throw new ApiException(statusCode + "", statusError);
-      }
-
-      return this;
-   }
-
    //----------------------------------------------------------------------------------------------------------------------
    //----------------------------------------------------------------------------------------------------------------------
    //TEST ASSERTION CONVENIENCE METHODS
 
-   public Response assertOk(String message)
+   public Response assertOk(String... messages)
    {
       if (statusCode < 200 || statusCode > 299)
-         throw new ApiException(statusCode + "", message);
+      {
+         String msg = "";
+         for (int i = 0; messages != null && i < messages.length; i++)
+            msg += messages[i] + " ";
+
+         dump();
+         throw new ApiException(statusCode + "", msg);
+      }
 
       return this;
    }

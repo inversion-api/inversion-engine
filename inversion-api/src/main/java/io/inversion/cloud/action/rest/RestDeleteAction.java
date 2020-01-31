@@ -205,7 +205,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          //that need to be deleted and make sure the uses has read access to the key
          //
          //TODO: need to do more tests here
-         Response res = req.getEngine().get(url).statusOk();
+         Response res = req.getEngine().get(url).assertOk();
 
          if (res.data().size() == 0)
             break;

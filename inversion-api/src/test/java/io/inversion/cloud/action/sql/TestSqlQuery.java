@@ -545,8 +545,9 @@ public class TestSqlQuery extends TestCase
          {
             System.out.println("\r\n");
             System.out.println("\r\n");
-            System.out.println(expected);
-            System.out.println(received);
+            System.out.println("EXPECTED: " + expected);
+            System.out.println("ACTUAL  : " + received);
+            System.out.print("          " );
 
             for (int i = 0; i < expected.length() && i < received.length(); i++)
             {

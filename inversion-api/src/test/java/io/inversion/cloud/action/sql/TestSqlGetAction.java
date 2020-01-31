@@ -187,7 +187,7 @@ public class TestSqlGetAction extends TestRestGetActions
       Engine engine = service();
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
-      res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).statusOk();
+      res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
       System.out.println(res.getDebug());
       assertNull(res.find("data.0.href"));
       assertNull(res.find("data.0.shipname"));
@@ -271,7 +271,9 @@ public class TestSqlGetAction extends TestRestGetActions
       Engine engine = service();
       Response res = null;
 
-      res = engine.get(url("orders/10395?includes=shipname")).statusOk();
+      res = engine.get(url("orders/10395?includes=shipname"));
+      res.dump();
+      res.assertOk();
       assertEquals("HILARION-Abastos", res.findString("data.0.shipname"));
       assertEquals(1, res.findNode("data.0").size());
    }
@@ -330,14 +332,14 @@ public class TestSqlGetAction extends TestRestGetActions
       Engine engine = service();
       Response res = null;
 
-      res = engine.get(url("orderdetails/10395~46")).statusOk();
+      res = engine.get(url("orderdetails/10395~46")).assertOk();
       assertEquals(1, res.getFoundRows());
 
       res = engine.get(url("orders/10395?expands=orderdetails"));
-      res.statusOk();
+      res.assertOk();
       assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10395~46"));
 
-      res = engine.get(url("orderdetails/10395~46?expands=order")).statusOk();
+      res = engine.get(url("orderdetails/10395~46?expands=order")).assertOk();
       assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
    }
 
@@ -364,7 +366,7 @@ public class TestSqlGetAction extends TestRestGetActions
    {
       Engine engine = service();
       Response res = null;
-      res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).statusOk();
+      res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();
 
       assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
@@ -374,7 +376,7 @@ public class TestSqlGetAction extends TestRestGetActions
          assertTrue(debug.indexOf("args=[%error\\_msg%]") > 0);
       }
 
-      res = engine.get(url("indexlogs?w(error,ERROR MSG)")).statusOk();
+      res = engine.get(url("indexlogs?w(error,ERROR MSG)")).assertOk();
 
       assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
@@ -384,7 +386,7 @@ public class TestSqlGetAction extends TestRestGetActions
          assertTrue(debug.indexOf("args=[%error msg%]") > 0);
       }
 
-      res = engine.get(url("indexlogs?eq(error,ERROR_MSG foo)")).statusOk();
+      res = engine.get(url("indexlogs?eq(error,ERROR_MSG foo)")).assertOk();
 
       assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 

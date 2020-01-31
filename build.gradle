@@ -125,6 +125,16 @@ subprojects {
 	    archiveClassifier = 'javadoc'
 	}
 	
+	//keeps integration test that require access to external systems
+	//from running as part of the standard CICD pipeline build
+	//run intergration tests via:  ./gradlew test -Dtest.profile=integration 
+	test {
+  		if (System.properties['test.profile'] != 'integration') {
+    		exclude '**/*IntegTest*'
+  		}
+	}
+	
+	
 	publishing {
 	    publications {
 	        mavenJava(MavenPublication) {

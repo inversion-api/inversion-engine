@@ -60,7 +60,6 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
          params.add(new SqlParameter(varName, kv.getValue()));
       }
 
-      DocumentClient cosmos = db.getDocumentClient();
       SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
       FeedOptions options = new FeedOptions();
 
@@ -93,7 +92,19 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
 
       if (!isDryRun())
       {
-         FeedResponse<Document> queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
+         DocumentClient cosmos = db.getDocumentClient();
+         FeedResponse<Document> queryResults = null;
+         try
+         {
+            queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
+         }
+         catch (Exception ex)
+         {
+            System.err.println(ex.getMessage());
+            System.err.println(debug);
+
+            throw ex;
+         }
 
          for (Document doc : queryResults.getQueryIterable())
          {

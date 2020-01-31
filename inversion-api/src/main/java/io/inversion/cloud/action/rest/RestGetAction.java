@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -118,7 +118,7 @@ public class RestGetAction extends Action<RestGetAction>
 
             //maps query string parameter names for the main tables pk to the related tables fk
             Index fkIdx = rel.getFkIndex1();
-            for (int i = 0; i<fkIdx.size(); i++)
+            for (int i = 0; i < fkIdx.size(); i++)
             {
                Column fk = fkIdx.getColumn(i);
                String pkName = fk.getPk().getName();
@@ -315,7 +315,7 @@ public class RestGetAction extends Action<RestGetAction>
                      term.removeTerm(child);
 
                      Index pk = collection.getTable().getPrimaryIndex();
-                     for (int i = 0; i<pk.size(); i++)
+                     for (int i = 0; i < pk.size(); i++)
                      {
                         Column c = pk.getColumn(i);
                         boolean includesPkCol = false;
@@ -387,18 +387,6 @@ public class RestGetAction extends Action<RestGetAction>
                   entityKey = req.getCollection().getTable().encodeKey(row);
                   throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
                }
-
-               //------------------------------------------------
-               //copy over defined attributes first, if the select returned 
-               //extra columns they will be copied over last
-               for (Attribute attr : collection.getEntity().getAttributes())
-               {
-                  String attrName = attr.getName();
-                  String colName = attr.getColumn().getName();
-                  Object val = row.remove(colName);
-                  node.put(attrName, val);
-               }
-
                //------------------------------------------------
                //next turn all relationships into links that will 
                //retrieve the related entities
@@ -407,8 +395,9 @@ public class RestGetAction extends Action<RestGetAction>
                   String link = null;
                   if (rel.isOneToMany())
                   {
-                     //Object fkval = node.remove(rel.getFk1Col1().getName());
-                     Object fkval = node.get(rel.getFk1Col1().getName());
+                     Index foreignKey = rel.getFkIndex1();
+                     String fkval = Table.encodeKey(row, rel.getFkIndex1());
+
                      if (fkval != null)
                      {
                         link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
@@ -419,6 +408,18 @@ public class RestGetAction extends Action<RestGetAction>
                      link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
                   }
                   node.put(rel.getName(), link);
+               }
+               //------------------------------------------------
+               //copy over defined attributes first, if the select returned 
+               //extra columns they will be copied over last
+               for (Attribute attr : collection.getEntity().getAttributes())
+               {
+                  String attrName = attr.getName();
+                  String colName = attr.getColumn().getName();
+                  Object val = row.remove(colName);
+                  
+                  if(!node.containsKey(attrName))
+                     node.put(attrName, val);
                }
 
                //------------------------------------------------
@@ -440,7 +441,7 @@ public class RestGetAction extends Action<RestGetAction>
                if (Utils.empty(href))
                {
                   href = Chain.buildLink(collection, entityKey, null);
-                  node.put("href", href);
+                  node.putFirst("href", href);
                }
             }
 
@@ -599,9 +600,7 @@ public class RestGetAction extends Action<RestGetAction>
 
                cols.addAll(idxToMatch.getColumnNames());
                cols.addAll(idxToRetrieve.getColumnNames());
-               
-               
-               
+
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
                {
@@ -718,8 +717,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       columns.addAll(idxToMatch.getColumnNames());
       columns.addAll(idxToRetrieve.getColumnNames());
-      
-      
+
       Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
       Term includes = Term.term(null, "includes", columns);
       Term sort = Term.term(null, "sort", columns);

@@ -38,6 +38,7 @@ import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
@@ -89,25 +90,22 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
    {
       JSNode doc = new JSNode(columnMappedTermsRow);
 
-      //-- this simply makes the pk fields appear at the top of the inserted document
-      Index pk = table.getPrimaryIndex();
-      if (pk != null)
+      String id = doc.getString("id");
+      if (id == null)
       {
-         for (int i = pk.size() - 1; i >= 0; i--)
-         {
-            Column key = pk.getColumn(i);
-            Object val = doc.remove(key.getName());
-            if (val != null)
-            {
-               doc.putFirst(key.getName(), val);
-            }
-         }
+         id = table.encodeKey(columnMappedTermsRow);
+         doc.putFirst("id", id);
       }
 
       //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getName();
-      Document document = new Document(doc.toString());
+      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getActualName();
+      
+      String json = doc.toString();
+      Document document = new Document(json);
 
+      String debug = "CosmosDb: Insert " + json;
+      Chain.debug(debug);
+      
       ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
 
       int statusCode = response.getStatusCode();
@@ -116,7 +114,10 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }
 
-      String id = response.getResource().getId();
+      String returnedId = response.getResource().getId();
+      if (!Utils.equal(id, returnedId))
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
+
       return id;
    }
 
@@ -143,9 +144,9 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
     */
    protected void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
    {
-      Object id = indexValues.get("id");
+      Object id = table.encodeKey(indexValues);
       Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getName());
-      String documentUri = "/dbs/" + db + "/colls/" + table.getName() + "/docs/" + id;
+      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName() + "/docs/" + id;
 
       RequestOptions options = new RequestOptions();
       options.setPartitionKey(new PartitionKey(partitionKeyValue));
@@ -153,6 +154,8 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       ResourceResponse<Document> response = null;
       try
       {
+         Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
+         
          response = getDocumentClient().deleteDocument(documentUri, options);
 
          int statusCode = response.getStatusCode();
@@ -178,7 +181,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
 
    protected String getCollectionUri(Table table)
    {
-      String documentUri = "/dbs/" + db + "/colls/" + table.getName();
+      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName();
       return documentUri;
    }
 
@@ -254,7 +257,8 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, error);
       }
 
-      return new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+      DocumentClient client =  new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+      return client;
    }
 
 }

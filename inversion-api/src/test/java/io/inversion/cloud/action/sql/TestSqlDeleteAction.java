@@ -93,7 +93,7 @@ public class TestSqlDeleteAction extends TestCase
 
       res = engine.get(url("orderdetails?limit=1&sort=orderid"));
       res.dump();
-      res.statusOk();
+      res.assertOk();
       String href = res.findString("data.0.href");
 
       res = engine.delete(href);
@@ -109,7 +109,7 @@ public class TestSqlDeleteAction extends TestCase
       Response res = null;
       Engine engine = service();
 
-      res = engine.get(url("orderdetails?limit=10&sort=orderid")).statusOk();
+      res = engine.get(url("orderdetails?limit=10&sort=orderid")).assertOk();
 
       JSArray hrefs = new JSArray();
 
@@ -132,7 +132,7 @@ public class TestSqlDeleteAction extends TestCase
       JSArray hrefs = new JSArray(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
 
       for (int i = 0; i < hrefs.size(); i++)
-         assertTrue(engine.get(hrefs.getString(i)).statusOk().getFoundRows() > 0);
+         assertTrue(engine.get(hrefs.getString(i)).assertOk().getFoundRows() > 0);
 
       engine.delete(url("orderdetails"), hrefs).isSuccess();
 

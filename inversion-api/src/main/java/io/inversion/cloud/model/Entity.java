@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,9 @@
 package io.inversion.cloud.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Entity
 {
@@ -130,9 +132,6 @@ public class Entity
    public Entity withAttribute(Attribute attribute)
    {
       Attribute a = getAttribute(attribute.getName());
-      if (a != null && a != attribute)
-         System.out.println("???");
-
       if (attribute != null && !attributes.contains(attribute))
       {
          attributes.add(attribute);
@@ -142,6 +141,54 @@ public class Entity
       }
 
       return this;
+   }
+
+   public void removeAttribute(Attribute attribute)
+   {
+      attributes.remove(attribute);
+   }
+
+   public void removeAttributes(String... names)
+   {
+      for (int i = 0; names != null && i < names.length; i++)
+      {
+         String name = names[i];
+         if (name != null)
+         {
+            for (Attribute a :  (List<Attribute>)new ArrayList(attributes))
+            {
+               if (name.equalsIgnoreCase(a.getName()))
+               {
+                  removeAttribute(a);
+                  break;
+               }
+            }
+         }
+      }
+   }
+
+   /**
+    * Removes all attributes except those passed in
+    * @param names
+    */
+   public void retainAttributes(String... names)
+   {
+      Set keepNames = new HashSet();
+      for (int i = 0; names != null && i < names.length; i++)
+      {
+         String name = names[i];
+         if (name != null)
+         {
+            keepNames.add(name.toLowerCase());
+         }
+      }
+      for (Attribute a : (List<Attribute>)new ArrayList(attributes))
+      {
+         if (!keepNames.contains(a.getName().toLowerCase()))
+         {
+            removeAttribute(a);
+         }
+      }
    }
 
    /**
@@ -193,11 +240,6 @@ public class Entity
    //
    //      return attr;
    //   }
-
-   public void removeAttribute(Attribute attribute)
-   {
-      attributes.remove(attribute);
-   }
 
    /**
     * @return the hint

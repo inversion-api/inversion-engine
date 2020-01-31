@@ -280,7 +280,7 @@ public class RestPostAction extends Action<RestPostAction>
       //-- 
       //-- THIS IS THE ONLY RECURSION IN THE ALGORITHM.  IT IS NOT DIRECTLY RECURSIVE. IT
       //-- SENDS THE "CHILD GENERATION" AS A POST BACK TO THE ENGINE WHICH WOULD LAND AT
-      //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD GENERATION
+      //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD COLLECTION
       //-- AND ITS DESCENDANTS.
       for (Relationship rel : collection.getEntity().getRelationships())
       {
@@ -582,6 +582,9 @@ public class RestPostAction extends Action<RestPostAction>
 
    Map mapTo(Map srcRow, Index srcCols, Index destCols)
    {
+      if(srcCols.size() != destCols.size())
+         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to map from index '" + srcCols.toString() + "' to '" + destCols + "'");
+      
       if (srcRow == null)
          return Collections.EMPTY_MAP;
 
