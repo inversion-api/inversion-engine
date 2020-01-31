@@ -366,7 +366,6 @@ public class Table
       List colNames = index.getColumnNames();
 
       Rows rows = new Rows(colNames);
-
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
@@ -381,10 +380,10 @@ public class Table
 
             value = getDb().cast(index.getColumn(i), value);
             row.set(i, value);
-
-            rows.addRow(row);
          }
+         rows.addRow(row);
       }
+
       return rows;
    }
 

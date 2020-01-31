@@ -146,7 +146,9 @@ public abstract class Db<T extends Db>
 
    
    /**
-    * Upserts the key/values pairs for each row into the underlying data source.  
+    * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
+    * not as a full replacement.  Keys that are not supplied in the call but that exist in the row in 
+    * the target DB should not be modified.
     * 
     * Each row should minimally contain key value pairs that satisfy one of the 
     * tables unique index constraints allowing an update to take place instead  
@@ -536,7 +538,7 @@ public abstract class Db<T extends Db>
                if (value.toString().indexOf(".") < 0)
                   return Long.parseLong(value.toString());
                else
-                  Double.parseDouble(value.toString());
+                  return Double.parseDouble(value.toString());
 
             case "bool":
             case "boolean":
