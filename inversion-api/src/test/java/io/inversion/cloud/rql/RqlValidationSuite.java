@@ -16,8 +16,11 @@
  */
 package io.inversion.cloud.rql;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.inversion.cloud.action.sql.TestSqlQuery;
@@ -53,79 +56,74 @@ public class RqlValidationSuite
    public RqlValidationSuite(String queryClass, Db db, Table... tables)
    {
       withTables(new Table("orders")//s
-                                    .withColumn("OrderID", "VARCHAR")//
-                                    .withColumn("CustomerID", "INTEGER")//
-                                    .withColumn("EmployeeID", "DATETIME")//
-                                    .withColumn("OrderDate", "DATETIME")//
-                                    .withColumn("RequiredDate", "DATETIME")//
-                                    .withColumn("ShippedDate", "DATETIME")//
-                                    .withColumn("ShipVia", "INTEGER")//
-                                    .withColumn("Freight", "DECIMAL")//
-                                    .withColumn("ShipName", "VARCHAR")//
-                                    .withColumn("ShipAddress", "VARCHAR")//
-                                    .withColumn("ShipCity", "VARCHAR")//
-                                    .withColumn("ShipRegion", "VARCHAR")//
-                                    .withColumn("ShipPostalCode", "VARCHAR")//
-                                    .withColumn("ShipCountry", "VARCHAR")//
-                                    .withIndex("PK_Orders", "primary", true, "OrderID"));
+                                    .withColumn("orderId", "VARCHAR")//
+                                    .withColumn("customerId", "INTEGER")//
+                                    .withColumn("employeeId", "DATETIME")//
+                                    .withColumn("orderDate", "DATETIME")//
+                                    .withColumn("requiredDate", "DATETIME")//
+                                    .withColumn("shippedDate", "DATETIME")//
+                                    .withColumn("shipVia", "INTEGER")//
+                                    .withColumn("freight", "DECIMAL")//
+                                    .withColumn("shipName", "VARCHAR")//
+                                    .withColumn("shipAddress", "VARCHAR")//
+                                    .withColumn("shipCity", "VARCHAR")//
+                                    .withColumn("shipRegion", "VARCHAR")//
+                                    .withColumn("shipPostalCode", "VARCHAR")//
+                                    .withColumn("shipCountry", "VARCHAR")//
+                                    .withIndex("PK_Orders", "primary", true, "orderId"));
 
-      withTest("eq", "orders?eq(OrderID, 1234)&eq(ShipCountry,France)");
-      withTest("ne", "orders?ne(ShipCountry,France)");
+      withTest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
+      withTest("ne", "orders?ne(shipCountry,France)");
 
-      
-      
-      withTest("n", "orders?n(ShipCountry)");
-      withTest("nn", "orders?nn(ShipCountry)");
-      withTest("emp", "");
-      withTest("nemp", "");
-      
-      
-      withTest("like", "order?like(ShipCountry,anc)");
-      withTest("sw", "order?sw(ShipCountry,Franc)");
-      withTest("ew", "order?ew(ShipCountry,ance)");
-      
-      withTest("lt", "");
-      withTest("le", "");
-      withTest("gt", "");
-      withTest("ge", "");
-      withTest("in", "");
-      withTest("out", "");
-      withTest("w", "");
-      withTest("wo", "");
-      
-      withTest("if", "");
-      withTest("and", "");
-      withTest("or", "");
-      withTest("not", "");
-      withTest("_key", "");
-      withTest("_index", "");
-      
-      
-      withTest("offset", "");
-      withTest("limit", "");
-      withTest("page", "");
-      withTest("pageNum", "");
-      withTest("pageSize", "");
-      withTest("after", "");
-      
-      withTest("as", "");
-      withTest("includes", "");
-      withTest("excludes", "");
-      withTest("distinct", "");
-      withTest("count", "");
-      withTest("sum", "");
-      withTest("min", "");
-      withTest("max", "");
-      withTest("if", "");
-      withTest("aggregate", "");
-      withTest("function", "");
-      withTest("countascol", "");
-      withTest("rowcount", "");
-      
-      
-      
+      withTest("n", "orders?n(shipRegion)");
+      withTest("nn", "orders?nn(shipRegion)");
+      //      withTest("emp", "");
+      //      withTest("nemp", "");
+
+      withTest("likeMiddle", "orders?like(shipCountry,F*ance)");
+      withTest("likeStartsWith", "orders?like(shipCountry,Franc*)");
+      withTest("likeEndsWith", "orders?like(shipCountry,*ance)");
+      withTest("sw", "orders?sw(shipCountry,Franc)");
+      withTest("ew", "orders?ew(shipCountry,nce)");
+
+      //      withTest("lt", "");
+      //      withTest("le", "");
+      //      withTest("gt", "");
+      //      withTest("ge", "");
+      //      withTest("in", "");
+      //      withTest("out", "");
+      //      withTest("w", "");
+      //      withTest("wo", "");
+      //
+      //      withTest("if", "");
+      //      withTest("and", "");
+      //      withTest("or", "");
+      //      withTest("not", "");
+      //      withTest("_key", "");
+      //      withTest("_index", "");
+      //
+      //      withTest("offset", "");
+      //      withTest("limit", "");
+      //      withTest("page", "");
+      //      withTest("pageNum", "");
+      //      withTest("pageSize", "");
+      //      withTest("after", "");
+      //
+      //      withTest("as", "");
+      //      withTest("includes", "");
+      //      withTest("excludes", "");
+      //      withTest("distinct", "");
+      //      withTest("count", "");
+      //      withTest("sum", "");
+      //      withTest("min", "");
+      //      withTest("max", "");
+      //      withTest("if", "");
+      //      withTest("aggregate", "");
+      //      withTest("function", "");
+      //      withTest("countascol", "");
+      //      withTest("rowcount", "");
+
       //("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
-      
 
       withQueryClass(queryClass);
       withDb(db);
@@ -134,9 +132,14 @@ public class RqlValidationSuite
 
    public void run() throws Exception
    {
+      LinkedHashMap<String, String> failures = new LinkedHashMap();
+
       for (String testKey : tests.keySet())
       {
+
          String queryString = tests.get(testKey);
+
+         System.out.println("\r\nTESTING: " + testKey + " - " + queryString);
 
          String tableName = queryString.substring(0, queryString.indexOf("?"));
          if (tableName.indexOf("/") > 0)
@@ -145,34 +148,74 @@ public class RqlValidationSuite
          Query query = (Query) Class.forName(queryClass).newInstance();
 
          String rql = queryString.substring(queryString.indexOf("?") + 1);
-         query.withTerms(rql);
 
-         Table table = tables.get(tableName);
-         table.withDb(db);
-         query.withTable(table);
-         query.withDryRun(true);
-
-         String expected = results.get(testKey);
-
-         if ("UNSUPPORTED".equalsIgnoreCase(expected))
+         //-- RestGetAction sorts the terms so we do it here
+         //-- to try and mimic the order of terms in the sql
+         //-- when a live call is made
+         List<Term> terms = new ArrayList();
+         String[] parts = rql.split("\\&");
+         Parser parser = new Parser();
+         for (int i = 0; i < parts.length; i++)
          {
-            System.err.println("SKIPPING UNSUPPORTED TEST CASE: " + testKey + " - " + queryString);
-            continue;
+            if (parts[i] == null || parts[i].length() == 0)
+               continue;
+
+            Term parsed = parser.parse(parts[i]);
+            terms.add(parsed);
          }
+         Collections.sort(terms);
+         //-- end sorting
 
-         if (Utils.empty(expected))
-            expected = "You are missing a validation for test '" + testKey + "' with RQL '" + queryString + "'.  If this case is unsupported please call 'withResult(\"" + testKey + "\", \"UNSUPPORTED\") in your setup to declare that this validation should be skipped.";
+         String actual = null;
+         String expected = results.get(testKey);;
+         try
+         {
 
-         Results results = query.doSelect();
-         String actual = results.getTestQuery();
+            query.withTerms(terms);
+
+            Table table = tables.get(tableName);
+            if (table == null)
+               throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
+            table.withDb(db);
+            query.withTable(table);
+            query.withDryRun(true);
+
+            if ("UNSUPPORTED".equalsIgnoreCase(expected))
+            {
+               System.out.println("SKIPPING UNSUPPORTED TEST CASE: " + testKey + " - " + queryString);
+               continue;
+            }
+
+            if (Utils.empty(expected))
+               expected = "You are missing a validation for test '" + testKey + "' with RQL '" + queryString + "'.  If this case is unsupported please call 'withResult(\"" + testKey + "\", \"UNSUPPORTED\") in your setup to declare that this validation should be skipped.";
+
+            Results results = query.doSelect();
+            actual = results.getTestQuery();
+         }
+         catch (Exception ex)
+         {
+            actual = ex.getMessage();
+         }
 
          if (!TestSqlQuery.compare(expected, actual))
          {
-            System.err.println("VALIDATION FAILED: " + testKey + " " + queryString);
-            System.err.println(" - " + results.getDebugQuery());
-
-            throw new RuntimeException("Failed validation case '" + testKey + "'");
+            failures.put(testKey, actual);
          }
+         else
+         {
+            System.out.println("PASSED");
+         }
+      }
+
+      if (failures.size() > 0)
+      {
+         System.out.println("Failed cases...");
+         for (String key : failures.keySet())
+         {
+            System.out.println("  - " + key + " - " + failures.get(key));
+         }
+
+         throw new RuntimeException("Failed...");
       }
    }
 

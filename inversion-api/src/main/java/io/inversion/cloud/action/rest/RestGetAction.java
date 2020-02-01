@@ -20,7 +20,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,6 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.Attribute;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Column;
@@ -43,6 +41,7 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
@@ -345,6 +344,10 @@ public class RestGetAction extends Action<RestGetAction>
             }
          }
       }
+      
+      //-- this sort is not strictly necessary but it makes the order of terms in generated
+      //-- query text dependable so you can write better tests.
+      Collections.sort(terms);
 
       Results results = null;
 

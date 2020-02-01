@@ -26,24 +26,24 @@ public class CosmosSqlQueryRqlValidationTests extends TestCase
    @Test
    public void test_doSelect_validateRql() throws Exception
    {
-//      RqlValidationSuite suite = new RqlValidationSuite(CosmosSqlQuery.class.getName(), new CosmosDocumentDb());
-//
-//      suite.withResult("eq_queryForEquals", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"OrderID\\\"] = @OrderID1 AND orders[\\\"ShipCountry\\\"] = @ShipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@OrderID1\",\"value\":\"1234\"},{\"name\":\"@ShipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-//           .withResult("ne_queryForNotEquals", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (NOT (orders[\\\"ShipCountry\\\"] = @ShipCountry1)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@ShipCountry1\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}").withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//           .withResult("", "")//
-//      ;
-//      suite.run();
+      RqlValidationSuite suite = new RqlValidationSuite(CosmosSqlQuery.class.getName(), new CosmosDocumentDb());
+
+      suite.withResult("eq", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderID\\\"] = @orderID1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderID1\",\"value\":\"10248\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("ne", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (NOT (orders[\\\"shipCountry\\\"] = @shipCountry1)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("n", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE IS_NULL (orders[\\\"shipRegion\\\"]) ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("nn", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipRegion\\\"] <> null ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("sw", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE STARTSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("ew", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE ENDSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"nce\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("likeMiddle", "The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.")//
+           .withResult("likeStartsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE STARTSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("likeEndsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE ENDSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"ance\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("", "")//
+           .withResult("", "")//
+           .withResult("", "")//
+           .withResult("", "")//
+           .withResult("", "")//
+           .withResult("", "")//
+      ;
+      suite.run();
    }
 }

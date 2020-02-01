@@ -25,6 +25,7 @@ import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.action.sql.SqlEngineFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
@@ -95,7 +96,7 @@ public class CosmosEngineFactory
 
                   employeesTbl.withIndex("fkIdx_Employees_reportsTo", "foreignKey", false, "type", "reportsTo");
 
-                  Table ordersTbl = new Table("Orders").withActualName("Northwind")//
+                  Table ordersTbl = new Table("orders").withActualName("Northwind")//
 
                                                        .withColumn("type", "string", false)//
                                                        .withColumn("orderId", "number")//
@@ -117,7 +118,7 @@ public class CosmosEngineFactory
                                                        .withColumn("shipPostalCode", "string")//
                                                        .withColumn("shipCountry", "string");
 
-                  Table orderDetailsTbl = new Table("OrderDetails").withActualName("Northwind")//
+                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
 
                                                                    .withColumn("type", "string", false)//
                                                                    .withColumn("orderId", "number")//
@@ -149,13 +150,6 @@ public class CosmosEngineFactory
          final Api api = engine.getApi("northwind");
          api.withDb(cosmosdb);
 
-         //         api.withCollection(new Collection(customersTbl));
-         //         api.withCollection(new Collection(employeesTbl));
-         //         api.withCollection(new Collection(ordersTbl));
-         //         api.withCollection(new Collection(orderDetailsTbl));
-
-         //         
-
          api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action()
             {
                public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
@@ -182,10 +176,10 @@ public class CosmosEngineFactory
          {
             Engine e = engine;
 
-//            deleteAll(e, "/northwind/cosmosdb/orders");
-//            deleteAll(e, "/northwind/cosmosdb/orderDetails");
-//            deleteAll(e, "/northwind/cosmosdb/customers");
-//            deleteAll(e, "/northwind/cosmosdb/employees");
+            deleteAll(e, "/northwind/cosmosdb/orders");
+            deleteAll(e, "/northwind/cosmosdb/orderDetails");
+            deleteAll(e, "/northwind/cosmosdb/customers");
+            deleteAll(e, "/northwind/cosmosdb/employees");
 
             Response res = null;
 
@@ -204,7 +198,7 @@ public class CosmosEngineFactory
                orderIds.add(node.get("orderid"));
                customerIds.add(node.get("customerid"));
 
-               //e.post("/northwind/cosmosdb/orders", node).assertOk();
+               e.post("/northwind/cosmosdb/orders", node).assertOk();
             }
 
             String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
@@ -212,7 +206,7 @@ public class CosmosEngineFactory
             for (JSNode node : res.data().asNodeList())
             {
                cleanSourceNode("orderDetails", node);
-               //e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
+               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
             }
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
@@ -220,7 +214,7 @@ public class CosmosEngineFactory
             for (JSNode node : res.data().asNodeList())
             {
                cleanSourceNode("customers", node);
-               //e.post("/northwind/cosmosdb/customers", node).assertOk();
+               e.post("/northwind/cosmosdb/customers", node).assertOk();
             }
 
             res = e.get("/northwind/source/employees").assertOk();

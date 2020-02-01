@@ -543,8 +543,8 @@ public class TestSqlQuery extends TestCase
 
          if (!expected.equals(received))
          {
-            System.out.println("\r\n");
-            System.out.println("\r\n");
+            //System.out.println("\r\n");
+            //System.out.println("\r\n");
             System.out.println("EXPECTED: " + expected);
             System.out.println("ACTUAL  : " + received);
             System.out.print("          " );

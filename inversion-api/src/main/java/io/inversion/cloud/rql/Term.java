@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,7 @@ import java.util.List;
 
 import io.inversion.cloud.utils.Utils;
 
-public class Term
+public class Term implements Comparable<Term>
 {
    public Term       parent = null;
 
@@ -34,6 +34,26 @@ public class Term
    {
       withParent(parent);
       withToken(token);
+   }
+
+   @Override
+   public int compareTo(Term o)
+   {
+      int val = token.compareTo(o.token);
+      if (val == 0)
+      {
+         for (int i = 0; i < terms.size(); i++)
+         {
+            if (o.terms.size() <= i)
+               return 1;
+
+            val = terms.get(i).compareTo(o.terms.get(i));
+
+            if (val != 0)
+               break;
+         }
+      }
+      return val;
    }
 
    public String getToken(int childIndex)
@@ -153,7 +173,7 @@ public class Term
    public Term replaceTerm(Term oldTerm, Term newTerm)
    {
       terms.remove(newTerm);//make sure not in there twice
-      
+
       int idx = terms.indexOf(oldTerm);
       if (idx < 0)
          terms.add(newTerm);
