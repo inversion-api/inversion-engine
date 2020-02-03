@@ -126,6 +126,8 @@ public class RestGetAction extends Action<RestGetAction>
                if (pkVal == null)
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
 
+               //-- TODO: fixme - should be using collection attrubte names not column names for the keys
+               //-- TODO: fixme - this is not a URL safe encoding
                newHref += fk.getName() + "=" + pkVal + "&";
             }
 

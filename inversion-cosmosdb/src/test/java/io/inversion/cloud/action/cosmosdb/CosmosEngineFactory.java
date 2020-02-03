@@ -91,10 +91,13 @@ public class CosmosEngineFactory
                                                              .withColumn("homePhone", "string")//
                                                              .withColumn("extension", "string")//
                                                              .withColumn("notes", "string")//
-                                                             .withColumn("reportsTo", "string")//
+                                                             .withColumn("reportsTo", "number")//
                                                              .withColumn("salary", "number");
 
                   employeesTbl.withIndex("fkIdx_Employees_reportsTo", "foreignKey", false, "type", "reportsTo");
+                  employeesTbl.getColumn("type").withPk(employeesTbl.getColumn("type"));
+                  employeesTbl.getColumn("reportsTo").withPk(employeesTbl.getColumn("employeeId"));
+                  
 
                   Table ordersTbl = new Table("orders").withActualName("Northwind")//
 
@@ -118,22 +121,22 @@ public class CosmosEngineFactory
                                                        .withColumn("shipPostalCode", "string")//
                                                        .withColumn("shipCountry", "string");
 
-                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
-
-                                                                   .withColumn("type", "string", false)//
-                                                                   .withColumn("orderId", "number")//
-                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
-                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
-
-                                                                   .withColumn("productId", "number")//
-                                                                   .withColumn("unitPrice", "number")//
-                                                                   .withColumn("quantity", "number")//
-                                                                   .withColumn("discount", "number");
+//                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
+//
+//                                                                   .withColumn("type", "string", false)//
+//                                                                   .withColumn("orderId", "number")//
+//                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
+//                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
+//
+//                                                                   .withColumn("productId", "number")//
+//                                                                   .withColumn("unitPrice", "number")//
+//                                                                   .withColumn("quantity", "number")//
+//                                                                   .withColumn("discount", "number");
 
                   withTable(customersTbl);
                   withTable(employeesTbl);
                   withTable(ordersTbl);
-                  withTable(orderDetailsTbl);
+                  //withTable(orderDetailsTbl);
 
                }
 
@@ -144,6 +147,7 @@ public class CosmosEngineFactory
 
                   Entity employeeEntity = getApi().getCollection("employees").getEntity();
                   employeeEntity.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employeeEntity, employeeEntity, getTable("employees").getIndex("fkIdx_Employees_reportsTo"), null));
+                  employeeEntity.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employeeEntity, employeeEntity, getTable("employees").getIndex("fkIdx_Employees_reportsTo"), null));
                }
             };
 
@@ -177,7 +181,7 @@ public class CosmosEngineFactory
             Engine e = engine;
 
             deleteAll(e, "/northwind/cosmosdb/orders");
-            deleteAll(e, "/northwind/cosmosdb/orderDetails");
+            //deleteAll(e, "/northwind/cosmosdb/orderDetails");
             deleteAll(e, "/northwind/cosmosdb/customers");
             deleteAll(e, "/northwind/cosmosdb/employees");
 
@@ -191,37 +195,48 @@ public class CosmosEngineFactory
             Set orderIds = new HashSet();
             Set customerIds = new HashSet();
 
-            for (JSNode node : res.data().asNodeList())
+            for (JSNode order : res.data().asNodeList())
             {
-               cleanSourceNode("orders", node);
+               cleanSourceNode("orders", order);
 
-               orderIds.add(node.get("orderid"));
-               customerIds.add(node.get("customerid"));
+               orderIds.add(order.get("orderid"));
+               customerIds.add(order.get("customerid"));
 
-               e.post("/northwind/cosmosdb/orders", node).assertOk();
+               res = e.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
+
+               for (JSNode details : res.data().asNodeList())
+               {
+                  cleanSourceNode("orderDetails", details);
+                  details.remove("employees");
+                  details.remove("order");
+                  details.remove("orderid");
+               }
+               order.put("orderDetails", res.data());
+               e.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
-            String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
-            res = e.get(getOrderDetails).assertOk();
-            for (JSNode node : res.data().asNodeList())
-            {
-               cleanSourceNode("orderDetails", node);
-               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
-            }
+//            String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
+//            res = e.get(getOrderDetails).assertOk();
+//            for (JSNode node : res.data().asNodeList())
+//            {
+//               cleanSourceNode("orderDetails", node);
+//               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
+//            }
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = e.get(getCustomers).assertOk();
-            for (JSNode node : res.data().asNodeList())
+            for (JSNode customer : res.data().asNodeList())
             {
-               cleanSourceNode("customers", node);
-               e.post("/northwind/cosmosdb/customers", node).assertOk();
+               cleanSourceNode("customers", customer);
+               e.post("/northwind/cosmosdb/customers", customer).assertOk();
             }
 
             res = e.get("/northwind/source/employees").assertOk();
-            for (JSNode node : res.data().asNodeList())
+            for (JSNode employee : res.data().asNodeList())
             {
-               cleanSourceNode("employees", node);
-               e.post("/northwind/cosmosdb/employees", node).assertOk().dump();
+               employee.remove("employees");
+               cleanSourceNode("employees", employee);
+               e.post("/northwind/cosmosdb/employees", employee).assertOk().dump();
             }
          }
 
@@ -236,6 +251,7 @@ public class CosmosEngineFactory
    public static void cleanSourceNode(String collection, JSNode node)
    {
       node.remove("href");
+      node.remove("employee");
 
       if ("employees".equalsIgnoreCase(collection))
       {

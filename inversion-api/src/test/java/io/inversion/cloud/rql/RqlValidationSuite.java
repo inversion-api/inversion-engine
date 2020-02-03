@@ -86,14 +86,14 @@ public class RqlValidationSuite
       withTest("sw", "orders?sw(shipCountry,Franc)");
       withTest("ew", "orders?ew(shipCountry,nce)");
 
-      //      withTest("lt", "");
-      //      withTest("le", "");
-      //      withTest("gt", "");
-      //      withTest("ge", "");
-      //      withTest("in", "");
-      //      withTest("out", "");
-      //      withTest("w", "");
-      //      withTest("wo", "");
+      withTest("lt", "orders?lt(freight,10)");
+      withTest("le", "orders?le(freight,10)");
+      withTest("gt", "orders?gt(freight,3.67)");
+      withTest("ge", "orders?ge(freight,3.67)");
+      withTest("in", "in(shipCity,Reims,Charleroi)");
+      withTest("out", "out(shipCity,Reims,Charleroi)");
+      withTest("w", "");
+      withTest("wo", "");
       //
       //      withTest("if", "");
       //      withTest("and", "");

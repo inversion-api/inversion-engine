@@ -231,6 +231,11 @@ public class Term implements Comparable<Term>
    {
       terms.remove(term);
    }
+   
+   public void clear()
+   {
+      terms.clear();
+   }
 
    public boolean isQuoted()
    {

@@ -65,10 +65,31 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
                   else
                   {
                      parent.withToken("sw");
-                     parent.getTerm(1).withToken(text.substring(0, text.length()-1));
+                     parent.getTerm(1).withToken(text.substring(0, text.length() - 1));
                   }
                }
-               
+               if (parent.hasToken("w", "wo"))
+               {
+                  Term and = Term.term(parent.getParent(), "and");
+                  Term sw = Term.term(null, "sw", parent.getTerm(0), parent.getTerm(1));
+                  Term ew = Term.term(null, "ew", parent.getTerm(0), parent.getTerm(1));
+                  and.withTerm(sw);
+                  and.withTerm(ew);
+
+                  parent.clear();
+
+                  if (parent.hasToken("wo"))
+                  {
+                     Term not = Term.term(null, "not", and);
+                     parent.getParent().replaceTerm(parent, not);
+                  }
+                  else
+                  {
+                     parent.getParent().replaceTerm(parent, and);
+                  }
+
+               }
+
                return super.transform(parent);
             }
          };

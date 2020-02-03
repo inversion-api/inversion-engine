@@ -117,15 +117,24 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       super(null);
       withTable(table);
 
-      //order matters when multiple clauses can accept the same term 
-      where();
-      page();
-      order();
-      group();
-      select();
-
       if (terms != null)
          withTerms(terms);
+   }
+
+   public List<Builder> getBuilders()
+   {
+      if (builders == null)
+      {
+         builders = new ArrayList();
+
+         //order matters when multiple clauses can accept the same term 
+         where();
+         page();
+         order();
+         group();
+         select();
+      }
+      return builders;
    }
 
    @Override
