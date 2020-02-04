@@ -94,7 +94,7 @@ public class RestClient
    //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
    protected boolean                                forwardHeaders   = false;
    protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
-   protected Set                                    blacklistHeaders = new HashSet();
+   protected Set                                    blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5"));
 
    protected boolean                                forwardParams    = false;
    protected Set<String>                            whitelistParams  = new HashSet();
