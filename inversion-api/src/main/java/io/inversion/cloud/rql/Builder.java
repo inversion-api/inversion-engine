@@ -218,7 +218,7 @@ public class Builder<T, P extends Builder>
          return r();
 
       String token = term.getToken().toLowerCase();
-      if ("eq".equals(token) && term.size() == 2)
+      if ("eq".equals(token))
       {
          //-- single arg functions such as limit(x) or page(y) can be written as limit=x and page=y 
          //-- which will parse here as eq(limit,x) or eq(page,y).  If the terms first child is a leaf
