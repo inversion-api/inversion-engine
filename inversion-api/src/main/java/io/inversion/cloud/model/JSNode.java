@@ -288,22 +288,6 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * @deprecated Use {@link #findAll()} instead.
-    */
-   public JSArray collect(String jsonPath)
-   {
-      return findAll(jsonPath, -1);
-   }
-
-   /**
-    * @deprecated Use {@link #findAllNodes()} instead.
-    */
-   public JSArray collect(String jsonPath, int qty)
-   {
-      return findAll(jsonPath, qty);
-   }
-
-   /**
     * @deprecated Use {@link #findAllNodes()} instead.
     */
    public List<JSNode> collectNodes(String jsonPath)
@@ -914,9 +898,9 @@ public class JSNode implements Map<String, Object>
 
    public List asList()
    {
-      if(this instanceof JSArray)
-         return new ArrayList( ((JSArray)this).objects);
-      
+      if (this instanceof JSArray)
+         return new ArrayList(((JSArray) this).objects);
+
       ArrayList list = new ArrayList();
       list.add(this);
       return list;
@@ -934,8 +918,6 @@ public class JSNode implements Map<String, Object>
 
       return new JSArray(this);
    }
-
-
 
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------

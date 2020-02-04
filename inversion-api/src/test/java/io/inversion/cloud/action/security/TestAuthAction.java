@@ -16,22 +16,8 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.sql.Connection;
-import java.util.Arrays;
-
-import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.action.security.AuthAction.SqlDbUserDao;
-import io.inversion.cloud.action.sql.H2SqlDb;
-import io.inversion.cloud.action.sql.SqlDb;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.User;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.SqlUtils;
 import junit.framework.TestCase;
 
 public class TestAuthAction extends TestCase

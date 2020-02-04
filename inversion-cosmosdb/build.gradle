@@ -1,6 +1,7 @@
 dependencies {
 
     compile project(':inversion-api')
+    compile project(':inversion-jdbc')
 	compile "com.microsoft.azure:azure-documentdb:${azureSdkVersion}"
 
 	testCompile project(':inversion-api').sourceSets.test.output

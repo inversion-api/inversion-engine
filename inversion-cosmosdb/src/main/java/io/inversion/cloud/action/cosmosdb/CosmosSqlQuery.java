@@ -13,7 +13,7 @@ import com.microsoft.azure.documentdb.SqlParameter;
 import com.microsoft.azure.documentdb.SqlParameterCollection;
 import com.microsoft.azure.documentdb.SqlQuerySpec;
 
-import io.inversion.cloud.action.sql.SqlQuery;
+import io.inversion.cloud.jdbc.db.SqlQuery;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
@@ -68,26 +68,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
                      parent.getTerm(1).withToken(text.substring(0, text.length() - 1));
                   }
                }
-               if (parent.hasToken("w", "wo"))
+               else if (parent.hasToken("w", "wo"))
                {
-                  Term and = Term.term(parent.getParent(), "and");
-                  Term sw = Term.term(null, "sw", parent.getTerm(0), parent.getTerm(1));
-                  Term ew = Term.term(null, "ew", parent.getTerm(0), parent.getTerm(1));
-                  and.withTerm(sw);
-                  and.withTerm(ew);
-
-                  parent.clear();
-
-                  if (parent.hasToken("wo"))
-                  {
-                     Term not = Term.term(null, "not", and);
-                     parent.getParent().replaceTerm(parent, not);
-                  }
-                  else
-                  {
-                     parent.getParent().replaceTerm(parent, and);
-                  }
-
+                  throw new ApiException(SC.SC_400_BAD_REQUEST, "CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
                }
 
                return super.transform(parent);

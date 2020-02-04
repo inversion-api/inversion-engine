@@ -18,8 +18,6 @@ package io.inversion.cloud.rql;
 
 import org.junit.Test;
 
-import io.inversion.cloud.action.sql.SqlQuery;
-import io.inversion.cloud.rql.Query;
 import junit.framework.TestCase;
 
 public class TestQuery extends TestCase

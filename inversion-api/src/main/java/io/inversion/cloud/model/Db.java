@@ -23,15 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.English;
-import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
 public abstract class Db<T extends Db>
@@ -559,13 +556,16 @@ public abstract class Db<T extends Db>
                   return JSNode.parseJsonNode(value + "");
 
             default :
-               return SqlUtils.cast(value, type);
+               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
          }
       }
       catch (Exception ex)
       {
-         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+         Utils.rethrow(ex);
+         //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
       }
+      
+      return null;
    }
 
    public Set<Term> mapToColumns(Collection collection, Term term)

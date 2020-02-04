@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.inversion.cloud.action.sql.SqlDb;
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Table;
@@ -37,7 +37,7 @@ import io.inversion.cloud.rql.Where;
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // 
-public class ElasticsearchQuery extends Query<ElasticsearchQuery, SqlDb, Table, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
+public class ElasticsearchQuery extends Query<ElasticsearchQuery, JdbcDb, Table, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
 {
    // identifies a nested path
    @JsonIgnore

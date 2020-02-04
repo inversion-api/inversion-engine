@@ -85,6 +85,8 @@ public class RqlValidationSuite
       withTest("likeEndsWith", "orders?like(shipCountry,*ance)");
       withTest("sw", "orders?sw(shipCountry,Franc)");
       withTest("ew", "orders?ew(shipCountry,nce)");
+      withTest("w", "ance");
+      withTest("wo", "ance");
 
       withTest("lt", "orders?lt(freight,10)");
       withTest("le", "orders?le(freight,10)");
@@ -92,38 +94,45 @@ public class RqlValidationSuite
       withTest("ge", "orders?ge(freight,3.67)");
       withTest("in", "in(shipCity,Reims,Charleroi)");
       withTest("out", "out(shipCity,Reims,Charleroi)");
-      withTest("w", "");
-      withTest("wo", "");
-      //
-      //      withTest("if", "");
-      //      withTest("and", "");
-      //      withTest("or", "");
-      //      withTest("not", "");
-      //      withTest("_key", "");
-      //      withTest("_index", "");
-      //
-      //      withTest("offset", "");
-      //      withTest("limit", "");
-      //      withTest("page", "");
-      //      withTest("pageNum", "");
-      //      withTest("pageSize", "");
-      //      withTest("after", "");
-      //
-      //      withTest("as", "");
-      //      withTest("includes", "");
-      //      withTest("excludes", "");
-      //      withTest("distinct", "");
-      //      withTest("count", "");
-      //      withTest("sum", "");
-      //      withTest("min", "");
-      //      withTest("max", "");
-      //      withTest("if", "");
-      //      withTest("aggregate", "");
-      //      withTest("function", "");
-      //      withTest("countascol", "");
-      //      withTest("rowcount", "");
 
-      //("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
+      withTest("and", "orders?and(eq(orderID, 10248),eq(shipCountry,France))");
+      withTest("or", "orders?or(eq(shipCity, Reims),eq(shipCity,Charleroi))");
+      withTest("not", "orders?not(or(eq(shipCity, Reims),eq(shipCity,Charleroi)))");
+
+      withTest("as", "orders?as(orderid,order_identifier)");
+      withTest("includes", "orders?includes(shipCountry,shipCity)");
+      withTest("excludes", "orders?excludes(shipCountry,shipCity)");
+      withTest("distinct", "orders?distinct(shipCountry)");
+      withTest("count", "orders?count(*)");
+      withTest("sum", "orders?sum(freight)");
+      withTest("sumAs", "as(sum(freight),'Sum Freight')");
+      withTest("sumAs", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
+      withTest("min", "orders?min(freight)");
+      withTest("max", "orders?max(freight)");
+      withTest("if", "orders?");
+      withTest("groupCount", "orders?group(shipCountry)&count(shipCountry, countForCountry)");
+      
+      
+      withTest("aggregate", "orders?");
+      withTest("function", "orders?");
+      withTest("countascol", "orders?");
+      withTest("rowcount", "orders?");
+      
+      
+      withTest("offset", "orders?offset=3");
+      withTest("limit", "orders?limit=7");
+      withTest("page", "orders?pageSize=7&page=3");
+      withTest("pageNum", "orders?pageSize=7&pageNum=3");
+      withTest("after", "orders?after=10248");
+      
+      withTest("sort", "orders?sort(-shipCountry,shipCity)");
+      withTest("order", "orders?order(-shipCountry,shipCity)");
+      
+      
+      withTest("_key", "orders?");
+      withTest("join", "orders?");
+      
+
 
       withQueryClass(queryClass);
       withDb(db);

@@ -48,9 +48,8 @@ import io.inversion.cloud.model.Table;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.SqlUtils;
+import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class RestPostAction extends Action<RestPostAction>
@@ -716,30 +715,6 @@ public class RestPostAction extends Action<RestPostAction>
       }
    }
 
-   Object cast(Column col, Object value)
-   {
-      return SqlUtils.cast(value, col.getType());
-      //      
-      //      if (Utils.empty(value))
-      //         return null;
-      //
-      //      String type = col.getType().toUpperCase();
-      //
-      //      if ((type.equals("BIT") || type.equals("BOOLEAN")) && !(value instanceof Boolean))
-      //      {
-      //         if (value instanceof String)
-      //         {
-      //            String str = ((String) value).toLowerCase();
-      //            value = str.startsWith("t") || str.startsWith("1");
-      //         }
-      //      }
-      //      if ((type.startsWith("DATE") || type.startsWith("TIME")) && !(value instanceof Date))
-      //      {
-      //         value = Utils.date(value.toString());
-      //      }
-      //
-      //      return value;
-   }
 
    public boolean isCollapseAll()
    {

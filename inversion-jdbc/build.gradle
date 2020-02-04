@@ -1,4 +1,5 @@
 dependencies {
+
     compile project(':inversion-api')
-    compile project(':inversion-jdbc')
+	testCompile project(':inversion-spring-boot')
 }
