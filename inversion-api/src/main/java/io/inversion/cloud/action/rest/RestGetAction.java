@@ -346,7 +346,7 @@ public class RestGetAction extends Action<RestGetAction>
             }
          }
       }
-      
+
       //-- this sort is not strictly necessary but it makes the order of terms in generated
       //-- query text dependable so you can write better tests.
       Collections.sort(terms);
@@ -387,44 +387,52 @@ public class RestGetAction extends Action<RestGetAction>
 
                String entityKey = req.getCollection().getTable().encodeKey(row);
 
-               if (Utils.empty(entityKey))
+               if (!Utils.empty(entityKey))
                {
-                  entityKey = req.getCollection().getTable().encodeKey(row);
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
-               }
-               //------------------------------------------------
-               //next turn all relationships into links that will 
-               //retrieve the related entities
-               for (Relationship rel : collection.getEntity().getRelationships())
-               {
-                  String link = null;
-                  if (rel.isOneToMany())
+                  //------------------------------------------------
+                  //next turn all relationships into links that will 
+                  //retrieve the related entities
+                  for (Relationship rel : collection.getEntity().getRelationships())
                   {
-                     Index foreignKey = rel.getFkIndex1();
-                     String fkval = Table.encodeKey(row, rel.getFkIndex1());
-
-                     if (fkval != null)
+                     String link = null;
+                     if (rel.isOneToMany())
                      {
-                        link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
+                        Index foreignKey = rel.getFkIndex1();
+                        String fkval = Table.encodeKey(row, rel.getFkIndex1());
+
+                        if (fkval != null)
+                        {
+                           link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
+                        }
                      }
+                     else
+                     {
+                        link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
+                     }
+                     node.put(rel.getName(), link);
                   }
-                  else
+                  //------------------------------------------------
+                  //copy over defined attributes first, if the select returned 
+                  //extra columns they will be copied over last
+                  for (Attribute attr : collection.getEntity().getAttributes())
                   {
-                     link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
+                     String attrName = attr.getName();
+                     String colName = attr.getColumn().getName();
+                     Object val = row.remove(colName);
+
+                     if (!node.containsKey(attrName))
+                        node.put(attrName, val);
                   }
-                  node.put(rel.getName(), link);
-               }
-               //------------------------------------------------
-               //copy over defined attributes first, if the select returned 
-               //extra columns they will be copied over last
-               for (Attribute attr : collection.getEntity().getAttributes())
-               {
-                  String attrName = attr.getName();
-                  String colName = attr.getColumn().getName();
-                  Object val = row.remove(colName);
-                  
-                  if(!node.containsKey(attrName))
-                     node.put(attrName, val);
+
+                  //------------------------------------------------
+                  // finally make sure the entity key is encoded as
+                  // the href
+                  String href = node.getString("href");
+                  if (Utils.empty(href))
+                  {
+                     href = Chain.buildLink(collection, entityKey, null);
+                     node.putFirst("href", href);
+                  }
                }
 
                //------------------------------------------------
@@ -439,15 +447,6 @@ public class RestGetAction extends Action<RestGetAction>
                   }
                }
 
-               //------------------------------------------------
-               // finally make sure the entity key is encoded as
-               // the href
-               String href = node.getString("href");
-               if (Utils.empty(href))
-               {
-                  href = Chain.buildLink(collection, entityKey, null);
-                  node.putFirst("href", href);
-               }
             }
 
          }

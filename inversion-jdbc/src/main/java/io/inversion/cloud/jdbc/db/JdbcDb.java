@@ -37,6 +37,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ch.qos.logback.classic.Level;
+import io.inversion.cloud.jdbc.rql.SqlQuery;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.jdbc.utils.JdbcUtils.SqlListener;
 import io.inversion.cloud.model.Api;

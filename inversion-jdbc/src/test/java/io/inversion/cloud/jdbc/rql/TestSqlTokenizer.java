@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc.rql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.inversion.cloud.jdbc.db.SqlTokenizer;
+import io.inversion.cloud.jdbc.rql.SqlTokenizer;
 import junit.framework.TestCase;
 
 public class TestSqlTokenizer extends TestCase

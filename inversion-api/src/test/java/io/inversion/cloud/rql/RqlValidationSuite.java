@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.inversion.cloud.action.sql.TestSqlQuery;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
@@ -206,7 +205,7 @@ public class RqlValidationSuite
             actual = ex.getMessage();
          }
 
-         if (!TestSqlQuery.compare(expected, actual))
+         if (!Utils.testCompare(expected, actual))
          {
             failures.put(testKey, actual);
          }

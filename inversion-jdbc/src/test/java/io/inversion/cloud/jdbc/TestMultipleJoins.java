@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc;
 
 import org.junit.Test;
 

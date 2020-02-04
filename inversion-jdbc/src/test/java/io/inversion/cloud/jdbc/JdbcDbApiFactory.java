@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,15 +29,17 @@ import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.service.spring.InversionApp;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Utils;
 
-public class SqlEngineFactory
+public class JdbcDbApiFactory
 {
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"h2"}, {"mysql"}});
    //public static final List<Object[]> CONFIG_DBS_TO_TEST   = Arrays.asList(new Object[][]{{"mysql"}});
@@ -57,42 +59,32 @@ public class SqlEngineFactory
       return false;
    }
 
-   static
-   {
-      //delete old h2 dbs
-      Utils.delete(new File("./.h2"));
-      //
-      //      SqlUtils.addSqlListener(new SqlListener()
-      //         {
-      //
-      //            @Override
-      //            public void onError(String method, String sql, Object args, Exception ex)
-      //            {
-      //               // TODO Auto-generated method stub
-      //
-      //            }
-      //
-      //            @Override
-      //            public void beforeStmt(String method, String sql, Object args)
-      //            {
-      //               //System.out.println("SQL---> " + sql.replace("\r", "").replace("\n", " ").trim().replaceAll(" +", " "));
-      //            }
-      //
-      //            @Override
-      //            public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
-      //            {
-      //            }
-      //         });
-   }
-
    public static void main(String[] args) throws Exception
    {
-      //SpringBoot.run(service(false));
+      Engine e = JdbcDbApiFactory.engine();
+      e.withEngineListener(new EngineListener()
+         {
+            @Override
+            public void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            {
+               if (Chain.getDepth() <= 1)
+               {
+                  res.dump();
+               }
+            }
+         });
+
+      e.startup();
+      JdbcDb db = (JdbcDb) e.getApi("northwind").getDb("source");
+      Connection conn = db.getConnection();
+      System.out.println(JdbcUtils.selectRows(conn, "SELECT SUM(\"ORDERS\".\"FREIGHT\") AS \"Sum Freight\" FROM \"ORDERS\""));
+
+      InversionApp.run(e);
    }
 
    public static synchronized Engine engine() throws Exception
    {
-      return SqlEngineFactory.service(false, true);
+      return JdbcDbApiFactory.service(false, true);
    }
 
    public static synchronized Engine service(boolean startup, boolean newCopy) throws Exception
@@ -109,7 +101,7 @@ public class SqlEngineFactory
                {
                   try
                   {
-                     JdbcDb sourceDb = createDb("source", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-source" + "-" + Utils.time(), "sa", "", "source/");
+                     JdbcDb sourceDb = createDb("source", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:northwind-source;DB_CLOSE_DELAY=-1", "sa", "", "source/");
 
                      engine.withApi("northwind")//
                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
@@ -130,7 +122,7 @@ public class SqlEngineFactory
 
                      if (shouldLoad("h2"))
                      {
-                        JdbcDb h2Db = createDb("h2", "northwind-h2.ddl", "org.h2.Driver", "jdbc:h2:./.h2/northwind-h2" + "-" + Utils.time(), "sa", "", "h2/");
+                        JdbcDb h2Db = createDb("h2", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:northwind-h2;DB_CLOSE_DELAY=-1", "sa", "", "h2/");
 
                         engine.getApi("northwind")//
                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
@@ -165,12 +157,12 @@ public class SqlEngineFactory
                            }
                            if (!sourceLoaded || CONFIG_REBUILD_MYSQL)
                            {
-                              JdbcUtils.runDdl(mysqlConn, SqlEngineFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
+                              JdbcUtils.runDdl(mysqlConn, JdbcDbApiFactory.class.getResourceAsStream("northwind-mysql-source.ddl"));
                            }
 
                            try
                            {
-                              JdbcUtils.runDdl(mysqlConn, SqlEngineFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
+                              JdbcUtils.runDdl(mysqlConn, JdbcDbApiFactory.class.getResourceAsStream("northwind-mysql-copy.ddl"));
                            }
                            catch (Exception ex)
                            {
@@ -303,7 +295,7 @@ public class SqlEngineFactory
 
    }
 
-   public static JdbcDb createDb(String name, String ddl, String driver, String url, String user, String pass, String collectionPath)
+   public static JdbcDb createDb(String name, String ddlUrl, String driver, String url, String user, String pass, String collectionPath)
    {
       JdbcDb db = new JdbcDb();
       db.withName(name);
@@ -313,23 +305,27 @@ public class SqlEngineFactory
       db.withPass(pass);
       db.withCollectionPath(collectionPath);
 
-      if (ddl != null)
-      {
-         try
-         {
-            Connection conn = db.getConnection();
-            JdbcUtils.runDdl(conn, SqlEngineFactory.class.getResourceAsStream(ddl));
-            conn.commit();
+      if (ddlUrl.indexOf(":") < 0)
+         ddlUrl = new File(ddlUrl).toURI().toString();
+      db.withDdlUrl(ddlUrl);
 
-            //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));
-         }
-         catch (Exception ex)
-         {
-            System.out.println("error initializing " + ddl);
-            ex.printStackTrace();
-            Utils.rethrow(ex);
-         }
-      }
+      //      if (ddl != null)
+      //      {
+      //         try
+      //         {
+      //            Connection conn = db.getConnection();
+      //            JdbcUtils.runDdl(conn, JdbcDbApiFactory.class.getResourceAsStream(ddl));
+      //            conn.commit();
+      //
+      //            //System.out.println("INITIALIZING DB: " + name + " - " + ddl + " - " + url + " - " + SqlUtils.selectRows(conn, "SHOW TABLES") + " - " + SqlUtils.selectRows(conn, "SELECT CUSTOMERID FROM CUSTOMERS LIMIT 1"));
+      //         }
+      //         catch (Exception ex)
+      //         {
+      //            System.out.println("error initializing " + ddl);
+      //            ex.printStackTrace();
+      //            Utils.rethrow(ex);
+      //         }
+      //      }
 
       return db;
    }

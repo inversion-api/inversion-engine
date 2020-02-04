@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc.action;
 
 import java.util.Collection;
 
@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
@@ -36,7 +37,7 @@ public class TestSqlDeleteAction extends TestCase
    @Parameterized.Parameters
    public static Collection input()
    {
-      return SqlEngineFactory.CONFIG_DBS_TO_TEST;
+      return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
    }
 
    protected String url(String path)
@@ -67,7 +68,7 @@ public class TestSqlDeleteAction extends TestCase
    {
       if (engine == null)
       {
-         engine = SqlEngineFactory.service(true, false);
+         engine = JdbcDbApiFactory.service(true, false);
       }
       return engine;
    }
@@ -82,7 +83,7 @@ public class TestSqlDeleteAction extends TestCase
    @Before
    public void before() throws Exception
    {
-      SqlEngineFactory.prepData(db);
+      JdbcDbApiFactory.prepData(db);
    }
 
    @Test

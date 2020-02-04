@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.db;
+package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Column;
 import io.inversion.cloud.model.Db;
@@ -202,7 +203,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          }
          else
          {
-            initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
+            //initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
+            initialSelect = " SELECT FROM " + quotedTable;
          }
       }
 
@@ -226,7 +228,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             String colName = term.getToken(1);
             if (!(empty(colName) || colName.indexOf("$$$ANON") > -1))
             {
-               cols.append(" AS " + asString(colName));
+               //cols.append(" AS " + asString(colName));
+               cols.append(" AS " + quoteCol(colName));
             }
          }
          else if (term.getToken().indexOf(".") < 0)
@@ -240,7 +243,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
       if (cols.length() > 0)
       {
-         boolean restrictCols = find("includes") != null;
+         boolean restrictCols = find("includes","sum","min","max","count","function","aggregate") != null;
          int star = parts.select.lastIndexOf("* ");
          if (restrictCols && star > 0)
          {
@@ -252,18 +255,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             //
             //TODO: maybe this should be put into Select.columns()
             //so all query subclasses will inherit the behavior???
-            if (table() != null)
-            {
-               Index primaryIndex = table().getPrimaryIndex();
-               if (primaryIndex != null)
-               {
-                  for (String colName : primaryIndex.getColumnNames())
-                  {
-                     if (cols.indexOf(printCol(colName)) < 0)
-                        cols.append(", ").append(printCol(colName));
-                  }
-               }
-            }
+//            if (table() != null)
+//            {
+//               Index primaryIndex = table().getPrimaryIndex();
+//               if (primaryIndex != null)
+//               {
+//                  for (String colName : primaryIndex.getColumnNames())
+//                  {
+//                     if (cols.indexOf(printCol(colName)) < 0)
+//                        cols.append(", ").append(printCol(colName));
+//                  }
+//               }
+//            }
 
             //SELECT y.year, e.*, p.*, `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
             //SELECT `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
@@ -275,7 +278,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          }
          else
          {
-            parts.select = parts.select.trim() + ", " + cols;
+            String select = parts.select.trim();
+            if(!select.toLowerCase().endsWith("select"))
+               select += ", ";
+            select += cols;
+            
+            parts.select = select;
          }
       }
 
@@ -368,10 +376,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       //-- primary index.
       //-- TODO: can this be moved into the Order builder?
 
-      if (sorts.isEmpty())
-      {
-         sorts = getDefaultSorts(parts);
-      }
+//      if (sorts.isEmpty())
+//      {
+//         sorts = getDefaultSorts(parts);
+//      }
 
       for (int i = 0; i < sorts.size(); i++)
       {

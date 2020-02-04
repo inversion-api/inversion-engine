@@ -383,17 +383,17 @@ public class Builder<T, P extends Builder>
       return found;
    }
 
-   public Term find(String token)
+   public Term find(String... tokens)
    {
       for (Term term : terms)
       {
-         if (term.hasToken(token))
+         if (term.hasToken(tokens))
             return term;
       }
 
       for (Builder builder : getBuilders())
       {
-         Term term = builder.find(token);
+         Term term = builder.find(tokens);
          if (term != null)
             return term;
       }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc.action;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import io.inversion.cloud.action.rest.TestRestGetActions;
+import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
@@ -39,7 +40,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Parameterized.Parameters
    public static Collection input()
    {
-      return SqlEngineFactory.CONFIG_DBS_TO_TEST;
+      return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
    }
 
    String db = null;
@@ -61,7 +62,7 @@ public class TestSqlGetAction extends TestRestGetActions
    {
       if (engine == null)
       {
-         engine = SqlEngineFactory.service(true, true);
+         engine = JdbcDbApiFactory.service(true, true);
       }
       return engine;
    }

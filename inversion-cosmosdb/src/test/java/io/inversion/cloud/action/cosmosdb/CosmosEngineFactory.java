@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.action.sql.SqlEngineFactory;
+import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
@@ -47,7 +47,7 @@ public class CosmosEngineFactory
    {
       if (engine == null)
       {
-         engine = SqlEngineFactory.service(false, true);
+         engine = JdbcDbApiFactory.service(false, true);
 
          CosmosDocumentDb cosmosdb = new CosmosDocumentDb("cosmos")
             {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.sql;
+package io.inversion.cloud.jdbc.rql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import io.inversion.cloud.jdbc.db.SqlQuery;
+import io.inversion.cloud.jdbc.rql.SqlQuery;
 import junit.framework.TestCase;
 
 public class TestSqlQuery extends TestCase
@@ -528,31 +528,31 @@ public class TestSqlQuery extends TestCase
       }
    }
 
-   public static boolean compare(String expected, String received)
+   public static boolean compare(String expected, String actual)
    {
       expected = expected.replaceAll("\\s+", " ").trim();
-      received = received.replaceAll("\\s+", " ").trim();
+      actual = actual.replaceAll("\\s+", " ").trim();
 
-      if (!expected.equals(received))
+      if (!expected.equals(actual))
       {
          //TODO: TAKE THESE "CORRECTIONS" OUT
-         received = received.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+         actual = actual.replaceAll("SQL_CALC_FOUND_ROWS ", "");
          //str2 = str2.replaceAll(" LIMIT 0, 100", "");
 
          expected = expected.replaceAll("SQL_CALC_FOUND_ROWS ", "");
          //str1 = str1.replaceAll(" LIMIT 0, 100", "");
 
-         if (!expected.equals(received))
+         if (!expected.equals(actual))
          {
             //System.out.println("\r\n");
             //System.out.println("\r\n");
             System.out.println("EXPECTED: " + expected);
-            System.out.println("ACTUAL  : " + received);
+            System.out.println("ACTUAL  : " + actual);
             System.out.print("          " );
 
-            for (int i = 0; i < expected.length() && i < received.length(); i++)
+            for (int i = 0; i < expected.length() && i < actual.length(); i++)
             {
-               if (expected.charAt(i) == received.charAt(i))
+               if (expected.charAt(i) == actual.charAt(i))
                {
                   System.out.print(" ");
                }
@@ -564,7 +564,7 @@ public class TestSqlQuery extends TestCase
             }
             System.out.println(" ");
 
-            String err = "failed test: " + expected + " != " + received;
+            String err = "failed test: " + expected + " != " + actual;
             return false;
          }
       }

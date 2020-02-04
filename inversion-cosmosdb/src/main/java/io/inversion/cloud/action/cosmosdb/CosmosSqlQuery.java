@@ -13,7 +13,7 @@ import com.microsoft.azure.documentdb.SqlParameter;
 import com.microsoft.azure.documentdb.SqlParameterCollection;
 import com.microsoft.azure.documentdb.SqlQuerySpec;
 
-import io.inversion.cloud.jdbc.db.SqlQuery;
+import io.inversion.cloud.jdbc.rql.SqlQuery;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
