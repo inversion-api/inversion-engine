@@ -208,6 +208,26 @@ public class Request
       return collection;
    }
 
+   /**
+    * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
+    */
+   public boolean hasCollectionKey(String... collectionKeys)
+   {
+      if (collectionKey != null)
+      {
+         for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
+         {
+            String key = collectionKeys[i];
+            if (key != null && key.equalsIgnoreCase(collectionKey))
+            {
+               return true;
+            }
+         }
+      }
+
+      return false;
+   }
+
    public Request withCollection(Collection collection)
    {
       this.collection = collection;
