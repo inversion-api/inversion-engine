@@ -208,6 +208,26 @@ public class Request
       return collection;
    }
 
+   /**
+    * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
+    */
+   public boolean hasCollectionKey(String... collectionKeys)
+   {
+      if (collectionKey != null)
+      {
+         for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
+         {
+            String key = collectionKeys[i];
+            if (key != null && key.equalsIgnoreCase(collectionKey))
+            {
+               return true;
+            }
+         }
+      }
+
+      return false;
+   }
+
    public Request withCollection(Collection collection)
    {
       this.collection = collection;
@@ -276,6 +296,42 @@ public class Request
       return json;
    }
 
+   /**
+    * Attempts to massage an inbound json body into an array
+    * according to:
+    * 1. if getBody() is a JSArray return it.
+    * 1. if getBody() is a JSNode with a "data" array prop, return it
+    * 1. if getBody() is a JSNode wrap it in an array and return it.
+    * 1. if getBody() is not a JSNode and getBody() is null, return
+    *     an empty array.
+    *
+    *
+    * @return
+    */
+   public JSArray getData()
+   {
+      JSNode node = getJson();
+      if (node != null)
+      {
+         if (node instanceof JSArray)
+         {
+            return (JSArray) node;
+         }
+         else if (node.get("data") instanceof JSArray)
+         {
+            return node.getArray("data");
+         }
+         else
+         {
+            return new JSArray(node);
+         }
+      }
+      else if (getBody() == null)
+         return new JSArray();
+      return null;
+   }
+
+   //todo we should probably remove the ability for end users to modify the json?
    public Request withJson(JSNode json)
    {
       this.json = json;

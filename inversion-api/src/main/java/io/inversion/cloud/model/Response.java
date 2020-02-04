@@ -242,20 +242,7 @@ public class Response
    }
 
    /**
-    * @return the json
-    */
-   public JSNode getJson()
-   {
-      if (json == null && file != null && file.length() > 0)
-      {
-         json = JSNode.parseJsonNode(getContent());
-      }
-
-      return json;
-   }
-
-   /**
-    * @deprecated this method sets the root json document you should use withData and withMeta
+    * Sets the root output json document...you should use withData and withMeta
     * instead unless you REALLY want to change to wrapper document structure.
     * 
     * @param json the json to set
@@ -435,16 +422,6 @@ public class Response
       return statusCode;
    }
 
-   public String getText()
-   {
-      if (json == null && file != null && file.length() > 0)
-      {
-         text = getContent();
-      }
-
-      return text;
-   }
-
    public Response withText(String text)
    {
       this.json = null;
@@ -568,22 +545,59 @@ public class Response
       return null;
    }
 
+   /**
+    * @return the json
+    */
+   public JSNode getJson()
+   {
+      if (json == null)
+      {
+         //lazy loads text/json
+         getContent();
+      }
+
+      return json;
+   }
+
+   public String getText()
+   {
+      if (text == null)
+      {
+         //lazy loads text/json
+         getContent();
+      }
+
+      return text;
+   }
+
    public String getContent()
    {
       try
       {
-         if (file != null && file.length() > 0)
+         if (text == null && json == null && file != null && file.length() > 0)
          {
             String string = Utils.read(getInputStream());
-            return string;
+            if (string != null)
+            {
+               try
+               {
+                  json = JSNode.parseJsonNode(string);
+               }
+               catch (Exception ex)
+               {
+                  //OK
+                  text = string;
+               }
+            }
          }
-         else if (getJson() != null)
-         {
-            return getJson().toString();
-         }
-         else if (text != null)
+
+         if (text != null)
          {
             return text;
+         }
+         else if (json != null)
+         {
+            return json.toString();
          }
       }
       catch (Exception ex)
@@ -600,9 +614,9 @@ public class Response
 
       try
       {
-         if (!isSuccess() && file != null && file.length() > 0)
+         if (!isSuccess())
          {
-            String string = Utils.read(getInputStream());
+            String string = getContent();//Utils.read(getInputStream());
             return string;
          }
       }
@@ -837,15 +851,30 @@ public class Response
    {
       if (statusCode < 200 || statusCode > 299)
       {
-         String msg = "";
-         for (int i = 0; messages != null && i < messages.length; i++)
-            msg += messages[i] + " ";
-
-         dump();
-         throw new ApiException(statusCode + "", msg);
+         rethrow(statusCode, messages);
       }
 
       return this;
+   }
+
+   public void rethrow(int statusCode, String... messages)
+   {
+      String msg = "";
+      for (int i = 0; messages != null && i < messages.length; i++)
+         msg += messages[i] + " ";
+
+      JSNode json = getJson();
+      if (json != null)
+      {
+         String message = json.getString("message");
+         if (!Utils.empty(message))
+         {
+            msg += msg.length() > 0 ? " " : "";
+            msg += message;
+         }
+      }
+
+      throw new ApiException(statusCode + "", msg);
    }
 
    public Response assertStatus(int... statusCodes)
