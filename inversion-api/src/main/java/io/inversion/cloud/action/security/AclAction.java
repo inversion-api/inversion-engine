@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -77,9 +77,28 @@ public class AclAction extends Action<AclAction>
          withAclRules(aclRules);
    }
 
-   public AclAction withAclRule(String name, String methods, String includePaths, String... permissions)
+   public AclAction requireAllPerms(String includePaths, String permission1, String... permissionsN)
    {
-      return withAclRules(new AclRule(name, methods, includePaths, permissions));
+      withAclRules(AclRule.requireAllPerms(includePaths, permission1, permissionsN));
+      return this;
+   }
+
+   public AclAction requireOnePerm(String includePaths, String permission1, String... permissionsN)
+   {
+      withAclRules(AclRule.requireOnePerm(includePaths, permission1, permissionsN));
+      return this;
+   }
+
+   public AclAction requireAllRoles(String includePaths, String role1, String... rolesN)
+   {
+      withAclRules(AclRule.requireAllRoles(includePaths, role1, rolesN));
+      return this;
+   }
+
+   public AclAction requireOneRole(String includePaths, String role1, String... rolesN)
+   {
+      withAclRules(AclRule.requireOneRole(includePaths, role1, rolesN));
+      return this;
    }
 
    public AclAction withAclRules(AclRule... acls)

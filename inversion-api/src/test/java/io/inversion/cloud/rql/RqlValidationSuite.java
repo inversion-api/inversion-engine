@@ -17,15 +17,20 @@
 package io.inversion.cloud.rql;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Table;
+import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 public class RqlValidationSuite
@@ -54,6 +59,10 @@ public class RqlValidationSuite
 
    public RqlValidationSuite(String queryClass, Db db, Table... tables)
    {
+      withQueryClass(queryClass);
+      withDb(db);
+      withTables(tables);
+
       withTables(new Table("orders")//s
                                     .withColumn("orderId", "VARCHAR")//
                                     .withColumn("customerId", "INTEGER")//
@@ -76,23 +85,23 @@ public class RqlValidationSuite
 
       withTest("n", "orders?n(shipRegion)");
       withTest("nn", "orders?nn(shipRegion)");
-      //      withTest("emp", "");
-      //      withTest("nemp", "");
+      withTest("emp", "orders?emp(shipRegion)");
+      withTest("nemp", "orders?nemp(shipRegion)");
 
       withTest("likeMiddle", "orders?like(shipCountry,F*ance)");
       withTest("likeStartsWith", "orders?like(shipCountry,Franc*)");
       withTest("likeEndsWith", "orders?like(shipCountry,*ance)");
       withTest("sw", "orders?sw(shipCountry,Franc)");
       withTest("ew", "orders?ew(shipCountry,nce)");
-      withTest("w", "ance");
-      withTest("wo", "ance");
+      withTest("w", "orders?w(shipCountry,ance)");
+      withTest("wo", "orders?wo(shipCountry,ance)");
 
       withTest("lt", "orders?lt(freight,10)");
       withTest("le", "orders?le(freight,10)");
       withTest("gt", "orders?gt(freight,3.67)");
       withTest("ge", "orders?ge(freight,3.67)");
-      withTest("in", "in(shipCity,Reims,Charleroi)");
-      withTest("out", "out(shipCity,Reims,Charleroi)");
+      withTest("in", "orders?in(shipCity,Reims,Charleroi)");
+      withTest("out", "orders?out(shipCity,Reims,Charleroi)");
 
       withTest("and", "orders?and(eq(orderID, 10248),eq(shipCountry,France))");
       withTest("or", "orders?or(eq(shipCity, Reims),eq(shipCity,Charleroi))");
@@ -100,52 +109,114 @@ public class RqlValidationSuite
 
       withTest("as", "orders?as(orderid,order_identifier)");
       withTest("includes", "orders?includes(shipCountry,shipCity)");
-      withTest("excludes", "orders?excludes(shipCountry,shipCity)");
-      withTest("distinct", "orders?distinct(shipCountry)");
-      withTest("count", "orders?count(*)");
+      withTest("distinct", "orders?distinct&includes=shipCountry");
+
+      withTest("count1", "orders?count(*)");
+      withTest("count2", "orders?count(1)");
+      withTest("count3", "orders?count(shipRegion)");//in the data some shipRegions are null so this would be fewer than count(*) or count(1)
+      withTest("countAs", "orders?as(count(*),countOrders)");
+      //-- this is commented out because Select.java translates this to as(count(shipCountry), numRows) which is tested above
+      //-- withTest("countAs2", "orders?count(shipCountry,numRows)"); //
+
       withTest("sum", "orders?sum(freight)");
-      withTest("sumAs", "as(sum(freight),'Sum Freight')");
-      withTest("sumAs", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
+      withTest("sumAs", "orders?as(sum(freight),'Sum Freight')");
+      
+      //-- this is commented out because Select.java translates this to as(sum(freight), sumFreight) which is tested above
+      //-- withTest("sumAs", "orders?sum(freight,sumFreight)");
+      
+      
+      withTest("sumIf", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
       withTest("min", "orders?min(freight)");
       withTest("max", "orders?max(freight)");
-      withTest("if", "orders?");
-      withTest("groupCount", "orders?group(shipCountry)&count(shipCountry, countForCountry)");
-      
-      
-      withTest("aggregate", "orders?");
-      withTest("function", "orders?");
-      withTest("countascol", "orders?");
-      withTest("rowcount", "orders?");
-      
-      
+      //withTest("if", "orders?");
+      withTest("groupCount", "orders?group(shipCountry)&as(count(*),countryCount)&includes=shipCountry,countryCount");
+
+      //      withTest("aggregate", "orders?");
+      //      withTest("function", "orders?");
+      //      withTest("countascol", "orders?");
+      //      withTest("rowcount", "orders?");
+
       withTest("offset", "orders?offset=3");
       withTest("limit", "orders?limit=7");
       withTest("page", "orders?pageSize=7&page=3");
       withTest("pageNum", "orders?pageSize=7&pageNum=3");
       withTest("after", "orders?after=10248");
-      
+
       withTest("sort", "orders?sort(-shipCountry,shipCity)");
-      withTest("order", "orders?order(-shipCountry,shipCity)");
-      
-      
-      withTest("_key", "orders?");
-      withTest("join", "orders?");
-      
+      withTest("order", "orders?order(shipCountry,-shipCity)");
 
+      //withTest("_key", "orders?");
+      //withTest("join", "orders?");
 
-      withQueryClass(queryClass);
-      withDb(db);
-      withTables(tables);
    }
 
-   public void run() throws Exception
+   public void runIntegTests(Engine engine, String urlPrefix) throws Exception
    {
       LinkedHashMap<String, String> failures = new LinkedHashMap();
 
       for (String testKey : tests.keySet())
       {
-
          String queryString = tests.get(testKey);
+
+         if (Utils.empty(testKey) || Utils.empty(queryString))
+            continue;
+
+         System.out.println("\r\nTESTING: " + testKey + " - " + queryString);
+
+         Response res = engine.get(urlPrefix + queryString);
+         if (!verifyIntegTest(testKey, queryString, res))
+         {
+            failures.put(testKey, res.getDebug());
+         }
+      }
+
+      if (failures.size() > 0)
+      {
+         System.out.println("Failed cases...");
+         for (String key : failures.keySet())
+         {
+            String failure = null;
+            failure = failures.get(key);
+
+            int idx = failure.indexOf("\"message\"");
+            if (idx > -1)
+            {
+               int idx2 = failure.indexOf("\n", idx);
+               failure = failure.substring(idx + 12, idx2);
+            }
+
+            System.out.println("  - " + key + " - " + failure);
+         }
+
+         throw new RuntimeException("Failed...");
+      }
+   }
+
+   /**
+    * Override me to add additional special case validations per test.
+    * By default, all integ test pass if the return code is 200 or 404
+    * 
+    * @param testKey
+    * @param queryString
+    * @param res
+    * @return
+    */
+   protected boolean verifyIntegTest(String testKey, String queryString, Response res)
+   {
+      boolean success = res.hasStatus(200, 404);
+      return success;
+   }
+
+   public void runUnitTests() throws Exception
+   {
+      LinkedHashMap<String, String> failures = new LinkedHashMap();
+
+      for (String testKey : tests.keySet())
+      {
+         String queryString = tests.get(testKey);
+
+         if (Utils.empty(testKey) || Utils.empty(queryString))
+            continue;
 
          System.out.println("\r\nTESTING: " + testKey + " - " + queryString);
 
@@ -199,13 +270,14 @@ public class RqlValidationSuite
 
             Results results = query.doSelect();
             actual = results.getTestQuery();
+            actual = actual.substring(actual.indexOf(":") + 1).trim();
          }
          catch (Exception ex)
          {
             actual = ex.getMessage();
          }
 
-         if (!Utils.testCompare(expected, actual))
+         if (!verifyUnitTest(testKey, queryString, expected, actual, query))
          {
             failures.put(testKey, actual);
          }
@@ -225,6 +297,30 @@ public class RqlValidationSuite
 
          throw new RuntimeException("Failed...");
       }
+
+      Collection<String> unknownTests = CollectionUtils.disjunction(tests.keySet(), results.keySet());
+      for (String testKey : unknownTests)
+      {
+         System.out.println("It looks like you tried to run a test for '" + testKey + "' but that is an unknown test.");
+      }
+      if (unknownTests.size() > 0)
+         throw new Exception("Unknown tests: " + unknownTests);
+
+   }
+
+   /**
+    * Override me to add additional special case validations.
+    * 
+    * @param testKey
+    * @param queryString
+    * @param expected
+    * @param actual
+    * @param query
+    * @return
+    */
+   protected boolean verifyUnitTest(String testKey, String queryString, String expected, String actual, Query query)
+   {
+      return Utils.testCompare(expected, actual);
    }
 
    public RqlValidationSuite withTables(Table... tables)
@@ -261,6 +357,16 @@ public class RqlValidationSuite
    {
       this.queryClass = queryClass;
       return this;
+   }
+
+   public Map<String, String> getTests()
+   {
+      return tests;
+   }
+
+   public Map<String, String> getResults()
+   {
+      return results;
    }
 
 }

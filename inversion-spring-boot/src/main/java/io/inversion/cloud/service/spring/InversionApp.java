@@ -31,10 +31,12 @@ import io.inversion.cloud.service.Servlet;
 import io.inversion.cloud.utils.Utils;
 
 /**
- * A simple Spring Boot based launcher.
- * @deprecated Please use {@link io.inversion.cloud.service.spring.config.EnableInversion}.
+ * Launches your Api in an SpringBoot embedded Tomcat.
+ * 
+ * This is a super simple way to launch an Api with an embedded Tomcat but if you are a
+ * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
+ * way, please check out <code>io.inversion.cloud.service.spring.config.EnableInversion</code>
  */
-@Deprecated
 public class InversionApp
 {
    static Engine engine = null;

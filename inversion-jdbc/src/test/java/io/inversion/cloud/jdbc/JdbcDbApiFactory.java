@@ -74,10 +74,10 @@ public class JdbcDbApiFactory
             }
          });
 
-      e.startup();
-      JdbcDb db = (JdbcDb) e.getApi("northwind").getDb("source");
-      Connection conn = db.getConnection();
-      System.out.println(JdbcUtils.selectRows(conn, "SELECT SUM(\"ORDERS\".\"FREIGHT\") AS \"Sum Freight\" FROM \"ORDERS\""));
+//      e.startup();
+//      JdbcDb db = (JdbcDb) e.getApi("northwind").getDb("source");
+//      Connection conn = db.getConnection();
+//      System.out.println(JdbcUtils.selectRows(conn, "SELECT COUNT(\"orders\".\"shipCountry\") FROM \"orders\" LIMIT 100 OFFSET"));
 
       InversionApp.run(e);
    }

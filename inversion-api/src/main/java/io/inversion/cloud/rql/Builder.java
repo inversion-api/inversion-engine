@@ -387,8 +387,9 @@ public class Builder<T, P extends Builder>
    {
       for (Term term : terms)
       {
-         if (term.hasToken(tokens))
-            return term;
+         Term found = find(term, tokens);
+         if (found != null)
+            return found;
       }
 
       for (Builder builder : getBuilders())
@@ -397,6 +398,20 @@ public class Builder<T, P extends Builder>
          if (term != null)
             return term;
       }
+      return null;
+   }
+
+   Term find(Term term, String... tokens)
+   {
+      if (term.hasToken(tokens))
+         return term;
+
+      for (Term child : term.getTerms())
+      {
+         if (child.hasToken(tokens))
+            return child;
+      }
+
       return null;
    }
 

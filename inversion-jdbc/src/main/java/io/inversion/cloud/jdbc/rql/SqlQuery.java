@@ -18,11 +18,14 @@ package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.omg.CosNaming.IstringHelper;
 
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
@@ -99,30 +102,47 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
    public Results<Row> doSelect() throws Exception
    {
       JdbcDb db = (JdbcDb) getDb();
-      Connection conn = db.getConnection();
       String sql = getPreparedStmt();
 
-      //-- prepared statement variables are computing during the 
-      //-- generation of the prepared statement above
+      Results results = new Results(this);
       List values = getColValues();
-      Rows rows = JdbcUtils.selectRows(conn, sql, values);
-      int foundRows = -1;
 
-      if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
+      //-- for test cases and query explain
+      String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + values;
+      debug = debug.replaceAll("\r", "");
+      debug = debug.replaceAll("\n", " ");
+      debug = debug.replaceAll(" +", " ");
+      Chain.debug(debug);
+      results.withTestQuery(debug);
+
+      if (!isDryRun())
       {
-         if (rows.size() == 0)
+         Connection conn = db.getConnection();
+         //-- prepared statement variables are computing during the 
+         //-- generation of the prepared statement above
+
+         Rows rows = JdbcUtils.selectRows(conn, sql, values);
+         int foundRows = -1;
+
+         if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
          {
-            foundRows = 0;
-         }
-         else
-         {
-            foundRows = queryFoundRows(conn, sql, values);
+            if (rows.size() == 0)
+            {
+               foundRows = 0;
+            }
+            else
+            {
+               foundRows = queryFoundRows(conn, sql, values);
+            }
+
+            Chain.peek().put("foundRows", foundRows);
          }
 
-         Chain.peek().put("foundRows", foundRows);
+         results.withFoundRows(foundRows);
+         results.withRows(rows);
       }
 
-      return new Results(this, foundRows, rows);
+      return results;
    }
 
    public String getPreparedStmt()
@@ -203,8 +223,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          }
          else
          {
-            //initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
-            initialSelect = " SELECT FROM " + quotedTable;
+            boolean distinct = find("distinct") != null;
+
+            initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + quotedTable + ".* FROM " + quotedTable;
+            //initialSelect = " SELECT FROM " + quotedTable;
          }
       }
 
@@ -243,34 +265,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
       if (cols.length() > 0)
       {
-         boolean restrictCols = find("includes","sum","min","max","count","function","aggregate") != null;
+         boolean restrictCols = find("includes", "sum", "min", "max", "count", "function", "aggregate") != null;
          int star = parts.select.lastIndexOf("* ");
          if (restrictCols && star > 0)
          {
-            //force the inclusion of pk cols even if there
-            //were not requested by the caller.  Actions such
-            //as RestGetHandler need the pk values to do 
-            //anything interesting with the results and they
-            //are responsible for filtering out the values
-            //
-            //TODO: maybe this should be put into Select.columns()
-            //so all query subclasses will inherit the behavior???
-//            if (table() != null)
-//            {
-//               Index primaryIndex = table().getPrimaryIndex();
-//               if (primaryIndex != null)
-//               {
-//                  for (String colName : primaryIndex.getColumnNames())
-//                  {
-//                     if (cols.indexOf(printCol(colName)) < 0)
-//                        cols.append(", ").append(printCol(colName));
-//                  }
-//               }
-//            }
-
-            //SELECT y.year, e.*, p.*, `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
-            //SELECT `year` AS 'Year', SUM(IF((`motiveConfirmed` = 'Confirmed' AND `type` = 'Journalist'), 1, 0)) AS 'Motive Confirmed', SUM(IF(`type` = 'Media Worker', 1, 0)) AS 'Media Worker', SUM(IF(`motiveConfirmed` = 'Unconfirmed', 1, 0)) AS 'Motive Unconfirmed' FROM Entry e JOIN Year y ON y.year < YEAR(CURDATE()) AND (((e.startYear <= year) AND (e.endYear is NULL OR e.endYear >= year) AND status != 'Killed') OR (status = 'Killed' AND e.startYear = year)) JOIN Person p ON e.personId = p.id LEFT JOIN Country c ON e.country = c.country_name WHERE (`type` = 'Media Worker' OR (NOT (`motiveConfirmed` IS NULL ))) AND `status` = 'Killed' ORDER BY `Year` DESC LIMIT 100
-
             //inserts the select list before the *
             int idx = parts.select.substring(0, star).indexOf(" ");
             String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
@@ -279,10 +277,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          else
          {
             String select = parts.select.trim();
-            if(!select.toLowerCase().endsWith("select"))
+            if (!select.toLowerCase().endsWith("select"))
                select += ", ";
             select += cols;
-            
+
             parts.select = select;
          }
       }
@@ -376,10 +374,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       //-- primary index.
       //-- TODO: can this be moved into the Order builder?
 
-//      if (sorts.isEmpty())
-//      {
-//         sorts = getDefaultSorts(parts);
-//      }
+      if (sorts.isEmpty())
+      {
+         sorts = getDefaultSorts(parts);
+      }
 
       for (int i = 0; i < sorts.size(); i++)
       {
@@ -411,7 +409,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          for (int k = 0; k < table.getPrimaryIndex().size(); k++)
          {
             Column col = table.getPrimaryIndex().getColumn(k);
-            if (parts.select.indexOf('*') >= 0 || parts.select.contains(col.getName()))
+            if ((parts.select.indexOf("* ") >= 0 || parts.select.indexOf("*,") >= 0)//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)" 
+                  || parts.select.contains(col.getName()))
             {
                Sort sort = new Sort(col.getName(), true);
                sorts.add(sort);
@@ -657,7 +656,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       }
       else if ("if".equalsIgnoreCase(token))
       {
-         sql.append("IF(").append(preparedStmtChildText.get(0)).append(", ").append(preparedStmtChildText.get(1)).append(", ").append(preparedStmtChildText.get(2)).append(")");
+         if (db.isType("mysql"))
+         {
+            sql.append("IF(").append(preparedStmtChildText.get(0)).append(", ").append(preparedStmtChildText.get(1)).append(", ").append(preparedStmtChildText.get(2)).append(")");
+         }
+         else
+         {
+            sql.append("CASE WHEN ").append(preparedStmtChildText.get(0)).append(" THEN ").append(preparedStmtChildText.get(1)).append(" ELSE ").append(preparedStmtChildText.get(2)).append(" END");
+         }
       }
       else if ("and".equalsIgnoreCase(token) || "or".equalsIgnoreCase(token))
       {
@@ -681,7 +687,21 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
          }
          sql.append(")");
       }
-      else if ("sum".equalsIgnoreCase(token) || "count".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token) || "distinct".equalsIgnoreCase(token))
+      else if ("count".equalsIgnoreCase(token))
+      {
+         //String s = "COUNT (1)";
+         //sql.append(s);
+
+         String acol = preparedStmtChildText.get(0);
+         String s = token.toUpperCase() + "(" + acol + ")";
+         sql.append(s);
+
+      }
+      else if ("distinct".equalsIgnoreCase(token))
+      {
+         //TODO: what do you do with this as a function????
+      }
+      else if ("sum".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token))
       {
          String acol = preparedStmtChildText.get(0);
          String s = token.toUpperCase() + "(" + acol + ")";
@@ -759,7 +779,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       String[] parts = str.split("\\.");
       for (int i = 0; i < parts.length; i++)
       {
-         buff.append(columnQuote).append(parts[i]).append(columnQuote);
+         if ("*".equals(parts[i]))
+            buff.append(parts[i]);
+         else
+            buff.append(columnQuote).append(parts[i]).append(columnQuote);
          if (i < parts.length - 1)
             buff.append(".");
       }

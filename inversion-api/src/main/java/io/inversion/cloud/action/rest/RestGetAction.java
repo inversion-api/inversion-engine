@@ -411,18 +411,6 @@ public class RestGetAction extends Action<RestGetAction>
                      }
                      node.put(rel.getName(), link);
                   }
-                  //------------------------------------------------
-                  //copy over defined attributes first, if the select returned 
-                  //extra columns they will be copied over last
-                  for (Attribute attr : collection.getEntity().getAttributes())
-                  {
-                     String attrName = attr.getName();
-                     String colName = attr.getColumn().getName();
-                     Object val = row.remove(colName);
-
-                     if (!node.containsKey(attrName))
-                        node.put(attrName, val);
-                  }
 
                   //------------------------------------------------
                   // finally make sure the entity key is encoded as
@@ -432,6 +420,26 @@ public class RestGetAction extends Action<RestGetAction>
                   {
                      href = Chain.buildLink(collection, entityKey, null);
                      node.putFirst("href", href);
+                  }
+               }
+
+               //------------------------------------------------
+               //copy over defined attributes first, if the select returned 
+               //extra columns they will be copied over last
+               for (Attribute attr : collection.getEntity().getAttributes())
+               {
+                  String attrName = attr.getName();
+                  String colName = attr.getColumn().getName();
+
+                  boolean rowHas = row.containsKey(colName);
+                  if (entityKey != null || rowHas)
+                  {
+                     //-- if the entityKey was null don't create
+                     //-- empty props for fields that were not 
+                     //-- returned from the db
+                     Object val = row.remove(colName);
+                     if (!node.containsKey(attrName))
+                        node.put(attrName, val);
                   }
                }
 
