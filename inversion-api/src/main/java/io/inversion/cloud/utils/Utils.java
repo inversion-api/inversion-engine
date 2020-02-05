@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -86,11 +87,25 @@ public class Utils
 
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
+
    /**
-    * A null safe loose equality checker.  
+    * Turns a double value into a rounded double with 2 digits of precision
+    * 12.3334 -> 12.33
+    * 23.0 -> 23.00
+    * 45.677 -> 45.68
+    * @param amount
+    * @return
+    */
+   public static BigDecimal toDollarAmount(double amount)
+   {
+      return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
+   }
+
+   /**
+    * A null safe loose equality checker.
     * @param obj1
     * @param obj2
-    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null. 
+    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null.
     */
    public static boolean equal(Object obj1, Object obj2)
    {
@@ -114,7 +129,7 @@ public class Utils
    }
 
    /**
-    * @return true if any args are not null with a toString().length() > 0 
+    * @return true if any args are not null with a toString().length() > 0
     */
    public static boolean empty(Object... arr)
    {
@@ -498,10 +513,10 @@ public class Utils
    }
 
    /**
-    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm], 
-    * then yyyy-MM-dd, 
-    * then MM/dd/yy, 
-    * then MM/dd/yyyy, 
+    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm],
+    * then yyyy-MM-dd,
+    * then MM/dd/yy,
+    * then MM/dd/yyyy,
     * then yyyyMMdd
     * @param date
     * @return
@@ -668,7 +683,7 @@ public class Utils
    }
 
    /**
-    * Shortcut for throw new RuntimeException(message); 
+    * Shortcut for throw new RuntimeException(message);
     */
    public static void error(String message)
    {
@@ -1696,7 +1711,7 @@ public class Utils
    }
 
    /**
-    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values 
+    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values
     */
    public static boolean wildcardMatch(String wildcard, String string)
    {
@@ -1714,7 +1729,7 @@ public class Utils
 
    /**
     * Performs string.matches() but also checks for null
-    * 
+    *
     * @param regex
     * @param string
     * @return
@@ -1729,7 +1744,7 @@ public class Utils
 
    /**
     * Converts a * and ? wildcard style patterns into regex style pattern
-    * 
+    *
     * @see http://www.rgagnon.com/javadetails/java-0515.html
     * @param wildcard
     * @return
