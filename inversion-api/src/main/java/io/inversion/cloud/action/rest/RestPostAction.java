@@ -487,13 +487,6 @@ public class RestPostAction extends Action<RestPostAction>
          Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
-//         
-//         if (childKeys.size() == 0)
-//         {
-//            Index fkIdx = rel.getFkIndex1();
-//            System.out.println(fkIdx);
-//            System.out.println(fkIdx);
-//         }
 
          for (Map childKey : childKeys)
          {
