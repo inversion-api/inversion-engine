@@ -23,8 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.net.URL;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -34,7 +32,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1298,149 +1295,6 @@ public class JdbcUtils
       while (clazz != null && !Object.class.equals(clazz));
 
       return fields;
-   }
-
-   public static Object cast(Object object, String jdbcType)
-   {
-      try
-      {
-         jdbcType = jdbcType.toUpperCase();
-         return cast(object, (Integer) Types.class.getField(jdbcType).get(null));
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting to type " + jdbcType + " for value " + object);
-      }
-   }
-
-   /**
-    * https://www.cis.upenn.edu/~bcpierce/courses/629/jdkdocs/guide/jdbc/getstart/mapping.doc.html
-    * @param object
-    * @param sqlType
-    * @return
-    */
-   public static Object cast(Object object, int jdbcType)
-   {
-      try
-      {
-         if (object == null)
-            return null;
-
-         switch (jdbcType)
-         {
-            case Types.CHAR:
-            case Types.VARCHAR:
-            case Types.LONGVARCHAR:
-            case Types.LONGNVARCHAR:
-               return object.toString();
-            case Types.CLOB:
-               return object.toString().trim();
-            case Types.NUMERIC:
-            case Types.DECIMAL:
-               return new BigDecimal(object.toString());
-            case Types.BIT:
-            case Types.BOOLEAN:
-               return object.toString().toLowerCase().startsWith("t") || object.toString().equals("1");
-            case Types.TINYINT:
-               return Byte.parseByte(object.toString());
-            case Types.SMALLINT:
-               return Short.parseShort(object.toString());
-            case Types.INTEGER:
-               return Integer.parseInt(object.toString());
-            case Types.BIGINT:
-               return Long.parseLong(object.toString());
-            case Types.FLOAT:
-            case Types.REAL:
-            case Types.DOUBLE:
-               return Double.parseDouble(object.toString());
-            case Types.DATALINK:
-               return new URL(object.toString());
-
-            case Types.BINARY:
-            case Types.VARBINARY:
-            case Types.LONGVARBINARY:
-               throw new UnsupportedOperationException("Binary types are currently unsupporrted");
-
-            case Types.DATE:
-               return new java.sql.Date(date(object.toString()).getTime());
-            case Types.TIMESTAMP:
-               return new java.sql.Timestamp(date(object.toString()).getTime());
-            default :
-               throw new UnsupportedOperationException("JDBC Type: " + jdbcType + " is not yet supported");
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting to type " + jdbcType + " for value " + object);
-      }
-   }
-
-   public static Date date(String date)
-   {
-      try
-      {
-         //not supported in JDK 1.6
-         //         DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
-         //         TemporalAccessor accessor = timeFormatter.parse(date);
-         //         return Date.from(Instant.from(accessor));
-         return Utils.parseIso8601(date);
-      }
-      catch (Exception ex)
-      {
-
-      }
-
-      try
-      {
-         //2018-06-20 01:10:24.0 - mysql timestamp string represnetation
-         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-         return f.parse(date);
-      }
-      catch (Exception ex)
-      {
-
-      }
-
-      try
-      {
-         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
-         return f.parse(date);
-
-      }
-      catch (Exception ex)
-      {
-
-      }
-
-      try
-      {
-         SimpleDateFormat f = new SimpleDateFormat("MM/dd/yy");
-
-         int lastSlash = date.lastIndexOf("/");
-         if (lastSlash > 0 && lastSlash == date.length() - 5)
-         {
-            f = new SimpleDateFormat("MM/dd/yyyy");
-         }
-         Date d = f.parse(date);
-         //System.out.println(d);
-         return d;
-
-      }
-      catch (Exception ex)
-      {
-
-      }
-
-      try
-      {
-         SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
-         return f.parse(date);
-      }
-      catch (Exception ex)
-      {
-
-      }
-      throw new RuntimeException("unsupported format: " + date);
    }
 
 }

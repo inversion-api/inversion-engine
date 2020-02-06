@@ -471,59 +471,6 @@ public class DynamoDb extends Db<DynamoDb>
       }
    }
 
-   @Override
-   public Object cast(String type, Object value)
-   {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-         {
-            try
-            {
-               if (value.toString().indexOf(".") < 0)
-               {
-                  value = Long.parseLong(value.toString());
-               }
-               else
-               {
-                  value = Double.parseDouble(value.toString());
-               }
-
-               return value;
-            }
-            catch (Exception ex)
-            {
-
-            }
-            return value.toString();
-         }
-
-         switch (type)
-         {
-            case "S":
-               return value.toString();
-
-            case "N":
-               if (value.toString().indexOf(".") < 0)
-                  return Long.parseLong(value.toString());
-               else
-                  Double.parseDouble(value.toString());
-            case "BOOL":
-               return Boolean.parseBoolean(value.toString());
-
-            default :
-               return value.toString();
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting '" + value + "' to type '" + type + "'", ex);
-      }
-   }
-
    public AmazonDynamoDB getDynamoClient()
    {
       if (this.dynamoClient == null)

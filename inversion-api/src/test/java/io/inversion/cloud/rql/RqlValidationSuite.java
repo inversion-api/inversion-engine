@@ -120,11 +120,10 @@ public class RqlValidationSuite
 
       withTest("sum", "orders?sum(freight)");
       withTest("sumAs", "orders?as(sum(freight),'Sum Freight')");
-      
+
       //-- this is commented out because Select.java translates this to as(sum(freight), sumFreight) which is tested above
       //-- withTest("sumAs", "orders?sum(freight,sumFreight)");
-      
-      
+
       withTest("sumIf", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
       withTest("min", "orders?min(freight)");
       withTest("max", "orders?max(freight)");
@@ -225,6 +224,7 @@ public class RqlValidationSuite
             tableName = tableName.substring(tableName.lastIndexOf("/") + 1);
 
          Query query = (Query) Class.forName(queryClass).newInstance();
+         query.withDb(db);
 
          String rql = queryString.substring(queryString.indexOf("?") + 1);
 
@@ -274,7 +274,7 @@ public class RqlValidationSuite
          }
          catch (Exception ex)
          {
-            actual = ex.getMessage();
+            actual = ex.getMessage() + "";
          }
 
          if (!verifyUnitTest(testKey, queryString, expected, actual, query))

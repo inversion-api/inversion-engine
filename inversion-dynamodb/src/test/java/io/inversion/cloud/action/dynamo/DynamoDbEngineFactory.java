@@ -39,9 +39,8 @@ import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 
-import io.inversion.cloud.action.dynamo.DynamoDb;
 import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.action.sql.SqlEngineFactory;
+import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSArray;
@@ -78,7 +77,7 @@ public class DynamoDbEngineFactory
    {
       buildTables();
 
-      Engine engine = SqlEngineFactory.service(true, true);
+      Engine engine = JdbcDbApiFactory.service(true, true);
 
       final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
       Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);

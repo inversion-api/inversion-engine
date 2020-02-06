@@ -141,7 +141,6 @@ public abstract class Db<T extends Db>
     */
    public abstract Results<Row> select(Table table, List<Term> queryTerms) throws Exception;
 
-   
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
     * not as a full replacement.  Keys that are not supplied in the call but that exist in the row in 
@@ -499,73 +498,17 @@ public abstract class Db<T extends Db>
 
    public Object cast(Column column, Object value)
    {
-      try
-      {
-         return cast(column != null ? column.getType() : null, value);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error casting column '" + column.getTable().getName() + "." + column.getName() + "' with value '" + value + "' to type " + column.getType() + ". " + ex.getMessage());
-      }
+      return Utils.cast(column != null ? column.getType() : null, value);
    }
 
    public Object cast(Attribute attr, Object value)
    {
-      return cast(attr.getType(), value);
+      return Utils.cast(attr.getType(), value);
    }
 
    public Object cast(String type, Object value)
    {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-            return value.toString();
-
-         switch (type.toLowerCase())
-         {
-            case "s":
-            case "string":
-               return value.toString();
-
-            case "n":
-            case "number":
-               if (value.toString().indexOf(".") < 0)
-                  return Long.parseLong(value.toString());
-               else
-                  return Double.parseDouble(value.toString());
-
-            case "bool":
-            case "boolean":
-               return Boolean.parseBoolean(value.toString());
-
-            case "array":
-
-               if (value instanceof JSArray)
-                  return value;
-               else
-                  return JSNode.parseJsonArray(value + "");
-
-            case "object":
-
-               if (value instanceof JSNode)
-                  return value;
-               else
-                  return JSNode.parseJsonNode(value + "");
-
-            default :
-               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
-         }
-      }
-      catch (Exception ex)
-      {
-         Utils.rethrow(ex);
-         //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-      }
-      
-      return null;
+      return Utils.cast(type, value);
    }
 
    public Set<Term> mapToColumns(Collection collection, Term term)

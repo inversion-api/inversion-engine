@@ -388,18 +388,6 @@ public class JdbcDb extends Db<JdbcDb>
       return key.toString();
    }
 
-   @Override
-   public Object cast(String type, Object value)
-   {
-      try
-      {
-         return JdbcUtils.cast(value, type);
-      }
-      catch (Exception ex)
-      {
-         return super.cast(type, value);
-      }
-   }
 
    public Connection getConnection() throws ApiException
    {

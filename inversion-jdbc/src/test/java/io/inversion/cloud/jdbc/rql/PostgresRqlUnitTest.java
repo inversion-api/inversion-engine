@@ -16,25 +16,14 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.cloud.jdbc.db.JdbcDb;
 
 public class PostgresRqlUnitTest extends AbstractSqlRqlTest
 {
    public PostgresRqlUnitTest()
    {
-      dbType = "postgres";
+      db = new JdbcDb("postgres").withType("postgres");
    }
 
-   @Override
-   protected RqlValidationSuite buildUnitTestSuite()
-   {
-      RqlValidationSuite suite = super.buildUnitTestSuite();
-
-      //--customize db type specific specific cases here
-      //suite.withResult("", "")//
-      ;
-
-      return suite;
-   }
 
 }

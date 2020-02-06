@@ -16,25 +16,20 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
 public class MsSqlRqlUnitTest extends AbstractSqlRqlTest
 {
    public MsSqlRqlUnitTest()
    {
-      dbType = "mssql";
+      db = new JdbcDb("mssql").withType("mssql");
    }
 
    @Override
-   protected RqlValidationSuite buildUnitTestSuite()
+   protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
-      RqlValidationSuite suite = super.buildUnitTestSuite();
-
-      //--customize db type specific specific cases here
-      //suite.withResult("", "")//
-      ;
-
-      return suite;
+      super.customizeUnitTestSuite(suite);
+      //--add/replace any tests and results needed
    }
-
 }

@@ -30,12 +30,7 @@ public class H2RqlIntegTest extends H2RqlUnitTest
       engine = new Engine();
       engine.withApi(new Api("northwind")//
                                          .withEndpoint("GET", "h2/*", new RestAction())//
-                                         .withDb(new JdbcDb("db", //
-                                                            "org.h2.Driver", //
-                                                            "jdbc:h2:mem:northwind" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //
-                                                            "sa", //
-                                                            "", //
-                                                            JdbcDb.class.getResource("northwind-h2.ddl").toString()))//
+                                         .withDb(db)//
       );
    }
 }

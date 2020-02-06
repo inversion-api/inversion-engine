@@ -39,6 +39,7 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
+import java.sql.Types;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -46,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,8 +60,13 @@ import java.util.regex.Pattern;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.h2.util.JdbcUtils;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
+
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
 
 /**
  * Collection of utility methods designed to make
@@ -587,6 +592,9 @@ public class Utils
 
    public static boolean testCompare(String str1, String str2)
    {
+      str1 = str1 != null ? str1 : "";
+      str2 = str2 != null ? str2 : "";
+
       str1 = str1.replaceAll("\\s+", " ").trim();
       str2 = str2.replaceAll("\\s+", " ").trim();
 
@@ -1942,6 +1950,123 @@ public class Utils
       bb.putLong(uuid.getMostSignificantBits());
       bb.putLong(uuid.getLeastSignificantBits());
       return bb.array();
+   }
+
+   public static Object jdbcCast(Object object, String jdbcType)
+   {
+      try
+      {
+         jdbcType = jdbcType.toUpperCase();
+         return cast(jdbcType, object);
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting to type " + jdbcType + " for value " + object);
+      }
+   }
+
+   public static Object cast(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+         {
+            try
+            {
+               if (value.toString().indexOf(".") < 0)
+               {
+                  return Long.parseLong(value.toString());
+               }
+               else
+               {
+                  return Double.parseDouble(value.toString());
+               }
+            }
+            catch (Exception ex)
+            {
+               //must not have been an number
+            }
+            return value.toString();
+         }
+
+         switch (type.toLowerCase())
+         {
+            case "s":
+            case "string":
+            case "char":
+            case "varchar":
+            case "longvarchar":
+            case "longnvarchar":
+               return value.toString();
+            case "clob":
+               return value.toString().trim();
+            case "n":
+            case "number":
+            case "numeric":
+            case "decimal":
+               if (value.toString().indexOf(".") < 0)
+                  return Long.parseLong(value.toString());
+               else
+                  return Double.parseDouble(value.toString());
+
+            case "bool":
+            case "boolean":
+            case "bit":
+               return Boolean.parseBoolean(value.toString());
+
+            case "tinyint":
+               return Byte.parseByte(value.toString());
+            case "smallint":
+               return Short.parseShort(value.toString());
+            case "integer":
+               return Integer.parseInt(value.toString());
+            case "bigint":
+               return Long.parseLong(value.toString());
+            case "float":
+            case "real":
+            case "double":
+               return Double.parseDouble(value.toString());
+            case "datalink":
+               return new URL(value.toString());
+
+            case "binary":
+            case "varbinary":
+            case "longvarbinary":
+               throw new UnsupportedOperationException("Binary types are currently unsupporrted");
+
+            case "date":
+               return new java.sql.Date(date(value.toString()).getTime());
+            case "timestamp":
+               return new java.sql.Timestamp(date(value.toString()).getTime());
+
+            case "array":
+
+               if (value instanceof JSArray)
+                  return value;
+               else
+                  return JSNode.parseJsonArray(value + "");
+
+            case "object":
+
+               if (value instanceof JSNode)
+                  return value;
+               else
+                  return JSNode.parseJsonNode(value + "");
+
+            default :
+               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
+         }
+      }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+         //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
+
+      return null;
    }
 
 }

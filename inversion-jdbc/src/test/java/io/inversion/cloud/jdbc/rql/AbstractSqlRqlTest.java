@@ -21,12 +21,18 @@ import io.inversion.cloud.rql.RqlValidationSuite;
 
 public abstract class AbstractSqlRqlTest extends AbstractRqlTest
 {
+
+   public AbstractSqlRqlTest()
+   {
+      queryClass = SqlQuery.class.getName();
+   }
+
    /**
     * The majority of these should be postgres/h2 compatible.  Mysql and MsSQL 
     * will probably have to customize most of these.
     */
    @Override
-   protected void customizeResults(RqlValidationSuite suite)
+   protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
 
       suite//

@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
 public class H2RqlUnitTest extends AbstractSqlRqlTest
@@ -23,19 +24,19 @@ public class H2RqlUnitTest extends AbstractSqlRqlTest
 
    public H2RqlUnitTest()
    {
-      dbType = "h2";
+      db = new JdbcDb("db", //
+                      "org.h2.Driver", //
+                      "jdbc:h2:mem:northwind" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //
+                      "sa", //
+                      "", //
+                      JdbcDb.class.getResource("northwind-h2.ddl").toString());
    }
 
    @Override
-   protected RqlValidationSuite buildUnitTestSuite()
+   protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
-      RqlValidationSuite suite = super.buildUnitTestSuite();
-
-      //--customize db type specific specific cases here
-      //suite.withResult("", "")//
-      ;
-
-      return suite;
+      super.customizeUnitTestSuite(suite);
+      //--add/replace any tests and results needed
    }
 
 }

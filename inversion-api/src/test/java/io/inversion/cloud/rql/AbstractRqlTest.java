@@ -25,7 +25,6 @@ import junit.framework.TestCase;
 public abstract class AbstractRqlTest extends TestCase
 {
    protected String queryClass = null;
-   protec
    protected String urlPrefix  = null;
    protected Engine engine     = null;
    protected Db     db         = null;
@@ -59,12 +58,55 @@ public abstract class AbstractRqlTest extends TestCase
    }
 
    /**
-    * Override me to customize unit tests
-    * @param suite
+    * This is here as a template that you can copy 
     */
    protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
 
+      suite//
+           .withResult("eq", "PUT YOUR SQL HERE")//
+           .withResult("ne", "")//
+           .withResult("n", "")//
+           .withResult("nn", "")//
+           .withResult("emp", "")//
+           .withResult("nemp", "")//
+           .withResult("likeMiddle", "")//
+           .withResult("likeStartsWith", "")//
+           .withResult("likeEndsWith", "")//
+           .withResult("sw", "")//
+           .withResult("ew", "")//
+           .withResult("w", "")//
+           .withResult("wo", "")//
+           .withResult("lt", "")//
+           .withResult("le", "")//
+           .withResult("gt", "")//
+           .withResult("ge", "")//
+           .withResult("in", "")//
+           .withResult("out", "")//
+           .withResult("and", "")//
+           .withResult("or", "")//
+           .withResult("not", "")//
+           .withResult("as", "")//
+           .withResult("includes", "")//
+           .withResult("distinct", "")//
+           .withResult("count1", "")//
+           .withResult("count2", "")//
+           .withResult("count3", "")//
+           .withResult("countAs", "")//
+           .withResult("sum", "")//
+           .withResult("sumAs", "")//
+           .withResult("sumIf", "")//
+           .withResult("min", "")//
+           .withResult("max", "")//
+           .withResult("groupCount", "")//
+           .withResult("offset", "")//
+           .withResult("limit", "")//
+           .withResult("page", "")//
+           .withResult("pageNum", "")//
+           .withResult("after", "")//
+           .withResult("sort", "")//
+           .withResult("order", "")//
+      ;
    }
 
    /**

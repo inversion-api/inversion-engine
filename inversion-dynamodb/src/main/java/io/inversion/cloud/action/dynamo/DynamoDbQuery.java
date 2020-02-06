@@ -415,7 +415,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          Object partKeyVal = db().cast(type, partKey.getToken(1));
 
          String sortKeyCol = sortKey.getToken(0);
-         Object sortKeyVal = db.cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
+         Object sortKeyVal = db().cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
 
          Chain.debug("DynamoDb GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
