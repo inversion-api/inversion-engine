@@ -180,9 +180,6 @@ public class Index
             this.columnNames.add(columnName);
          }
       }
-
-      if(this.columnNames.size() == 4)
-         System.out.println("too big!!!");
       
       return this;
    }

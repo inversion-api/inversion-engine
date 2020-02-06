@@ -250,8 +250,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             String colName = term.getToken(1);
             if (!(empty(colName) || colName.indexOf("$$$ANON") > -1))
             {
-               //cols.append(" AS " + asString(colName));
-               cols.append(" AS " + quoteCol(colName));
+               //TODO: validate if this mysql special case is required...will require changing tests if removed
+               if (db == null || db.isType("mysql"))
+                  cols.append(" AS " + asString(colName));
+               else
+                  cols.append(" AS " + quoteCol(colName));
             }
          }
          else if (term.getToken().indexOf(".") < 0)
@@ -266,6 +269,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       if (cols.length() > 0)
       {
          boolean restrictCols = find("includes", "sum", "min", "max", "count", "function", "aggregate") != null;
+         if (db == null || db.isType("mysql"))
+         {
+            //-- this a special case for legacy mysql that does not require grouping each column when aggregating 
+            restrictCols = find("includes") != null;
+         }
+
          int star = parts.select.lastIndexOf("* ");
          if (restrictCols && star > 0)
          {
@@ -656,7 +665,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       }
       else if ("if".equalsIgnoreCase(token))
       {
-         if (db.isType("mysql"))
+         if (db == null || db.isType("mysql"))
          {
             sql.append("IF(").append(preparedStmtChildText.get(0)).append(", ").append(preparedStmtChildText.get(1)).append(", ").append(preparedStmtChildText.get(2)).append(")");
          }

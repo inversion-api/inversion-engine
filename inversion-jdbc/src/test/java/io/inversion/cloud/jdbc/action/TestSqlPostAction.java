@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.jdbc.action;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -261,7 +262,7 @@ public class TestSqlPostAction extends TestCase
 
       res = engine.put(steve.getString("href"), steve);
       res = engine.get(url("employees?employeeId=5&expands=employees"));
-
+      res.dump();
       assertEquals(0, res.findArray("data.0.employees").size());
 
       //-- now unhook all many-to-many employee->territories...this a different case than unhooking some but not all  
@@ -288,7 +289,7 @@ public class TestSqlPostAction extends TestCase
                                                             "jdbc:h2:mem:crm;DB_CLOSE_DELAY=-1", //-- jdbc url 
                                                             "sa", //-- jdbc user
                                                             "", //jdbc password
-                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+                                                            JdbcDb.class.getResource("crm-h2.ddl").toString()))//
                                           .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
       engine.startup();
       Response res = null;
@@ -367,12 +368,13 @@ public class TestSqlPostAction extends TestCase
                                                             "jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1", //-- jdbc url 
                                                             "sa", //-- jdbc user
                                                             "", //jdbc password
-                                                            TestSqlPostAction.class.getResource("crm-h2.ddl").toString()))//
+                                                            JdbcDb.class.getResource("crm-h2.ddl").toString()))//
                                           .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
       engine.startup();
       Response res = null;
 
-      JSNode id10 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("upsert003/01-POST-identifiers.json")));
+      InputStream stream = getClass().getResourceAsStream("upsert003/01-POST-identifiers.json");
+      JSNode id10 = JSNode.parseJsonNode(Utils.read(stream));
       res = engine.post("crm/identifiers", id10);
       res = engine.get("crm/identifiers?id=10&expands=customer");
       res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");

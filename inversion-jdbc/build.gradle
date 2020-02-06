@@ -1,5 +1,5 @@
 dependencies {
-
     compile project(':inversion-api')
-	testCompile project(':inversion-spring-boot')
+    testCompile  project(':inversion-api').sourceSets.test.output
+    testCompile project(':inversion-spring-boot')
 }

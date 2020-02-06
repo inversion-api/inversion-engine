@@ -30,7 +30,7 @@ public class TestMultipleJoins extends TestCase
    @Test
    public void testRelatedCollectionJoinSelect2() throws Exception
    {
-      String crmDdlUrl = TestMultipleJoins.class.getResource("crm-h2.ddl").toString();
+      String crmDdlUrl = JdbcDb.class.getResource("crm-h2.ddl").toString();
 
       //SqlDb db = new H2SqlDb("db", "crm.db", crmDdlUrl);
 

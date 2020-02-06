@@ -481,10 +481,19 @@ public class RestPostAction extends Action<RestPostAction>
          //-- this set will contain the columns we need to update/delete outdated relationships
          Set includesKeys = new HashSet();
          includesKeys.addAll(parentKey.keySet());
+         includesKeys.addAll(rel.getRelated().getTable().getPrimaryIndex().getColumnNames());
+         
 
          Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
+//         
+//         if (childKeys.size() == 0)
+//         {
+//            Index fkIdx = rel.getFkIndex1();
+//            System.out.println(fkIdx);
+//            System.out.println(fkIdx);
+//         }
 
          for (Map childKey : childKeys)
          {
@@ -497,7 +506,7 @@ public class RestPostAction extends Action<RestPostAction>
             childOr.withTerm(asTerm(childKey));
          }
 
-         //I don't think you need to do this...the recursive generation already did it...
+         //-- TODO: I don't think you need to do this...the recursive generation already did it...
          Table table = rel.isManyToOne() ? rel.getRelated().getTable() : rel.getFk1Col1().getTable();
          if (rel.isManyToMany() || rel.isManyToOne())
          {
@@ -581,9 +590,9 @@ public class RestPostAction extends Action<RestPostAction>
 
    Map mapTo(Map srcRow, Index srcCols, Index destCols)
    {
-      if(srcCols.size() != destCols.size())
+      if (srcCols.size() != destCols.size())
          throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to map from index '" + srcCols.toString() + "' to '" + destCols + "'");
-      
+
       if (srcRow == null)
          return Collections.EMPTY_MAP;
 
@@ -714,7 +723,6 @@ public class RestPostAction extends Action<RestPostAction>
 
       }
    }
-
 
    public boolean isCollapseAll()
    {

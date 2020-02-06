@@ -26,7 +26,7 @@ public class H2SqlTest extends TestCase
       run("SELECT * FROM \"ORDERS\" LIMIT 100 OFFSET 0");
       run("SELECT count(orderId) FROM \"ORDERS\"");
       run("SELECT count(\"ORDERS\".\"ORDERID\") FROM \"ORDERS\"");
-      run("SELECT count(\"ORDERS\".\"*\") FROM \"ORDERS\"");
+      run("SELECT count(\"ORDERS\".*) FROM \"ORDERS\"");
    }
 
    public void run(String sql) throws Exception
