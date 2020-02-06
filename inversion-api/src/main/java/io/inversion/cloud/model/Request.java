@@ -291,7 +291,6 @@ public class Request
       {
          throw new ApiException(SC.SC_400_BAD_REQUEST, "Unparsable JSON body");
       }
-      prune(json);
 
       return json;
    }
@@ -710,50 +709,6 @@ public class Request
    public List<Upload> getUploads()
    {
       return uploader.getUploads();
-   }
-
-   /**
-    * Removes all empty objects from the tree
-    */
-   boolean prune(Object parent)
-   {
-      if (parent instanceof JSArray)
-      {
-         JSArray arr = ((JSArray) parent);
-         for (int i = 0; i < arr.length(); i++)
-         {
-            if (prune(arr.get(i)))
-            {
-               arr.remove(i);
-               i--;
-            }
-         }
-         return arr.length() == 0;
-      }
-      else if (parent instanceof JSNode)
-      {
-         boolean prune = true;
-         JSNode js = (JSNode) parent;
-         for (String key : js.keySet())
-         {
-            Object child = js.get(key);
-            prune &= prune(child);
-         }
-
-         if (prune)
-         {
-            for (String key : js.keySet())
-            {
-               js.remove(key);
-            }
-         }
-
-         return prune;
-      }
-      else
-      {
-         return parent == null;
-      }
    }
 
    public Request withTerm(String token, Object... terms)
