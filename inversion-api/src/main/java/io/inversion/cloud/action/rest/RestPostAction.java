@@ -518,7 +518,7 @@ public class RestPostAction extends Action<RestPostAction>
          {
             log.debug("...looking for many-to-* outdated relationships: " + rel + " -> " + queryTerms);
 
-            Results<Row> results = table.getDb().select(table, queryTerms);
+            Results<Row> results = coll.getDb().select(coll, queryTerms);
 
             if (results.size() <= 0)
                break;
@@ -534,12 +534,12 @@ public class RestPostAction extends Action<RestPostAction>
                   }
                }
 
-               log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + table + " -> " + results.getRows());
+               log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + results.getRows());
                coll.getDb().upsert(coll, results.getRows());
             }
             else if (rel.isManyToMany())
             {
-               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + table + " -> " + results.getRows());
+               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + coll + " -> " + results.getRows());
                Rows rows = new Rows();
                rows.addAll(results.getRows());
                coll.getDb().delete(coll, rows);
