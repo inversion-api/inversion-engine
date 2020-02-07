@@ -80,15 +80,6 @@ public class Api
 
          removeExcludes();
 
-         for (Db db : dbs)
-         {
-            for (Collection coll : (List<Collection>) db.getCollections())
-            {
-               if (!coll.isLinkTbl() && !coll.isExclude())
-                  withCollection(coll);
-            }
-         }
-
          started = true;
 
          for (EngineListener listener : listeners)
@@ -176,34 +167,16 @@ public class Api
       return this;
    }
 
-   public Collection findTable(String name)
+   public Api withCollection(Collection coll)
    {
-      for (Db db : dbs)
-      {
-         Collection t = db.getCollection(name);
-         if (t != null)
-            return t;
-      }
-      return null;
-   }
+      if (coll.isLinkTbl() || coll.isExclude())
+         return this;
 
-   public Db findDb(String name)
-   {
-      if (name == null)
-         return null;
+      if (!collections.contains(coll))
+         collections.add(coll);
 
-      for (Db db : dbs)
-      {
-         if (name.equals(db.getName()))
-            return db;
-      }
-      return null;
-   }
-
-   public Api withCollection(Collection collection)
-   {
-      if (!collections.contains(collection))
-         collections.add(collection);
+      if (coll.getApi() != this)
+         coll.withApi(this);
 
       return this;
    }
@@ -215,12 +188,12 @@ public class Api
 
    public Collection getCollection(String name)
    {
-      if (name == null)
-         return null;
-
-      for (Collection collection : collections)
-         if (name.equalsIgnoreCase(collection.getCollectionName()))
-            return collection;
+      for (Collection coll : collections)
+      {
+         if (name.equalsIgnoreCase(coll.getCollectionName()) //
+               || name.equalsIgnoreCase(coll.getTableName()))
+            return coll;
+      }
       return null;
    }
 
@@ -259,7 +232,14 @@ public class Api
    public Api withDb(Db db)
    {
       if (!dbs.contains(db))
+      {
          dbs.add(db);
+
+         for (Collection coll : (List<Collection>) db.getCollections())
+         {
+            withCollection(coll);
+         }
+      }
 
       if (db.getApi() != this)
          db.withApi(this);

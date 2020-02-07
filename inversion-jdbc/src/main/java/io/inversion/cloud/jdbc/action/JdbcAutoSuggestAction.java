@@ -103,7 +103,7 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
 
          sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + JdbcUtils.check(value) + "%' AND " + column + " != ''";
 
-         if (api.isMultiTenant() && api.findTable(tableName).getProperty(tenantCol) != null)
+         if (api.isMultiTenant() && api.getCollection(tableName).getProperty(tenantCol) != null)
             sql += " AND " + tenantCol + "=" + Chain.peek().getUser().getTenantId();
 
          if (i + 1 < propertyList.size())

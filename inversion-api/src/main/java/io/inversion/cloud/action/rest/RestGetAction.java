@@ -349,7 +349,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (collection == null)
       {
-         Db db = api.findDb((String) Chain.peek().get("db"));
+         Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
             throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");

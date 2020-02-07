@@ -184,17 +184,24 @@ public abstract class Db<T extends Db>
    {
       for (String key : includeTables.keySet())
       {
-         Collection table = new Collection(key);
-         if (getCollectionPath() != null)
-            table.withIncludePaths(getCollectionPath());
-
-         withCollection(table);
+         withCollection(new Collection(key));
       }
    }
 
    protected void configApi() throws Exception
    {
       List<String> relationshipStrs = new ArrayList();
+
+      for (Collection coll : getCollections())
+      {
+         if (!coll.isLinkTbl() && !coll.isExclude())
+         {
+            api.withCollection(coll);
+            
+            if (getCollectionPath() != null)
+               coll.withIncludePaths(getCollectionPath());
+         }
+      }
 
       for (Collection coll : getCollections())
       {
@@ -578,25 +585,13 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Collection getCollection(String tableName)
+   public Collection getCollection(String collectionOrTableName)
    {
       for (Collection t : tables)
       {
-         if (t.getTableName().equalsIgnoreCase(tableName))
+         if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
+               || collectionOrTableName.equalsIgnoreCase(t.getCollectionName()))
             return t;
-      }
-
-      tableName = tableName.replaceAll("\\s+", "");
-      for (Collection t : tables)
-      {
-         String name = t.getTableName();
-
-         if (name.indexOf(" ") > -1)
-         {
-            name = name.replaceAll("\\s+", "");
-            if (name.equalsIgnoreCase(tableName))
-               return t;
-         }
       }
 
       return null;

@@ -509,7 +509,7 @@ public class Engine
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
+            throw new ApiException(SC.SC_404_NOT_FOUND, "No Endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid Endpoints include: " + buff);
          }
 
          //         if (Utils.empty(req.getCollectionKey()))

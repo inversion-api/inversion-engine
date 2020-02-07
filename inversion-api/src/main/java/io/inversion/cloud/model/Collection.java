@@ -124,7 +124,7 @@ public class Collection extends Rule<Collection>
       if (object instanceof Collection)
       {
          Collection coll = (Collection) object;
-         return (db == null || db == coll.db) && Utils.equal(getTableName(), coll.getTableName());
+         return (db == null || db == coll.db) && Utils.equal(getTableName(), coll.getTableName()) && Utils.equal(getCollectionName(), coll.getCollectionName());
       }
       return false;
    }
@@ -461,7 +461,7 @@ public class Collection extends Rule<Collection>
    @Override
    public Collection withApi(Api api)
    {
-      //this.api = api;
+      this.api = api;
       return this;
    }
 
