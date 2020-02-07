@@ -251,11 +251,11 @@ public class RqlValidationSuite
 
             query.withTerms(terms);
 
-            Collection table = tables.get(tableName);
-            if (table == null)
+            Collection coll = tables.get(tableName);
+            if (coll == null)
                throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
-            table.withDb(db);
-            query.withTable(table);
+            coll.withDb(db);
+            query.withCollection(coll);
             query.withDryRun(true);
 
             if ("UNSUPPORTED".equalsIgnoreCase(expected))

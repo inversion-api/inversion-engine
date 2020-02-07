@@ -165,8 +165,8 @@ public class DynamoDb extends Db<DynamoDb>
    {
       AmazonDynamoDB dynamoClient = getDynamoClient();
 
-      Collection table = new Collection(tableName);
-      withCollection(table);
+      Collection coll = new Collection(tableName);
+      withCollection(coll);
 
       DynamoDB dynamoDB = new DynamoDB(dynamoClient);
       com.amazonaws.services.dynamodbv2.document.Table dynamoTable = dynamoDB.getTable(tableName);
@@ -174,7 +174,7 @@ public class DynamoDb extends Db<DynamoDb>
 
       for (AttributeDefinition attr : tableDescription.getAttributeDefinitions())
       {
-         table.withProperty(attr.getAttributeName(), attr.getAttributeType(), true);
+         coll.withProperty(attr.getAttributeName(), attr.getAttributeType(), true);
       }
 
       DynamoDbIndex index = new DynamoDbIndex(DynamoDbIndex.PRIMARY_INDEX, DynamoDbIndex.PRIMARY_TYPE);
@@ -184,11 +184,11 @@ public class DynamoDb extends Db<DynamoDb>
       {
          if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
          {
-            index.witHashKey(table.getProperty(keyInfo.getAttributeName()));
+            index.witHashKey(coll.getProperty(keyInfo.getAttributeName()));
          }
          else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
          {
-            index.withSortKey(table.getProperty(keyInfo.getAttributeName()));
+            index.withSortKey(coll.getProperty(keyInfo.getAttributeName()));
          }
       }
 
@@ -196,7 +196,7 @@ public class DynamoDb extends Db<DynamoDb>
       {
          for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes())
          {
-            addTableIndex(DynamoDbIndex.GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
+            addTableIndex(DynamoDbIndex.GLOBAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll);
          }
       }
 
@@ -204,11 +204,11 @@ public class DynamoDb extends Db<DynamoDb>
       {
          for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes())
          {
-            addTableIndex(DynamoDbIndex.LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), table);
+            addTableIndex(DynamoDbIndex.LOCAL_SECONDARY_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll);
          }
       }
 
-      return table;
+      return coll;
    }
 
 //   protected Collection buildCollection(String collectionName, Table table)
@@ -379,11 +379,11 @@ public class DynamoDb extends Db<DynamoDb>
 
    }
 
-   public static DynamoDbIndex findIndexByName(Collection table, String name)
+   public static DynamoDbIndex findIndexByName(Collection coll, String name)
    {
-      if (table != null && table.getIndexes() != null)
+      if (coll != null && coll.getIndexes() != null)
       {
-         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) table.getIndexes())
+         for (DynamoDbIndex index : (List<DynamoDbIndex>) (List<?>) coll.getIndexes())
          {
             if (index.getName().equals(name))
             {

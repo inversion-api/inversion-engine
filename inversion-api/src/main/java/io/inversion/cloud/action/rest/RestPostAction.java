@@ -31,16 +31,16 @@ import org.apache.commons.collections4.map.MultiKeyMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Change;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows;
@@ -477,7 +477,6 @@ public class RestPostAction extends Action<RestPostAction>
          Set includesKeys = new HashSet();
          includesKeys.addAll(parentKey.keySet());
          includesKeys.addAll(rel.getRelated().getPrimaryIndex().getColumnNames());
-         
 
          Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
@@ -495,11 +494,11 @@ public class RestPostAction extends Action<RestPostAction>
          }
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
-         Collection table = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
+         Collection coll = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
          if (rel.isManyToMany() || rel.isManyToOne())
          {
-            log.debug("updating relationship: " + rel + " -> " + table + " -> " + upserts);
-            table.getDb().upsert(table, upserts);
+            log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
+            coll.getDb().upsert(coll, upserts);
          }
 
          //-- now find all relationships that are NOT in the group that we just upserted
@@ -536,14 +535,14 @@ public class RestPostAction extends Action<RestPostAction>
                }
 
                log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + table + " -> " + results.getRows());
-               table.getDb().upsert(table, results.getRows());
+               coll.getDb().upsert(coll, results.getRows());
             }
             else if (rel.isManyToMany())
             {
                log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + table + " -> " + results.getRows());
                Rows rows = new Rows();
                rows.addAll(results.getRows());
-               table.getDb().delete(table, rows);
+               coll.getDb().delete(coll, rows);
             }
 
             if (results.size() < 100)

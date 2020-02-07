@@ -119,26 +119,26 @@ public class Api
    {
       for (Db db : getDbs())
       {
-         for (Collection table : (List<Collection>) db.getCollections())
+         for (Collection coll : (List<Collection>) db.getCollections())
          {
-            if (table.isExclude())
+            if (coll.isExclude())
             {
-               db.removeCollection(table);
+               db.removeCollection(coll);
             }
             else
             {
-               for (Property col : table.getProperties())
+               for (Property col : coll.getProperties())
                {
                   if (col.isExclude())
-                     table.removeProperty(col);
+                     coll.removeProperty(col);
                }
             }
 
-            for (Relationship rel : table.getRelationships())
+            for (Relationship rel : coll.getRelationships())
             {
                if (rel.isExclude())
                {
-                  table.removeRelationship(rel);
+                  coll.removeRelationship(rel);
                }
             }
          }

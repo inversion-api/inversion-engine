@@ -83,7 +83,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       Results results = new Results(this);
       CosmosDocumentDb db = getDb();
 
-      String collectionUri = db.getCollectionUri(table);
+      String collectionUri = db.getCollectionUri(collection);
 
       String sql = getPreparedStmt();
       sql = sql.replaceAll("\r", "");
@@ -102,7 +102,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
 
       boolean enableCrossPartitionQuery = true;
 
-      Index partKey = table.getIndex("PartitionKey");
+      Index partKey = collection.getIndex("PartitionKey");
       if (partKey != null)
       {
          String partKeyCol = partKey.getColumn(0).getColumnName();
@@ -183,12 +183,12 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
    {
       String sql = super.toSql(preparedStmt);
 
-      sql = sql.replace(columnQuote + table.getTableName() + columnQuote + ".*", "*");
+      sql = sql.replace(columnQuote + collection.getTableName() + columnQuote + ".*", "*");
 
-      String regex = columnQuote + table.getTableName() + columnQuote + "\\." + columnQuote + "([^" + columnQuote + "]*)" + columnQuote;
-      sql = sql.replaceAll(regex, table.getTableName() + "[\"$1\"]");
+      String regex = columnQuote + collection.getTableName() + columnQuote + "\\." + columnQuote + "([^" + columnQuote + "]*)" + columnQuote;
+      sql = sql.replaceAll(regex, collection.getTableName() + "[\"$1\"]");
 
-      sql = sql.replace(columnQuote + table.getTableName() + columnQuote, table.getTableName());
+      sql = sql.replace(columnQuote + collection.getTableName() + columnQuote, collection.getTableName());
 
       return sql;
    }

@@ -47,7 +47,7 @@ import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
-public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';
    protected char              columnQuote = '"';
@@ -78,7 +78,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
             return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (name.indexOf(".") < 0 && table != null && table.getProperty(name) == null)
+         if (name.indexOf(".") < 0 && collection != null && collection.getProperty(name) == null)
             return true;
       }
 
@@ -163,10 +163,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
       printInitialSelect(parts, this.selectSql);
       printTermsSelect(parts, preparedStmt);
       printJoins(parts, joins);
-      printWhereClause(parts, where().filters(), preparedStmt);
+      printWhereClause(parts, getWhere().getFilters(), preparedStmt);
       printGroupClause(parts, find("group"));
-      printOrderClause(parts, order().getSorts());
-      printLimitClause(parts, page().getOffset(), page().getLimit());
+      printOrderClause(parts, getOrder().getSorts());
+      printLimitClause(parts, getPage().getOffset(), getPage().getLimit());
 
       return printSql(parts);
    }
@@ -238,7 +238,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
    {
       StringBuffer cols = new StringBuffer();
 
-      List<Term> terms = select().columns();
+      List<Term> terms = getSelect().columns();
       for (int i = 0; i < terms.size(); i++)
       {
          Term term = terms.get(i);
@@ -294,7 +294,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
          }
       }
 
-      if (select().isDistinct() && parts.select.toLowerCase().indexOf("distinct") < 0)
+      if (getSelect().isDistinct() && parts.select.toLowerCase().indexOf("distinct") < 0)
       {
          int idx = parts.select.toLowerCase().indexOf("select") + 6;
          parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
@@ -413,11 +413,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
    {
       List<Sort> sorts = new ArrayList();
 
-      if (table != null && table.getPrimaryIndex() != null)
+      if (collection != null && collection.getPrimaryIndex() != null)
       {
-         for (int k = 0; k < table.getPrimaryIndex().size(); k++)
+         for (int k = 0; k < collection.getPrimaryIndex().size(); k++)
          {
-            Property col = table.getPrimaryIndex().getColumn(k);
+            Property col = collection.getPrimaryIndex().getColumn(k);
             if ((parts.select.indexOf("* ") >= 0 || parts.select.indexOf("*,") >= 0)//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)" 
                   || parts.select.contains(col.getColumnName()))
             {
@@ -439,7 +439,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
       String s = null;
       if (limit >= 0 || offset >= 0)
       {
-         if (db == null || db().isType("mysql"))
+         if (db == null || getDb().isType("mysql"))
          {
             s = "LIMIT ";
             if (offset > 0)
@@ -773,7 +773,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
       if (isNum(term))
          return false;
 
-      if (table != null && table.getProperty(term.getToken()) != null)
+      if (collection != null && collection.getProperty(term.getToken()) != null)
          return true;
 
       if (term.getParent() != null && term.getParent().indexOf(term) == 0)
@@ -801,13 +801,13 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Selec
 
    public String printTable()
    {
-      return quoteCol(table.getTableName());
+      return quoteCol(collection.getTableName());
    }
 
    public String printCol(String columnName)
    {
-      if (table != null && columnName.indexOf(".") < 0)
-         columnName = table.getTableName() + "." + columnName;
+      if (collection != null && columnName.indexOf(".") < 0)
+         columnName = collection.getTableName() + "." + columnName;
 
       return quoteCol(columnName);
    }

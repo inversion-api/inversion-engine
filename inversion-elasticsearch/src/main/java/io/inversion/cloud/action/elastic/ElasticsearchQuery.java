@@ -36,7 +36,7 @@ import io.inversion.cloud.rql.Where;
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // 
-public class ElasticsearchQuery extends Query<ElasticsearchQuery, JdbcDb, Collection, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
+public class ElasticsearchQuery extends Query<ElasticsearchQuery, JdbcDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
 {
    // identifies a nested path
    @JsonIgnore

@@ -624,10 +624,10 @@ public abstract class Db<T extends Db>
    /**
     * @param collections to include (add not replace)
     */
-   public T withCollections(Collection... tbls)
+   public T withCollections(Collection... colls)
    {
-      for (Collection table : tbls)
-         withCollection(table);
+      for (Collection coll : colls)
+         withCollection(coll);
 
       return (T) this;
    }

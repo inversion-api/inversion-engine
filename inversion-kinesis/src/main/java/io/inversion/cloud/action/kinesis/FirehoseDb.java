@@ -113,11 +113,11 @@ public class FirehoseDb extends Db<FirehoseDb>
                streamName = arr[1];
             }
 
-            Collection table = new Collection(streamName);
-            withCollection(table);
+            Collection coll = new Collection(streamName);
+            withCollection(coll);
 
             if (arr.length == 1)//a specific collection name was not supplied by the config
-               table.withTableName(beautifyCollectionName(collectionName));
+               coll.withTableName(beautifyCollectionName(collectionName));
          }
       }
       else

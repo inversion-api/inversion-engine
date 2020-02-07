@@ -194,7 +194,7 @@ public class RestGetAction extends Action<RestGetAction>
          //------------------------------------------------
          //setup all of the meta section
 
-         Page page = results.getQuery().page();
+         Page page = results.getQuery().getPage();
          res.withPageSize(page.getPageSize());
          res.withPageNum(page.getPageNum());
 

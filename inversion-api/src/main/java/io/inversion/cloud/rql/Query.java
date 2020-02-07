@@ -40,21 +40,21 @@ import io.inversion.cloud.model.Collection;
  * @author wells
  *
  */
-public class Query<T extends Query, D extends Db, E extends Collection, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
+public class Query<T extends Query, D extends Db, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
-   protected D              db     = null;
-   protected E              table  = null;
+   protected D              db         = null;
+   protected Collection     collection = null;
 
-   protected S              select = null;
-   protected W              where  = null;
-   protected R              group  = null;
-   protected O              order  = null;
-   protected G              page   = null;
+   protected S              select     = null;
+   protected W              where      = null;
+   protected R              group      = null;
+   protected O              order      = null;
+   protected G              page       = null;
 
-   protected boolean        dryRun = false;
+   protected boolean        dryRun     = false;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KeyValue> values = new ArrayList();
+   protected List<KeyValue> values     = new ArrayList();
 
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
@@ -107,15 +107,15 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       this(null);
    }
 
-   public Query(E table)
+   public Query(Collection coll)
    {
-      this(table, null);
+      this(coll, null);
    }
 
-   public Query(E table, Object terms)
+   public Query(Collection coll, Object terms)
    {
       super(null);
-      withTable(table);
+      withCollection(coll);
 
       if (terms != null)
          withTerms(terms);
@@ -128,11 +128,11 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
          builders = new ArrayList();
 
          //order matters when multiple clauses can accept the same term 
-         where();
-         page();
-         order();
-         group();
-         select();
+         getWhere();
+         getPage();
+         getOrder();
+         getGroup();
+         getSelect();
       }
       return builders;
    }
@@ -146,7 +146,7 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return parser;
    }
 
-   public S select()
+   public S getSelect()
    {
       if (select == null)
       {
@@ -156,7 +156,7 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return select;
    }
 
-   public W where()
+   public W getWhere()
    {
       if (where == null)
       {
@@ -166,7 +166,7 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return where;
    }
 
-   public R group()
+   public R getGroup()
    {
       if (group == null)
       {
@@ -176,7 +176,7 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return group;
    }
 
-   public O order()
+   public O getOrder()
    {
       if (order == null)
       {
@@ -186,7 +186,7 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return order;
    }
 
-   public G page()
+   public G getPage()
    {
       if (page == null)
       {
@@ -196,12 +196,12 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return page;
    }
 
-   public E table()
+   public Collection getCollection()
    {
-      return table;
+      return collection;
    }
 
-   public D db()
+   public D getDb()
    {
       return db;
    }
@@ -212,18 +212,13 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
       return r();
    }
 
-   public D getDb()
+   public T withCollection(Collection coll)
    {
-      return db;
-   }
-
-   public T withTable(E table)
-   {
-      this.table = table;
-      if (table != null)
+      this.collection = coll;
+      if (coll != null)
       {
-         if (table.getDb() != null)
-            withDb((D) table.getDb());
+         if (coll.getDb() != null)
+            withDb((D) coll.getDb());
       }
 
       return r();
@@ -242,22 +237,22 @@ public class Query<T extends Query, D extends Db, E extends Collection, S extend
 
    protected T withColValue(String columnName, Object value)
    {
-      Collection table = this.table;
+      Collection coll = this.collection;
       String shortName = columnName;
 
       if (columnName != null)
       {
          if (columnName.indexOf(".") > -1)
          {
-            table = table.getDb().getCollection(columnName.substring(0, columnName.indexOf(".")));
+            coll = coll.getDb().getCollection(columnName.substring(0, columnName.indexOf(".")));
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
 
-         if (table != null)
+         if (coll != null)
          {
-            Property col = table.getProperty(shortName);
+            Property col = coll.getProperty(shortName);
             if (col == null)
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getTableName() + "'");
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + coll.getTableName() + "'");
 
             value = db.cast(col, value);
 

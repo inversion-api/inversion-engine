@@ -256,23 +256,23 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection coll, List<Term> columnMappedTerms) throws Exception
    {
       JdbcDb db = null;
-      if (table == null)
+      if (coll == null)
       {
          db = this;
       }
       else
       {
-         db = (JdbcDb) table.getDb();
+         db = (JdbcDb) coll.getDb();
       }
 
-      String selectKey = (table != null ? table.getTableName() + "." : "") + "select";
+      String selectKey = (coll != null ? coll.getTableName() + "." : "") + "select";
 
       String selectSql = (String) Chain.peek().remove(selectKey);
 
-      SqlQuery query = new SqlQuery(table, columnMappedTerms);
+      SqlQuery query = new SqlQuery(coll, columnMappedTerms);
       query.withDb(db);
       if (selectSql != null)
       {
@@ -743,11 +743,11 @@ public class JdbcDb extends Db<JdbcDb>
                Property pk = getProperty(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               Collection table = getCollection(fkTableName);
-               if (table != null)
+               Collection coll = getCollection(fkTableName);
+               if (coll != null)
                {
                   //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-                  table.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
+                  coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
                }
 
             }
@@ -756,20 +756,6 @@ public class JdbcDb extends Db<JdbcDb>
          while (rs.next());
 
       rs.close();
-
-      //2019-02-11 WB - moved below code into Table.isLinkTable
-      //      
-      //      -- if a table has two columns and both are foreign keys
-      //      -- then it is a relationship table for MANY_TO_MANY relationships
-      //            for (Table table : getTables())
-      //            {
-      //               List<Column> cols = table.getColumns();
-      //               if (cols.size() == 2 && cols.get(0).isFk() && cols.get(1).isFk())
-      //               {
-      //                  table.withLinkTbl(true);
-      //               }
-      //            }
-
    }
 
    @Override
