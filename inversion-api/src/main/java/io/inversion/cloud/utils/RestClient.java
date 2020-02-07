@@ -403,8 +403,6 @@ public class RestClient
 
          hr = h.execute(req);
 
-         HttpEntity e = hr.getEntity();
-
          response.withStatusMesg(hr.getStatusLine().toString());
          response.withStatusCode(hr.getStatusLine().getStatusCode());
 
@@ -419,19 +417,18 @@ public class RestClient
          debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
          debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
 
-         InputStream is = e.getContent();
-
          Url u = new Url(url);
          String fileName = u.getFile();
          if (fileName == null)
             fileName = Utils.slugify(u.toString());
 
          boolean skip = false;
-         // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
-         if (response.getStatusCode() == 404)
+         if (response.getStatusCode() == 404 //no amount of retries will make this request not found 
+               || response.getStatusCode() == 204)//this status code indicates "no content" so we are done.
          {
             skip = true;
          }
+         // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
          else if (future.getRetryFile() != null //
                && future.getRetryFile().length() == response.getContentRangeStart() //
                && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
@@ -457,9 +454,11 @@ public class RestClient
             debug("## Creating temp file .. " + tempFile);
          }
 
-         if (!skip)
+         HttpEntity e = null;
+         if (!skip && (e = hr.getEntity()) != null)
          {
             // stream to the temp file with append set to true (this is crucial for resumable downloads)
+            InputStream is = e.getContent();
             Utils.pipe(is, new FileOutputStream(tempFile, true));
 
             response.withFile(tempFile);
