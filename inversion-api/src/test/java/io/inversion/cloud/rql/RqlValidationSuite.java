@@ -17,7 +17,6 @@
 package io.inversion.cloud.rql;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,7 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
@@ -53,31 +52,31 @@ public class RqlValidationSuite
    Map<String, String> tests      = new LinkedHashMap();
    Map<String, String> results    = new HashMap();
 
-   Map<String, Table>  tables     = new HashMap();
+   Map<String, Collection>  tables     = new HashMap();
    Db                  db         = null;
    String              queryClass = null;
 
-   public RqlValidationSuite(String queryClass, Db db, Table... tables)
+   public RqlValidationSuite(String queryClass, Db db, Collection... tables)
    {
       withQueryClass(queryClass);
       withDb(db);
       withTables(tables);
 
-      withTables(new Table("orders")//s
-                                    .withColumn("orderId", "VARCHAR")//
-                                    .withColumn("customerId", "INTEGER")//
-                                    .withColumn("employeeId", "DATETIME")//
-                                    .withColumn("orderDate", "DATETIME")//
-                                    .withColumn("requiredDate", "DATETIME")//
-                                    .withColumn("shippedDate", "DATETIME")//
-                                    .withColumn("shipVia", "INTEGER")//
-                                    .withColumn("freight", "DECIMAL")//
-                                    .withColumn("shipName", "VARCHAR")//
-                                    .withColumn("shipAddress", "VARCHAR")//
-                                    .withColumn("shipCity", "VARCHAR")//
-                                    .withColumn("shipRegion", "VARCHAR")//
-                                    .withColumn("shipPostalCode", "VARCHAR")//
-                                    .withColumn("shipCountry", "VARCHAR")//
+      withTables(new Collection("orders")//s
+                                    .withProperty("orderId", "VARCHAR")//
+                                    .withProperty("customerId", "INTEGER")//
+                                    .withProperty("employeeId", "DATETIME")//
+                                    .withProperty("orderDate", "DATETIME")//
+                                    .withProperty("requiredDate", "DATETIME")//
+                                    .withProperty("shippedDate", "DATETIME")//
+                                    .withProperty("shipVia", "INTEGER")//
+                                    .withProperty("freight", "DECIMAL")//
+                                    .withProperty("shipName", "VARCHAR")//
+                                    .withProperty("shipAddress", "VARCHAR")//
+                                    .withProperty("shipCity", "VARCHAR")//
+                                    .withProperty("shipRegion", "VARCHAR")//
+                                    .withProperty("shipPostalCode", "VARCHAR")//
+                                    .withProperty("shipCountry", "VARCHAR")//
                                     .withIndex("PK_Orders", "primary", true, "orderId"));
 
       withTest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
@@ -252,11 +251,11 @@ public class RqlValidationSuite
 
             query.withTerms(terms);
 
-            Table table = tables.get(tableName);
-            if (table == null)
+            Collection coll = tables.get(tableName);
+            if (coll == null)
                throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
-            table.withDb(db);
-            query.withTable(table);
+            coll.withDb(db);
+            query.withCollection(coll);
             query.withDryRun(true);
 
             if ("UNSUPPORTED".equalsIgnoreCase(expected))
@@ -298,7 +297,7 @@ public class RqlValidationSuite
          throw new RuntimeException("Failed...");
       }
 
-      Collection<String> unknownTests = CollectionUtils.disjunction(tests.keySet(), results.keySet());
+      java.util.Collection<String> unknownTests = CollectionUtils.disjunction(tests.keySet(), results.keySet());
       for (String testKey : unknownTests)
       {
          System.out.println("It looks like you tried to run a test for '" + testKey + "' but that is an unknown test.");
@@ -323,13 +322,13 @@ public class RqlValidationSuite
       return Utils.testCompare(expected, actual);
    }
 
-   public RqlValidationSuite withTables(Table... tables)
+   public RqlValidationSuite withTables(Collection... tables)
    {
       for (int i = 0; tables != null && i < tables.length; i++)
       {
-         Table t = tables[i];
+         Collection t = tables[i];
          if (t != null)
-            this.tables.put(t.getName(), t);
+            this.tables.put(t.getTableName(), t);
       }
 
       return this;

@@ -18,7 +18,7 @@ package io.inversion.cloud.action.s3;
 
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.Collection;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Request.Upload;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 

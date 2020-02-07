@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ package io.inversion.cloud.action.elastic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,17 +26,13 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.HttpUtils;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client
@@ -55,15 +50,14 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    boolean isOneSrcArray = true;
 
    /**
-    * @see io.inversion.cloud.service.Handler#run(io.inversion.cloud.service.Engine, io.inversion.cloud.model.Api, io.inversion.cloud.model.Endpoint, io.inversion.cloud.service.Chain, io.inversion.cloud.model.Request, io.inversion.cloud.model.Response)
+    * @see io.inversion.cloud.service.Handler#run(io.inversion.cloud.model.Request, io.inversion.cloud.model.Response)
     */
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
 
-      Collection collection = findCollectionOrThrow404(api, chain, req);
-      Table table = collection.getTable();
-      ElasticsearchDb db = (ElasticsearchDb) table.getDb();
+      Collection collection = findCollectionOrThrow404(api, req.getChain(), req);
+      ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
 
       // examples...
       // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
@@ -74,11 +68,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       String[] paths = path != null ? path.split("/") : new String[]{};
       if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
       {
-         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, table);
+         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, collection);
       }
       else
       {
-         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, table);
+         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, collection);
       }
 
    }
@@ -91,7 +85,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param paths
     * @throws Exception
     */
-   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticsearchDb db, Table table) throws Exception
+   private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticsearchDb db, Collection table) throws Exception
    {
       if (req.getParam("source") == null && defaultSource != null)
       {
@@ -226,7 +220,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param res
     * @param paths
     */
-   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticsearchDb db, Table table) throws Exception
+   private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticsearchDb db, Collection table) throws Exception
    {
 
       int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
@@ -320,7 +314,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
    }
 
-   private String buildSearchUrlAndHeaders(Table table, String[] paths, List<String> headers)
+   private String buildSearchUrlAndHeaders(Collection table, String[] paths, List<String> headers)
    {
       //      String indexAndType = null;
       //      // paths[0] should be 'elastic' ... otherwise this handled wouldn't be invoked

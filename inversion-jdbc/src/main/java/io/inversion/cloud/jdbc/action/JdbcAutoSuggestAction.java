@@ -24,15 +24,12 @@ import java.util.Set;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
@@ -43,13 +40,13 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
    protected String          searchProp   = "value";
    protected String          tenantCol    = "tenantId";
 
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
-      String propertyProp = chain.getConfig("propertyProp", this.propertyProp);
-      String searchProp = chain.getConfig("searchProp", this.searchProp);
-      String tenantCol = chain.getConfig("tenantCol", this.tenantCol);
+      String propertyProp = req.getChain().getConfig("propertyProp", this.propertyProp);
+      String searchProp = req.getChain().getConfig("searchProp", this.searchProp);
+      String tenantCol = req.getChain().getConfig("tenantCol", this.tenantCol);
 
-      String whitelistStr = chain.getConfig("whitelist", null);
+      String whitelistStr = req.getChain().getConfig("whitelist", null);
       Set<String> whitelist = this.whitelist;
       if (whitelistStr != null)
       {
@@ -101,12 +98,12 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 
-         String tableName = JdbcUtils.check(collection.getEntity().getTable().getName());
+         String tableName = JdbcUtils.check(collection.getTableName());
          String column = JdbcUtils.check(prop.substring(prop.indexOf(".") + 1, prop.length()));
 
          sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + JdbcUtils.check(value) + "%' AND " + column + " != ''";
 
-         if (api.isMultiTenant() && api.findTable(tableName).getColumn(tenantCol) != null)
+         if (api.isMultiTenant() && api.getCollection(tableName).getProperty(tenantCol) != null)
             sql += " AND " + tenantCol + "=" + Chain.peek().getUser().getTenantId();
 
          if (i + 1 < propertyList.size())
@@ -119,8 +116,8 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
       req.removeParam("tenantId");
 
       JdbcDb db = (JdbcDb) collection.getDb();
-      chain.put("db", db.getName());
-      chain.put("select", sql);
+      req.getChain().put("db", db.getName());
+      req.getChain().put("select", sql);
    }
 
    public List<String> getWhitelist()

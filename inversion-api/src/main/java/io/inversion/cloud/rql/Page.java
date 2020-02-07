@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,9 +53,9 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
          if (limit > 0)
          {
             int page = findInt("page", 0, -1);
-            if(page < 0)
+            if (page < 0)
                page = findInt("pageNum", 0, -1);
-            
+
             if (page >= 0)
             {
                offset = Math.max(0, (page - 1)) * limit;
@@ -63,9 +63,9 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
          }
       }
 
-      if(offset < 0) 
+      if (offset < 0)
          offset = 0;
-      
+
       return offset;
    }
 
@@ -73,7 +73,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
    {
       return find("after");
    }
-   
+
    public int getLimit()
    {
       int limit = findInt("limit", 0, -1);
@@ -116,36 +116,6 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
    public int getPageNum()
    {
       return getPage();
-   }
-
-   public T offset(int offset)
-   {
-      withTerm("offset", offset);
-      return r();
-   }
-
-   public T limit(int limit)
-   {
-      withTerm("limit", limit);
-      return r();
-   }
-
-   public T page(int page)
-   {
-      withTerm("page", page);
-      return r();
-   }
-
-   public T pageNum(int page)
-   {
-      withTerm("pageNum", page);
-      return r();
-   }
-
-   public T pageSize(int pageSize)
-   {
-      withTerm("pageSize", pageSize);
-      return r();
    }
 
 }

@@ -27,8 +27,8 @@ public class Relationship
    protected Index            fkIndex1         = null;
    protected Index            fkIndex2         = null;
 
-   protected Entity           entity           = null;
-   protected Entity           related          = null;
+   protected Collection       entity           = null;
+   protected Collection       related          = null;
 
    protected boolean          exclude          = false;
 
@@ -37,7 +37,7 @@ public class Relationship
 
    }
 
-   public Relationship(String name, String type, Entity entity, Entity related, Index fkIndex1, Index fkIndex2)
+   public Relationship(String name, String type, Collection entity, Collection related, Index fkIndex1, Index fkIndex2)
    {
       withName(name);
       withType(type);
@@ -61,7 +61,7 @@ public class Relationship
    /**
     * @return the entity
     */
-   public Entity getEntity()
+   public Collection getEntity()
    {
       return entity;
    }
@@ -69,7 +69,7 @@ public class Relationship
    /**
     * @param entity the entity to set
     */
-   public Relationship withEntity(Entity entity)
+   public Relationship withEntity(Collection entity)
    {
       if (this.entity != entity)
       {
@@ -83,7 +83,7 @@ public class Relationship
    /**
     * @return the related
     */
-   public Entity getRelated()
+   public Collection getRelated()
    {
       return related;
    }
@@ -127,7 +127,7 @@ public class Relationship
    /**
     * @param related the related to set
     */
-   public Relationship withRelated(Entity related)
+   public Relationship withRelated(Collection related)
    {
       this.related = related;
       return this;
@@ -186,14 +186,14 @@ public class Relationship
    {
       try
       {
-         String str = "Relationship: " + getEntity().getCollection() + "." + getName() + ":" + getType() + " ";
+         String str = "Relationship: " + entity + "." + getName() + ":" + getType() + " ";
          if (isOneToMany())
          {
-            str += getEntity().getTable().getPrimaryIndex() + " -> " + getFkIndex1();
+            str += entity.getPrimaryIndex() + " -> " + getFkIndex1();
          }
          if (isManyToOne())
          {
-            str += getEntity().getTable().getPrimaryIndex() + " <- " + getFkIndex1();
+            str += entity.getPrimaryIndex() + " <- " + getFkIndex1();
          }
          else
          {
@@ -247,20 +247,20 @@ public class Relationship
       return this;
    }
 
-   public Table getPrimaryKeyTable1()
+   public Collection getPrimaryKeyTable1()
    {
-      return fkIndex1.getColumn(0).getTable();
+      return fkIndex1.getColumn(0).getCollection();
    }
 
-   public Table getPrimaryKeyTable2()
+   public Collection getPrimaryKeyTable2()
    {
-      return fkIndex2.getColumn(0).getTable();
+      return fkIndex2.getColumn(0).getCollection();
    }
 
    /**
     * @return the fkCol1
     */
-   public Column getFk1Col1()
+   public Property getFk1Col1()
    {
       return fkIndex1.getColumn(0);
    }
@@ -278,7 +278,7 @@ public class Relationship
    /**
     * @return the fkCol2
     */
-   public Column getFk2Col1()
+   public Property getFk2Col1()
    {
       return fkIndex2.getColumn(0);
    }

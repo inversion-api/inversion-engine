@@ -244,38 +244,38 @@ public class TestEngine extends TestCase
       Endpoint ep = new Endpoint("GET", "/", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
       Action actionA = new MockAction()
          {
-            public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
             {
-               Chain.debug("Endpoint_actionA_overriddenParam " + chain.getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionA_endpointParam " + chain.getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionA_actionAParam " + chain.getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionA_actionBParam " + chain.getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionA_actionCParam " + chain.getConfig("actionCParam"));
+               Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+               Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
+               Chain.debug("Endpoint_actionA_actionAParam " + req.getChain().getConfig("actionAParam"));
+               Chain.debug("Endpoint_actionA_actionBParam " + req.getChain().getConfig("actionBParam"));
+               Chain.debug("Endpoint_actionA_actionCParam " + req.getChain().getConfig("actionCParam"));
             }
          }.withConfig("overriddenParam=actionAOverride&actionAParam=actionAValue");
 
       Action actionB = new MockAction()
          {
-            public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
             {
-               Chain.debug("Endpoint_actionB_overriddenParam " + chain.getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionB_endpointParam " + chain.getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionB_actionAParam " + chain.getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionB_actionBParam " + chain.getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionB_actionCParam " + chain.getConfig("actionCParam"));
+               Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+               Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
+               Chain.debug("Endpoint_actionB_actionAParam " + req.getChain().getConfig("actionAParam"));
+               Chain.debug("Endpoint_actionB_actionBParam " + req.getChain().getConfig("actionBParam"));
+               Chain.debug("Endpoint_actionB_actionCParam " + req.getChain().getConfig("actionCParam"));
 
             }
          }.withConfig("overriddenParam=actionBOverride&actionBParam=actionBValue");
 
       Action actionC = new MockAction()
          {
-            public void run(Engine engine, io.inversion.cloud.model.Api api, Endpoint endpoint, Chain chain, io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
             {
-               Chain.debug("Endpoint_actionC_overriddenParam " + chain.getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionC_endpointParam " + chain.getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionC_actionAParam " + chain.getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionC_actionBParam " + chain.getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionC_actionCParam " + chain.getConfig("actionCParam"));
+               Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+               Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));
+               Chain.debug("Endpoint_actionC_actionAParam " + req.getChain().getConfig("actionAParam"));
+               Chain.debug("Endpoint_actionC_actionBParam " + req.getChain().getConfig("actionBParam"));
+               Chain.debug("Endpoint_actionC_actionCParam " + req.getChain().getConfig("actionCParam"));
 
             }
          }.withConfig("overriddenParam=actionCOverride&actionCParam=actionCValue");
@@ -323,7 +323,7 @@ public class TestEngine extends TestCase
          {
             protected void run(Chain chain, List<Action> actions) throws Exception
             {
-               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
+               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getCollectionName()))
                   fail(chain, "endpoints don't match");
 
                if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString()))

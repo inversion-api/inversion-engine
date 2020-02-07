@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -49,41 +48,41 @@ public abstract class Action<A extends Action> extends Rule<A>
       withConfig(config);
    }
 
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       if (req.isGet())
-         doGet(engine, api, endpoint, chain, req, res);
+         doGet(req, res);
       else if (req.isPost())
-         doPost(engine, api, endpoint, chain, req, res);
+         doPost(req, res);
       else if (req.isPut())
-         doPut(engine, api, endpoint, chain, req, res);
+         doPut(req, res);
       else if (req.isPatch())
-         doPatch(engine, api, endpoint, chain, req, res);
+         doPatch(req, res);
       else if (req.isDebug())
-         doDelete(engine, api, endpoint, chain, req, res);
+         doDelete(req, res);
    }
 
-   public void doGet(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void doGet(Request req, Response res) throws Exception
    {
       throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
-   public void doPost(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void doPost(Request req, Response res) throws Exception
    {
       throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
-   public void doPut(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void doPut(Request req, Response res) throws Exception
    {
       throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
-   public void doPatch(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void doPatch(Request req, Response res) throws Exception
    {
       throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
-   public void doDelete(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void doDelete(Request req, Response res) throws Exception
    {
       throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }

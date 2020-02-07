@@ -723,7 +723,7 @@ public class JdbcUtils
       String keyCols = "";
       for (int i = 0; i < index.size(); i++)
       {
-         keyCols += quote(conn, index.getColumn(i).getName());
+         keyCols += quote(conn, index.getColumn(i).getColumnName());
          if (i < index.size() - 1)
             keyCols += ", ";
       }

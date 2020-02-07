@@ -42,7 +42,6 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
@@ -141,18 +140,18 @@ public class DynamoDbEngineFactory
       //            @Override
       //            public void onStartup(Engine service)
       //            {
-      Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
-      orders.withName("orders");
+      io.inversion.cloud.model.Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
+      orders.withCollectionName("orders");
 
-      orders.getAttribute("hk").withName("orderId"); //get orders by id 
-      orders.getAttribute("sk").withName("type");
+      orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id 
+      orders.getPropertyByColumnName("sk").withJsonName("type");
 
-      orders.getAttribute("gs1hk").withName("employeeId"); //get orders by customer sorted by date
-      orders.getAttribute("gs1sk").withName("orderDate");
+      orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
+      orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
 
-      orders.getAttribute("ls1").withName("shipCity");
-      orders.getAttribute("ls2").withName("shipName");
-      orders.getAttribute("ls3").withName("requireDate");
+      orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
+      orders.getPropertyByColumnName("ls2").withJsonName("shipName");
+      orders.getPropertyByColumnName("ls3").withJsonName("requireDate");
 
       //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
       //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"

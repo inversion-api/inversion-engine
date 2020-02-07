@@ -21,8 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -40,7 +38,7 @@ public class ConfigAction extends Action<ConfigAction>
       super(includePaths, excludePaths, config);
    }
 
-   public final void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public final void run(Request req, Response res) throws Exception
    {
       //does nothing on purpose!
    }

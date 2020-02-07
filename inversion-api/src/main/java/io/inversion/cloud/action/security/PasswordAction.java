@@ -17,23 +17,20 @@
 package io.inversion.cloud.action.security;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 public class PasswordAction extends Action<PasswordAction>
 {
    String passwordField = "password";
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
-      if (chain.getParent() != null)
+      if (req.getChain().getParent() != null)
       {
          // this must be a nested call to service.include so the outer call
          // is responsible for logging this change
@@ -60,7 +57,7 @@ public class PasswordAction extends Action<PasswordAction>
 
       try
       {
-         chain.go();
+         req.getChain().go();
       }
       finally
       {
@@ -73,7 +70,7 @@ public class PasswordAction extends Action<PasswordAction>
                String encryptedPassword = AuthAction.strongHash(user.get("id"), password);
                JSNode body = new JSNode(passwordField, encryptedPassword, "href", user.getString("href"));
                String url = Chain.buildLink(req.getCollection(), user.get("id"), null);
-               engine.put(url, body.toString());
+               req.getEngine().put(url, body.toString());
             }
          }
       }

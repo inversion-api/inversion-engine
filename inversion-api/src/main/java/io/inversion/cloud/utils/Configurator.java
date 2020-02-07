@@ -43,18 +43,15 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Attribute;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Rule;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Wirer.Ignore;
 import io.inversion.cloud.utils.Wirer.Includer;
@@ -395,35 +392,20 @@ public class Configurator
          {
             name = Utils.getField("name", clazz).get(o);
          }
-         else if (o instanceof Table)
+         else if (o instanceof Collection)
          {
-            Table t = (Table) o;
-            name = t.getDb().getName() + ".tables." + t.getName();
+            Collection t = (Collection) o;
+            name = t.getDb().getName() + ".tables." + t.getTableName();
          }
-         else if (o instanceof Column)
+         else if (o instanceof Property)
          {
-            Column col = (Column) o;
-            name = col.getTable().getDb().getName() + ".tables." + col.getTable().getName() + ".columns." + col.getName();
+            Property col = (Property) o;
+            name = col.getCollection().getDb().getName() + ".tables." + col.getCollection().getTableName() + ".columns." + col.getColumnName();
          }
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            name = index.getTable().getDb().getName() + ".tables." + index.getTable().getName() + ".indexes." + index.getName();
-         }
-         else if (o instanceof Collection)
-         {
-            Collection col = (Collection) o;
-            name = col.getApi().getName() + ".collections." + col.getDb().getName() + "_" + col.getName();
-         }
-         else if (o instanceof Entity)
-         {
-            Entity e = (Entity) o;
-            name = getName(e.getCollection()) + ".entity";
-         }
-         else if (o instanceof Attribute)
-         {
-            Attribute a = (Attribute) o;
-            name = getName(a.getEntity()) + ".attributes." + a.getName();
+            name = index.getCollection().getDb().getName() + ".tables." + index.getCollection().getTableName() + ".indexes." + index.getName();
          }
          else if (o instanceof Relationship)
          {

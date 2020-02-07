@@ -16,8 +16,6 @@
  */
 package io.inversion.cloud.action.dynamo;
 
-import java.util.Collection;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Test;
 
@@ -69,7 +67,7 @@ public class DynamoDbDeleteActionsIntegTest extends TestCase
          assertTrue(Utils.equal(record.get(key), updatedRecord.get(key)));
       }
 
-      Collection disjunction = CollectionUtils.disjunction(record.keySet(), updatedRecord.keySet());
+      java.util.Collection disjunction = CollectionUtils.disjunction(record.keySet(), updatedRecord.keySet());
       if (disjunction.size() > 0)
       {
          //there is an extra or missing column somewhere

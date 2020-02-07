@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package io.inversion.cloud.jdbc.action;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -31,14 +31,14 @@ import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 
 @RunWith(Parameterized.class)
 public class TestSqlGetAction extends TestRestGetActions
 {
    @Parameterized.Parameters
-   public static Collection input()
+   public static java.util.Collection input()
    {
       return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
    }
@@ -53,7 +53,6 @@ public class TestSqlGetAction extends TestRestGetActions
    protected String collectionPath()
    {
       return "northwind/" + db + "/";
-      //return "northwind/h2/";
    }
 
    static Engine engine = null;
@@ -161,17 +160,15 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testCollections() throws Exception
    {
-      List c1 = new ArrayList(Arrays.asList("Categories", "CustomerDemographics", "Customers", "Employees", "IndexLogs", "Orders", "OrderDetails", "Products", "Regions", "Shippers", "Suppliers", "Territories", "Urls"));
+      List c1 = new ArrayList(Arrays.asList("categories", "CUSTOMERCUSTOMERDEMO", "customerdemographics", "customers", "EMPLOYEEORDERDETAILS", "employees", "EMPLOYEETERRITORIES", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
 
       List<String> c2 = new ArrayList();
 
       Api api = service().getApi("northwind");
-      List<Table> tables = api.getDb(db).getTables();
-      for (Table t : tables)
+
+      for (Collection coll : (List<Collection>)api.getDb(db).getCollections())
       {
-         io.inversion.cloud.model.Collection c = api.getCollection(t);
-         if (c != null)
-            c2.add(c.getName());
+         c2.add(coll.getCollectionName());
       }
 
       Collections.sort(c1);
@@ -189,7 +186,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
       res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
-      System.out.println(res.getDebug());
+      res.dump();
       assertNull(res.find("data.0.href"));
       assertNull(res.find("data.0.shipname"));
       assertNull(res.find("data.0.orderdetails"));

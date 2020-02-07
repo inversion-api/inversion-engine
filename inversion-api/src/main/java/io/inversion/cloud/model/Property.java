@@ -18,55 +18,57 @@ package io.inversion.cloud.model;
 
 import io.inversion.cloud.utils.Utils;
 
-public class Column implements Comparable<Column>
+public class Property implements Comparable<Property>
 {
-   protected String  name     = null;
-   protected String  type     = "string";
-   protected boolean nullable = false;
+   protected String     jsonName   = null;
+   protected String     columnName = null;
+   protected String     type       = "string";
+   protected boolean    nullable   = false;
 
-   protected String  hint     = null;
+   protected String     hint       = null;
 
-   protected boolean exclude  = false;
+   protected boolean    exclude    = false;
 
    /**
-    *  If this Col is a foreign key, this will be populated
-    *  with the refrenced primary key from the referred table
+    *  If this Property is a foreign key, this will be populated
+    *  with the referenced primary key from the referred Collection
     */
-   protected Column  pk       = null;
+   protected Property   pk         = null;
 
-   protected Table   table    = null;
+   protected Collection collection      = null;
 
-   public Column()
+   public Property()
    {
 
    }
 
-   public Column(String name)
+   public Property(String name)
    {
       this(name, "string", true);
    }
 
-   public Column(String name, String type)
+   public Property(String name, String type)
    {
       this(name, type, true);
    }
 
-   public Column(String name, String type, boolean nullable)
+   public Property(String name, String type, boolean nullable)
    {
-      withName(name);
+      withColumnName(name);
+      withJsonName(name);
       withType(type);
       withNullable(nullable);
    }
 
    @Override
-   public int compareTo(Column o)
+   public int compareTo(Property o)
    {
       if (o == null)
          return 1;
 
-      if (o.table == table)
+      if (o.collection == collection)
       {
-         return table.indexOf(this) > table.indexOf(o) ? 1 : -1;
+         return collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
       }
 
       return 0;
@@ -77,10 +79,10 @@ public class Column implements Comparable<Column>
       if (object == this)
          return true;
 
-      if (object instanceof Column)
+      if (object instanceof Property)
       {
-         Column column = (Column) object;
-         return ((table == null || table == column.table) && Utils.equal(name, column.name));
+         Property column = (Property) object;
+         return ((collection == null || collection == column.collection) && Utils.equal(columnName, column.columnName));
       }
       return false;
    }
@@ -93,7 +95,7 @@ public class Column implements Comparable<Column>
    /**
     * @return the primaryKey
     */
-   public Column getPk()
+   public Property getPk()
    {
       return pk;
    }
@@ -101,7 +103,7 @@ public class Column implements Comparable<Column>
    /**
     * @param primaryKey the primaryKey to set
     */
-   public Column withPk(Column pk)
+   public Property withPk(Property pk)
    {
       this.pk = pk;
       return this;
@@ -115,17 +117,34 @@ public class Column implements Comparable<Column>
    /**
     * @return the name
     */
-   public String getName()
+   public String getColumnName()
    {
-      return name;
+      return columnName;
    }
 
    /**
     * @param name the name to set
     */
-   public Column withName(String name)
+   public Property withColumnName(String name)
    {
-      this.name = name;
+      this.columnName = name;
+      return this;
+   }
+
+   /**
+    * @return the name
+    */
+   public String getJsonName()
+   {
+      return jsonName;
+   }
+
+   /**
+    * @param name the name to set
+    */
+   public Property withJsonName(String name)
+   {
+      this.jsonName = name;
       return this;
    }
 
@@ -140,7 +159,7 @@ public class Column implements Comparable<Column>
    /**
     * @param type the type to set
     */
-   public Column withType(String type)
+   public Property withType(String type)
    {
       if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
          this.type = type;
@@ -150,20 +169,20 @@ public class Column implements Comparable<Column>
    /**
     * @return the tbl
     */
-   public Table getTable()
+   public Collection getCollection()
    {
-      return table;
+      return collection;
    }
 
    /**
     * @param tbl the tbl to set
     */
-   public Column withTable(Table table)
+   public Property withCollection(Collection collection)
    {
-      if (this.table != table)
+      if (this.collection != collection)
       {
-         this.table = table;
-         table.withColumns(this);
+         this.collection = collection;
+         collection.withProperties(this);
       }
       return this;
    }
@@ -179,7 +198,7 @@ public class Column implements Comparable<Column>
    /**
     * @param hint the hint to set
     */
-   public Column withHint(String hint)
+   public Property withHint(String hint)
    {
       this.hint = hint;
       return this;
@@ -190,7 +209,7 @@ public class Column implements Comparable<Column>
       return nullable;
    }
 
-   public Column withNullable(boolean nullable)
+   public Property withNullable(boolean nullable)
    {
       this.nullable = nullable;
       return this;
@@ -201,7 +220,7 @@ public class Column implements Comparable<Column>
       return exclude;
    }
 
-   public Column withExclude(boolean exclude)
+   public Property withExclude(boolean exclude)
    {
       this.exclude = exclude;
       return this;

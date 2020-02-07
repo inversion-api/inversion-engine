@@ -22,16 +22,13 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.HttpUtils;
 import io.inversion.cloud.utils.Rows.Row;
@@ -47,38 +44,30 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    public ElasticsearchDb()
    {
-
+      withType("elasticsearch");
    }
 
    public ElasticsearchDb(String name)
    {
+      this();
       withName(name);
    }
 
    @Override
-   protected void doStartup()
-   {
-      this.withType("elasticsearch");
-
-      reflectDb();
-      configApi();
-   }
-
-   @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
    }
 
    @Override
-   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       return null;
    }
@@ -105,7 +94,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
             Map<String, JSNode> jsContentMap = jsObj.asMap();
 
             // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-            Map<String, Table> tableMap = new HashMap<String, Table>();
+            Map<String, Collection> tableMap = new HashMap<String, Collection>();
 
             for (Map.Entry<String, JSNode> entry : jsContentMap.entrySet())
             {
@@ -129,20 +118,6 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       }
    }
 
-   @Override
-   public void configApi()
-   {
-      for (Table t : getTables())
-      {
-         List<Column> cols = t.getColumns();
-         Collection collection = new Collection();
-
-         collection.withName(super.beautifyCollectionName(t.getName()));
-         collection.withTable(t);
-         api.withCollection(collection);
-      }
-   }
-
    /**
     * At the time of writing, there is no need to parse settings.
     * This method creates tables based on alias names of 
@@ -155,7 +130,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
     * @param jsIndex
     * @return
     */
-   private void buildAliasTables(String elasticName, JSNode jsIndex, Map<String, Table> tableMap)
+   private void buildAliasTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap)
    {
 
       String aliasName = null;
@@ -165,18 +140,18 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       {
          aliasName = propEntry.getKey();
 
-         Table table = null;
+         Collection table = null;
 
          // use the previously created table if it exists.
          if (tableMap.containsKey(aliasName))
             table = tableMap.get(aliasName);
          else
          {
-            table = new Table(aliasName);
+            table = new Collection(aliasName);
             tableMap.put(aliasName, table);
          }
 
-         withTable(table);
+         withCollection(table);
 
          // use the mapping to add columns to the table.
          addColumns(table, false, jsMappingsDocProps, "");
@@ -189,7 +164,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
     * @param jsPropsMap - contains the parent's nested properties
     * @param parentPrefix - necessary for 'nested' column names.
     */
-   private void addColumns(Table table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
+   private void addColumns(Collection table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
    {
       int columnNumber = 0;
       for (Map.Entry<String, JSNode> propEntry : jsPropsMap.entrySet())
@@ -200,10 +175,10 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          JSNode propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
-         if (propValue.containsKey("type") && table.getColumn(colName) == null)
+         if (propValue.containsKey("type") && table.getProperty(colName) == null)
          {
-            Column column = new Column(colName, propValue.getString("type"), true);
-            table.withColumns(column);
+            Property column = new Property(colName, propValue.getString("type"), true);
+            table.withProperties(column);
          }
       }
    }
