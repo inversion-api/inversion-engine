@@ -495,7 +495,7 @@ public class RestPostAction extends Action<RestPostAction>
          }
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
-         Collection table = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getTable();
+         Collection table = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
          if (rel.isManyToMany() || rel.isManyToOne())
          {
             log.debug("updating relationship: " + rel + " -> " + table + " -> " + upserts);

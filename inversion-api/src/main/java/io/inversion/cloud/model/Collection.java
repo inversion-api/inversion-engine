@@ -212,8 +212,8 @@ public class Collection extends Rule<Collection>
          if (existing == null)
          {
             properties.add(prop);
-            if (prop.getTable() != this)
-               prop.withTable(this);
+            if (prop.getCollection() != this)
+               prop.withCollection(this);
          }
          else
          {
@@ -316,8 +316,8 @@ public class Collection extends Rule<Collection>
          Index index = indexes[i];
          if (index != null)
          {
-            if (index.getTable() != this)
-               index.withTable(this);
+            if (index.getCollection() != this)
+               index.withCollection(this);
 
             if (!this.indexes.contains(index))
                this.indexes.add(index);

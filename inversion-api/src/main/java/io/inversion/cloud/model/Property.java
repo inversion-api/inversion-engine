@@ -20,22 +20,22 @@ import io.inversion.cloud.utils.Utils;
 
 public class Property implements Comparable<Property>
 {
-   protected String  jsonName = null;
-   protected String  columnName    = null;
-   protected String  type          = "string";
-   protected boolean nullable      = false;
+   protected String     jsonName   = null;
+   protected String     columnName = null;
+   protected String     type       = "string";
+   protected boolean    nullable   = false;
 
-   protected String  hint          = null;
+   protected String     hint       = null;
 
-   protected boolean exclude       = false;
+   protected boolean    exclude    = false;
 
    /**
-    *  If this Col is a foreign key, this will be populated
-    *  with the refrenced primary key from the referred table
+    *  If this Property is a foreign key, this will be populated
+    *  with the referenced primary key from the referred Collection
     */
-   protected Property  pk            = null;
+   protected Property   pk         = null;
 
-   protected Collection   table         = null;
+   protected Collection collection      = null;
 
    public Property()
    {
@@ -66,9 +66,9 @@ public class Property implements Comparable<Property>
       if (o == null)
          return 1;
 
-      if (o.table == table)
+      if (o.collection == collection)
       {
-         return table.indexOf(this) > table.indexOf(o) ? 1 : -1;
+         return collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
       }
 
       return 0;
@@ -82,7 +82,7 @@ public class Property implements Comparable<Property>
       if (object instanceof Property)
       {
          Property column = (Property) object;
-         return ((table == null || table == column.table) && Utils.equal(columnName, column.columnName));
+         return ((collection == null || collection == column.collection) && Utils.equal(columnName, column.columnName));
       }
       return false;
    }
@@ -169,20 +169,20 @@ public class Property implements Comparable<Property>
    /**
     * @return the tbl
     */
-   public Collection getTable()
+   public Collection getCollection()
    {
-      return table;
+      return collection;
    }
 
    /**
     * @param tbl the tbl to set
     */
-   public Property withTable(Collection table)
+   public Property withCollection(Collection collection)
    {
-      if (this.table != table)
+      if (this.collection != collection)
       {
-         this.table = table;
-         table.withProperties(this);
+         this.collection = collection;
+         collection.withProperties(this);
       }
       return this;
    }

@@ -829,7 +829,7 @@ public class JdbcDb extends Db<JdbcDb>
                   String relatedTable = rel.getRelated().getTableName();
 
                   if (rel.isManyToMany() && j == 0)
-                     relatedTable = rel.getFk1Col1().getTable().getTableName();
+                     relatedTable = rel.getFk1Col1().getCollection().getTableName();
 
                   String tableAlias = aliasPrefix + (j + 1);
 
@@ -848,7 +848,7 @@ public class JdbcDb extends Db<JdbcDb>
                      for (int k = 0; k < idx.size(); k++)
                      {
                         Property col = idx.getColumn(k);
-                        joinTerms.add(col.getTable().getTableName());
+                        joinTerms.add(col.getCollection().getTableName());
                         joinTerms.add(col.getColumnName());
                         joinTerms.add(tableAlias);
                         joinTerms.add(col.getPk().getColumnName());
@@ -861,7 +861,7 @@ public class JdbcDb extends Db<JdbcDb>
                         for (int k = 0; k < idx.size(); k++)
                         {
                            Property col = idx.getColumn(k);
-                           joinTerms.add(col.getPk().getTable().getTableName());
+                           joinTerms.add(col.getPk().getCollection().getTableName());
                            joinTerms.add(col.getPk().getColumnName());
                            joinTerms.add(tableAlias);
                            joinTerms.add(col.getColumnName());

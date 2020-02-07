@@ -249,12 +249,12 @@ public class Relationship
 
    public Collection getPrimaryKeyTable1()
    {
-      return fkIndex1.getColumn(0).getTable();
+      return fkIndex1.getColumn(0).getCollection();
    }
 
    public Collection getPrimaryKeyTable2()
    {
-      return fkIndex2.getColumn(0).getTable();
+      return fkIndex2.getColumn(0).getCollection();
    }
 
    /**

@@ -53,7 +53,6 @@ public class TestSqlGetAction extends TestRestGetActions
    protected String collectionPath()
    {
       return "northwind/" + db + "/";
-      //return "northwind/h2/";
    }
 
    static Engine engine = null;

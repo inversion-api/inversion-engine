@@ -713,7 +713,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
-      if (idxToMatch.getTable() != idxToRetrieve.getTable())
+      if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
          throw new ApiException(SC.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
       List<KeyValue> related = new ArrayList<>();
 
@@ -729,7 +729,7 @@ public class RestGetAction extends Action<RestGetAction>
       Term sort = Term.term(null, "sort", columns);
       Term notNull = Term.term(null, "nn", columns);
 
-      Rows rows = ((Rows) idxToMatch.getColumn(0).getTable().getDb().select(idxToRetrieve.getTable(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
+      Rows rows = ((Rows) idxToMatch.getColumn(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
       for (Row row : rows)
       {
          List keyParts = row.asList();

@@ -400,12 +400,12 @@ public class Configurator
          else if (o instanceof Property)
          {
             Property col = (Property) o;
-            name = col.getTable().getDb().getName() + ".tables." + col.getTable().getTableName() + ".columns." + col.getColumnName();
+            name = col.getCollection().getDb().getName() + ".tables." + col.getCollection().getTableName() + ".columns." + col.getColumnName();
          }
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            name = index.getTable().getDb().getName() + ".tables." + index.getTable().getTableName() + ".indexes." + index.getName();
+            name = index.getCollection().getDb().getName() + ".tables." + index.getCollection().getTableName() + ".indexes." + index.getName();
          }
          else if (o instanceof Relationship)
          {

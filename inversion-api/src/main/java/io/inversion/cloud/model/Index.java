@@ -27,7 +27,7 @@ import io.inversion.cloud.utils.Utils;
  */
 public class Index
 {
-   protected Collection        table       = null;
+   protected Collection   collection  = null;
    protected String       name        = null;
    protected String       type        = null;           // primary, partition, sort, localsecondary, etc
    protected boolean      unique      = true;
@@ -55,15 +55,14 @@ public class Index
       if (object instanceof Index)
       {
          Index index = ((Index) object);
-         return ((table == null || table == index.table) && Utils.equal(name, index.name));
+         return ((collection == null || collection == index.collection) && Utils.equal(name, index.name));
       }
       return false;
    }
 
    public String toString()
    {
-      //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
-      StringBuffer buff = new StringBuffer(getTable().getTableName()).append(".").append(name).append("(");
+      StringBuffer buff = new StringBuffer(getCollection().getTableName()).append(".").append(name).append("(");
       for (int i = 0; i < columnNames.size(); i++)
       {
          buff.append(columnNames.get(i));
@@ -76,27 +75,27 @@ public class Index
 
    public boolean isExclude()
    {
-      if (table.isExclude())
+      if (collection.isExclude())
          return true;
 
       for (String c : columnNames)
-         if (table.getProperty(c).isExclude())
+         if (collection.getProperty(c).isExclude())
             return true;
 
       return false;
    }
 
-   public Collection getTable()
+   public Collection getCollection()
    {
-      return table;
+      return collection;
    }
 
-   public Index withTable(Collection table)
+   public Index withCollection(Collection coll)
    {
-      if (this.table != table)
+      if (this.collection != coll)
       {
-         this.table = table;
-         table.withIndexes(this);
+         this.collection = coll;
+         coll.withIndexes(this);
       }
 
       return this;
@@ -157,13 +156,8 @@ public class Index
 
    public Property getColumn(int idx)
    {
-      return table.getProperty(columnNames.get(idx));
+      return collection.getProperty(columnNames.get(idx));
    }
-
-   //   public List<Column> getColumns()
-   //   {
-   //      return new ArrayList(columns);
-   //   }
 
    public int size()
    {
@@ -180,7 +174,7 @@ public class Index
             this.columnNames.add(columnName);
          }
       }
-      
+
       return this;
    }
 

@@ -251,8 +251,8 @@ public abstract class Db<T extends Db>
                   if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Collection entity1 = idx1.getColumn(0).getPk().getTable();
-                  Collection entity2 = idx2.getColumn(0).getPk().getTable();
+                  Collection entity1 = idx1.getColumn(0).getPk().getCollection();
+                  Collection entity2 = idx2.getColumn(0).getPk().getCollection();
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
@@ -275,8 +275,8 @@ public abstract class Db<T extends Db>
                   if (!fkIdx.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Collection pkEntity = fkIdx.getColumn(0).getPk().getTable();
-                  Collection fkEntity = fkIdx.getColumn(0).getTable();
+                  Collection pkEntity = fkIdx.getColumn(0).getPk().getCollection();
+                  Collection fkEntity = fkIdx.getColumn(0).getCollection();
 
                   //ONE_TO_MANY
                   {
@@ -458,7 +458,7 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getTableName();
+         name = rel.getFk2Col1().getPk().getCollection().getTableName();
          pluralize = true;
       }
 
@@ -492,7 +492,7 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getCollectionName();
+         name = rel.getFk2Col1().getPk().getCollection().getCollectionName();
          pluralize = true;
       }
 
