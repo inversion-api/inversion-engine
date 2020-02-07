@@ -27,7 +27,7 @@ import com.amazonaws.services.s3.model.Bucket;
 
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -67,14 +67,12 @@ public class S3Db extends Db<S3Db>
 
       for (Bucket bucket : bucketList)
       {
-         Table table = new Table(bucket.getName());
+         Collection table = new Collection(bucket.getName());
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
          // Other core metadata includes: eTag, size, lastModified, storageClass
-         table.withColumn("key", String.class.getName(), false);
-         withTable(table);
-
-         api.makeCollection(table, beautifyCollectionName(table.getName()));
+         table.withProperty("key", String.class.getName(), false);
+         withCollection(table);
       }
    }
 
@@ -100,7 +98,7 @@ public class S3Db extends Db<S3Db>
 //   }
 
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
       return query.doSelect();
@@ -108,14 +106,14 @@ public class S3Db extends Db<S3Db>
 
 
    @Override
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
       

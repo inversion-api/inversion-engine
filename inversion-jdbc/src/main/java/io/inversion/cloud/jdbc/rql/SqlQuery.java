@@ -29,11 +29,11 @@ import org.omg.CosNaming.IstringHelper;
 
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Order.Sort;
@@ -47,7 +47,7 @@ import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
-public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Collection, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';
    protected char              columnQuote = '"';
@@ -63,7 +63,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
    }
 
-   public SqlQuery(Table table, List<Term> terms)
+   public SqlQuery(Collection table, List<Term> terms)
    {
       super(table, terms);
    }
@@ -78,7 +78,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (name.indexOf(".") < 0 && table != null && table.getColumn(name) == null)
+         if (name.indexOf(".") < 0 && table != null && table.getProperty(name) == null)
             return true;
       }
 
@@ -417,11 +417,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       {
          for (int k = 0; k < table.getPrimaryIndex().size(); k++)
          {
-            Column col = table.getPrimaryIndex().getColumn(k);
+            Property col = table.getPrimaryIndex().getColumn(k);
             if ((parts.select.indexOf("* ") >= 0 || parts.select.indexOf("*,") >= 0)//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)" 
-                  || parts.select.contains(col.getName()))
+                  || parts.select.contains(col.getColumnName()))
             {
-               Sort sort = new Sort(col.getName(), true);
+               Sort sort = new Sort(col.getColumnName(), true);
                sorts.add(sort);
             }
             else
@@ -773,7 +773,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
       if (isNum(term))
          return false;
 
-      if (table != null && table.getColumn(term.getToken()) != null)
+      if (table != null && table.getProperty(term.getToken()) != null)
          return true;
 
       if (term.getParent() != null && term.getParent().indexOf(term) == 0)
@@ -801,13 +801,13 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
 
    public String printTable()
    {
-      return quoteCol(table.getName());
+      return quoteCol(table.getTableName());
    }
 
    public String printCol(String columnName)
    {
       if (table != null && columnName.indexOf(".") < 0)
-         columnName = table.getName() + "." + columnName;
+         columnName = table.getTableName() + "." + columnName;
 
       return quoteCol(columnName);
    }

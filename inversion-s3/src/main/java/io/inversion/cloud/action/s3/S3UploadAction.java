@@ -35,8 +35,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -44,7 +42,6 @@ import io.inversion.cloud.model.SC;
 import io.inversion.cloud.model.Request.Upload;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
-import io.inversion.cloud.service.Engine;
 
 /**
  * Sends browser multi-part file uploads to a defined S3 location
@@ -84,7 +81,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       String requestPath = null;
       String fileName = null;
@@ -119,7 +116,7 @@ public class S3UploadAction extends Action<S3UploadAction>
 
          try
          {
-            responseContent = saveFile(chain, uploadStream, fileName, requestPath);
+            responseContent = saveFile(req.getChain(), uploadStream, fileName, requestPath);
          }
          catch (Exception e)
          {

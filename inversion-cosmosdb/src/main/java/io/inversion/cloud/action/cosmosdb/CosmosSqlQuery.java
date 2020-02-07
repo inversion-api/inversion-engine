@@ -19,7 +19,7 @@ import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
@@ -37,7 +37,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
 
    }
 
-   public CosmosSqlQuery(CosmosDocumentDb db, Table table, List<Term> terms)
+   public CosmosSqlQuery(CosmosDocumentDb db, Collection table, List<Term> terms)
    {
       super(table, terms);
       super.withDb(db);
@@ -105,7 +105,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       Index partKey = table.getIndex("PartitionKey");
       if (partKey != null)
       {
-         String partKeyCol = partKey.getColumn(0).getName();
+         String partKeyCol = partKey.getColumn(0).getColumnName();
          //-- the only way to turn cross partition querying off is to 
          //-- have a single partition key identified in your query.
          //-- If we have a pk term but it is nested in an expression
@@ -183,12 +183,12 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
    {
       String sql = super.toSql(preparedStmt);
 
-      sql = sql.replace(columnQuote + table.getName() + columnQuote + ".*", "*");
+      sql = sql.replace(columnQuote + table.getTableName() + columnQuote + ".*", "*");
 
-      String regex = columnQuote + table.getName() + columnQuote + "\\." + columnQuote + "([^" + columnQuote + "]*)" + columnQuote;
-      sql = sql.replaceAll(regex, table.getName() + "[\"$1\"]");
+      String regex = columnQuote + table.getTableName() + columnQuote + "\\." + columnQuote + "([^" + columnQuote + "]*)" + columnQuote;
+      sql = sql.replaceAll(regex, table.getTableName() + "[\"$1\"]");
 
-      sql = sql.replace(columnQuote + table.getName() + columnQuote, table.getName());
+      sql = sql.replace(columnQuote + table.getTableName() + columnQuote, table.getTableName());
 
       return sql;
    }

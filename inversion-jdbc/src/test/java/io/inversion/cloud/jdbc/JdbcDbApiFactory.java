@@ -28,11 +28,11 @@ import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.service.spring.InversionApp;
@@ -112,7 +112,7 @@ public class JdbcDbApiFactory
                                  {
                                     for (Collection col : api.getCollections())
                                     {
-                                       col.withAlias("aliased_" + col.getName());
+                                       col.withAlias("aliased_" + col.getCollectionName());
                                     }
                                  }
                               });
@@ -262,13 +262,13 @@ public class JdbcDbApiFactory
       //-- Clear and restore the Order and OrderDetails tables.  OrderDetails must be
       //-- cleared first and restored second because of foreign key dependencies
 
-      String orderDetailsTbl = destDb.getTable("OrderDetails").getName();
-      String orderTbl = destDb.getTable("Orders").getName();
+      String orderDetailsTbl = destDb.getCollection("OrderDetails").getTableName();
+      String orderTbl = destDb.getCollection("Orders").getTableName();
 
       JdbcUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderDetailsTbl));
       JdbcUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(orderTbl));
 
-      int rows = JdbcUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getTable("Orders").getName()));
+      int rows = JdbcUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(destDb.getCollection("Orders").getTableName()));
       Utils.assertEq(0, rows);
 
       JdbcDb sourceDb = ((JdbcDb) engine.getApi("northwind").getDb("source"));
@@ -287,7 +287,7 @@ public class JdbcDbApiFactory
       assertEquals(59, JdbcUtils.selectInt(destCon, "SELECT count(*) FROM " + destDb.quoteCol(orderDetailsTbl)));
 
       //-- Restore the IndexLog table from source
-      String indexLogTbl = destDb.getTable("IndexLog").getName();
+      String indexLogTbl = destDb.getCollection("IndexLog").getTableName();
       JdbcUtils.execute(destCon, "DELETE FROM " + destDb.quoteCol(indexLogTbl));
 
       Rows indexLogs = JdbcUtils.selectRows(sourceConn, "SELECT * FROM \"INDEXLOG\"");

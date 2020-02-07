@@ -34,12 +34,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Attribute;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
@@ -48,13 +44,12 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.rql.Page;
 import io.inversion.cloud.rql.Parser;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -86,14 +81,13 @@ public class RestGetAction extends Action<RestGetAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       if (req.getSubCollectionKey() != null)
       {
          String entityKey = req.getEntityKey();
          Collection collection = req.getCollection();
-         Entity entity = collection.getEntity();
-         Relationship rel = entity.getRelationship(req.getSubCollectionKey());
+         Relationship rel = collection.getRelationship(req.getSubCollectionKey());
 
          if (rel == null)
             throw new ApiException(SC.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
@@ -109,18 +103,18 @@ public class RestGetAction extends Action<RestGetAction>
             //TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
 
             //TODO: need a compound key test case here
-            Collection relatedCollection = rel.getRelated().getCollection();
+            Collection relatedCollection = rel.getRelated();
 
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
 
-            Row entityKeyRow = collection.getTable().decodeKey(req.getEntityKey());
+            Row entityKeyRow = collection.decodeKey(req.getEntityKey());
 
             //maps query string parameter names for the main tables pk to the related tables fk
             Index fkIdx = rel.getFkIndex1();
             for (int i = 0; i < fkIdx.size(); i++)
             {
-               Column fk = fkIdx.getColumn(i);
-               String pkName = fk.getPk().getName();
+               Property fk = fkIdx.getColumn(i);
+               String pkName = fk.getPk().getColumnName();
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
@@ -128,7 +122,7 @@ public class RestGetAction extends Action<RestGetAction>
 
                //-- TODO: fixme - should be using collection attrubte names not column names for the keys
                //-- TODO: fixme - this is not a URL safe encoding
-               newHref += fk.getName() + "=" + pkVal + "&";
+               newHref += fk.getColumnName() + "=" + pkVal + "&";
             }
 
             newHref = newHref.substring(0, newHref.length() - 1);
@@ -145,7 +139,7 @@ public class RestGetAction extends Action<RestGetAction>
                List foreignKeys = new ArrayList();
                rows.forEach(k -> foreignKeys.add(k.getValue()));
 
-               Collection relatedCollection = rel.getRelated().getCollection();
+               Collection relatedCollection = rel.getRelated();
                String entityKeys = Utils.implode(",", foreignKeys.toArray());
                newHref = Chain.buildLink(relatedCollection, entityKeys, null);
             }
@@ -174,7 +168,7 @@ public class RestGetAction extends Action<RestGetAction>
          }
 
          //TODO: forward better symentec here?
-         Response included = engine.get(newHref);
+         Response included = req.getEngine().get(newHref);
          res.withStatus(included.getStatus());
          res.withJson(included.getJson());
          return;
@@ -182,7 +176,7 @@ public class RestGetAction extends Action<RestGetAction>
       else if (req.getCollection() != null && req.getEntityKey() != null)
       {
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
-         Term term = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName(), entityKeys.toArray());
+         Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), entityKeys.toArray());
          req.getUrl().withParams(term.toString(), null);
       }
 
@@ -315,21 +309,21 @@ public class RestGetAction extends Action<RestGetAction>
                   {
                      term.removeTerm(child);
 
-                     Index pk = collection.getTable().getPrimaryIndex();
+                     Index pk = collection.getPrimaryIndex();
                      for (int i = 0; i < pk.size(); i++)
                      {
-                        Column c = pk.getColumn(i);
+                        Property c = pk.getColumn(i);
                         boolean includesPkCol = false;
                         for (Term col : term.getTerms())
                         {
-                           if (col.hasToken(c.getName()))
+                           if (col.hasToken(c.getColumnName()))
                            {
                               includesPkCol = true;
                               break;
                            }
                         }
                         if (!includesPkCol)
-                           term.withTerm(Term.term(term, c.getName()));
+                           term.withTerm(Term.term(term, c.getColumnName()));
                      }
                      break;
                   }
@@ -364,7 +358,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else
       {
-         results = collection.getDb().select(collection.getTable(), terms);
+         results = collection.getDb().select(collection, terms);
       }
 
       if (results.size() > 0)
@@ -385,24 +379,24 @@ public class RestGetAction extends Action<RestGetAction>
                JSNode node = new JSNode();
                results.setRow(i, node);
 
-               String entityKey = req.getCollection().getTable().encodeKey(row);
+               String entityKey = req.getCollection().encodeKey(row);
 
                if (!Utils.empty(entityKey))
                {
                   //------------------------------------------------
                   //next turn all relationships into links that will 
                   //retrieve the related entities
-                  for (Relationship rel : collection.getEntity().getRelationships())
+                  for (Relationship rel : collection.getRelationships())
                   {
                      String link = null;
                      if (rel.isOneToMany())
                      {
                         Index foreignKey = rel.getFkIndex1();
-                        String fkval = Table.encodeKey(row, rel.getFkIndex1());
+                        String fkval = Collection.encodeKey(row, rel.getFkIndex1());
 
                         if (fkval != null)
                         {
-                           link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
+                           link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
                         }
                      }
                      else
@@ -426,10 +420,10 @@ public class RestGetAction extends Action<RestGetAction>
                //------------------------------------------------
                //copy over defined attributes first, if the select returned 
                //extra columns they will be copied over last
-               for (Attribute attr : collection.getEntity().getAttributes())
+               for (Property attr : collection.getProperties())
                {
-                  String attrName = attr.getName();
-                  String colName = attr.getColumn().getName();
+                  String attrName = attr.getJsonName();
+                  String colName = attr.getColumnName();
 
                   boolean rowHas = row.containsKey(colName);
                   if (entityKey != null || rowHas)
@@ -541,7 +535,7 @@ public class RestGetAction extends Action<RestGetAction>
       if (expandsPath == null)
          expandsPath = "";
 
-      for (Relationship rel : collection.getEntity().getRelationships())
+      for (Relationship rel : collection.getRelationships())
       {
          boolean shouldExpand = shouldExpand(expands, expandsPath, rel);
 
@@ -585,7 +579,7 @@ public class RestGetAction extends Action<RestGetAction>
             //MANY_TO_ONE - Location.id <- Player.locationId  
             //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
 
-            final Collection relatedCollection = rel.getRelated().getCollection();
+            final Collection relatedCollection = rel.getRelated();
             //            Column toMatchCol = null;
             //            Column toRetrieveCol = null;
 
@@ -595,7 +589,7 @@ public class RestGetAction extends Action<RestGetAction>
 
             if (rel.isOneToMany())
             {
-               idxToMatch = collection.getEntity().getTable().getPrimaryIndex();
+               idxToMatch = collection.getPrimaryIndex();
                idxToRetrieve = rel.getFkIndex1();
 
                //NOTE: expands() is only getting the paired up related keys.  For a ONE_TO_MANY
@@ -631,7 +625,7 @@ public class RestGetAction extends Action<RestGetAction>
                //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
 
                idxToMatch = rel.getFkIndex1();
-               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();
+               idxToRetrieve = rel.getRelated().getPrimaryIndex();
 
             }
             else if (rel.isManyToMany())
@@ -739,8 +733,8 @@ public class RestGetAction extends Action<RestGetAction>
       for (Row row : rows)
       {
          List keyParts = row.asList();
-         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.size()));
-         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
+         String parentEk = Collection.encodeKey(keyParts.subList(0, idxToMatch.size()));
+         String relatedEk = Collection.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }
@@ -854,9 +848,10 @@ public class RestGetAction extends Action<RestGetAction>
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();
-         String attrName = collection.getAttributeName(token);
-         if (attrName != null)
-            term.withToken(attrName);
+
+         Property attr = collection.findProperty(token);
+         if (attr != null)
+            term.withToken(attr.getJsonName());
       }
       else
       {

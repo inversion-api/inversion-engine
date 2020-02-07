@@ -35,7 +35,7 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row;
@@ -68,14 +68,14 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
     * @throws Exception
     */
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)
@@ -85,7 +85,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return keys;
    }
 
-   public String upsertRow(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws Exception
    {
       JSNode doc = new JSNode(columnMappedTermsRow);
 
@@ -111,7 +111,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       }
 
       //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getActualName();
+      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getTableName();
 
       String json = doc.toString();
       Document document = new Document(json);
@@ -135,7 +135,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       for (Map<String, Object> row : indexValues)
       {
@@ -155,11 +155,11 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
     * @param indexValues
     * @throws Exception
     */
-   protected void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
    {
       Object id = table.encodeKey(indexValues);
-      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getName());
-      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName() + "/docs/" + id;
+      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getColumnName());
+      String documentUri = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
 
       RequestOptions options = new RequestOptions();
       options.setPartitionKey(new PartitionKey(partitionKeyValue));
@@ -192,9 +192,9 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       }
    }
 
-   protected String getCollectionUri(Table table)
+   protected String getCollectionUri(Collection table)
    {
-      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName();
+      String documentUri = "/dbs/" + db + "/colls/" + table.getTableName();
       return documentUri;
    }
 

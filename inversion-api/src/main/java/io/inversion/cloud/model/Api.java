@@ -17,6 +17,7 @@
 package io.inversion.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -50,7 +51,6 @@ public class Api
    protected List<Db>                       dbs         = new ArrayList();
    protected List<Endpoint>                 endpoints   = new ArrayList();
    protected List<Action>                   actions     = new ArrayList();
-
    protected List<Collection>               collections = new ArrayList();
 
    protected transient List<EngineListener> listeners   = new ArrayList();
@@ -78,7 +78,17 @@ public class Api
             db.startup();
          }
 
-         //removeExcludes();
+         removeExcludes();
+
+         for (Db db : dbs)
+         {
+            for (Collection coll : (List<Collection>) db.getCollections())
+            {
+               if (!coll.isLinkTbl() && !coll.isExclude())
+                  withCollection(coll);
+            }
+         }
+
          started = true;
 
          for (EngineListener listener : listeners)
@@ -116,46 +126,28 @@ public class Api
 
    public void removeExcludes()
    {
-      for (io.inversion.cloud.model.Collection col : getCollections())
-      {
-         if (col.isExclude() || col.getEntity().isExclude())
-         {
-            removeCollection(col);
-         }
-         else
-         {
-            for (Attribute attr : col.getEntity().getAttributes())
-            {
-               if (attr.isExclude())
-               {
-                  col.getEntity().removeAttribute(attr);
-               }
-            }
-
-            for (Relationship rel : col.getEntity().getRelationships())
-            {
-               if (rel.isExclude())
-               {
-                  col.getEntity().removeRelationship(rel);
-               }
-            }
-         }
-      }
-
       for (Db db : getDbs())
       {
-         for (Table table : (List<Table>) db.getTables())
+         for (Collection table : (List<Collection>) db.getCollections())
          {
             if (table.isExclude())
             {
-               db.removeTable(table);
+               db.removeCollection(table);
             }
             else
             {
-               for (Column col : table.getColumns())
+               for (Property col : table.getProperties())
                {
                   if (col.isExclude())
-                     table.removeColumn(col);
+                     table.removeProperty(col);
+               }
+            }
+
+            for (Relationship rel : table.getRelationships())
+            {
+               if (rel.isExclude())
+               {
+                  table.removeRelationship(rel);
                }
             }
          }
@@ -184,11 +176,11 @@ public class Api
       return this;
    }
 
-   public Table findTable(String name)
+   public Collection findTable(String name)
    {
       for (Db db : dbs)
       {
-         Table t = db.getTable(name);
+         Collection t = db.getCollection(name);
          if (t != null)
             return t;
       }
@@ -208,86 +200,28 @@ public class Api
       return null;
    }
 
+   public Api withCollection(Collection collection)
+   {
+      if (!collections.contains(collection))
+         collections.add(collection);
+
+      return this;
+   }
+
+   public List<Collection> getCollections()
+   {
+      return Collections.unmodifiableList(collections);
+   }
+
    public Collection getCollection(String name)
    {
       if (name == null)
          return null;
 
       for (Collection collection : collections)
-         if (name.equalsIgnoreCase(collection.getName()))
+         if (name.equalsIgnoreCase(collection.getCollectionName()))
             return collection;
       return null;
-   }
-
-   public Collection getCollection(Table tbl)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getTable() == tbl)
-            return collection;
-      }
-      return null;
-   }
-
-   public Collection getCollection(Entity entity)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getEntity() == entity)
-            return collection;
-      }
-      return null;
-   }
-
-   public Entity getEntity(Table table)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getTable() == table)
-            return collection.getEntity();
-      }
-
-      return null;
-   }
-
-   public Collection makeCollection(Table table, String name)
-   {
-      Collection collection = new Collection(this, table, name);
-      withCollection(collection);
-      return collection;
-   }
-
-   public List<Collection> getCollections()
-   {
-      return new ArrayList(collections);
-   }
-
-   public Api withCollections(Collection... collections)
-   {
-      for (Collection collection : collections)
-         withCollection(collection);
-
-      return null;
-   }
-
-   /**
-    * Bi-directional method also sets 'this' api on the collection
-    * @param collection
-    */
-   public Api withCollection(Collection collection)
-   {
-      if (!collections.contains(collection))
-         collections.add(collection);
-
-      if (collection.getApi() != this)
-         collection.withApi(this);
-
-      return this;
-   }
-
-   public void removeCollection(Collection collection)
-   {
-      collections.remove(collection);
    }
 
    public Db getDb(String name)

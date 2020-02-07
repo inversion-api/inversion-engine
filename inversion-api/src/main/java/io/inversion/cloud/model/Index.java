@@ -27,7 +27,7 @@ import io.inversion.cloud.utils.Utils;
  */
 public class Index
 {
-   protected Table        table       = null;
+   protected Collection        table       = null;
    protected String       name        = null;
    protected String       type        = null;           // primary, partition, sort, localsecondary, etc
    protected boolean      unique      = true;
@@ -63,7 +63,7 @@ public class Index
    public String toString()
    {
       //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
-      StringBuffer buff = new StringBuffer(getTable().getName()).append(".").append(name).append("(");
+      StringBuffer buff = new StringBuffer(getTable().getTableName()).append(".").append(name).append("(");
       for (int i = 0; i < columnNames.size(); i++)
       {
          buff.append(columnNames.get(i));
@@ -80,18 +80,18 @@ public class Index
          return true;
 
       for (String c : columnNames)
-         if (table.getColumn(c).isExclude())
+         if (table.getProperty(c).isExclude())
             return true;
 
       return false;
    }
 
-   public Table getTable()
+   public Collection getTable()
    {
       return table;
    }
 
-   public Index withTable(Table table)
+   public Index withTable(Collection table)
    {
       if (this.table != table)
       {
@@ -155,9 +155,9 @@ public class Index
       return false;
    }
 
-   public Column getColumn(int idx)
+   public Property getColumn(int idx)
    {
-      return table.getColumn(columnNames.get(idx));
+      return table.getProperty(columnNames.get(idx));
    }
 
    //   public List<Column> getColumns()
@@ -189,7 +189,7 @@ public class Index
       return new ArrayList(columnNames);
    }
 
-   public void removeColumn(Column column)
+   public void removeColumn(Property column)
    {
       columnNames.remove(column);
    }

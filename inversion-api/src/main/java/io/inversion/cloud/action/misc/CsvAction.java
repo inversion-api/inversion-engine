@@ -23,14 +23,10 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 /**
  * Converts a JSON object/array response value into CSV format.  
@@ -42,14 +38,14 @@ import io.inversion.cloud.service.Engine;
  */
 public class CsvAction extends BatchAction<CsvAction>
 {
-    @Override public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+    @Override public void run(Request req, Response res) throws Exception
     {
         if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null)
         {
             return;
         }
 
-        if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(chain.getConfig("format", null)))
+        if (!"csv".equalsIgnoreCase(req.getParam("format")) && !"csv".equalsIgnoreCase(req.getChain().getConfig("format", null)))
         {
             return;
         }

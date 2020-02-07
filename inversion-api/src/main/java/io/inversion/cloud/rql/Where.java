@@ -82,7 +82,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
          if (index.size() == 1)
          {
-            Term t = Term.term(null, "in", index.getColumn(0).getName());
+            Term t = Term.term(null, "in", index.getColumn(0).getColumnName());
             List<Term> children = parent.getTerms();
             for (int i = 1; i < children.size(); i++)
             {

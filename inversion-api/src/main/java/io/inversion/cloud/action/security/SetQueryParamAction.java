@@ -20,12 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 public class SetQueryParamAction extends Action<SetQueryParamAction>
 {
@@ -46,7 +42,7 @@ public class SetQueryParamAction extends Action<SetQueryParamAction>
       super(inludePaths, excludePaths, config);
    }
 
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       for (String name : params.keySet())
       {

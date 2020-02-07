@@ -30,15 +30,12 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Change;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 public class JdbcLogAction extends Action<JdbcLogAction>
@@ -52,9 +49,9 @@ public class JdbcLogAction extends Action<JdbcLogAction>
    protected Set<String> logMaskFields  = new HashSet<>();
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
-      if (chain.getParent() != null)
+      if (req.getChain().getParent() != null)
       {
          //this must be a nested call to service.include so the outter call
          //is responsible for logging this change
@@ -63,13 +60,13 @@ public class JdbcLogAction extends Action<JdbcLogAction>
 
       try
       {
-         chain.go();
+         req.getChain().go();
       }
       finally
       {
-         String logMask = chain.getConfig("logMask", this.logMask);
-         String logTable = chain.getConfig("logTable", this.logTable);
-         String logChangeTable = chain.getConfig("logChangeTable", this.logChangeTable);
+         String logMask = req.getChain().getConfig("logMask", this.logMask);
+         String logTable = req.getChain().getConfig("logTable", this.logTable);
+         String logChangeTable = req.getChain().getConfig("logChangeTable", this.logChangeTable);
 
          try
          {

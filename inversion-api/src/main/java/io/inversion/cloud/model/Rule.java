@@ -224,7 +224,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return (R) this;
    }
 
-   public String getName()
+   public String getCollectionName()
    {
       return name;
    }

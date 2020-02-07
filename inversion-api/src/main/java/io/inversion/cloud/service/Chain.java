@@ -29,11 +29,11 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.utils.Utils;
 
@@ -85,6 +85,7 @@ public class Chain
       if (parent != null)
          child.setParent(parent);
 
+      req.withChain(child);
       get().push(child);
 
       return child;
@@ -143,7 +144,7 @@ public class Chain
    {
       Request req = peek().getRequest();
 
-      String collectionKey = collection.getName();
+      String collectionKey = collection.getTableName();
 
       if (req.getCollection() == collection)
          collectionKey = req.getCollectionKey();
@@ -202,12 +203,15 @@ public class Chain
          url = newUrl + url.substring(url.indexOf("/", 8));
       }
 
-      if (Utils.empty(collection.getApi().getUrl()))
+      if (collection.getApi() != null)
       {
-         String proto = req.getHeader("x-forwarded-proto");
-         if (!Utils.empty(proto))
+         if (Utils.empty(collection.getApi().getUrl()))
          {
-            url = proto + url.substring(url.indexOf(':'), url.length());
+            String proto = req.getHeader("x-forwarded-proto");
+            if (!Utils.empty(proto))
+            {
+               url = proto + url.substring(url.indexOf(':'), url.length());
+            }
          }
       }
       return url;
@@ -479,7 +483,7 @@ public class Chain
       {
          Action action = actions.get(next);
          next += 1;
-         action.run(engine, request.getApi(), request.getEndpoint(), this, request, response);
+         action.run(request, response);
          return true;
       }
       return false;

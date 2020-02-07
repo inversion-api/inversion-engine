@@ -17,12 +17,8 @@
 package io.inversion.cloud.action.rest;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 public class RestAction extends Action<RestAction>
 {
@@ -46,19 +42,19 @@ public class RestAction extends Action<RestAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       if (req.isMethod("GET"))
       {
-         get.run(engine, api, endpoint, chain, req, res);
+         get.run(req, res);
       }
       else if (req.isMethod("POST", "PUT"))
       {
-         post.run(engine, api, endpoint, chain, req, res);
+         post.run(req, res);
       }
       else if (req.isMethod("DELETE"))
       {
-         delete.run(engine, api, endpoint, chain, req, res);
+         delete.run(req, res);
       }
    }
 

@@ -41,6 +41,7 @@ import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.utils.Configurator;
 import io.inversion.cloud.utils.English;
@@ -166,36 +167,6 @@ public class Engine
             }
          }
 
-         //      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-         //      {
-         //         Thread t = new Thread(new Runnable()
-         //            {
-         //               @Override
-         //               public void run()
-         //               {
-         //                  while (true)
-         //                  {
-         //                     try
-         //                     {
-         //                        Utils.sleep(service.getConfigTimeout());
-         //                        if (destroyed)
-         //                           return;
-         //
-         //                        Config config = findConfig();
-         //                        loadConfig(config, false, false);
-         //                     }
-         //                     catch (Throwable t)
-         //                     {
-         //                        log.warn("Error loading config", t);
-         //                     }
-         //                  }
-         //               }
-         //            }, "inversion-config-reloader");
-         //
-         //         t.setDaemon(true);
-         //         t.start();
-         //      }
-
          //-- the following block is only debug output
          for (Api api : apis)
          {
@@ -203,16 +174,16 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getCollectionName()) ? ("name:" + e.getCollectionName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
-            for (io.inversion.cloud.model.Collection c : api.getCollections())
+            for (Collection c : api.getCollections())
             {
                if (c.getDb().getCollectionPath() != null)
-                  strs.add(c.getDb().getCollectionPath() + c.getName());
+                  strs.add(c.getDb().getCollectionPath() + c.getCollectionName());
                else
-                  strs.add(c.getName());
+                  strs.add(c.getCollectionName());
             }
             Collections.sort(strs);
             for (String coll : strs)
@@ -455,7 +426,7 @@ public class Engine
                         req.withCollectionKey(collectionKey);
                         i += 1;
 
-                        for (io.inversion.cloud.model.Collection collection : a.getCollections())
+                        for (Collection collection : a.getCollections())
                         {
                            if (collection.hasName(collectionKey)//
                                  && (collection.getIncludePaths().size() > 0 //
@@ -471,7 +442,7 @@ public class Engine
 
                         if (req.getCollection() == null)
                         {
-                           for (io.inversion.cloud.model.Collection collection : a.getCollections())
+                           for (Collection collection : a.getCollections())
                            {
                               if (collection.hasName(collectionKey) //
                                     && collection.getIncludePaths().size() == 0 //

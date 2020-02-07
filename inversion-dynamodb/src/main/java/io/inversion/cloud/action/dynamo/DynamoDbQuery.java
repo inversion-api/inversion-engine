@@ -36,10 +36,10 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.inversion.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Page;
@@ -68,7 +68,7 @@ import io.inversion.cloud.utils.Utils;
  * 
  * 
  */
-public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
+public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Collection, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
 {
 
    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
@@ -101,7 +101,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
    Term                                             partKey     = null;
    Term                                             sortKey     = null;
 
-   public DynamoDbQuery(Table table, List<Term> terms)
+   public DynamoDbQuery(Collection table, List<Term> terms)
    {
       super(table);
       where().clearFunctions();
@@ -277,8 +277,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       Term after = page().getAfter();
       if (after != null)
       {
-         Column afterHashKeyCol = table().getColumn(after.getToken(0));
-         Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+         Property afterHashKeyCol = table().getProperty(after.getToken(0));
+         Property afterSortKeyCol = after.size() > 2 ? table().getProperty(after.getToken(2)) : null;
 
          for (io.inversion.cloud.model.Index idx : table.getIndexes())
          {
@@ -287,23 +287,23 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
             {
                index = didx;
 
-               partKey = findTerm(afterHashKeyCol.getName(), "eq");
+               partKey = findTerm(afterHashKeyCol.getColumnName(), "eq");
 
                if (partKey == null)
                   continue;
 
                if (afterSortKeyCol != null)
                {
-                  sortKey = findTerm(afterSortKeyCol.getName(), "eq");
+                  sortKey = findTerm(afterSortKeyCol.getColumnName(), "eq");
                   if (sortKey == null)
-                     sortKey = findTerm(afterSortKeyCol.getName(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out");
+                     sortKey = findTerm(afterSortKeyCol.getColumnName(), "gt", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out");
                }
 
                break;
             }
          }
 
-         if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol.getName())))
+         if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol.getColumnName())))
          {
             //TODO make test
             throw new ApiException("The requested sort key does not match the supplied 'after' continuation token.");
@@ -320,8 +320,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          {
             DynamoDbIndex index = (DynamoDbIndex) idx;
 
-            String partCol = index.getHashKey().getName();
-            String sortCol = index.getSortKey() != null ? index.getSortKey().getName() : null;
+            String partCol = index.getHashKey().getColumnName();
+            String sortCol = index.getSortKey() != null ? index.getSortKey().getColumnName() : null;
 
             if (sortBy != null && !sortBy.equalsIgnoreCase(sortCol))
                continue; //incompatible index. if a sort was requested, can't choose an index that has a different sort
@@ -411,11 +411,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
       if (index != null && index.isPrimaryIndex() && partKey != null && sortKey != null && sortKey.hasToken("eq") && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
       {
          String partKeyCol = partKey.getToken(0);
-         String type = table.getColumn(partKeyCol).getType();
+         String type = table.getProperty(partKeyCol).getType();
          Object partKeyVal = db().cast(type, partKey.getToken(1));
 
          String sortKeyCol = sortKey.getToken(0);
-         Object sortKeyVal = db().cast(table.getColumn(sortKeyCol).getType(), sortKey.getToken(1));
+         Object sortKeyVal = db().cast(table.getProperty(sortKeyCol).getType(), sortKey.getToken(1));
 
          Chain.debug("DynamoDb GetItemSpec partKeyCol=" + partKeyCol + " partKeyVal=" + partKeyVal + " sortKeyCol=" + sortKeyCol + " sortKeyVal=" + sortKeyVal);
 
@@ -472,8 +472,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          Term after = page().getAfter();
          if (after != null)
          {
-            Column afterHashKeyCol = table().getColumn(after.getToken(0));
-            Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+            Property afterHashKeyCol = table().getProperty(after.getToken(0));
+            Property afterSortKeyCol = after.size() > 2 ? table().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
@@ -483,11 +483,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
             if (afterSortKeyCol != null)
             {
-               querySpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue, afterSortKeyCol.getName(), sortValue);
+               querySpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
             }
             else
             {
-               querySpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue);
+               querySpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue);
             }
          }
 
@@ -528,8 +528,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          if (after != null)
          {
             DynamoDbIndex index = (DynamoDbIndex) table().getPrimaryIndex();
-            Column afterHashKeyCol = table().getColumn(after.getToken(0));
-            Column afterSortKeyCol = after.size() > 2 ? table().getColumn(after.getToken(2)) : null;
+            Property afterHashKeyCol = table().getProperty(after.getToken(0));
+            Property afterSortKeyCol = after.size() > 2 ? table().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
                throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
@@ -539,11 +539,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
 
             if (afterSortKeyCol != null)
             {
-               scanSpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue, afterSortKeyCol.getName(), sortValue);
+               scanSpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
             }
             else
             {
-               scanSpec.withExclusiveStartKey(afterHashKeyCol.getName(), hashValue);
+               scanSpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue);
             }
          }
 
@@ -657,7 +657,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Table, Select<
          String colName = term.getParent().getToken(0);
 
          Object value = term.getToken();
-         Column col = table.getColumn(colName);
+         Property col = table.getProperty(colName);
          value = db.cast(col, term.getToken());
 
          if ("null".equalsIgnoreCase(value + ""))

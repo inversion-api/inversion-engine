@@ -42,9 +42,7 @@ import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.jdbc.utils.JdbcUtils.SqlListener;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Attribute;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
@@ -54,7 +52,7 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
@@ -258,7 +256,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       JdbcDb db = null;
       if (table == null)
@@ -270,7 +268,7 @@ public class JdbcDb extends Db<JdbcDb>
          db = (JdbcDb) table.getDb();
       }
 
-      String selectKey = (table != null ? table.getName() + "." : "") + "select";
+      String selectKey = (table != null ? table.getTableName() + "." : "") + "select";
 
       String selectSql = (String) Chain.peek().remove(selectKey);
 
@@ -285,7 +283,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       if (isType("h2"))
       {
@@ -307,7 +305,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> columnMappedIndexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws Exception
    {
       if (columnMappedIndexValues.size() == 0)
          return;
@@ -325,14 +323,14 @@ public class JdbcDb extends Db<JdbcDb>
          }
 
          String sql = "";
-         sql += " DELETE FROM " + quoteCol(table.getName());
+         sql += " DELETE FROM " + quoteCol(table.getTableName());
          sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
          JdbcUtils.execute(getConnection(), sql, values.toArray());
       }
       else
       {
          String sql = "";
-         sql += " DELETE FROM " + quoteCol(table.getName());
+         sql += " DELETE FROM " + quoteCol(table.getTableName());
          sql += " WHERE ";
 
          List values = new ArrayList();
@@ -358,23 +356,23 @@ public class JdbcDb extends Db<JdbcDb>
 
    }
 
-   public List<String> mysqlUpsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> mysqlUpsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
-      return JdbcUtils.mysqlUpsert(getConnection(), table.getName(), rows);
+      return JdbcUtils.mysqlUpsert(getConnection(), table.getTableName(), rows);
    }
 
-   public String h2Upsert(Table table, Map<String, Object> row) throws Exception
+   public String h2Upsert(Collection table, Map<String, Object> row) throws Exception
    {
       Object key = table.encodeKey(row);
 
       if (key == null)//this must be an insert
       {
-         JdbcUtils.insertMap(getConnection(), table.getName(), row);
+         JdbcUtils.insertMap(getConnection(), table.getTableName(), row);
       }
       else
       {
          //String keyCol = table.getKeyName();
-         JdbcUtils.h2Upsert(getConnection(), table.getName(), table.getPrimaryIndex(), row);
+         JdbcUtils.h2Upsert(getConnection(), table.getTableName(), table.getPrimaryIndex(), row);
       }
 
       if (key == null)
@@ -643,8 +641,8 @@ public class JdbcDb extends Db<JdbcDb>
             if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
                continue;
 
-            Table table = new Table(tableName);
-            withTable(table);
+            Collection table = new Collection(tableName);
+            withCollection(table);
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
@@ -658,8 +656,8 @@ public class JdbcDb extends Db<JdbcDb>
 
                boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
 
-               Column column = new Column(colName, colType, nullable);
-               table.withColumns(column);
+               Property column = new Property(colName, colType, nullable);
+               table.withProperties(column);
 
                //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
                //               {
@@ -687,14 +685,14 @@ public class JdbcDb extends Db<JdbcDb>
                      idxType = "Statistic";
                }
 
-               Column column = table.getColumn(colName);
+               Property column = table.getProperty(colName);
                Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                //this looks like it only supports single column indexes but if
                //an index with this name already exists, that means this is another
                //column in that index.
-               table.withIndex(idxName, idxType, unique, column.getName());
+               table.withIndex(idxName, idxType, unique, column.getColumnName());
 
             }
             indexMd.close();
@@ -741,15 +739,15 @@ public class JdbcDb extends Db<JdbcDb>
                String pkTableName = keyMd.getString("PKTABLE_NAME");
                String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
 
-               Column fk = getColumn(fkTableName, fkColumnName);
-               Column pk = getColumn(pkTableName, pkColumnName);
+               Property fk = getProperty(fkTableName, fkColumnName);
+               Property pk = getProperty(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               Table table = getTable(fkTableName);
+               Collection table = getCollection(fkTableName);
                if (table != null)
                {
                   //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-                  table.withIndex(fkName, "FOREIGN_KEY", false, fk.getName());
+                  table.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
                }
 
             }
@@ -804,13 +802,13 @@ public class JdbcDb extends Db<JdbcDb>
 
             if (i == parts.length - 1)
             {
-               Attribute attr = collection.getAttribute(parts[i]);
+               Property attr = collection.findProperty(parts[i]);
 
                if (attr == null)
                   break;
                //throw new ApiException("Unable to identify related column for dotted attribute name: '" + token + "'");
 
-               name += attr.getColumn().getName();
+               name += attr.getColumnName();
                break;
             }
             else
@@ -823,15 +821,15 @@ public class JdbcDb extends Db<JdbcDb>
                //               if (rel == null)
                //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
 
-               String aliasPrefix = "_join_" + rel.getEntity().getCollection().getName() + "_" + part + "_";
+               String aliasPrefix = "_join_" + rel.getEntity().getCollectionName() + "_" + part + "_";
 
                Term join = null;
                for (int j = 0; j < 2; j++)
                {
-                  String relatedTable = rel.getRelated().getTable().getName();
+                  String relatedTable = rel.getRelated().getTableName();
 
                   if (rel.isManyToMany() && j == 0)
-                     relatedTable = rel.getFk1Col1().getTable().getName();
+                     relatedTable = rel.getFk1Col1().getTable().getTableName();
 
                   String tableAlias = aliasPrefix + (j + 1);
 
@@ -849,11 +847,11 @@ public class JdbcDb extends Db<JdbcDb>
                   {
                      for (int k = 0; k < idx.size(); k++)
                      {
-                        Column col = idx.getColumn(k);
-                        joinTerms.add(col.getTable().getName());
-                        joinTerms.add(col.getName());
+                        Property col = idx.getColumn(k);
+                        joinTerms.add(col.getTable().getTableName());
+                        joinTerms.add(col.getColumnName());
                         joinTerms.add(tableAlias);
-                        joinTerms.add(col.getPk().getName());
+                        joinTerms.add(col.getPk().getColumnName());
                      }
                   }
                   else
@@ -862,24 +860,24 @@ public class JdbcDb extends Db<JdbcDb>
                      {
                         for (int k = 0; k < idx.size(); k++)
                         {
-                           Column col = idx.getColumn(k);
-                           joinTerms.add(col.getPk().getTable().getName());
-                           joinTerms.add(col.getPk().getName());
+                           Property col = idx.getColumn(k);
+                           joinTerms.add(col.getPk().getTable().getTableName());
+                           joinTerms.add(col.getPk().getColumnName());
                            joinTerms.add(tableAlias);
-                           joinTerms.add(col.getName());
+                           joinTerms.add(col.getColumnName());
                         }
                      }
                      else//second time through on M2M
                      {
                         for (int k = 0; k < idx.size(); k++)
                         {
-                           Column col = idx.getColumn(k);
+                           Property col = idx.getColumn(k);
                            String m2mTbl = join.getToken(1);
 
                            joinTerms.add(m2mTbl);
-                           joinTerms.add(col.getName());
+                           joinTerms.add(col.getColumnName());
                            joinTerms.add(tableAlias);
-                           joinTerms.add(col.getPk().getName());
+                           joinTerms.add(col.getPk().getColumnName());
                         }
                      }
                   }
@@ -888,7 +886,7 @@ public class JdbcDb extends Db<JdbcDb>
                   terms.add(join);
                }
 
-               collection = rel.getRelated().getCollection();
+               collection = rel.getRelated();
 
             }
          }

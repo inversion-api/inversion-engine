@@ -23,11 +23,11 @@ import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 
 /**
  * 
@@ -40,7 +40,7 @@ import io.inversion.cloud.model.Table;
  * @author wells
  *
  */
-public class Query<T extends Query, D extends Db, E extends Table, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
+public class Query<T extends Query, D extends Db, E extends Collection, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
    protected D              db     = null;
    protected E              table  = null;
@@ -242,22 +242,22 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
-      Table table = this.table;
+      Collection table = this.table;
       String shortName = columnName;
 
       if (columnName != null)
       {
          if (columnName.indexOf(".") > -1)
          {
-            table = table.getDb().getTable(columnName.substring(0, columnName.indexOf(".")));
+            table = table.getDb().getCollection(columnName.substring(0, columnName.indexOf(".")));
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
 
          if (table != null)
          {
-            Column col = table.getColumn(shortName);
+            Property col = table.getProperty(shortName);
             if (col == null)
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getTableName() + "'");
 
             value = db.cast(col, value);
 

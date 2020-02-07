@@ -22,7 +22,7 @@ public class TestCsvAction
       singleObject.put("key1", "value1");
       singleObject.put("key2", "value2");
       res.withJson(singleObject);
-      action.run(null, null, null, null, buildSuccessfulRequest(), res);
+      action.run(buildSuccessfulRequest(), res);
       assertNull(res.getJson());
       assertEquals("key1,key2\r\nvalue1,value2\r\n", res.getText());
    }
@@ -38,7 +38,7 @@ public class TestCsvAction
       array.put(0, singleObject);
       array.put(1, singleObject);
       res.withJson(array);
-      action.run(null, null, null, null, buildSuccessfulRequest(), res);
+      action.run(buildSuccessfulRequest(), res);
       assertNull(res.getJson());
       assertEquals("key1,key2\r\nvalue1,value2\r\nvalue1,value2\r\n", res.getText());
    }
@@ -55,7 +55,7 @@ public class TestCsvAction
       array.put(1, singleObject);
       res.withData(array);
       res.withMeta("blah", "blahvalue");
-      action.run(null, null, null, null, buildSuccessfulRequest(), res);
+      action.run(buildSuccessfulRequest(), res);
       assertNull(res.getJson());
       assertEquals("key1,key2\r\nvalue1,value2\r\nvalue1,value2\r\n", res.getText());
    }
@@ -71,7 +71,7 @@ public class TestCsvAction
       Map<String, String> params = new HashMap<>();
       params.put("format", "csv");
 
-      action.run(null, null, null, null, new Request("POST", "/", null, params, null), res);
+      action.run(new Request("POST", "/", null, params, null), res);
       assertEquals(singleObject, res.getJson());
    }
 
@@ -80,6 +80,8 @@ public class TestCsvAction
    {
       try
       {
+        
+         
          Response res = new Response();
          JSNode singleObject = new JSNode();
          singleObject.put("key1", "value1");
@@ -88,7 +90,9 @@ public class TestCsvAction
          Map<String, String> params = new HashMap<>();
          Request req = new Request("GET", "/", null, params, null);
          req.withEndpoint(new Endpoint());
-         action.run(null, null, null, Chain.push(null, req, res), req, res);
+         
+         Chain.push(null, req, res);
+         action.run(req, res);
          assertEquals(singleObject, res.getJson());
       }
       finally

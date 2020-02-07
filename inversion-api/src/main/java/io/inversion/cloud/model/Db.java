@@ -33,13 +33,13 @@ import io.inversion.cloud.utils.Utils;
 
 public abstract class Db<T extends Db>
 {
-   transient protected Logger    log            = LoggerFactory.getLogger(getClass());
+   transient protected Logger      log            = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean    started        = false;
-   transient volatile boolean    starting       = false;
-   transient volatile boolean    shutdown       = false;
+   transient volatile boolean      started        = false;
+   transient volatile boolean      starting       = false;
+   transient volatile boolean      shutdown       = false;
 
-   protected Api                 api            = null;
+   protected Api                   api            = null;
 
    /**
     * A CSV of pipe delimited table name to collection pairs
@@ -50,16 +50,16 @@ public abstract class Db<T extends Db>
     * 
     * Example: db.includeTables=orders,users,events
     */
-   protected Map<String, String> includeTables  = new HashMap();
+   protected Map<String, String>   includeTables  = new HashMap();
 
-   protected boolean             bootstrap      = true;
+   protected boolean               bootstrap      = true;
 
-   protected String              name           = null;
-   protected String              type           = null;
+   protected String                name           = null;
+   protected String                type           = null;
 
-   protected String              collectionPath = null;
+   protected String                collectionPath = null;
 
-   protected ArrayList<Table>    tables         = new ArrayList();
+   protected ArrayList<Collection> tables         = new ArrayList();
 
    public Db()
    {
@@ -139,7 +139,7 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract Results<Row> select(Table table, List<Term> queryTerms) throws Exception;
+   public abstract Results<Row> select(Collection table, List<Term> queryTerms) throws Exception;
 
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
@@ -164,7 +164,7 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception;
+   public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
 
    /**
     * Deletes rows identified by the unique index values from the underlying data source.
@@ -178,13 +178,17 @@ public abstract class Db<T extends Db>
     * @param indexValues
     * @throws Exception
     */
-   public abstract void delete(Table table, List<Map<String, Object>> indexValues) throws Exception;
+   public abstract void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception;
 
    public void configDb() throws Exception
    {
       for (String key : includeTables.keySet())
       {
-         withTable(new Table(key));
+         Collection table = new Collection(key);
+         if (getCollectionPath() != null)
+            table.withIncludePaths(getCollectionPath());
+
+         withCollection(table);
       }
    }
 
@@ -192,28 +196,28 @@ public abstract class Db<T extends Db>
    {
       List<String> relationshipStrs = new ArrayList();
 
-      for (Table table : getTables())
+      for (Collection coll : getCollections())
       {
-         if (table.isLinkTbl())
+         if (coll.isLinkTbl())
             continue;
 
-         List<Column> cols = table.getColumns();
-         String name = beautifyCollectionName(table.getName());
-
-         Collection collection = api.makeCollection(table, name);
-         if (getCollectionPath() != null)
-            collection.withIncludePaths(getCollectionPath());
-
-         Entity entity = collection.getEntity();
-
-         for (Attribute attr : entity.getAttributes())
+         if (coll.getCollectionName().equals(coll.getTableName()))
          {
-            attr.withName(beautifyAttributeName(attr.getName()));
+            //collection has not already been specifically customized
+            String prettyName = beautifyCollectionName(coll.getTableName());
+            coll.withCollectionName(prettyName);
          }
 
-         //         String debug = getCollectionPath();
-         //         debug = (debug == null ? "" : (debug + collection));
-         //         System.out.println("CREATING COLLECTION: " + debug);
+         for (Property prop : coll.getProperties())
+         {
+            if (prop.getColumnName().equals(prop.getJsonName()))
+            {
+               //json name has not already been specifically customized
+               String prettyName = beautifyAttributeName(prop.getColumnName());
+               prop.withJsonName(prettyName);
+            }
+
+         }
       }
 
       //-- Now go back through and create relationships for all foreign keys
@@ -223,13 +227,13 @@ public abstract class Db<T extends Db>
       //-- API designers may want to represent one or both directions of the
       //-- relationship in their API and/or the names of the JSON properties
       //-- for the relationships will probably be different
-      for (Table t : getTables())
+      for (Collection coll : getCollections())
       {
-         if (t.isLinkTbl())
+         if (coll.isLinkTbl())
          {
             //create reciprocal pairs for of MANY_TO_MANY relationships
             //for each pair combination in the link table.
-            List<Index> indexes = t.getIndexes();
+            List<Index> indexes = coll.getIndexes();
             for (int i = 0; i < indexes.size(); i++)
             {
                for (int j = 0; j < indexes.size(); j++)
@@ -240,8 +244,8 @@ public abstract class Db<T extends Db>
                   if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
-                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
+                  Collection entity1 = idx1.getColumn(0).getPk().getTable();
+                  Collection entity2 = idx2.getColumn(0).getPk().getTable();
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
@@ -257,15 +261,15 @@ public abstract class Db<T extends Db>
          }
          else
          {
-            for (Index fkIdx : t.getIndexes())
+            for (Index fkIdx : coll.getIndexes())
             {
                try
                {
                   if (!fkIdx.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
-                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
+                  Collection pkEntity = fkIdx.getColumn(0).getPk().getTable();
+                  Collection fkEntity = fkIdx.getColumn(0).getTable();
 
                   //ONE_TO_MANY
                   {
@@ -300,12 +304,11 @@ public abstract class Db<T extends Db>
          }
       }
 
+      //TODO...should this operate on all tables or just this DBs tables...?
       //now we need to see if any relationship names conflict and need to be made unique
       for (Collection coll : api.getCollections())
       {
-         Entity entity = coll.getEntity();
-
-         List<Relationship> relationships = entity.getRelationships();
+         List<Relationship> relationships = coll.getRelationships();
 
          for (int i = 0; i < relationships.size(); i++)
          {
@@ -317,7 +320,7 @@ public abstract class Db<T extends Db>
 
                if (nameA.equalsIgnoreCase(nameB))
                {
-                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
+                  String uniqueName = makeRelationshipUniqueName(coll, relationships.get(j));
                   relationships.get(j).withName(uniqueName);
                }
             }
@@ -386,14 +389,14 @@ public abstract class Db<T extends Db>
       return buff.toString();
    }
 
-   protected String makeRelationshipUniqueName(Entity entity, Relationship rel)
+   protected String makeRelationshipUniqueName(Collection entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
-         name = rel.getFk1Col1().getName();
+         name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -420,7 +423,7 @@ public abstract class Db<T extends Db>
          //so it results in a property called "subcategoryAlarms"
          //being added to the Category collection.
 
-         String idxColName = rel.getFk1Col1().getName();
+         String idxColName = rel.getFk1Col1().getColumnName();
          if (idxColName.toLowerCase().endsWith("id") && idxColName.length() > 2)
          {
             idxColName = idxColName.substring(0, idxColName.length() - 2);
@@ -430,8 +433,8 @@ public abstract class Db<T extends Db>
          if (idxColName.toUpperCase().equals(idxColName))
             idxColName = idxColName.toLowerCase();
 
-         String collectionName = entity.getCollection().getName();
-         String relatedCollectionName = rel.getRelated().getCollection().getName();
+         String collectionName = entity.getCollectionName();
+         String relatedCollectionName = rel.getRelated().getCollectionName();
          //String tableName = entity.getTable().getName();
          if (!collectionName.equalsIgnoreCase(idxColName) //
                && !English.plural(idxColName).equalsIgnoreCase(collectionName))
@@ -448,7 +451,7 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getName();
+         name = rel.getFk2Col1().getPk().getTable().getTableName();
          pluralize = true;
       }
 
@@ -462,14 +465,14 @@ public abstract class Db<T extends Db>
       return name;
    }
 
-   protected String makeRelationshipName(Entity entity, Relationship rel)
+   protected String makeRelationshipName(Collection entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
-         name = rel.getFk1Col1().getName();
+         name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -477,12 +480,12 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getRelated().getCollection().getName();
+         name = rel.getRelated().getCollectionName();
          pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getName();
+         name = rel.getFk2Col1().getPk().getTable().getCollectionName();
          pluralize = true;
       }
 
@@ -496,14 +499,9 @@ public abstract class Db<T extends Db>
       return name;
    }
 
-   public Object cast(Column column, Object value)
+   public Object cast(Property column, Object value)
    {
       return Utils.cast(column != null ? column.getType() : null, value);
-   }
-
-   public Object cast(Attribute attr, Object value)
-   {
-      return Utils.cast(attr.getType(), value);
    }
 
    public Object cast(String type, Object value)
@@ -528,10 +526,10 @@ public abstract class Db<T extends Db>
          while (token.startsWith("-") || token.startsWith("+"))
             token = token.substring(1, token.length());
 
-         Attribute attr = collection.getAttribute(token);
+         Property attr = collection.findProperty(token);
          if (attr != null)
          {
-            String columnName = attr.getColumn().getName();
+            String columnName = attr.getColumnName();
 
             if (term.getToken().startsWith("-"))
                columnName = "-" + columnName;
@@ -560,15 +558,15 @@ public abstract class Db<T extends Db>
       return shutdown;
    }
 
-   public Column getColumn(String table, String col)
+   public Property getProperty(String table, String col)
    {
-      for (Table t : tables)
+      for (Collection t : tables)
       {
-         if (t.getName().equalsIgnoreCase(table))
+         if (t.getTableName().equalsIgnoreCase(table))
          {
-            for (Column c : t.getColumns())
+            for (Property c : t.getProperties())
             {
-               if (c.getName().equalsIgnoreCase(col))
+               if (c.getColumnName().equalsIgnoreCase(col))
                {
                   return c;
                }
@@ -580,18 +578,18 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Table getTable(String tableName)
+   public Collection getCollection(String tableName)
    {
-      for (Table t : tables)
+      for (Collection t : tables)
       {
-         if (t.getName().equalsIgnoreCase(tableName))
+         if (t.getTableName().equalsIgnoreCase(tableName))
             return t;
       }
 
       tableName = tableName.replaceAll("\\s+", "");
-      for (Table t : tables)
+      for (Collection t : tables)
       {
-         String name = t.getName();
+         String name = t.getTableName();
 
          if (name.indexOf(" ") > -1)
          {
@@ -604,15 +602,15 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public void removeTable(Table table)
+   public void removeCollection(Collection table)
    {
       tables.remove(table);
    }
 
    /**
-    * @return the tables
+    * @return the collections
     */
-   public List<Table> getTables()
+   public List<Collection> getCollections()
    {
       return tables;
    }
@@ -629,17 +627,17 @@ public abstract class Db<T extends Db>
    }
 
    /**
-    * @param tables the tables to set
+    * @param collections to include (add not replace)
     */
-   public T withTables(Table... tbls)
+   public T withCollections(Collection... tbls)
    {
-      for (Table table : tbls)
-         withTable(table);
+      for (Collection table : tbls)
+         withCollection(table);
 
       return (T) this;
    }
 
-   public T withTable(Table tbl)
+   public T withCollection(Collection tbl)
    {
       if (tbl != null)
       {

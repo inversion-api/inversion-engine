@@ -20,14 +20,10 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.SC;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 /**
  * Provides a blank or client specific request rate limit of <code>limitRequests</code> per 
@@ -57,11 +53,11 @@ public class RateLimitAction extends Action<RateLimitAction>
    Map<String, Bucket> buckets        = new Hashtable();
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
-      int limitMinutes = chain.getConfig("limitMinutes", this.limitMinutes);;
-      int limitUserHits = chain.getConfig("limitUserHits", this.limitUserHits);
-      int limitTotalHits = chain.getConfig("limitTotalHits", this.limitTotalHits);
+      int limitMinutes = req.getChain().getConfig("limitMinutes", this.limitMinutes);;
+      int limitUserHits = req.getChain().getConfig("limitUserHits", this.limitUserHits);
+      int limitTotalHits = req.getChain().getConfig("limitTotalHits", this.limitTotalHits);
 
       String bucketKey = new StringBuffer(limitMinutes).append("-").append(limitUserHits).append("-").append(limitTotalHits).toString();
 
@@ -82,7 +78,7 @@ public class RateLimitAction extends Action<RateLimitAction>
          res.withJson(error);
          res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
 
-         chain.cancel();
+         req.getChain().cancel();
       }
    }
 
