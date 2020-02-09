@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,12 +43,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.*;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
@@ -67,17 +62,17 @@ import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row.E;
 
 /**
- * An HttpClient wrapper designed specifically to run inside of an 
- * Inversion Action that adds async and retry support and make it 
- * easy to proxy in-bound params and headers on to other services 
- * 
+ * An HttpClient wrapper designed specifically to run inside of an
+ * Inversion Action that adds async and retry support and make it
+ * easy to proxy in-bound params and headers on to other services
+ *
  * Designed to have host "url" set manually or discovered at runtime
  * out of the environment as "${name}.url=http://somehost.com"
- * 
- * This file was forked from the Inversion HttpUtils class to 
+ *
+ * This file was forked from the Inversion HttpUtils class to
  * give authors options in tuning the underlying Apache HttpClient
  * configuration and thread pooling.
- * 
+ *
  * @author Wells Burke
  */
 public class RestClient
@@ -382,6 +377,10 @@ public class RestClient
                req = new HttpDelete(url);
             }
          }
+         else if ("patch".equalsIgnoreCase(m))
+         {
+               req = new HttpPatch(url);
+         }
 
          for (String key : future.request.getHeaders().keySet())
          {
@@ -423,7 +422,7 @@ public class RestClient
             fileName = Utils.slugify(u.toString());
 
          boolean skip = false;
-         if (response.getStatusCode() == 404 //no amount of retries will make this request not found 
+         if (response.getStatusCode() == 404 //no amount of retries will make this request not found
                || response.getStatusCode() == 204)//this status code indicates "no content" so we are done.
          {
             skip = true;
