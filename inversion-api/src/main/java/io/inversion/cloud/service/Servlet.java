@@ -39,7 +39,7 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Request.Upload;
 import io.inversion.cloud.model.Request.Uploader;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class Servlet extends HttpServlet
@@ -231,7 +231,7 @@ public class Servlet extends HttpServlet
       }
       catch (Exception ex)
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to read request body", ex);
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to read request body", ex);
       }
       finally
       {

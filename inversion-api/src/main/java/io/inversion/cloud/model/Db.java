@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.English;
+import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
@@ -305,7 +305,7 @@ public abstract class Db<T extends Db>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
+                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
                }
             }
          }
@@ -343,7 +343,7 @@ public abstract class Db<T extends Db>
       name = beautifyAttributeName(name);
 
       if (!(name.endsWith("s") || name.endsWith("S")))
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
 
       return name;
    }
@@ -444,7 +444,7 @@ public abstract class Db<T extends Db>
          String relatedCollectionName = rel.getRelated().getCollectionName();
          //String tableName = entity.getTable().getName();
          if (!collectionName.equalsIgnoreCase(idxColName) //
-               && !English.plural(idxColName).equalsIgnoreCase(collectionName))
+               && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
          {
             name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
             System.out.println("RELATIONSHIP: " + name + " " + rel);
@@ -466,7 +466,7 @@ public abstract class Db<T extends Db>
 
       if (pluralize)
       {
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
       }
 
       return name;
@@ -500,7 +500,7 @@ public abstract class Db<T extends Db>
 
       if (pluralize)
       {
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
       }
 
       return name;

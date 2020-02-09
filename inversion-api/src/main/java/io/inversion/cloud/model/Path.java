@@ -23,6 +23,11 @@ import java.util.regex.Pattern;
 
 import io.inversion.cloud.utils.Utils;
 
+/**
+ * A case insensitive utility abstraction for working with
+ * forward slash based paths /like/you/find/in/urls. 
+ * @author wells
+ */
 public class Path
 {
    List<String> parts = null;
@@ -192,32 +197,6 @@ public class Path
          lc.add(part.toLowerCase());
       }
    }
-
-   //   /**
-   //    * Trims leading and trailing 
-   //    * @param path
-   //    * @return
-   //    */
-   //   public static String asPath(String path)
-   //   {
-   //      if (path != null)
-   //      {
-   //         path = path.trim().replaceAll("/+", "/");
-   //
-   //         if (path.startsWith("/"))
-   //            path = path.substring(1, path.length());
-   //
-   //         if (path.endsWith("/"))
-   //            path = path.substring(0, path.length() - 1);
-   //      }
-   //      
-   //      if (Utils.empty(path))
-   //      {
-   //         path = null;
-   //      }
-   //
-   //      return path;
-   //   }
 
    public static boolean pathMatches(String wildcardPath, String path)
    {

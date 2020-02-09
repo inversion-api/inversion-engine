@@ -890,7 +890,7 @@ public class Response
       }
 
       if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
 
       return this;
    }
@@ -908,7 +908,7 @@ public class Response
       }
 
       if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
 
       return this;
    }
@@ -916,7 +916,7 @@ public class Response
    public Response assertStatus(int statusCode, String message)
    {
       if (this.statusCode != statusCode)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
 
       return this;
    }

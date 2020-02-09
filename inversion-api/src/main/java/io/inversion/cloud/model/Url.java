@@ -25,7 +25,12 @@ import java.util.stream.Collectors;
 
 import io.inversion.cloud.utils.Utils;
 
-public class Url implements Cloneable
+/**
+ * Url utilities
+ * 
+ * @author wells
+ */
+public class Url
 {
    protected String original = null;
    protected String protocol = "http";

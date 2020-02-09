@@ -40,11 +40,11 @@ import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.English;
+import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Utils;
 
 public class Engine
@@ -341,13 +341,13 @@ public class Engine
          if (req.isMethod("options"))
          {
             //this is a CORS preflight request. All of hte work was done bove
-            res.withStatus(SC.SC_200_OK);
+            res.withStatus(Status.SC_200_OK);
             return chain;
          }
 
          if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
          {
-            res.withStatus(SC.SC_404_NOT_FOUND);
+            res.withStatus(Status.SC_404_NOT_FOUND);
             return chain;
          }
 
@@ -492,7 +492,7 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
          }
 
          if (req.getEndpoint() == null)
@@ -509,7 +509,7 @@ public class Engine
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No Endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid Endpoints include: " + buff);
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No Endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid Endpoints include: " + buff);
          }
 
          //         if (Utils.empty(req.getCollectionKey()))
@@ -532,7 +532,7 @@ public class Engine
          }
 
          if (actions.size() == 0)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
 
          Collections.sort(actions);
 
@@ -576,7 +576,7 @@ public class Engine
 
          }
 
-         String status = SC.SC_500_INTERNAL_SERVER_ERROR;
+         String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
          if (ex instanceof ApiException)
          {
@@ -586,7 +586,7 @@ public class Engine
             }
 
             status = ((ApiException) ex).getStatus();
-            if (SC.SC_404_NOT_FOUND.equals(status))
+            if (Status.SC_404_NOT_FOUND.equals(status))
             {
                //an endpoint could have match the url "such as GET * but then not 
                //known what to do with the URL because the collection was not pluralized
@@ -601,7 +601,7 @@ public class Engine
 
          res.withStatus(status);
          JSNode response = new JSNode("message", ex.getMessage());
-         if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
+         if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
          res.withJson(response);
@@ -680,7 +680,7 @@ public class Engine
          else if (!Utils.empty(res.getRedirect()))
          {
             res.withHeader("Location", res.getRedirect());
-            res.withStatus(SC.SC_308_PERMANENT_REDIRECT);
+            res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
          }
          else if (output == null && res.getJson() != null)
          {
@@ -725,7 +725,7 @@ public class Engine
       String collection = req.getCollectionKey();
       if (!Utils.empty(collection))
       {
-         String plural = English.plural(collection);
+         String plural = Pluralizer.plural(collection);
          if (!plural.equals(collection))
          {
             String path = req.getPath().toString();

@@ -26,12 +26,12 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 
 /**
@@ -204,7 +204,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         throw new ApiException(SC.matches(r.getStatusCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -309,7 +309,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       }
       else
       {
-         throw new ApiException(SC.matches(r.getStatusCode(), db.allowedFailResponseCodes) ? SC.SC_MAP.get(r.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus(): Status.SC_500_INTERNAL_SERVER_ERROR);
       }
 
    }
@@ -527,12 +527,12 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (collection == null)
       {
-         throw new ApiException(SC.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
+         throw new ApiException(Status.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
       }
 
       if (!(collection.getDb() instanceof ElasticsearchDb))
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
       }
 
       return collection;

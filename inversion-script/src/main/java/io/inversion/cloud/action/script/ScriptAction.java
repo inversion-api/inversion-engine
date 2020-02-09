@@ -62,7 +62,7 @@ import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
@@ -586,17 +586,17 @@ public class ScriptAction extends Action<ScriptAction>
 
       public void throwBadRequest(String message)
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, message);
+         throw new ApiException(Status.SC_400_BAD_REQUEST, message);
       }
 
       public void throwNotFound(String message)
       {
-         throw new ApiException(SC.SC_404_NOT_FOUND, message);
+         throw new ApiException(Status.SC_404_NOT_FOUND, message);
       }
 
       public void throwServerError(String message)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
       }
 
       public List<Object> list(Object obj)

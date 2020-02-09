@@ -501,7 +501,7 @@ public class Collection extends Rule<Collection>
       {
          Object piece = pieces.get(i);
          if (piece == null)
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Trying to encode an entity key with a null component: '" + pieces + "'");
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Trying to encode an entity key with a null component: '" + pieces + "'");
 
          entityKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
          if (i < pieces.size() - 1)
@@ -600,14 +600,14 @@ public class Collection extends Rule<Collection>
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getTableName() + "' has " + index.size());
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getTableName() + "' has " + index.size());
 
          for (int i = 0; i < colNames.size(); i++)
          {
             Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
 
             value = getDb().cast(index.getColumn(i), value);
             row.set(i, value);

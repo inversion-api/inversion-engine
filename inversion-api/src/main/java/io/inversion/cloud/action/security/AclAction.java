@@ -32,7 +32,7 @@ import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
@@ -152,7 +152,7 @@ public class AclAction extends Action<AclAction>
       if (!allowed)
       {
          Chain.debug("AclAction: NO_MATCH_DENY");
-         throw new ApiException(SC.SC_403_FORBIDDEN);
+         throw new ApiException(Status.SC_403_FORBIDDEN);
       }
 
       Set requires = new HashSet();
@@ -230,7 +230,7 @@ public class AclAction extends Action<AclAction>
             String value = req.getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
             }
          }
       }
@@ -278,7 +278,7 @@ public class AclAction extends Action<AclAction>
 
          if (!found)
          {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing required param '" + required + "'");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing required param '" + required + "'");
          }
       }
    }
@@ -314,7 +314,7 @@ public class AclAction extends Action<AclAction>
                if (!silent)
                {
                   if (target.containsKey(targetProp))
-                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
+                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
                }
             }
          }
@@ -355,7 +355,7 @@ public class AclAction extends Action<AclAction>
                   if (value != null)
                      target.put(targetProp, value);
                   else
-                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Required property '" + path + "' is missing from JSON body");
+                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + path + "' is missing from JSON body");
 
                }
             }

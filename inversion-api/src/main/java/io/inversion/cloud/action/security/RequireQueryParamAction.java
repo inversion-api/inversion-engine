@@ -23,7 +23,7 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 
 /**
  * Requires query string parameter "requiredName=anyValue" OR "eq(requiredName,anyValue)" be present on the Request.
@@ -68,7 +68,7 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
                hasParam = true;
          }
          if (!hasParam)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Required query string parameter '" + requiredParam + "' appears to be missing.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Required query string parameter '" + requiredParam + "' appears to be missing.");
       }
    }
 

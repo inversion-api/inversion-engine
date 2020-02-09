@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Rows.Row;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
@@ -67,7 +67,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
             transform(child);
          }
       }
@@ -78,7 +78,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
          Index index = getParent().getCollection().getIndex(indexName);
          if (index == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
 
          if (index.size() == 1)
          {
@@ -108,7 +108,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                Term child = children.get(i);
                if (!child.isLeaf())
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
+                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
 
                Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");

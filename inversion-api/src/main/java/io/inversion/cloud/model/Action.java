@@ -64,27 +64,27 @@ public abstract class Action<A extends Action> extends Rule<A>
 
    public void doGet(Request req, Response res) throws Exception
    {
-      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
    public void doPost(Request req, Response res) throws Exception
    {
-      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
    public void doPut(Request req, Response res) throws Exception
    {
-      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
    public void doPatch(Request req, Response res) throws Exception
    {
-      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
    public void doDelete(Request req, Response res) throws Exception
    {
-      throw new ApiException(SC.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
+      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }
 
    @Override

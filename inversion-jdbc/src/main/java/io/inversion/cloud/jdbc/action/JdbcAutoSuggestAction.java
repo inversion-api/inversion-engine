@@ -27,7 +27,7 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
@@ -56,10 +56,10 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
       String properties = req.removeParam(propertyProp);
 
       if (Utils.empty(properties))
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
 
       if (!properties.contains("."))
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be in the format '{collection}.{property}'");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be in the format '{collection}.{property}'");
 
       String value = req.removeParam(searchProp);
       if (Utils.empty(value))
@@ -80,7 +80,7 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
 
       Collection collection = api.getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
       if (collection == null)
-         throw new ApiException(SC.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
+         throw new ApiException(Status.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
       String sql = "";
       sql += " SELECT DISTINCT " + searchProp;
@@ -91,10 +91,10 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
          String prop = propertyList.get(i);
 
          if (!whitelist.contains(prop.toLowerCase()))
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
 
          if (prop.indexOf(".") < 0)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 

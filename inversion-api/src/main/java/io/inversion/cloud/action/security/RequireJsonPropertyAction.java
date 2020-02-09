@@ -24,7 +24,7 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
@@ -73,7 +73,7 @@ public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
          for (JSNode aNode : node.asNodeList())
          {
             if (Utils.empty(aNode.get(prop)))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Required property '" + prop + "' appears to be missing from your JSON body.");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + prop + "' appears to be missing from your JSON body.");
          }
       }
    }

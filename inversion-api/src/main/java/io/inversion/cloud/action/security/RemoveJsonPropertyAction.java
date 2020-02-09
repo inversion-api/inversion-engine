@@ -25,7 +25,7 @@ import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class RemoveJsonPropertyAction extends Action<RemoveJsonPropertyAction>

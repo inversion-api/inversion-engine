@@ -51,7 +51,7 @@ import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
@@ -181,7 +181,7 @@ public class JdbcDb extends Db<JdbcDb>
                   }
                   catch (Exception ex)
                   {
-                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
+                     throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
                   }
                }
 
@@ -300,7 +300,7 @@ public class JdbcDb extends Db<JdbcDb>
       }
       else
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
       }
    }
 
@@ -381,7 +381,7 @@ public class JdbcDb extends Db<JdbcDb>
       }
 
       if (key == null)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
 
       return key.toString();
    }
@@ -425,7 +425,7 @@ public class JdbcDb extends Db<JdbcDb>
       catch (Exception ex)
       {
          log.error("Unable to get DB connection", ex);
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
       }
    }
 

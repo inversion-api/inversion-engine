@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
  * </p>
  */
-public class English// extends TwoFormInflector
+public class Pluralizer
 {
    public static enum MODE {
       ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
@@ -81,14 +81,14 @@ public class English// extends TwoFormInflector
 
    private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
 
-   private static English        inflector         = new English();
+   private static Pluralizer     inflector         = new Pluralizer();
 
-   public English()
+   public Pluralizer()
    {
       this(MODE.ENGLISH_ANGLICIZED);
    }
 
-   public English(MODE mode)
+   public Pluralizer(MODE mode)
    {
 
       uncountable(new String[]{
@@ -267,7 +267,7 @@ public class English// extends TwoFormInflector
 
    public static void setMode(MODE mode)
    {
-      English newInflector = new English(mode);
+      Pluralizer newInflector = new Pluralizer(mode);
       inflector = newInflector;
    }
 

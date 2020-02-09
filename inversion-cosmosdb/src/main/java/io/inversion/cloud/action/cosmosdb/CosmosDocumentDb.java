@@ -34,7 +34,7 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
@@ -94,7 +94,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       {
          id = table.encodeKey(columnMappedTermsRow);
          if (id == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Your record does not contain the required key fields.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Your record does not contain the required key fields.");
          doc.putFirst("id", id);
       }
 
@@ -124,12 +124,12 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       int statusCode = response.getStatusCode();
       if (statusCode > 299)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }
 
       String returnedId = response.getResource().getId();
       if (!Utils.equal(id, returnedId))
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
 
       return id;
    }
@@ -174,7 +174,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          int statusCode = response.getStatusCode();
          if (statusCode > 299)
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
          }
       }
       catch (DocumentClientException ex)
@@ -187,7 +187,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          }
          else
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
          }
       }
    }
@@ -267,7 +267,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
          error += "values into your code is strongly discouraged as a poor security practice.";
 
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, error);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, error);
       }
 
       DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);

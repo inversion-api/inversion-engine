@@ -50,7 +50,7 @@ import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Rule;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Wirer.Ignore;
@@ -154,7 +154,7 @@ public class Configurator
          for (Api api : wire.getBeans(Api.class))
          {
             if (Utils.empty(api.getApiCode()))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
 
             Api existingApi = engine.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))

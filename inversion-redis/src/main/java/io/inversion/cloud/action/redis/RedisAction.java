@@ -26,7 +26,7 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 import redis.clients.jedis.Jedis;
 
@@ -106,7 +106,7 @@ public class RedisAction extends Action<RedisAction>
 
                resJson = JSNode.parseJsonNode(value);
                res.withJson(resJson);
-               res.withStatus(SC.SC_200_OK);
+               res.withStatus(Status.SC_200_OK);
                req.getChain().cancel();
             }
             else

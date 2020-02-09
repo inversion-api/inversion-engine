@@ -23,7 +23,7 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 
 /**
  * Provides a blank or client specific request rate limit of <code>limitRequests</code> per 
@@ -74,9 +74,9 @@ public class RateLimitAction extends Action<RateLimitAction>
 
       if (!bucket.hit(clientId))
       {
-         JSNode error = new JSNode("error", SC.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
+         JSNode error = new JSNode("error", Status.SC_429_TOO_MANY_REQUESTS, "message", "slow down your request rate");
          res.withJson(error);
-         res.withStatus(SC.SC_429_TOO_MANY_REQUESTS);
+         res.withStatus(Status.SC_429_TOO_MANY_REQUESTS);
 
          req.getChain().cancel();
       }

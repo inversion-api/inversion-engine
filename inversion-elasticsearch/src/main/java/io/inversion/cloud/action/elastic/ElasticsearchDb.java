@@ -27,7 +27,7 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.HttpUtils;
@@ -109,7 +109,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
                allResp.getError().printStackTrace();
                Utils.getCause(allResp.getError()).printStackTrace();
             }
-            throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+            throw new ApiException(allResp.hasStatus(allowedFailResponseCodes) ? allResp.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
          }
       }
       catch (Exception ex)

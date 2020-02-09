@@ -26,7 +26,7 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 
 /**
@@ -252,7 +252,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          {
             Property col = coll.getProperty(shortName);
             if (col == null)
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + coll.getTableName() + "'");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + coll.getTableName() + "'");
 
             value = db.cast(col, value);
 

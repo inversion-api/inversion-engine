@@ -42,7 +42,7 @@ import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
@@ -157,7 +157,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
       else
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + row + "'");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + row + "'");
       }
    }
 

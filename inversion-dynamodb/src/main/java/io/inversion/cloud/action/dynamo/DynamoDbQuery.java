@@ -38,7 +38,7 @@ import io.inversion.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
@@ -124,7 +124,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       if (term.hasToken("n", "nn", "emp", "nemp"))
       {
          if (term.size() > 1)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "The n() and nn() functions only take one column name arg.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "The n() and nn() functions only take one column name arg.");
 
          if (term.hasToken("n", "emp"))
          {
@@ -263,7 +263,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       if (v.getBOOL() != null)
          return v.getBOOL();
 
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to get value from AttributeValue: " + v);
+      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to get value from AttributeValue: " + v);
    }
 
    /**
@@ -359,13 +359,13 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          if (sortBy != null && foundIndex == null)
          {
             //TODO: create test case to trigger this exception
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find valid index to query.  The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find valid index to query.  The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
          }
 
          if (foundPartKey == null && sortBy != null && !order.isAsc(0))
          {
             //an inverse/descending sort can only be run on a QuerySpec which requires a partition key.
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find valid index to query.  A descending sort on '" + sortBy + " is only possible when a partition key value is supplied.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find valid index to query.  A descending sort on '" + sortBy + " is only possible when a partition key value is supplied.");
          }
 
          this.index = foundIndex;
@@ -476,7 +476,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
 
             Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
             Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
@@ -532,7 +532,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
 
             Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
             Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;

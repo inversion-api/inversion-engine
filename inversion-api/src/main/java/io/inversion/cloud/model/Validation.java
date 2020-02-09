@@ -2,6 +2,20 @@ package io.inversion.cloud.model;
 
 import io.inversion.cloud.utils.Utils;
 
+/**
+ * Utility designed to make it easy to validate request properties or request body
+ * json values while you are retrieving them.  
+ * 
+ * Example:
+ * <ul>
+ * <li>int myParam = request.validate("myParamName", "optional_custom_error_message").gt(5).asInt();
+ * </ul>
+ *  
+ * 
+ * @see Request.validate()
+ * @author wells
+ *
+ */
 public class Validation
 {
    Object value              = null;
@@ -297,6 +311,6 @@ public class Validation
    protected void fail(String defaultErrorMessage)
    {
       String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
-      throw new ApiException(SC.SC_400_BAD_REQUEST, message);
+      throw new ApiException(Status.SC_400_BAD_REQUEST, message);
    }
 }

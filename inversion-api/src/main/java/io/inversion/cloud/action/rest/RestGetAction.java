@@ -43,7 +43,7 @@ import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.rql.Page;
@@ -90,7 +90,7 @@ public class RestGetAction extends Action<RestGetAction>
          Relationship rel = collection.getRelationship(req.getSubCollectionKey());
 
          if (rel == null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
 
          String newHref = null;
 
@@ -118,7 +118,7 @@ public class RestGetAction extends Action<RestGetAction>
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
+                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
 
                //-- TODO: fixme - should be using collection attrubte names not column names for the keys
                //-- TODO: fixme - this is not a URL safe encoding
@@ -184,7 +184,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
-         res.withStatus(SC.SC_404_NOT_FOUND);
+         res.withStatus(Status.SC_404_NOT_FOUND);
       }
       else
       {
@@ -352,7 +352,7 @@ public class RestGetAction extends Action<RestGetAction>
          Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
 
          results = db.select(null, terms);
       }
@@ -643,7 +643,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof JSArray)
-                        throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
+                        throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
 
@@ -714,7 +714,7 @@ public class RestGetAction extends Action<RestGetAction>
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
       if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
       List<KeyValue> related = new ArrayList<>();
 
       List columns = new ArrayList();
@@ -788,7 +788,7 @@ public class RestGetAction extends Action<RestGetAction>
          if (res.getError() != null)
             throw res.getError();
          else
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getText());
       }
       else if (sc == 200)
       {
@@ -798,14 +798,14 @@ public class RestGetAction extends Action<RestGetAction>
          {
             Object entityKey = getEntityKey((JSNode) node);
             if (pkCache.containsKey(collection, entityKey))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
 
             pkCache.put(collection, entityKey, node);
          }
          return nodes;
       }
 
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
+      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
    public int getMaxRows()

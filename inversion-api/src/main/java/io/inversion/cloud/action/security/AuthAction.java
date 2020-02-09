@@ -41,7 +41,7 @@ import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
@@ -152,7 +152,7 @@ public class AuthAction extends Action<AuthAction>
                }
 
                if (jwt == null)
-                  throw new ApiException(SC.SC_401_UNAUTHORIZED);
+                  throw new ApiException(Status.SC_401_UNAUTHORIZED);
             }
 
             user = createUserFromValidJwt(jwt);
@@ -195,7 +195,7 @@ public class AuthAction extends Action<AuthAction>
                sessionKey = url.substring(url.lastIndexOf("/") + 1, url.length());
 
             if (sessionKey == null)
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
 
             sessionCache.remove(sessionKey);
          }
@@ -205,7 +205,7 @@ public class AuthAction extends Action<AuthAction>
             if (salt == null)
             {
                log.warn("You must configure a salt value for password hashing.");
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR);
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
             }
 
             user = dao.getUser(username, accountCode, apiCode, tenantCode);
@@ -276,7 +276,7 @@ public class AuthAction extends Action<AuthAction>
             }
 
             if (user == null)
-               throw new ApiException(SC.SC_401_UNAUTHORIZED);
+               throw new ApiException(Status.SC_401_UNAUTHORIZED);
          }
       }
 
@@ -328,7 +328,7 @@ public class AuthAction extends Action<AuthAction>
       {
          User loggedIn = Chain.getUser();
          if (api.isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
-            throw new ApiException(SC.SC_401_UNAUTHORIZED);
+            throw new ApiException(Status.SC_401_UNAUTHORIZED);
       }
 
       if (user == null && !sessionReq)
@@ -499,7 +499,7 @@ public class AuthAction extends Action<AuthAction>
       }
       catch (Exception ex)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
       }
    }
 

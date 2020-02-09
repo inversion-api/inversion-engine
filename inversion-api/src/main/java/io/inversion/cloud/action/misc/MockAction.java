@@ -28,7 +28,7 @@ import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class MockAction extends Action<MockAction>
@@ -80,7 +80,7 @@ public class MockAction extends Action<MockAction>
       if (status != null)
          res.withStatus(status);
       else if (statusCode < 0)
-         withStatus(SC.SC_200_OK);
+         withStatus(Status.SC_200_OK);
 
       JSNode json = getJson();
 
@@ -156,7 +156,7 @@ public class MockAction extends Action<MockAction>
          }
          else
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to locate jsonUrl '" + jsonUrl + "'. Please check your configuration");
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to locate jsonUrl '" + jsonUrl + "'. Please check your configuration");
          }
 
       }
