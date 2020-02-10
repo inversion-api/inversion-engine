@@ -185,11 +185,11 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else
       {
-         //copy data into the response
+         //-- copy data into the response
          res.withRecords(results.getRows());
 
          //------------------------------------------------
-         //setup all of the meta section
+         //-- setup all of the meta section
 
          Page page = results.getQuery().getPage();
          res.withPageSize(page.getPageSize());
@@ -205,7 +205,6 @@ public class RestGetAction extends Action<RestGetAction>
 
          if (foundRows >= 0)
          {
-            //  Chain.peek().put("foundRows", foundRows);
             res.withFoundRows(foundRows);
          }
 
