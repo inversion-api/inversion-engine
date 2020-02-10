@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -289,6 +290,19 @@ public class Utils
       }
 
       return str;
+   }
+
+   /**
+    * Turns a double value into a rounded double with 2 digits of precision
+    * 12.3334 -> 12.33
+    * 23.0 -> 23.00
+    * 45.677 -> 45.68
+    * @param amount
+    * @return
+    */
+   public static BigDecimal toDollarAmount(double amount)
+   {
+      return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
    }
 
    public static int roundUp(int num, int divisor)
