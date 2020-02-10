@@ -40,7 +40,6 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
-import java.sql.Types;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -61,7 +60,6 @@ import java.util.regex.Pattern;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.h2.util.JdbcUtils;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
@@ -1841,49 +1839,11 @@ public class Utils
       return params;
    }
 
-   @Deprecated
-   public static String findSysEnvPropStr(String name, Object overrideValue)
-   {
-      Object obj = findSysEnvProp(name, overrideValue);
-      if (obj != null)
-         return obj.toString();
-      return null;
-   }
-
-   @Deprecated
-   public static int findSysEnvPropInt(String name, Object overrideValue)
-   {
-      Object obj = findSysEnvProp(name, overrideValue);
-      if (obj != null)
-         return Integer.parseInt(obj.toString());
-      return -1;
-   }
-
-   @Deprecated
-   public static boolean findSysEnvPropBool(String name, Object overrideValue)
-   {
-      Object obj = findSysEnvProp(name, overrideValue);
-      if (obj != null)
-         return "true".equalsIgnoreCase(obj.toString());
-      return false;
-   }
-
    /**
-    * @param name - name to look for in sysprops and envprops if 'value' is null;
-    * @param overrideValue - will be returned if not null
-    * @return first not null of 'overrideValue' || sysprop(name) || envprop(name)
+    * @param name - name to look for in sysprops and envprops
+    * @param defaultValue - will be returned if prop not found
+    * @return first not null of sysprop(name) || envprop(name) || defaultValue
     */
-   @Deprecated
-   public static Object findSysEnvProp(String name, Object overrideValue)
-   {
-      if (!Utils.empty(overrideValue))
-         return overrideValue;
-
-      Object value = getProperty(name);
-
-      return value;
-   }
-
    public static String getSysEnvPropStr(String name, Object defaultValue)
    {
       Object obj = getSysEnvProp(name, defaultValue);
