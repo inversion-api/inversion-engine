@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,10 +93,10 @@ public class Utils
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
    /**
-    * A null safe loose equality checker.  
+    * A null safe loose equality checker.
     * @param obj1
     * @param obj2
-    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null. 
+    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null.
     */
    public static boolean equal(Object obj1, Object obj2)
    {
@@ -120,7 +120,7 @@ public class Utils
    }
 
    /**
-    * @return true if any args are not null with a toString().length() > 0 
+    * @return true if any args are not null with a toString().length() > 0
     */
    public static boolean empty(Object... arr)
    {
@@ -292,12 +292,6 @@ public class Utils
       return str;
    }
 
-   public static int roundUp(int num, int divisor)
-   {
-      int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
-      return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
-   }
-
    /**
     * Turns a double value into a rounded double with 2 digits of precision
     * 12.3334 -> 12.33
@@ -309,6 +303,12 @@ public class Utils
    public static BigDecimal toDollarAmount(double amount)
    {
       return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
+   }
+
+   public static int roundUp(int num, int divisor)
+   {
+      int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
+      return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
    }
 
    /**
@@ -517,10 +517,10 @@ public class Utils
    }
 
    /**
-    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm], 
-    * then yyyy-MM-dd, 
-    * then MM/dd/yy, 
-    * then MM/dd/yyyy, 
+    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm],
+    * then yyyy-MM-dd,
+    * then MM/dd/yy,
+    * then MM/dd/yyyy,
     * then yyyyMMdd
     * @param date
     * @return
@@ -690,7 +690,7 @@ public class Utils
    }
 
    /**
-    * Shortcut for throw new RuntimeException(message); 
+    * Shortcut for throw new RuntimeException(message);
     */
    public static void error(String message)
    {
@@ -1718,7 +1718,7 @@ public class Utils
    }
 
    /**
-    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values 
+    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values
     */
    public static boolean wildcardMatch(String wildcard, String string)
    {
@@ -1736,7 +1736,7 @@ public class Utils
 
    /**
     * Performs string.matches() but also checks for null
-    * 
+    *
     * @param regex
     * @param string
     * @return
@@ -1751,7 +1751,7 @@ public class Utils
 
    /**
     * Converts a * and ? wildcard style patterns into regex style pattern
-    * 
+    *
     * @see http://www.rgagnon.com/javadetails/java-0515.html
     * @param wildcard
     * @return
@@ -1841,6 +1841,7 @@ public class Utils
       return params;
    }
 
+   @Deprecated
    public static String findSysEnvPropStr(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1849,6 +1850,7 @@ public class Utils
       return null;
    }
 
+   @Deprecated
    public static int findSysEnvPropInt(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1857,6 +1859,7 @@ public class Utils
       return -1;
    }
 
+   @Deprecated
    public static boolean findSysEnvPropBool(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1867,14 +1870,58 @@ public class Utils
 
    /**
     * @param name - name to look for in sysprops and envprops if 'value' is null;
-    * @param value - will be returned if not null
-    * @return first not null of 'value' || sysprop(name) || envprop(name)
+    * @param overrideValue - will be returned if not null
+    * @return first not null of 'overrideValue' || sysprop(name) || envprop(name)
     */
+   @Deprecated
    public static Object findSysEnvProp(String name, Object overrideValue)
    {
       if (!Utils.empty(overrideValue))
          return overrideValue;
 
+      Object value = getProperty(name);
+
+      return value;
+   }
+
+   public static String getSysEnvPropStr(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return obj.toString();
+      return null;
+   }
+
+   public static int getSysEnvPropInt(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return Integer.parseInt(obj.toString());
+      return -1;
+   }
+
+   public static boolean getSysEnvPropBool(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return "true".equalsIgnoreCase(obj.toString());
+      return false;
+   }
+
+   /**
+    * @param name - name to look for in sysprops and envprops if 'value' is null;
+    * @param defaultValue - will be returned if not found on sys or env
+    * @return first not null of sysprop(name) || envprop(name) || 'defaultValue'
+    */
+   public static Object getSysEnvProp(String name, Object defaultValue)
+   {
+      Object value = getProperty(name);
+
+      return null == value ? defaultValue : value;
+   }
+
+   private static Object getProperty(String name)
+   {
       String value = System.getProperty(name);
 
       if (Utils.empty(value))
@@ -1888,7 +1935,7 @@ public class Utils
          // try replacing dot for underscores, since Lambda doesn't support dots in env vars
          value = System.getenv(name.replace(".", "_"));
 
-      if (value == null)
+      if (Utils.empty(value))
       {
          InputStream stream = Utils.findInputStream(".env");
          if (stream != null)
@@ -1906,7 +1953,6 @@ public class Utils
             }
          }
       }
-
       return value;
    }
 
