@@ -18,10 +18,10 @@ package io.inversion.cloud.jdbc.action;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -29,9 +29,9 @@ import org.junit.runners.Parameterized;
 import io.inversion.cloud.action.rest.TestRestGetActions;
 import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 
 @RunWith(Parameterized.class)
@@ -64,6 +64,12 @@ public class TestSqlGetAction extends TestRestGetActions
          engine = JdbcDbApiFactory.service(true, true);
       }
       return engine;
+   }
+
+   @BeforeClass
+   public static void beforeClass() throws Exception
+   {
+      JdbcDbApiFactory.resetAll();
    }
 
    @Test
@@ -166,7 +172,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       Api api = service().getApi("northwind");
 
-      for (Collection coll : (List<Collection>)api.getDb(db).getCollections())
+      for (Collection coll : (List<Collection>) api.getDb(db).getCollections())
       {
          c2.add(coll.getCollectionName());
       }

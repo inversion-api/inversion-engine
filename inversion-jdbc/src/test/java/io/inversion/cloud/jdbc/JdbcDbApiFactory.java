@@ -28,11 +28,11 @@ import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.service.spring.InversionApp;
@@ -74,12 +74,17 @@ public class JdbcDbApiFactory
             }
          });
 
-//      e.startup();
-//      JdbcDb db = (JdbcDb) e.getApi("northwind").getDb("source");
-//      Connection conn = db.getConnection();
-//      System.out.println(JdbcUtils.selectRows(conn, "SELECT COUNT(\"orders\".\"shipCountry\") FROM \"orders\" LIMIT 100 OFFSET"));
+      //      e.startup();
+      //      JdbcDb db = (JdbcDb) e.getApi("northwind").getDb("source");
+      //      Connection conn = db.getConnection();
+      //      System.out.println(JdbcUtils.selectRows(conn, "SELECT COUNT(\"orders\".\"shipCountry\") FROM \"orders\" LIMIT 100 OFFSET"));
 
       InversionApp.run(e);
+   }
+
+   public static void resetAll() throws Exception
+   {
+      engine = null;
    }
 
    public static synchronized Engine engine() throws Exception
