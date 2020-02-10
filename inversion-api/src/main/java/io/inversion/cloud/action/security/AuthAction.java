@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -149,11 +149,16 @@ public class AuthAction extends Action<AuthAction>
                }
                catch (Exception ex)
                {
+                  //-- this is not an error yet because there can be multiple signing keys in the list
+                  //-- and this jwt may be using an older/different but still supported one in the list
+                  //--
+                  //-- multiple keys are supported so you can release keys with new signatures
+                  //-- while supporting old signatures for some transition period.
                }
-
-               if (jwt == null)
-                  throw new ApiException(Status.SC_401_UNAUTHORIZED);
             }
+
+            if (jwt == null)
+               throw new ApiException(Status.SC_401_UNAUTHORIZED);
 
             user = createUserFromValidJwt(jwt);
          }
@@ -410,7 +415,7 @@ public class AuthAction extends Action<AuthAction>
          user.withPermissions(perms.toArray(new String[perms.size()]));
       }
    }
-   
+
    /**
     * Looks gwt signing secrets up as environment vars or sysprops.
     * 
@@ -629,5 +634,4 @@ public class AuthAction extends Action<AuthAction>
       User getUser(String username, String accountCode, String apiCode, String tenantCode) throws Exception;
    }
 
-   
 }
