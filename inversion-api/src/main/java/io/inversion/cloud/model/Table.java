@@ -16,19 +16,18 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Rows;
+import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.utils.Utils;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang3.StringEscapeUtils;
-
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.Utils;
 
 public class Table
 {
