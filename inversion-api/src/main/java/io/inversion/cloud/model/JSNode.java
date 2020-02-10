@@ -1196,4 +1196,58 @@ public class JSNode implements Map<String, Object>
       }
       json.writeEndObject();
    }
+   
+   /**
+    * Removes all empty objects from the tree
+    * @param parent - parent node
+    */
+   private boolean prune0(Object parent)
+   {
+      if (parent instanceof JSArray)
+      {
+         JSArray arr = ((JSArray) parent);
+         for (int i = 0; i < arr.length(); i++)
+         {
+            if (prune0(arr.get(i)))
+            {
+               arr.remove(i);
+               i--;
+            }
+         }
+         return arr.length() == 0;
+      }
+      else if (parent instanceof JSNode)
+      {
+         boolean prune = true;
+         JSNode js = (JSNode) parent;
+         for (String key : js.keySet())
+         {
+            Object child = js.get(key);
+            prune &= prune0(child);
+         }
+
+         if (prune)
+         {
+            for (String key : js.keySet())
+            {
+               js.remove(key);
+            }
+         }
+
+         return prune;
+      }
+      else
+      {
+         return parent == null;
+      }
+   }
+   
+   /**
+    * Removes all empty objects from the tree
+    * of current JSNode
+    */
+   public boolean prune()
+   {
+      return prune0(this);
+   }
 }
