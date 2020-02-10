@@ -452,7 +452,7 @@ public class AuthAction extends Action<AuthAction>
 
             key += ".secret";
 
-            String secret = Utils.findSysEnvPropStr(key, null);
+            String secret = Utils.getSysEnvPropStr(key, null);
             if (secret != null)
             {
                secrets.add(secret);
@@ -591,7 +591,7 @@ public class AuthAction extends Action<AuthAction>
 
    public String getSalt()
    {
-      return Utils.findSysEnvPropStr(getCollectionName() + ".salt", salt);
+      return Utils.getSysEnvPropStr(getCollectionName() + ".salt", salt);
    }
 
    class LRUAuthSessionCache implements AuthSessionCache

@@ -857,7 +857,7 @@ public class Engine
 
    public String getProfile()
    {
-      return Utils.findSysEnvPropStr("inversion.profile", profile);
+      return Utils.getSysEnvPropStr("inversion.profile", profile);
    }
 
    public Engine withProfile(String profile)

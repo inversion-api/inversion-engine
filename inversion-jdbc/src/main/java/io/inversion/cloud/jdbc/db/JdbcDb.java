@@ -907,7 +907,7 @@ public class JdbcDb extends Db<JdbcDb>
 
    public String getDriver()
    {
-      return Utils.findSysEnvPropStr(getName() + ".driver", driver);
+      return Utils.getSysEnvPropStr(getName() + ".driver", driver);
    }
 
    public JdbcDb withDriver(String driver)
@@ -918,7 +918,7 @@ public class JdbcDb extends Db<JdbcDb>
 
    public String getUrl()
    {
-      return Utils.findSysEnvPropStr(getName() + ".url", url);
+      return Utils.getSysEnvPropStr(getName() + ".url", url);
    }
 
    public JdbcDb withUrl(String url)
@@ -929,7 +929,7 @@ public class JdbcDb extends Db<JdbcDb>
 
    public String getUser()
    {
-      return Utils.findSysEnvPropStr(getName() + ".user", user);
+      return Utils.getSysEnvPropStr(getName() + ".user", user);
    }
 
    public JdbcDb withUser(String user)
@@ -940,7 +940,7 @@ public class JdbcDb extends Db<JdbcDb>
 
    public String getPass()
    {
-      return Utils.findSysEnvPropStr(getName() + ".pass", pass);
+      return Utils.getSysEnvPropStr(getName() + ".pass", pass);
    }
 
    public JdbcDb withPass(String pass)
