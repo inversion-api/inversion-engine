@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -59,21 +59,21 @@ public class RedisDb extends Db<RedisDb>
 
 
    @Override
-   public Results<Row> select(Table table, List<Term> queryTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> queryTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
       

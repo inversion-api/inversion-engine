@@ -22,18 +22,14 @@ import java.util.List;
 import java.util.Set;
 
 import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.action.sql.SqlEngineFactory;
+import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Table;
-import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
@@ -47,7 +43,7 @@ public class CosmosEngineFactory
    {
       if (engine == null)
       {
-         engine = SqlEngineFactory.service(false, true);
+         engine = JdbcDbApiFactory.service(false, true);
 
          CosmosDocumentDb cosmosdb = new CosmosDocumentDb("cosmos")
             {
@@ -57,85 +53,84 @@ public class CosmosEngineFactory
                   withDb("inversion-testing-cosmos1");
                   withCollectionPath("cosmosdb/");
 
-                  Table customersTbl = new Table("customers").withActualName("Northwind")//
+                  Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 
-                                                             .withColumn("type", "string", false)//
-                                                             .withColumn("customerId", "string")//
+                                                             .withProperty("type", "string", false)//
+                                                             .withProperty("customerId", "string")//
                                                              .withIndex("primaryIndex", "primary", true, "type", "customerId")//
                                                              .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                                                             .withColumn("companyName", "string")//
-                                                             .withColumn("contactName", "string")//
-                                                             .withColumn("contactTitle", "string")//
-                                                             .withColumn("address", "string")//
-                                                             .withColumn("city", "string")//
-                                                             .withColumn("region", "string")//
-                                                             .withColumn("postalCode", "string")//
-                                                             .withColumn("country", "string")//
-                                                             .withColumn("phone", "string")//
-                                                             .withColumn("fax", "string");
+                                                             .withProperty("companyName", "string")//
+                                                             .withProperty("contactName", "string")//
+                                                             .withProperty("contactTitle", "string")//
+                                                             .withProperty("address", "string")//
+                                                             .withProperty("city", "string")//
+                                                             .withProperty("region", "string")//
+                                                             .withProperty("postalCode", "string")//
+                                                             .withProperty("country", "string")//
+                                                             .withProperty("phone", "string")//
+                                                             .withProperty("fax", "string");
 
-                  Table employeesTbl = new Table("employees").withActualName("Northwind")//
+                  Collection employeesTbl = new Collection("employees").withCollectionName("Northwind")//
 
-                                                             .withColumn("type", "string", false)//
-                                                             .withColumn("employeeId", "number")//
+                                                             .withProperty("type", "string", false)//
+                                                             .withProperty("employeeId", "number")//
                                                              .withIndex("primaryIndex", "primary", true, "type", "employeeId")//
                                                              .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                                                             .withColumn("lastName", "string")//
-                                                             .withColumn("firstName", "string")//
-                                                             .withColumn("title", "string")//
-                                                             .withColumn("titleOfCourtesy", "string")//
-                                                             .withColumn("birthDate", "string")//
-                                                             .withColumn("hireDate", "string")//
-                                                             .withColumn("homePhone", "string")//
-                                                             .withColumn("extension", "string")//
-                                                             .withColumn("notes", "string")//
-                                                             .withColumn("reportsTo", "number")//
-                                                             .withColumn("salary", "number");
+                                                             .withProperty("lastName", "string")//
+                                                             .withProperty("firstName", "string")//
+                                                             .withProperty("title", "string")//
+                                                             .withProperty("titleOfCourtesy", "string")//
+                                                             .withProperty("birthDate", "string")//
+                                                             .withProperty("hireDate", "string")//
+                                                             .withProperty("homePhone", "string")//
+                                                             .withProperty("extension", "string")//
+                                                             .withProperty("notes", "string")//
+                                                             .withProperty("reportsTo", "number")//
+                                                             .withProperty("salary", "number");
 
                   employeesTbl.withIndex("fkIdx_Employees_reportsTo", "foreignKey", false, "type", "reportsTo");
-                  employeesTbl.getColumn("type").withPk(employeesTbl.getColumn("type"));
-                  employeesTbl.getColumn("reportsTo").withPk(employeesTbl.getColumn("employeeId"));
-                  
+                  employeesTbl.getProperty("type").withPk(employeesTbl.getProperty("type"));
+                  employeesTbl.getProperty("reportsTo").withPk(employeesTbl.getProperty("employeeId"));
 
-                  Table ordersTbl = new Table("orders").withActualName("Northwind")//
+                  Collection ordersTbl = new Collection("orders").withTableName("Northwind")//
 
-                                                       .withColumn("type", "string", false)//
-                                                       .withColumn("orderId", "number")//
+                                                       .withProperty("type", "string", false)//
+                                                       .withProperty("orderId", "number")//
                                                        .withIndex("primaryIndex", "primary", true, "type", "orderId")//
                                                        .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
                                                        //these are order fields
-                                                       .withColumn("customerId", "string")//
-                                                       .withColumn("employeeId", "number")//
-                                                       .withColumn("orderDate", "string")//
-                                                       .withColumn("requiredDate", "string")//
-                                                       .withColumn("shippedDate", "string")//
+                                                       .withProperty("customerId", "string")//
+                                                       .withProperty("employeeId", "number")//
+                                                       .withProperty("orderDate", "string")//
+                                                       .withProperty("requiredDate", "string")//
+                                                       .withProperty("shippedDate", "string")//
                                                        //.withColumn("ShipVia", "number")//
-                                                       .withColumn("freight", "number")//
-                                                       .withColumn("shipName", "string")//
-                                                       .withColumn("shipAddress", "string")//
-                                                       .withColumn("shipCity", "string")//
-                                                       .withColumn("shipRegion", "string")//
-                                                       .withColumn("shipPostalCode", "string")//
-                                                       .withColumn("shipCountry", "string");
+                                                       .withProperty("freight", "number")//
+                                                       .withProperty("shipName", "string")//
+                                                       .withProperty("shipAddress", "string")//
+                                                       .withProperty("shipCity", "string")//
+                                                       .withProperty("shipRegion", "string")//
+                                                       .withProperty("shipPostalCode", "string")//
+                                                       .withProperty("shipCountry", "string");
 
-//                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
-//
-//                                                                   .withColumn("type", "string", false)//
-//                                                                   .withColumn("orderId", "number")//
-//                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
-//                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
-//
-//                                                                   .withColumn("productId", "number")//
-//                                                                   .withColumn("unitPrice", "number")//
-//                                                                   .withColumn("quantity", "number")//
-//                                                                   .withColumn("discount", "number");
+                  //                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
+                  //
+                  //                                                                   .withColumn("type", "string", false)//
+                  //                                                                   .withColumn("orderId", "number")//
+                  //                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
+                  //                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                  //
+                  //                                                                   .withColumn("productId", "number")//
+                  //                                                                   .withColumn("unitPrice", "number")//
+                  //                                                                   .withColumn("quantity", "number")//
+                  //                                                                   .withColumn("discount", "number");
 
-                  withTable(customersTbl);
-                  withTable(employeesTbl);
-                  withTable(ordersTbl);
+                  withCollection(customersTbl);
+                  withCollection(employeesTbl);
+                  withCollection(ordersTbl);
                   //withTable(orderDetailsTbl);
 
                }
@@ -145,9 +140,9 @@ public class CosmosEngineFactory
                {
                   super.configApi();
 
-                  Entity employeeEntity = getApi().getCollection("employees").getEntity();
-                  employeeEntity.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employeeEntity, employeeEntity, getTable("employees").getIndex("fkIdx_Employees_reportsTo"), null));
-                  employeeEntity.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employeeEntity, employeeEntity, getTable("employees").getIndex("fkIdx_Employees_reportsTo"), null));
+                  Collection employeesTbl = getApi().getCollection("employees");
+                  employeesTbl.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employeesTbl, employeesTbl, getCollection("employees").getIndex("fkIdx_Employees_reportsTo"), null));
+                  employeesTbl.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employeesTbl, employeesTbl, getCollection("employees").getIndex("fkIdx_Employees_reportsTo"), null));
                }
             };
 
@@ -156,7 +151,7 @@ public class CosmosEngineFactory
 
          api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action()
             {
-               public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+               public void run(Request req, Response res) throws Exception
                {
                   String collectionKey = req.getCollectionKey().toLowerCase();
 
@@ -215,13 +210,13 @@ public class CosmosEngineFactory
                e.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
-//            String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
-//            res = e.get(getOrderDetails).assertOk();
-//            for (JSNode node : res.data().asNodeList())
-//            {
-//               cleanSourceNode("orderDetails", node);
-//               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
-//            }
+            //            String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
+            //            res = e.get(getOrderDetails).assertOk();
+            //            for (JSNode node : res.data().asNodeList())
+            //            {
+            //               cleanSourceNode("orderDetails", node);
+            //               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
+            //            }
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = e.get(getCustomers).assertOk();

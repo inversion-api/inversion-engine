@@ -25,7 +25,6 @@ import org.junit.Test;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 import junit.framework.TestCase;
 
@@ -73,7 +72,7 @@ public class DynamoDbPostActionsIntegTest extends TestCase
       }
 
       //-- pull the orders again fresh from h2
-      String url = "northwind/h2/orders?in(orderId, " + SqlUtils.getQuotedInClauseStr(orderIds).replaceAll("\"", "") + ")";
+      String url = "northwind/h2/orders?in(orderId, " + Utils.implode(",", orderIds) + ")";
       res = engine.get(url);
       res.dump();
       assertTrue(res.data().size() == 5);

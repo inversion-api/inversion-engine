@@ -62,7 +62,7 @@ import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
@@ -158,24 +158,24 @@ public class ScriptAction extends Action<ScriptAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       scriptLocal.set(this);
-      chainLocal.set(chain);
+      chainLocal.set(req.getChain());
 
       if (!inited)
       {
-         init(engine);
+         init(req.getEngine());
       }
 
-      LinkedHashMap<String, JSNode> scripts = findScripts(engine, chain, req);
+      LinkedHashMap<String, JSNode> scripts = findScripts(req.getEngine(), req.getChain(), req);
       if (scripts.size() > 0)
       {
-         runScripts(engine, api, endpoint, chain, req, res, scripts);
+         runScripts(req, res, scripts);
       }
    }
 
-   void runScripts(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res, LinkedHashMap<String, JSNode> scripts) throws Exception
+   void runScripts(Request req, Response res, LinkedHashMap<String, JSNode> scripts) throws Exception
    {
       Map<String, Object> contexts = new HashMap();
 
@@ -214,11 +214,11 @@ public class ScriptAction extends Action<ScriptAction>
 
                   Value bindings = context.getBindings("js");
 
-                  bindings.putMember("engine", engine);
+                  bindings.putMember("engine", req.getEngine());
                   bindings.putMember("api", api);
-                  bindings.putMember("endpoint", endpoint);
+                  bindings.putMember("endpoint", req.getEndpoint());
                   bindings.putMember("action", this);
-                  bindings.putMember("chain", chain);
+                  bindings.putMember("chain", req.getChain());
                   bindings.putMember("req", req);
                   bindings.putMember("res", res);
                   bindings.putMember("scriptJson", script.getString("script"));
@@ -248,11 +248,11 @@ public class ScriptAction extends Action<ScriptAction>
                   contexts.put("velocity", context);
 
                   context.put("method", req.getMethod());
-                  context.put("engine", engine);
+                  context.put("engine", req.getEngine());
                   context.put("api", api);
-                  context.put("endpoint", endpoint);
+                  context.put("endpoint", req.getEndpoint());
                   context.put("action", this);
-                  context.put("chain", chain);
+                  context.put("chain", req.getChain());
                   context.put("req", req);
                   context.put("res", res);
                   context.put("scriptJson", script);
@@ -586,17 +586,17 @@ public class ScriptAction extends Action<ScriptAction>
 
       public void throwBadRequest(String message)
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, message);
+         throw new ApiException(Status.SC_400_BAD_REQUEST, message);
       }
 
       public void throwNotFound(String message)
       {
-         throw new ApiException(SC.SC_404_NOT_FOUND, message);
+         throw new ApiException(Status.SC_404_NOT_FOUND, message);
       }
 
       public void throwServerError(String message)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
       }
 
       public List<Object> list(Object obj)

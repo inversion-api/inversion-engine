@@ -23,16 +23,12 @@ import java.io.InputStream;
 import java.net.URL;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class MockAction extends Action<MockAction>
@@ -76,7 +72,7 @@ public class MockAction extends Action<MockAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       if (statusCode > 0)
          res.withStatus(status);
@@ -84,7 +80,7 @@ public class MockAction extends Action<MockAction>
       if (status != null)
          res.withStatus(status);
       else if (statusCode < 0)
-         withStatus(SC.SC_200_OK);
+         withStatus(Status.SC_200_OK);
 
       JSNode json = getJson();
 
@@ -97,7 +93,7 @@ public class MockAction extends Action<MockAction>
       }
 
       if (cancelRequest)
-         chain.cancel();
+         req.getChain().cancel();
    }
 
    public MockAction withJson(JSNode json)
@@ -160,7 +156,7 @@ public class MockAction extends Action<MockAction>
          }
          else
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to locate jsonUrl '" + jsonUrl + "'. Please check your configuration");
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to locate jsonUrl '" + jsonUrl + "'. Please check your configuration");
          }
 
       }

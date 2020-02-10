@@ -23,20 +23,16 @@ import java.util.Map;
 import java.util.Set;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.rql.Parser;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -60,7 +56,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       String entityKey = req.getEntityKey();
       String subcollectionKey = req.getSubCollectionKey();
@@ -71,10 +67,10 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       count += json == null ? 0 : 1;
 
       if (count != 1)
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "DELETE expects an entity url, OR a query string OR a JSON array of entity urls, but only one at a time.");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "DELETE expects an entity url, OR a query string OR a JSON array of entity urls, but only one at a time.");
 
       if (!Utils.empty(subcollectionKey))
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "A subcollection key is not valid for a DELETE request");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "A subcollection key is not valid for a DELETE request");
 
       List<String> toDelete = new ArrayList();
 
@@ -82,13 +78,13 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       {
          if (!(json instanceof JSArray))
          {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
          }
 
          for (Object o : (JSArray) json)
          {
             if (!(o instanceof String))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "The JSON body to a DELETE must be an array that contains string urls.");
 
             String url = (String) o;
 
@@ -100,7 +96,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 
             if (!url.toLowerCase().startsWith(path.toLowerCase()))
             {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "All delete request must be for the collection in the original request: '" + path + "'");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "All delete request must be for the collection in the original request: '" + path + "'");
             }
             toDelete.add((String) o);
          }
@@ -122,9 +118,9 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       int deleted = delete(req, req.getCollection(), collectionUrl, toDelete);
 
       if (deleted < 1)
-         res.withStatus(SC.SC_404_NOT_FOUND);
+         res.withStatus(Status.SC_404_NOT_FOUND);
       else
-         res.withStatus(SC.SC_204_NO_CONTENT);
+         res.withStatus(Status.SC_204_NO_CONTENT);
    }
 
    protected int delete(Request req, Collection collection, String collectionUrl, List<String> urls) throws Exception
@@ -138,7 +134,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       //      terms.add(Term.term(null, "eq", "includes", "href"));
 
       Term or = Term.term(null, "or");
-      Term in = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName());
+      Term in = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName());
 
       Parser parser = new Parser();
       for (String u : urls)
@@ -172,7 +168,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             }
             if (and.size() == 0)
             {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't DELETE to a collection unless you include an entityKey or query string");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't DELETE to a collection unless you include an entityKey or query string");
             }
             else
             {
@@ -219,16 +215,16 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             String href = node.getString("href");
 
             if (alreadyDeleted.contains(href))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Deletion of '" + href + "' was not successful.");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Deletion of '" + href + "' was not successful.");
             else
                alreadyDeleted.add(href);
 
-            Row key = collection.getTable().decodeKey((String) Utils.last(Utils.explode("/", href)));
+            Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
             rows.add(key);
          }
 
          //res.data().asList().forEach(o -> ));
-         req.getCollection().getDb().delete(collection.getTable(), rows);
+         req.getCollection().getDb().delete(collection, rows);
       }
 
       return deleted;

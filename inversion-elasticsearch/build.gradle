@@ -1,3 +1,4 @@
 dependencies {
     compile project(':inversion-api')
+    compile project(':inversion-jdbc')
 }

@@ -20,16 +20,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Utils;
 
 public class RemoveJsonPropertyAction extends Action<RemoveJsonPropertyAction>
@@ -52,7 +48,7 @@ public class RemoveJsonPropertyAction extends Action<RemoveJsonPropertyAction>
       super(inludePaths, excludePaths, config);
    }
 
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       JSNode json = req.getJson();
       if (json == null)

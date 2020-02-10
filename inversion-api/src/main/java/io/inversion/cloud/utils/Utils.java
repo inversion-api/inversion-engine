@@ -2012,19 +2012,6 @@ public class Utils
       return bb.array();
    }
 
-   public static Object jdbcCast(Object object, String jdbcType)
-   {
-      try
-      {
-         jdbcType = jdbcType.toUpperCase();
-         return cast(jdbcType, object);
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting to type " + jdbcType + " for value " + object);
-      }
-   }
-
    public static Object cast(String type, Object value)
    {
       try

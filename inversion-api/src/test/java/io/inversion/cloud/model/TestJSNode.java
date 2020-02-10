@@ -106,7 +106,7 @@ public class TestJSNode extends TestCase
       found1 = doc.findAll("$..[?(@.price!=100)]", 3);
       System.out.println(found1);
       assertEquals(3, found1.size());
-      
+
       found1 = doc.findAll("$..book[?(@.isbn)]", 2);
       System.out.println(found1);
       assertEquals(2, found1.size());
@@ -129,22 +129,22 @@ public class TestJSNode extends TestCase
       JSArray found = null;
       JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
-      found = doc.collect("data.*.basket.lineItems.code");
+      found = doc.findAll("data.*.basket.lineItems.code");
       assertTrue(found.size() == 0);
 
-      found = doc.collect("data.*.basket.lineItems.*.code");
+      found = doc.findAll("data.*.basket.lineItems.*.code");
       assertTrue(found.size() == 2);
 
-      found = doc.collect("lineItems.*.code");
+      found = doc.findAll("lineItems.*.code");
       assertTrue(found.size() == 0);
 
-      found = doc.collect("lineItems.code");
+      found = doc.findAll("lineItems.code");
       assertTrue(found.size() == 1);
 
-      found = doc.collect("data.*.basket.*");
+      found = doc.findAll("data.*.basket.*");
       assertTrue(found.size() == 3);
 
-      found = doc.collect("**.lineItems.*.code");
+      found = doc.findAll("**.lineItems.*.code");
       assertTrue(found.size() == 3);
 
       System.out.println(found);
