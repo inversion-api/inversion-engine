@@ -34,8 +34,8 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row;
@@ -68,14 +68,14 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
     * @throws Exception
     */
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)
@@ -85,7 +85,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return keys;
    }
 
-   public String upsertRow(Table table, Map<String, Object> columnMappedTermsRow) throws Exception
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws Exception
    {
       JSNode doc = new JSNode(columnMappedTermsRow);
 
@@ -94,7 +94,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       {
          id = table.encodeKey(columnMappedTermsRow);
          if (id == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Your record does not contain the required key fields.");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Your record does not contain the required key fields.");
          doc.putFirst("id", id);
       }
 
@@ -111,7 +111,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       }
 
       //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getActualName();
+      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getTableName();
 
       String json = doc.toString();
       Document document = new Document(json);
@@ -124,18 +124,18 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       int statusCode = response.getStatusCode();
       if (statusCode > 299)
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
       }
 
       String returnedId = response.getResource().getId();
       if (!Utils.equal(id, returnedId))
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
 
       return id;
    }
 
    @Override
-   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       for (Map<String, Object> row : indexValues)
       {
@@ -155,11 +155,11 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
     * @param indexValues
     * @throws Exception
     */
-   protected void deleteRow(Table table, Map<String, Object> indexValues) throws Exception
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
    {
       Object id = table.encodeKey(indexValues);
-      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getName());
-      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName() + "/docs/" + id;
+      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getColumnName());
+      String documentUri = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
 
       RequestOptions options = new RequestOptions();
       options.setPartitionKey(new PartitionKey(partitionKeyValue));
@@ -174,7 +174,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          int statusCode = response.getStatusCode();
          if (statusCode > 299)
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
          }
       }
       catch (DocumentClientException ex)
@@ -187,14 +187,14 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          }
          else
          {
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
          }
       }
    }
 
-   protected String getCollectionUri(Table table)
+   protected String getCollectionUri(Collection table)
    {
-      String documentUri = "/dbs/" + db + "/colls/" + table.getActualName();
+      String documentUri = "/dbs/" + db + "/colls/" + table.getTableName();
       return documentUri;
    }
 
@@ -267,7 +267,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
          error += "values into your code is strongly discouraged as a poor security practice.";
 
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, error);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, error);
       }
 
       DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);

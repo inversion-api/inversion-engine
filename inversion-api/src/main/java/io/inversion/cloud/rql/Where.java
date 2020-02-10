@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Rows.Row;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
@@ -67,7 +67,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
             transform(child);
          }
       }
@@ -76,13 +76,13 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
       {
          String indexName = parent.getToken(0);
 
-         Index index = getParent().table().getIndex(indexName);
+         Index index = getParent().getCollection().getIndex(indexName);
          if (index == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
 
          if (index.size() == 1)
          {
-            Term t = Term.term(null, "in", index.getColumn(0).getName());
+            Term t = Term.term(null, "in", index.getColumn(0).getColumnName());
             List<Term> children = parent.getTerms();
             for (int i = 1; i < children.size(); i++)
             {
@@ -108,9 +108,9 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                Term child = children.get(i);
                if (!child.isLeaf())
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
+                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
 
-               Row keyParts = getParent().table().decodeKey(index, child.getToken());
+               Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");
                for (String key : keyParts.keySet())
                {
@@ -121,17 +121,6 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                transformed = or.getTerm(0);
                transformed.withParent(null);
-
-               //For a single key, unwrap or(and(eq(a,b), eq(c,d))) into individual parts equal to ?eq(a,b)&eq(b,c)
-               //Term and = or.getTerm(0);
-               //               for (Term andCond : and.getTerms())
-               //               {
-               //                  parent = andCond;
-               //                  //andCond.withParent(null);
-               //                  //                  if (!super.addTerm(andCond.getToken(), andCond))
-               //                  //                     throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm Error");
-               //               }
-
             }
          }
       }
@@ -142,89 +131,8 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
       return transformed;
    }
 
-   public List<Term> filters()
+   public List<Term> getFilters()
    {
       return getTerms();
    }
-
-   public T key(Object... terms)
-   {
-      return withTerm("key", terms);
-   }
-
-   public T and(Object... terms)
-   {
-      return withTerm("and", terms);
-   }
-
-   public T or(Object... terms)
-   {
-      return withTerm("or", terms);
-   }
-
-   public T not(Object... terms)
-   {
-      return withTerm("not", terms);
-   }
-
-   public T eq(Object... terms)
-   {
-      return withTerm("eq", terms);
-   }
-
-   public T ne(Object... terms)
-   {
-      return withTerm("ne", terms);
-   }
-
-   public T like(Object... terms)
-   {
-      return withTerm("like", terms);
-   }
-
-   public T lt(Object... terms)
-   {
-      return withTerm("lt", terms);
-   }
-
-   public T gt(Object... terms)
-   {
-      return withTerm("gt", terms);
-   }
-
-   public T in(Object... terms)
-   {
-      return withTerm("in", terms);
-   }
-
-   public T out(Object... terms)
-   {
-      return withTerm("out", terms);
-   }
-
-   public T iff(Object... terms)
-   {
-      return withTerm("if", terms);
-   }
-
-   public T w(Object... terms)
-   {
-      return withTerm("w", terms);
-   }
-
-   public T wo(Object... terms)
-   {
-      return withTerm("wo", terms);
-   }
-
-   public T emp(Object... terms)
-   {
-      return withTerm("emp", terms);
-   }
-
-   public T nemp(Object... terms)
-   {
-      return withTerm("nemp", terms);
-   }
-
 }

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import org.junit.Test;
 
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import junit.framework.TestCase;
 
 public class TestKeyEncoding extends TestCase
@@ -32,13 +32,13 @@ public class TestKeyEncoding extends TestCase
 
       System.out.println("string   : '" + string + "'");
 
-      String encoded = Table.encodeStr(string);
+      String encoded = Collection.encodeStr(string);
       System.out.println("encoded  : '" + encoded + "'");
 
-      String decoded = Table.decodeStr(encoded);
+      String decoded = Collection.decodeStr(encoded);
       System.out.println("decoded  : '" + decoded + "'");
 
-      String reincoded = Table.encodeStr(decoded);
+      String reincoded = Collection.encodeStr(decoded);
       System.out.println("reincoded: '" + reincoded + "'");
 
       assertEquals(string, decoded);

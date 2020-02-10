@@ -21,6 +21,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A simple tokenizing parser initially designed to facilitate 
+ * json path parsing in JSNode.
+ * 
+ * @author wells
+ */
 public class SimpleTokenizer
 {
    char[]       chars           = null;
@@ -156,8 +162,8 @@ public class SimpleTokenizer
 
       String str = next.toString().trim();
       next = new StringBuffer();
-      
-      if(str.length() == 0)
+
+      if (str.length() == 0)
          str = null;
 
       return str;

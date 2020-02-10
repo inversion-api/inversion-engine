@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,26 +39,41 @@ public class AclRule extends Rule<AclRule>
    protected boolean      allRolesMustMatch       = true;
    protected boolean      allPermissionsMustMatch = true;
 
-   public static AclRule allowAny(String name, String methods, String includePaths, String excludePaths)
+   public static AclRule allowAll(String methods, String includePaths)
    {
-      AclRule rule = new AclRule(methods, includePaths, excludePaths, null);
-      rule.withName(name);
+      AclRule rule = new AclRule(null, methods, includePaths, null);
       return rule;
    }
 
-   public static AclRule allowIfUserHasAllPermissions(String name, String methods, String includePaths, String excludePaths, String... permissions)
+   public static AclRule requireAllPerms(String includePaths, String permission1, String... permissionsN)
    {
-      AclRule rule = new AclRule(methods, includePaths, excludePaths, null);
-      rule.withName(name);
-      rule.withPermissions(permissions);
+      AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+      rule.withAllPermissionsMustMatch(true);
       return rule;
    }
 
-   public static AclRule allowIfUserHasAnyPermissions(String name, String methods, String includePaths, String excludePaths, String... permissions)
+   public static AclRule requireOnePerm(String includePaths, String permission1, String... permissionsN)
    {
-      AclRule rule = new AclRule(methods, includePaths, excludePaths, null);
-      rule.withName(name);
-      rule.withPermissions(permissions);
+      AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+      rule.withAllPermissionsMustMatch(false);
+      return rule;
+   }
+
+   public static AclRule requireAllRoles(String includePaths, String role1, String... rolesN)
+   {
+      AclRule rule = new AclRule(null, null, includePaths, null);
+      rule.withAllRolesMustMatch(true);
+      rule.withRoles(role1);
+      rule.withRoles(rolesN);
+      return rule;
+   }
+
+   public static AclRule requireOneRole(String includePaths, String role1, String... rolesN)
+   {
+      AclRule rule = new AclRule(null, null, includePaths, null);
+      rule.withAllRolesMustMatch(false);
+      rule.withRoles(role1);
+      rule.withRoles(rolesN);
       return rule;
    }
 
@@ -67,27 +82,18 @@ public class AclRule extends Rule<AclRule>
       super();
    }
 
-   //   public AclRule(String methods)
-   //   {
-   //      super();
-   //      withMethods(methods);
-   //   }
-
-   public AclRule(String name, String methods, String includePaths, String... permissions)
+   public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN)
    {
       withName(name);
       withMethods(methods);
       withIncludePaths(includePaths);
-      withPermissions(permissions);
-   }
 
-   //   public AclRule(String methods, String includePaths, String excludePaths, String config)
-   //   {
-   //      withMethods(methods);
-   //      withIncludePaths(includePaths);
-   //      withExcludePaths(excludePaths);
-   //      withConfig(config);
-   //   }
+      if (permission1 != null)
+         withPermissions(permission1);
+
+      if (permissionsN != null)
+         withPermissions(permissionsN);
+   }
 
    @Override
    public AclRule withApi(Api api)

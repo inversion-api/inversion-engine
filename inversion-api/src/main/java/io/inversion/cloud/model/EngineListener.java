@@ -31,12 +31,12 @@ public interface EngineListener
 
    }
 
-   default void beforeError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+   default void afterError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
    {
 
    }
 
-   default void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+   default void beforeFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
    {
 
    }

@@ -23,26 +23,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.English;
-import io.inversion.cloud.utils.Rows;
+import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.SqlUtils;
 import io.inversion.cloud.utils.Utils;
 
 public abstract class Db<T extends Db>
 {
-   transient protected Logger    log            = LoggerFactory.getLogger(getClass());
+   transient protected Logger      log            = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean    started        = false;
-   transient volatile boolean    starting       = false;
-   transient volatile boolean    shutdown       = false;
+   transient volatile boolean      started        = false;
+   transient volatile boolean      starting       = false;
+   transient volatile boolean      shutdown       = false;
 
-   protected Api                 api            = null;
+   protected Api                   api            = null;
 
    /**
     * A CSV of pipe delimited table name to collection pairs
@@ -53,16 +50,16 @@ public abstract class Db<T extends Db>
     * 
     * Example: db.includeTables=orders,users,events
     */
-   protected Map<String, String> includeTables  = new HashMap();
+   protected Map<String, String>   includeTables  = new HashMap();
 
-   protected boolean             bootstrap      = true;
+   protected boolean               bootstrap      = true;
 
-   protected String              name           = null;
-   protected String              type           = null;
+   protected String                name           = null;
+   protected String                type           = null;
 
-   protected String              collectionPath = null;
+   protected String                collectionPath = null;
 
-   protected ArrayList<Table>    tables         = new ArrayList();
+   protected ArrayList<Collection> tables         = new ArrayList();
 
    public Db()
    {
@@ -142,9 +139,8 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract Results<Row> select(Table table, List<Term> queryTerms) throws Exception;
+   public abstract Results<Row> select(Collection table, List<Term> queryTerms) throws Exception;
 
-   
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
     * not as a full replacement.  Keys that are not supplied in the call but that exist in the row in 
@@ -168,7 +164,7 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception;
+   public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
 
    /**
     * Deletes rows identified by the unique index values from the underlying data source.
@@ -182,13 +178,13 @@ public abstract class Db<T extends Db>
     * @param indexValues
     * @throws Exception
     */
-   public abstract void delete(Table table, List<Map<String, Object>> indexValues) throws Exception;
+   public abstract void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception;
 
    public void configDb() throws Exception
    {
       for (String key : includeTables.keySet())
       {
-         withTable(new Table(key));
+         withCollection(new Collection(key));
       }
    }
 
@@ -196,28 +192,39 @@ public abstract class Db<T extends Db>
    {
       List<String> relationshipStrs = new ArrayList();
 
-      for (Table table : getTables())
+      for (Collection coll : getCollections())
       {
-         if (table.isLinkTbl())
+         if (!coll.isLinkTbl() && !coll.isExclude())
+         {
+            api.withCollection(coll);
+            
+            if (getCollectionPath() != null)
+               coll.withIncludePaths(getCollectionPath());
+         }
+      }
+
+      for (Collection coll : getCollections())
+      {
+         if (coll.isLinkTbl())
             continue;
 
-         List<Column> cols = table.getColumns();
-         String name = beautifyCollectionName(table.getName());
-
-         Collection collection = api.makeCollection(table, name);
-         if (getCollectionPath() != null)
-            collection.withIncludePaths(getCollectionPath());
-
-         Entity entity = collection.getEntity();
-
-         for (Attribute attr : entity.getAttributes())
+         if (coll.getCollectionName().equals(coll.getTableName()))
          {
-            attr.withName(beautifyAttributeName(attr.getName()));
+            //collection has not already been specifically customized
+            String prettyName = beautifyCollectionName(coll.getTableName());
+            coll.withCollectionName(prettyName);
          }
 
-         //         String debug = getCollectionPath();
-         //         debug = (debug == null ? "" : (debug + collection));
-         //         System.out.println("CREATING COLLECTION: " + debug);
+         for (Property prop : coll.getProperties())
+         {
+            if (prop.getColumnName().equals(prop.getJsonName()))
+            {
+               //json name has not already been specifically customized
+               String prettyName = beautifyAttributeName(prop.getColumnName());
+               prop.withJsonName(prettyName);
+            }
+
+         }
       }
 
       //-- Now go back through and create relationships for all foreign keys
@@ -227,13 +234,13 @@ public abstract class Db<T extends Db>
       //-- API designers may want to represent one or both directions of the
       //-- relationship in their API and/or the names of the JSON properties
       //-- for the relationships will probably be different
-      for (Table t : getTables())
+      for (Collection coll : getCollections())
       {
-         if (t.isLinkTbl())
+         if (coll.isLinkTbl())
          {
             //create reciprocal pairs for of MANY_TO_MANY relationships
             //for each pair combination in the link table.
-            List<Index> indexes = t.getIndexes();
+            List<Index> indexes = coll.getIndexes();
             for (int i = 0; i < indexes.size(); i++)
             {
                for (int j = 0; j < indexes.size(); j++)
@@ -244,8 +251,8 @@ public abstract class Db<T extends Db>
                   if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Entity entity1 = api.getEntity(idx1.getColumn(0).getPk().getTable());
-                  Entity entity2 = api.getEntity(idx2.getColumn(0).getPk().getTable());
+                  Collection entity1 = idx1.getColumn(0).getPk().getCollection();
+                  Collection entity2 = idx2.getColumn(0).getPk().getCollection();
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
@@ -261,15 +268,15 @@ public abstract class Db<T extends Db>
          }
          else
          {
-            for (Index fkIdx : t.getIndexes())
+            for (Index fkIdx : coll.getIndexes())
             {
                try
                {
                   if (!fkIdx.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Entity pkEntity = api.getEntity(fkIdx.getColumn(0).getPk().getTable());
-                  Entity fkEntity = api.getEntity(fkIdx.getColumn(0).getTable());
+                  Collection pkEntity = fkIdx.getColumn(0).getPk().getCollection();
+                  Collection fkEntity = fkIdx.getColumn(0).getCollection();
 
                   //ONE_TO_MANY
                   {
@@ -298,18 +305,17 @@ public abstract class Db<T extends Db>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
+                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
                }
             }
          }
       }
 
+      //TODO...should this operate on all tables or just this DBs tables...?
       //now we need to see if any relationship names conflict and need to be made unique
       for (Collection coll : api.getCollections())
       {
-         Entity entity = coll.getEntity();
-
-         List<Relationship> relationships = entity.getRelationships();
+         List<Relationship> relationships = coll.getRelationships();
 
          for (int i = 0; i < relationships.size(); i++)
          {
@@ -321,7 +327,7 @@ public abstract class Db<T extends Db>
 
                if (nameA.equalsIgnoreCase(nameB))
                {
-                  String uniqueName = makeRelationshipUniqueName(entity, relationships.get(j));
+                  String uniqueName = makeRelationshipUniqueName(coll, relationships.get(j));
                   relationships.get(j).withName(uniqueName);
                }
             }
@@ -337,7 +343,7 @@ public abstract class Db<T extends Db>
       name = beautifyAttributeName(name);
 
       if (!(name.endsWith("s") || name.endsWith("S")))
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
 
       return name;
    }
@@ -390,14 +396,14 @@ public abstract class Db<T extends Db>
       return buff.toString();
    }
 
-   protected String makeRelationshipUniqueName(Entity entity, Relationship rel)
+   protected String makeRelationshipUniqueName(Collection entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
-         name = rel.getFk1Col1().getName();
+         name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -424,7 +430,7 @@ public abstract class Db<T extends Db>
          //so it results in a property called "subcategoryAlarms"
          //being added to the Category collection.
 
-         String idxColName = rel.getFk1Col1().getName();
+         String idxColName = rel.getFk1Col1().getColumnName();
          if (idxColName.toLowerCase().endsWith("id") && idxColName.length() > 2)
          {
             idxColName = idxColName.substring(0, idxColName.length() - 2);
@@ -434,11 +440,11 @@ public abstract class Db<T extends Db>
          if (idxColName.toUpperCase().equals(idxColName))
             idxColName = idxColName.toLowerCase();
 
-         String collectionName = entity.getCollection().getName();
-         String relatedCollectionName = rel.getRelated().getCollection().getName();
+         String collectionName = entity.getCollectionName();
+         String relatedCollectionName = rel.getRelated().getCollectionName();
          //String tableName = entity.getTable().getName();
          if (!collectionName.equalsIgnoreCase(idxColName) //
-               && !English.plural(idxColName).equalsIgnoreCase(collectionName))
+               && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
          {
             name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
             System.out.println("RELATIONSHIP: " + name + " " + rel);
@@ -452,7 +458,7 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getName();
+         name = rel.getFk2Col1().getPk().getCollection().getTableName();
          pluralize = true;
       }
 
@@ -460,20 +466,20 @@ public abstract class Db<T extends Db>
 
       if (pluralize)
       {
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
       }
 
       return name;
    }
 
-   protected String makeRelationshipName(Entity entity, Relationship rel)
+   protected String makeRelationshipName(Collection entity, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
       if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
-         name = rel.getFk1Col1().getName();
+         name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -481,12 +487,12 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getRelated().getCollection().getName();
+         name = rel.getRelated().getCollectionName();
          pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getTable().getName();
+         name = rel.getFk2Col1().getPk().getCollection().getCollectionName();
          pluralize = true;
       }
 
@@ -494,78 +500,20 @@ public abstract class Db<T extends Db>
 
       if (pluralize)
       {
-         name = English.plural(name);
+         name = Pluralizer.plural(name);
       }
 
       return name;
    }
 
-   public Object cast(Column column, Object value)
+   public Object cast(Property column, Object value)
    {
-      try
-      {
-         return cast(column != null ? column.getType() : null, value);
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Error casting column '" + column.getTable().getName() + "." + column.getName() + "' with value '" + value + "' to type " + column.getType() + ". " + ex.getMessage());
-      }
-   }
-
-   public Object cast(Attribute attr, Object value)
-   {
-      return cast(attr.getType(), value);
+      return Utils.cast(column != null ? column.getType() : null, value);
    }
 
    public Object cast(String type, Object value)
    {
-      try
-      {
-         if (value == null)
-            return null;
-
-         if (type == null)
-            return value.toString();
-
-         switch (type.toLowerCase())
-         {
-            case "s":
-            case "string":
-               return value.toString();
-
-            case "n":
-            case "number":
-               if (value.toString().indexOf(".") < 0)
-                  return Long.parseLong(value.toString());
-               else
-                  return Double.parseDouble(value.toString());
-
-            case "bool":
-            case "boolean":
-               return Boolean.parseBoolean(value.toString());
-
-            case "array":
-
-               if (value instanceof JSArray)
-                  return value;
-               else
-                  return JSNode.parseJsonArray(value + "");
-
-            case "object":
-
-               if (value instanceof JSNode)
-                  return value;
-               else
-                  return JSNode.parseJsonNode(value + "");
-
-            default :
-               return SqlUtils.cast(value, type);
-         }
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
-      }
+      return Utils.cast(type, value);
    }
 
    public Set<Term> mapToColumns(Collection collection, Term term)
@@ -585,10 +533,10 @@ public abstract class Db<T extends Db>
          while (token.startsWith("-") || token.startsWith("+"))
             token = token.substring(1, token.length());
 
-         Attribute attr = collection.getAttribute(token);
+         Property attr = collection.findProperty(token);
          if (attr != null)
          {
-            String columnName = attr.getColumn().getName();
+            String columnName = attr.getColumnName();
 
             if (term.getToken().startsWith("-"))
                columnName = "-" + columnName;
@@ -617,15 +565,15 @@ public abstract class Db<T extends Db>
       return shutdown;
    }
 
-   public Column getColumn(String table, String col)
+   public Property getProperty(String table, String col)
    {
-      for (Table t : tables)
+      for (Collection t : tables)
       {
-         if (t.getName().equalsIgnoreCase(table))
+         if (t.getTableName().equalsIgnoreCase(table))
          {
-            for (Column c : t.getColumns())
+            for (Property c : t.getProperties())
             {
-               if (c.getName().equalsIgnoreCase(col))
+               if (c.getColumnName().equalsIgnoreCase(col))
                {
                   return c;
                }
@@ -637,39 +585,27 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Table getTable(String tableName)
+   public Collection getCollection(String collectionOrTableName)
    {
-      for (Table t : tables)
+      for (Collection t : tables)
       {
-         if (t.getName().equalsIgnoreCase(tableName))
+         if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
+               || collectionOrTableName.equalsIgnoreCase(t.getCollectionName()))
             return t;
-      }
-
-      tableName = tableName.replaceAll("\\s+", "");
-      for (Table t : tables)
-      {
-         String name = t.getName();
-
-         if (name.indexOf(" ") > -1)
-         {
-            name = name.replaceAll("\\s+", "");
-            if (name.equalsIgnoreCase(tableName))
-               return t;
-         }
       }
 
       return null;
    }
 
-   public void removeTable(Table table)
+   public void removeCollection(Collection table)
    {
       tables.remove(table);
    }
 
    /**
-    * @return the tables
+    * @return the collections
     */
-   public List<Table> getTables()
+   public List<Collection> getCollections()
    {
       return tables;
    }
@@ -686,17 +622,17 @@ public abstract class Db<T extends Db>
    }
 
    /**
-    * @param tables the tables to set
+    * @param collections to include (add not replace)
     */
-   public T withTables(Table... tbls)
+   public T withCollections(Collection... colls)
    {
-      for (Table table : tbls)
-         withTable(table);
+      for (Collection coll : colls)
+         withCollection(coll);
 
       return (T) this;
    }
 
-   public T withTable(Table tbl)
+   public T withCollection(Collection tbl)
    {
       if (tbl != null)
       {

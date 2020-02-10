@@ -383,20 +383,35 @@ public class Builder<T, P extends Builder>
       return found;
    }
 
-   public Term find(String token)
+   public Term find(String... tokens)
    {
       for (Term term : terms)
       {
-         if (term.hasToken(token))
-            return term;
+         Term found = find(term, tokens);
+         if (found != null)
+            return found;
       }
 
       for (Builder builder : getBuilders())
       {
-         Term term = builder.find(token);
+         Term term = builder.find(tokens);
          if (term != null)
             return term;
       }
+      return null;
+   }
+
+   Term find(Term term, String... tokens)
+   {
+      if (term.hasToken(tokens))
+         return term;
+
+      for (Term child : term.getTerms())
+      {
+         if (child.hasToken(tokens))
+            return child;
+      }
+
       return null;
    }
 

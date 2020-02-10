@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,16 +27,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -77,9 +74,28 @@ public class AclAction extends Action<AclAction>
          withAclRules(aclRules);
    }
 
-   public AclAction withAclRule(String name, String methods, String includePaths, String... permissions)
+   public AclAction requireAllPerms(String includePaths, String permission1, String... permissionsN)
    {
-      return withAclRules(new AclRule(name, methods, includePaths, permissions));
+      withAclRules(AclRule.requireAllPerms(includePaths, permission1, permissionsN));
+      return this;
+   }
+
+   public AclAction requireOnePerm(String includePaths, String permission1, String... permissionsN)
+   {
+      withAclRules(AclRule.requireOnePerm(includePaths, permission1, permissionsN));
+      return this;
+   }
+
+   public AclAction requireAllRoles(String includePaths, String role1, String... rolesN)
+   {
+      withAclRules(AclRule.requireAllRoles(includePaths, role1, rolesN));
+      return this;
+   }
+
+   public AclAction requireOneRole(String includePaths, String role1, String... rolesN)
+   {
+      withAclRules(AclRule.requireOneRole(includePaths, role1, rolesN));
+      return this;
    }
 
    public AclAction withAclRules(AclRule... acls)
@@ -97,7 +113,7 @@ public class AclAction extends Action<AclAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response resp) throws Exception
+   public void run(Request req, Response resp) throws Exception
    {
       List<AclRule> matched = new ArrayList<>();
       boolean allowed = false;
@@ -136,7 +152,7 @@ public class AclAction extends Action<AclAction>
       if (!allowed)
       {
          Chain.debug("AclAction: NO_MATCH_DENY");
-         throw new ApiException(SC.SC_403_FORBIDDEN);
+         throw new ApiException(Status.SC_403_FORBIDDEN);
       }
 
       Set requires = new HashSet();
@@ -154,12 +170,12 @@ public class AclAction extends Action<AclAction>
       if (!restricts.isEmpty())
          Chain.debug("AclAction: restricts: " + restricts);
 
-      cleanParams(chain, req, restricts, requires);
-      cleanJson(chain, req.getJson(), restricts, requires, false);
+      cleanParams(req, restricts, requires);
+      cleanJson(req, req.getJson(), restricts, requires, false);
 
       try
       {
-         chain.go();
+         req.getChain().go();
       }
       finally
       {
@@ -171,14 +187,14 @@ public class AclAction extends Action<AclAction>
             {
                if (parent instanceof JSNode)
                {
-                  cleanJson(chain, (JSNode) parent, restricts, Collections.EMPTY_SET, true);
+                  cleanJson(req, (JSNode) parent, restricts, Collections.EMPTY_SET, true);
                }
             }
          }
       }
    }
 
-   void cleanParams(Chain chain, Request req, Set<String> restricts, Set<String> requires)
+   void cleanParams(Request req, Set<String> restricts, Set<String> requires)
    {
       for (String restricted : restricts)
       {
@@ -190,7 +206,7 @@ public class AclAction extends Action<AclAction>
             String value = restricted.split("=")[1].trim();
 
             if (value.startsWith("${"))
-               value = getValue(chain, value.substring(2, value.length() - 1));
+               value = getValue(req.getChain(), value.substring(2, value.length() - 1));
 
             if ("entitykey".equals(key1))
             {
@@ -214,7 +230,7 @@ public class AclAction extends Action<AclAction>
             String value = req.getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
-               throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
+               throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
             }
          }
       }
@@ -237,7 +253,7 @@ public class AclAction extends Action<AclAction>
                String value = req.getParam(key);
                if (Utils.empty(value))
                {
-                  value = getValue(chain, key);
+                  value = getValue(req.getChain(), key);
                   if (value != null)
                      req.withParam(key, value);
                }
@@ -252,7 +268,7 @@ public class AclAction extends Action<AclAction>
 
          if (!found)
          {
-            String value = getValue(chain, required);
+            String value = getValue(req.getChain(), required);
             if (value != null)
             {
                req.withParam(required, value);
@@ -262,12 +278,12 @@ public class AclAction extends Action<AclAction>
 
          if (!found)
          {
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing required param '" + required + "'");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing required param '" + required + "'");
          }
       }
    }
 
-   void cleanJson(Chain chain, JSNode json, Set<String> restricts, Set<String> requires, boolean silent)
+   void cleanJson(Request req, JSNode json, Set<String> restricts, Set<String> requires, boolean silent)
    {
       if (json != null)
       {
@@ -298,7 +314,7 @@ public class AclAction extends Action<AclAction>
                if (!silent)
                {
                   if (target.containsKey(targetProp))
-                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
+                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
                }
             }
          }
@@ -334,12 +350,12 @@ public class AclAction extends Action<AclAction>
                Object value = target.get(targetProp);
                if (value == null)
                {
-                  value = getValue(chain, targetProp);
+                  value = getValue(req.getChain(), targetProp);
 
                   if (value != null)
                      target.put(targetProp, value);
                   else
-                     throw new ApiException(SC.SC_400_BAD_REQUEST, "Required property '" + path + "' is missing from JSON body");
+                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + path + "' is missing from JSON body");
 
                }
             }
