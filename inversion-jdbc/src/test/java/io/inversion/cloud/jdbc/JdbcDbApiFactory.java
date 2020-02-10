@@ -65,7 +65,7 @@ public class JdbcDbApiFactory
       e.withEngineListener(new EngineListener()
          {
             @Override
-            public void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            public void beforeFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
             {
                if (Chain.getDepth() <= 1)
                {

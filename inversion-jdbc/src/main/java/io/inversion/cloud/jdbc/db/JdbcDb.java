@@ -168,61 +168,55 @@ public class JdbcDb extends Db<JdbcDb>
    @Override
    protected void doStartup()
    {
-      try
-      {
-         api.withEngineListener(new EngineListener()
+
+      if (isType("mysql"))
+         withColumnQuote('`');
+
+      super.doStartup();
+
+      api.withEngineListener(new EngineListener()
+         {
+
+            public void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            {
+               try
+               {
+                  ConnectionLocal.commit();
+               }
+               catch (Exception ex)
+               {
+                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
+               }
+            }
+
+            public void afterError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
             {
 
-               public void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+               try
                {
-                  try
-                  {
-                     ConnectionLocal.commit();
-                  }
-                  catch (Exception ex)
-                  {
-                     throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
-                  }
+                  ConnectionLocal.rollback();
+               }
+               catch (Throwable t)
+               {
+                  log.warn("Error rollowing back transaction.", t);
                }
 
-               public void beforeError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            }
+
+            public void beforeFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            {
+               try
                {
-
-                  try
-                  {
-                     ConnectionLocal.rollback();
-                  }
-                  catch (Throwable t)
-                  {
-                     log.warn("Error rollowing back transaction.", t);
-                  }
-
+                  ConnectionLocal.close();
                }
-
-               public void onFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+               catch (Throwable t)
                {
-                  try
-                  {
-                     ConnectionLocal.close();
-                  }
-                  catch (Throwable t)
-                  {
-                     log.warn("Error closing connections.", t);
-                  }
+                  log.warn("Error closing connections.", t);
                }
+            }
 
-            });
+         });
 
-         if (isType("mysql"))
-            withColumnQuote('`');
-
-         super.doStartup();
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-         Utils.rethrow(ex);
-      }
    }
 
    protected void doShutdown()
@@ -378,14 +372,13 @@ public class JdbcDb extends Db<JdbcDb>
       if (key == null)
       {
          key = JdbcUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
-      }
 
-      if (key == null)
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
+         if (-1 == (Integer) key)
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
+      }
 
       return key.toString();
    }
-
 
    public Connection getConnection() throws ApiException
    {

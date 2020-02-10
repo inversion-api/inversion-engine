@@ -432,6 +432,11 @@ public class Api
       return this;
    }
 
+   public List<EngineListener> getEngineListeners()
+   {
+      return Collections.unmodifiableList(listeners);
+   }
+
    public Engine getEngine()
    {
       return engine;

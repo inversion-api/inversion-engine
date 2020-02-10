@@ -85,6 +85,9 @@ public class RestGetAction extends Action<RestGetAction>
    {
       if (req.getSubCollectionKey() != null)
       {
+         //-- all URLs with a subcollection key will be rewritten and  
+         //-- internally forwarded to the non-subcollection form.
+         
          String entityKey = req.getEntityKey();
          Collection collection = req.getCollection();
          Relationship rel = collection.getRelationship(req.getSubCollectionKey());
@@ -96,20 +99,18 @@ public class RestGetAction extends Action<RestGetAction>
 
          if (rel.isManyToOne())
          {
-            //CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
-            //TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
+            //-- CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
+            //-- TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
 
-            //CONVERTS: http://localhost/northwind/sql/collection/val1~val2/subcollection
-            //TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
+            //-- CONVERTS: http://localhost/northwind/sql/collection/val1~val2/subcollection
+            //-- TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
 
             //TODO: need a compound key test case here
             Collection relatedCollection = rel.getRelated();
-
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
-
             Row entityKeyRow = collection.decodeKey(req.getEntityKey());
 
-            //maps query string parameter names for the main tables pk to the related tables fk
+            //-- maps query string parameter names for the main collection's pk to the related collection's fk
             Index fkIdx = rel.getFkIndex1();
             for (int i = 0; i < fkIdx.size(); i++)
             {
@@ -120,8 +121,6 @@ public class RestGetAction extends Action<RestGetAction>
                if (pkVal == null)
                   throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
 
-               //-- TODO: fixme - should be using collection attrubte names not column names for the keys
-               //-- TODO: fixme - this is not a URL safe encoding
                newHref += fk.getColumnName() + "=" + pkVal + "&";
             }
 
@@ -129,13 +128,12 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else if (rel.isManyToMany())
          {
-            //CONVERTS: http://localhost/northwind/source/employees/1/territories
-            //TO THIS : http://localhost/northwind/source/territories/06897,19713
+            //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
+            //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
             List<KeyValue> rows = getRelatedKeys(rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
             if (rows.size() > 0)
             {
-               //TODO need to escape values (~',) in this string and add test case
                List foreignKeys = new ArrayList();
                rows.forEach(k -> foreignKeys.add(k.getValue()));
 
@@ -150,8 +148,8 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else
          {
-            //The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
-            //The system would have written out : http://localhost/northwind/source/orders/YYYYY
+            //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
+            //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
             throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
          }
 
@@ -167,13 +165,12 @@ public class RestGetAction extends Action<RestGetAction>
             newHref += query;
          }
 
-         //TODO: forward better symentec here?
          Response included = req.getEngine().get(newHref);
          res.withStatus(included.getStatus());
          res.withJson(included.getJson());
          return;
       }
-      else if (req.getCollection() != null && req.getEntityKey() != null)
+      else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getEntityKey()))
       {
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
          Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), entityKeys.toArray());

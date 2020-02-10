@@ -1,6 +1,7 @@
 package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -12,12 +13,12 @@ public class H2SqlTest extends TestCase
 {
    JdbcDb     db   = new JdbcDb("db",                                                                          //
                                 "org.h2.Driver",                                                               //
-                                "jdbc:h2:mem:northwind" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1",   //
+                                "jdbc:h2:mem:northwind" + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=-1",   //
                                 "sa",                                                                          //
                                 "",                                                                            //
                                 JdbcDb.class.getResource("northwind-h2.ddl").toString());
 
-   Connection conn = db.getConnection();
+   
 
    @Test
    public void testH2Sql() throws Exception
@@ -33,7 +34,7 @@ public class H2SqlTest extends TestCase
    {
       try
       {
-         JdbcUtils.execute(conn, sql);
+         JdbcUtils.execute(db.getConnection(), sql);
       }
       catch (Exception ex)
       {

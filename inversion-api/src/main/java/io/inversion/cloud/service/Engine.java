@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Vector;
 
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.JSArray;
@@ -41,7 +43,6 @@ import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.utils.Configurator;
 import io.inversion.cloud.utils.Pluralizer;
@@ -154,16 +155,32 @@ public class Engine
 
          for (EngineListener listener : listeners)
          {
-            try
+            for (Api api : apis)
             {
-               for (Api api : apis)
+               try
                {
                   listener.onStartup(this, api);
                }
+               catch (Exception ex)
+               {
+                  log.warn("Error notifying listener init()", ex);
+               }
             }
-            catch (Exception ex)
+
+         }
+
+         for (Api api : apis)
+         {
+            for (EngineListener listener : api.getEngineListeners())
             {
-               log.warn("Error notifying listener init()", ex);
+               try
+               {
+                  listener.onStartup(this, api);
+               }
+               catch (Exception ex)
+               {
+                  log.warn("Error notifying listener init()", ex);
+               }
             }
          }
 
@@ -546,7 +563,7 @@ public class Engine
 
          run(chain, actions);
 
-         for (EngineListener listener : listeners)
+         for (EngineListener listener : getListeners(req))
          {
             try
             {
@@ -563,19 +580,6 @@ public class Engine
       }
       catch (Throwable ex)
       {
-         for (EngineListener listener : listeners)
-         {
-            try
-            {
-               listener.beforeError(this, req.getApi(), req.getEndpoint(), chain, req, res);
-            }
-            catch (Exception ex2)
-            {
-               log.warn("Error notifying EngineListner.beforeError", ex);
-            }
-
-         }
-
          String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
          if (ex instanceof ApiException)
@@ -596,7 +600,7 @@ public class Engine
          }
          else
          {
-            log.error("Error in Engine", ex);
+            log.error("Non ApiException was caught in Engine.", ex);
          }
 
          res.withStatus(status);
@@ -606,14 +610,27 @@ public class Engine
 
          res.withJson(response);
 
-      }
-      finally
-      {
-         for (EngineListener listener : listeners)
+         for (EngineListener listener : getListeners(req))
          {
             try
             {
-               listener.onFinally(this, req.getApi(), req.getEndpoint(), chain, req, res);
+               listener.afterError(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex2)
+            {
+               log.warn("Error notifying EngineListner.beforeError", ex);
+            }
+
+         }
+
+      }
+      finally
+      {
+         for (EngineListener listener : getListeners(req))
+         {
+            try
+            {
+               listener.beforeFinally(this, req.getApi(), req.getEndpoint(), chain, req, res);
             }
             catch (Exception ex)
             {
@@ -627,7 +644,7 @@ public class Engine
          }
          catch (Throwable ex)
          {
-            log.error("Error in Engine", ex);
+            log.error("Error writing response.", ex);
          }
 
          Chain.pop();
@@ -635,6 +652,17 @@ public class Engine
       }
 
       return chain;
+   }
+
+   LinkedHashSet<EngineListener> getListeners(Request req)
+   {
+      LinkedHashSet listeners = new LinkedHashSet(this.listeners);
+      if (req.getApi() != null)
+      {
+         listeners.addAll(req.getApi().getEngineListeners());
+      }
+      return listeners;
+
    }
 
    /**
