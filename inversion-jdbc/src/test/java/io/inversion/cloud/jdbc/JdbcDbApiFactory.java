@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.db.JdbcDb;
@@ -106,7 +107,7 @@ public class JdbcDbApiFactory
                {
                   try
                   {
-                     JdbcDb sourceDb = createDb("source", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:northwind-source;DB_CLOSE_DELAY=-1", "sa", "", "source/");
+                     JdbcDb sourceDb = createDb("source", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:" + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=-1", "sa", "", "source/");
 
                      engine.withApi("northwind")//
                            .withEndpoint("GET,PUT,POST,DELETE", "source/*", new RestAction())//
@@ -127,7 +128,7 @@ public class JdbcDbApiFactory
 
                      if (shouldLoad("h2"))
                      {
-                        JdbcDb h2Db = createDb("h2", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:northwind-h2;DB_CLOSE_DELAY=-1", "sa", "", "h2/");
+                        JdbcDb h2Db = createDb("h2", JdbcDb.class.getResource("northwind-h2.ddl").toString(), "org.h2.Driver", "jdbc:h2:mem:" + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=-1", "sa", "", "h2/");
 
                         engine.getApi("northwind")//
                               .withEndpoint("GET,PUT,POST,DELETE", "h2/*", new RestAction())//
