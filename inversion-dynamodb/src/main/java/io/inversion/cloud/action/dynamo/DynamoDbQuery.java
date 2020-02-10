@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
@@ -36,10 +34,10 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import io.inversion.cloud.action.dynamo.DynamoDb.DynamoDbIndex;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Page;
@@ -86,7 +84,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       FUNCTION_MAP.put("sw", "begins_with");
       FUNCTION_MAP.put("attribute_not_exists", "attribute_not_exists");
       FUNCTION_MAP.put("attribute_exists", "attribute_exists");
-      
+
       //attribute_not_exists
       //attribute_exists
 
@@ -105,7 +103,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
    {
       super(table);
       getWhere().clearFunctions();
-      
+
       //withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
       getWhere().withFunctions("_key", "eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out", "and", "or", "not", "attribute_not_exists", "attribute_exists");
       super.withTerms(terms);
@@ -130,8 +128,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          {
             Term eqNull = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
             Term attrNotExists = Term.term(null, "attribute_not_exists", term.getTerm(0));
-            
-            term = Term.term(term.getParent(),  "or",  attrNotExists, eqNull);
+
+            term = Term.term(term.getParent(), "or", attrNotExists, eqNull);
          }
          else if (term.hasToken("nn", "nemp"))
          {

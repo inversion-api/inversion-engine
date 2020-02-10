@@ -9,6 +9,7 @@ dependencies {
     compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.+'	
     compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
+    compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.+'
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.+'
