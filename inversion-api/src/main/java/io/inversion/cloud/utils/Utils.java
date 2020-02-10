@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,12 +34,12 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
+import java.sql.Types;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -60,8 +60,13 @@ import java.util.regex.Pattern;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.h2.util.JdbcUtils;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
+
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
 
 /**
  * Collection of utility methods designed to make
@@ -87,10 +92,10 @@ public class Utils
    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
    /**
-    * A null safe loose equality checker.  
+    * A null safe loose equality checker.
     * @param obj1
     * @param obj2
-    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null. 
+    * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null.
     */
    public static boolean equal(Object obj1, Object obj2)
    {
@@ -114,7 +119,7 @@ public class Utils
    }
 
    /**
-    * @return true if any args are not null with a toString().length() > 0 
+    * @return true if any args are not null with a toString().length() > 0
     */
    public static boolean empty(Object... arr)
    {
@@ -290,19 +295,6 @@ public class Utils
    {
       int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
       return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
-   }
-
-   /**
-    * Turns a double value into a rounded double with 2 digits of precision
-    * 12.3334 -> 12.33
-    * 23.0 -> 23.00
-    * 45.677 -> 45.68
-    * @param amount
-    * @return
-    */
-   public static BigDecimal toDollarAmount(double amount)
-   {
-      return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
    }
 
    /**
@@ -511,10 +503,10 @@ public class Utils
    }
 
    /**
-    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm], 
-    * then yyyy-MM-dd, 
-    * then MM/dd/yy, 
-    * then MM/dd/yyyy, 
+    * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm],
+    * then yyyy-MM-dd,
+    * then MM/dd/yy,
+    * then MM/dd/yyyy,
     * then yyyyMMdd
     * @param date
     * @return
@@ -600,6 +592,9 @@ public class Utils
 
    public static boolean testCompare(String str1, String str2)
    {
+      str1 = str1 != null ? str1 : "";
+      str2 = str2 != null ? str2 : "";
+
       str1 = str1.replaceAll("\\s+", " ").trim();
       str2 = str2.replaceAll("\\s+", " ").trim();
 
@@ -681,7 +676,7 @@ public class Utils
    }
 
    /**
-    * Shortcut for throw new RuntimeException(message); 
+    * Shortcut for throw new RuntimeException(message);
     */
    public static void error(String message)
    {
@@ -1709,7 +1704,7 @@ public class Utils
    }
 
    /**
-    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values 
+    * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values
     */
    public static boolean wildcardMatch(String wildcard, String string)
    {
@@ -1727,7 +1722,7 @@ public class Utils
 
    /**
     * Performs string.matches() but also checks for null
-    * 
+    *
     * @param regex
     * @param string
     * @return
@@ -1742,7 +1737,7 @@ public class Utils
 
    /**
     * Converts a * and ? wildcard style patterns into regex style pattern
-    * 
+    *
     * @see http://www.rgagnon.com/javadetails/java-0515.html
     * @param wildcard
     * @return
@@ -1832,6 +1827,7 @@ public class Utils
       return params;
    }
 
+   @Deprecated
    public static String findSysEnvPropStr(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1840,6 +1836,7 @@ public class Utils
       return null;
    }
 
+   @Deprecated
    public static int findSysEnvPropInt(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1848,6 +1845,7 @@ public class Utils
       return -1;
    }
 
+   @Deprecated
    public static boolean findSysEnvPropBool(String name, Object overrideValue)
    {
       Object obj = findSysEnvProp(name, overrideValue);
@@ -1858,14 +1856,58 @@ public class Utils
 
    /**
     * @param name - name to look for in sysprops and envprops if 'value' is null;
-    * @param value - will be returned if not null
-    * @return first not null of 'value' || sysprop(name) || envprop(name)
+    * @param overrideValue - will be returned if not null
+    * @return first not null of 'overrideValue' || sysprop(name) || envprop(name)
     */
+   @Deprecated
    public static Object findSysEnvProp(String name, Object overrideValue)
    {
       if (!Utils.empty(overrideValue))
          return overrideValue;
 
+      Object value = getProperty(name);
+
+      return value;
+   }
+
+   public static String getSysEnvPropStr(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return obj.toString();
+      return null;
+   }
+
+   public static int getSysEnvPropInt(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return Integer.parseInt(obj.toString());
+      return -1;
+   }
+
+   public static boolean getSysEnvPropBool(String name, Object defaultValue)
+   {
+      Object obj = getSysEnvProp(name, defaultValue);
+      if (obj != null)
+         return "true".equalsIgnoreCase(obj.toString());
+      return false;
+   }
+
+   /**
+    * @param name - name to look for in sysprops and envprops if 'value' is null;
+    * @param defaultValue - will be returned if not found on sys or env
+    * @return first not null of sysprop(name) || envprop(name) || 'defaultValue'
+    */
+   public static Object getSysEnvProp(String name, Object defaultValue)
+   {
+      Object value = getProperty(name);
+
+      return null == value ? defaultValue : value;
+   }
+
+   private static Object getProperty(String name)
+   {
       String value = System.getProperty(name);
 
       if (Utils.empty(value))
@@ -1879,7 +1921,7 @@ public class Utils
          // try replacing dot for underscores, since Lambda doesn't support dots in env vars
          value = System.getenv(name.replace(".", "_"));
 
-      if (value == null)
+      if (Utils.empty(value))
       {
          InputStream stream = Utils.findInputStream(".env");
          if (stream != null)
@@ -1897,7 +1939,6 @@ public class Utils
             }
          }
       }
-
       return value;
    }
 
@@ -1955,6 +1996,123 @@ public class Utils
       bb.putLong(uuid.getMostSignificantBits());
       bb.putLong(uuid.getLeastSignificantBits());
       return bb.array();
+   }
+
+   public static Object jdbcCast(Object object, String jdbcType)
+   {
+      try
+      {
+         jdbcType = jdbcType.toUpperCase();
+         return cast(jdbcType, object);
+      }
+      catch (Exception ex)
+      {
+         throw new RuntimeException("Error casting to type " + jdbcType + " for value " + object);
+      }
+   }
+
+   public static Object cast(String type, Object value)
+   {
+      try
+      {
+         if (value == null)
+            return null;
+
+         if (type == null)
+         {
+            try
+            {
+               if (value.toString().indexOf(".") < 0)
+               {
+                  return Long.parseLong(value.toString());
+               }
+               else
+               {
+                  return Double.parseDouble(value.toString());
+               }
+            }
+            catch (Exception ex)
+            {
+               //must not have been an number
+            }
+            return value.toString();
+         }
+
+         switch (type.toLowerCase())
+         {
+            case "s":
+            case "string":
+            case "char":
+            case "varchar":
+            case "longvarchar":
+            case "longnvarchar":
+               return value.toString();
+            case "clob":
+               return value.toString().trim();
+            case "n":
+            case "number":
+            case "numeric":
+            case "decimal":
+               if (value.toString().indexOf(".") < 0)
+                  return Long.parseLong(value.toString());
+               else
+                  return Double.parseDouble(value.toString());
+
+            case "bool":
+            case "boolean":
+            case "bit":
+               return Boolean.parseBoolean(value.toString());
+
+            case "tinyint":
+               return Byte.parseByte(value.toString());
+            case "smallint":
+               return Short.parseShort(value.toString());
+            case "integer":
+               return Integer.parseInt(value.toString());
+            case "bigint":
+               return Long.parseLong(value.toString());
+            case "float":
+            case "real":
+            case "double":
+               return Double.parseDouble(value.toString());
+            case "datalink":
+               return new URL(value.toString());
+
+            case "binary":
+            case "varbinary":
+            case "longvarbinary":
+               throw new UnsupportedOperationException("Binary types are currently unsupporrted");
+
+            case "date":
+               return new java.sql.Date(date(value.toString()).getTime());
+            case "timestamp":
+               return new java.sql.Timestamp(date(value.toString()).getTime());
+
+            case "array":
+
+               if (value instanceof JSArray)
+                  return value;
+               else
+                  return JSNode.parseJsonArray(value + "");
+
+            case "object":
+
+               if (value instanceof JSNode)
+                  return value;
+               else
+                  return JSNode.parseJsonNode(value + "");
+
+            default :
+               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
+         }
+      }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+         //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+      }
+
+      return null;
    }
 
 }
