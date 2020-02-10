@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,6 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.Attribute;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Column;
@@ -43,6 +41,7 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
@@ -118,14 +117,17 @@ public class RestGetAction extends Action<RestGetAction>
 
             //maps query string parameter names for the main tables pk to the related tables fk
             Index fkIdx = rel.getFkIndex1();
-            for (Column fk : fkIdx.getColumns())
+            for (int i = 0; i < fkIdx.size(); i++)
             {
+               Column fk = fkIdx.getColumn(i);
                String pkName = fk.getPk().getName();
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
                   throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
 
+               //-- TODO: fixme - should be using collection attrubte names not column names for the keys
+               //-- TODO: fixme - this is not a URL safe encoding
                newHref += fk.getName() + "=" + pkVal + "&";
             }
 
@@ -314,8 +316,9 @@ public class RestGetAction extends Action<RestGetAction>
                      term.removeTerm(child);
 
                      Index pk = collection.getTable().getPrimaryIndex();
-                     for (Column c : pk.getColumns())
+                     for (int i = 0; i < pk.size(); i++)
                      {
+                        Column c = pk.getColumn(i);
                         boolean includesPkCol = false;
                         for (Term col : term.getTerms())
                         {
@@ -343,6 +346,10 @@ public class RestGetAction extends Action<RestGetAction>
             }
          }
       }
+      
+      //-- this sort is not strictly necessary but it makes the order of terms in generated
+      //-- query text dependable so you can write better tests.
+      Collections.sort(terms);
 
       Results results = null;
 
@@ -381,19 +388,10 @@ public class RestGetAction extends Action<RestGetAction>
                String entityKey = req.getCollection().getTable().encodeKey(row);
 
                if (Utils.empty(entityKey))
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
-
-               //------------------------------------------------
-               //copy over defined attributes first, if the select returned 
-               //extra columns they will be copied over last
-               for (Attribute attr : collection.getEntity().getAttributes())
                {
-                  String attrName = attr.getName();
-                  String colName = attr.getColumn().getName();
-                  Object val = row.remove(colName);
-                  node.put(attrName, val);
+                  entityKey = req.getCollection().getTable().encodeKey(row);
+                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
                }
-
                //------------------------------------------------
                //next turn all relationships into links that will 
                //retrieve the related entities
@@ -402,8 +400,9 @@ public class RestGetAction extends Action<RestGetAction>
                   String link = null;
                   if (rel.isOneToMany())
                   {
-                     //Object fkval = node.remove(rel.getFk1Col1().getName());
-                     Object fkval = node.get(rel.getFk1Col1().getName());
+                     Index foreignKey = rel.getFkIndex1();
+                     String fkval = Table.encodeKey(row, rel.getFkIndex1());
+
                      if (fkval != null)
                      {
                         link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
@@ -414,6 +413,18 @@ public class RestGetAction extends Action<RestGetAction>
                      link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
                   }
                   node.put(rel.getName(), link);
+               }
+               //------------------------------------------------
+               //copy over defined attributes first, if the select returned 
+               //extra columns they will be copied over last
+               for (Attribute attr : collection.getEntity().getAttributes())
+               {
+                  String attrName = attr.getName();
+                  String colName = attr.getColumn().getName();
+                  Object val = row.remove(colName);
+                  
+                  if(!node.containsKey(attrName))
+                     node.put(attrName, val);
                }
 
                //------------------------------------------------
@@ -435,7 +446,7 @@ public class RestGetAction extends Action<RestGetAction>
                if (Utils.empty(href))
                {
                   href = Chain.buildLink(collection, entityKey, null);
-                  node.put("href", href);
+                  node.putFirst("href", href);
                }
             }
 
@@ -589,8 +600,11 @@ public class RestGetAction extends Action<RestGetAction>
                //would be exactly the same you would just end up running an extra db query
 
                List cols = new ArrayList();
-               idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
-               idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+
+               cols.addAll(idxToMatch.getColumnNames());
+               cols.addAll(idxToRetrieve.getColumnNames());
 
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
@@ -703,8 +717,11 @@ public class RestGetAction extends Action<RestGetAction>
       List<KeyValue> related = new ArrayList<>();
 
       List columns = new ArrayList();
-      idxToMatch.getColumns().forEach(c -> columns.add(c.getName()));
-      idxToRetrieve.getColumns().forEach(c -> columns.add(c.getName()));
+      //idxToMatch.getColumns().forEach(c -> columnNames.add(c.getName()));
+      //idxToRetrieve.getColumns().forEach(c -> columnNames.add(c.getName()));
+
+      columns.addAll(idxToMatch.getColumnNames());
+      columns.addAll(idxToRetrieve.getColumnNames());
 
       Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
       Term includes = Term.term(null, "includes", columns);
@@ -715,8 +732,8 @@ public class RestGetAction extends Action<RestGetAction>
       for (Row row : rows)
       {
          List keyParts = row.asList();
-         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.getColumns().size()));
-         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.getColumns().size(), keyParts.size()));
+         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.size()));
+         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }

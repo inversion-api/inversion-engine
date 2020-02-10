@@ -481,8 +481,8 @@ public class TestSqlQuery extends TestCase
                {
                   try
                   {
-                     String col = query.getColValue(i).getKey();
-                     String val = query.getColValue(i).getValue();
+                     String col = (String)query.getColValue(i).getKey();
+                     String val = (String)query.getColValue(i).getValue();
 
                      if (!(col + "").equals(test.fields[i * 2] + ""))
                         passed = false;
@@ -527,30 +527,31 @@ public class TestSqlQuery extends TestCase
       }
    }
 
-   public static boolean compare(String str1, String str2)
+   public static boolean compare(String expected, String received)
    {
-      str1 = str1.replaceAll("\\s+", " ").trim();
-      str2 = str2.replaceAll("\\s+", " ").trim();
+      expected = expected.replaceAll("\\s+", " ").trim();
+      received = received.replaceAll("\\s+", " ").trim();
 
-      if (!str1.equals(str2))
+      if (!expected.equals(received))
       {
          //TODO: TAKE THESE "CORRECTIONS" OUT
-         str2 = str2.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+         received = received.replaceAll("SQL_CALC_FOUND_ROWS ", "");
          //str2 = str2.replaceAll(" LIMIT 0, 100", "");
 
-         str1 = str1.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+         expected = expected.replaceAll("SQL_CALC_FOUND_ROWS ", "");
          //str1 = str1.replaceAll(" LIMIT 0, 100", "");
 
-         if (!str1.equals(str2))
+         if (!expected.equals(received))
          {
-            System.out.println("\r\n");
-            System.out.println("\r\n");
-            System.out.println(str1);
-            System.out.println(str2);
+            //System.out.println("\r\n");
+            //System.out.println("\r\n");
+            System.out.println("EXPECTED: " + expected);
+            System.out.println("ACTUAL  : " + received);
+            System.out.print("          " );
 
-            for (int i = 0; i < str1.length() && i < str2.length(); i++)
+            for (int i = 0; i < expected.length() && i < received.length(); i++)
             {
-               if (str1.charAt(i) == str2.charAt(i))
+               if (expected.charAt(i) == received.charAt(i))
                {
                   System.out.print(" ");
                }
@@ -562,7 +563,7 @@ public class TestSqlQuery extends TestCase
             }
             System.out.println(" ");
 
-            String err = "failed test: " + str1 + " != " + str2;
+            String err = "failed test: " + expected + " != " + received;
             return false;
          }
       }

@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -46,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -290,6 +290,19 @@ public class Utils
    {
       int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
       return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
+   }
+
+   /**
+    * Turns a double value into a rounded double with 2 digits of precision
+    * 12.3334 -> 12.33
+    * 23.0 -> 23.00
+    * 45.677 -> 45.68
+    * @param amount
+    * @return
+    */
+   public static BigDecimal toDollarAmount(double amount)
+   {
+      return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
    }
 
    /**

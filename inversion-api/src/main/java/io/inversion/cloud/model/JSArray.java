@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -172,49 +172,10 @@ public class JSArray extends JSNode implements Iterable
       return objects.size();
    }
 
-   public void sort(final String key)
-   {
-      Collections.sort(objects, new Comparator<JSNode>()
-         {
-            @Override
-            public int compare(JSNode o1, JSNode o2)
-            {
-               Object val1 = o1.get(key);
-               Object val2 = o2.get(key);
-               if (val1 == null)
-                  return -1;
-               if (val2 == null)
-                  return 1;
-
-               return val1.toString().compareTo(val2.toString());
-            }
-         });
-   }
-
-   public List asList()
-   {
-      return new ArrayList(objects);
-   }
-
-   public List<JSNode> asNodeList()
-   {
-      return new ArrayList(objects);
-   }
-
-   public List<JSArray> asArrayList()
-   {
-      return new ArrayList(objects);
-   }
-
    @Override
    public Iterator iterator()
    {
       return asList().iterator();
-   }
-
-   public Stream stream()
-   {
-      return asList().stream();
    }
 
    @Override

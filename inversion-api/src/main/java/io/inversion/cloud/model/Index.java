@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,54 +19,43 @@ package io.inversion.cloud.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.inversion.cloud.utils.Utils;
+
 /**
  * @author tc-rocket
  *
  */
 public class Index
 {
-   protected Table        table   = null;
-   protected String       name    = null;
-   protected String       type    = null;           // primary, partition, sort, localsecondary, etc
-   protected boolean      unique  = true;
-   protected List<Column> columns = new ArrayList();
+   protected Table        table       = null;
+   protected String       name        = null;
+   protected String       type        = null;           // primary, partition, sort, localsecondary, etc
+   protected boolean      unique      = true;
+   protected List<String> columnNames = new ArrayList();
 
    public Index()
    {
       super();
    }
 
-   public Index(Table table, String name, String type)
+   public Index(String name, String type, boolean unique, String columnName1, String... columnNameN)
    {
-      this(table, null, name, type, true);
-   }
-
-   public Index(Table table, Column column, String name, String type, boolean unique)
-   {
-      super();
-      withTable(table);
-      withColumn(column);
       withName(name);
       withType(type);
       withUnique(unique);
+      withColumnNames(columnName1);
+      withColumnNames(columnNameN);
    }
 
    public boolean equals(Object object)
    {
+      if (object == this)
+         return true;
+
       if (object instanceof Index)
       {
          Index index = ((Index) object);
-
-         if (table.equals(index.table) && columns.size() == index.columns.size())
-         {
-            for (int i = 0; i < columns.size(); i++)
-            {
-               if (!columns.get(i).equals(index.columns.get(i)))
-                  return false;
-            }
-            return true;
-         }
-
+         return ((table == null || table == index.table) && Utils.equal(name, index.name));
       }
       return false;
    }
@@ -75,10 +64,10 @@ public class Index
    {
       //StringBuffer buff = new StringBuffer("Index: ").append(table.getName()).append(".").append(name).append(" ").append(type).append(" ").append(unique).append("(");
       StringBuffer buff = new StringBuffer(getTable().getName()).append(".").append(name).append("(");
-      for (int i = 0; i < columns.size(); i++)
+      for (int i = 0; i < columnNames.size(); i++)
       {
-         buff.append(columns.get(i).getName());
-         if (i < columns.size() - 1)
+         buff.append(columnNames.get(i));
+         if (i < columnNames.size() - 1)
             buff.append(", ");
       }
       buff.append(")");
@@ -90,8 +79,8 @@ public class Index
       if (table.isExclude())
          return true;
 
-      for (Column c : columns)
-         if (c.isExclude())
+      for (String c : columnNames)
+         if (table.getColumn(c).isExclude())
             return true;
 
       return false;
@@ -107,8 +96,9 @@ public class Index
       if (this.table != table)
       {
          this.table = table;
-         table.withIndex(this);
+         table.withIndexes(this);
       }
+
       return this;
    }
 
@@ -157,9 +147,9 @@ public class Index
 
    public boolean hasColumn(String name)
    {
-      for (Column col : columns)
+      for (String col : columnNames)
       {
-         if (col.getName().equalsIgnoreCase(name))
+         if (col.equalsIgnoreCase(name))
             return true;
       }
       return false;
@@ -167,40 +157,43 @@ public class Index
 
    public Column getColumn(int idx)
    {
-      return columns.get(idx);
+      return table.getColumn(columnNames.get(idx));
    }
 
-   public List<Column> getColumns()
-   {
-      return new ArrayList(columns);
-   }
+   //   public List<Column> getColumns()
+   //   {
+   //      return new ArrayList(columns);
+   //   }
 
    public int size()
    {
-      return columns.size();
+      return columnNames.size();
    }
 
-   public Index withColumns(List<Column> columns)
+   public Index withColumnNames(String... columnNames)
    {
-      for (Column column : columns)
+      for (int i = 0; columnNames != null && i < columnNames.length; i++)
       {
-         withColumn(column);
+         String columnName = columnNames[i];
+         if (!Utils.empty(columnName) && !this.columnNames.contains(columnName))
+         {
+            this.columnNames.add(columnName);
+         }
       }
+
+      if(this.columnNames.size() == 4)
+         System.out.println("too big!!!");
+      
       return this;
    }
 
-   public Index withColumn(Column column)
+   public List<String> getColumnNames()
    {
-      if (column != null && !columns.contains(column))
-      {
-         columns.add(column);
-      }
-
-      return this;
+      return new ArrayList(columnNames);
    }
 
    public void removeColumn(Column column)
    {
-      columns.remove(column);
+      columnNames.remove(column);
    }
 }

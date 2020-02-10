@@ -182,7 +182,7 @@ public class TestSqlPostAction extends TestCase
 
       JSNode employee5 = res.findNode("data.0");
 
-      engine.put(employee5.getString("href"), employee5.toString()).statusOk();
+      engine.put(employee5.getString("href"), employee5.toString()).assertOk();
 
       res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
       JSNode updated5 = res.findNode("data.0");
@@ -207,7 +207,7 @@ public class TestSqlPostAction extends TestCase
       steve.findArray("employees").add(john);
 
       System.out.println(steve);
-      res = engine.put(steve.getString("href"), steve).statusOk();
+      res = engine.put(steve.getString("href"), steve).assertOk();
       res.dump();
 
       res = engine.get(url("employees?employeeId=5&expands=employees"));

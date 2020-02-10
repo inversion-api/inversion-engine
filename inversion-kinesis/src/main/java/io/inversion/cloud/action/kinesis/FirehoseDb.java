@@ -101,7 +101,7 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       if (!Utils.empty(includeStreams))
       {
@@ -115,7 +115,7 @@ public class FirehoseDb extends Db<FirehoseDb>
                streamName = arr[1];
             }
 
-            Table table = new Table(this, streamName);
+            Table table = new Table(streamName);
             withTable(table);
 
             if (arr.length == 1)//a specific collection name was not supplied by the config
@@ -137,23 +137,14 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Table table, List<Map<String, Object>> indexValues) throws Exception
    {
       throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
-   @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
-   {
-      List<String> keys = upsert(table, Arrays.asList(row));
-      if (keys != null && keys.size() > 0)
-         return keys.get(0);
-
-      return null;
-   }
 
    @Override
-   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Table table, List<Map<String, Object>> rows) throws Exception
    {
       List<Record> batch = new ArrayList();
       for (int i = 0; i < rows.size(); i++)

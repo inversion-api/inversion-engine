@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.inversion.cloud.utils.Utils;
+
 public class Builder<T, P extends Builder>
 {
    protected Parser        parser    = null;
    protected P             parent    = null;
-   protected List<Builder> builders  = new ArrayList();
+   protected List<Builder> builders  = null;
    protected List<Term>    terms     = new ArrayList();
    protected T             r         = null;
 
@@ -35,6 +37,11 @@ public class Builder<T, P extends Builder>
     * Term tokens this builder is willing to accept
     */
    protected Set<String>   functions = new HashSet();
+
+   public Builder()
+   {
+
+   }
 
    public Builder(P parent)
    {
@@ -48,7 +55,7 @@ public class Builder<T, P extends Builder>
     */
    protected boolean addTerm(String token, Term term)
    {
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          if (builder.addTerm(token, term))
             return true;
@@ -123,11 +130,20 @@ public class Builder<T, P extends Builder>
       return r();
    }
 
+   public List<Builder> getBuilders()
+   {
+      if (builders == null)
+      {
+         builders = new ArrayList();
+      }
+      return builders;
+   }
+
    public T withBuilder(Builder builder)
    {
-      if (!builders.contains(builder))
+      if (!getBuilders().contains(builder))
       {
-         builders.add(builder);
+         getBuilders().add(builder);
          builder.withParent(this);
       }
       return r();
@@ -135,7 +151,7 @@ public class Builder<T, P extends Builder>
 
    public T removeBuilder(Builder builder)
    {
-      builders.remove(builder);
+      getBuilders().remove(builder);
       return r();
    }
 
@@ -150,9 +166,13 @@ public class Builder<T, P extends Builder>
 
    public T withFunctions(String... tokens)
    {
-      for (String token : tokens)
+      for (int i = 0; tokens != null && i < tokens.length; i++)
       {
-         this.functions.add(token.trim().toLowerCase());
+         String token = tokens[i];
+         if (!Utils.empty(token))
+         {
+            this.functions.add(token.trim().toLowerCase());
+         }
       }
 
       return r();
@@ -164,7 +184,7 @@ public class Builder<T, P extends Builder>
       if (functions.contains(token))
          return true;
 
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          if (builder.isFunction(token))
             return true;
@@ -197,15 +217,15 @@ public class Builder<T, P extends Builder>
       if (term.isQuoted())
          return r();
 
-      //      add in support for special cases here like offset limit etc
-      //      make parse() call this repeatetly..didn't I write that code already. look for Utils.explode
-
       String token = term.getToken().toLowerCase();
       if ("eq".equals(token))
       {
-         //FIX ME this has to happen in two separate recursions.....otherwise where will grab the eq for limit=5 etc. 
+         //-- single arg functions such as limit(x) or page(y) can be written as limit=x and page=y 
+         //-- which will parse here as eq(limit,x) or eq(page,y).  If the terms first child is a leaf
+         //-- with a token that is a fucntion name of a child builder, then this logic reorders eq 
+         //-- functions and attempts to add them before attempting to add the eq function that was
+         //-- passed in.
 
-         //this param came in in function=arg format not function(col,arg) format
          Term child = term.getTerm(0);
          if (child != null && !child.isQuoted() && child.isLeaf() && isFunction(child.getToken()))
          {
@@ -219,7 +239,7 @@ public class Builder<T, P extends Builder>
                if (addTerm(childToken, term))
                   return r();
 
-               //OK, this was not an inverted "eq" term so put things back the way they started
+               //-- OK, this was not an inverted "eq" term so put things back the way they started
                term.withToken(token);
                term.withTerm(0, child);
             }
@@ -356,7 +376,7 @@ public class Builder<T, P extends Builder>
             found.add(term);
       }
 
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          builder.findAll(token, found);
       }
@@ -371,7 +391,7 @@ public class Builder<T, P extends Builder>
             return term;
       }
 
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          Term term = builder.find(token);
          if (term != null)
@@ -397,7 +417,7 @@ public class Builder<T, P extends Builder>
          }
       }
 
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          Term t = builder.findTerm(childToken, parentFunctions);
          if (t != null)
@@ -423,7 +443,7 @@ public class Builder<T, P extends Builder>
             buff.append("&");
       }
 
-      for (Builder builder : builders)
+      for (Builder builder : getBuilders())
       {
          String rql = builder.toString();
          if (!empty(rql))

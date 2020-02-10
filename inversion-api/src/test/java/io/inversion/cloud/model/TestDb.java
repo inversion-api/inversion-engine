@@ -16,13 +16,14 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.service.MockDb;
 import junit.framework.TestCase;
 
 public class TestDb extends TestCase
 {
    public void testAttributeBeautification()
    {
-      Db db = new Db() {};
+      Db db = new MockDb() {};
       
       assertEquals("somecolumn",  db.beautifyAttributeName("SOMECOLUMN"));
       assertEquals("someColumn",  db.beautifyAttributeName("SomeColumn"));

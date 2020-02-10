@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,9 +23,12 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,12 +43,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.*;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
@@ -61,52 +59,60 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Rows.Row.E;
 
 /**
- * An HttpClient wrapper designed specifically to run inside of an 
- * Inversion Action that adds async and retry support and make it 
- * easy to proxy in-bound params and headers on to other services 
- * 
+ * An HttpClient wrapper designed specifically to run inside of an
+ * Inversion Action that adds async and retry support and make it
+ * easy to proxy in-bound params and headers on to other services
+ *
  * Designed to have host "url" set manually or discovered at runtime
  * out of the environment as "${name}.url=http://somehost.com"
- * 
- * This file was forked from the Inversion HttpUtils class to 
+ *
+ * This file was forked from the Inversion HttpUtils class to
  * give authors options in tuning the underlying Apache HttpClient
  * configuration and thread pooling.
- * 
+ *
  * @author Wells Burke
  */
 public class RestClient
 {
-   static Log                                       log             = LogFactory.getLog(RestClient.class);
+   static Log                                       log              = LogFactory.getLog(RestClient.class);
 
    //-- config properties
-   protected String                                 name            = null;
-   protected String                                 url             = null;
-   protected boolean                                remoteAsync     = true;
-   protected boolean                                localAsync      = false;
-   protected ArrayListValuedHashMap<String, String> forcedHeaders   = new ArrayListValuedHashMap();
-   protected boolean                                forwardHeaders  = false;
-   protected boolean                                forwardParams   = false;
+   protected String                                 name             = null;
+   protected String                                 url              = null;
+   protected boolean                                remoteAsync      = true;
+   protected boolean                                localAsync       = false;
+   protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
+
+   //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+   protected boolean                                forwardHeaders   = false;
+   protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+   protected Set                                    blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
+
+   protected boolean                                forwardParams    = false;
+   protected Set<String>                            whitelistParams  = new HashSet();
+   protected Set<String>                            blacklistParams  = new HashSet();
 
    //-- networking and pooling specific properties
-   protected Executor                               pool            = null;
-   protected int                                    poolMin         = 2;
-   protected int                                    poolMax         = 100;
-   protected int                                    queueMax        = 500;
-   protected int                                    retryMax        = 5;
-   protected int                                    totalRetryMax   = 50;
+   protected Executor                               pool             = null;
+   protected int                                    poolMin          = 2;
+   protected int                                    poolMax          = 100;
+   protected int                                    queueMax         = 500;
+   protected int                                    retryMax         = 5;
+   protected int                                    totalRetryMax    = 50;
 
-   protected int                                    retryTimeoutMin = 10;
-   protected int                                    retryTimeoutMax = 1000;
+   protected int                                    retryTimeoutMin  = 10;
+   protected int                                    retryTimeoutMax  = 1000;
 
-   protected int                                    socketTimeout   = 1000;
-   protected int                                    connectTimeout  = 1000;
-   protected int                                    requestTimeout  = 5000;
+   protected int                                    socketTimeout    = 30000;
+   protected int                                    connectTimeout   = 30000;
+   protected int                                    requestTimeout   = 30000;
 
-   protected HttpClient                             httpClient      = null;
+   protected HttpClient                             httpClient       = null;
 
-   protected Timer                                  timer           = null;
+   protected Timer                                  timer            = null;
 
    public RestClient()
    {
@@ -174,7 +180,7 @@ public class RestClient
       {
          submit(future);
       }
-      
+
       return future;
    }
 
@@ -203,9 +209,12 @@ public class RestClient
             {
                for (String key : inboundHeaders.keySet())
                {
-                  if (request.getHeader(key) == null)
-                     for (String header : inboundHeaders.get(key))
-                        request.withHeader(key, header);
+                  if (forwardHeader(key))
+                  {
+                     if (request.getHeader(key) == null)
+                        for (String header : inboundHeaders.get(key))
+                           request.withHeader(key, header);
+                  }
                }
             }
          }
@@ -222,8 +231,11 @@ public class RestClient
             {
                for (String key : origionalParams.keySet())
                {
-                  if (request.getParam(key) == null)
-                     request.withParam(key, origionalParams.get(key));
+                  if (forwardParam(key))
+                  {
+                     if (request.getParam(key) == null)
+                        request.withParam(key, origionalParams.get(key));
+                  }
                }
             }
          }
@@ -365,6 +377,10 @@ public class RestClient
                req = new HttpDelete(url);
             }
          }
+         else if ("patch".equalsIgnoreCase(m))
+         {
+               req = new HttpPatch(url);
+         }
 
          for (String key : future.request.getHeaders().keySet())
          {
@@ -386,8 +402,6 @@ public class RestClient
 
          hr = h.execute(req);
 
-         HttpEntity e = hr.getEntity();
-
          response.withStatusMesg(hr.getStatusLine().toString());
          response.withStatusCode(hr.getStatusLine().getStatusCode());
 
@@ -402,19 +416,18 @@ public class RestClient
          debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
          debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
 
-         InputStream is = e.getContent();
-
          Url u = new Url(url);
          String fileName = u.getFile();
          if (fileName == null)
             fileName = Utils.slugify(u.toString());
 
          boolean skip = false;
-         // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
-         if (response.getStatusCode() == 404)
+         if (response.getStatusCode() == 404 //no amount of retries will make this request not found
+               || response.getStatusCode() == 204)//this status code indicates "no content" so we are done.
          {
             skip = true;
          }
+         // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
          else if (future.getRetryFile() != null //
                && future.getRetryFile().length() == response.getContentRangeStart() //
                && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
@@ -440,9 +453,11 @@ public class RestClient
             debug("## Creating temp file .. " + tempFile);
          }
 
-         if (!skip)
+         HttpEntity e = null;
+         if (!skip && (e = hr.getEntity()) != null)
          {
             // stream to the temp file with append set to true (this is crucial for resumable downloads)
+            InputStream is = e.getContent();
             Utils.pipe(is, new FileOutputStream(tempFile, true));
 
             response.withFile(tempFile);
@@ -782,9 +797,35 @@ public class RestClient
       return forwardHeaders;
    }
 
+   public boolean forwardHeader(String headerKey)
+   {
+      return forwardHeaders //
+            && (whitelistHeaders.size() == 0 || whitelistHeaders.contains(headerKey.toLowerCase())) //
+            && (!blacklistHeaders.contains(headerKey.toLowerCase()));
+   }
+
    public RestClient withForwardHeaders(boolean forwardHeaders)
    {
       this.forwardHeaders = forwardHeaders;
+      return this;
+   }
+
+   public Set getWhitelistHeaders()
+   {
+      return new HashSet(whitelistHeaders);
+   }
+
+   public RestClient withWhitelistedHeaders(String... headerKeys)
+   {
+      for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
+         whitelistHeaders.add(headerKeys[i].toLowerCase());
+      return this;
+   }
+
+   public RestClient removeWhitelistHeader(String headerKey)
+   {
+      if (headerKey != null)
+         whitelistHeaders.remove(headerKey.toString());
       return this;
    }
 
@@ -793,9 +834,35 @@ public class RestClient
       return forwardParams;
    }
 
+   public boolean forwardParam(String param)
+   {
+      return forwardParams //
+            && (whitelistParams.size() == 0 || whitelistParams.contains(param.toLowerCase())) //
+            && (!blacklistParams.contains(param.toLowerCase()));
+   }
+
    public RestClient withForwardParams(boolean forwardParams)
    {
       this.forwardParams = forwardParams;
+      return this;
+   }
+
+   public Set getWhitelistParams()
+   {
+      return new HashSet(whitelistParams);
+   }
+
+   public RestClient withWhitelistedParams(String... paramNames)
+   {
+      for (int i = 0; paramNames != null && i < paramNames.length; i++)
+         whitelistParams.add(paramNames[i].toLowerCase());
+      return this;
+   }
+
+   public RestClient removeWhitelistParam(String param)
+   {
+      if (param != null)
+         whitelistParams.remove(param.toString());
       return this;
    }
 

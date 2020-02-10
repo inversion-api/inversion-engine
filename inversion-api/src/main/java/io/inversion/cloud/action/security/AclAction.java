@@ -41,7 +41,7 @@ import io.inversion.cloud.utils.Utils;
 
 /**
  * The AclAction secures an API by making sure that a requests matches one or 
- * more declared AclRules.
+ * more declared AclRules.apple.com
  * 
  * AclRules specify the roles and permissions that a user must have to access
  * specific method/path combinations and can also specify input/output

@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,6 +61,19 @@ public class JSNode implements Map<String, Object>
       {
          put(key + "", map.get(key));
       }
+   }
+
+   public void sortKeys()
+   {
+      List<String> keys = new ArrayList(properties.keySet());
+      Collections.sort(keys);
+
+      LinkedHashMap<String, Property> newProps = new LinkedHashMap();
+      for (String key : keys)
+      {
+         newProps.put(key, properties.get(key));
+      }
+      properties = newProps;
    }
 
    public JSArray diff(JSNode diffAgainst)
@@ -898,6 +912,31 @@ public class JSNode implements Map<String, Object>
       return asMap().entrySet();
    }
 
+   public List asList()
+   {
+      if(this instanceof JSArray)
+         return new ArrayList( ((JSArray)this).objects);
+      
+      ArrayList list = new ArrayList();
+      list.add(this);
+      return list;
+   }
+
+   public List<JSNode> asNodeList()
+   {
+      return asList();
+   }
+
+   public JSArray asArray()
+   {
+      if (this instanceof JSArray)
+         return (JSArray) this;
+
+      return new JSArray(this);
+   }
+
+
+
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------
    //--------------------------------------------------------------------------------------
@@ -1174,5 +1213,59 @@ public class JSNode implements Map<String, Object>
          }
       }
       json.writeEndObject();
+   }
+   
+   /**
+    * Removes all empty objects from the tree
+    * @param parent - parent node
+    */
+   private boolean prune0(Object parent)
+   {
+      if (parent instanceof JSArray)
+      {
+         JSArray arr = ((JSArray) parent);
+         for (int i = 0; i < arr.length(); i++)
+         {
+            if (prune0(arr.get(i)))
+            {
+               arr.remove(i);
+               i--;
+            }
+         }
+         return arr.length() == 0;
+      }
+      else if (parent instanceof JSNode)
+      {
+         boolean prune = true;
+         JSNode js = (JSNode) parent;
+         for (String key : js.keySet())
+         {
+            Object child = js.get(key);
+            prune &= prune0(child);
+         }
+
+         if (prune)
+         {
+            for (String key : js.keySet())
+            {
+               js.remove(key);
+            }
+         }
+
+         return prune;
+      }
+      else
+      {
+         return parent == null;
+      }
+   }
+   
+   /**
+    * Removes all empty objects from the tree
+    * of current JSNode
+    */
+   public boolean prune()
+   {
+      return prune0(this);
    }
 }
