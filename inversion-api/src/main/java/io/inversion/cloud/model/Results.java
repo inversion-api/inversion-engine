@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,12 @@ import io.inversion.cloud.rql.Term;
 
 public class Results<M extends Map> implements Iterable<M>
 {
-   protected Query      query     = null;
-   protected List       rows      = new ArrayList();
-   protected List<Term> next      = new ArrayList();
-   protected int        foundRows = -1;
+   protected Query      query      = null;
+   protected List       rows       = new ArrayList();
+   protected List<Term> next       = new ArrayList();
+   protected int        foundRows  = -1;
+   protected String     debugQuery = null;
+   protected String     testQuery  = null;
 
    public Results(Query query)
    {
@@ -119,6 +121,33 @@ public class Results<M extends Map> implements Iterable<M>
    public Results withFoundRows(int foundRows)
    {
       this.foundRows = foundRows;
+      return this;
+   }
+
+   public boolean isDryRun()
+   {
+      return query.isDryRun();
+   }
+
+   public String getDebugQuery()
+   {
+      return debugQuery;
+   }
+
+   public Results withDebugQuery(String debugQuery)
+   {
+      this.debugQuery = debugQuery;
+      return this;
+   }
+
+   public String getTestQuery()
+   {
+      return testQuery;
+   }
+
+   public Results withTestQuery(String testQuery)
+   {
+      this.testQuery = testQuery;
       return this;
    }
 

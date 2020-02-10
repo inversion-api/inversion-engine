@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,19 +18,34 @@ package io.inversion.cloud.model;
 
 public class Relationship
 {
-   public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
+   public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
 
    protected String           name             = null;
    protected String           type             = null;
    protected Index            fkIndex1         = null;
    protected Index            fkIndex2         = null;
 
-   protected Entity           entity           = null;
-   protected Entity           related          = null;
+   protected Collection       entity           = null;
+   protected Collection       related          = null;
 
    protected boolean          exclude          = false;
+
+   public Relationship()
+   {
+
+   }
+
+   public Relationship(String name, String type, Collection entity, Collection related, Index fkIndex1, Index fkIndex2)
+   {
+      withName(name);
+      withType(type);
+      withEntity(entity);
+      withRelated(related);
+      withFkIndex1(fkIndex1);
+      withFkIndex2(fkIndex2);
+   }
 
    public boolean isExclude()
    {
@@ -46,7 +61,7 @@ public class Relationship
    /**
     * @return the entity
     */
-   public Entity getEntity()
+   public Collection getEntity()
    {
       return entity;
    }
@@ -54,7 +69,7 @@ public class Relationship
    /**
     * @param entity the entity to set
     */
-   public Relationship withEntity(Entity entity)
+   public Relationship withEntity(Collection entity)
    {
       if (this.entity != entity)
       {
@@ -68,7 +83,7 @@ public class Relationship
    /**
     * @return the related
     */
-   public Entity getRelated()
+   public Collection getRelated()
    {
       return related;
    }
@@ -112,7 +127,7 @@ public class Relationship
    /**
     * @param related the related to set
     */
-   public Relationship withRelated(Entity related)
+   public Relationship withRelated(Collection related)
    {
       this.related = related;
       return this;
@@ -171,14 +186,14 @@ public class Relationship
    {
       try
       {
-         String str = "Relationship: " + getEntity().getCollection() + "." + getName() + ":" + getType() + " ";
+         String str = "Relationship: " + entity + "." + getName() + ":" + getType() + " ";
          if (isOneToMany())
          {
-            str += getEntity().getTable().getPrimaryIndex() + " -> " + getFkIndex1();
+            str += entity.getPrimaryIndex() + " -> " + getFkIndex1();
          }
          if (isManyToOne())
          {
-            str += getEntity().getTable().getPrimaryIndex() + " <- " + getFkIndex1();
+            str += entity.getPrimaryIndex() + " <- " + getFkIndex1();
          }
          else
          {
@@ -232,22 +247,22 @@ public class Relationship
       return this;
    }
 
-   public Table getPrimaryKeyTable1()
+   public Collection getPrimaryKeyTable1()
    {
-      return fkIndex1.getColumns().get(0).getTable();
+      return fkIndex1.getColumn(0).getCollection();
    }
 
-   public Table getPrimaryKeyTable2()
+   public Collection getPrimaryKeyTable2()
    {
-      return fkIndex2.getColumns().get(0).getTable();
+      return fkIndex2.getColumn(0).getCollection();
    }
 
    /**
     * @return the fkCol1
     */
-   public Column getFk1Col1()
+   public Property getFk1Col1()
    {
-      return fkIndex1.getColumns().get(0);
+      return fkIndex1.getColumn(0);
    }
 
    //
@@ -263,9 +278,9 @@ public class Relationship
    /**
     * @return the fkCol2
     */
-   public Column getFk2Col1()
+   public Property getFk2Col1()
    {
-      return fkIndex2.getColumns().get(0);
+      return fkIndex2.getColumn(0);
    }
    //
    //   /**

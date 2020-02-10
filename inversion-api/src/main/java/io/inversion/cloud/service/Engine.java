@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Vector;
 
@@ -30,43 +31,43 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.action.sql.SqlDb.ConnectionLocal;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.StartupListener;
+import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.English;
+import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Utils;
 
 public class Engine
 {
-   transient volatile boolean                        started        = false;
-   transient volatile boolean                        starting       = false;
-   transient volatile boolean                        destroyed      = false;
+   transient volatile boolean               started        = false;
+   transient volatile boolean               starting       = false;
+   transient volatile boolean               destroyed      = false;
 
-   protected Logger                                  log            = LoggerFactory.getLogger(getClass());
-   protected Logger                                  requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected Logger                         log            = LoggerFactory.getLogger(getClass());
+   protected Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
-   protected List<Api>                               apis           = new Vector();
+   protected List<Api>                      apis           = new Vector();
 
-   protected ResourceLoader                          resourceLoader = null;
+   protected ResourceLoader                 resourceLoader = null;
 
-   protected Configurator                            configurator   = new Configurator();
+   protected Configurator                   configurator   = new Configurator();
 
    /**
     * Must be set to match your servlet path if your servlet is not 
     * mapped to /*
     */
-   protected Path                                    servletMapping = null;
+   protected Path                           servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -74,40 +75,40 @@ public class Engine
     * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
     * profile specific settings files.
     */
-   protected String                                  profile        = null;
+   protected String                         profile        = null;
 
    /**
     * The path to inversion*.properties files
     */
-   protected String                                  configPath     = "";
+   protected String                         configPath     = "";
 
    /**
     * The number of milliseconds between background reloads of the Api config
     */
-   protected int                                     configTimeout  = 10000;
+   protected int                            configTimeout  = 10000;
 
    /**
     * Indicates that the supplied config files contain all the setup info and the Api
     * will not be reflectively configured as it otherwise would.
     */
-   protected boolean                                 configFast     = false;
-   protected boolean                                 configDebug    = false;
-   protected String                                  configOut      = null;
+   protected boolean                        configFast     = false;
+   protected boolean                        configDebug    = false;
+   protected String                         configOut      = null;
 
    /**
     * The last response returned.  Not that useful in concurrent 
     * production environments but useful for writing test cases.
     */
-   protected transient volatile Response             lastResponse   = null;
+   protected transient volatile Response    lastResponse   = null;
 
-   protected transient List<StartupListener<Engine>> listeners      = new ArrayList();
+   protected transient List<EngineListener> listeners      = new ArrayList();
 
    /**
     * Engine reflects all request headers along with those supplied in <code>allowHeaders</code> as 
     * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
     * probably won't need to customize this list. 
     */
-   protected String                                  allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+   protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
    public Engine()
    {
@@ -152,47 +153,36 @@ public class Engine
             api.startup();
          }
 
-         for (StartupListener listener : listeners)
+         for (EngineListener listener : listeners)
          {
-            try
+            for (Api api : apis)
             {
-               listener.onStartup(Engine.this);
+               try
+               {
+                  listener.onStartup(this, api);
+               }
+               catch (Exception ex)
+               {
+                  log.warn("Error notifying listener init()", ex);
+               }
             }
-            catch (Exception ex)
-            {
-               log.warn("Error notifying listener init()", ex);
-            }
+
          }
 
-         //      if (service.getConfigTimeout() > 0 && !service.isConfigFast())
-         //      {
-         //         Thread t = new Thread(new Runnable()
-         //            {
-         //               @Override
-         //               public void run()
-         //               {
-         //                  while (true)
-         //                  {
-         //                     try
-         //                     {
-         //                        Utils.sleep(service.getConfigTimeout());
-         //                        if (destroyed)
-         //                           return;
-         //
-         //                        Config config = findConfig();
-         //                        loadConfig(config, false, false);
-         //                     }
-         //                     catch (Throwable t)
-         //                     {
-         //                        log.warn("Error loading config", t);
-         //                     }
-         //                  }
-         //               }
-         //            }, "inversion-config-reloader");
-         //
-         //         t.setDaemon(true);
-         //         t.start();
-         //      }
+         for (Api api : apis)
+         {
+            for (EngineListener listener : api.getEngineListeners())
+            {
+               try
+               {
+                  listener.onStartup(this, api);
+               }
+               catch (Exception ex)
+               {
+                  log.warn("Error notifying listener init()", ex);
+               }
+            }
+         }
 
          //-- the following block is only debug output
          for (Api api : apis)
@@ -201,16 +191,16 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getCollectionName()) ? ("name:" + e.getCollectionName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
-            for (io.inversion.cloud.model.Collection c : api.getCollections())
+            for (Collection c : api.getCollections())
             {
                if (c.getDb().getCollectionPath() != null)
-                  strs.add(c.getDb().getCollectionPath() + c.getName());
+                  strs.add(c.getDb().getCollectionPath() + c.getCollectionName());
                else
-                  strs.add(c.getName());
+                  strs.add(c.getCollectionName());
             }
             Collections.sort(strs);
             for (String coll : strs)
@@ -234,7 +224,7 @@ public class Engine
       return started;
    }
 
-   public Engine withStartupListener(StartupListener listener)
+   public Engine withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
@@ -368,13 +358,13 @@ public class Engine
          if (req.isMethod("options"))
          {
             //this is a CORS preflight request. All of hte work was done bove
-            res.withStatus(SC.SC_200_OK);
+            res.withStatus(Status.SC_200_OK);
             return chain;
          }
 
          if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
          {
-            res.withStatus(SC.SC_404_NOT_FOUND);
+            res.withStatus(Status.SC_404_NOT_FOUND);
             return chain;
          }
 
@@ -453,7 +443,7 @@ public class Engine
                         req.withCollectionKey(collectionKey);
                         i += 1;
 
-                        for (io.inversion.cloud.model.Collection collection : a.getCollections())
+                        for (Collection collection : a.getCollections())
                         {
                            if (collection.hasName(collectionKey)//
                                  && (collection.getIncludePaths().size() > 0 //
@@ -469,7 +459,7 @@ public class Engine
 
                         if (req.getCollection() == null)
                         {
-                           for (io.inversion.cloud.model.Collection collection : a.getCollections())
+                           for (Collection collection : a.getCollections())
                            {
                               if (collection.hasName(collectionKey) //
                                     && collection.getIncludePaths().size() == 0 //
@@ -519,7 +509,7 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
          }
 
          if (req.getEndpoint() == null)
@@ -536,7 +526,7 @@ public class Engine
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid end points include: " + buff);
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No Endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid Endpoints include: " + buff);
          }
 
          //         if (Utils.empty(req.getCollectionKey()))
@@ -559,7 +549,7 @@ public class Engine
          }
 
          if (actions.size() == 0)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
 
          Collections.sort(actions);
 
@@ -573,22 +563,24 @@ public class Engine
 
          run(chain, actions);
 
-         ConnectionLocal.commit();
+         for (EngineListener listener : getListeners(req))
+         {
+            try
+            {
+               listener.afterRequest(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifying EngineListner.afterRequest", ex);
+            }
+
+         }
 
          return chain;
       }
       catch (Throwable ex)
       {
-         try
-         {
-            ConnectionLocal.rollback();
-         }
-         catch (Throwable t)
-         {
-            log.warn("Error rollowing back transaction", t);
-         }
-
-         String status = SC.SC_500_INTERNAL_SERVER_ERROR;
+         String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
          if (ex instanceof ApiException)
          {
@@ -598,7 +590,7 @@ public class Engine
             }
 
             status = ((ApiException) ex).getStatus();
-            if (SC.SC_404_NOT_FOUND.equals(status))
+            if (Status.SC_404_NOT_FOUND.equals(status))
             {
                //an endpoint could have match the url "such as GET * but then not 
                //known what to do with the URL because the collection was not pluralized
@@ -608,25 +600,42 @@ public class Engine
          }
          else
          {
-            log.error("Error in Engine", ex);
+            log.error("Non ApiException was caught in Engine.", ex);
          }
 
          res.withStatus(status);
          JSNode response = new JSNode("message", ex.getMessage());
-         if (SC.SC_500_INTERNAL_SERVER_ERROR.equals(status))
+         if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
          res.withJson(response);
+
+         for (EngineListener listener : getListeners(req))
+         {
+            try
+            {
+               listener.afterError(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex2)
+            {
+               log.warn("Error notifying EngineListner.beforeError", ex);
+            }
+
+         }
+
       }
       finally
       {
-         try
+         for (EngineListener listener : getListeners(req))
          {
-            ConnectionLocal.close();
-         }
-         catch (Throwable t)
-         {
-            log.warn("Error closing connections", t);
+            try
+            {
+               listener.beforeFinally(this, req.getApi(), req.getEndpoint(), chain, req, res);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error notifying EngineListner.onFinally", ex);
+            }
          }
 
          try
@@ -635,7 +644,7 @@ public class Engine
          }
          catch (Throwable ex)
          {
-            log.error("Error in Engine", ex);
+            log.error("Error writing response.", ex);
          }
 
          Chain.pop();
@@ -643,6 +652,17 @@ public class Engine
       }
 
       return chain;
+   }
+
+   LinkedHashSet<EngineListener> getListeners(Request req)
+   {
+      LinkedHashSet listeners = new LinkedHashSet(this.listeners);
+      if (req.getApi() != null)
+      {
+         listeners.addAll(req.getApi().getEngineListeners());
+      }
+      return listeners;
+
    }
 
    /**
@@ -688,7 +708,7 @@ public class Engine
          else if (!Utils.empty(res.getRedirect()))
          {
             res.withHeader("Location", res.getRedirect());
-            res.withStatus(SC.SC_308_PERMANENT_REDIRECT);
+            res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
          }
          else if (output == null && res.getJson() != null)
          {
@@ -733,7 +753,7 @@ public class Engine
       String collection = req.getCollectionKey();
       if (!Utils.empty(collection))
       {
-         String plural = English.plural(collection);
+         String plural = Pluralizer.plural(collection);
          if (!plural.equals(collection))
          {
             String path = req.getPath().toString();
@@ -771,14 +791,19 @@ public class Engine
 
    public Api withApi(String apiCode)
    {
-      Api api = new Api(apiCode);
-      addApi(api);
+      Api api = getApi(apiCode);
+      if (api == null)
+      {
+         api = new Api(apiCode);
+         addApi(api);
+      }
       return api;
    }
 
    public Engine withApi(Api api)
    {
       addApi(api);
+      api.withEngine(this);
       return this;
    }
 
@@ -832,7 +857,7 @@ public class Engine
 
    public String getProfile()
    {
-      return Utils.findSysEnvPropStr("inversion.profile", profile);
+      return Utils.getSysEnvPropStr("inversion.profile", profile);
    }
 
    public Engine withProfile(String profile)

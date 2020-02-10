@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -56,25 +56,27 @@ public class RedisDb extends Db<RedisDb>
    protected int                 readSocketTimeout             = 2500;                               // time in milliseconds
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
+
+
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> queryTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
-   {
-      // TODO Auto-generated method stub
-
-   }
-
-   @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
+   }
+
+   @Override
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
    }
 
    protected Jedis getRedisClient()
@@ -86,20 +88,20 @@ public class RedisDb extends Db<RedisDb>
             if (jedis == null)
             {
                JedisPoolConfig poolConfig = new JedisPoolConfig();
-               poolConfig.setMaxTotal(Utils.findSysEnvPropInt(getName() + ".poolMax", this.poolMax));
-               poolConfig.setMaxIdle(Utils.findSysEnvPropInt(getName() + ".poolMax", this.poolMax));
-               poolConfig.setMinIdle(Utils.findSysEnvPropInt(getName() + ".poolMin", this.poolMin));
-               poolConfig.setTestOnBorrow(Utils.findSysEnvPropBool(getName() + "testOnBorrow", this.testOnBorrow));
-               poolConfig.setTestOnReturn(Utils.findSysEnvPropBool(getName() + ".testOnReturn", this.testOnReturn));
-               poolConfig.setTestWhileIdle(Utils.findSysEnvPropBool(getName() + ".testWhileIdle", this.testWhileIdle));
-               poolConfig.setMinEvictableIdleTimeMillis(Utils.findSysEnvPropInt(getName() + ".minEvictableIdleTimeMillis", this.minEvictableIdleTimeMillis));
-               poolConfig.setTimeBetweenEvictionRunsMillis(Utils.findSysEnvPropInt(getName() + ".timeBetweenEvictionRunsMillis", this.timeBetweenEvictionRunsMillis));
-               poolConfig.setNumTestsPerEvictionRun(Utils.findSysEnvPropInt(getName() + ".numTestsPerEvictionRun", this.numTestsPerEvictionRun));
-               poolConfig.setBlockWhenExhausted(Utils.findSysEnvPropBool(getName() + ".blockWhenExhausted", this.blockWhenExhausted));
+               poolConfig.setMaxTotal(Utils.getSysEnvPropInt(getName() + ".poolMax", this.poolMax));
+               poolConfig.setMaxIdle(Utils.getSysEnvPropInt(getName() + ".poolMax", this.poolMax));
+               poolConfig.setMinIdle(Utils.getSysEnvPropInt(getName() + ".poolMin", this.poolMin));
+               poolConfig.setTestOnBorrow(Utils.getSysEnvPropBool(getName() + "testOnBorrow", this.testOnBorrow));
+               poolConfig.setTestOnReturn(Utils.getSysEnvPropBool(getName() + ".testOnReturn", this.testOnReturn));
+               poolConfig.setTestWhileIdle(Utils.getSysEnvPropBool(getName() + ".testWhileIdle", this.testWhileIdle));
+               poolConfig.setMinEvictableIdleTimeMillis(Utils.getSysEnvPropInt(getName() + ".minEvictableIdleTimeMillis", this.minEvictableIdleTimeMillis));
+               poolConfig.setTimeBetweenEvictionRunsMillis(Utils.getSysEnvPropInt(getName() + ".timeBetweenEvictionRunsMillis", this.timeBetweenEvictionRunsMillis));
+               poolConfig.setNumTestsPerEvictionRun(Utils.getSysEnvPropInt(getName() + ".numTestsPerEvictionRun", this.numTestsPerEvictionRun));
+               poolConfig.setBlockWhenExhausted(Utils.getSysEnvPropBool(getName() + ".blockWhenExhausted", this.blockWhenExhausted));
 
-               String host = Utils.findSysEnvPropStr(getName() + ".host", this.host);
-               int port = Utils.findSysEnvPropInt(getName() + ".port", this.port);
-               int timeout = Utils.findSysEnvPropInt(getName() + ".readSocketTimeout", this.readSocketTimeout);
+               String host = Utils.getSysEnvPropStr(getName() + ".host", this.host);
+               int port = Utils.getSysEnvPropInt(getName() + ".port", this.port);
+               int timeout = Utils.getSysEnvPropInt(getName() + ".readSocketTimeout", this.readSocketTimeout);
 
                jedis = new JedisPool(poolConfig, host, port, timeout);
             }

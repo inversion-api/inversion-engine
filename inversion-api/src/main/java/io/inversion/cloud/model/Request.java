@@ -208,6 +208,26 @@ public class Request
       return collection;
    }
 
+   /**
+    * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
+    */
+   public boolean hasCollectionKey(String... collectionKeys)
+   {
+      if (collectionKey != null)
+      {
+         for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
+         {
+            String key = collectionKeys[i];
+            if (key != null && key.equalsIgnoreCase(collectionKey))
+            {
+               return true;
+            }
+         }
+      }
+
+      return false;
+   }
+
    public Request withCollection(Collection collection)
    {
       this.collection = collection;
@@ -269,13 +289,48 @@ public class Request
       }
       catch (Exception ex)
       {
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "Unparsable JSON body");
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "Unparsable JSON body");
       }
-      prune(json);
 
       return json;
    }
 
+   /**
+    * Attempts to massage an inbound json body into an array
+    * according to:
+    * 1. if getBody() is a JSArray return it.
+    * 1. if getBody() is a JSNode with a "data" array prop, return it
+    * 1. if getBody() is a JSNode wrap it in an array and return it.
+    * 1. if getBody() is not a JSNode and getBody() is null, return
+    *     an empty array.
+    *
+    *
+    * @return
+    */
+   public JSArray getData()
+   {
+      JSNode node = getJson();
+      if (node != null)
+      {
+         if (node instanceof JSArray)
+         {
+            return (JSArray) node;
+         }
+         else if (node.get("data") instanceof JSArray)
+         {
+            return node.getArray("data");
+         }
+         else
+         {
+            return new JSArray(node);
+         }
+      }
+      else if (getBody() == null)
+         return new JSArray();
+      return null;
+   }
+
+   //todo we should probably remove the ability for end users to modify the json?
    public Request withJson(JSNode json)
    {
       this.json = json;
@@ -654,50 +709,6 @@ public class Request
    public List<Upload> getUploads()
    {
       return uploader.getUploads();
-   }
-
-   /**
-    * Removes all empty objects from the tree
-    */
-   boolean prune(Object parent)
-   {
-      if (parent instanceof JSArray)
-      {
-         JSArray arr = ((JSArray) parent);
-         for (int i = 0; i < arr.length(); i++)
-         {
-            if (prune(arr.get(i)))
-            {
-               arr.remove(i);
-               i--;
-            }
-         }
-         return arr.length() == 0;
-      }
-      else if (parent instanceof JSNode)
-      {
-         boolean prune = true;
-         JSNode js = (JSNode) parent;
-         for (String key : js.keySet())
-         {
-            Object child = js.get(key);
-            prune &= prune(child);
-         }
-
-         if (prune)
-         {
-            for (String key : js.keySet())
-            {
-               js.remove(key);
-            }
-         }
-
-         return prune;
-      }
-      else
-      {
-         return parent == null;
-      }
    }
 
    public Request withTerm(String token, Object... terms)

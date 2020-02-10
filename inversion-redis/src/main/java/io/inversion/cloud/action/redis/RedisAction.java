@@ -23,14 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import redis.clients.jedis.Jedis;
 
 /**
@@ -60,19 +57,19 @@ public class RedisAction extends Action<RedisAction>
    protected transient Logger log = LoggerFactory.getLogger(getClass());
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       //caching only makes sense for GET requests
       if (!"GET".equalsIgnoreCase(req.getMethod()))
          return;
 
       //only cache top level request, on internal recursive requests
-      if (chain.getParent() != null)
+      if (req.getChain().getParent() != null)
          return;
 
       RedisDb db = (RedisDb) req.getCollection().getDb();
 
-      String nocacheParam = chain.getConfig("redisNocacheParam", db.getNocacheParam());
+      String nocacheParam = req.getChain().getConfig("redisNocacheParam", db.getNocacheParam());
 
       // remove this param before creating the key, so this param is not included in the key
       boolean skipCache = (req.removeParam(nocacheParam) != null);
@@ -87,7 +84,7 @@ public class RedisAction extends Action<RedisAction>
          if (!skipCache)
          {
             // the key is derived from the URL
-            String key = getCacheKey(chain);
+            String key = getCacheKey(req.getChain());
 
             // request should include a json object
             JSNode resJson = null;
@@ -109,14 +106,14 @@ public class RedisAction extends Action<RedisAction>
 
                resJson = JSNode.parseJsonNode(value);
                res.withJson(resJson);
-               res.withStatus(SC.SC_200_OK);
-               chain.cancel();
+               res.withStatus(Status.SC_200_OK);
+               req.getChain().cancel();
             }
             else
             {
                log.debug("CACHE MISS: " + key);
 
-               chain.go();
+               req.getChain().go();
 
                // TODO should the naming convention include the TTL in the name?
 
@@ -130,7 +127,7 @@ public class RedisAction extends Action<RedisAction>
                   // will NOT store empty JSON responses
                   try
                   {
-                     int ttl = chain.getConfig("redisTtl", db.getTtl());
+                     int ttl = req.getChain().getConfig("redisTtl", db.getTtl());
                      jedis.setex(key, ttl, json.toString());
                   }
                   catch (Exception ex)

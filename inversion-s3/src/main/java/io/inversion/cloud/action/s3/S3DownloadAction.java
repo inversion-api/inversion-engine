@@ -16,37 +16,7 @@
  */
 package io.inversion.cloud.action.s3;
 
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.services.s3.model.CopyObjectResult;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ch.qos.logback.classic.Logger;
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Request.Upload;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 
 /**
  * Accepts RQL parameters and responds with json or files to the client.

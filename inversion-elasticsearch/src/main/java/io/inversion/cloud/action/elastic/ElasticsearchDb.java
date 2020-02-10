@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,16 +22,13 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.HttpUtils;
 import io.inversion.cloud.utils.Rows.Row;
@@ -47,36 +44,32 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    public ElasticsearchDb()
    {
-
+      withType("elasticsearch");
    }
 
    public ElasticsearchDb(String name)
    {
+      this();
       withName(name);
    }
 
    @Override
-   protected void startup0()
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
-      this.withType("elasticsearch");
-
-      reflectDb();
-      configApi();
-   }
-
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
-   {
+      // TODO Auto-generated method stub
       return null;
    }
 
-   public String upsert(Table table, Map<String, Object> values) throws Exception
+   @Override
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
-      return null;
+      // TODO Auto-generated method stub
    }
 
-   public void delete(Table table, String entityKey) throws Exception
+   @Override
+   public List upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
-
+      return null;
    }
 
    private void reflectDb()
@@ -101,7 +94,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
             Map<String, JSNode> jsContentMap = jsObj.asMap();
 
             // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-            Map<String, Table> tableMap = new HashMap<String, Table>();
+            Map<String, Collection> tableMap = new HashMap<String, Collection>();
 
             for (Map.Entry<String, JSNode> entry : jsContentMap.entrySet())
             {
@@ -116,25 +109,12 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
                allResp.getError().printStackTrace();
                Utils.getCause(allResp.getError()).printStackTrace();
             }
-            throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : SC.SC_500_INTERNAL_SERVER_ERROR);
+            throw new ApiException(allResp.hasStatus(allowedFailResponseCodes) ? allResp.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
          }
       }
       catch (Exception ex)
       {
          Utils.rethrow(ex);
-      }
-   }
-
-   private void configApi()
-   {
-      for (Table t : getTables())
-      {
-         List<Column> cols = t.getColumns();
-         Collection collection = new Collection();
-
-         collection.withName(super.beautifyCollectionName(t.getName()));
-         collection.withTable(t);
-         api.withCollection(collection);
       }
    }
 
@@ -150,7 +130,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
     * @param jsIndex
     * @return
     */
-   private void buildAliasTables(String elasticName, JSNode jsIndex, Map<String, Table> tableMap)
+   private void buildAliasTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap)
    {
 
       String aliasName = null;
@@ -160,18 +140,18 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       {
          aliasName = propEntry.getKey();
 
-         Table table = null;
+         Collection table = null;
 
          // use the previously created table if it exists.
          if (tableMap.containsKey(aliasName))
             table = tableMap.get(aliasName);
          else
          {
-            table = new Table(this, aliasName);
+            table = new Collection(aliasName);
             tableMap.put(aliasName, table);
          }
 
-         withTable(table);
+         withCollection(table);
 
          // use the mapping to add columns to the table.
          addColumns(table, false, jsMappingsDocProps, "");
@@ -184,7 +164,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
     * @param jsPropsMap - contains the parent's nested properties
     * @param parentPrefix - necessary for 'nested' column names.
     */
-   private void addColumns(Table table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
+   private void addColumns(Collection table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
    {
       int columnNumber = 0;
       for (Map.Entry<String, JSNode> propEntry : jsPropsMap.entrySet())
@@ -195,17 +175,17 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          JSNode propValue = propEntry.getValue();
 
          // potential types include: keyword, long, nested, object, boolean
-         if (propValue.containsKey("type") && table.getColumn(colName) == null)
+         if (propValue.containsKey("type") && table.getProperty(colName) == null)
          {
-            Column column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
-            table.withColumn(column);
+            Property column = new Property(colName, propValue.getString("type"), true);
+            table.withProperties(column);
          }
       }
    }
 
    public String getUrl()
    {
-      return Utils.findSysEnvPropStr(getName() + ".url", url);
+      return Utils.getSysEnvPropStr(getName() + ".url", url);
    }
 
    public ElasticsearchDb withUrl(String url)

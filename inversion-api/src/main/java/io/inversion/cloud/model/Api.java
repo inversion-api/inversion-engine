@@ -17,41 +17,43 @@
 package io.inversion.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.cloud.service.Engine;
+
 public class Api
 {
-   protected Logger                               log         = LoggerFactory.getLogger(getClass());
+   protected Logger                         log         = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean                     started     = false;
-   transient volatile boolean                     starting    = false;
-   transient long                                 loadTime    = 0;
-   transient Hashtable                            cache       = new Hashtable();
-   transient protected String                     hash        = null;
+   transient Engine                         engine      = null;
 
-   //   protected transient Engine engine      = null;
+   transient volatile boolean               started     = false;
+   transient volatile boolean               starting    = false;
+   transient long                           loadTime    = 0;
+   transient Hashtable                      cache       = new Hashtable();
+   transient protected String               hash        = null;
 
-   protected boolean                              debug       = false;
+   protected boolean                        debug       = false;
 
-   protected int                                  id          = 0;
+   protected int                            id          = 0;
 
-   protected String                               name        = null;
-   protected String                               accountCode = null;
-   protected String                               apiCode     = null;
-   protected boolean                              multiTenant = false;
-   protected String                               url         = null;
+   protected String                         name        = null;
+   protected String                         accountCode = null;
+   protected String                         apiCode     = null;
+   protected boolean                        multiTenant = false;
+   protected String                         url         = null;
 
-   protected List<Db>                             dbs         = new ArrayList();
-   protected List<Endpoint>                       endpoints   = new ArrayList();
-   protected List<Action>                         actions     = new ArrayList();
+   protected List<Db>                       dbs         = new ArrayList();
+   protected List<Endpoint>                 endpoints   = new ArrayList();
+   protected List<Action>                   actions     = new ArrayList();
+   protected List<Collection>               collections = new ArrayList();
 
-   protected List<Collection>                     collections = new ArrayList();
-
-   protected transient List<StartupListener<Api>> listeners   = new ArrayList();
+   protected transient List<EngineListener> listeners   = new ArrayList();
 
    public Api()
    {
@@ -76,14 +78,15 @@ public class Api
             db.startup();
          }
 
-         //removeExcludes();
+         removeExcludes();
+
          started = true;
 
-         for (StartupListener listener : listeners)
+         for (EngineListener listener : listeners)
          {
             try
             {
-               listener.onStartup(this);
+               listener.onStartup(engine, this);
             }
             catch (Exception ex)
             {
@@ -114,46 +117,28 @@ public class Api
 
    public void removeExcludes()
    {
-      for (io.inversion.cloud.model.Collection col : getCollections())
-      {
-         if (col.isExclude() || col.getEntity().isExclude())
-         {
-            removeCollection(col);
-         }
-         else
-         {
-            for (Attribute attr : col.getEntity().getAttributes())
-            {
-               if (attr.isExclude())
-               {
-                  col.getEntity().removeAttribute(attr);
-               }
-            }
-
-            for (Relationship rel : col.getEntity().getRelationships())
-            {
-               if (rel.isExclude())
-               {
-                  col.getEntity().removeRelationship(rel);
-               }
-            }
-         }
-      }
-
       for (Db db : getDbs())
       {
-         for (Table table : (List<Table>) db.getTables())
+         for (Collection coll : (List<Collection>) db.getCollections())
          {
-            if (table.isExclude())
+            if (coll.isExclude())
             {
-               db.removeTable(table);
+               db.removeCollection(coll);
             }
             else
             {
-               for (Column col : table.getColumns())
+               for (Property col : coll.getProperties())
                {
                   if (col.isExclude())
-                     table.removeColumn(col);
+                     coll.removeProperty(col);
+               }
+            }
+
+            for (Relationship rel : coll.getRelationships())
+            {
+               if (rel.isExclude())
+               {
+                  coll.removeRelationship(rel);
                }
             }
          }
@@ -182,111 +167,34 @@ public class Api
       return this;
    }
 
-   public Table findTable(String name)
+   public Api withCollection(Collection coll)
    {
-      for (Db db : dbs)
-      {
-         Table t = db.getTable(name);
-         if (t != null)
-            return t;
-      }
-      return null;
-   }
+      if (coll.isLinkTbl() || coll.isExclude())
+         return this;
 
-   public Db findDb(String name)
-   {
-      if (name == null)
-         return null;
+      if (!collections.contains(coll))
+         collections.add(coll);
 
-      for (Db db : dbs)
-      {
-         if (name.equals(db.getName()))
-            return db;
-      }
-      return null;
-   }
-
-
-   public Collection getCollection(String name)
-   {
-      if (name == null)
-         return null;
-
-      for (Collection collection : collections)
-         if (name.equalsIgnoreCase(collection.getName()))
-            return collection;
-      return null;
-   }
-
-   public Collection getCollection(Table tbl)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getTable() == tbl)
-            return collection;
-      }
-      return null;
-   }
-
-   public Collection getCollection(Entity entity)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getEntity() == entity)
-            return collection;
-      }
-      return null;
-   }
-
-   public Entity getEntity(Table table)
-   {
-      for (Collection collection : collections)
-      {
-         if (collection.getTable() == table)
-            return collection.getEntity();
-      }
-
-      return null;
-   }
-
-   public Collection makeCollection(Table table, String name)
-   {
-      Collection collection = new Collection(this, table, name);
-      withCollection(collection);
-      return collection;
-   }
-
-   public List<Collection> getCollections()
-   {
-      return new ArrayList(collections);
-   }
-
-   public Api withCollections(Collection... collections)
-   {
-      for (Collection collection : collections)
-         withCollection(collection);
-
-      return null;
-   }
-
-   /**
-    * Bi-directional method also sets 'this' api on the collection
-    * @param collection
-    */
-   public Api withCollection(Collection collection)
-   {
-      if (!collections.contains(collection))
-         collections.add(collection);
-
-      if (collection.getApi() != this)
-         collection.withApi(this);
+      if (coll.getApi() != this)
+         coll.withApi(this);
 
       return this;
    }
 
-   public void removeCollection(Collection collection)
+   public List<Collection> getCollections()
    {
-      collections.remove(collection);
+      return Collections.unmodifiableList(collections);
+   }
+
+   public Collection getCollection(String name)
+   {
+      for (Collection coll : collections)
+      {
+         if (name.equalsIgnoreCase(coll.getCollectionName()) //
+               || name.equalsIgnoreCase(coll.getTableName()))
+            return coll;
+      }
+      return null;
    }
 
    public Db getDb(String name)
@@ -324,7 +232,14 @@ public class Api
    public Api withDb(Db db)
    {
       if (!dbs.contains(db))
+      {
          dbs.add(db);
+
+         for (Collection coll : (List<Collection>) db.getCollections())
+         {
+            withCollection(coll);
+         }
+      }
 
       if (db.getApi() != this)
          db.withApi(this);
@@ -510,10 +425,26 @@ public class Api
       return this;
    }
 
-   public Api withStartupListener(StartupListener<Api> listener)
+   public Api withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
          listeners.add(listener);
+      return this;
+   }
+
+   public List<EngineListener> getEngineListeners()
+   {
+      return Collections.unmodifiableList(listeners);
+   }
+
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   public Api withEngine(Engine engine)
+   {
+      this.engine = engine;
       return this;
    }
 

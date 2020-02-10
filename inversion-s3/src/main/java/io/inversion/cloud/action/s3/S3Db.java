@@ -16,7 +16,6 @@
  */
 package io.inversion.cloud.action.s3;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -25,18 +24,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
-import com.amazonaws.services.s3.model.CopyObjectResult;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
 
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -67,7 +58,7 @@ public class S3Db extends Db<S3Db>
     * @see io.rcktapp.api.Db#bootstrapApi()
     */
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       AmazonS3 client = getS3Client();
 
@@ -76,14 +67,12 @@ public class S3Db extends Db<S3Db>
 
       for (Bucket bucket : bucketList)
       {
-         Table table = new Table(this, bucket.getName());
+         Collection coll = new Collection(bucket.getName());
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
          // Other core metadata includes: eTag, size, lastModified, storageClass
-         table.makeColumn("key", String.class.getName());
-         withTable(table);
-
-         api.makeCollection(table, beautifyCollectionName(table.getName()));
+         coll.withProperty("key", String.class.getName(), false);
+         withCollection(coll);
       }
    }
 
@@ -109,24 +98,25 @@ public class S3Db extends Db<S3Db>
 //   }
 
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
       return query.doSelect();
    }
 
-   @Override
-   public void delete(Table table, String entityKey) throws Exception
-   {
-      // TODO Auto-generated method stub
-
-   }
 
    @Override
-   public String upsert(Table table, Map<String, Object> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       // TODO Auto-generated method stub
       return null;
+   }
+
+   @Override
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
    }
 
    //   /**
@@ -181,6 +171,7 @@ public class S3Db extends Db<S3Db>
    //      return client.copyObject(copyReq);
    //   }
 
+
    public AmazonS3 getS3Client()
    {
       return getS3Client(awsRegion, awsAccessKey, awsSecretKey);
@@ -194,9 +185,9 @@ public class S3Db extends Db<S3Db>
          {
             if (this.client == null)
             {
-               awsRegion = Utils.findSysEnvPropStr(getName() + ".awsRegion", awsRegion);
-               awsAccessKey = Utils.findSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
-               awsSecretKey = Utils.findSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
+               awsRegion = Utils.getSysEnvPropStr(getName() + ".awsRegion", awsRegion);
+               awsAccessKey = Utils.getSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
+               awsSecretKey = Utils.getSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
 
                AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
 

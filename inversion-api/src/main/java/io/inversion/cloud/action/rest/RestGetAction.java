@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,27 +34,22 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.Attribute;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Entity;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.rql.Page;
 import io.inversion.cloud.rql.Parser;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -87,63 +81,63 @@ public class RestGetAction extends Action<RestGetAction>
    }
 
    @Override
-   public void run(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws Exception
    {
       if (req.getSubCollectionKey() != null)
       {
+         //-- all URLs with a subcollection key will be rewritten and  
+         //-- internally forwarded to the non-subcollection form.
+         
          String entityKey = req.getEntityKey();
          Collection collection = req.getCollection();
-         Entity entity = collection.getEntity();
-         Relationship rel = entity.getRelationship(req.getSubCollectionKey());
+         Relationship rel = collection.getRelationship(req.getSubCollectionKey());
 
          if (rel == null)
-            throw new ApiException(SC.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
+            throw new ApiException(Status.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
 
          String newHref = null;
 
          if (rel.isManyToOne())
          {
-            //CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
-            //TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
+            //-- CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
+            //-- TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
 
-            //CONVERTS: http://localhost/northwind/sql/collection/val1~val2/subcollection
-            //TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
+            //-- CONVERTS: http://localhost/northwind/sql/collection/val1~val2/subcollection
+            //-- TO THIS : http://localhost/northwind/sql/subcollection?col1=val1&col2=val2
 
             //TODO: need a compound key test case here
-            Collection relatedCollection = rel.getRelated().getCollection();
-
+            Collection relatedCollection = rel.getRelated();
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
+            Row entityKeyRow = collection.decodeKey(req.getEntityKey());
 
-            Row entityKeyRow = collection.getTable().decodeKey(req.getEntityKey());
-
-            //maps query string parameter names for the main tables pk to the related tables fk
+            //-- maps query string parameter names for the main collection's pk to the related collection's fk
             Index fkIdx = rel.getFkIndex1();
-            for (Column fk : fkIdx.getColumns())
+            for (int i = 0; i < fkIdx.size(); i++)
             {
-               String pkName = fk.getPk().getName();
+               Property fk = fkIdx.getColumn(i);
+               String pkName = fk.getPk().getColumnName();
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
-                  throw new ApiException(SC.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
+                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
 
-               newHref += fk.getName() + "=" + pkVal + "&";
+               newHref += fk.getColumnName() + "=" + pkVal + "&";
             }
 
             newHref = newHref.substring(0, newHref.length() - 1);
          }
          else if (rel.isManyToMany())
          {
-            //CONVERTS: http://localhost/northwind/source/employees/1/territories
-            //TO THIS : http://localhost/northwind/source/territories/06897,19713
+            //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
+            //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
             List<KeyValue> rows = getRelatedKeys(rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
             if (rows.size() > 0)
             {
-               //TODO need to escape values (~',) in this string and add test case
                List foreignKeys = new ArrayList();
                rows.forEach(k -> foreignKeys.add(k.getValue()));
 
-               Collection relatedCollection = rel.getRelated().getCollection();
+               Collection relatedCollection = rel.getRelated();
                String entityKeys = Utils.implode(",", foreignKeys.toArray());
                newHref = Chain.buildLink(relatedCollection, entityKeys, null);
             }
@@ -154,8 +148,8 @@ public class RestGetAction extends Action<RestGetAction>
          }
          else
          {
-            //The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
-            //The system would have written out : http://localhost/northwind/source/orders/YYYYY
+            //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
+            //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
             throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
          }
 
@@ -171,16 +165,15 @@ public class RestGetAction extends Action<RestGetAction>
             newHref += query;
          }
 
-         //TODO: forward better symentec here?
-         Response included = engine.get(newHref);
+         Response included = req.getEngine().get(newHref);
          res.withStatus(included.getStatus());
          res.withJson(included.getJson());
          return;
       }
-      else if (req.getCollection() != null && req.getEntityKey() != null)
+      else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getEntityKey()))
       {
          List<String> entityKeys = Utils.explode(",", req.getEntityKey());
-         Term term = Term.term(null, "_key", req.getCollection().getEntity().getTable().getPrimaryIndex().getName(), entityKeys.toArray());
+         Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), entityKeys.toArray());
          req.getUrl().withParams(term.toString(), null);
       }
 
@@ -188,17 +181,17 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
-         res.withStatus(SC.SC_404_NOT_FOUND);
+         res.withStatus(Status.SC_404_NOT_FOUND);
       }
       else
       {
-         //copy data into the response
+         //-- copy data into the response
          res.withRecords(results.getRows());
 
          //------------------------------------------------
-         //setup all of the meta section
+         //-- setup all of the meta section
 
-         Page page = results.getQuery().page();
+         Page page = results.getQuery().getPage();
          res.withPageSize(page.getPageSize());
          res.withPageNum(page.getPageNum());
 
@@ -212,7 +205,6 @@ public class RestGetAction extends Action<RestGetAction>
 
          if (foundRows >= 0)
          {
-            //  Chain.peek().put("foundRows", foundRows);
             res.withFoundRows(foundRows);
          }
 
@@ -313,20 +305,21 @@ public class RestGetAction extends Action<RestGetAction>
                   {
                      term.removeTerm(child);
 
-                     Index pk = collection.getTable().getPrimaryIndex();
-                     for (Column c : pk.getColumns())
+                     Index pk = collection.getPrimaryIndex();
+                     for (int i = 0; i < pk.size(); i++)
                      {
+                        Property c = pk.getColumn(i);
                         boolean includesPkCol = false;
                         for (Term col : term.getTerms())
                         {
-                           if (col.hasToken(c.getName()))
+                           if (col.hasToken(c.getColumnName()))
                            {
                               includesPkCol = true;
                               break;
                            }
                         }
                         if (!includesPkCol)
-                           term.withTerm(Term.term(term, c.getName()));
+                           term.withTerm(Term.term(term, c.getColumnName()));
                      }
                      break;
                   }
@@ -344,20 +337,24 @@ public class RestGetAction extends Action<RestGetAction>
          }
       }
 
+      //-- this sort is not strictly necessary but it makes the order of terms in generated
+      //-- query text dependable so you can write better tests.
+      Collections.sort(terms);
+
       Results results = null;
 
       if (collection == null)
       {
-         Db db = api.findDb((String) Chain.peek().get("db"));
+         Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            throw new ApiException(SC.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
+            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
 
          results = db.select(null, terms);
       }
       else
       {
-         results = collection.getDb().select(collection.getTable(), terms);
+         results = collection.getDb().select(collection, terms);
       }
 
       if (results.size() > 0)
@@ -378,42 +375,62 @@ public class RestGetAction extends Action<RestGetAction>
                JSNode node = new JSNode();
                results.setRow(i, node);
 
-               String entityKey = req.getCollection().getTable().encodeKey(row);
+               String entityKey = req.getCollection().encodeKey(row);
 
-               if (Utils.empty(entityKey))
-                  throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine entity key for " + row);
+               if (!Utils.empty(entityKey))
+               {
+                  //------------------------------------------------
+                  //next turn all relationships into links that will 
+                  //retrieve the related entities
+                  for (Relationship rel : collection.getRelationships())
+                  {
+                     String link = null;
+                     if (rel.isOneToMany())
+                     {
+                        Index foreignKey = rel.getFkIndex1();
+                        String fkval = Collection.encodeKey(row, rel.getFkIndex1());
+
+                        if (fkval != null)
+                        {
+                           link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
+                        }
+                     }
+                     else
+                     {
+                        link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
+                     }
+                     node.put(rel.getName(), link);
+                  }
+
+                  //------------------------------------------------
+                  // finally make sure the entity key is encoded as
+                  // the href
+                  String href = node.getString("href");
+                  if (Utils.empty(href))
+                  {
+                     href = Chain.buildLink(collection, entityKey, null);
+                     node.putFirst("href", href);
+                  }
+               }
 
                //------------------------------------------------
                //copy over defined attributes first, if the select returned 
                //extra columns they will be copied over last
-               for (Attribute attr : collection.getEntity().getAttributes())
+               for (Property attr : collection.getProperties())
                {
-                  String attrName = attr.getName();
-                  String colName = attr.getColumn().getName();
-                  Object val = row.remove(colName);
-                  node.put(attrName, val);
-               }
+                  String attrName = attr.getJsonName();
+                  String colName = attr.getColumnName();
 
-               //------------------------------------------------
-               //next turn all relationships into links that will 
-               //retrieve the related entities
-               for (Relationship rel : collection.getEntity().getRelationships())
-               {
-                  String link = null;
-                  if (rel.isOneToMany())
+                  boolean rowHas = row.containsKey(colName);
+                  if (entityKey != null || rowHas)
                   {
-                     //Object fkval = node.remove(rel.getFk1Col1().getName());
-                     Object fkval = node.get(rel.getFk1Col1().getName());
-                     if (fkval != null)
-                     {
-                        link = Chain.buildLink(rel.getRelated().getCollection(), fkval.toString(), null);
-                     }
+                     //-- if the entityKey was null don't create
+                     //-- empty props for fields that were not 
+                     //-- returned from the db
+                     Object val = row.remove(colName);
+                     if (!node.containsKey(attrName))
+                        node.put(attrName, val);
                   }
-                  else
-                  {
-                     link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
-                  }
-                  node.put(rel.getName(), link);
                }
 
                //------------------------------------------------
@@ -428,15 +445,6 @@ public class RestGetAction extends Action<RestGetAction>
                   }
                }
 
-               //------------------------------------------------
-               // finally make sure the entity key is encoded as
-               // the href
-               String href = node.getString("href");
-               if (Utils.empty(href))
-               {
-                  href = Chain.buildLink(collection, entityKey, null);
-                  node.put("href", href);
-               }
             }
 
          }
@@ -523,7 +531,7 @@ public class RestGetAction extends Action<RestGetAction>
       if (expandsPath == null)
          expandsPath = "";
 
-      for (Relationship rel : collection.getEntity().getRelationships())
+      for (Relationship rel : collection.getRelationships())
       {
          boolean shouldExpand = shouldExpand(expands, expandsPath, rel);
 
@@ -567,7 +575,7 @@ public class RestGetAction extends Action<RestGetAction>
             //MANY_TO_ONE - Location.id <- Player.locationId  
             //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
 
-            final Collection relatedCollection = rel.getRelated().getCollection();
+            final Collection relatedCollection = rel.getRelated();
             //            Column toMatchCol = null;
             //            Column toRetrieveCol = null;
 
@@ -577,7 +585,7 @@ public class RestGetAction extends Action<RestGetAction>
 
             if (rel.isOneToMany())
             {
-               idxToMatch = collection.getEntity().getTable().getPrimaryIndex();
+               idxToMatch = collection.getPrimaryIndex();
                idxToRetrieve = rel.getFkIndex1();
 
                //NOTE: expands() is only getting the paired up related keys.  For a ONE_TO_MANY
@@ -589,8 +597,11 @@ public class RestGetAction extends Action<RestGetAction>
                //would be exactly the same you would just end up running an extra db query
 
                List cols = new ArrayList();
-               idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
-               idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
+               //idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
+
+               cols.addAll(idxToMatch.getColumnNames());
+               cols.addAll(idxToRetrieve.getColumnNames());
 
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
@@ -610,7 +621,7 @@ public class RestGetAction extends Action<RestGetAction>
                //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
 
                idxToMatch = rel.getFkIndex1();
-               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();
+               idxToRetrieve = rel.getRelated().getPrimaryIndex();
 
             }
             else if (rel.isManyToMany())
@@ -628,7 +639,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof JSArray)
-                        throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
+                        throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
 
@@ -698,25 +709,28 @@ public class RestGetAction extends Action<RestGetAction>
 
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
-      if (idxToMatch.getTable() != idxToRetrieve.getTable())
-         throw new ApiException(SC.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
+      if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
+         throw new ApiException(Status.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
       List<KeyValue> related = new ArrayList<>();
 
       List columns = new ArrayList();
-      idxToMatch.getColumns().forEach(c -> columns.add(c.getName()));
-      idxToRetrieve.getColumns().forEach(c -> columns.add(c.getName()));
+      //idxToMatch.getColumns().forEach(c -> columnNames.add(c.getName()));
+      //idxToRetrieve.getColumns().forEach(c -> columnNames.add(c.getName()));
+
+      columns.addAll(idxToMatch.getColumnNames());
+      columns.addAll(idxToRetrieve.getColumnNames());
 
       Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
       Term includes = Term.term(null, "includes", columns);
       Term sort = Term.term(null, "sort", columns);
       Term notNull = Term.term(null, "nn", columns);
 
-      Rows rows = ((Rows) idxToMatch.getColumn(0).getTable().getDb().select(idxToRetrieve.getTable(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
+      Rows rows = ((Rows) idxToMatch.getColumn(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
       for (Row row : rows)
       {
          List keyParts = row.asList();
-         String parentEk = Table.encodeKey(keyParts.subList(0, idxToMatch.getColumns().size()));
-         String relatedEk = Table.encodeKey(keyParts.subList(idxToMatch.getColumns().size(), keyParts.size()));
+         String parentEk = Collection.encodeKey(keyParts.subList(0, idxToMatch.size()));
+         String relatedEk = Collection.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }
@@ -770,7 +784,7 @@ public class RestGetAction extends Action<RestGetAction>
          if (res.getError() != null)
             throw res.getError();
          else
-            throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getText());
       }
       else if (sc == 200)
       {
@@ -780,14 +794,14 @@ public class RestGetAction extends Action<RestGetAction>
          {
             Object entityKey = getEntityKey((JSNode) node);
             if (pkCache.containsKey(collection, entityKey))
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
 
             pkCache.put(collection, entityKey, node);
          }
          return nodes;
       }
 
-      throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
+      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
    public int getMaxRows()
@@ -830,9 +844,10 @@ public class RestGetAction extends Action<RestGetAction>
       if (term.isLeaf() && !term.isQuoted())
       {
          String token = term.getToken();
-         String attrName = collection.getAttributeName(token);
-         if (attrName != null)
-            term.withToken(attrName);
+
+         Property attr = collection.findProperty(token);
+         if (attr != null)
+            term.withToken(attr.getJsonName());
       }
       else
       {

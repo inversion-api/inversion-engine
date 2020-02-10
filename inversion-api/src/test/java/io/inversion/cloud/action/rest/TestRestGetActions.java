@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
 
 import io.inversion.cloud.model.JSArray;
@@ -78,7 +78,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       JSNode json = null;
 
-      res = engine.get(url("aliased_orders?limit=5")).statusOk();
+      res = engine.get(url("aliased_orders?limit=5")).assertOk();
       json = res.getJson();
       assertEquals(5, json.find("meta.pageSize"));
       assertEquals(5, res.data().length());
@@ -94,7 +94,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       JSNode json = null;
 
-      res = engine.get(url("orders?limit=5")).statusOk();
+      res = engine.get(url("orders?limit=5")).assertOk();
       json = res.getJson();
       assertEquals(5, json.find("meta.pageSize"));
       assertEquals(5, res.data().length());
@@ -238,7 +238,7 @@ public abstract class TestRestGetActions extends TestCase
       Engine engine = service();
       Response res = null;
 
-      res = engine.get(url("orders?limit=5&like(customerId,*VI*)")).statusOk();
+      res = engine.get(url("orders?limit=5&like(customerId,*VI*)")).assertOk();
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[%VI%]");
 
       JSArray data = res.data();
@@ -248,7 +248,7 @@ public abstract class TestRestGetActions extends TestCase
          assertTrue(((JSNode) o).getString("customerid").contains("VI"));
       }
 
-      res = engine.get(url("orders?limit=5&like(customerId,VI)")).statusOk();
+      res = engine.get(url("orders?limit=5&like(customerId,VI)")).assertOk();
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" = ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[VI]");
 
    }
@@ -260,7 +260,7 @@ public abstract class TestRestGetActions extends TestCase
       Response res = null;
       JSNode json = null;
 
-      res = engine.get(url("orders?limit=5&like(customerId,*ZZ*)")).statusOk();
+      res = engine.get(url("orders?limit=5&like(customerId,*ZZ*)")).assertOk();
       json = res.getJson();
       assertTrue(json.getArray("data").length() == 0);
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[%ZZ%]");
@@ -271,7 +271,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      res = engine.get(url("employees?w(city,ondon)")).statusOk();
+      res = engine.get(url("employees?w(city,ondon)")).assertOk();
       res.assertDebug("h2", "'SELECT \"EMPLOYEES\".* FROM \"EMPLOYEES\" WHERE \"EMPLOYEES\".\"CITY\" LIKE ? ORDER BY \"EMPLOYEES\".\"EMPLOYEEID\" ASC LIMIT 100 OFFSET 0' args=[%ondon%] error=''");
 
       assertEquals(4, res.data().length());
@@ -280,7 +280,7 @@ public abstract class TestRestGetActions extends TestCase
          assertTrue(((JSNode) obj).getString("city").contains("ondon"));
       }
 
-      res = engine.get(url("employees?w(city,*ondon*)")).statusOk();
+      res = engine.get(url("employees?w(city,*ondon*)")).assertOk();
       res.assertDebug("h2", "'SELECT \"EMPLOYEES\".* FROM \"EMPLOYEES\" WHERE \"EMPLOYEES\".\"CITY\" LIKE ? ORDER BY \"EMPLOYEES\".\"EMPLOYEEID\" ASC LIMIT 100 OFFSET 0' args=[%ondon%] error=''");
    }
 
@@ -320,7 +320,7 @@ public abstract class TestRestGetActions extends TestCase
    {
       Engine engine = service();
       Response res = null;
-      res = engine.get(url("orders?limit=5&sw(customerId,VI)")).statusOk();
+      res = engine.get(url("orders?limit=5&sw(customerId,VI)")).assertOk();
 
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={#var1=customerId} valueMap={:val1=VI} keyConditionExpression='' filterExpression='begins_with(#var1,:val1)'");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[VI%]");
@@ -333,7 +333,7 @@ public abstract class TestRestGetActions extends TestCase
       }
 
       //check that the trailing * is not doubled
-      res = engine.get(url("orders?limit=5&sw(customerId,VI*)")).statusOk();
+      res = engine.get(url("orders?limit=5&sw(customerId,VI*)")).assertOk();
 
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={#var1=customerId} valueMap={:val1=VI} keyConditionExpression='' filterExpression='begins_with(#var1,:val1)'");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[VI%]");
@@ -345,7 +345,7 @@ public abstract class TestRestGetActions extends TestCase
       Engine engine = service();
       Response res = null;
 
-      res = engine.get(url("orders?limit=5&sw(customerId,Z)")).statusOk();
+      res = engine.get(url("orders?limit=5&sw(customerId,Z)")).assertOk();
 
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={#var1=customerId} valueMap={:val1=Z} keyConditionExpression='' filterExpression='begins_with(#var1,:val1)'");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[Z%]");
@@ -387,7 +387,7 @@ public abstract class TestRestGetActions extends TestCase
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipregion, #var2=shipregion} valueMap={:val1=null} keyConditionExpression='' filterExpression='(attribute_not_exists(#var1) or (#var2 = :val1))'");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"SHIPREGION\" IS NULL ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 500 OFFSET 0'");
 
-      res.statusOk();
+      res.assertOk();
       json = res.getJson();
       data = json.getArray("data");
       assertTrue(data.length() > 0);
@@ -406,8 +406,8 @@ public abstract class TestRestGetActions extends TestCase
    public void testN02() throws Exception
    {
       Engine engine = service();
-      assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).statusOk().data().size() > 0);
-      assertTrue(engine.get(url("orders?limit=5&n(shipcountry)")).statusOk().data().size() == 0);
+      assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().data().size() > 0);
+      assertTrue(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().data().size() == 0);
    }
 
    @Test
@@ -448,7 +448,7 @@ public abstract class TestRestGetActions extends TestCase
       JSNode json = null;
       JSArray data = null;
 
-      res = engine.get(url("orders?limit=500&nn(shipregion)")).statusOk();
+      res = engine.get(url("orders?limit=500&nn(shipregion)")).assertOk();
 
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipregion, #var2=shipregion} valueMap={:val1=null} keyConditionExpression='' filterExpression='attribute_exists(#var1) and (#var2 <> :val1)' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"SHIPREGION\" IS NOT NULL ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 500 OFFSET 0' args=[]");

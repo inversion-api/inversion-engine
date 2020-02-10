@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package io.inversion.cloud.action.kinesis;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +30,11 @@ import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Attribute;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -101,7 +99,7 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   protected void startup0()
+   protected void doStartup()
    {
       if (!Utils.empty(includeStreams))
       {
@@ -115,45 +113,33 @@ public class FirehoseDb extends Db<FirehoseDb>
                streamName = arr[1];
             }
 
-            Table table = new Table(this, streamName);
-            withTable(table);
+            Collection coll = new Collection(streamName);
+            withCollection(coll);
 
             if (arr.length == 1)//a specific collection name was not supplied by the config
-               collectionName = beautifyCollectionName(collectionName);
-
-            api.makeCollection(table, collectionName);
+               coll.withTableName(beautifyCollectionName(collectionName));
          }
       }
       else
       {
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
       }
    }
 
    @Override
-   public Results<Row> select(Table table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
-      throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override
-   public void delete(Table table, String entityKey) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
-      throw new ApiException(SC.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override
-   public String upsert(Table table, Map<String, Object> row) throws Exception
-   {
-      List<String> keys = upsert(table, Arrays.asList(row));
-      if (keys != null && keys.size() > 0)
-         return keys.get(0);
-
-      return null;
-   }
-
-   @Override
-   public List upsert(Table table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       List<Record> batch = new ArrayList();
       for (int i = 0; i < rows.size(); i++)
@@ -167,14 +153,14 @@ public class FirehoseDb extends Db<FirehoseDb>
 
          if (i > 0 && i % batchMax == 0)
          {
-            getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getName()).withRecords(batch));
+            getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getTableName()).withRecords(batch));
             batch.clear();
          }
       }
 
       if (batch.size() > 0)
       {
-         getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getName()).withRecords(batch));
+         getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getTableName()).withRecords(batch));
       }
 
       return Collections.emptyList();
@@ -193,9 +179,9 @@ public class FirehoseDb extends Db<FirehoseDb>
          {
             if (this.firehoseClient == null)
             {
-               awsRegion = Utils.findSysEnvPropStr(getName() + ".awsRegion", awsRegion);
-               awsAccessKey = Utils.findSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
-               awsSecretKey = Utils.findSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
+               awsRegion = Utils.getSysEnvPropStr(getName() + ".awsRegion", awsRegion);
+               awsAccessKey = Utils.getSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
+               awsSecretKey = Utils.getSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
 
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
 

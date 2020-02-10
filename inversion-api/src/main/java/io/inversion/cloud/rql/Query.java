@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,10 +23,11 @@ import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Column;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.SC;
-import io.inversion.cloud.model.Table;
+import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Collection;
 
 /**
  * 
@@ -39,19 +40,21 @@ import io.inversion.cloud.model.Table;
  * @author wells
  *
  */
-public class Query<T extends Query, D extends Db, E extends Table, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
+public class Query<T extends Query, D extends Db, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
-   protected D              db     = null;
-   protected E              table  = null;
+   protected D              db         = null;
+   protected Collection     collection = null;
 
-   protected S              select = null;
-   protected W              where  = null;
-   protected R              group  = null;
-   protected O              order  = null;
-   protected G              page   = null;
+   protected S              select     = null;
+   protected W              where      = null;
+   protected R              group      = null;
+   protected O              order      = null;
+   protected G              page       = null;
+
+   protected boolean        dryRun     = false;
 
    //hold ordered list of columnName=literalValue pairs
-   protected List<KeyValue> values = new ArrayList();
+   protected List<KeyValue> values     = new ArrayList();
 
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
@@ -91,28 +94,47 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return super.withTerm(term);
    }
 
-   //------------------------------------------------------------------
-   //------------------------------------------------------------------
-
-   public Query(E table)
+   public Results doSelect() throws Exception
    {
-      this(table, null);
+      return null;
    }
 
-   public Query(E table, Object terms)
+   //------------------------------------------------------------------
+   //------------------------------------------------------------------
+
+   public Query()
+   {
+      this(null);
+   }
+
+   public Query(Collection coll)
+   {
+      this(coll, null);
+   }
+
+   public Query(Collection coll, Object terms)
    {
       super(null);
-      withTable(table);
-
-      //order matters when multiple clauses can accept the same term 
-      where();
-      page();
-      order();
-      group();
-      select();
+      withCollection(coll);
 
       if (terms != null)
          withTerms(terms);
+   }
+
+   public List<Builder> getBuilders()
+   {
+      if (builders == null)
+      {
+         builders = new ArrayList();
+
+         //order matters when multiple clauses can accept the same term 
+         getWhere();
+         getPage();
+         getOrder();
+         getGroup();
+         getSelect();
+      }
+      return builders;
    }
 
    @Override
@@ -124,7 +146,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return parser;
    }
 
-   public S select()
+   public S getSelect()
    {
       if (select == null)
       {
@@ -134,7 +156,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return select;
    }
 
-   public W where()
+   public W getWhere()
    {
       if (where == null)
       {
@@ -144,7 +166,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return where;
    }
 
-   public R group()
+   public R getGroup()
    {
       if (group == null)
       {
@@ -154,7 +176,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return group;
    }
 
-   public O order()
+   public O getOrder()
    {
       if (order == null)
       {
@@ -164,7 +186,7 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return order;
    }
 
-   public G page()
+   public G getPage()
    {
       if (page == null)
       {
@@ -174,12 +196,12 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return page;
    }
 
-   public E table()
+   public Collection getCollection()
    {
-      return table;
+      return collection;
    }
 
-   public D db()
+   public D getDb()
    {
       return db;
    }
@@ -190,71 +212,17 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
       return r();
    }
 
-   public D getDb()
+   public T withCollection(Collection coll)
    {
-      return db;
-   }
-
-   public T withTable(E table)
-   {
-      this.table = table;
-      if (table != null)
+      this.collection = coll;
+      if (coll != null)
       {
-         withDb((D) table.getDb());
+         if (coll.getDb() != null)
+            withDb((D) coll.getDb());
       }
 
       return r();
    }
-
-   //   public Collection collection()
-   //   {
-   //      return collection;
-   //   }
-   //
-   //   public T withCollection(Collection collection)
-   //   {
-   //      this.collection = collection;
-   //
-   //      if (collection != null)
-   //      {
-   //         Entity entity = collection.getEntity();
-   //         if (entity != null)
-   //         {
-   //            Table table = entity.getTable();
-   //            withTable((E) table);
-   //         }
-   //      }
-   //
-   //      return r();
-   //   }
-   //
-   //   public String getColumnName(String attributeName)
-   //   {
-   //      String name = attributeName;
-   //      if (collection != null)
-   //      {
-   //         Attribute attr = collection.getAttribute(attributeName);
-   //         if (attr != null)
-   //            name = attr.getColumn().getName();
-   //      }
-   //
-   //      if (name == null)
-   //         name = attributeName;
-   //
-   //      return name;
-   //   }
-   //
-   //   public String getAttributeName(String columnName)
-   //   {
-   //      String name = columnName;
-   //      if (collection != null)
-   //         name = collection.getAttributeName(columnName);
-   //
-   //      if (name == null)
-   //         name = columnName;
-   //
-   //      return name;
-   //   }
 
    public int getNumValues()
    {
@@ -269,22 +237,22 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
 
    protected T withColValue(String columnName, Object value)
    {
-      Table table = this.table;
+      Collection coll = this.collection;
       String shortName = columnName;
 
       if (columnName != null)
       {
          if (columnName.indexOf(".") > -1)
          {
-            table = table.getDb().getTable(columnName.substring(0, columnName.indexOf(".")));
+            coll = coll.getDb().getCollection(columnName.substring(0, columnName.indexOf(".")));
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
 
-         if (table != null)
+         if (coll != null)
          {
-            Column col = table.getColumn(shortName);
+            Property col = coll.getProperty(shortName);
             if (col == null)
-               throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + table.getName() + "'");
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + coll.getTableName() + "'");
 
             value = db.cast(col, value);
 
@@ -319,6 +287,17 @@ public class Query<T extends Query, D extends Db, E extends Table, S extends Sel
    public List<KeyValue> getValues()
    {
       return values;
+   }
+
+   public boolean isDryRun()
+   {
+      return dryRun;
+   }
+
+   public T withDryRun(boolean dryRun)
+   {
+      this.dryRun = dryRun;
+      return r();
    }
 
 }

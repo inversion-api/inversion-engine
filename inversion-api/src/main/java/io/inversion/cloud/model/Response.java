@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -242,20 +242,7 @@ public class Response
    }
 
    /**
-    * @return the json
-    */
-   public JSNode getJson()
-   {
-      if (json == null && file != null && file.length() > 0)
-      {
-         json = JSNode.parseJsonNode(getContent());
-      }
-
-      return json;
-   }
-
-   /**
-    * @deprecated this method sets the root json document you should use withData and withMeta
+    * Sets the root output json document...you should use withData and withMeta
     * instead unless you REALLY want to change to wrapper document structure.
     * 
     * @param json the json to set
@@ -295,7 +282,7 @@ public class Response
    {
       return getJson().find(path);
    }
-   
+
    public Validation validate(String jsonPath)
    {
       return validate(jsonPath, null);
@@ -305,7 +292,6 @@ public class Response
    {
       return new Validation(this, jsonPath, customErrorMessage);
    }
-   
 
    public JSArray data()
    {
@@ -436,16 +422,6 @@ public class Response
       return statusCode;
    }
 
-   public String getText()
-   {
-      if (json == null && file != null && file.length() > 0)
-      {
-         text = getContent();
-      }
-
-      return text;
-   }
-
    public Response withText(String text)
    {
       this.json = null;
@@ -569,22 +545,59 @@ public class Response
       return null;
    }
 
+   /**
+    * @return the json
+    */
+   public JSNode getJson()
+   {
+      if (json == null)
+      {
+         //lazy loads text/json
+         getContent();
+      }
+
+      return json;
+   }
+
+   public String getText()
+   {
+      if (text == null)
+      {
+         //lazy loads text/json
+         getContent();
+      }
+
+      return text;
+   }
+
    public String getContent()
    {
       try
       {
-         if (file != null && file.length() > 0)
+         if (text == null && json == null && file != null && file.length() > 0)
          {
             String string = Utils.read(getInputStream());
-            return string;
+            if (string != null)
+            {
+               try
+               {
+                  json = JSNode.parseJsonNode(string);
+               }
+               catch (Exception ex)
+               {
+                  //OK
+                  text = string;
+               }
+            }
          }
-         else if (getJson() != null)
-         {
-            return getJson().toString();
-         }
-         else if (text != null)
+
+         if (text != null)
          {
             return text;
+         }
+         else if (json != null)
+         {
+            return json.toString();
          }
       }
       catch (Exception ex)
@@ -601,9 +614,9 @@ public class Response
 
       try
       {
-         if (!isSuccess() && file != null && file.length() > 0)
+         if (!isSuccess())
          {
-            String string = Utils.read(getInputStream());
+            String string = getContent();//Utils.read(getInputStream());
             return string;
          }
       }
@@ -830,27 +843,38 @@ public class Response
       }
    }
 
-   public Response statusOk()
+   //----------------------------------------------------------------------------------------------------------------------
+   //----------------------------------------------------------------------------------------------------------------------
+   //TEST ASSERTION CONVENIENCE METHODS
+
+   public Response assertOk(String... messages)
    {
       if (statusCode < 200 || statusCode > 299)
       {
-         dump();
-         throw new ApiException(statusCode + "", statusError);
+         rethrow(statusCode, messages);
       }
 
       return this;
    }
 
-   //----------------------------------------------------------------------------------------------------------------------
-   //----------------------------------------------------------------------------------------------------------------------
-   //TEST ASSERTION CONVENIENCE METHODS
-
-   public Response assertOk(String message)
+   public void rethrow(int statusCode, String... messages)
    {
-      if (statusCode < 200 || statusCode > 299)
-         throw new ApiException(statusCode + "", message);
+      String msg = "";
+      for (int i = 0; messages != null && i < messages.length; i++)
+         msg += messages[i] + " ";
 
-      return this;
+      JSNode json = getJson();
+      if (json != null)
+      {
+         String message = json.getString("message");
+         if (!Utils.empty(message))
+         {
+            msg += msg.length() > 0 ? " " : "";
+            msg += message;
+         }
+      }
+
+      throw new ApiException(statusCode + "", msg);
    }
 
    public Response assertStatus(int... statusCodes)
@@ -866,7 +890,7 @@ public class Response
       }
 
       if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
 
       return this;
    }
@@ -884,7 +908,7 @@ public class Response
       }
 
       if (!matched)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
 
       return this;
    }
@@ -892,7 +916,7 @@ public class Response
    public Response assertStatus(int statusCode, String message)
    {
       if (this.statusCode != statusCode)
-         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, message);
+         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
 
       return this;
    }
