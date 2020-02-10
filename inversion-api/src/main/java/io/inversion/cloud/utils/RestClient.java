@@ -613,7 +613,7 @@ public class RestClient
    public String getUrl()
    {
       String key = getName() + ".url";
-      return Utils.findSysEnvPropStr(key, url);
+      return Utils.getSysEnvPropStr(key, url);
    }
 
    public RestClient withUrl(String url)

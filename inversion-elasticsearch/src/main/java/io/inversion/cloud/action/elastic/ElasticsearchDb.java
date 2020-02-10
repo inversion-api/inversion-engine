@@ -185,7 +185,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
    public String getUrl()
    {
-      return Utils.findSysEnvPropStr(getName() + ".url", url);
+      return Utils.getSysEnvPropStr(getName() + ".url", url);
    }
 
    public ElasticsearchDb withUrl(String url)

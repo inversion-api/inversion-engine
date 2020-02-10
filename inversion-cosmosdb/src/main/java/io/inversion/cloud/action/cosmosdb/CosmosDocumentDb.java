@@ -255,8 +255,8 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
 
    public static DocumentClient buildDocumentClient(String prefix, String uri, String key)
    {
-      uri = Utils.findSysEnvPropStr(prefix + ".uri", uri);
-      key = Utils.findSysEnvPropStr(prefix + ".key", key);
+      uri = Utils.getSysEnvPropStr(prefix + ".uri", uri);
+      key = Utils.getSysEnvPropStr(prefix + ".key", key);
 
       if (Utils.empty(uri) || Utils.empty(key))
       {
