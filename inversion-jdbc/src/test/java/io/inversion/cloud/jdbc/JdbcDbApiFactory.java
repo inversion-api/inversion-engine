@@ -118,7 +118,7 @@ public class JdbcDbApiFactory
                                  {
                                     for (Collection col : api.getCollections())
                                     {
-                                       col.withAlias("aliased_" + col.getCollectionName());
+                                       col.withAlias("aliased_" + col.getName());
                                     }
                                  }
                               });

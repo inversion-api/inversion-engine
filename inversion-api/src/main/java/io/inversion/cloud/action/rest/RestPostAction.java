@@ -86,7 +86,7 @@ public class RestPostAction extends Action<RestPostAction>
 
       Collection collection = req.getCollection();
       List<Change> changes = new ArrayList();
-      List<String> entityKeys = new ArrayList();
+      List entityKeys = new ArrayList();
       JSNode obj = req.getJson();
 
       if (obj == null)
@@ -132,8 +132,7 @@ public class RestPostAction extends Action<RestPostAction>
       StringBuffer buff = new StringBuffer("");
       for (int i = 0; i < entityKeys.size(); i++)
       {
-         String entityKey = entityKeys.get(i);
-
+         String entityKey = entityKeys.get(i) + "";
          String href = Chain.buildLink(collection, entityKey, null);
 
          boolean added = false;

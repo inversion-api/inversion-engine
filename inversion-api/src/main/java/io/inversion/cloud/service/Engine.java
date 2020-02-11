@@ -191,16 +191,16 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getCollectionName()) ? ("name:" + e.getCollectionName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
             for (Collection c : api.getCollections())
             {
                if (c.getDb().getCollectionPath() != null)
-                  strs.add(c.getDb().getCollectionPath() + c.getCollectionName());
+                  strs.add(c.getDb().getCollectionPath() + c.getName());
                else
-                  strs.add(c.getCollectionName());
+                  strs.add(c.getName());
             }
             Collections.sort(strs);
             for (String coll : strs)

@@ -14,22 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.db;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import org.junit.Test;
 
-public class MsSqlRqlUnitTest extends AbstractSqlRqlTest
+import junit.framework.TestCase;
+
+public class JdbcDbTest extends TestCase
 {
-   public MsSqlRqlUnitTest()
+   @Test
+   public void test_upsert_rrowsWitDifferentColumns_upsertIsSplitIntoBatchesWithMatchingKeys()
    {
-      db = new JdbcDb("sqlserver").withType("sqlserver");
+      //TODO: implement me
    }
 
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-      //--add/replace any tests and results needed
-   }
 }

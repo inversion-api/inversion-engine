@@ -208,11 +208,11 @@ public abstract class Db<T extends Db>
          if (coll.isLinkTbl())
             continue;
 
-         if (coll.getCollectionName().equals(coll.getTableName()))
+         if (coll.getName().equals(coll.getTableName()))
          {
             //collection has not already been specifically customized
             String prettyName = beautifyCollectionName(coll.getTableName());
-            coll.withCollectionName(prettyName);
+            coll.withName(prettyName);
          }
 
          for (Property prop : coll.getProperties())
@@ -440,8 +440,8 @@ public abstract class Db<T extends Db>
          if (idxColName.toUpperCase().equals(idxColName))
             idxColName = idxColName.toLowerCase();
 
-         String collectionName = entity.getCollectionName();
-         String relatedCollectionName = rel.getRelated().getCollectionName();
+         String collectionName = entity.getName();
+         String relatedCollectionName = rel.getRelated().getName();
          //String tableName = entity.getTable().getName();
          if (!collectionName.equalsIgnoreCase(idxColName) //
                && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
@@ -487,12 +487,12 @@ public abstract class Db<T extends Db>
       }
       else if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getRelated().getCollectionName();
+         name = rel.getRelated().getName();
          pluralize = true;
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
-         name = rel.getFk2Col1().getPk().getCollection().getCollectionName();
+         name = rel.getFk2Col1().getPk().getCollection().getName();
          pluralize = true;
       }
 
@@ -590,7 +590,7 @@ public abstract class Db<T extends Db>
       for (Collection t : tables)
       {
          if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
-               || collectionOrTableName.equalsIgnoreCase(t.getCollectionName()))
+               || collectionOrTableName.equalsIgnoreCase(t.getName()))
             return t;
       }
 

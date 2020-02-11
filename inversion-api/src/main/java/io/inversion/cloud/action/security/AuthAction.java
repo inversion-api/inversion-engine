@@ -444,7 +444,7 @@ public class AuthAction extends Action<AuthAction>
 
          for (int j = 2; j >= 0; j--)
          {
-            String key = (getCollectionName() != null ? getCollectionName() : "") + ".jwt" + (i == 0 ? "" : ("." + i));
+            String key = (getName() != null ? getName() : "") + ".jwt" + (i == 0 ? "" : ("." + i));
 
             if (j > 0 && accountCode != null)
                key += "." + accountCode;
@@ -596,7 +596,7 @@ public class AuthAction extends Action<AuthAction>
 
    public String getSalt()
    {
-      return Utils.getSysEnvPropStr(getCollectionName() + ".salt", salt);
+      return Utils.getSysEnvPropStr(getName() + ".salt", salt);
    }
 
    class LRUAuthSessionCache implements AuthSessionCache

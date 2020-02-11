@@ -33,6 +33,8 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -42,17 +44,17 @@ import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.jdbc.utils.JdbcUtils.SqlListener;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
@@ -242,6 +244,9 @@ public class JdbcDb extends Db<JdbcDb>
          if (driver.indexOf("redshift") >= 0)
             return "redshift";
 
+         if (driver.indexOf("sqlserver") >= 0)
+            return "sqlserver";
+
          if (driver.indexOf("h2") >= 0)
             return "h2";
       }
@@ -279,23 +284,7 @@ public class JdbcDb extends Db<JdbcDb>
    @Override
    public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
-      if (isType("h2"))
-      {
-         List keys = new ArrayList();
-         for (Map<String, Object> row : rows)
-         {
-            keys.add(h2Upsert(table, row));
-         }
-         return keys;
-      }
-      else if (isType("mysql"))
-      {
-         return mysqlUpsert(table, rows);
-      }
-      else
-      {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Need to implement SqlDb.upsert for db type '" + getType() + "'");
-      }
+      return JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
    }
 
    @Override
@@ -348,36 +337,6 @@ public class JdbcDb extends Db<JdbcDb>
          JdbcUtils.execute(getConnection(), sql, values.toArray());
       }
 
-   }
-
-   public List<String> mysqlUpsert(Collection table, List<Map<String, Object>> rows) throws Exception
-   {
-      return JdbcUtils.mysqlUpsert(getConnection(), table.getTableName(), rows);
-   }
-
-   public String h2Upsert(Collection table, Map<String, Object> row) throws Exception
-   {
-      Object key = table.encodeKey(row);
-
-      if (key == null)//this must be an insert
-      {
-         JdbcUtils.insertMap(getConnection(), table.getTableName(), row);
-      }
-      else
-      {
-         //String keyCol = table.getKeyName();
-         JdbcUtils.h2Upsert(getConnection(), table.getTableName(), table.getPrimaryIndex(), row);
-      }
-
-      if (key == null)
-      {
-         key = JdbcUtils.selectInt(getConnection(), "SELECT SCOPE_IDENTITY()");
-
-         if (-1 == (Integer) key)
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key of upserted row: " + row);
-      }
-
-      return key.toString();
    }
 
    public Connection getConnection() throws ApiException
@@ -800,7 +759,7 @@ public class JdbcDb extends Db<JdbcDb>
                //               if (rel == null)
                //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
 
-               String aliasPrefix = "_join_" + rel.getEntity().getCollectionName() + "_" + part + "_";
+               String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
 
                Term join = null;
                for (int j = 0; j < 2; j++)

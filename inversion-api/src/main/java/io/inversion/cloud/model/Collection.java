@@ -32,17 +32,17 @@ import io.inversion.cloud.utils.Utils;
 
 public class Collection extends Rule<Collection>
 {
-   protected Db                      db                = null;
+   protected Db                      db            = null;
 
-   protected String                  collectionName    = null;
-   protected List<String>            collectionAliases = new ArrayList();
-   protected String                  tableName         = null;
+   protected String                  name          = null;
+   protected List<String>            aliases       = new ArrayList();
+   protected String                  tableName     = null;
 
-   protected ArrayList<Property>     properties        = new ArrayList();
-   protected ArrayList<Index>        indexes           = new ArrayList();
-   protected ArrayList<Relationship> relationships     = new ArrayList();
+   protected ArrayList<Property>     properties    = new ArrayList();
+   protected ArrayList<Index>        indexes       = new ArrayList();
+   protected ArrayList<Relationship> relationships = new ArrayList();
 
-   protected boolean                 exclude           = false;
+   protected boolean                 exclude       = false;
 
    public Collection()
    {
@@ -51,7 +51,7 @@ public class Collection extends Rule<Collection>
 
    public Collection(String defaultName)
    {
-      withCollectionName(defaultName);
+      withName(defaultName);
       withTableName(defaultName);
    }
 
@@ -124,14 +124,14 @@ public class Collection extends Rule<Collection>
       if (object instanceof Collection)
       {
          Collection coll = (Collection) object;
-         return (db == null || db == coll.db) && Utils.equal(getTableName(), coll.getTableName()) && Utils.equal(getCollectionName(), coll.getCollectionName());
+         return (db == null || db == coll.db) && Utils.equal(getTableName(), coll.getTableName()) && Utils.equal(getName(), coll.getName());
       }
       return false;
    }
 
    public String toString()
    {
-      return getCollectionName() != null ? getCollectionName() : super.toString();
+      return getName() != null ? getName() : super.toString();
    }
 
    /**
@@ -156,7 +156,7 @@ public class Collection extends Rule<Collection>
     */
    public String getTableName()
    {
-      return tableName != null ? tableName : collectionName;
+      return tableName != null ? tableName : name;
    }
 
    /**
@@ -171,17 +171,17 @@ public class Collection extends Rule<Collection>
    /**
     * @return the name
     */
-   public String getCollectionName()
+   public String getName()
    {
-      return collectionName != null ? collectionName : tableName;
+      return name != null ? name : tableName;
    }
 
    /**
     * @param name the name to set
     */
-   public Collection withCollectionName(String name)
+   public Collection withName(String name)
    {
-      this.collectionName = name;
+      this.name = name;
       return this;
    }
 
@@ -431,8 +431,8 @@ public class Collection extends Rule<Collection>
       if (nameOrAlias == null)
          return false;
 
-      if (nameOrAlias.equalsIgnoreCase(this.collectionName) //
-            || this.collectionAliases.stream().anyMatch(nameOrAlias::equalsIgnoreCase))
+      if (nameOrAlias.equalsIgnoreCase(this.name) //
+            || this.aliases.stream().anyMatch(nameOrAlias::equalsIgnoreCase))
          return true;
 
       return false;
@@ -440,12 +440,12 @@ public class Collection extends Rule<Collection>
 
    public List<String> getAliases()
    {
-      return new ArrayList(collectionAliases);
+      return new ArrayList(aliases);
    }
 
    public Collection withAliases(List<String> aliases)
    {
-      this.collectionAliases.clear();
+      this.aliases.clear();
       for (String alias : aliases)
          withAlias(alias);
       return this;
@@ -453,8 +453,8 @@ public class Collection extends Rule<Collection>
 
    public Collection withAlias(String alias)
    {
-      if (!collectionAliases.contains(alias))
-         collectionAliases.add(alias);
+      if (!aliases.contains(alias))
+         aliases.add(alias);
       return this;
    }
 

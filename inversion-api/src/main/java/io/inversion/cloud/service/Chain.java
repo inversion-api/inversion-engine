@@ -144,7 +144,7 @@ public class Chain
    {
       Request req = peek().getRequest();
 
-      String collectionKey = collection.getCollectionName();
+      String collectionKey = collection.getName();
 
       if (req.getCollection() == collection)
          collectionKey = req.getCollectionKey();

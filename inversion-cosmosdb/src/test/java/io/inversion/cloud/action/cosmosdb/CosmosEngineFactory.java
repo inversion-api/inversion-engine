@@ -71,7 +71,7 @@ public class CosmosEngineFactory
                                                              .withProperty("phone", "string")//
                                                              .withProperty("fax", "string");
 
-                  Collection employeesTbl = new Collection("employees").withCollectionName("Northwind")//
+                  Collection employeesTbl = new Collection("employees").withName("Northwind")//
 
                                                              .withProperty("type", "string", false)//
                                                              .withProperty("employeeId", "number")//

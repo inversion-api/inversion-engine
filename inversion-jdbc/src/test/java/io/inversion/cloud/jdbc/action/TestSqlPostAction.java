@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -104,51 +104,6 @@ public class TestSqlPostAction extends TestCase
    }
 
    @Test
-   public void testUpsert() throws Exception
-   {
-      Engine engine = service();
-      Response res = null;
-
-      JdbcDb mysql = (JdbcDb) engine.getApi("northwind").getDb(db);
-
-      if (mysql.isType("mysql"))
-      {
-         Connection conn = mysql.getConnection();
-         try
-         {
-            Rows rows = JdbcUtils.selectRows(conn, "SELECT * FROM Orders WHERE OrderID in(10257, 10395, 10476, 10486)");
-
-            for (Row row : rows)
-            {
-               row.put("shipaddress", "testing_upsert");
-            }
-
-            Map clone1 = new HashMap(rows.get(0));
-            clone1.remove("OrderID");
-
-            Map clone2 = new HashMap(rows.get(0));
-            clone2.put("OrderID", 1);
-
-            List<Map<String, Object>> toUpsert = new ArrayList(rows);
-            toUpsert.add(clone1);
-            toUpsert.add(clone2);
-            List generatedKeys = JdbcUtils.mysqlUpsert(conn, "Orders", toUpsert);
-
-            //[10257, 10395, 10476, 10486, 222001, 1]
-
-            assertEquals("11078", generatedKeys.get(4));//should be next auto increment key
-            assertEquals("1", generatedKeys.get(5));
-         }
-         finally
-         {
-            conn.close();
-         }
-
-      }
-
-   }
-
-   @Test
    public void testAddOneRecord() throws Exception
    {
       Response res = null;
@@ -210,8 +165,9 @@ public class TestSqlPostAction extends TestCase
       steve.findArray("employees").add(john);
 
       System.out.println(steve);
-      res = engine.put(steve.getString("href"), steve).assertOk();
+      res = engine.put(steve.getString("href"), steve);
       res.dump();
+      res.assertOk();
 
       res = engine.get(url("employees?employeeId=5&expands=employees"));
       res.dump();
@@ -285,11 +241,11 @@ public class TestSqlPostAction extends TestCase
                                           .withName("crm")//
                                           .withApiCode("crm")//
                                           .withDb(new JdbcDb("crm", //the database name used as the properties key prefix when 
-                                                            "org.h2.Driver", //-- jdbc driver
-                                                            "jdbc:h2:mem:crm;DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                                            "sa", //-- jdbc user
-                                                            "", //jdbc password
-                                                            JdbcDb.class.getResource("crm-h2.ddl").toString()))//
+                                                             "org.h2.Driver", //-- jdbc driver
+                                                             "jdbc:h2:mem:crm;DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                                             "sa", //-- jdbc user
+                                                             "", //jdbc password
+                                                             JdbcDb.class.getResource("crm-h2.ddl").toString()))//
                                           .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
       engine.startup();
       Response res = null;
@@ -364,11 +320,11 @@ public class TestSqlPostAction extends TestCase
                                           .withName("crm")//
                                           .withApiCode("crm")//
                                           .withDb(new JdbcDb("crm2", //the database name used as the properties key prefix when 
-                                                            "org.h2.Driver", //-- jdbc driver
-                                                            "jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                                            "sa", //-- jdbc user
-                                                            "", //jdbc password
-                                                            JdbcDb.class.getResource("crm-h2.ddl").toString()))//
+                                                             "org.h2.Driver", //-- jdbc driver
+                                                             "jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                                             "sa", //-- jdbc user
+                                                             "", //jdbc password
+                                                             JdbcDb.class.getResource("crm-h2.ddl").toString()))//
                                           .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
       engine.startup();
       Response res = null;

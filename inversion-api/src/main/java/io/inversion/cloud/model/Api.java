@@ -190,7 +190,7 @@ public class Api
    {
       for (Collection coll : collections)
       {
-         if (name.equalsIgnoreCase(coll.getCollectionName()) //
+         if (name.equalsIgnoreCase(coll.getName()) //
                || name.equalsIgnoreCase(coll.getTableName()))
             return coll;
       }

@@ -323,7 +323,7 @@ public class TestEngine extends TestCase
          {
             protected void run(Chain chain, List<Action> actions) throws Exception
             {
-               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getCollectionName()))
+               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
                   fail(chain, "endpoints don't match");
 
                if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString()))

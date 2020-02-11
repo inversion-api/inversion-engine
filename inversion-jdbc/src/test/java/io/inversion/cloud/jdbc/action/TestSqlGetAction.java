@@ -174,7 +174,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       for (Collection coll : (List<Collection>) api.getDb(db).getCollections())
       {
-         c2.add(coll.getCollectionName());
+         c2.add(coll.getName());
       }
 
       Collections.sort(c1);

@@ -39,10 +39,13 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.inversion.cloud.model.Index;
+import org.apache.commons.collections4.CollectionUtils;
+
+import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -76,11 +79,28 @@ public class JdbcUtils
       return '"';
    }
 
-   public static String quote(Connection conn, Object str)
+   public static String getDbType(Connection conn)
    {
       String connstr = conn.toString().toLowerCase();
       if (connstr.indexOf("mysql") > -1)
+         return "mysql";
+      if (connstr.indexOf("postgres") > -1)
+         return "postgres";
+      if (connstr.indexOf("h2") > -1)
+         return "h2";
+      if (connstr.indexOf("sqlserver") > -1)
+         return "sqlserver";
+
+      return "unknown";
+   }
+
+   public static String quote(Connection conn, Object str)
+   {
+      String dbtype = getDbType(conn);
+      if ("mysql".equals(dbtype))
+      {
          return "`" + str + "`";
+      }
 
       return "\"" + str + "\"";
    }
@@ -465,13 +485,14 @@ public class JdbcUtils
       return execute(conn, sql, values.toArray());
    }
 
-   //note this was parameterized with "List<Map> rows" but could not figure out 
-   //how to get compiler to accept passing in a Rows object without removing <Map>
-   public static void insertMaps(Connection conn, String tableName, List rows) throws Exception
+   public static List insertMaps(Connection conn, String tableName, List maps) throws Exception
    {
+      List<Map<String, Object>> rows = (List<Map<String, Object>>) maps;
+
+      List returnKeys = new ArrayList();
       LinkedHashSet keySet = new LinkedHashSet();
 
-      for (Map row : ((List<Map>) rows))
+      for (Map row : rows)
       {
          keySet.addAll(row.keySet());
       }
@@ -480,12 +501,12 @@ public class JdbcUtils
       String sql = buildInsertSQL(conn, tableName, keys.toArray());
 
       Exception ex = null;
-      PreparedStatement stmt = conn.prepareStatement(sql);
+      PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
       try
       {
          notifyBefore("insertMaps", sql, rows);
 
-         for (Map row : ((List<Map>) rows))
+         for (Map row : rows)
          {
             for (int i = 0; i < keys.size(); i++)
             {
@@ -495,6 +516,11 @@ public class JdbcUtils
             stmt.addBatch();
          }
          stmt.executeBatch();
+         ResultSet rs = stmt.getGeneratedKeys();
+         while (rs.next())
+         {
+            returnKeys.add(rs.getObject(1));
+         }
       }
       catch (Exception e)
       {
@@ -506,6 +532,7 @@ public class JdbcUtils
          JdbcUtils.close(stmt);
          notifyAfter("insertMap", sql, rows, ex, null);
       }
+      return returnKeys;
    }
 
    public static void insert(Connection conn, Object o) throws Exception
@@ -706,7 +733,134 @@ public class JdbcUtils
    +------------------------------------------------------------------------------+
     */
 
-   public static Object h2Upsert(Connection conn, String tableName, Index index, Map<String, Object> row) throws Exception
+   /**
+    * Batches <code>rows</code> into groups containing identical keys and then 
+    * inserts rows that are missing indexCols key values or attempts an upsert
+    * for rows that have the key values...the row could have the key but still 
+    * not exist in the db in cases where the key is not an autoincrement number.
+    * 
+    * @param conn
+    * @param tableName
+    * @param indexCols
+    * @param rows
+    * @return
+    * @throws Exception
+    */
+   public static List upsert(Connection conn, String tableName, List<String> indexCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List returnKeys = new ArrayList();
+      if (rows.isEmpty())
+         return returnKeys;
+
+      List<Map<String, Object>> inserts = new ArrayList();
+      List<Map<String, Object>> upserts = new ArrayList();
+
+      for (Map row : rows)
+      {
+         boolean hasKeys = true;
+
+         for (String indexCol : indexCols)
+         {
+            if (Utils.empty(row.get(indexCol)))
+            {
+               hasKeys = false;
+               break;
+            }
+         }
+
+         if (!hasKeys)
+            inserts.add(row);
+         else
+            upserts.add(row);
+      }
+
+      //-- first insert rows that do not have values for the provided index column.
+      //-- there is no way it could be an update without a key
+      Set cols = null;
+      List<Map<String, Object>> batch = new ArrayList();
+      for (Map row : inserts)
+      {
+         if (cols == null)
+         {
+            cols = row.keySet();
+         }
+         else if (CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
+         {
+            cols = row.keySet();
+            returnKeys.addAll(insertMaps(conn, tableName, batch));
+            batch.clear();
+         }
+
+         batch.add(row);
+      }
+      if (batch.size() > 0)
+      {
+         returnKeys.addAll(insertMaps(conn, tableName, batch));
+         batch.clear();
+      }
+
+      //-- you can only batch upsert rows together if they share the same key set 
+      //-- otherwise you may end up unintentionally nulling out cols from some rows
+      cols = null;
+      batch.clear();
+      for (Map row : upserts)
+      {
+         if (cols == null)
+         {
+            cols = row.keySet();
+         }
+         else if (CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
+         {
+            cols = row.keySet();
+            returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+            batch.clear();
+         }
+
+         batch.add(row);
+      }
+      if (batch.size() > 0)
+      {
+         returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+         batch.clear();
+      }
+
+      if(returnKeys.size() != rows.size())
+         throw new ApiException("Return key size does not equal supplied row size.");
+      
+      return returnKeys;
+   }
+
+   public static List upsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   {
+      String type = getDbType(conn);
+
+      switch (type)
+      {
+         case "mysql":
+            return mysqlUpsert(conn, tableName, idxCols, rows);
+
+         case "postgres":
+            return postgresUpsert(conn, tableName, idxCols, rows);
+
+         case "sqlserver":
+            return sqlserverUpsert(conn, tableName, idxCols, rows);
+
+         default :
+            return h2Upsert(conn, tableName, idxCols, rows);
+      }
+   }
+
+   public static List h2Upsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List returnKeys = new ArrayList();
+      for (Map row : rows)
+      {
+         returnKeys.add(h2Upsert(conn, tableName, idxCols, row));
+      }
+      return returnKeys;
+   }
+
+   public static Object h2Upsert(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
    {
       String sql = "";
 
@@ -719,10 +873,10 @@ public class JdbcUtils
       }
 
       String keyCols = "";
-      for (int i = 0; i < index.size(); i++)
+      for (int i = 0; i < idxCols.size(); i++)
       {
-         keyCols += quote(conn, index.getColumn(i).getColumnName());
-         if (i < index.size() - 1)
+         keyCols += quote(conn, idxCols.get(i));
+         if (i < idxCols.size() - 1)
             keyCols += ", ";
       }
 
@@ -746,10 +900,10 @@ public class JdbcUtils
       }
    }
 
-   public static List<String> mysqlUpsert(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
+   public static List mysqlUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
-      List<String> primaryKeys = new ArrayList<String>();
+      List returnKeys = new ArrayList();
 
       for (Map row : rows)
       {
@@ -757,7 +911,7 @@ public class JdbcUtils
       }
 
       List<String> keys = new ArrayList(keySet);
-      String sql = buildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
+      String sql = mysqlBuildInsertOnDuplicateKeySQL(conn, tableName, keys.toArray());
 
       Exception ex = null;
       PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -787,17 +941,16 @@ public class JdbcUtils
          ResultSet rs = stmt.getGeneratedKeys();
          while (rs.next())
          {
-
             String key = rs.getString(1);
-            primaryKeys.add(key);
+            returnKeys.add(key);
          }
          JdbcUtils.close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
       }
-      return primaryKeys;
+      return returnKeys;
    }
 
-   public static String buildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
+   public static String mysqlBuildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
    {
       StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
       sql.append(" ON DUPLICATE KEY UPDATE ");
@@ -809,6 +962,165 @@ public class JdbcUtils
             sql.append(", ");
       }
       return sql.toString();
+   }
+
+   /**
+    * https://stackoverflow.com/questions/17267417/how-to-upsert-merge-insert-on-duplicate-update-in-postgresql
+    * 
+    * @param conn
+    * @param tableName
+    * @param rows
+    * @return
+    * @throws Exception
+    */
+   public static List postgresUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List returnKeys = new ArrayList();
+
+      List<String> cols = new ArrayList(rows.get(0).keySet());
+
+      StringBuffer buff = new StringBuffer(buildInsertSQL(conn, tableName, cols.toArray()));
+      buff.append("\r\n ON CONFLICT (");
+      for (int i = 0; i < idxCols.size(); i++)
+      {
+         buff.append(quote(conn, idxCols.get(i)));
+         if (i < idxCols.size() - 1)
+            buff.append(", ");
+      }
+      buff.append(") DO UPDATE SET ");
+      for (int i = 0; i < cols.size(); i++)
+      {
+         buff.append("\r\n ").append(quote(conn, cols.get(i))).append(" = EXCLUDED." + cols.get(i));
+         if (i < cols.size() - 1)
+            buff.append(", ");
+      }
+
+      Exception ex = null;
+      String sql = buff.toString();
+      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+      try
+      {
+         notifyBefore("upsert", sql, rows);
+
+         for (Map<String, Object> row : rows)
+         {
+            for (int i = 0; i < cols.size(); i++)
+            {
+               Object value = row.get(cols.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1, value);
+            }
+            stmt.addBatch();
+         }
+         stmt.executeBatch();
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("upsert", sql, rows, ex);
+         throw e;
+      }
+      finally
+      {
+         ResultSet rs = stmt.getGeneratedKeys();
+         while (rs.next())
+         {
+
+            String key = rs.getString(1);
+            returnKeys.add(key);
+         }
+         JdbcUtils.close(stmt);
+         notifyAfter("upsert", sql, rows, ex, null);
+      }
+      return returnKeys;
+   }
+
+   /**
+    * https://stackoverflow.com/questions/108403/solutions-for-insert-or-update-on-sql-server
+    * @param sql
+    * @return
+    */
+   public static List sqlserverUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List returnKeys = new ArrayList();
+      for (Map row : rows)
+      {
+         returnKeys.add(sqlserverUpsert(conn, tableName, idxCols, row));
+      }
+      return returnKeys;
+   }
+
+   public static Object sqlserverUpsert(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
+   {
+      String returnKey = null;
+
+      boolean hasIdx = true;
+      for (String col : idxCols)
+      {
+         if (Utils.empty(row.get(col)))
+         {
+            hasIdx = false;
+            break;
+         }
+      }
+
+      Object[] keys = idxCols.toArray();
+      Object[] cols = row.keySet().toArray();
+
+      String sql = buildInsertSQL(conn, tableName, cols);
+      if (hasIdx)
+      {
+         sql = buildUpdateSQL(conn, tableName, cols, keys) + "\r\n IF @@ROWCOUNT = 0 \r\n " + sql;
+      }
+
+      Exception ex = null;
+
+      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+      try
+      {
+         notifyBefore("upsert", sql, row);
+
+         int colNum = 1;
+
+         for (Object col : cols)
+         {
+            Object value = row.get(col);
+            ((PreparedStatement) stmt).setObject(colNum++, value);
+         }
+
+         if (hasIdx)
+         {
+            for (Object key : keys)
+            {
+               Object value = row.get(key);
+               ((PreparedStatement) stmt).setObject(colNum++, value);
+            }
+
+            for (Object col : cols)
+            {
+               Object value = row.get(col);
+               ((PreparedStatement) stmt).setObject(colNum++, value);
+            }
+         }
+         stmt.execute();
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("upsert", sql, row, ex);
+         throw e;
+      }
+      finally
+      {
+         ResultSet rs = stmt.getGeneratedKeys();
+         if (rs.next())
+         {
+
+            returnKey = rs.getString(1);
+         }
+         JdbcUtils.close(stmt);
+         notifyAfter("upsert", sql, row, ex, null);
+      }
+      return returnKey;
    }
 
    /*

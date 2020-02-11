@@ -141,7 +141,7 @@ public class DynamoDbEngineFactory
       //            public void onStartup(Engine service)
       //            {
       io.inversion.cloud.model.Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
-      orders.withCollectionName("orders");
+      orders.withName("orders");
 
       orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id 
       orders.getPropertyByColumnName("sk").withJsonName("type");
