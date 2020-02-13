@@ -16,91 +16,205 @@
  */
 package io.inversion.cloud.jdbc.utils;
 
+import java.net.URL;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.Test;
 
-import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
 import junit.framework.TestCase;
 
 public class JdbcUtilsIntegTest extends TestCase
 {
-   @Test
-   public void h2Upsert_oneNewRecordOneOldRecord_twoKeysReturned(Connection conn, String tableName, Index index, List<Map<String, Object>> rows) throws Exception
-   {
-      //TODO: implement me
-   }
 
    @Test
-   public void mysqlUpsert_oneNewRecordOneOldRecord_twoKeysReturned(Connection conn, String tableName, List<Map<String, Object>> rows) throws Exception
+   public void test_h2Upsert() throws Exception
    {
-      //TODO: implement me
+      Class.forName("org.h2.Driver").newInstance();
+      Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";IGNORECASE=TRUE", "sa", "");
+      //Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";MODE=MySQL;DATABASE_TO_LOWER=TRUE", "sa", "");
+      //Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE", "sa", "");
+
+      runTests(conn, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+
+      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT ContactName FROM customers WHERE CustomerID = 'ALFKI'"));
+      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT CompanyName FROM customers WHERE CustomerID = 'ALFKI'"));
+      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT CompanyName FROM customers WHERE CustomerID = 'ANATR'"));
+      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT ContactName FROM customers WHERE CustomerID = 'ANATR'"));
+      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT CompanyName FROM customers WHERE CustomerID = 'ZZZZ5'"));
+
    }
 
+   /**
+    * Integration Environment Setup...
+    * 
+    * docker rm mysql57
+    * docker run --name mysql57 -p 3307:3306 -e MYSQL_ROOT_PASSWORD=password -d mysql/mysql-server:5.7
+    * docker exec -it mysql57 bash
+    * mysql -h localhost -u root -p
+    * GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
+    * FLUSH PRIVILEGES;
+    * CREATE DATABASE northwind;
+    * 
+    * @throws Exception
+    */
    @Test
-   public void postgresUpsert_oneNewRecordOneOldRecord_twoKeysReturned(Connection conn, String tableName, Index index, List<Map<String, Object>> rows) throws Exception
+   public void test_mysqlUpsert() throws Exception
    {
-      //TODO: implement me
+      Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+      Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/", "root", "password");
+      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS northwind");
+      JdbcUtils.execute(conn, "CREATE DATABASE northwind");
+      conn.close();
+
+      conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/northwind?sessionVariables=sql_mode=ANSI_QUOTES", "root", "password");
+      runTests(conn, JdbcDb.class.getResource("northwind-mysql.ddl").toString());
+
+      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
+
    }
 
+   /**
+    * Postgres 9.5+ required for upsert
+    * https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on
+    * 
+    * docker run --name postgres95 -p 5433:5432 -e POSTGRES_PASSWORD=password -d postgres:9.5
+    * @throws Exception
+    */
    @Test
-   public void sqlserverUpsert_oneNewRecordOneOldRecord_twoKeysReturned(Connection conn, String tableName, Index index, List<Map<String, Object>> rows) throws Exception
+   public void test_postgresUpsert() throws Exception
    {
-      //TODO: implement me
+      Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/", "postgres", "password");
+      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS northwind");
+      JdbcUtils.execute(conn, "CREATE DATABASE northwind");
+      conn.close();
+
+      conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/northwind", "postgres", "password");
+      runTests(conn, JdbcDb.class.getResource("northwind-postgres.ddl").toString());
+
+      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
    }
 
+   /**
+    * docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=password' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest
+    */
    //   @Test
-   //   public void upsert_test() throws Exception
+   //   public void test_sqlserverlUpsert() throws Exception
    //   {
-   //      Engine engine = JdbcDbApiFactory.service(true, true);
-   //      Response res = null;
-   //
-   //      JdbcDb mysql = (JdbcDb) engine.getApi("northwind").getDb("mysql");
-   //
-   //      if (mysql.isType("mysql"))
-   //      {
-   //         Connection conn = mysql.getConnection();
-   //         try
-   //         {
-   //            Rows rows = JdbcUtils.selectRows(conn, "SELECT * FROM Orders WHERE OrderID in(10257, 10395, 10476, 10486)");
-   //
-   //            for (Row row : rows)
-   //            {
-   //               row.put("shipaddress", "testing_upsert");
-   //            }
-   //
-   //            Map clone1 = new HashMap(rows.get(0));
-   //            clone1.remove("OrderID");
-   //
-   //            Map clone2 = new HashMap(rows.get(0));
-   //            clone2.put("OrderID", 1);
-   //
-   //            List<Map<String, Object>> toUpsert = new ArrayList(rows);
-   //            toUpsert.add(clone1);
-   //            toUpsert.add(clone2);
-   //            List generatedKeys = JdbcUtils.upsert(conn, "Orders", mysql.getCollection("Orders").getPrimaryIndex().getColumnNames(), toUpsert);
-   //
-   //            //[10257, 10395, 10476, 10486, 222001, 1]
-   //
-   //            assertEquals("11078", generatedKeys.get(4));//should be next auto increment key
-   //            assertEquals("1", generatedKeys.get(5));
-   //         }
-   //         finally
-   //         {
-   //            conn.close();
-   //         }
-   //
-   //      }
-   //
+   //      runTests("jdbc:sqlserver://<server>:1433;databaseName=northwind", "admin", "auRsAyUuakz98RjJ", JdbcDb.class.getResource("northwind-postgres.ddl").toString());
    //   }
+
+   public void runTests(Connection conn, String ddlUrl) throws Exception
+   {
+      if (ddlUrl != null)
+      {
+         JdbcUtils.runDdl(conn, new URL(ddlUrl).openStream());
+      }
+
+      try
+      {
+         runTests(conn);
+      }
+      finally
+      {
+         //JdbcUtils.close(conn);
+      }
+
+   }
+
+   public void runTests(Connection conn) throws Exception
+   {
+      List returnedKeys = null;
+
+      returnedKeys = JdbcUtils.upsert(conn, //
+            "orders", //
+            list("OrderID"), //
+            rows(//
+                  row("OrderID", 10248, "ShipCountry", "USA") //existing record w/ ShipCountry = 'France'
+                  , row("OrderID", 10249, "ShipPostalCode", "00000") //existing record w/ ShipCountry = 'Germany'
+                  , row("OrderID", 12000, "CustomerID", "RATTC", "ShipCity", "Atlanta", "ShipCountry", "USA")//this is new                  
+
+            )); //ShipCountry was 'Brazil
+
+      assertEquals("10248", returnedKeys.get(0) + "");
+      assertEquals("10249", returnedKeys.get(1) + "");
+      assertEquals("12000", returnedKeys.get(2) + "");
+
+      //      assertEquals("USA", JdbcUtils.selectValue(conn, "SELECT ShipCountry FROM Orders WHERE OrderId = 10248"));
+      //      assertEquals("Germany", JdbcUtils.selectValue(conn, "SELECT ShipCountry FROM Orders WHERE OrderId = 10249"));
+      //      assertEquals("00000", JdbcUtils.selectValue(conn, "SELECT ShipPostalCode FROM Orders WHERE OrderId = 10249"));
+      //      assertEquals("Atlanta", JdbcUtils.selectValue(conn, "SELECT ShipCity FROM Orders WHERE OrderId = 12000"));
+
+      returnedKeys = JdbcUtils.upsert(conn, //
+            "customers", //
+            list("CustomerID"), //
+            rows(//
+                  row("CustomerID", "ZZZZ1", "CompanyName", "John Doe Co ZZZZ1")//
+                  , row("CustomerID", "ZZZZ2", "CompanyName", "John Doe Co ZZZZ2")//
+                  , row("CustomerID", "ZZZZ3", "CompanyName", "John Doe Co ZZZZ3")//
+                  , row("CustomerID", "ALFKI", "CompanyName", "UPDATED Alfreds Futterkiste")//
+                  , row("CustomerID", "ZZZZ4", "CompanyName", "John Doe Co ZZZZ4")//
+                  , row("CustomerID", "ANATR", "CompanyName", "UPDATED Ana Trujillo Emparedados", "ContactName", "UPDATED Ana")//
+                  , row("CustomerID", "ZZZZ5", "CompanyName", "John Doe Co ZZZZ5")//
+            ));
+
+      assertEquals("ZZZZ1", returnedKeys.get(0) + "");
+      assertEquals("ZZZZ2", returnedKeys.get(1) + "");
+      assertEquals("ZZZZ3", returnedKeys.get(2) + "");
+      assertEquals("ALFKI", returnedKeys.get(3) + "");
+      assertEquals("ZZZZ4", returnedKeys.get(4) + "");
+      assertEquals("ANATR", returnedKeys.get(5) + "");
+      assertEquals("ZZZZ5", returnedKeys.get(6) + "");
+
+      //      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      //      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
+      //      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      //      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
+      //      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
+
+   }
+
+   Map<String, Object> row(Object... keyValues)
+   {
+      Map row = new LinkedHashMap();
+      for (int i = 0; i < keyValues.length - 1; i += 2)
+      {
+         row.put(keyValues[i], keyValues[i + 1]);
+      }
+      return row;
+   }
+
+   List<Map<String, Object>> rows(Map... maps)
+   {
+      ArrayList rows = new ArrayList();
+      for (Map row : maps)
+      {
+         rows.add(row);
+      }
+      return rows;
+   }
+
+   List list(String... values)
+   {
+      ArrayList list = new ArrayList();
+      for (Object value : values)
+      {
+         list.add(value);
+      }
+      return list;
+   }
 }

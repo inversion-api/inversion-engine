@@ -18,6 +18,4 @@ dependencies {
     compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
 
     compile group: 'com.zaxxer', name: 'HikariCP', version: '3.3.+'   
-    compile group: 'com.h2database', name: 'h2', version: '1.4.+'
-
 }

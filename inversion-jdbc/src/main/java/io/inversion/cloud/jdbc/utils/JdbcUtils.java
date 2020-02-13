@@ -70,15 +70,6 @@ public class JdbcUtils
 
    static List<SqlListener> listeners = new ArrayList();
 
-   public static char colQuote(Connection conn)
-   {
-      String connstr = conn.toString().toLowerCase();
-      if (connstr.indexOf("mysql") > -1)
-         return '`';
-
-      return '"';
-   }
-
    public static String getDbType(Connection conn)
    {
       String connstr = conn.toString().toLowerCase();
@@ -94,15 +85,19 @@ public class JdbcUtils
       return "unknown";
    }
 
-   public static String quote(Connection conn, Object str)
+   public static char colQuote(Connection conn)
    {
-      String dbtype = getDbType(conn);
-      if ("mysql".equals(dbtype))
-      {
-         return "`" + str + "`";
-      }
+      String connstr = conn.toString().toLowerCase();
+      if (connstr.indexOf("mysql") > -1 || connstr.indexOf("h2") > -1)
+         return '`';
 
-      return "\"" + str + "\"";
+      return '"';
+   }
+
+   public static String quoteCol(Connection conn, Object str)
+   {
+      char c = colQuote(conn);
+      return c + str.toString() + c;
    }
 
    public static void addSqlListener(SqlListener listener)
@@ -465,7 +460,7 @@ public class JdbcUtils
    public static String buildInsertSQL(Connection conn, String tableName, Object[] columnNameArray)
    {
       StringBuffer sql = new StringBuffer("INSERT INTO ");
-      sql.append(quote(conn, tableName)).append(" (");
+      sql.append(quoteCol(conn, tableName)).append(" (");
       sql.append(getColumnStr(conn, columnNameArray)).append(") VALUES (");
       sql.append(getQuestionMarkStr(columnNameArray)).append(")");
 
@@ -571,7 +566,7 @@ public class JdbcUtils
             //if (value != null)
             {
                values.add(value);
-               namesClause.append(quote(conn, name)).append(",");
+               namesClause.append(quoteCol(conn, name)).append(",");
                valuesClause.append("?,");
             }
          }
@@ -633,7 +628,7 @@ public class JdbcUtils
       // UPDATE tmtuple SET model_id = ? , subj = ? , pred = ? , obj = ? , declared = ?
 
       StringBuffer sql = new StringBuffer("UPDATE ");
-      sql.append(quote(conn, tableName)).append(" SET ");
+      sql.append(quoteCol(conn, tableName)).append(" SET ");
       sql.append(getWhereColumnStr(conn, setColumnNameArray, ","));
       if (whereColumnNames != null && whereColumnNames.length > 0)
       {
@@ -678,7 +673,7 @@ public class JdbcUtils
       StringBuffer sql = null;
       try
       {
-         sql = new StringBuffer("UPDATE ").append(quote(conn, tableName)).append(" SET ");
+         sql = new StringBuffer("UPDATE ").append(quoteCol(conn, tableName)).append(" SET ");
 
          Object id = null;
 
@@ -694,7 +689,7 @@ public class JdbcUtils
             else
             {
                values.add(f.get(o));
-               sql.append(quote(conn, f.getName())).append(" = ?");
+               sql.append(quoteCol(conn, f.getName())).append(" = ?");
                if (i < fields.size() - 1)
                {
                   sql.append(',');
@@ -824,43 +819,50 @@ public class JdbcUtils
          batch.clear();
       }
 
-      if(returnKeys.size() != rows.size())
-         throw new ApiException("Return key size does not equal supplied row size.");
-      
       return returnKeys;
    }
 
-   public static List upsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static List upsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       String type = getDbType(conn);
+      List returnKeys = null;
 
       switch (type)
       {
          case "mysql":
-            return mysqlUpsert(conn, tableName, idxCols, rows);
+            returnKeys = mysqlUpsertBatch(conn, tableName, idxCols, rows);
+            break;
 
          case "postgres":
-            return postgresUpsert(conn, tableName, idxCols, rows);
+            returnKeys = postgresUpsertBatch(conn, tableName, idxCols, rows);
+            break;
 
          case "sqlserver":
-            return sqlserverUpsert(conn, tableName, idxCols, rows);
+            returnKeys = sqlserverUpsertBatch(conn, tableName, idxCols, rows);
+            break;
 
          default :
-            return h2Upsert(conn, tableName, idxCols, rows);
+            returnKeys = h2UpsertBatch(conn, tableName, idxCols, rows);
+            break;
       }
+
+      if (returnKeys.size() != rows.size())
+         throw new ApiException("Return key size does not equal supplied row size.");
+
+      return returnKeys;
    }
 
-   public static List h2Upsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static List h2UpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       List returnKeys = new ArrayList();
       for (Map row : rows)
       {
-         returnKeys.add(h2Upsert(conn, tableName, idxCols, row));
+         returnKeys.add(h2UpsertBatch(conn, tableName, idxCols, row));
       }
       return returnKeys;
    }
 
-   public static Object h2Upsert(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
+   static Object h2UpsertBatch(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
    {
       String sql = "";
 
@@ -875,12 +877,12 @@ public class JdbcUtils
       String keyCols = "";
       for (int i = 0; i < idxCols.size(); i++)
       {
-         keyCols += quote(conn, idxCols.get(i));
+         keyCols += quoteCol(conn, idxCols.get(i));
          if (i < idxCols.size() - 1)
             keyCols += ", ";
       }
 
-      sql += " MERGE INTO " + quote(conn, tableName) + " (" + JdbcUtils.getColumnStr(conn, cols) + ")  KEY(" + keyCols + ") VALUES (" + getQuestionMarkStr(vals.size()) + ")";
+      sql += " MERGE INTO " + quoteCol(conn, tableName) + " (" + JdbcUtils.getColumnStr(conn, cols) + ")  KEY(" + keyCols + ") VALUES (" + getQuestionMarkStr(vals.size()) + ")";
 
       Exception ex = null;
       try
@@ -900,7 +902,7 @@ public class JdbcUtils
       }
    }
 
-   public static List mysqlUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static List mysqlUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
       List returnKeys = new ArrayList();
@@ -932,6 +934,8 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
+         System.out.println(sql);
+         e.printStackTrace();
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
@@ -939,10 +943,25 @@ public class JdbcUtils
       finally
       {
          ResultSet rs = stmt.getGeneratedKeys();
+         boolean hadNext = false;
          while (rs.next())
          {
+            //this was an autogenerated key
+            hadNext = true;
             String key = rs.getString(1);
             returnKeys.add(key);
+         }
+         if (!hadNext)
+         {
+            //this was not an autogenerated key
+            for (Map row : rows)
+            {
+               Object key = row.get(idxCols.get(0));
+               if (key == null)
+                  throw new RuntimeException("Unable to determine key value for upserted row.");
+
+               returnKeys.add(key);
+            }
          }
          JdbcUtils.close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
@@ -950,7 +969,7 @@ public class JdbcUtils
       return returnKeys;
    }
 
-   public static String mysqlBuildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
+   static String mysqlBuildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
    {
       StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
       sql.append(" ON DUPLICATE KEY UPDATE ");
@@ -973,7 +992,7 @@ public class JdbcUtils
     * @return
     * @throws Exception
     */
-   public static List postgresUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static List postgresUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       List returnKeys = new ArrayList();
 
@@ -983,14 +1002,14 @@ public class JdbcUtils
       buff.append("\r\n ON CONFLICT (");
       for (int i = 0; i < idxCols.size(); i++)
       {
-         buff.append(quote(conn, idxCols.get(i)));
+         buff.append(quoteCol(conn, idxCols.get(i)));
          if (i < idxCols.size() - 1)
             buff.append(", ");
       }
       buff.append(") DO UPDATE SET ");
       for (int i = 0; i < cols.size(); i++)
       {
-         buff.append("\r\n ").append(quote(conn, cols.get(i))).append(" = EXCLUDED." + cols.get(i));
+         buff.append("\r\n ").append(quoteCol(conn, cols.get(i))).append(" = EXCLUDED." + quoteCol(conn, cols.get(i)));
          if (i < cols.size() - 1)
             buff.append(", ");
       }
@@ -1015,6 +1034,7 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
+         System.out.println(sql);
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
@@ -1039,17 +1059,17 @@ public class JdbcUtils
     * @param sql
     * @return
     */
-   public static List sqlserverUpsert(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static List sqlserverUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       List returnKeys = new ArrayList();
       for (Map row : rows)
       {
-         returnKeys.add(sqlserverUpsert(conn, tableName, idxCols, row));
+         returnKeys.add(sqlserverUpsertBatch(conn, tableName, idxCols, row));
       }
       return returnKeys;
    }
 
-   public static Object sqlserverUpsert(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
+   static Object sqlserverUpsertBatch(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
    {
       String returnKey = null;
 
@@ -1137,7 +1157,7 @@ public class JdbcUtils
    public static int deleteRow(Connection conn, String table, String keyCol, Object keyVal) throws Exception
    {
       String sql = "";
-      sql += " DELETE FROM " + quote(conn, table);
+      sql += " DELETE FROM " + quoteCol(conn, table);
       sql += " WHERE " + keyCol + " = ?";
       Integer deletes = (Integer) execute(conn, sql, keyVal);
       if (deletes == null)
@@ -1154,7 +1174,7 @@ public class JdbcUtils
       }
 
       String sql = "";
-      sql += " DELETE FROM " + quote(conn, table);
+      sql += " DELETE FROM " + quoteCol(conn, table);
       sql += " WHERE " + keyCol + " in (" + getQuestionMarkStr(keyVals.length) + ")";
       Integer deletes = (Integer) execute(conn, sql, keyVals);
       if (deletes == null)
@@ -1175,7 +1195,7 @@ public class JdbcUtils
       StringBuffer sql = null;
       try
       {
-         sql = new StringBuffer("DELETE FROM ").append(quote(conn, tableName));
+         sql = new StringBuffer("DELETE FROM ").append(quoteCol(conn, tableName));
 
          Object id = null;
 
@@ -1272,18 +1292,12 @@ public class JdbcUtils
             {
                for (int i = 0; i < sql.length; i++)
                {
-                  //                  if (i % 100 == 0)
-                  //                     System.out.print("\r\n" + i + "/" + sql.length);
-                  //                  else
-                  //                     System.out.print(".");
-
                   try
                   {
                      stmt.execute(sql[i]);
                   }
                   catch (SQLException ex)
                   {
-                     //System.out.println("Error trying to run statement: " + ex.getMessage());
                      System.err.println("Error trying to run sql statement: \r\n" + sql[i] + "\r\n\r\n");
                      ex.printStackTrace();
                      throw ex;
@@ -1316,7 +1330,7 @@ public class JdbcUtils
 
       for (int i = 0; i < columnNameArray.length; i++)
       {
-         sb.append(quote(conn, columnNameArray[i]));
+         sb.append(quoteCol(conn, columnNameArray[i]));
          sb.append(" = ? ");
          if (i < columnNameArray.length - 1)
          {
@@ -1333,7 +1347,7 @@ public class JdbcUtils
 
       for (int i = 0; i < columnNameArray.length; i++)
       {
-         sb.append(quote(conn, columnNameArray[i]));
+         sb.append(quoteCol(conn, columnNameArray[i]));
          if (i < columnNameArray.length - 1)
          {
             sb.append(", ");
@@ -1406,7 +1420,7 @@ public class JdbcUtils
 
       for (int i = 0; i < columnNameArray.size(); i++)
       {
-         sb.append(quote(conn, columnNameArray.get(i)));
+         sb.append(quoteCol(conn, columnNameArray.get(i)));
          if (i < columnNameArray.size() - 1)
          {
             sb.append(", ");
