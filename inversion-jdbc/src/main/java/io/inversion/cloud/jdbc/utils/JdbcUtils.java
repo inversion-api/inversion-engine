@@ -81,6 +81,8 @@ public class JdbcUtils
          return "h2";
       if (connstr.indexOf("sqlserver") > -1)
          return "sqlserver";
+      if (connstr.indexOf("clientconnectionid") > -1)
+         return "sqlserver";
 
       return "unknown";
    }
@@ -231,6 +233,8 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
+         System.out.println(sql);
+         e.printStackTrace();
          notifyError("execute", sql, vals, e);
          ex = new Exception(e.getMessage() + " SQL=" + sql, Utils.getCause(e));
          throw ex;
@@ -482,6 +486,27 @@ public class JdbcUtils
 
    public static List insertMaps(Connection conn, String tableName, List maps) throws Exception
    {
+      if ("sqlserver".equalsIgnoreCase(getDbType(conn)) && maps.size() > 0)
+      {
+         //-- as of 2020 sqlserver does not seem to support getGeneratedKeys for multiple rows.
+         //-- 
+         //-- https://github.com/microsoft/mssql-jdbc/issues/358
+         //-- https://stackoverflow.com/questions/13641832/getgeneratedkeys-after-preparedstatement-executebatch/13642539#13642539
+         List returnKeys = new ArrayList();
+         for (Object map : maps)
+         {
+            returnKeys.addAll(insertMaps0(conn, tableName, Arrays.asList(map)));
+         }
+         return returnKeys;
+      }
+      else
+      {
+         return insertMaps0(conn, tableName, maps);
+      }
+   }
+
+   static List insertMaps0(Connection conn, String tableName, List maps) throws Exception
+   {
       List<Map<String, Object>> rows = (List<Map<String, Object>>) maps;
 
       List returnKeys = new ArrayList();
@@ -493,7 +518,19 @@ public class JdbcUtils
       }
 
       List<String> keys = new ArrayList(keySet);
-      String sql = buildInsertSQL(conn, tableName, keys.toArray());
+
+      StringBuffer buff = new StringBuffer("INSERT INTO ");
+      buff.append(quoteCol(conn, tableName)).append(" (");
+      buff.append(getColumnStr(conn, keys.toArray())).append(") VALUES \r\n");
+
+      for (int i = 0; i < maps.size(); i++)
+      {
+         buff.append("(").append(getQuestionMarkStr(keys.size())).append(")");
+         if (i < maps.size() - 1)
+            buff.append(",\r\n");
+      }
+
+      String sql = buff.toString();
 
       Exception ex = null;
       PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -501,20 +538,22 @@ public class JdbcUtils
       {
          notifyBefore("insertMaps", sql, rows);
 
+         int idx = 1;
          for (Map row : rows)
          {
-            for (int i = 0; i < keys.size(); i++)
+            for (String col : keys)
             {
-               Object value = row.get(keys.get(i));
-               ((PreparedStatement) stmt).setObject(i + 1, value);
+               Object value = row.get(col);
+               ((PreparedStatement) stmt).setObject(idx++, value);
             }
-            stmt.addBatch();
+
          }
-         stmt.executeBatch();
+         stmt.execute();
          ResultSet rs = stmt.getGeneratedKeys();
          while (rs.next())
          {
-            returnKeys.add(rs.getObject(1));
+            Object key = rs.getObject(1);
+            returnKeys.add(key);
          }
       }
       catch (Exception e)
@@ -529,6 +568,10 @@ public class JdbcUtils
          JdbcUtils.close(stmt);
          notifyAfter("insertMap", sql, rows, ex, null);
       }
+
+      if (returnKeys.size() != rows.size())
+         throw new RuntimeException("insertMaps() did not return generatedKeys for all rows");
+
       return returnKeys;
    }
 
@@ -771,18 +814,18 @@ public class JdbcUtils
             cols = row.keySet();
          }
 
-         if (hadKey != hasKey || CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
+         if (batch.size() > 0 && (hadKey != hasKey) || CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
          {
-            if (hasKey == 0)
+            if (hadKey == 0)
                returnKeys.addAll(insertMaps(conn, tableName, batch));
             else
                returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
 
-            cols = row.keySet();
             batch.clear();
          }
 
          hadKey = hasKey;
+         cols = row.keySet();
          batch.add(row);
       }
       if (batch.size() > 0)
@@ -1038,33 +1081,45 @@ public class JdbcUtils
       List returnKeys = new ArrayList();
       for (Map row : rows)
       {
-         returnKeys.add(sqlserverUpsertBatch(conn, tableName, idxCols, row));
+         Object key = sqlserverUpsertBatch(conn, tableName, idxCols, row);
+         if (key == null)
+            key = row.get(idxCols.get(0));
+
+         if (key == null)
+            throw new RuntimeException("Unable to determine primary key for upserted row: " + row);
+
+         returnKeys.add(key);
       }
       return returnKeys;
    }
 
+   /**
+    * UPDATE "orders" SET "CustomerID" = ? , "ShipCity" = ? , "ShipCountry" = ?  WHERE "OrderID" = ? 
+    * IF @@ROWCOUNT = 0 
+    *   INSERT INTO "orders" ("OrderID", "CustomerID", "ShipCity", "ShipCountry") VALUES (?,?,?,?)
+   
+    * @param conn
+    * @param tableName
+    * @param idxCols
+    * @param row
+    * @return
+    * @throws Exception
+    */
    static Object sqlserverUpsertBatch(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
    {
       String returnKey = null;
-
-      boolean hasIdx = true;
-      for (String col : idxCols)
-      {
-         if (Utils.empty(row.get(col)))
-         {
-            hasIdx = false;
-            break;
-         }
-      }
-
       Object[] keys = idxCols.toArray();
-      Object[] cols = row.keySet().toArray();
+      Object[] insertCols = row.keySet().toArray();
 
-      String sql = buildInsertSQL(conn, tableName, cols);
-      if (hasIdx)
-      {
-         sql = buildUpdateSQL(conn, tableName, cols, keys) + "\r\n IF @@ROWCOUNT = 0 \r\n " + sql;
-      }
+      List temp = new ArrayList(row.keySet());
+      temp.removeAll(idxCols);
+
+      Object[] updateCols = temp.toArray();
+
+      String sql = buildUpdateSQL(conn, tableName, updateCols, keys);
+
+      sql += "\r\n IF @@ROWCOUNT = 0 ";
+      sql += "\r\n " + buildInsertSQL(conn, tableName, insertCols);
 
       Exception ex = null;
 
@@ -1074,46 +1129,45 @@ public class JdbcUtils
          notifyBefore("upsert", sql, row);
 
          int colNum = 1;
-
-         for (Object col : cols)
+         for (Object col : updateCols)
+         {
+            Object value = row.get(col);
+            ((PreparedStatement) stmt).setObject(colNum++, value);
+         }
+         for (Object key : keys)
+         {
+            Object value = row.get(key);
+            ((PreparedStatement) stmt).setObject(colNum++, value);
+         }
+         for (Object col : insertCols)
          {
             Object value = row.get(col);
             ((PreparedStatement) stmt).setObject(colNum++, value);
          }
 
-         if (hasIdx)
-         {
-            for (Object key : keys)
-            {
-               Object value = row.get(key);
-               ((PreparedStatement) stmt).setObject(colNum++, value);
-            }
+         System.out.println(sql + " - " + row);
 
-            for (Object col : cols)
-            {
-               Object value = row.get(col);
-               ((PreparedStatement) stmt).setObject(colNum++, value);
-            }
+         stmt.executeUpdate();
+         ResultSet rs = stmt.getGeneratedKeys();
+         if (rs.next())
+         {
+            returnKey = rs.getString(1);
          }
-         stmt.execute();
       }
       catch (Exception e)
       {
+         System.out.println(sql);
+         e.printStackTrace();
          ex = e;
          notifyError("upsert", sql, row, ex);
          throw e;
       }
       finally
       {
-         ResultSet rs = stmt.getGeneratedKeys();
-         if (rs.next())
-         {
-
-            returnKey = rs.getString(1);
-         }
          JdbcUtils.close(stmt);
          notifyAfter("upsert", sql, row, ex, null);
       }
+
       return returnKey;
    }
 
