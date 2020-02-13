@@ -38,8 +38,6 @@ public class JdbcUtilsIntegTest extends TestCase
    {
       Class.forName("org.h2.Driver").newInstance();
       Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";IGNORECASE=TRUE", "sa", "");
-      //Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";MODE=MySQL;DATABASE_TO_LOWER=TRUE", "sa", "");
-      //Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE", "sa", "");
 
       runTests(conn, JdbcDb.class.getResource("northwind-h2.ddl").toString());
 
@@ -138,6 +136,8 @@ public class JdbcUtilsIntegTest extends TestCase
 
    public void runTests(Connection conn) throws Exception
    {
+      System.out.println();
+
       List returnedKeys = null;
 
       returnedKeys = JdbcUtils.upsert(conn, //
@@ -146,13 +146,19 @@ public class JdbcUtilsIntegTest extends TestCase
             rows(//
                   row("OrderID", 10248, "ShipCountry", "USA") //existing record w/ ShipCountry = 'France'
                   , row("OrderID", 10249, "ShipPostalCode", "00000") //existing record w/ ShipCountry = 'Germany'
-                  , row("OrderID", 12000, "CustomerID", "RATTC", "ShipCity", "Atlanta", "ShipCountry", "USA")//this is new                  
+                  , row("OrderID", 12000, "CustomerID", "RATTC", "ShipCity", "Atlanta", "ShipCountry", "USA")//this is new
+                  , row("CustomerID", "RATTC", "ShipCity", "Atlanta", "ShipCountry", "USA")//this is new
+                  , row("CustomerID", "RATTC", "ShipCity", "Atlanta", "ShipCountry", "USA")//this is new
 
             )); //ShipCountry was 'Brazil
+
+      System.out.println(returnedKeys);
 
       assertEquals("10248", returnedKeys.get(0) + "");
       assertEquals("10249", returnedKeys.get(1) + "");
       assertEquals("12000", returnedKeys.get(2) + "");
+      assertTrue("12001".equals(returnedKeys.get(3) + "") || "1".equals(returnedKeys.get(3) + ""));
+      assertTrue("12002".equals(returnedKeys.get(4) + "") || "2".equals(returnedKeys.get(4) + ""));
 
       //      assertEquals("USA", JdbcUtils.selectValue(conn, "SELECT ShipCountry FROM Orders WHERE OrderId = 10248"));
       //      assertEquals("Germany", JdbcUtils.selectValue(conn, "SELECT ShipCountry FROM Orders WHERE OrderId = 10249"));

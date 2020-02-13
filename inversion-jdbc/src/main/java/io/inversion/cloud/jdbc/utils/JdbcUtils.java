@@ -519,6 +519,8 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
+         System.out.println(sql);
+         e.printStackTrace();
          ex = e;
          notifyError("insertMaps", sql, rows, ex);
       }
@@ -747,76 +749,48 @@ public class JdbcUtils
       if (rows.isEmpty())
          return returnKeys;
 
-      List<Map<String, Object>> inserts = new ArrayList();
-      List<Map<String, Object>> upserts = new ArrayList();
-
+      Set cols = null;
+      int hadKey = -1;
+      List<Map<String, Object>> batch = new ArrayList();
       for (Map row : rows)
       {
-         boolean hasKeys = true;
-
+         int hasKey = 1;
          for (String indexCol : indexCols)
          {
             if (Utils.empty(row.get(indexCol)))
             {
-               hasKeys = false;
+               hasKey = 0;
                break;
             }
          }
+         if (hadKey == -1)
+            hadKey = hasKey;
 
-         if (!hasKeys)
-            inserts.add(row);
-         else
-            upserts.add(row);
-      }
-
-      //-- first insert rows that do not have values for the provided index column.
-      //-- there is no way it could be an update without a key
-      Set cols = null;
-      List<Map<String, Object>> batch = new ArrayList();
-      for (Map row : inserts)
-      {
          if (cols == null)
          {
             cols = row.keySet();
          }
-         else if (CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
+
+         if (hadKey != hasKey || CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
          {
+            if (hasKey == 0)
+               returnKeys.addAll(insertMaps(conn, tableName, batch));
+            else
+               returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+
             cols = row.keySet();
+            batch.clear();
+         }
+
+         hadKey = hasKey;
+         batch.add(row);
+      }
+      if (batch.size() > 0)
+      {
+         if (hadKey == 0)
             returnKeys.addAll(insertMaps(conn, tableName, batch));
-            batch.clear();
-         }
-
-         batch.add(row);
-      }
-      if (batch.size() > 0)
-      {
-         returnKeys.addAll(insertMaps(conn, tableName, batch));
-         batch.clear();
-      }
-
-      //-- you can only batch upsert rows together if they share the same key set 
-      //-- otherwise you may end up unintentionally nulling out cols from some rows
-      cols = null;
-      batch.clear();
-      for (Map row : upserts)
-      {
-         if (cols == null)
-         {
-            cols = row.keySet();
-         }
-         else if (CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
-         {
-            cols = row.keySet();
+         else
             returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
-            batch.clear();
-         }
-
-         batch.add(row);
-      }
-      if (batch.size() > 0)
-      {
-         returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
-         batch.clear();
       }
 
       return returnKeys;

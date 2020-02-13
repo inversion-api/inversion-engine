@@ -156,7 +156,7 @@ ALTER TABLE public.order_details OWNER TO postgres;
 --
 
 CREATE TABLE orders (
-    "OrderID" smallint NOT NULL,
+    "OrderID" SERIAL PRIMARY KEY,
     "CustomerID" bpchar,
     "EmployeeID" smallint,
     "OrderDate" date,
@@ -905,8 +905,8 @@ ALTER TABLE ONLY order_details
 -- Name: pk_orders; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
-ALTER TABLE ONLY orders
-    ADD CONSTRAINT pk_orders PRIMARY KEY ("OrderID");
+-- ALTER TABLE ONLY orders
+--    ADD CONSTRAINT pk_orders PRIMARY KEY ("OrderID");
 
 
 --
