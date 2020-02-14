@@ -18,15 +18,21 @@ package io.inversion.cloud.action.dynamo;
 
 import org.junit.Test;
 
-import io.inversion.cloud.action.rest.TestRestGetActions;
+import io.inversion.cloud.action.rest.AbstractRestGetActionTest;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * @see README.md
  */
-public class DynamoDbGetActionsIntegTest extends TestRestGetActions
+public class DynamoDbGetActionsIntegTest extends AbstractRestGetActionTest
 {
 
    protected String collectionPath()
@@ -35,7 +41,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    }
 
    @Override
-   protected Engine service() throws Exception
+   protected Engine engine() throws Exception
    {
       return DynamoDbEngineFactory.service();
    }
@@ -77,7 +83,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testSort01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
       String href = null;
@@ -98,13 +104,13 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
 
    public void testSort02DescendingSortRequiresPartitionKey() throws Exception
    {
-      assertEquals(400, service().get(url("orders?limit=2&sort=-orderid")).getStatusCode());
+      assertEquals(400, engine().get(url("orders?limit=2&sort=-orderid")).getStatusCode());
    }
 
    @Test
    public void test0() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -131,7 +137,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testA() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -144,7 +150,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testC() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -158,7 +164,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testD() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -182,7 +188,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testE() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -196,7 +202,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testF() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -209,7 +215,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testG() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -224,7 +230,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testH() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get("northwind/dynamodb/orders?eq(OrderId, 11058)&sw(type, 'ORD')&eq(shipcity,Mannheim)").assertOk();
@@ -237,7 +243,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testI() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -252,7 +258,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testK() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get("northwind/dynamodb/orders?gt(OrderId, 1)&eq(type, ORDER)").assertOk();
@@ -262,7 +268,7 @@ public class DynamoDbGetActionsIntegTest extends TestRestGetActions
    @Test
    public void testAA() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get("northwind/dynamodb/orders?eq(type, ORDER)&or(eq(shipname, 'Blauer See Delikatessen'),eq(customerid,HILAA))");

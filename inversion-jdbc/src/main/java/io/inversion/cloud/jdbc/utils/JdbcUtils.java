@@ -233,8 +233,6 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
-         System.out.println(sql);
-         e.printStackTrace();
          notifyError("execute", sql, vals, e);
          ex = new Exception(e.getMessage() + " SQL=" + sql, Utils.getCause(e));
          throw ex;
@@ -558,8 +556,6 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
-         System.out.println(sql);
-         e.printStackTrace();
          ex = e;
          notifyError("insertMaps", sql, rows, ex);
       }
@@ -951,8 +947,6 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
-         System.out.println(sql);
-         e.printStackTrace();
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
@@ -1051,7 +1045,6 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
-         System.out.println(sql);
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
@@ -1145,8 +1138,6 @@ public class JdbcUtils
             ((PreparedStatement) stmt).setObject(colNum++, value);
          }
 
-         System.out.println(sql + " - " + row);
-
          stmt.executeUpdate();
          ResultSet rs = stmt.getGeneratedKeys();
          if (rs.next())
@@ -1156,8 +1147,6 @@ public class JdbcUtils
       }
       catch (Exception e)
       {
-         System.out.println(sql);
-         e.printStackTrace();
          ex = e;
          notifyError("upsert", sql, row, ex);
          throw e;

@@ -16,14 +16,13 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
+import io.inversion.cloud.jdbc.db.PostgresUtils;
 
 public class PostgresRqlUnitTest extends AbstractSqlRqlTest
 {
-   public PostgresRqlUnitTest()
+   public PostgresRqlUnitTest() throws Exception
    {
-      db = new JdbcDb("postgres").withType("postgres");
+      db = PostgresUtils.bootstrapPostgres(PostgresRqlUnitTest.class.getSimpleName());
    }
-
 
 }

@@ -16,20 +16,21 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.service.Engine;
 
-public class MsSqlRqlUnitTest extends AbstractSqlRqlTest
+public class MySqlRqlIntegTest extends MySqlRqlUnitTest
 {
-   public MsSqlRqlUnitTest()
+   public MySqlRqlIntegTest() throws Exception
    {
-      db = new JdbcDb("sqlserver").withType("sqlserver");
+      urlPrefix = "/northwind/postgres/";
+
+      engine = new Engine();
+      engine.withApi(new Api("northwind")//
+                                         .withEndpoint("GET", "postgres/*", new RestAction())//
+                                         .withDb(db)//
+      );
    }
 
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-      //--add/replace any tests and results needed
-   }
 }

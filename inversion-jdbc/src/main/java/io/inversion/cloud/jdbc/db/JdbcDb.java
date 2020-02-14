@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +33,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -167,6 +166,13 @@ public class JdbcDb extends Db<JdbcDb>
       withDdlUrl(ddlUrls);
    }
 
+   public JdbcDb(String url, String user, String pass)
+   {
+      withUrl(url);
+      withUser(user);
+      withPass(pass);
+   }
+
    @Override
    protected void doStartup()
    {
@@ -233,6 +239,8 @@ public class JdbcDb extends Db<JdbcDb>
          return type;
 
       String driver = getDriver();
+      driver = driver != null ? driver : getUrl();
+
       if (driver != null)
       {
          if (driver.indexOf("mysql") >= 0)
@@ -339,11 +347,33 @@ public class JdbcDb extends Db<JdbcDb>
 
    }
 
+   /**
+    * Shortcut for getConnection(true);
+    * 
+    */
    public Connection getConnection() throws ApiException
+   {
+      return getConnection(true);
+   }
+
+   /**
+    * Returns a JDBC connection that is shared on the ThreadLocal
+    * with autoCommit managed by this Db and an EngineListener.
+    * 
+    * @param managed
+    * @return
+    * @throws ApiException
+    */
+   public Connection getConnection(boolean managed) throws ApiException
+   {
+      return getConnection0(managed);
+   }
+
+   protected Connection getConnection0(boolean managed) throws ApiException
    {
       try
       {
-         Connection conn = ConnectionLocal.getConnection(this);
+         Connection conn = !managed ? null : ConnectionLocal.getConnection(this);
          if (conn == null && !isShutdown())
          {
             String dsKey = "name=" + getName() + ", url=" + getUrl() + ", user=" + getUser();
@@ -367,9 +397,12 @@ public class JdbcDb extends Db<JdbcDb>
             }
 
             conn = pool.getConnection();
-            conn.setAutoCommit(isAutoCommit());
 
-            ConnectionLocal.putConnection(this, conn);
+            if (managed)
+            {
+               conn.setAutoCommit(isAutoCommit());
+               ConnectionLocal.putConnection(this, conn);
+            }
          }
 
          return conn;
@@ -396,7 +429,10 @@ public class JdbcDb extends Db<JdbcDb>
          //connection errors for some dbs...specifically h2 in testing
          //so the initialization does not use the pool.
 
-         Class.forName(getDriver());
+         String driver = getDriver();
+         if (driver != null)
+            Class.forName(driver);
+
          Connection conn = null;
          try
          {
@@ -410,8 +446,9 @@ public class JdbcDb extends Db<JdbcDb>
          }
          catch (Exception ex)
          {
-            conn.rollback();
             log.warn("Error initializing db with supplied ddl.", ex);
+            if (conn != null)
+               conn.rollback();
             throw ex;
          }
          finally
@@ -574,7 +611,11 @@ public class JdbcDb extends Db<JdbcDb>
       //-- that caputres all of the foreign key relationships.  You
       //-- have to do the fk loop second becuase the reference pk
       //-- object needs to exist so that it can be set on the fk Col
-      ResultSet rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
+      ResultSet rs = null;
+      if (isType("sqlserver"))
+         rs = dbmd.getTables(conn.getCatalog(), "dbo", "%", new String[]{"TABLE", "VIEW"});
+      else
+         rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
       //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
       boolean hasNext = rs.next();
       if (!hasNext)
@@ -624,6 +665,13 @@ public class JdbcDb extends Db<JdbcDb>
                String idxName = indexMd.getString("INDEX_NAME");
                String idxType = "Other";
                String colName = indexMd.getString("COLUMN_NAME");
+
+               if (idxName == null || colName == null)
+               {
+                  //WDB 2020-02-14 this was put in because SqlServer was 
+                  //found to be returning indexes without names.
+                  continue;
+               }
 
                switch (indexMd.getInt("TYPE"))
                {

@@ -139,6 +139,7 @@ public class RestGetAction extends Action<RestGetAction>
 
                Collection relatedCollection = rel.getRelated();
                String entityKeys = Utils.implode(",", foreignKeys.toArray());
+
                newHref = Chain.buildLink(relatedCollection, entityKeys, null);
             }
             else
@@ -177,7 +178,7 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<JSNode> results = select(req, req.getCollection(), req.getParams(), api);
+      Results<JSNode> results = select(req, req.getCollection(), req.getParams(), req.getApi());
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {

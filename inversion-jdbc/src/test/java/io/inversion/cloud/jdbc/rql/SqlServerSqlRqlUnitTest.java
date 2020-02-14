@@ -16,29 +16,25 @@
  */
 package io.inversion.cloud.jdbc.rql;
 
-import io.inversion.cloud.jdbc.db.H2Utils;
-import io.inversion.cloud.jdbc.db.JdbcDb;
+import io.inversion.cloud.jdbc.db.SqlServerUtils;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
-public class H2RqlUnitTest extends AbstractSqlRqlTest
+public class SqlServerSqlRqlUnitTest extends AbstractSqlRqlTest
 {
-
-   public H2RqlUnitTest() throws Exception
+   public SqlServerSqlRqlUnitTest() throws Exception
    {
-      //      db = new JdbcDb("db", //
-      //                      "org.h2.Driver", //
-      //                      "jdbc:h2:mem:northwind" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //
-      //                      "sa", //
-      //                      "", //
-      //                      JdbcDb.class.getResource("northwind-h2.ddl").toString());
-      db = H2Utils.bootstrapH2(getClass().getSimpleName());
+      db = SqlServerUtils.bootstrapSqlServer(SqlServerSqlRqlUnitTest.class.getName());
    }
 
+   /**
+    * The majority of these should be postgres/h2 compatible.  Mysql and MsSQL 
+    * will probably have to customize most of these.
+    */
    @Override
    protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
-      super.customizeUnitTestSuite(suite);
-      //--add/replace any tests and results needed
-   }
 
+      suite//
+           .withResult("eq", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"orderID\" = ? AND \"orders\".\"shipCountry\" = ? ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY args=[10248, France]");//
+   }
 }

@@ -16,38 +16,33 @@
  */
 package io.inversion.cloud.jdbc.action;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-import io.inversion.cloud.action.rest.TestRestGetActions;
-import io.inversion.cloud.jdbc.JdbcDbApiFactory;
+import io.inversion.cloud.action.rest.AbstractRestGetActionTest;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 
-@RunWith(Parameterized.class)
-public class TestSqlGetAction extends TestRestGetActions
+public abstract class AbstractSqlGetActionTest extends AbstractRestGetActionTest
 {
-   @Parameterized.Parameters
-   public static java.util.Collection input()
-   {
-      return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
-   }
+   static Engine engine = null;
+   static String db     = null;
 
-   String db = null;
-
-   public TestSqlGetAction(String db)
+   protected Engine engine() throws Exception
    {
-      this.db = db;
+      return engine;
    }
 
    protected String collectionPath()
@@ -55,28 +50,11 @@ public class TestSqlGetAction extends TestRestGetActions
       return "northwind/" + db + "/";
    }
 
-   static Engine engine = null;
-
-   protected Engine service() throws Exception
-   {
-      if (engine == null)
-      {
-         engine = JdbcDbApiFactory.service(true, true);
-      }
-      return engine;
-   }
-
-   @BeforeClass
-   public static void beforeClass() throws Exception
-   {
-      JdbcDbApiFactory.resetAll();
-   }
-
    @Test
    public void testNonUrlSafeKeyValues() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       res = engine.get(url("urls"));
       res.dump();
@@ -98,7 +76,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testRelatedCollectionJoinSelect() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       res = engine.get(url("customers?orders.shipCity=NONE&customerid=VINET"));
       assertEquals(res.getFoundRows(), 0);
@@ -170,7 +148,7 @@ public class TestSqlGetAction extends TestRestGetActions
 
       List<String> c2 = new ArrayList();
 
-      Api api = service().getApi("northwind");
+      Api api = engine().getApi("northwind");
 
       for (Collection coll : (List<Collection>) api.getDb(db).getCollections())
       {
@@ -188,7 +166,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testExcludes() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
       res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
@@ -205,7 +183,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testRelationships1() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       res = engine.get(url("orders?limit=5&sort=orderid"));
@@ -224,7 +202,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testExpandsOneToMany11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
@@ -236,7 +214,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testExpandsOneToMany12() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders/10395?expands=employee.reportsto.employees"));
@@ -247,9 +225,9 @@ public class TestSqlGetAction extends TestRestGetActions
    }
 
    @Test
-   public void testExpandsManyToOne11() throws Exception
+   public void testExpandsManyToOne() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("employees/5?expands=employees"));
@@ -259,9 +237,9 @@ public class TestSqlGetAction extends TestRestGetActions
    }
 
    @Test
-   public void testExpandsManyToMany11() throws Exception
+   public void testExpandsManyToMany() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("employees/6?expands=territories"));
@@ -270,9 +248,9 @@ public class TestSqlGetAction extends TestRestGetActions
    }
 
    @Test
-   public void testIncludes11() throws Exception
+   public void testIncludes() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders/10395?includes=shipname"));
@@ -285,66 +263,68 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testExcludes11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
+      res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
       assertNull(res.findString("data.0.customer"));
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
+      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
       assertNull(res.findString("data.0.employee.firstname"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
       assertNull(res.findString("data.0.employee.reportsto.territories"));
    }
 
    @Test
    public void testIncludes12() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
+      res = engine.get(url("orders/10248?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
 
       res.dump();
 
-      String toMatch = JSNode.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/5/territories") + "\"}}} ]").toString();
+      String toMatch = JSNode.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/2/territories") + "\"}}} ]").toString();
       assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
    }
 
    @Test
    public void testTwoPartEntityKey11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orderdetails/10395~46"));
+      res = engine.get(url("orderdetails/10248~11"));
       res.dump();
-      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
-      assertTrue(res.findString("data.0.product").endsWith("/products/46"));
-      assertTrue(res.findString("data.0.order").endsWith("/orders/10395"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
+      assertTrue(res.findString("data.0.product").endsWith("/products/11"));
+      assertTrue(res.findString("data.0.order").endsWith("/orders/10248"));
 
-      res = engine.get(url("orders/10395/orderdetails"));
+      res = engine.get(url("orders/10248/orderdetails"));
       assertTrue(res.find("meta.foundRows") != null);
-      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
-      assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10395~53"));
-      assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10395~69"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
+      assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10248~42"));
+      assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10248~72"));
 
    }
 
    @Test
    public void testTwoPartForeignKey11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orderdetails/10395~46")).assertOk();
+      res = engine.get(url("orderdetails/10248~11")).assertOk();
       assertEquals(1, res.getFoundRows());
 
-      res = engine.get(url("orders/10395?expands=orderdetails"));
+      res = engine.get(url("orders/10248?expands=orderdetails"));
       res.assertOk();
-      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10395~46"));
+      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10248~11"));
+      assertTrue(res.findString("data.0.orderdetails.1.href").toLowerCase().endsWith("orderdetails/10248~42"));
+      assertTrue(res.findString("data.0.orderdetails.2.href").toLowerCase().endsWith("orderdetails/10248~72"));
 
-      res = engine.get(url("orderdetails/10395~46?expands=order")).assertOk();
-      assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
+      res = engine.get(url("orderdetails/10248~11?expands=order")).assertOk();
+      assertTrue(res.findString("data.0.order.href").endsWith("/orders/10248"));
    }
 
    //   @Test
@@ -368,7 +348,7 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testWildcardAndUnderscores() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();
 

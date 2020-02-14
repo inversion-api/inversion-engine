@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.action;
+
+import org.junit.BeforeClass;
 
 import io.inversion.cloud.action.rest.RestAction;
+
+import io.inversion.cloud.jdbc.db.PostgresUtils;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.service.Engine;
 
-public class H2RqlIntegTest extends H2RqlUnitTest
+public class PostgresSqlGetActionTest extends AbstractSqlGetActionTest
 {
-   public H2RqlIntegTest() throws Exception
+   @BeforeClass
+   public static void beforeClass() throws Exception
    {
-      urlPrefix = "/northwind/h2/";
+      db = "postgres";
+      engine = new Engine().withApi(new Api("northwind") //
+                                                        .withEndpoint("GET,PUT,POST,DELETE", "postgres/*", new RestAction())//
+                                                        .withDb(PostgresUtils.bootstrapPostgres(PostgresSqlGetActionTest.class.getClass().getSimpleName())));
 
-      engine = new Engine();
-      engine.withApi(new Api("northwind")//
-                                         .withEndpoint("GET", "h2/*", new RestAction())//
-                                         .withDb(db)//
-      );
+      engine.startup();
    }
+
 }

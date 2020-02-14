@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 package io.inversion.cloud.action.rest;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,11 +39,11 @@ import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
 import junit.framework.TestCase;
 
-public abstract class TestRestGetActions extends TestCase
+public abstract class AbstractRestGetActionTest
 {
    protected abstract String collectionPath();
 
-   protected abstract Engine service() throws Exception;
+   protected abstract Engine engine() throws Exception;
 
    /**
     * Returns the last response handled by the engine.
@@ -46,7 +52,7 @@ public abstract class TestRestGetActions extends TestCase
     */
    protected Response response() throws Exception
    {
-      return service().response();
+      return engine().response();
    }
 
    protected String url(String path)
@@ -74,7 +80,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testAliasedOrders() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -82,15 +88,12 @@ public abstract class TestRestGetActions extends TestCase
       json = res.getJson();
       assertEquals(5, json.find("meta.pageSize"));
       assertEquals(5, res.data().length());
-
-      res.assertDebug("[1]: SQL ->", "'SELECT \"ORDERS\".* FROM \"ORDERS\" ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[] error=''");
-      res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
    }
-   
+
    @Test
    public void testLimit01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -98,50 +101,40 @@ public abstract class TestRestGetActions extends TestCase
       json = res.getJson();
       assertEquals(5, json.find("meta.pageSize"));
       assertEquals(5, res.data().length());
-
-      res.assertDebug("[1]: SQL ->", "'SELECT \"ORDERS\".* FROM \"ORDERS\" ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[] error=''");
-      res.assertDebug("DynamoDb", "ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
    }
 
    @Test
    public void testSort01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       String url = url("orders?limit=2&sort=orderid");
-
       res = engine.get(url);
-      res.assertDebug("DynamoDb", "ScanSpec:'gs3' maxPageSize=2 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
-      res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 2 OFFSET 0' args=[] error=''");
-
       assertEquals(2, res.data().length());
 
       String href = res.findString("data.0.href");
       assertTrue(href.indexOf("/orders/10248") > 0);
 
       res = engine.get(url("orders?limit=2&sort=-orderid&type=ORDER"));
-      res.assertDebug("DynamoDb", "QuerySpec:'gs3' maxPageSize=2 scanIndexForward=false nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
-      res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" ORDER BY \"ORDERS\".\"ORDERID\" DESC LIMIT 2 OFFSET 0' args=[] error=''");
-
       assertEquals(2, res.data().length());
+
       href = res.findString("data.0.href");
       assertTrue(href.indexOf("/orders/11077") > 0);
-
    }
 
    @Test
    public void testPagination01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       //--
       //-- gets a sorted list of all hrefs
       res = engine.get(url("orders?type=ORDER&sort=orderId&includes=href&limit=1000"));
-      
+
       res.dump();
-      
+
       List<String> hrefs = new ArrayList();
       res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
@@ -217,7 +210,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testEq01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
       res = engine.get(url("orders?eq(orderid,10257)"));
@@ -225,21 +218,15 @@ public abstract class TestRestGetActions extends TestCase
       json = res.getJson();
       assertEquals(1, res.data().size());
       assertTrue(res.findString("data.0.orderid").equals("10257"));
-
-      res.assertDebug("DynamoDb", "QuerySpec:'Primary Index' maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=10257} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
-      res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"ORDERID\" = ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 100 OFFSET 0' args=[10257] error=''");
-      // 
-
    }
 
    @Test
    public void testLike01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=5&like(customerId,*VI*)")).assertOk();
-      res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"CUSTOMERID\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 5 OFFSET 0' args=[%VI%]");
 
       JSArray data = res.data();
       assertTrue(data.length() > 0);
@@ -256,7 +243,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testLike02() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
 
@@ -269,7 +256,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testW01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("employees?w(city,ondon)")).assertOk();
       res.assertDebug("h2", "'SELECT \"EMPLOYEES\".* FROM \"EMPLOYEES\" WHERE \"EMPLOYEES\".\"CITY\" LIKE ? ORDER BY \"EMPLOYEES\".\"EMPLOYEEID\" ASC LIMIT 100 OFFSET 0' args=[%ondon%] error=''");
@@ -287,7 +274,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testWo01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
       JSArray data = null;
@@ -318,7 +305,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testSw01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("orders?limit=5&sw(customerId,VI)")).assertOk();
 
@@ -342,7 +329,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testSw02() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=5&sw(customerId,Z)")).assertOk();
@@ -356,7 +343,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testEw01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("orders?ew(shipname,Chevalier)"));
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"SHIPNAME\" LIKE ? ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 100 OFFSET 0' args=[%Chevalier]");
@@ -376,7 +363,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testN01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
       JSArray data = null;
@@ -405,7 +392,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testN02() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().data().size() > 0);
       assertTrue(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().data().size() == 0);
    }
@@ -413,7 +400,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testEmp01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=500&nemp(shipregion)"));
@@ -443,7 +430,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testNn01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       JSNode json = null;
       JSArray data = null;
@@ -465,7 +452,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testNemp01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=1&emp(shipregion)"));
@@ -490,7 +477,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testIn01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("orders?in(orderid,10249,10258,10252)"));
 
@@ -510,7 +497,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testOut01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = engine.get(url("orders?out(orderid,10249,10258,10252)"));
       res.assertDebug("DynamoDb", "ScanSpec maxPageSize=100 scanIndexForward=true nameMap={#var1=hk} valueMap={:val1=10249, :val2=10258, :val3=10252} keyConditionExpression='' filterExpression='(NOT #var1 IN (:val1, :val2, :val3))' projectionExpression=''");
       res.assertDebug("h2", "'SELECT \"ORDERS\".* FROM \"ORDERS\" WHERE \"ORDERS\".\"ORDERID\" NOT IN(?, ?, ?) ORDER BY \"ORDERS\".\"ORDERID\" ASC LIMIT 100 OFFSET 0' args=[10249, 10258, 10252]");
@@ -525,7 +512,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testLt01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=1000&gt(freight,2)"));
@@ -548,7 +535,7 @@ public abstract class TestRestGetActions extends TestCase
    @Test
    public void testLe01() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders?limit=1000&lt(freight,2.94)"));

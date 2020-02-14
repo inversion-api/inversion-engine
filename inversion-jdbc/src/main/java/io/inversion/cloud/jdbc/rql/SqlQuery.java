@@ -18,22 +18,20 @@ package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.omg.CosNaming.IstringHelper;
-
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Order.Sort;
@@ -121,25 +119,35 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          //-- prepared statement variables are computing during the 
          //-- generation of the prepared statement above
 
-         Rows rows = JdbcUtils.selectRows(conn, sql, values);
-         int foundRows = -1;
-
-         if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
+         try
          {
-            if (rows.size() == 0)
+            Rows rows = JdbcUtils.selectRows(conn, sql, values);
+            int foundRows = -1;
+
+            if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
             {
-               foundRows = 0;
-            }
-            else
-            {
-               foundRows = queryFoundRows(conn, sql, values);
+               if (rows.size() == 0)
+               {
+                  foundRows = 0;
+               }
+               else
+               {
+                  foundRows = queryFoundRows(conn, sql, values);
+               }
+
+               Chain.peek().put("foundRows", foundRows);
             }
 
-            Chain.peek().put("foundRows", foundRows);
+            results.withFoundRows(foundRows);
+            results.withRows(rows);
          }
+         catch (Exception ex)
+         {
+            System.out.println(sql);
+            ex.printStackTrace();
 
-         results.withFoundRows(foundRows);
-         results.withRows(rows);
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage());
+         }
       }
 
       return results;
@@ -453,6 +461,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                s += limit;
             }
          }
+         else if (getDb().isType("sqlserver"))
+         {
+            //https://docs.microsoft.com/en-us/sql/t-sql/queries/select-order-by-clause-transact-sql?view=sql-server-2017#Offset
+            //OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY  
+
+            s = "";
+            if (offset >= 0)
+               s += " OFFSET " + offset + " ROWS ";
+
+            if (limit >= 0)
+               s += " FETCH NEXT " + limit + " ROWS ONLY ";
+         }
          else
          {
             s = "";
@@ -701,7 +721,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          //String s = "COUNT (1)";
          //sql.append(s);
 
+         String pt = printTable() + "*";
+
          String acol = preparedStmtChildText.get(0);
+         if (pt.equals(acol))
+            acol = "*";
+
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
 

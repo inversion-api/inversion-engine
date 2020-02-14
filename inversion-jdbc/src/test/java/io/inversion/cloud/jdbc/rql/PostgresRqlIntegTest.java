@@ -14,25 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.db;
+package io.inversion.cloud.jdbc.rql;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.jdbc.db.JdbcDb;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.service.Engine;
 
-import org.junit.Test;
-
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
-
-public class JdbcDbTest extends TestCase
+public class PostgresRqlIntegTest extends PostgresRqlUnitTest
 {
-  
-
-   @Test
-   public void test_upsert_rrowsWitDifferentColumns_upsertIsSplitIntoBatchesWithMatchingKeys()
+   public PostgresRqlIntegTest() throws Exception
    {
-      //TODO: implement me
-   }
+      urlPrefix = "/northwind/postgres/";
 
+      engine = new Engine();
+      engine.withApi(new Api("northwind")//
+                                         .withEndpoint("GET", "postgres/*", new RestAction())//
+                                         .withDb(db)//
+      );
+   }
 }
