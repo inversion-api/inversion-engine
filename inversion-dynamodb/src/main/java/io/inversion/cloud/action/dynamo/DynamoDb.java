@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -54,10 +55,11 @@ public class DynamoDb extends Db<DynamoDb>
    protected String                   awsAccessKey = null;
    protected String                   awsSecretKey = null;
    protected String                   awsRegion    = "us-east-1";
+   protected String                   awsEndpoint  = null;
 
    /**
     * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
-    * 
+    *
     * FORMAT: collection name | primaryKey | sortKey (optional)
     */
    protected String                   blueprintRow;
@@ -65,6 +67,7 @@ public class DynamoDb extends Db<DynamoDb>
    protected int                      batchMax     = 20;
 
    transient protected AmazonDynamoDB dynamoClient = null;
+
 
    public DynamoDb()
    {
@@ -288,6 +291,12 @@ public class DynamoDb extends Db<DynamoDb>
       return this;
    }
 
+   public DynamoDb withAwsEndpoint(String awsEndpoint)
+   {
+      this.awsEndpoint = awsEndpoint;
+      return this;
+   }
+
    @Override
    public String toString()
    {
@@ -422,7 +431,7 @@ public class DynamoDb extends Db<DynamoDb>
          {
             if (this.dynamoClient == null)
             {
-               this.dynamoClient = buildDynamoClient(name + ".", awsRegion, awsAccessKey, awsSecretKey);
+               this.dynamoClient = buildDynamoClient(name + ".", awsRegion, awsAccessKey, awsSecretKey, awsEndpoint);
             }
          }
       }
@@ -432,25 +441,35 @@ public class DynamoDb extends Db<DynamoDb>
 
    public static AmazonDynamoDB buildDynamoClient(String prefix)
    {
-      return buildDynamoClient(prefix, null, null, null);
+      return buildDynamoClient(prefix, null, null, null, null);
    }
 
-   public static AmazonDynamoDB buildDynamoClient(String prefix, String awsRegion, String awsAccessKey, String awsSecretKey)
+   public static AmazonDynamoDB buildDynamoClient(String prefix, String awsRegion, String awsAccessKey, String awsSecretKey, String awsEndpoint)
    {
       awsRegion = Utils.getSysEnvPropStr(prefix + ".awsRegion", awsRegion);
       awsAccessKey = Utils.getSysEnvPropStr(prefix + ".awsAccessKey", awsAccessKey);
       awsSecretKey = Utils.getSysEnvPropStr(prefix + ".awsSecretKey", awsSecretKey);
+      awsEndpoint = Utils.getSysEnvPropStr(prefix + ".awsEndpoint", awsEndpoint);
 
       AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
       if (!Utils.empty(awsRegion))
       {
-         builder.withRegion(awsRegion);
+         if (!Utils.empty(awsEndpoint))
+         {
+            AwsClientBuilder.EndpointConfiguration endpointConfig = new AwsClientBuilder.EndpointConfiguration(awsEndpoint, awsRegion);
+            builder.withEndpointConfiguration(endpointConfig);
+         }
+         else
+         {
+            builder.withRegion(awsRegion);
+         }
       }
       if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
       {
          BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
          builder.withCredentials(new AWSStaticCredentialsProvider(creds));
       }
+
       AmazonDynamoDB dynamoClient = builder.build();
 
       return dynamoClient;
