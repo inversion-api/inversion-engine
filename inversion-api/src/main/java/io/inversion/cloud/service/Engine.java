@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Vector;
 
@@ -575,7 +576,7 @@ public class Engine
 
          run(chain, actions);
 
-         for (EngineListener listener : listeners)
+         for (EngineListener listener : getListeners(req))
          {
             try
             {
@@ -592,7 +593,7 @@ public class Engine
       }
       catch (Throwable ex)
       {
-         for (EngineListener listener : listeners)
+         for (EngineListener listener : getListeners(req))
          {
             try
             {
@@ -638,7 +639,7 @@ public class Engine
       }
       finally
       {
-         for (EngineListener listener : listeners)
+         for (EngineListener listener : getListeners(req))
          {
             try
             {
@@ -664,6 +665,17 @@ public class Engine
       }
 
       return chain;
+   }
+   
+   LinkedHashSet<EngineListener> getListeners(Request req)
+   {
+      LinkedHashSet listeners = new LinkedHashSet(this.listeners);
+      if (req.getApi() != null)
+      {
+         listeners.addAll(req.getApi().getEngineListeners());
+      }
+      return listeners;
+
    }
 
    /**
