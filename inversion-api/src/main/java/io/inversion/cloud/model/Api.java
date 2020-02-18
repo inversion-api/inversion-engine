@@ -17,6 +17,7 @@
 package io.inversion.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -518,6 +519,11 @@ public class Api
       return this;
    }
 
+   public List<EngineListener> getEngineListeners()
+   {
+      return Collections.unmodifiableList(listeners);
+   }
+   
    public Engine getEngine()
    {
       return engine;
