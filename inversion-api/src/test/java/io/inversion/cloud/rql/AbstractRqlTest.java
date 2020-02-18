@@ -16,13 +16,12 @@
  */
 package io.inversion.cloud.rql;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.service.Engine;
-import junit.framework.TestCase;
 
-public abstract class AbstractRqlTest extends TestCase
+public abstract class AbstractRqlTest
 {
    protected String queryClass = null;
    protected String urlPrefix  = null;

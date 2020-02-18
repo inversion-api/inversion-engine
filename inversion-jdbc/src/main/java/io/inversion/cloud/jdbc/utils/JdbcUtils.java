@@ -322,6 +322,8 @@ public class JdbcUtils
                }
                catch (Exception e)
                {
+                  System.out.println(sql);
+                  e.printStackTrace();
                   notifyError("selectRows", sql, vals, e);
                }
                rows.put(o);

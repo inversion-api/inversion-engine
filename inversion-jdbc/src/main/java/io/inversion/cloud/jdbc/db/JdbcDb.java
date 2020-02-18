@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,30 +61,30 @@ import io.inversion.cloud.utils.Utils;
 
 public class JdbcDb extends Db<JdbcDb>
 {
-   protected char                 stringQuote              = '\'';
-   protected char                 columnQuote              = '"';
+   protected char          stringQuote              = '\'';
+   protected char          columnQuote              = '"';
 
-   static Map<String, DataSource> pools                    = new HashMap();
+   protected DataSource    pool                     = null;
 
-   public static final int        MIN_POOL_SIZE            = 3;
-   public static final int        MAX_POOL_SIZE            = 10;
+   public static final int MIN_POOL_SIZE            = 3;
+   public static final int MAX_POOL_SIZE            = 10;
 
-   protected String               driver                   = null;
-   protected String               url                      = null;
-   protected String               user                     = null;
-   protected String               pass                     = null;
-   protected int                  poolMin                  = 3;
-   protected int                  poolMax                  = 10;
-   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
-   protected boolean              autoCommit               = false;
+   protected String        driver                   = null;
+   protected String        url                      = null;
+   protected String        user                     = null;
+   protected String        pass                     = null;
+   protected int           poolMin                  = 3;
+   protected int           poolMax                  = 10;
+   protected int           idleConnectionTestPeriod = 3600;           // in seconds
+   protected boolean       autoCommit               = false;
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
-   protected boolean              calcRowsFound            = true;
+   protected boolean       calcRowsFound            = true;
 
-   protected int                  relatedMax               = 500;
+   protected int           relatedMax               = 500;
 
-   protected List<String>         ddlUrls                  = new ArrayList();
+   protected List<String>  ddlUrls                  = new ArrayList();
 
    static
    {
@@ -229,7 +228,8 @@ public class JdbcDb extends Db<JdbcDb>
 
    protected void doShutdown()
    {
-      //pool.close();
+      if (pool != null)
+         ((HikariDataSource) pool).close();
    }
 
    @Override
@@ -376,22 +376,13 @@ public class JdbcDb extends Db<JdbcDb>
          Connection conn = !managed ? null : ConnectionLocal.getConnection(this);
          if (conn == null && !isShutdown())
          {
-            String dsKey = "name=" + getName() + ", url=" + getUrl() + ", user=" + getUser();
-
-            DataSource pool = pools.get(dsKey);
-
             if (pool == null)
             {
-               synchronized (pools)
+               synchronized (this)
                {
-                  //System.out.println("CREATING CONNECTION POOL: " + dsKey);
-
-                  pool = pools.get(getName());
-
-                  if (pool == null && !isShutdown())
+                  if (pool == null)
                   {
                      pool = createConnectionPool();
-                     pools.put(dsKey, pool);
                   }
                }
             }
@@ -807,7 +798,7 @@ public class JdbcDb extends Db<JdbcDb>
                //               if (rel == null)
                //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
 
-               String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
+               //String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
 
                Term join = null;
                for (int j = 0; j < 2; j++)
@@ -816,6 +807,8 @@ public class JdbcDb extends Db<JdbcDb>
 
                   if (rel.isManyToMany() && j == 0)
                      relatedTable = rel.getFk1Col1().getCollection().getTableName();
+
+                  String aliasPrefix = "_join~" + rel.getEntity().getName() + "~to~" + relatedTable + "~via~" + part + "~";
 
                   String tableAlias = aliasPrefix + (j + 1);
 

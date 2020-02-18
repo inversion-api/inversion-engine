@@ -209,9 +209,10 @@ public class Response
       return out.toString();
    }
 
-   public void dump()
+   public Response dump()
    {
       System.out.println(getDebug());
+      return this;
    }
 
    public String getDebug()

@@ -16,15 +16,17 @@
  */
 package io.inversion.cloud.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
 
-public class TestJSNode extends TestCase
+public class TestJSNode
 {
 
    @Test

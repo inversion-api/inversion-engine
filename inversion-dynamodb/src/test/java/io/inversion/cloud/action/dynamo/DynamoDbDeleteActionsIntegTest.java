@@ -16,16 +16,20 @@
  */
 package io.inversion.cloud.action.dynamo;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.apache.commons.collections4.CollectionUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
 
-public class DynamoDbDeleteActionsIntegTest extends TestCase
+public class DynamoDbDeleteActionsIntegTest
 {
    @Test
    public void test1() throws Exception

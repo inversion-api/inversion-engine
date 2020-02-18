@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,17 +35,17 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.rql.Page;
 import io.inversion.cloud.rql.Parser;
@@ -87,7 +88,7 @@ public class RestGetAction extends Action<RestGetAction>
       {
          //-- all URLs with a subcollection key will be rewritten and  
          //-- internally forwarded to the non-subcollection form.
-         
+
          String entityKey = req.getEntityKey();
          Collection collection = req.getCollection();
          Relationship rel = collection.getRelationship(req.getSubCollectionKey());
@@ -466,7 +467,7 @@ public class RestGetAction extends Action<RestGetAction>
       return results;
    }
 
-   public void exclude(List<JSNode> nodes)
+   protected void exclude(List<JSNode> nodes)
    {
       Set includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
       Set excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
@@ -480,7 +481,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
    }
 
-   public void exclude(JSNode node, Set includes, Set excludes, String path)
+   protected void exclude(JSNode node, Set includes, Set excludes, String path)
    {
       for (String key : node.keySet())
       {
@@ -510,6 +511,35 @@ public class RestGetAction extends Action<RestGetAction>
             }
          }
       }
+   }
+
+   protected static boolean exclude(String path, Set<String> includes, Set<String> excludes)
+   {
+      boolean exclude = false;
+
+      if (includes.size() > 0 || excludes.size() > 0)
+      {
+         path = path.toLowerCase();
+
+         if (includes != null && includes.size() > 0)
+         {
+            if (path.endsWith("href") || path.endsWith(".href"))
+               exclude = false;
+
+            else if (!find(includes, path, true))
+               exclude = true;
+         }
+
+         if (excludes != null && excludes.size() > 0)
+         {
+            if (find(excludes, path, false))
+               exclude = true;
+         }
+      }
+
+      //System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
+
+      return exclude;
    }
 
    /**
@@ -714,10 +744,7 @@ public class RestGetAction extends Action<RestGetAction>
          throw new ApiException(Status.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
       List<KeyValue> related = new ArrayList<>();
 
-      List columns = new ArrayList();
-      //idxToMatch.getColumns().forEach(c -> columnNames.add(c.getName()));
-      //idxToRetrieve.getColumns().forEach(c -> columnNames.add(c.getName()));
-
+      LinkedHashSet columns = new LinkedHashSet();
       columns.addAll(idxToMatch.getColumnNames());
       columns.addAll(idxToRetrieve.getColumnNames());
 
@@ -729,9 +756,15 @@ public class RestGetAction extends Action<RestGetAction>
       Rows rows = ((Rows) idxToMatch.getColumn(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
       for (Row row : rows)
       {
-         List keyParts = row.asList();
-         String parentEk = Collection.encodeKey(keyParts.subList(0, idxToMatch.size()));
-         String relatedEk = Collection.encodeKey(keyParts.subList(idxToMatch.size(), keyParts.size()));
+         List idxToMatchVals = new ArrayList();
+         idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
+            
+         List idxToRetrieveVals = new ArrayList();
+         idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
+         
+         
+         String parentEk = Collection.encodeKey(idxToMatchVals);
+         String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }
@@ -802,7 +835,7 @@ public class RestGetAction extends Action<RestGetAction>
          return nodes;
       }
 
-      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unknow repose code \"" + sc + "\" or body type from nested query.");
+      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getErrorContent());//"Unknow repose code \"" + sc + "\" or body type from nested query.");
    }
 
    public int getMaxRows()
@@ -953,32 +986,6 @@ public class RestGetAction extends Action<RestGetAction>
       //System.out.println("expand(" + expands + ", " + path + ") -> " + expand);
 
       return expand;
-   }
-
-   protected static boolean exclude(String path, Set<String> includes, Set<String> excludes)
-   {
-      boolean exclude = false;
-
-      if (includes.size() > 0 || excludes.size() > 0)
-      {
-         path = path.toLowerCase();
-
-         if (includes != null && includes.size() > 0)
-         {
-            if (!find(includes, path, true))
-               exclude = true;
-         }
-
-         if (excludes != null && excludes.size() > 0)
-         {
-            if (find(excludes, path, false))
-               exclude = true;
-         }
-      }
-
-      //System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
-
-      return exclude;
    }
 
    //   protected static boolean include(String path, Set<String> includes, Set<String> excludes)

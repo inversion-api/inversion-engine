@@ -244,7 +244,15 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
       {
          if (columnName.indexOf(".") > -1)
          {
-            coll = coll.getDb().getCollection(columnName.substring(0, columnName.indexOf(".")));
+            String collectionName = columnName.substring(0, columnName.indexOf("."));
+            if(columnName.startsWith("_join~"))
+            {
+               //ex: _join_customers_to_orders_via_orders_1
+               collectionName = columnName.split("~")[3];
+            }
+            
+            
+            coll = coll.getDb().getCollection(collectionName);
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
 

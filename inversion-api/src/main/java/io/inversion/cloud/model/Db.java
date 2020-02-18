@@ -114,8 +114,14 @@ public abstract class Db<T extends Db>
    {
       if ((started || starting) && !shutdown)
       {
-         shutdown = true;
-         doShutdown();
+         try
+         {
+            doShutdown();
+         }
+         finally
+         {
+            shutdown = true;
+         }
       }
    }
 
@@ -197,7 +203,7 @@ public abstract class Db<T extends Db>
          if (!coll.isLinkTbl() && !coll.isExclude())
          {
             api.withCollection(coll);
-            
+
             if (getCollectionPath() != null)
                coll.withIncludePaths(getCollectionPath());
          }
@@ -540,7 +546,6 @@ public abstract class Db<T extends Db>
 
             if (term.getToken().startsWith("-"))
                columnName = "-" + columnName;
-
             term.withToken(columnName);
          }
       }

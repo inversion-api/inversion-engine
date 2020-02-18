@@ -16,9 +16,12 @@
  */
 package io.inversion.cloud.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.action.misc.MockAction;
 import io.inversion.cloud.model.Action;
@@ -27,9 +30,8 @@ import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Response;
-import junit.framework.TestCase;
 
-public class TestEngine extends TestCase
+public class TestEngine
 {
 
    @Test

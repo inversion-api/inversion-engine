@@ -16,23 +16,20 @@
  */
 package io.inversion.cloud.action.dynamo;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.inversion.cloud.action.rest.AbstractRestGetActionTest;
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * @see README.md
  */
-public class DynamoDbGetActionsIntegTest extends AbstractRestGetActionTest
+public class DynamoDbGetActionsIntegTest extends AbstractRestGetActionIntegTest
 {
 
    protected String collectionPath()

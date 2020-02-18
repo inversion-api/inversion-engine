@@ -16,16 +16,17 @@
  */
 package io.inversion.cloud.action.rest;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
-import junit.framework.TestCase;
 
-public class TestCollapse extends TestCase
+public class TestCollapse
 {
    @Test
    public void testCollapses1()

@@ -16,10 +16,13 @@
  */
 package io.inversion.cloud.action.rest;
 
-import junit.framework.TestCase;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestStripTerms extends TestCase
+import org.junit.jupiter.api.Test;
+
+public class TestStripTerms 
 {
+   @Test
    public void testStripTerms1()
    {
       //arg format {resultMatchString, inputString, tostrip...)

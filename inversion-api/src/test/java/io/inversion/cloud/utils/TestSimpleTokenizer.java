@@ -16,11 +16,10 @@
  */
 package io.inversion.cloud.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.TestCase;
-
-public class TestSimpleTokenizer extends TestCase
+public class TestSimpleTokenizer
 {
    @Test
    public void testJsonPathTokenizers1()
@@ -34,7 +33,7 @@ public class TestSimpleTokenizer extends TestCase
                                                     ". \t" //leadingIgoredChars
       );
 
-//      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
+      //      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
 
       SimpleTokenizer exprTok = new SimpleTokenizer(//
                                                     "'\"", //openQuoteStr
@@ -59,9 +58,8 @@ public class TestSimpleTokenizer extends TestCase
       assertEquals(exprTok, "[?(@.price < 10)]", "[?, @.price, <, 10]");
       assertEquals(exprTok, "[?(@.price<10)]", "[?, @.price, <, 10]");
       assertEquals(exprTok, "[?(@.price<=10)]", "[?, @.price, <, =, 10]");
-      
+
       assertEquals(exprTok, "[?(@.price!=8.99)]", "[?, @.price, !, =, 8.99]");
-      
 
    }
 
@@ -69,6 +67,6 @@ public class TestSimpleTokenizer extends TestCase
    {
       String tokenized = tokenizer.withChars(input).asList().toString();
       System.out.println(tokenized);
-      assertEquals(tokenized, output);
+      Assertions.assertEquals(tokenized, output);
    }
 }

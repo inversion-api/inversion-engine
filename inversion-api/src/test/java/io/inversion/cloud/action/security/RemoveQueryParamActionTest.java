@@ -16,11 +16,12 @@
  */
 package io.inversion.cloud.action.security;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class RemoveQueryParamActionTest extends TestCase
+public class RemoveQueryParamActionTest
 {
    @Test
    public void test_containsParam_wholeword_matches()

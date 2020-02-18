@@ -16,14 +16,14 @@
  */
 package io.inversion.cloud.service;
 
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.Collection;
-import junit.framework.TestCase;
 
-public class TestKeyEncoding extends TestCase
+public class TestKeyEncoding
 {
    @Test
    public void test1() throws Exception

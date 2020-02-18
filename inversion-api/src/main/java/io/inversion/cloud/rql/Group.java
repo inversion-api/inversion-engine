@@ -27,7 +27,7 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P>
       withFunctions("group");
    }
 
-   public List<String> groups()
+   public List<String> getGroupBy()
    {
       List<String> groups = new ArrayList();
       for (Term group : findAll("group"))
@@ -41,7 +41,7 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P>
       return groups;
    }
 
-   public T group(String... properties)
+   public T withGroupBy(String... properties)
    {
       Term group = find("group");
       if (group != null)

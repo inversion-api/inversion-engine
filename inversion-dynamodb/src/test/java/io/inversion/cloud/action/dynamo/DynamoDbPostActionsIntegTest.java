@@ -16,19 +16,22 @@
  */
 package io.inversion.cloud.action.dynamo;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
 
-public class DynamoDbPostActionsIntegTest extends TestCase
+public class DynamoDbPostActionsIntegTest
 {
    protected Engine service() throws Exception
    {
