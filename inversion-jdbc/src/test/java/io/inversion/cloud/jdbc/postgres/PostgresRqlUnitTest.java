@@ -16,14 +16,28 @@
  */
 package io.inversion.cloud.jdbc.postgres;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
 import io.inversion.cloud.jdbc.AbstractSqlRqlTest;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class PostgresRqlUnitTest extends AbstractSqlRqlTest
 {
    public PostgresRqlUnitTest() throws Exception
    {
       db = PostgresUtils.bootstrapPostgres(PostgresRqlUnitTest.class.getSimpleName());
+   }
+
+   @AfterAll
+   public void afterAll_shutdownDb()
+   {
+      if (engine != null)
+      {
+         engine.getApi("northwind").getDb("postgres").shutdown();
+      }
    }
 
    @Override
