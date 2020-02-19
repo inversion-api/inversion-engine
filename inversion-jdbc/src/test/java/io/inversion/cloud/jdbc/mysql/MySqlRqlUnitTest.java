@@ -16,14 +16,19 @@
  */
 package io.inversion.cloud.jdbc.mysql;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
 import io.inversion.cloud.jdbc.AbstractSqlRqlTest;
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class MySqlRqlUnitTest extends AbstractSqlRqlTest
 {
    public MySqlRqlUnitTest() throws Exception
    {
-      db = MySqlUtils.bootstrapMySql(MySqlRqlUnitTest.class.getSimpleName());
+      super("mysql");
    }
 
    @Override

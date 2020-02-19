@@ -16,16 +16,55 @@
  */
 package io.inversion.cloud.jdbc;
 
+import org.junit.jupiter.api.AfterAll;
+
+import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.rql.SqlQuery;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.rql.AbstractRqlTest;
 import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.cloud.service.Engine;
 
 public abstract class AbstractSqlRqlTest extends AbstractRqlTest
 {
 
-   public AbstractSqlRqlTest()
+   public AbstractSqlRqlTest(String dbType)
    {
-      queryClass = SqlQuery.class.getName();
+      super(SqlQuery.class.getName(), dbType);
+   }
+
+   @Override
+   public Db buildUnitTestDb()
+   {
+      return new JdbcDb(dbType).withType(dbType);
+   }
+
+   @Override
+   public Engine buildIntegTestEngine() throws Exception
+   {
+      //      if (engine != null)
+      //      {
+      //         engine.getApi("northwind").getDb(dbType).shutdown();
+      //      }
+
+      Engine engine = new Engine().withApi(new Api("northwind") //
+                                                               .withEndpoint("GET", dbType + "/*", new RestAction())//
+                                                               .withDb(JdbcDbFactory.buildDb(dbType, getClass().getName())));
+
+      engine.startup();
+
+      return engine;
+   }
+
+   @AfterAll
+   public void afterAll_shutdownDb()
+   {
+      if (engine != null)
+      {
+         engine.getApi("northwind").getDb(dbType).shutdown();
+      }
    }
 
    /**

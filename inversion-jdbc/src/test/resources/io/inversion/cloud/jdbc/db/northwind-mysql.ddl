@@ -12,6 +12,11 @@
 # Add table "Categories"                                                 #
 # ---------------------------------------------------------------------- #
 
+-- SET @@GLOBAL.sql_mode= 'NO_ENGINE_SUBSTITUTION';
+-- ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+
+
+
 CREATE TABLE `Categories` (
     `CategoryID` INTEGER NOT NULL AUTO_INCREMENT,
     `CategoryName` VARCHAR(15) NOT NULL,

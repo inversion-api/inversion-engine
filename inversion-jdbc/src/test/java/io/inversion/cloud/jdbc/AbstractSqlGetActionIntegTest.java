@@ -26,9 +26,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
+import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
@@ -37,6 +40,34 @@ import io.inversion.cloud.service.Engine;
 
 public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActionIntegTest
 {
+   public AbstractSqlGetActionIntegTest(String dbType)
+   {
+      super(dbType);
+   }
+
+   @BeforeAll
+   public void initializeDb() throws Exception
+   {
+      if (engine != null)
+      {
+         engine.getApi("northwind").getDb(dbType).shutdown();
+      }
+
+      engine = new Engine().withApi(new Api("northwind") //
+                                                        .withEndpoint("*", dbType + "/*", new RestAction())//
+                                                        .withDb(JdbcDbFactory.buildDb(dbType, getClass().getSimpleName())));
+      engine.startup();
+   }
+
+   @AfterAll
+   public void finalizeDb() throws Exception
+   {
+      if (engine != null)
+      {
+         engine.getApi("northwind").getDb(dbType).shutdown();
+      }
+   }
+
    @Test
    public void testNonUrlSafeKeyValues() throws Exception
    {
@@ -136,7 +167,7 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
 
       Api api = engine().getApi("northwind");
 
-      for (Collection coll : (List<Collection>) api.getDb(db).getCollections())
+      for (Collection coll : (List<Collection>) api.getDb(dbType).getCollections())
       {
          c2.add(coll.getName().toLowerCase());
       }

@@ -16,29 +16,16 @@
  */
 package io.inversion.cloud.jdbc.sqlserver;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
 
-public class SqlServerSqlDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class SqlServerSqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
 {
-
-   @BeforeEach
-   public void beforeEach_reinitializeDb() throws Exception
+   public SqlServerSqlDeleteActionIntegTest()
    {
-      if (engine != null)
-      {
-         engine.getApi("northwind").getDb("sqlserver").shutdown();;
-      }
-
-      db = "sqlserver";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("*", "sqlserver/*", new RestAction())//
-                                                        .withDb(SqlServerUtils.bootstrapSqlServer(SqlServerSqlDeleteActionIntegTest.class.getSimpleName())));
-      engine.startup();
+      super("sqlserver");
    }
-
 }

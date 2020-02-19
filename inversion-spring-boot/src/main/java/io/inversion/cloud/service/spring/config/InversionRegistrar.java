@@ -31,8 +31,8 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         GenericBeanDefinition bean = new GenericBeanDefinition() ;
         bean.setBeanClass(Engine.class);
         bean.setAutowireMode(AUTOWIRE_CONSTRUCTOR);
-        bean.setLazyInit(false);
-        bean.setInitMethodName("startup");
+        //bean.setLazyInit(false);
+        //bean.setInitMethodName("startup");
         bean.setDestroyMethodName("destroy");
         registry.registerBeanDefinition("engine", bean);
     }

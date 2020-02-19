@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -42,6 +43,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.text.DefaultEditorKit.InsertBreakAction;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -289,44 +292,53 @@ public class JdbcUtils
 
          rows = new Rows();
 
-         ResultSetMetaData rsmd = rs.getMetaData();
-         int cols = rsmd.getColumnCount();
-         for (int i = 1; i <= cols; i++)
+         if (!sql.toLowerCase().trim().startsWith("set "))
          {
-            rows.addKey(rsmd.getColumnLabel(i));
-         }
 
-         while (rs.next())
-         {
-            rows.addRow();
-            for (int i = 0; i < cols; i++)
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int cols = rsmd.getColumnCount();
+            for (int i = 1; i <= cols; i++)
             {
-               Object o = null;
-               try
-               {
-                  o = rs.getObject(i + 1);
+               rows.addKey(rsmd.getColumnLabel(i));
+            }
 
-                  if (o instanceof Clob)
-                  {
-                     Reader reader = ((Clob) o).getCharacterStream();
-                     char[] arr = new char[8 * 1024];
-                     StringBuilder buffer = new StringBuilder();
-                     int numCharsRead;
-                     while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1)
-                     {
-                        buffer.append(arr, 0, numCharsRead);
-                     }
-                     reader.close();
-                     o = buffer.toString();
-                  }
-               }
-               catch (Exception e)
+            while (rs.next())
+            {
+               rows.addRow();
+               for (int i = 0; i < cols; i++)
                {
-                  System.out.println(sql);
-                  e.printStackTrace();
-                  notifyError("selectRows", sql, vals, e);
+                  Object o = null;
+                  try
+                  {
+                     o = rs.getObject(i + 1);
+
+                     if (o instanceof Clob)
+                     {
+                        Reader reader = ((Clob) o).getCharacterStream();
+                        char[] arr = new char[8 * 1024];
+                        StringBuilder buffer = new StringBuilder();
+                        int numCharsRead;
+                        while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1)
+                        {
+                           buffer.append(arr, 0, numCharsRead);
+                        }
+                        reader.close();
+                        o = buffer.toString();
+                     }
+                     else if (o != null && o.getClass().isArray() && Array.getLength(o) == 0)
+                     {
+                        o = null;
+                     }
+
+                  }
+                  catch (Exception e)
+                  {
+                     System.out.println(sql);
+                     e.printStackTrace();
+                     notifyError("selectRows", sql, vals, e);
+                  }
+                  rows.put(o);
                }
-               rows.put(o);
             }
          }
       }
@@ -702,6 +714,56 @@ public class JdbcUtils
       String sql = buildUpdateSQL(conn, tableName, colNames.toArray(), new String[]{keyCol});
 
       return (Integer) execute(conn, sql, colValues.toArray());
+   }
+
+   public static int[] updateRows(Connection conn, String tableName, List<String> keyCols, List<Map<String, Object>> rows) throws Exception
+   {
+      if (rows.size() == 0)
+         return new int[0];
+
+      int[] returnInts = null;
+
+      List<String> valCols = new ArrayList(rows.get(0).keySet());
+      valCols.removeAll(keyCols);
+
+      String sql = buildUpdateSQL(conn, tableName, valCols.toArray(), keyCols.toArray());
+
+      Exception ex = null;
+      PreparedStatement stmt = conn.prepareStatement(sql);
+      try
+      {
+         notifyBefore("update", sql, rows);
+
+         for (Map<String, Object> row : rows)
+         {
+            for (int i = 0; i < valCols.size(); i++)
+            {
+               Object value = row.get(valCols.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1, value);
+            }
+
+            for (int i = 0; i < keyCols.size(); i++)
+            {
+               Object value = row.get(keyCols.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1 + valCols.size(), value);
+            }
+
+            stmt.addBatch();
+         }
+         returnInts = stmt.executeBatch();
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("update", sql, rows, ex);
+         throw e;
+      }
+      finally
+      {
+         JdbcUtils.close(stmt);
+         notifyAfter("update", sql, rows, ex, returnInts);
+      }
+      return returnInts;
    }
 
    public static void update(Connection conn, Object o) throws Exception

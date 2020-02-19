@@ -16,7 +16,6 @@
  */
 package io.inversion.cloud.jdbc.postgres;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
@@ -28,30 +27,6 @@ public class PostgresRqlUnitTest extends AbstractSqlRqlTest
 {
    public PostgresRqlUnitTest() throws Exception
    {
-      db = PostgresUtils.bootstrapPostgres(PostgresRqlUnitTest.class.getSimpleName());
-   }
-
-   @AfterAll
-   public void afterAll_shutdownDb()
-   {
-      if (engine != null)
-      {
-         engine.getApi("northwind").getDb("postgres").shutdown();
-      }
-   }
-
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-
-      //-- add db specific customizations to the generated sql  
-      //-- below like the commented out example
-      //
-      //      suite//
-      //           .withResult("likeStartsWith", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipCountry\" ILIKE ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Franc%]")//
-      //           .withResult("testKey", "your sql")//
-      //           .withResult("testKey", "UNSUPPORTED")//
-      //      ;
+      super("postgres");
    }
 }

@@ -353,7 +353,21 @@ public class JdbcDb extends Db<JdbcDb>
     */
    public Connection getConnection() throws ApiException
    {
-      return getConnection(true);
+      Connection conn = getConnection(true);
+      try
+      {
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@GLOBAL.sql_mode"));
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
+
+         //JdbcUtils.selectRows(conn, "SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION';");
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
+
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+      return conn;
    }
 
    /**
@@ -455,6 +469,16 @@ public class JdbcDb extends Db<JdbcDb>
       config.setUsername(getUser());
       config.setPassword(getPass());
       config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
+
+      if (isType("mysql"))
+      {
+         //-- this is required to remove STRICT_TRANS_TABLES which prevents upserting
+         //-- existing rows without supplying the value of required columns
+         //-- hikari seemed to be overriding 'sessionVariables' set on the jdbc url
+         //-- so this was done to force the config
+//         config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
+      }
+
       DataSource pool = new HikariDataSource(config);
 
       return pool;

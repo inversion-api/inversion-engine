@@ -16,14 +16,18 @@
  */
 package io.inversion.cloud.jdbc.sqlserver;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
 import io.inversion.cloud.jdbc.AbstractSqlRqlTest;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class SqlServerRqlUnitTest extends AbstractSqlRqlTest
 {
    public SqlServerRqlUnitTest() throws Exception
    {
-      db = SqlServerUtils.bootstrapSqlServer(SqlServerRqlUnitTest.class.getName());
+      super("sqlserver");
    }
 
    /**

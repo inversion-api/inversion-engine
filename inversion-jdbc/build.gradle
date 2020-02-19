@@ -1,6 +1,8 @@
 dependencies {
     compile project(':inversion-api')
     compile group: 'com.h2database', name: 'h2', version: '1.4.200'
+    compile group: 'com.zaxxer', name: 'HikariCP', version: '3.4.2'
+    
     
     testCompile project(':inversion-api').sourceSets.test.output
     testCompile project(':inversion-spring-boot')

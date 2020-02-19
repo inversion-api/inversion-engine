@@ -16,20 +16,14 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class H2RqlIntegTest extends H2RqlUnitTest
 {
    public H2RqlIntegTest() throws Exception
    {
-      urlPrefix = "/northwind/h2/";
-
-      engine = new Engine();
-      engine.withApi(new Api("northwind")//
-                                         .withEndpoint("GET", "h2/*", new RestAction())//
-                                         .withDb(db)//
-      );
+      super();
    }
 }

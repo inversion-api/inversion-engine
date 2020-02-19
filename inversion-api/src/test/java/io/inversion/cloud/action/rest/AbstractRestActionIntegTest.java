@@ -22,8 +22,13 @@ import io.inversion.cloud.service.Engine;
 public abstract class AbstractRestActionIntegTest
 {
    protected Engine engine = null;
-   protected String db     = null;
+   protected String dbType     = null;
 
+   public AbstractRestActionIntegTest(String dbType)
+   {
+      this.dbType = dbType;
+   }
+   
    protected Engine engine() throws Exception
    {
       return engine;
@@ -31,8 +36,9 @@ public abstract class AbstractRestActionIntegTest
 
    protected String collectionPath()
    {
-      return "northwind/" + db + "/";
+      return "northwind/" + dbType + "/";
    }
+   
 
    /**
     * Returns the last response handled by the engine.

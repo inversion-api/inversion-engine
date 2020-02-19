@@ -28,10 +28,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.h2.H2Utils;
-import io.inversion.cloud.jdbc.mysql.MySqlUtils;
-import io.inversion.cloud.jdbc.postgres.PostgresUtils;
-import io.inversion.cloud.jdbc.sqlserver.SqlServerUtils;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 
 public class JdbcUtilsIntegTest
@@ -40,7 +36,7 @@ public class JdbcUtilsIntegTest
    @Test
    public void test_h2Upsert() throws Exception
    {
-      JdbcDb db = H2Utils.bootstrapH2(getClass().getSimpleName());
+      JdbcDb db = JdbcDbFactory.bootstrapH2(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "orders", "customers");
 
@@ -54,22 +50,22 @@ public class JdbcUtilsIntegTest
    @Test
    public void test_mysqlUpsert() throws Exception
    {
-      JdbcDb db = MySqlUtils.bootstrapMySql(getClass().getSimpleName());
+      JdbcDb db = JdbcDbFactory.bootstrapMySql(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "Orders", "Customers");
 
-      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM `Customers` WHERE \"CustomerID\" = 'ALFKI'"));
-      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM `Customers` WHERE \"CustomerID\" = 'ALFKI'"));
-      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM `Customers` WHERE \"CustomerID\" = 'ANATR'"));
-      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM `Customers` WHERE \"CustomerID\" = 'ANATR'"));
-      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM `Customers` WHERE \"CustomerID\" = 'ZZZZ5'"));
+      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT `ContactName` FROM `Customers` WHERE `CustomerID` = 'ALFKI'"));
+      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ALFKI'"));
+      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ANATR'"));
+      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT `ContactName` FROM `Customers` WHERE `CustomerID` = 'ANATR'"));
+      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ZZZZ5'"));
 
    }
 
    @Test
    public void test_postgresUpsert() throws Exception
    {
-      JdbcDb db = PostgresUtils.bootstrapPostgres(getClass().getSimpleName());
+      JdbcDb db = JdbcDbFactory.bootstrapPostgres(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "orders", "customers");
 
@@ -86,7 +82,7 @@ public class JdbcUtilsIntegTest
    @Test
    public void test_sqlserverlUpsert() throws Exception
    {
-      JdbcDb db = SqlServerUtils.bootstrapSqlServer(getClass().getSimpleName());
+      JdbcDb db = JdbcDbFactory.bootstrapSqlServer(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "orders", "customers");
 

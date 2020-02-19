@@ -16,30 +16,16 @@
  */
 package io.inversion.cloud.jdbc.mysql;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
 
-public class MySqlSqlDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class MySqlSqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
 {
-
-   @BeforeEach
-   public void beforeEach_reinitializeDb() throws Exception
+   public MySqlSqlDeleteActionIntegTest()
    {
-      if (engine != null)
-      {
-         engine.getApi("northwind").getDb("mysql").shutdown();
-      }
-
-      db = "mysql";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("*", "mysql/*", new RestAction())//
-                                                        .withDb(MySqlUtils.bootstrapMySql(MySqlSqlDeleteActionIntegTest.class.getSimpleName())));
-
-      engine.startup();
+      super("mysql");
    }
-
 }

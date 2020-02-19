@@ -16,29 +16,16 @@
  */
 package io.inversion.cloud.jdbc.postgres;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
 
-public class PostgresSqlDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class PostgresSqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
 {
-
-   @BeforeEach
-   public void beforeEach_reinitializeDb() throws Exception
+   public PostgresSqlDeleteActionIntegTest()
    {
-      if (engine != null)
-      {
-         engine.getApi("northwind").getDb("postgres").shutdown();
-      }
-
-      db = "postgres";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("*", "postgres/*", new RestAction())//
-                                                        .withDb(PostgresUtils.bootstrapPostgres(PostgresSqlDeleteActionIntegTest.class.getSimpleName())));
-      engine.startup();
+      super("postgres");
    }
-
 }

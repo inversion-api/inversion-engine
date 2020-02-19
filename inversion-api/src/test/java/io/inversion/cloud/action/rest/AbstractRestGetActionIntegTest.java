@@ -40,6 +40,12 @@ import io.inversion.cloud.utils.Utils;
 
 public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionIntegTest
 {
+
+   public AbstractRestGetActionIntegTest(String dbType)
+   {
+      super(dbType);
+   }
+
    @Test
    public void testLimit01() throws Exception
    {

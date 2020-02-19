@@ -16,24 +16,16 @@
  */
 package io.inversion.cloud.jdbc.postgres;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.AbstractSqlGetActionIntegTest;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class PostgresSqlGetActionIntegTest extends AbstractSqlGetActionIntegTest
 {
-   @BeforeAll
-   public void beforeAll_initializeDb() throws Exception
+   public PostgresSqlGetActionIntegTest()
    {
-      db = "postgres";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("GET", "postgres/*", new RestAction())//
-                                                        .withDb(PostgresUtils.bootstrapPostgres(PostgresSqlGetActionIntegTest.class.getSimpleName())));
-
-      engine.startup();
+      super("postgres");
    }
-
 }

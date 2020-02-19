@@ -16,30 +16,17 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.AbstractSqlGetActionIntegTest;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class H2SqlGetActionIntegTest extends AbstractSqlGetActionIntegTest
 {
-   //   public static void main(String[] args)throws Exception
-   //   {
-   //      beforeClass();
-   //      InversionApp.run(engine);
-   //   }
-
-   @BeforeAll
-   public void beforeAll_initializeDb() throws Exception
+   public H2SqlGetActionIntegTest()
    {
-      db = "h2";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("GET", "h2/*", new RestAction())//
-                                                        .withDb(H2Utils.bootstrapH2(H2SqlGetActionIntegTest.class.getSimpleName())));
-
-      engine.startup();
+      super("h2");
    }
 
 }

@@ -16,30 +16,17 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
 import io.inversion.cloud.jdbc.AbstractSqlRqlTest;
-import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class H2RqlUnitTest extends AbstractSqlRqlTest
 {
-
    public H2RqlUnitTest() throws Exception
    {
-      db = H2Utils.bootstrapH2(getClass().getSimpleName());
-   }
-
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-
-      //-- add db specific customizations to the generated sql  
-      //-- below like the commented out example
-      //
-      //      suite//
-      //           .withResult("likeStartsWith", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipCountry\" ILIKE ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Franc%]")//
-      //           .withResult("testKey", "your sql")//
-      //           .withResult("testKey", "UNSUPPORTED")//
-      //      ;
+      super("h2");
    }
 }

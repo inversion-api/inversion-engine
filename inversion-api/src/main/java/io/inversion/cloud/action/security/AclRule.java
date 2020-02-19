@@ -36,8 +36,8 @@ public class AclRule extends Rule<AclRule>
    protected List<String> restricts               = new ArrayList();
    protected List<String> requires                = new ArrayList();
 
-   protected boolean      allRolesMustMatch       = true;
-   protected boolean      allPermissionsMustMatch = true;
+   protected boolean      allRolesMustMatch       = false;
+   protected boolean      allPermissionsMustMatch = false;
 
    public static AclRule allowAll(String methods, String includePaths)
    {
@@ -136,39 +136,36 @@ public class AclRule extends Rule<AclRule>
          }
       }
 
-      boolean hasRoles = roles.size() == 0 //
-            || (allRolesMustMatch && matches == roles.size())//
-            || (!allRolesMustMatch && matches > 0);
-
-      if (hasRoles)//no need to check perms if does not have roles
+      for (String requiredPerm : permissions)
       {
-         for (String requiredPerm : permissions)
-         {
-            boolean matched = Chain.getUser().hasPermissions(requiredPerm);
+         boolean matched = Chain.getUser().hasPermissions(requiredPerm);
 
-            if (matched)
+         if (matched)
+         {
+            matches += 1;
+            if (!allPermissionsMustMatch)
             {
-               matches += 1;
-               if (!allPermissionsMustMatch)
-               {
-                  break;
-               }
+               break;
             }
-            else
+         }
+         else
+         {
+            if (allPermissionsMustMatch)
             {
-               if (allPermissionsMustMatch)
-               {
-                  break;
-               }
+               break;
             }
          }
       }
+
+      boolean hasRoles = roles.size() == 0 //
+            || (allRolesMustMatch && matches == roles.size())//
+            || (!allRolesMustMatch && matches > 0);
 
       boolean hasPermissions = permissions.size() == 0 //
             || (allPermissionsMustMatch && matches == permissions.size())//
             || (!allPermissionsMustMatch && matches > 0);
 
-      return hasRoles && hasPermissions;
+      return hasRoles || hasPermissions;
    }
 
    public ArrayList<String> getRoles()

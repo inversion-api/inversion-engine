@@ -16,33 +16,17 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest
+public class H2SqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
 {
-
-   @BeforeAll
-   public void beforeEach_reinitializeDb() throws Exception
+   public H2SqlDeleteActionIntegTest()
    {
-      if (engine != null)
-      {
-         engine.getApi("northwind").getDb("h2").shutdown();
-      }
-
-      db = "h2";
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("*", "h2/*", new RestAction())//
-                                                        .withDb(H2Utils.bootstrapH2(H2SqlDeleteActionIntegTest.class.getSimpleName())));
-
-      engine.startup();
+      super("h2");
    }
 
 }

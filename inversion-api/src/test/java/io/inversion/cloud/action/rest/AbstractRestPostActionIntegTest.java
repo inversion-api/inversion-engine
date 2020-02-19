@@ -30,6 +30,11 @@ import io.inversion.cloud.utils.Utils;
 public abstract class AbstractRestPostActionIntegTest extends AbstractRestActionIntegTest
 {
 
+   public AbstractRestPostActionIntegTest(String dbType)
+   {
+      super(dbType);
+   }
+
    @Test
    public void testAddOneRecord() throws Exception
    {

@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.rql;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.Db;
@@ -26,7 +27,31 @@ public abstract class AbstractRqlTest
    protected String queryClass = null;
    protected String urlPrefix  = null;
    protected Engine engine     = null;
+   protected String dbType     = null;
    protected Db     db         = null;
+
+   public AbstractRqlTest(String queryClass, String dbType)
+   {
+      this.queryClass = queryClass;
+      this.dbType = dbType;
+   }
+
+   @BeforeAll
+   public void buildDbAndEngine()throws Exception
+   {
+      if (getClass().getName().indexOf("IntegTest") >= 0)
+      {
+         engine = buildIntegTestEngine();
+      }
+      else
+      {
+         db = buildUnitTestDb();
+      }
+   }
+
+   public abstract Db buildUnitTestDb();
+
+   public abstract Engine buildIntegTestEngine() throws Exception;
 
    @Test
    public void test_doSelect_unitTests() throws Exception

@@ -29,6 +29,11 @@ import io.inversion.cloud.service.Engine;
 public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActionIntegTest
 {
 
+   public AbstractRestDeleteActionIntegTest(String dbType)
+   {
+      super(dbType);
+   }
+
    @Test
    public void testSingleDelete() throws Exception
    {
