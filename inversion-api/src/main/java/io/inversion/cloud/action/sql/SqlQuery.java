@@ -703,7 +703,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Table, Select<Sel
             return val;
       }
 
-      withColValue(col, val);
+      Object colVal = val;
+      if (table != null && table.getColumn(col) != null)
+         colVal = table.getDb().cast(table.getColumn(col), val);
+
+      withColValue(col, colVal);
       return asVariableName(values.size() - 1);
    }
 

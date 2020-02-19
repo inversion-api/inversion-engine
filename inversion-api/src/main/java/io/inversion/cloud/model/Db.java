@@ -542,7 +542,7 @@ public abstract class Db<T extends Db>
 
             case "bool":
             case "boolean":
-               return Boolean.parseBoolean(value.toString());
+               return Boolean.parseBoolean(value.toString()) || "1".equals(value);
 
             case "array":
 
