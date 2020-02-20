@@ -49,12 +49,12 @@ public class RqlValidationSuite
    //   
    //   withFunctions("order", "sort");
 
-   Map<String, String> tests      = new LinkedHashMap();
-   Map<String, String> results    = new HashMap();
+   Map<String, String>     tests      = new LinkedHashMap();
+   Map<String, String>     results    = new HashMap();
 
-   Map<String, Collection>  tables     = new HashMap();
-   Db                  db         = null;
-   String              queryClass = null;
+   Map<String, Collection> tables     = new HashMap();
+   Db                      db         = null;
+   String                  queryClass = null;
 
    public RqlValidationSuite(String queryClass, Db db, Collection... tables)
    {
@@ -63,21 +63,21 @@ public class RqlValidationSuite
       withTables(tables);
 
       withTables(new Collection("orders")//s
-                                    .withProperty("orderId", "VARCHAR")//
-                                    .withProperty("customerId", "INTEGER")//
-                                    .withProperty("employeeId", "DATETIME")//
-                                    .withProperty("orderDate", "DATETIME")//
-                                    .withProperty("requiredDate", "DATETIME")//
-                                    .withProperty("shippedDate", "DATETIME")//
-                                    .withProperty("shipVia", "INTEGER")//
-                                    .withProperty("freight", "DECIMAL")//
-                                    .withProperty("shipName", "VARCHAR")//
-                                    .withProperty("shipAddress", "VARCHAR")//
-                                    .withProperty("shipCity", "VARCHAR")//
-                                    .withProperty("shipRegion", "VARCHAR")//
-                                    .withProperty("shipPostalCode", "VARCHAR")//
-                                    .withProperty("shipCountry", "VARCHAR")//
-                                    .withIndex("PK_Orders", "primary", true, "orderId"));
+                                         .withProperty("orderId", "VARCHAR")//
+                                         .withProperty("customerId", "INTEGER")//
+                                         .withProperty("employeeId", "DATETIME")//
+                                         .withProperty("orderDate", "DATETIME")//
+                                         .withProperty("requiredDate", "DATETIME")//
+                                         .withProperty("shippedDate", "DATETIME")//
+                                         .withProperty("shipVia", "INTEGER")//
+                                         .withProperty("freight", "DECIMAL")//
+                                         .withProperty("shipName", "VARCHAR")//
+                                         .withProperty("shipAddress", "VARCHAR")//
+                                         .withProperty("shipCity", "VARCHAR")//
+                                         .withProperty("shipRegion", "VARCHAR")//
+                                         .withProperty("shipPostalCode", "VARCHAR")//
+                                         .withProperty("shipCountry", "VARCHAR")//
+                                         .withIndex("PK_Orders", "primary", true, "orderId"));
 
       withTest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
       withTest("ne", "orders?ne(shipCountry,France)");

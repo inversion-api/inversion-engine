@@ -16,18 +16,25 @@
  */
 package io.inversion.cloud.rql;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import io.inversion.cloud.model.AbstractEngineTest;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.service.Engine;
-import junit.framework.TestCase;
 
-public abstract class AbstractRqlTest extends TestCase
+public abstract class AbstractRqlTest implements AbstractEngineTest
 {
    protected String queryClass = null;
    protected String urlPrefix  = null;
    protected Engine engine     = null;
+   protected String type       = null;
    protected Db     db         = null;
+
+   public AbstractRqlTest(String queryClass, String dbType)
+   {
+      this.queryClass = queryClass;
+      this.type = dbType;
+   }
 
    @Test
    public void test_doSelect_unitTests() throws Exception
@@ -117,6 +124,36 @@ public abstract class AbstractRqlTest extends TestCase
    protected void customizeIntegTestSuite(RqlValidationSuite suite)
    {
 
+   }
+
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   public void setEngine(Engine engine)
+   {
+      this.engine = engine;
+   }
+
+   public String getType()
+   {
+      return type;
+   }
+
+   public void setType(String type)
+   {
+      this.type = type;
+   }
+
+   public Db getDb()
+   {
+      return db;
+   }
+
+   public void setDb(Db db)
+   {
+      this.db = db;
    }
 
 }

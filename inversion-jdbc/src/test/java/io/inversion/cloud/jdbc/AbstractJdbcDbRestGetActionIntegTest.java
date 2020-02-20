@@ -14,69 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.action;
+package io.inversion.cloud.jdbc;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.apache.commons.collections4.CollectionUtils;
+import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.rest.TestRestGetActions;
-import io.inversion.cloud.jdbc.JdbcDbApiFactory;
+import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 
-@RunWith(Parameterized.class)
-public class TestSqlGetAction extends TestRestGetActions
+public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestGetActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   @Parameterized.Parameters
-   public static java.util.Collection input()
+   public AbstractJdbcDbRestGetActionIntegTest(String type)
    {
-      return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
-   }
-
-   String db = null;
-
-   public TestSqlGetAction(String db)
-   {
-      this.db = db;
-   }
-
-   protected String collectionPath()
-   {
-      return "northwind/" + db + "/";
-   }
-
-   static Engine engine = null;
-
-   protected Engine service() throws Exception
-   {
-      if (engine == null)
-      {
-         engine = JdbcDbApiFactory.service(true, true);
-      }
-      return engine;
-   }
-
-   @BeforeClass
-   public static void beforeClass() throws Exception
-   {
-      JdbcDbApiFactory.resetAll();
+      super(type);
    }
 
    @Test
    public void testNonUrlSafeKeyValues() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       res = engine.get(url("urls"));
       res.dump();
@@ -98,7 +68,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testRelatedCollectionJoinSelect() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       res = engine.get(url("customers?orders.shipCity=NONE&customerid=VINET"));
       assertEquals(res.getFoundRows(), 0);
@@ -110,25 +80,25 @@ public class TestSqlGetAction extends TestRestGetActions
       assertEquals(res.findArray("data.0.orders").length(), 1);
 
       res = engine.get(url("customers?customerid=VINET&in(orders.freight,32.3800,11.0800)&expands=orders"));
-      assertEquals(res.getFoundRows(), 1);
+      assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/customers/VINET"));
-      assertEquals(res.findArray("data.0.orders").length(), 2);
+      assertEquals(1, res.findArray("data.0.orders").length());
 
-      res = engine.get(url("orders?in(freight,32.3800,11.0800)&customer.customerid=VINET&expands=customer"));
-      assertEquals(res.getFoundRows(), 2);
+      res = engine.get(url("orders?in(freight,32.3800)&customer.customerid=VINET&expands=customer"));
+      assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.customer.href").endsWith("/customers/VINET"));
-      assertTrue(res.findString("data.1.customer.href").endsWith("/customers/VINET"));
 
       //composite key many-to-many
       res = engine.get(url("employees?orderdetails.orderid=10258&expands=orderdetails"));
       res.dump();
-      assertEquals(res.getFoundRows(), 1);
+      assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/employees/1"));
-      assertEquals(res.findArray("data.0.orderdetails").length(), 3);
+      assertEquals(res.findArray("data.0.orderdetails").length(), 5);
       assertEquals(res.findString("data.0.orderdetails.0.orderid"), "10258");
 
       //joining back to yourself...have to alias table as join still
       res = engine.get(url("employees?reportsto.employeeid=2"));
+      res.dump();
       assertEquals(res.getFoundRows(), 5);
       assertTrue(res.findString("data.0.reportsto").endsWith("/employees/2"));
 
@@ -139,23 +109,23 @@ public class TestSqlGetAction extends TestRestGetActions
 
       //three way join on the employee table
       res = engine.get(url("employees?employees.employeeid=6&reportsto.employeeid=2"));
-      assertEquals(res.getFoundRows(), 1);
+      assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/employees/5"));
 
       //works
       res = engine.get(url("employees?employees.lastname=Davolio&expands=employees"));
       res.dump();
-      assertEquals(res.getFoundRows(), 1);
+      assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/employees/2"));
-      assertEquals(res.findArray("data.0.employees").length(), 1);
+      assertEquals(res.findArray("data.0.employees").length(), 5);
       assertEquals(res.find("data.0.employees.0.lastname"), "Davolio");
 
       res = engine.get(url("employees?orderdetails.orderid=10258&expands=orderdetails"));
-      assertEquals(res.getFoundRows(), 1);
+      assertEquals(1, res.getFoundRows());
 
       //none of the orderdetails from above have a quantity of 90
       res = engine.get(url("employees?orderdetails.orderid=10258&orderdetails.quantity=90"));
-      assertEquals(res.getFoundRows(), 0);
+      assertEquals(0, res.getFoundRows());
    }
 
    /**
@@ -166,21 +136,19 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testCollections() throws Exception
    {
-      List c1 = new ArrayList(Arrays.asList("categories", "CUSTOMERCUSTOMERDEMO", "customerdemographics", "customers", "EMPLOYEEORDERDETAILS", "employees", "EMPLOYEETERRITORIES", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
-
+      List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemo", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
       List<String> c2 = new ArrayList();
 
-      Api api = service().getApi("northwind");
+      Api api = engine().getApi("northwind");
 
-      for (Collection coll : (List<Collection>) api.getDb(db).getCollections())
+      for (Collection coll : (List<Collection>) api.getDb(getType()).getCollections())
       {
-         c2.add(coll.getName());
+         c2.add(coll.getName().toLowerCase());
       }
 
-      Collections.sort(c1);
-      Collections.sort(c2);
+      java.util.Collection disjunction = CollectionUtils.disjunction(c1, c2);
 
-      assertEquals(c1.toString().toLowerCase(), c2.toString().toLowerCase());
+      assertEquals(0, disjunction.size());
 
    }
 
@@ -188,7 +156,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testExcludes() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
       res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
@@ -205,7 +173,7 @@ public class TestSqlGetAction extends TestRestGetActions
    public void testRelationships1() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       res = engine.get(url("orders?limit=5&sort=orderid"));
@@ -224,32 +192,33 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testExpandsOneToMany11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=customer,employee,employee.reportsto"));
-      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/HILAA"));
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+      res = engine.get(url("orders/10248?expands=customer,employee,employee.reportsto"));
+      assertTrue(res.findString("data.0.customer.href").endsWith("/customers/VINET"));
+      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
    }
 
    @Test
    public void testExpandsOneToMany12() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=employee.reportsto.employees"));
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
-      assertTrue(res.findString("data.0.employee.reportsto.employees.0.href").endsWith("/employees/6"));
-      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"" + url("employees/6") + "\"") > 0);
+      res = engine.get(url("orders/10248?expands=employee.reportsto.employees"));
+      res.dump();
+      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
+      assertTrue(res.findString("data.0.employee.reportsto.employees.0.href").endsWith("/employees/1"));
+      assertTrue(res.getJson().toString().indexOf("\"@link\" : \"" + url("employees/5") + "\"") > 0);
    }
 
    @Test
-   public void testExpandsManyToOne11() throws Exception
+   public void testExpandsManyToOne() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("employees/5?expands=employees"));
@@ -259,9 +228,9 @@ public class TestSqlGetAction extends TestRestGetActions
    }
 
    @Test
-   public void testExpandsManyToMany11() throws Exception
+   public void testExpandsManyToMany() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("employees/6?expands=territories"));
@@ -270,81 +239,88 @@ public class TestSqlGetAction extends TestRestGetActions
    }
 
    @Test
-   public void testIncludes11() throws Exception
+   public void testIncludes() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?includes=shipname"));
+      res = engine.get(url("orders/10248?includes=shipname"));
       res.dump();
       res.assertOk();
-      assertEquals("HILARION-Abastos", res.findString("data.0.shipname"));
-      assertEquals(1, res.findNode("data.0").size());
+      assertEquals("Vins et alcools Chevalier", res.findString("data.0.shipname"));
+      //we only included 'shipname' but 'href' is always included unless it is 
+      //specifically excluded
+      assertEquals(2, res.findNode("data.0").size());
    }
 
    @Test
    public void testExcludes11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
+      res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
       assertNull(res.findString("data.0.customer"));
-      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/6"));
+      assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
       assertNull(res.findString("data.0.employee.firstname"));
-      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/5"));
+      assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
       assertNull(res.findString("data.0.employee.reportsto.territories"));
    }
 
    @Test
    public void testIncludes12() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orders/10395?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
-
+      res = engine.get(url("orders/10248?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
       res.dump();
 
-      String toMatch = JSNode.parseJson("[ {\"employee\" : {\"reportsto\" : {\"territories\" : \"" + url("employees/5/territories") + "\"}}} ]").toString();
+      String collectionPath = collectionPath();
+
+      String toMatch = JSNode.parseJson("[{\"href\":\"http://localhost/COLLECTION_PATHorders/10248\",\"employee\":{\"href\":\"http://localhost/COLLECTION_PATHemployees/5\",\"reportsto\":{\"href\":\"http://localhost/COLLECTION_PATHemployees/2\",\"territories\":\"http://localhost/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
+      toMatch = toMatch.replace("COLLECTION_PATH", collectionPath);
+
       assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
    }
 
    @Test
    public void testTwoPartEntityKey11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orderdetails/10395~46"));
+      res = engine.get(url("orderdetails/10248~11"));
       res.dump();
-      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
-      assertTrue(res.findString("data.0.product").endsWith("/products/46"));
-      assertTrue(res.findString("data.0.order").endsWith("/orders/10395"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
+      assertTrue(res.findString("data.0.product").endsWith("/products/11"));
+      assertTrue(res.findString("data.0.order").endsWith("/orders/10248"));
 
-      res = engine.get(url("orders/10395/orderdetails"));
+      res = engine.get(url("orders/10248/orderdetails"));
       assertTrue(res.find("meta.foundRows") != null);
-      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10395~46"));
-      assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10395~53"));
-      assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10395~69"));
+      assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
+      assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10248~42"));
+      assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10248~72"));
 
    }
 
    @Test
    public void testTwoPartForeignKey11() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
 
-      res = engine.get(url("orderdetails/10395~46")).assertOk();
+      res = engine.get(url("orderdetails/10248~11")).assertOk();
       assertEquals(1, res.getFoundRows());
 
-      res = engine.get(url("orders/10395?expands=orderdetails"));
+      res = engine.get(url("orders/10248?expands=orderdetails"));
       res.assertOk();
-      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10395~46"));
+      assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10248~11"));
+      assertTrue(res.findString("data.0.orderdetails.1.href").toLowerCase().endsWith("orderdetails/10248~42"));
+      assertTrue(res.findString("data.0.orderdetails.2.href").toLowerCase().endsWith("orderdetails/10248~72"));
 
-      res = engine.get(url("orderdetails/10395~46?expands=order")).assertOk();
-      assertTrue(res.findString("data.0.order.href").endsWith("/orders/10395"));
+      res = engine.get(url("orderdetails/10248~11?expands=order")).assertOk();
+      assertTrue(res.findString("data.0.order.href").endsWith("/orders/10248"));
    }
 
    //   @Test
@@ -368,10 +344,10 @@ public class TestSqlGetAction extends TestRestGetActions
    @Test
    public void testWildcardAndUnderscores() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
       Response res = null;
       res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();
-
+      res.dump();
       assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
 
       String debug = res.getDebug().toLowerCase();

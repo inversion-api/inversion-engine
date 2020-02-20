@@ -1,15 +1,30 @@
 package io.inversion.cloud.action.cosmosdb;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.rql.AbstractRqlTest;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlUnitTest extends AbstractRqlTest
 {
 
    public CosmosRqlUnitTest()
    {
-      queryClass = CosmosSqlQuery.class.getName();
-      db = new CosmosDocumentDb();
+      super(CosmosSqlQuery.class.getName(), "cosmos");
+   }
+
+   @Override
+   public void initializeDb()
+   {
+      Db db = getDb();
+      if (db == null)
+      {
+         db = new CosmosDocumentDb("cosmos");
+         setDb(db);
+      }
    }
 
    /**
@@ -44,7 +59,7 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
            .withResult("or", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("not", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE NOT ((orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("as", "SqlQuerySpec={\"query\":\"SELECT *, orders[\\\"orderid\\\"] AS \\\"order_identifier\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-           .withResult("includes", "SqlQuerySpec={\"query\":\"SELECT orders[\\\"shipCountry\\\"], orders[\\\"shipCity\\\"] FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("includes", "SqlQuerySpec={\"query\":\"SELECT orders[\\\"shipCountry\\\"], orders[\\\"shipCity\\\"], orders[\\\"orderId\\\"] FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("distinct", "SqlQuerySpec={\"query\":\"SELECT DISTINCT orders[\\\"shipCountry\\\"] FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("count1", "SqlQuerySpec={\"query\":\"SELECT COUNT(*) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("count2", "SqlQuerySpec={\"query\":\"SELECT COUNT(@null1) FROM orders ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@null1\",\"value\":\"1\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
@@ -65,5 +80,5 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
            .withResult("order", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"shipCountry\\\"] ASC, orders[\\\"shipCity\\\"] DESC\"} FeedOptions={enableCrossPartitionQuery=true}")//
       ;
    }
-   
+
 }

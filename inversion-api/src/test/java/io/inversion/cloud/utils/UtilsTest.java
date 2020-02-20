@@ -16,11 +16,11 @@
  */
 package io.inversion.cloud.utils;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class UtilsTest extends TestCase
+public class UtilsTest
 {
    @Test
    public void testToDollarAmount1()

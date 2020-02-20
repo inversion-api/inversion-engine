@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,17 @@
  */
 package io.inversion.cloud.rql;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.rql.Tokenizer;
 import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
 
-public class TestTokenizer extends TestCase
+public class TestTokenizer
 {
    public static void add(List tests, Object... vals)
    {
@@ -85,7 +85,7 @@ public class TestTokenizer extends TestCase
          {
             tokens = new Tokenizer(toParse).asList();
 
-            assertTrue("Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens, tokens.size() == test.size() - 1);
+            assertTrue(tokens.size() == test.size() - 1, "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
 
             for (int j = 0; j < tokens.size(); j++)
             {
@@ -125,7 +125,7 @@ public class TestTokenizer extends TestCase
          {
             failed = true;
          }
-         assertTrue("String should have thrown a parsing error: " + (i + 1) + " '" + test + "'", failed);
+         assertTrue(failed, "String should have thrown a parsing error: " + (i + 1) + " '" + test + "'");
       }
 
    }

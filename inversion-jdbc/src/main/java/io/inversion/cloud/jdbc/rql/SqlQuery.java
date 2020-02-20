@@ -18,22 +18,21 @@ package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.omg.CosNaming.IstringHelper;
-
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Order.Sort;
@@ -121,25 +120,46 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          //-- prepared statement variables are computing during the 
          //-- generation of the prepared statement above
 
-         Rows rows = JdbcUtils.selectRows(conn, sql, values);
-         int foundRows = -1;
-
-         if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
+         try
          {
-            if (rows.size() == 0)
+            Rows rows = JdbcUtils.selectRows(conn, sql, values);
+            int foundRows = rows.size();
+
+            int limit = getPage().getLimit();
+            int page = getPage().getOffset();
+
+            //-- don't query for total row count if the DB returned fewer that 
+            //-- the max number of rows on the first page...foundRows must be
+            //-- number of rows we just found
+            boolean needsPaging = page > 1 || foundRows == limit;
+            if (needsPaging)
             {
-               foundRows = 0;
-            }
-            else
-            {
-               foundRows = queryFoundRows(conn, sql, values);
+               if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET"))
+               {
+                  if (rows.size() == 0)
+                  {
+                     foundRows = 0;
+                  }
+                  else
+                  {
+
+                     foundRows = queryFoundRows(conn, sql, values);
+                  }
+
+                  Chain.peek().put("foundRows", foundRows);
+               }
             }
 
-            Chain.peek().put("foundRows", foundRows);
+            results.withFoundRows(foundRows);
+            results.withRows(rows);
          }
+         catch (Exception ex)
+         {
+            System.out.println(sql);
+            ex.printStackTrace();
 
-         results.withFoundRows(foundRows);
-         results.withRows(rows);
+            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage());
+         }
       }
 
       return results;
@@ -164,11 +184,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       printTermsSelect(parts, preparedStmt);
       printJoins(parts, joins);
       printWhereClause(parts, getWhere().getFilters(), preparedStmt);
-      printGroupClause(parts, find("group"));
+      printGroupClause(parts, getGroup().getGroupBy());
       printOrderClause(parts, getOrder().getSorts());
       printLimitClause(parts, getPage().getOffset(), getPage().getLimit());
 
-      return printSql(parts);
+      String sql = printSql(parts);
+      return sql;
    }
 
    protected String printSql(Parts parts)
@@ -193,7 +214,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             buff += " \r\n" + parts.limit;
       }
 
-      return buff.toString();
+      String sql = buff.toString();
+      return sql;
    }
 
    protected String printInitialSelect(Parts parts, String initialSelect)
@@ -268,7 +290,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
       if (cols.length() > 0)
       {
-         boolean restrictCols = find("includes", "sum", "min", "max", "count", "function", "aggregate") != null;
+         boolean aggregate = find("sum", "min", "max", "count", "function", "aggregate", "distinct") != null;
+         //boolean restrictCols = find("includes", "sum", "min", "max", "count", "function", "aggregate") != null;
+         boolean restrictCols = find("includes") != null || aggregate;
+
          if (db == null || db.isType("mysql"))
          {
             //-- this a special case for legacy mysql that does not require grouping each column when aggregating 
@@ -278,6 +303,30 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          int star = parts.select.lastIndexOf("* ");
          if (restrictCols && star > 0)
          {
+            //force the inclusion of pk cols even if there
+            //were not requested by the caller.  Actions such
+            //as RestGetHandler need the pk values to do 
+            //anything interesting with the results and they
+            //are responsible for filtering out the values
+            //
+            //TODO: maybe this should be put into Select.columns()
+            //so all query subclasses will inherit the behavior???
+            if (!aggregate)
+            {
+               if (getCollection() != null)
+               {
+                  Index primaryIndex = getCollection().getPrimaryIndex();
+                  if (primaryIndex != null)
+                  {
+                     for (String colName : primaryIndex.getColumnNames())
+                     {
+                        if (cols.indexOf(printCol(colName)) < 0)
+                           cols.append(", ").append(printCol(colName));
+                     }
+                  }
+               }
+            }
+
             //inserts the select list before the *
             int idx = parts.select.substring(0, star).indexOf(" ");
             String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
@@ -358,18 +407,19 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       return parts.where;
    }
 
-   protected String printGroupClause(Parts parts, Term groupBy)
+   protected String printGroupClause(Parts parts, List<String> groupBy)
    {
-      if (groupBy != null)
+      if (groupBy.size() > 0)
       {
          if (parts.group == null)
             parts.group = "GROUP BY ";
 
-         for (Term group : groupBy.getTerms())
+         //for (Term group : groupBy.getTerms())
+         for (String column : groupBy)
          {
             if (!parts.group.endsWith("GROUP BY "))
                parts.group += ", ";
-            parts.group += printCol(group.getToken());
+            parts.group += printCol(column);
          }
       }
 
@@ -413,29 +463,68 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
    {
       List<Sort> sorts = new ArrayList();
 
+      boolean wildcard = parts.select.indexOf("* ") >= 0 //
+            || parts.select.indexOf("*,") >= 0;//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
+
       if (collection != null && collection.getPrimaryIndex() != null)
       {
-         for (int k = 0; k < collection.getPrimaryIndex().size(); k++)
+         for (String pkCol : collection.getPrimaryIndex().getColumnNames())
          {
-            Property col = collection.getPrimaryIndex().getColumn(k);
-            if ((parts.select.indexOf("* ") >= 0 || parts.select.indexOf("*,") >= 0)//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)" 
-                  || parts.select.contains(col.getColumnName()))
+            if (wildcard || parts.select.contains(quoteCol(pkCol)))
             {
-               Sort sort = new Sort(col.getColumnName(), true);
+               Sort sort = new Sort(pkCol, true);
                sorts.add(sort);
-            }
-            else
-            {
-               sorts.clear();
-               break;
             }
          }
       }
+
+      //-- in this case the primaryIndex cols are not included in the select
+      //-- meaning this must be some time of aggregate...so we will do a
+      //-- full sort on all selected columns
+
+      //-- TODO: make test case for this
+      if (sorts.size() == 0)
+      {
+         boolean hasCol = false;
+         for (Term term : select.columns())
+         {
+            if (term.isLeaf() || term.hasToken("as") && term.getTerm(0).isLeaf())
+            {
+               hasCol = true;
+               break;
+            }
+         }
+
+         if (!hasCol)
+            return sorts;
+
+         Collection coll = getCollection();
+         if (coll != null)
+         {
+            for (Property prop : coll.getProperties())
+            {
+               if (parts.select.contains(quoteCol(prop.getColumnName())))
+                  sorts.add(new Sort(prop.getColumnName(), true));
+            }
+         }
+         else
+         {
+            for (String col : getSelect().getColumnNames())
+            {
+               sorts.add(new Sort(col, true));
+            }
+         }
+      }
+
       return sorts;
+
    }
 
    protected String printLimitClause(Parts parts, int offset, int limit)
    {
+      if (Utils.empty(parts.order))
+         return "";
+
       String s = null;
       if (limit >= 0 || offset >= 0)
       {
@@ -452,6 +541,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
                s += limit;
             }
+         }
+         else if (getDb().isType("sqlserver"))
+         {
+            //https://docs.microsoft.com/en-us/sql/t-sql/queries/select-order-by-clause-transact-sql?view=sql-server-2017#Offset
+            //OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY  
+
+            s = "";
+            if (offset >= 0)
+               s += " OFFSET " + offset + " ROWS ";
+
+            if (limit >= 0)
+               s += " FETCH NEXT " + limit + " ROWS ONLY ";
          }
          else
          {
@@ -597,7 +698,22 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
                if (wildcard)
                {
-                  sql.append(string0).append(" LIKE ").append(stringI);
+                  //this postgres engine uses "ilike" instead of "like" for case insensitive matching
+                  if (getDb().isType("h2", "postgres", "redshift"))
+                     sql.append(string0).append(" ILIKE ").append(stringI);
+                  else
+                  {
+                     sql.append(string0).append(" LIKE ").append(stringI);
+
+                     //-- the escape character in sqlserver must be intentionally 
+                     //-- identified in the sql
+                     //-- @see https://docs.microsoft.com/en-us/sql/connect/jdbc/using-sql-escape-sequences?view=sql-server-ver15
+                     if (getDb().isType("sqlserver") //
+                           && dynamicSqlChildText.get(i).indexOf('\\') >= 0)
+                     {
+                        sql.append(" {escape '\\'}");;
+                     }
+                  }
                }
                else
                {
@@ -701,7 +817,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          //String s = "COUNT (1)";
          //sql.append(s);
 
+         String pt = printTable() + ".*";
          String acol = preparedStmtChildText.get(0);
+         if (pt.equals(acol))//reset count(table.*) to count(*)
+            acol = "*";
+
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
 
@@ -801,7 +921,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
    public String printTable()
    {
-      return quoteCol(collection.getTableName());
+      if (collection != null)
+         return quoteCol(collection.getTableName());
+      return "";
    }
 
    public String printCol(String columnName)
@@ -826,7 +948,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
    {
       String token = term.token;
       Term parent = term.getParent();
-      if (parent != null)
+      if (parent != null && parent.hasToken("eq", "ne", "w", "sw", "ew", "like", "wo"))
       {
          if (parent.hasToken("w") || parent.hasToken("wo"))
          {
@@ -845,18 +967,13 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             token = "*" + token;
          }
 
-         if (parent.hasToken("eq", "ne", "w", "sw", "ew", "like", "wo"))
-         {
-            token = token.replace('*', '%');
-         }
-
-         boolean wildcard = token.indexOf('%') >= 0;
+         boolean wildcard = token.indexOf('*') >= 0;
          if (wildcard)
          {
-            // escape underscores because SQL pattern matching enables you to use "_" to match any single character and we don't want that behavior
+            token = token.replace("%", "\\%");
             token = token.replace("_", "\\_");
+            token = token.replace('*', '%');
          }
-
       }
 
       return stringQuote + token.toString() + stringQuote;

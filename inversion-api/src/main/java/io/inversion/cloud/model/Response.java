@@ -54,7 +54,7 @@ public class Response
    protected String                                 fileName          = null;
    protected File                                   file              = null;
 
-   protected Exception                              error             = null;
+   protected Throwable                              error             = null;
 
    protected String                                 contentRangeUnit  = null;
    protected long                                   contentRangeStart = -1;
@@ -209,9 +209,10 @@ public class Response
       return out.toString();
    }
 
-   public void dump()
+   public Response dump()
    {
       System.out.println(getDebug());
+      return this;
    }
 
    public String getDebug()
@@ -508,7 +509,7 @@ public class Response
       return statusCode >= 200 && statusCode <= 300 && error == null;
    }
 
-   public Exception getError()
+   public Throwable getError()
    {
       return error;
    }
@@ -758,7 +759,7 @@ public class Response
       return this;
    }
 
-   public Response withError(Exception ex)
+   public Response withError(Throwable ex)
    {
       this.error = ex;
       return this;
@@ -857,22 +858,47 @@ public class Response
       return this;
    }
 
+   public void rethrow()
+   {
+      rethrow(statusCode);
+   }
+
+   public void rethrow(int statusCode)
+   {
+      rethrow(statusCode, (String[]) null);
+   }
+
+   public void rethrow(String... messages)
+   {
+      rethrow(statusCode, messages);
+   }
+
    public void rethrow(int statusCode, String... messages)
    {
+      if (error != null)
+         Utils.rethrow(error);
+
+      statusCode = statusCode > 399 ? statusCode : 500;
+
       String msg = "";
       for (int i = 0; messages != null && i < messages.length; i++)
-         msg += messages[i] + " ";
+         msg += messages[i] + "\r\n ";
 
-      JSNode json = getJson();
-      if (json != null)
+      String message = getText();
+      try
       {
-         String message = json.getString("message");
-         if (!Utils.empty(message))
+         while (message != null && message.startsWith("{") && message.indexOf("\\\"message\\\"") > -1)
          {
-            msg += msg.length() > 0 ? " " : "";
-            msg += message;
+            message = JSNode.parseJsonNode(message).getString("message");
          }
       }
+      catch (Exception ex)
+      {
+
+      }
+
+      if (message != null)
+         msg = msg + " " + message.trim();
 
       throw new ApiException(statusCode + "", msg);
    }

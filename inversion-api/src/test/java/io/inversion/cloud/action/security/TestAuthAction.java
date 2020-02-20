@@ -16,11 +16,9 @@
  */
 package io.inversion.cloud.action.security;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.TestCase;
-
-public class TestAuthAction extends TestCase
+public class TestAuthAction
 {
 
    @Test

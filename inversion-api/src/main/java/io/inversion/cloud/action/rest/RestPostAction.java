@@ -339,7 +339,8 @@ public class RestPostAction extends Action<RestPostAction>
             Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
             if (!res.isSuccess() || res.data().length() != childNodes.size())
             {
-               throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
+               res.rethrow();
+               //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
             }
 
             //-- now get response URLS and set them BACK on the source from this generation
@@ -375,16 +376,22 @@ public class RestPostAction extends Action<RestPostAction>
                Map primaryKey = getKey(collection, node);
                Map foreignKey = mapTo(getKey(rel.getRelated(), node.get(rel.getName())), rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
 
-               Map updatedRow = new HashMap();
-               updatedRow.putAll(primaryKey);
-               updatedRow.putAll(foreignKey);
-
-               updatedRows.add(updatedRow);
+               if (foreignKey.size() > 0)
+               {
+                  Map updatedRow = new HashMap();
+                  updatedRow.putAll(primaryKey);
+                  updatedRow.putAll(foreignKey);
+                  updatedRows.add(updatedRow);
+               }
+               else
+               {
+                  //this FK value was not provided by the caller
+               }
             }
 
             if (updatedRows.size() > 0)
             {
-               collection.getDb().upsert(collection, updatedRows);
+               collection.getDb().update(collection, updatedRows);
             }
          }
       }
@@ -494,7 +501,12 @@ public class RestPostAction extends Action<RestPostAction>
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
          Collection coll = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
-         if (rel.isManyToMany() || rel.isManyToOne())
+         if (rel.isManyToOne())
+         {
+            log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
+            coll.getDb().update(coll, upserts);
+         }
+         else if(rel.isManyToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);
@@ -534,7 +546,7 @@ public class RestPostAction extends Action<RestPostAction>
                }
 
                log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + results.getRows());
-               coll.getDb().upsert(coll, results.getRows());
+               coll.getDb().update(coll, results.getRows());
             }
             else if (rel.isManyToMany())
             {

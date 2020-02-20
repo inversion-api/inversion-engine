@@ -114,8 +114,14 @@ public abstract class Db<T extends Db>
    {
       if ((started || starting) && !shutdown)
       {
-         shutdown = true;
-         doShutdown();
+         try
+         {
+            doShutdown();
+         }
+         finally
+         {
+            shutdown = true;
+         }
       }
    }
 
@@ -166,6 +172,14 @@ public abstract class Db<T extends Db>
     */
    public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
 
+   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   {
+      upsert(table, rows);
+      List counts = new ArrayList();
+      rows.forEach(row -> counts.add(-1));
+      return counts;
+   }
+
    /**
     * Deletes rows identified by the unique index values from the underlying data source.
     * 
@@ -197,7 +211,7 @@ public abstract class Db<T extends Db>
          if (!coll.isLinkTbl() && !coll.isExclude())
          {
             api.withCollection(coll);
-            
+
             if (getCollectionPath() != null)
                coll.withIncludePaths(getCollectionPath());
          }
@@ -540,7 +554,6 @@ public abstract class Db<T extends Db>
 
             if (term.getToken().startsWith("-"))
                columnName = "-" + columnName;
-
             term.withToken(columnName);
          }
       }

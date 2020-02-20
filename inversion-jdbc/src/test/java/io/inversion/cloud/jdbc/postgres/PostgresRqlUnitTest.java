@@ -14,29 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.postgres;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
-public class H2RqlUnitTest extends AbstractSqlRqlTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class PostgresRqlUnitTest extends AbstractSqlQueryRqlTest
 {
-
-   public H2RqlUnitTest()
+   public PostgresRqlUnitTest() throws Exception
    {
-      db = new JdbcDb("db", //
-                      "org.h2.Driver", //
-                      "jdbc:h2:mem:northwind" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //
-                      "sa", //
-                      "", //
-                      JdbcDb.class.getResource("northwind-h2.ddl").toString());
+      super("postgres");
    }
-
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-      //--add/replace any tests and results needed
-   }
-
 }

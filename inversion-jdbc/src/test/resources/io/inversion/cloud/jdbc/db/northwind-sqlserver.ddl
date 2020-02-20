@@ -20,8 +20,8 @@ CREATE TABLE "Employees" (
 	"Country" nvarchar (15) NULL ,
 	"HomePhone" nvarchar (24) NULL ,
 	"Extension" nvarchar (4) NULL ,
-	"Photo" "image" NULL ,
-	"Notes" "ntext" NULL ,
+	"Photo" nvarchar (30) NULL ,
+	"Notes" varchar(max) NULL ,
 	"ReportsTo" "int" NULL ,
 	"PhotoPath" nvarchar (255) NULL ,
 	"Salary" decimal(18,2) NULL,
@@ -45,8 +45,8 @@ CREATE  INDEX "PostalCode" ON "dbo"."Employees"("PostalCode");
 CREATE TABLE "Categories" (
 	"CategoryID" "int" IDENTITY (1, 1) NOT NULL ,
 	"CategoryName" nvarchar (15) NOT NULL ,
-	"Description" "ntext" NULL ,
-	"Picture" "image" NULL ,
+	"Description" nvarchar(max) NULL ,
+	"Picture" nvarchar(30) NULL ,
 	CONSTRAINT "PK_Categories" PRIMARY KEY  CLUSTERED 
 	(
 		"CategoryID"
@@ -101,7 +101,7 @@ CREATE TABLE "Suppliers" (
 	"Country" nvarchar (15) NULL ,
 	"Phone" nvarchar (24) NULL ,
 	"Fax" nvarchar (24) NULL ,
-	"HomePage" "ntext" NULL ,
+	"HomePage" nvarchar(max) NULL ,
 	CONSTRAINT "PK_Suppliers" PRIMARY KEY  CLUSTERED 
 	(
 		"SupplierID"
@@ -771,40 +771,45 @@ INSERT "Suppliers"("SupplierID","CompanyName","ContactName","ContactTitle","Addr
 INSERT "Suppliers"("SupplierID","CompanyName","ContactName","ContactTitle","Address","City","Region","PostalCode","Country","Phone","Fax","HomePage") VALUES(29,'For�ts d''�rables','Chantal Goulet','Accounting Manager','148 rue Chasseur','Ste-Hyacinthe','Qu�bec','J2S 7S8','Canada','(514) 555-2955','(514) 555-2921',NULL);
 set identity_insert "Suppliers" off;
 
-CREATE TABLE [dbo].[CustomerCustomerDemo] 
-	([CustomerID] nchar (5) NOT NULL,
-	[CustomerTypeID] [nchar] (10) NOT NULL
-) ON [PRIMARY];
+CREATE TABLE CustomerCustomerDemo 
+(
+	CustomerID nchar (5) NOT NULL,
+	CustomerTypeID nchar (10) NOT NULL
+);
 
-CREATE TABLE [dbo].[CustomerDemographics] 
-	([CustomerTypeID] [nchar] (10) NOT NULL ,
-	[CustomerDesc] [ntext] NULL 
-)  ON [PRIMARY] 
-;
+CREATE TABLE CustomerDemographics 
+(
+	CustomerTypeID nchar (10) NOT NULL ,
+	CustomerDesc nvarchar(max) NULL 
+);
 	
 CREATE TABLE "Region" 
-	( [RegionID] [int] NOT NULL ,
-	[RegionDescription] [nchar] (50) NOT NULL 
+(
+	RegionID "int" IDENTITY (1, 1) NOT NULL ,
+	RegionDescription nchar (50) NOT NULL 
 );
 
 CREATE TABLE "Territories" 
-	([TerritoryID] [nvarchar] (20) NOT NULL ,
-	[TerritoryDescription] [nchar] (50) NOT NULL ,
-        [RegionID] [int] NOT NULL
+(
+	TerritoryID nvarchar (20) NOT NULL ,
+	TerritoryDescription nchar (50) NOT NULL ,
+    RegionID int NOT NULL
 );
 
 CREATE TABLE "EmployeeTerritories" 
-	([EmployeeID] [int] NOT NULL,
-	[TerritoryID] [nvarchar] (20) NOT NULL 
+(
+	EmployeeID int NOT NULL,
+	TerritoryID nvarchar (20) NOT NULL 
 );
 
 -- The following adds data to the tables just created.
 
-Insert Into "Region" Values (1,'Eastern');
-Insert Into "Region" Values (2,'Western');
-Insert Into "Region" Values (3,'Northern');
-Insert Into "Region" Values (4,'Southern');
-
+-- set identity_insert "Region" on;
+Insert Into "Region" ("RegionDescription") Values ('Eastern');
+Insert Into "Region" ("RegionDescription") Values ('Western');
+Insert Into "Region" ("RegionDescription") Values ('Northern');
+Insert Into "Region" ("RegionDescription") Values ('Southern');
+-- set identity_insert "Region" off;
 
 Insert Into Territories Values ('01581','Westboro',1);
 Insert Into Territories Values ('01730','Bedford',1);
@@ -999,6 +1004,71 @@ ALTER TABLE EmployeeTerritories
 	)
 ;
 
+
+CREATE TABLE employeeorderdetails (
+	"EmployeeID" INTEGER NOT NULL,
+	"OrderID" INTEGER NOT NULL,
+	"ProductID" INTEGER NOT NULL,
+	CONSTRAINT "PK_EmployeeOrderDetails" PRIMARY KEY ( "EmployeeID", "OrderID", "ProductID")
+);
+
+ALTER TABLE employeeorderdetails ADD CONSTRAINT "FK_EmpoyeeOrderDetails1"
+	FOREIGN KEY ("EmployeeID") REFERENCES employees ("EmployeeID") ON DELETE CASCADE;
+
+ALTER TABLE employeeorderdetails ADD CONSTRAINT "FK_EmpoyeeOrderDetails2"
+	FOREIGN KEY ("OrderID", "ProductID") REFERENCES "Order Details" ("OrderID", "ProductID")  ON DELETE CASCADE;
+    
+INSERT INTO employeeorderdetails 
+SELECT o."EmployeeID", od."OrderID", od."ProductID" 
+FROM orders o JOIN "Order Details" od ON o."OrderID" = od."OrderID"; 
+    
+
+
+/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+CREATE TABLE "indexlog" (
+    "id" "int" IDENTITY (1, 1) NOT NULL ,
+    "tenantCode" VARCHAR(100) NOT NULL,
+    "entityId" INTEGER,
+    "entityType" VARCHAR(100),
+    "error" VARCHAR(1024),
+    "noIndex" BIT DEFAULT 0,
+    "modifiedAt" datetime,
+    CONSTRAINT "PK_indexlog" PRIMARY KEY ( "id")
+);
+
+set identity_insert "indexlog" on;
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (1, 'us', 100, 'locations', NULL, 0, '2019-02-12 15:44:18');
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (2, 'us', 200, 'locations', NULL, 1, '2019-04-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (3, 'us', 300, 'locations', 'error', 1, '2019-05-02 15:33:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (4, 'us', 567, 'ads', NULL, 0, '2019-01-22 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (5, 'ca', 837, 'ads', NULL, 0, '2019-05-01 12:03:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (6, 'us', 23, 'ads', NULL, 0, '2019-04-05 11:51:17'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (7, 'us', 24, 'ads', NULL, 0, '2019-04-22 15:05:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (8, 'us', 65, 'ads', NULL, 0, '2019-04-12 13:21:44'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (9, 'us', 765, 'ads', NULL, 0, '2019-04-08 03:00:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (10, 'ca', 239, 'ads', NULL, 0, '2019-04-09 23:32:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (11, 'ca', 8263, 'ads', NULL, 0, '2019-04-16 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (12, 'us', 103, 'items', NULL, 0, '2019-04-02 15:09:00'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (13, 'us', 105, 'items', NULL, 0, '2019-05-02 21:34:15'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (14, 'us', 23, 'ads', NULL, 0, '2019-05-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (15, 'ca', 8272, 'items', NULL, 0, '2019-05-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (16, 'us', 430, 'ads', 'error',1, '2019-03-01 12:21:22'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (17, 'us', 6252, 'ads', NULL, 0, '2019-05-02 03:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (18, 'us', 21, 'ads', NULL, 0, '2019-03-02 13:21:44'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (19, 'us', 23, 'ads', 'ERROR_MSG foo', 0, '2019-05-02 05:05:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (20, 'us', 567, 'ads', 'some ERROR MSG', 0, '2019-03-02 12:21:22'); 
+set identity_insert "indexlog" off;
+
+
+/* This table was added to support test cases for keys that have non url save characters in them */	
+CREATE TABLE "urls" (
+    "url" VARCHAR(512) NOT NULL,
+    "short" VARCHAR(100) NOT NULL,
+    "text" VARCHAR(500) NOT NULL,
+     CONSTRAINT "PK_Urls" PRIMARY KEY ("url", "short")
+);
+
+INSERT INTO "urls" ("url", "short", "text") VALUES ('http://www.rocketpartners.io/inversion', '74593jd1', 'some description');
 
 
 

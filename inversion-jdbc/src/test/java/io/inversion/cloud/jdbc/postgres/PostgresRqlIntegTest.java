@@ -14,18 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.db;
+package io.inversion.cloud.jdbc.postgres;
 
-import org.junit.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import junit.framework.TestCase;
-
-public class JdbcDbTest extends TestCase
+@TestInstance(Lifecycle.PER_CLASS)
+public class PostgresRqlIntegTest extends PostgresRqlUnitTest
 {
-   @Test
-   public void test_upsert_rrowsWitDifferentColumns_upsertIsSplitIntoBatchesWithMatchingKeys()
+   public PostgresRqlIntegTest() throws Exception
    {
-      //TODO: implement me
+      super();
    }
-
 }

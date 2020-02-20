@@ -14,16 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.mysql;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.rql.RqlValidationSuite;
 
-public class MySqlRqlUnitTest extends AbstractSqlRqlTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest
 {
-   public MySqlRqlUnitTest()
+   public MySqlRqlUnitTest() throws Exception
    {
-      db = new JdbcDb("mysql").withType("mysql");
+      super("mysql");
    }
 
    @Override
@@ -55,18 +60,18 @@ public class MySqlRqlUnitTest extends AbstractSqlRqlTest
            .withResult("or", "SELECT `orders`.* FROM `orders` WHERE (`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
            .withResult("not", "SELECT `orders`.* FROM `orders` WHERE NOT ((`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?)) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
            .withResult("as", "SELECT `orders`.*, `orders`.`orderid` AS 'order_identifier' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
-           .withResult("includes", "SELECT `orders`.`shipCountry`, `orders`.`shipCity` FROM `orders` LIMIT 100 args=[]")//
-           .withResult("distinct", "SELECT DISTINCT `orders`.`shipCountry` FROM `orders` LIMIT 100 args=[]")//
-           .withResult("count1", "SELECT `orders`.*, COUNT(`orders`.*) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
+           .withResult("includes", "SELECT `orders`.`shipCountry`, `orders`.`shipCity`, `orders`.`orderId` FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
+           .withResult("distinct", "SELECT DISTINCT `orders`.`shipCountry` FROM `orders` ORDER BY `orders`.`shipCountry` ASC LIMIT 100 args=[]")//
+           .withResult("count1", "SELECT `orders`.*, COUNT(*) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
            .withResult("count2", "SELECT `orders`.*, COUNT(?) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[1]")//
            .withResult("count3", "SELECT `orders`.*, COUNT(`orders`.`shipRegion`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
-           .withResult("countAs", "SELECT `orders`.*, COUNT(`orders`.*) AS 'countOrders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
+           .withResult("countAs", "SELECT `orders`.*, COUNT(*) AS 'countOrders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
            .withResult("sum", "SELECT `orders`.*, SUM(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
            .withResult("sumAs", "SELECT `orders`.*, SUM(`orders`.`freight`) AS 'Sum Freight' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
            .withResult("sumIf", "SELECT `orders`.*, SUM(IF(`orders`.`shipCountry` = ?, 1, 0)) AS 'French Orders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[France]")//
            .withResult("min", "SELECT `orders`.*, MIN(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
            .withResult("max", "SELECT `orders`.*, MAX(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
-           .withResult("groupCount", "SELECT `orders`.`shipCountry`, COUNT(`orders`.*) AS 'countryCount' FROM `orders` GROUP BY `orders`.`shipCountry` LIMIT 100 args=[]")//
+           .withResult("groupCount", "SELECT `orders`.`shipCountry`, COUNT(*) AS 'countryCount' FROM `orders` GROUP BY `orders`.`shipCountry` ORDER BY `orders`.`shipCountry` ASC LIMIT 100 args=[]")//
            .withResult("offset", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 3, 100 args=[]")//
            .withResult("limit", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 7 args=[]")//
            .withResult("page", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 14, 7 args=[]")//

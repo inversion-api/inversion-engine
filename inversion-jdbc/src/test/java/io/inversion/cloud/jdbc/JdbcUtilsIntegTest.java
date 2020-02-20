@@ -14,33 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.utils;
+package io.inversion.cloud.jdbc;
 
-import java.net.URL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
+import io.inversion.cloud.jdbc.utils.JdbcUtils;
 
-public class JdbcUtilsIntegTest extends TestCase
+public class JdbcUtilsIntegTest
 {
 
    @Test
    public void test_h2Upsert() throws Exception
    {
-      Class.forName("org.h2.Driver").newInstance();
-      Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";IGNORECASE=TRUE", "sa", "");
-
-      runTests(conn, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+      JdbcDb db = JdbcDbFactory.bootstrapH2(getClass().getSimpleName());
+      Connection conn = db.getConnection();
+      runTests(conn, "orders", "customers");
 
       assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT ContactName FROM customers WHERE CustomerID = 'ALFKI'"));
       assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT CompanyName FROM customers WHERE CustomerID = 'ALFKI'"));
@@ -49,77 +47,27 @@ public class JdbcUtilsIntegTest extends TestCase
       assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT CompanyName FROM customers WHERE CustomerID = 'ZZZZ5'"));
    }
 
-   /**
-    * Integration Environment Setup...
-    * 
-    * docker rm mysql57
-    * docker run --name mysql57 -p 3307:3306 -e MYSQL_ROOT_PASSWORD=password -d mysql/mysql-server:5.7
-    * docker exec -it mysql57 bash
-    * mysql -h localhost -u root -p
-    * GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
-    * FLUSH PRIVILEGES;
-    * 
-    * @throws Exception
-    */
    @Test
    public void test_mysqlUpsert() throws Exception
    {
-      String driver = Utils.getSysEnvPropStr("mysql.driver", "com.mysql.cj.jdbc.Driver");
-      String url = Utils.getSysEnvPropStr("mysql.url", "jdbc:mysql://localhost:3307/");
-      String user = Utils.getSysEnvPropStr("mysql.user", "root");
-      String pass = Utils.getSysEnvPropStr("mysql.pass", "password");
+      JdbcDb db = JdbcDbFactory.bootstrapMySql(getClass().getSimpleName());
+      Connection conn = db.getConnection();
+      runTests(conn, "Orders", "Customers");
 
-      Class.forName(driver).newInstance();
-
-      Connection conn = DriverManager.getConnection(url, user, pass);
-      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS jdbcutilsintegtest");
-      JdbcUtils.execute(conn, "CREATE DATABASE jdbcutilsintegtest");
-      conn.close();
-
-      conn = DriverManager.getConnection(url + "jdbcutilsintegtest?sessionVariables=sql_mode=ANSI_QUOTES", user, pass);
-      runTests(conn, JdbcDb.class.getResource("northwind-mysql.ddl").toString());
-
-      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
-      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
-      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
-      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ANATR'"));
-      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
+      assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT `ContactName` FROM `Customers` WHERE `CustomerID` = 'ALFKI'"));
+      assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ALFKI'"));
+      assertEquals("UPDATED Ana Trujillo Emparedados", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ANATR'"));
+      assertEquals("UPDATED Ana", JdbcUtils.selectValue(conn, "SELECT `ContactName` FROM `Customers` WHERE `CustomerID` = 'ANATR'"));
+      assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT `CompanyName` FROM `Customers` WHERE `CustomerID` = 'ZZZZ5'"));
 
    }
 
-   /**
-    * Postgres 9.5+ required for upsert
-    * https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on
-    * 
-    * docker run --name postgres95 -p 5433:5432 -e POSTGRES_PASSWORD=password -d postgres:9.5
-    * @throws Exception
-    */
    @Test
    public void test_postgresUpsert() throws Exception
    {
-      String driver = Utils.getSysEnvPropStr("postgres.driver", "org.postgresql.Driver");
-      String url = Utils.getSysEnvPropStr("postgres.url", "jdbc:postgresql://localhost:5433/");
-      String user = Utils.getSysEnvPropStr("postgres.user", "postgres");
-      String pass = Utils.getSysEnvPropStr("postgres.pass", "password");
-
-      Class.forName(driver).newInstance();
-
-      Connection conn = DriverManager.getConnection(url, user, pass);
-      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS jdbcutilsintegtest");
-      JdbcUtils.execute(conn, "CREATE DATABASE jdbcutilsintegtest");
-      conn.close();
-
-      conn = DriverManager.getConnection(url + "jdbcutilsintegtest", user, pass);
-      runTests(conn, JdbcDb.class.getResource("northwind-postgres.ddl").toString());
-
-      //      
-      //      Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/", "postgres", "password");
-      //      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS jdbcutilsintegtest");
-      //      JdbcUtils.execute(conn, "CREATE DATABASE jdbcutilsintegtest");
-      //      conn.close();
-      //
-      //      conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/jdbcutilsintegtest", "postgres", "password");
-      //      runTests(conn, JdbcDb.class.getResource("northwind-postgres.ddl").toString());
+      JdbcDb db = JdbcDbFactory.bootstrapPostgres(getClass().getSimpleName());
+      Connection conn = db.getConnection();
+      runTests(conn, "orders", "customers");
 
       assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
       assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
@@ -134,20 +82,9 @@ public class JdbcUtilsIntegTest extends TestCase
    @Test
    public void test_sqlserverlUpsert() throws Exception
    {
-      String driver = Utils.getSysEnvPropStr("sqlserver.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-      String url = Utils.getSysEnvPropStr("sqlserver.url", "jdbc:sqlserver://localhost:1433");
-      String user = Utils.getSysEnvPropStr("sqlserver.user", "sa");
-      String pass = Utils.getSysEnvPropStr("sqlserver.pass", "Jmk38zZVn");
-
-      Class.forName(driver).newInstance();
-
-      Connection conn = DriverManager.getConnection(url, user, pass);
-      JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS jdbcutilsintegtest");
-      JdbcUtils.execute(conn, "CREATE DATABASE jdbcutilsintegtest");
-      conn.close();
-
-      conn = DriverManager.getConnection(url + ";databaseName=jdbcutilsintegtest", user, pass);
-      runTests(conn, JdbcDb.class.getResource("northwind-sqlserver.ddl").toString());
+      JdbcDb db = JdbcDbFactory.bootstrapSqlServer(getClass().getSimpleName());
+      Connection conn = db.getConnection();
+      runTests(conn, "orders", "customers");
 
       assertEquals("Maria Anders", JdbcUtils.selectValue(conn, "SELECT \"ContactName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
       assertEquals("UPDATED Alfreds Futterkiste", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ALFKI'"));
@@ -156,20 +93,12 @@ public class JdbcUtilsIntegTest extends TestCase
       assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
    }
 
-
-
-   public void runTests(Connection conn, String ddlUrl) throws Exception
+   public void runTests(Connection conn, String ordersTblName, String customersTblName) throws Exception
    {
-      if (ddlUrl != null)
-      {
-         JdbcUtils.runDdl(conn, new URL(ddlUrl).openStream());
-      }
-      
-
       List returnedKeys = null;
 
       returnedKeys = JdbcUtils.upsert(conn, //
-            "orders", //
+            ordersTblName, //
             list("OrderID"), //
             rows(//
                   row("OrderID", 10248, "ShipCountry", "USA") //existing record w/ ShipCountry = 'France'
@@ -179,15 +108,13 @@ public class JdbcUtilsIntegTest extends TestCase
 
             )); //ShipCountry was 'Brazil
 
-      System.out.println(returnedKeys);
-
       assertEquals("10248", returnedKeys.get(0) + "");
       assertEquals("10249", returnedKeys.get(1) + "");
       assertTrue("11078".equals(returnedKeys.get(2) + "") || "10273".equals(returnedKeys.get(2) + "") || "1".equals(returnedKeys.get(2) + ""));
       assertTrue("11079".equals(returnedKeys.get(3) + "") || "10274".equals(returnedKeys.get(3) + "") || "2".equals(returnedKeys.get(3) + ""));
 
       returnedKeys = JdbcUtils.upsert(conn, //
-            "customers", //
+            customersTblName, //
             list("CustomerID"), //
             rows(//
                   row("CustomerID", "ZZZZ1", "CompanyName", "John Doe Co ZZZZ1")//

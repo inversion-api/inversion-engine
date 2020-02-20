@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,18 @@
  */
 package io.inversion.cloud.jdbc;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
-import junit.framework.TestCase;
 
-public class TestMultipleJoins extends TestCase
+public class TestMultipleJoins
 {
    @Test
    public void testRelatedCollectionJoinSelect2() throws Exception
@@ -38,16 +40,16 @@ public class TestMultipleJoins extends TestCase
                                      .withName("crm")//
                                      .withApiCode("crm")//
                                      //.withDb(db)//
-                                     
+
                                      .withDb(new JdbcDb("db", //the database name used as the properties key prefix when 
-                                           "org.h2.Driver", //-- jdbc driver
-                                           "jdbc:h2:mem:" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                           "sa", //-- jdbc user
-                                           "", //jdbc password
-                                           //OPTIONAL: the demo db is an in-memory db that gets
-                                           //reinitialized each time with the data in "northwind-h2.ddl"
-                                           crmDdlUrl))
-                                     
+                                                        "org.h2.Driver", //-- jdbc driver
+                                                        "jdbc:h2:mem:" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //-- jdbc url 
+                                                        "sa", //-- jdbc user
+                                                        "", //jdbc password
+                                                        //OPTIONAL: the demo db is an in-memory db that gets
+                                                        //reinitialized each time with the data in "northwind-h2.ddl"
+                                                        crmDdlUrl))
+
                                      .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
 
       e.startup();

@@ -224,6 +224,16 @@ public class Engine
       return started;
    }
 
+   public void shutdown()
+   {
+      for (Api api : getApis())
+      {
+         removeApi(api);
+      }
+
+      Chain.resetAll();
+   }
+
    public Engine withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
@@ -563,6 +573,7 @@ public class Engine
 
          run(chain, actions);
 
+         Exception listenerEx = null;
          for (EngineListener listener : getListeners(req))
          {
             try
@@ -571,10 +582,12 @@ public class Engine
             }
             catch (Exception ex)
             {
-               log.warn("Error notifying EngineListner.afterRequest", ex);
+               if (listenerEx == null)
+                  listenerEx = ex;
             }
-
          }
+         if (listenerEx != null)
+            throw listenerEx;
 
          return chain;
       }
@@ -600,14 +613,18 @@ public class Engine
          }
          else
          {
-            log.error("Non ApiException was caught in Engine.", ex);
+            ex = Utils.getCause(ex);
+            if (Chain.getDepth() == 1)
+               log.error("Non ApiException was caught in Engine.", ex);
          }
 
          res.withStatus(status);
-         JSNode response = new JSNode("message", ex.getMessage());
+         String message = ex.getMessage();
+         JSNode response = new JSNode("message", message);
          if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
+         res.withError(ex);
          res.withJson(response);
 
          for (EngineListener listener : getListeners(req))
@@ -842,7 +859,38 @@ public class Engine
       newList.remove(api);
       apis = newList;
 
-      api.shutdown();
+      for (EngineListener listener : api.getEngineListeners())
+      {
+         try
+         {
+            listener.onShutdown(this, api);
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error shutting down api '" + api.getName() + "'", ex);
+         }
+      }
+
+      for (EngineListener listener : listeners)
+      {
+         try
+         {
+            listener.onShutdown(this, api);
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error shutting down api '" + api.getName() + "'", ex);
+         }
+      }
+
+      try
+      {
+         api.shutdown();
+      }
+      catch (Exception ex)
+      {
+         log.warn("Error shutting down api '" + api.getName() + "'", ex);
+      }
    }
 
    public synchronized Api getApi(String apiCode)

@@ -2004,7 +2004,9 @@ public class Utils
             case "s":
             case "string":
             case "char":
+            case "nchar":
             case "varchar":
+            case "nvarchar":
             case "longvarchar":
             case "longnvarchar":
                return value.toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.sqlserver;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-public class MsSqlRqlUnitTest extends AbstractSqlRqlTest
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
+
+@TestInstance(Lifecycle.PER_CLASS)
+public class SqlServerSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
-   public MsSqlRqlUnitTest()
+   public SqlServerSqlDeleteActionIntegTest()
    {
-      db = new JdbcDb("sqlserver").withType("sqlserver");
-   }
-
-   @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
-      super.customizeUnitTestSuite(suite);
-      //--add/replace any tests and results needed
+      super("sqlserver");
    }
 }

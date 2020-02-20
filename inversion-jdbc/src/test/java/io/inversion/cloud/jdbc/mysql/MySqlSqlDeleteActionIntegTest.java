@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.mysql;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-public class H2RqlIntegTest extends H2RqlUnitTest
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
+
+@TestInstance(Lifecycle.PER_CLASS)
+public class MySqlSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
-   public H2RqlIntegTest() throws Exception
+   public MySqlSqlDeleteActionIntegTest()
    {
-      urlPrefix = "/northwind/h2/";
-
-      engine = new Engine();
-      engine.withApi(new Api("northwind")//
-                                         .withEndpoint("GET", "h2/*", new RestAction())//
-                                         .withDb(db)//
-      );
+      super("mysql");
    }
 }

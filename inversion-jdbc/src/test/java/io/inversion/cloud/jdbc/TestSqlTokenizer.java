@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,17 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.inversion.cloud.jdbc.rql.SqlTokenizer;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class TestSqlTokenizer extends TestCase
+import io.inversion.cloud.jdbc.rql.SqlTokenizer;
+import io.inversion.cloud.utils.Utils;
+
+public class TestSqlTokenizer
 {
+   @Test
    public void testTokens() throws Exception
    {
       String[][] tests = new String[][]{//
@@ -49,11 +54,12 @@ public class TestSqlTokenizer extends TestCase
             actual.add(next);
          }
 
-         if (!TestSqlQuery.compare(expected.toString(), actual.toString()))
+         if (!Utils.testCompare(expected.toString(), actual.toString()))
             fail();
       }
    }
 
+   @Test
    public void testClauses() throws Exception
    {
       String[][] tests = new String[][]{//
@@ -81,7 +87,7 @@ public class TestSqlTokenizer extends TestCase
             actual.add(next);
          }
 
-         if (!TestSqlQuery.compare(expected.toString(), actual.toString()))
+         if (!Utils.testCompare(expected.toString(), actual.toString()))
             fail();
       }
    }

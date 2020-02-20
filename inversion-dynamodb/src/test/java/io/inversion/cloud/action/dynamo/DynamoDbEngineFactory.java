@@ -40,7 +40,6 @@ import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 
 import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
@@ -74,177 +73,178 @@ public class DynamoDbEngineFactory
 
    protected static Engine buildEngine(String apiCode, final String ddl, String dynamoTbl) throws Exception
    {
-      buildTables();
-
-      Engine engine = JdbcDbApiFactory.service(true, true);
-
-      final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
-      Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);
+      return null;
+      //      buildTables();
+      //
+      //      Engine engine = JdbcDbApiFactory.service(true, true);
+      //
+      //      final DynamoDb dynamoDb = new DynamoDb("dynamo", dynamoTbl);
+      //      Table table = new DynamoDB(dynamoDb.getDynamoClient()).getTable(dynamoTbl);
+      //      //      //--
+      //      //      //--
+      //      //      //--
+      //      //
+      //      //      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
+      //      //
+      //      //      Map nameMap = new HashMap();
+      //      //      nameMap.put("#var1", "shipregion");
+      //      //
+      //      //      Map valueMap = new HashMap();
+      //      //      valueMap.put(":val1", null);
+      //      //
+      //      //      ScanSpec scanSpec = new ScanSpec();
+      //      //      scanSpec.withMaxPageSize(1000);
+      //      //      scanSpec.withMaxResultSize(1000);
+      //      //      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
+      //      //      scanSpec.withFilterExpression("(#var1 = :val1)");
+      //      //      scanSpec.withNameMap(nameMap);
+      //      //      scanSpec.withValueMap(valueMap);
+      //      //
+      //      //      
+      //      //
+      //      //      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
+      //      //      int num = 0;
+      //      //      for (Item item : scanResult)
+      //      //      {
+      //      //         num += 1;
+      //      //         String val = item.getString("shipRegion");
+      //      //         if (val == null)
+      //      //            val = item.getString("shipregion");
+      //      //         val += "";
+      //      //
+      //      //         System.out.println(val + " - " + item.asMap());
+      //      //         if (!"null".equalsIgnoreCase(val))
+      //      //         {
+      //      //            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
+      //      //            throw new RuntimeException("WRONG!!!");
+      //      //         }
+      //      //      }
+      //      //
+      //      //      if (num == 0)
+      //      //         throw new RuntimeException("WRONG!!!");
+      //      //
+      //      //      System.out.println("done");
+      //
       //      //--
       //      //--
       //      //--
       //
-      //      //DynamoDb  ScanSpec maxPageSize=500 scanIndexForward=true nameMap={#var1=shipRegion} valueMap={} keyConditionExpression='' filterExpression='attribute_not_exists(#var1)' projectionExpression=''
+      //      final Api api = engine.getApi(apiCode);
+      //      api.withDb(dynamoDb);
+      //      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
       //
-      //      Map nameMap = new HashMap();
-      //      nameMap.put("#var1", "shipregion");
+      //      dynamoDb.startup();
       //
-      //      Map valueMap = new HashMap();
-      //      valueMap.put(":val1", null);
+      //      //      service.withListener(new EngineListener()
+      //      //         {
+      //      //            @Override
+      //      //            public void onStartup(Engine service)
+      //      //            {
+      //      io.inversion.cloud.model.Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
+      //      orders.withName("orders");
       //
-      //      ScanSpec scanSpec = new ScanSpec();
-      //      scanSpec.withMaxPageSize(1000);
-      //      scanSpec.withMaxResultSize(1000);
-      //      //scanSpec.withFilterExpression("attribute_not_exists(#var1)");
-      //      scanSpec.withFilterExpression("(#var1 = :val1)");
-      //      scanSpec.withNameMap(nameMap);
-      //      scanSpec.withValueMap(valueMap);
+      //      orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id 
+      //      orders.getPropertyByColumnName("sk").withJsonName("type");
       //
-      //      
+      //      orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
+      //      orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
       //
-      //      ItemCollection<ScanOutcome> scanResult = table.scan(scanSpec);
-      //      int num = 0;
-      //      for (Item item : scanResult)
+      //      orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
+      //      orders.getPropertyByColumnName("ls2").withJsonName("shipName");
+      //      orders.getPropertyByColumnName("ls3").withJsonName("requireDate");
+      //
+      //      //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
+      //      //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
+      //
+      //      orders.withIncludePaths("dynamodb/*");
+      //
+      //      Response res = null;
+      //
+      //      //10248 - 11077
+      //      //      relaodDynamo = relaodDynamo || !"10248".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=orderid").findString("data.0.orderid"));
+      //      //      //relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=-orderid&includes=href").findString("data.0.orderid"));
+      //      //      relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?orderid=11077&limit=1&type=ORDER").findString("data.0.orderid"));
+      //
+      //      if (relaodDynamo)
       //      {
-      //         num += 1;
-      //         String val = item.getString("shipRegion");
-      //         if (val == null)
-      //            val = item.getString("shipregion");
-      //         val += "";
+      //         System.out.print("CLEARING DYNAMO...");
       //
-      //         System.out.println(val + " - " + item.asMap());
-      //         if (!"null".equalsIgnoreCase(val))
+      //         ItemCollection<ScanOutcome> deleteoutcome = table.scan();
+      //         Iterator<Item> iterator = deleteoutcome.iterator();
+      //
+      //         int deletedCount = 0;
+      //         while (iterator.hasNext())
       //         {
-      //            System.out.println("should be null: '" + StringEscapeUtils.escapeJava(val) + "'");
-      //            throw new RuntimeException("WRONG!!!");
+      //            deletedCount += 1;
+      //            if (deletedCount % 100 == 0)
+      //               System.out.print(deletedCount + " ");
+      //
+      //            Item item = iterator.next();
+      //            Object hk = item.get("hk");
+      //            Object sk = item.get("sk");
+      //            table.deleteItem("hk", hk, "sk", sk);
       //         }
+      //
+      //         //--confirm all deleted
+      //         res = engine.get("northwind/dynamodb/orders");
+      //         res.assertOk();
+      //         Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
+      //
+      //         System.out.println("");
+      //         System.out.println("RELOADING DYNAMO...");
+      //
+      //         int pages = 0;
+      //         int total = 0;
+      //         String start = "northwind/source/orders?pageSize=100&sort=orderid";
+      //         String next = start;
+      //         do
+      //         {
+      //            JSArray toPost = new JSArray();
+      //
+      //            res = engine.get(next);
+      //            if (res.data().size() == 0)
+      //               break;
+      //
+      //            pages += 1;
+      //            next = res.next();
+      //
+      //            //-- now post to DynamoDb
+      //            for (Object o : res.data())
+      //            {
+      //               total += 1;
+      //               JSNode js = (JSNode) o;
+      //
+      //               js.remove("href");
+      //               js.put("type", "ORDER");
+      //
+      //               for (String key : js.keySet())
+      //               {
+      //                  String value = js.getString(key);
+      //                  if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
+      //                  {
+      //                     value = value.substring(value.lastIndexOf("/") + 1, value.length());
+      //                     js.remove(key);
+      //
+      //                     if (!key.toLowerCase().endsWith("id"))
+      //                        key = key + "Id";
+      //
+      //                     js.put(key, value);
+      //                  }
+      //               }
+      //               toPost.add(js);
+      //            }
+      //
+      //            res = engine.post("northwind/dynamodb/orders", toPost);
+      //            Utils.assertEq(201, res.getStatusCode());
+      //            System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
+      //         }
+      //         while (pages < 200 && next != null);
+      //
+      //         Utils.assertEq(9, pages);
+      //         Utils.assertEq(830, total);
       //      }
       //
-      //      if (num == 0)
-      //         throw new RuntimeException("WRONG!!!");
-      //
-      //      System.out.println("done");
-
-      //--
-      //--
-      //--
-
-      final Api api = engine.getApi(apiCode);
-      api.withDb(dynamoDb);
-      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
-
-      dynamoDb.startup();
-
-      //      service.withListener(new EngineListener()
-      //         {
-      //            @Override
-      //            public void onStartup(Engine service)
-      //            {
-      io.inversion.cloud.model.Collection orders = api.getCollection(dynamoTbl + "s");//new Collection(dynamoDb.getTable(dynamoTbl));
-      orders.withName("orders");
-
-      orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id 
-      orders.getPropertyByColumnName("sk").withJsonName("type");
-
-      orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
-      orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
-
-      orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
-      orders.getPropertyByColumnName("ls2").withJsonName("shipName");
-      orders.getPropertyByColumnName("ls3").withJsonName("requireDate");
-
-      //orders.getAttribute("gs2hk").setName("customerId"); //get orders by customer sorted by date
-      //orders.getAttribute("gs2sk").setName("orderDate");//will be "order"
-
-      orders.withIncludePaths("dynamodb/*");
-
-      Response res = null;
-
-      //10248 - 11077
-      //      relaodDynamo = relaodDynamo || !"10248".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=orderid").findString("data.0.orderid"));
-      //      //relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?limit=1&type=ORDER&sort=-orderid&includes=href").findString("data.0.orderid"));
-      //      relaodDynamo = relaodDynamo || !"11077".equals(service.get("northwind/dynamodb/orders?orderid=11077&limit=1&type=ORDER").findString("data.0.orderid"));
-
-      if (relaodDynamo)
-      {
-         System.out.print("CLEARING DYNAMO...");
-
-         ItemCollection<ScanOutcome> deleteoutcome = table.scan();
-         Iterator<Item> iterator = deleteoutcome.iterator();
-
-         int deletedCount = 0;
-         while (iterator.hasNext())
-         {
-            deletedCount += 1;
-            if (deletedCount % 100 == 0)
-               System.out.print(deletedCount + " ");
-
-            Item item = iterator.next();
-            Object hk = item.get("hk");
-            Object sk = item.get("sk");
-            table.deleteItem("hk", hk, "sk", sk);
-         }
-
-         //--confirm all deleted
-         res = engine.get("northwind/dynamodb/orders");
-         res.assertOk();
-         Utils.assertEq(0, res.findArray("data").length());//confirm nothing in dynamo
-
-         System.out.println("");
-         System.out.println("RELOADING DYNAMO...");
-
-         int pages = 0;
-         int total = 0;
-         String start = "northwind/source/orders?pageSize=100&sort=orderid";
-         String next = start;
-         do
-         {
-            JSArray toPost = new JSArray();
-
-            res = engine.get(next);
-            if (res.data().size() == 0)
-               break;
-
-            pages += 1;
-            next = res.next();
-
-            //-- now post to DynamoDb
-            for (Object o : res.data())
-            {
-               total += 1;
-               JSNode js = (JSNode) o;
-
-               js.remove("href");
-               js.put("type", "ORDER");
-
-               for (String key : js.keySet())
-               {
-                  String value = js.getString(key);
-                  if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
-                  {
-                     value = value.substring(value.lastIndexOf("/") + 1, value.length());
-                     js.remove(key);
-
-                     if (!key.toLowerCase().endsWith("id"))
-                        key = key + "Id";
-
-                     js.put(key, value);
-                  }
-               }
-               toPost.add(js);
-            }
-
-            res = engine.post("northwind/dynamodb/orders", toPost);
-            Utils.assertEq(201, res.getStatusCode());
-            System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
-         }
-         while (pages < 200 && next != null);
-
-         Utils.assertEq(9, pages);
-         Utils.assertEq(830, total);
-      }
-
-      return engine;
+      //      return engine;
    }
 
    public static void main(String[] args) throws Exception

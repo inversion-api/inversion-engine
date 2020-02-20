@@ -16,11 +16,9 @@
  */
 package io.inversion.cloud.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.TestCase;
-
-public class TestRule extends TestCase
+public class TestRule
 {
    @Test
    public void test_pathMatches()

@@ -2,7 +2,6 @@ rootProject.name = 'inversion'
 
 include 'inversion-api'
 include 'inversion-cosmosdb'
-include 'inversion-demos'
 include 'inversion-dynamodb'
 include 'inversion-elasticsearch'
 include 'inversion-kinesis'

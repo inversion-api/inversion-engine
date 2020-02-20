@@ -16,10 +16,11 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.service.MockDb;
-import junit.framework.TestCase;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestDb extends TestCase
+import io.inversion.cloud.service.MockDb;
+
+public class TestDb 
 {
    public void testAttributeBeautification()
    {

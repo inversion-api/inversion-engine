@@ -14,16 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.cloud.jdbc.h2;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-public class PostgresRqlUnitTest extends AbstractSqlRqlTest
+import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
+import io.inversion.cloud.rql.RqlValidationSuite;
+
+@TestInstance(Lifecycle.PER_CLASS)
+public class H2RqlUnitTest extends AbstractSqlQueryRqlTest
 {
-   public PostgresRqlUnitTest()
+   public H2RqlUnitTest() throws Exception
    {
-      db = new JdbcDb("postgres").withType("postgres");
+      super("h2");
    }
-
-
 }

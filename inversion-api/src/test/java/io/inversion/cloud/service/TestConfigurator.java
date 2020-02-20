@@ -24,12 +24,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.utils.Utils;
-import junit.framework.TestCase;
 
-public class TestConfigurator extends TestCase
+public class TestConfigurator
 {
    @Test
    public void test_none()

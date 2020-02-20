@@ -379,7 +379,7 @@ public class RestClient
          }
          else if ("patch".equalsIgnoreCase(m))
          {
-               req = new HttpPatch(url);
+            req = new HttpPatch(url);
          }
 
          for (String key : future.request.getHeaders().keySet())
@@ -487,7 +487,7 @@ public class RestClient
       return response;
    }
 
-   public boolean isNetworkException(Exception ex)
+   public boolean isNetworkException(Throwable ex)
    {
       return ex instanceof org.apache.http.conn.HttpHostConnectException //
             || ex instanceof org.apache.http.conn.ConnectTimeoutException //

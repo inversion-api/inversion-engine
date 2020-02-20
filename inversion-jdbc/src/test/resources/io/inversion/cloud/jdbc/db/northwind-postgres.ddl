@@ -101,7 +101,7 @@ ALTER TABLE public.customers OWNER TO postgres;
 --
 
 CREATE TABLE employees (
-    "EmployeeID" smallint NOT NULL,
+    "EmployeeID" SERIAL PRIMARY KEY,
     "LastName" character varying(20) NOT NULL,
     "FirstName" character varying(10) NOT NULL,
     "Title" character varying(30),
@@ -117,7 +117,7 @@ CREATE TABLE employees (
     "Extension" character varying(4),
     "Photo" bytea,
     "Notes" text,
-    "ReportsTo" smallint,
+    "ReportsTo" int,
     "PhotoPath" character varying(255)
 );
 
@@ -129,7 +129,7 @@ ALTER TABLE public.employees OWNER TO postgres;
 --
 
 CREATE TABLE employeeterritories (
-    "EmployeeID" smallint NOT NULL,
+    "EmployeeID" int NOT NULL,
     "TerritoryID" character varying(20) NOT NULL
 );
 
@@ -158,12 +158,12 @@ ALTER TABLE public.order_details OWNER TO postgres;
 CREATE TABLE orders (
     "OrderID" SERIAL PRIMARY KEY,
     "CustomerID" bpchar,
-    "EmployeeID" smallint,
+    "EmployeeID" int,
     "OrderDate" date,
     "RequiredDate" date,
     "ShippedDate" date,
     "ShipVia" smallint,
-    "Freight" real,
+    "Freight" numeric(10,4),
     "ShipName" character varying(40),
     "ShipAddress" character varying(60),
     "ShipCity" character varying(15),
@@ -200,7 +200,7 @@ ALTER TABLE public.products OWNER TO postgres;
 --
 
 CREATE TABLE region (
-    "RegionID" smallint NOT NULL,
+    "RegionID" SERIAL PRIMARY KEY,
     "RegionDescription" bpchar NOT NULL
 );
 
@@ -220,18 +220,6 @@ CREATE TABLE shippers (
 
 ALTER TABLE public.shippers OWNER TO postgres;
 
---
--- Name: shippers_tmp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE shippers_tmp (
-    "ShipperID" smallint NOT NULL,
-    "CompanyName" character varying(40) NOT NULL,
-    "Phone" character varying(24)
-);
-
-
-ALTER TABLE public.shippers_tmp OWNER TO postgres;
 
 --
 -- Name: suppliers; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
@@ -261,26 +249,17 @@ ALTER TABLE public.suppliers OWNER TO postgres;
 
 CREATE TABLE territories (
     "TerritoryID" character varying(20) NOT NULL,
-    "TerritoryDescription" bpchar NOT NULL,
-    "RegionID" smallint NOT NULL
+--    "TerritoryDescription" bpchar NOT NULL,
+    "TerritoryDescription" bpchar,
+--    "RegionID" int NOT NULL
+    "RegionID" int
 );
 
 
 ALTER TABLE public.territories OWNER TO postgres;
 
---
--- Name: usstates; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE usstates (
-    "StateID" smallint NOT NULL,
-    "StateName" character varying(100),
-    "StateAbbr" character varying(2),
-    "StateRegion" character varying(50)
-);
 
 
-ALTER TABLE public.usstates OWNER TO postgres;
 
 --
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
@@ -664,10 +643,10 @@ INSERT INTO products VALUES (77, 'Original Frankfurter grüne Soße', 12, 2, '12
 -- Data for Name: region; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO region VALUES (1, 'Eastern');
-INSERT INTO region VALUES (2, 'Western');
-INSERT INTO region VALUES (3, 'Northern');
-INSERT INTO region VALUES (4, 'Southern');
+INSERT INTO region ("RegionDescription") VALUES ('Eastern');
+INSERT INTO region ("RegionDescription") VALUES ('Western');
+INSERT INTO region ("RegionDescription") VALUES ('Northern');
+INSERT INTO region ("RegionDescription") VALUES ('Southern');
 
 
 --
@@ -682,16 +661,6 @@ INSERT INTO shippers VALUES (5, 'UPS', '1-800-782-7892');
 INSERT INTO shippers VALUES (6, 'DHL', '1-800-225-5345');
 
 
---
--- Data for Name: shippers_tmp; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-INSERT INTO shippers_tmp VALUES (1, 'Speedy Express', '(503) 555-9831');
-INSERT INTO shippers_tmp VALUES (2, 'United Package', '(503) 555-3199');
-INSERT INTO shippers_tmp VALUES (3, 'Federal Shipping', '(503) 555-9931');
-INSERT INTO shippers_tmp VALUES (4, 'Alliance Shippers', '1-800-222-0451');
-INSERT INTO shippers_tmp VALUES (5, 'UPS', '1-800-782-7892');
-INSERT INTO shippers_tmp VALUES (6, 'DHL', '1-800-225-5345');
 
 
 --
@@ -788,61 +757,6 @@ INSERT INTO territories VALUES ('98052', 'Redmond', 2);
 INSERT INTO territories VALUES ('98104', 'Seattle', 2);
 
 
---
--- Data for Name: usstates; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-INSERT INTO usstates VALUES (1, 'Alabama', 'AL', 'south');
-INSERT INTO usstates VALUES (2, 'Alaska', 'AK', 'north');
-INSERT INTO usstates VALUES (3, 'Arizona', 'AZ', 'west');
-INSERT INTO usstates VALUES (4, 'Arkansas', 'AR', 'south');
-INSERT INTO usstates VALUES (5, 'California', 'CA', 'west');
-INSERT INTO usstates VALUES (6, 'Colorado', 'CO', 'west');
-INSERT INTO usstates VALUES (7, 'Connecticut', 'CT', 'east');
-INSERT INTO usstates VALUES (8, 'Delaware', 'DE', 'east');
-INSERT INTO usstates VALUES (9, 'District of Columbia', 'DC', 'east');
-INSERT INTO usstates VALUES (10, 'Florida', 'FL', 'south');
-INSERT INTO usstates VALUES (11, 'Georgia', 'GA', 'south');
-INSERT INTO usstates VALUES (12, 'Hawaii', 'HI', 'west');
-INSERT INTO usstates VALUES (13, 'Idaho', 'ID', 'midwest');
-INSERT INTO usstates VALUES (14, 'Illinois', 'IL', 'midwest');
-INSERT INTO usstates VALUES (15, 'Indiana', 'IN', 'midwest');
-INSERT INTO usstates VALUES (16, 'Iowa', 'IO', 'midwest');
-INSERT INTO usstates VALUES (17, 'Kansas', 'KS', 'midwest');
-INSERT INTO usstates VALUES (18, 'Kentucky', 'KY', 'south');
-INSERT INTO usstates VALUES (19, 'Louisiana', 'LA', 'south');
-INSERT INTO usstates VALUES (20, 'Maine', 'ME', 'north');
-INSERT INTO usstates VALUES (21, 'Maryland', 'MD', 'east');
-INSERT INTO usstates VALUES (22, 'Massachusetts', 'MA', 'north');
-INSERT INTO usstates VALUES (23, 'Michigan', 'MI', 'north');
-INSERT INTO usstates VALUES (24, 'Minnesota', 'MN', 'north');
-INSERT INTO usstates VALUES (25, 'Mississippi', 'MS', 'south');
-INSERT INTO usstates VALUES (26, 'Missouri', 'MO', 'south');
-INSERT INTO usstates VALUES (27, 'Montana', 'MT', 'west');
-INSERT INTO usstates VALUES (28, 'Nebraska', 'NE', 'midwest');
-INSERT INTO usstates VALUES (29, 'Nevada', 'NV', 'west');
-INSERT INTO usstates VALUES (30, 'New Hampshire', 'NH', 'east');
-INSERT INTO usstates VALUES (31, 'New Jersey', 'NJ', 'east');
-INSERT INTO usstates VALUES (32, 'New Mexico', 'NM', 'west');
-INSERT INTO usstates VALUES (33, 'New York', 'NY', 'east');
-INSERT INTO usstates VALUES (34, 'North Carolina', 'NC', 'east');
-INSERT INTO usstates VALUES (35, 'North Dakota', 'ND', 'midwest');
-INSERT INTO usstates VALUES (36, 'Ohio', 'OH', 'midwest');
-INSERT INTO usstates VALUES (37, 'Oklahoma', 'OK', 'midwest');
-INSERT INTO usstates VALUES (38, 'Oregon', 'OR', 'west');
-INSERT INTO usstates VALUES (39, 'Pennsylvania', 'PA', 'east');
-INSERT INTO usstates VALUES (40, 'Rhode Island', 'RI', 'east');
-INSERT INTO usstates VALUES (41, 'South Carolina', 'SC', 'east');
-INSERT INTO usstates VALUES (42, 'South Dakota', 'SD', 'midwest');
-INSERT INTO usstates VALUES (43, 'Tennessee', 'TN', 'midwest');
-INSERT INTO usstates VALUES (44, 'Texas', 'TX', 'west');
-INSERT INTO usstates VALUES (45, 'Utah', 'UT', 'west');
-INSERT INTO usstates VALUES (46, 'Vermont', 'VT', 'east');
-INSERT INTO usstates VALUES (47, 'Virginia', 'VA', 'east');
-INSERT INTO usstates VALUES (48, 'Washington', 'WA', 'west');
-INSERT INTO usstates VALUES (49, 'West Virginia', 'WV', 'south');
-INSERT INTO usstates VALUES (50, 'Wisconsin', 'WI', 'midwest');
-INSERT INTO usstates VALUES (51, 'Wyoming', 'WY', 'west');
 
 
 --
@@ -878,14 +792,6 @@ ALTER TABLE ONLY customers
 
 
 --
--- Name: pk_employees; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY employees
-    ADD CONSTRAINT pk_employees PRIMARY KEY ("EmployeeID");
-
-
---
 -- Name: pk_employeeterritories; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -917,13 +823,6 @@ ALTER TABLE ONLY products
     ADD CONSTRAINT pk_products PRIMARY KEY ("ProductID");
 
 
---
--- Name: pk_region; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY region
-    ADD CONSTRAINT pk_region PRIMARY KEY ("RegionID");
-
 
 --
 -- Name: pk_shippers; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
@@ -932,13 +831,6 @@ ALTER TABLE ONLY region
 ALTER TABLE ONLY shippers
     ADD CONSTRAINT pk_shippers PRIMARY KEY ("ShipperID");
 
-
---
--- Name: pk_shippers_tmp; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY shippers_tmp
-    ADD CONSTRAINT pk_shippers_tmp PRIMARY KEY ("ShipperID");
 
 
 --
@@ -955,6 +847,126 @@ ALTER TABLE ONLY suppliers
 
 ALTER TABLE ONLY territories
     ADD CONSTRAINT pk_territories PRIMARY KEY ("TerritoryID");
+
+
+
+ALTER TABLE "customercustomerdemo" ADD CONSTRAINT "FK_CustomerCustomerDemo" 
+    FOREIGN KEY ("CustomerTypeID") REFERENCES "customerdemographics" ("CustomerTypeID");
+
+ALTER TABLE "customercustomerdemo" ADD CONSTRAINT "FK_CustomerCustomerDemo_Customers" 
+    FOREIGN KEY ("CustomerID") REFERENCES customers ("CustomerID");
+
+ALTER TABLE "employees" ADD CONSTRAINT "FK_Employees_Employees" 
+    FOREIGN KEY ("ReportsTo") REFERENCES "employees" ("EmployeeID");
+
+ALTER TABLE "employeeterritories" ADD CONSTRAINT "FK_EmployeeTerritories_Employees" 
+    FOREIGN KEY ("EmployeeID") REFERENCES "employees" ("EmployeeID");
+
+ALTER TABLE "employeeterritories" ADD CONSTRAINT "FK_EmployeeTerritories_Territories" 
+    FOREIGN KEY ("TerritoryID") REFERENCES "territories" ("TerritoryID");
+
+ALTER TABLE "order_details" ADD CONSTRAINT "FK_Order_Details_Orders" 
+    FOREIGN KEY ("OrderID") REFERENCES "orders" ("OrderID");
+
+ALTER TABLE "order_details" ADD CONSTRAINT "FK_Order_Details_Products" 
+    FOREIGN KEY ("ProductID") REFERENCES "products" ("ProductID");
+
+ALTER TABLE "orders" ADD CONSTRAINT "FK_Orders_Customers" 
+    FOREIGN KEY ("CustomerID") REFERENCES customers ("CustomerID");
+
+ALTER TABLE "orders" ADD CONSTRAINT "FK_Orders_Employees" 
+    FOREIGN KEY ("EmployeeID") REFERENCES "employees" ("EmployeeID");
+
+ALTER TABLE "orders" ADD CONSTRAINT "FK_Orders_Shippers" 
+    FOREIGN KEY ("ShipVia") REFERENCES "shippers" ("ShipperID");
+
+ALTER TABLE "products" ADD CONSTRAINT "FK_Products_Categories" 
+    FOREIGN KEY ("CategoryID") REFERENCES "categories" ("CategoryID");
+
+ALTER TABLE "products" ADD CONSTRAINT "FK_Products_Suppliers" 
+    FOREIGN KEY ("SupplierID") REFERENCES "suppliers" ("SupplierID");
+
+ALTER TABLE "territories" ADD CONSTRAINT "FK_Territories_Region" 
+    FOREIGN KEY ("RegionID") REFERENCES "region" ("RegionID");
+
+
+
+CREATE TABLE employeeorderdetails (
+	"EmployeeID" INTEGER NOT NULL,
+	"OrderID" INTEGER NOT NULL,
+	"ProductID" INTEGER NOT NULL,
+	CONSTRAINT "PK_EmployeeOrderDetails" PRIMARY KEY ( "EmployeeID", "OrderID", "ProductID")
+);
+
+ALTER TABLE employeeorderdetails ADD CONSTRAINT "FK_EmpoyeeOrderDetails1"
+	FOREIGN KEY ("EmployeeID") REFERENCES employees ("EmployeeID") ON DELETE CASCADE;
+
+ALTER TABLE employeeorderdetails ADD CONSTRAINT "FK_EmpoyeeOrderDetails2"
+	FOREIGN KEY ("OrderID", "ProductID") REFERENCES order_details ("OrderID", "ProductID")  ON DELETE CASCADE;
+    
+INSERT INTO employeeorderdetails 
+SELECT o."EmployeeID", od."OrderID", od."ProductID" 
+FROM orders o JOIN order_details od ON o."OrderID" = od."OrderID"; 
+    
+
+ALTER TABLE public.employeeorderdetails OWNER TO postgres;
+
+
+
+
+/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+CREATE TABLE "indexlog" (
+    "id" SERIAL PRIMARY KEY,
+    "tenantCode" VARCHAR(100) NOT NULL,
+    "entityId" INTEGER,
+    "entityType" VARCHAR(100),
+    "error" VARCHAR(1024),
+    "noIndex" boolean DEFAULT '0',
+    "modifiedAt" timestamp
+);
+ALTER TABLE public.indexlog OWNER TO postgres;
+
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (1, 'us', 100, 'locations', NULL, false, '2019-02-12 15:44:18');
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (2, 'us', 200, 'locations', NULL, true, '2019-04-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (3, 'us', 300, 'locations', 'error', true, '2019-05-02 15:33:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (4, 'us', 567, 'ads', NULL, false, '2019-01-22 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (5, 'ca', 837, 'ads', NULL, false, '2019-05-01 12:03:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (6, 'us', 23, 'ads', NULL, false, '2019-04-05 11:51:17'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (7, 'us', 24, 'ads', NULL, false, '2019-04-22 15:05:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (8, 'us', 65, 'ads', NULL, false, '2019-04-12 13:21:44'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (9, 'us', 765, 'ads', NULL, false, '2019-04-08 03:00:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (10, 'ca', 239, 'ads', NULL, false, '2019-04-09 23:32:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (11, 'ca', 8263, 'ads', NULL, false, '2019-04-16 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (12, 'us', 103, 'items', NULL, false, '2019-04-02 15:09:00'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (13, 'us', 105, 'items', NULL, false, '2019-05-02 21:34:15'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (14, 'us', 23, 'ads', NULL, false, '2019-05-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (15, 'ca', 8272, 'items', NULL, false, '2019-05-02 15:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (16, 'us', 430, 'ads', 'error',true, '2019-03-01 12:21:22'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (17, 'us', 6252, 'ads', NULL, false, '2019-05-02 03:51:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (18, 'us', 21, 'ads', NULL, false, '2019-03-02 13:21:44'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (19, 'us', 23, 'ads', 'ERROR_MSG foo', false, '2019-05-02 05:05:18'); 
+INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "noIndex", "modifiedAt") VALUES (20, 'us', 567, 'ads', 'some ERROR MSG', false, '2019-03-02 12:21:22'); 
+
+
+
+/* This table was added to support test cases for keys that have non url save characters in them */	
+CREATE TABLE "urls" (
+    "url" VARCHAR(512) NOT NULL,
+    "short" VARCHAR(100) NOT NULL,
+    "text" VARCHAR(500) NOT NULL,
+     CONSTRAINT "PK_Urls" PRIMARY KEY ("url", "short")
+);
+ALTER TABLE public.urls OWNER TO postgres;
+
+INSERT INTO "urls" ("url", "short", "text") VALUES ('http://www.rocketpartners.io/inversion', '74593jd1', 'some description');
+
+
+
+
+
+
+
+
 
 
 --

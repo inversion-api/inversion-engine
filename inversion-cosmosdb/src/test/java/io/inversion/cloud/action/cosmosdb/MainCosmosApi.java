@@ -29,7 +29,7 @@ public class MainCosmosApi
 {
    public static void main(String[] args) throws Exception
    {
-      Engine e = CosmosEngineFactory.engine();
+      Engine e = CosmosEngineFactory.buildEngine();
       e.withEngineListener(new EngineListener()
          {
 

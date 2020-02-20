@@ -27,13 +27,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -63,30 +62,30 @@ import io.inversion.cloud.utils.Utils;
 
 public class JdbcDb extends Db<JdbcDb>
 {
-   protected char                 stringQuote              = '\'';
-   protected char                 columnQuote              = '"';
+   protected char          stringQuote              = '\'';
+   protected char          columnQuote              = '"';
 
-   static Map<String, DataSource> pools                    = new HashMap();
+   protected DataSource    pool                     = null;
 
-   public static final int        MIN_POOL_SIZE            = 3;
-   public static final int        MAX_POOL_SIZE            = 10;
+   public static final int MIN_POOL_SIZE            = 3;
+   public static final int MAX_POOL_SIZE            = 10;
 
-   protected String               driver                   = null;
-   protected String               url                      = null;
-   protected String               user                     = null;
-   protected String               pass                     = null;
-   protected int                  poolMin                  = 3;
-   protected int                  poolMax                  = 10;
-   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
-   protected boolean              autoCommit               = false;
+   protected String        driver                   = null;
+   protected String        url                      = null;
+   protected String        user                     = null;
+   protected String        pass                     = null;
+   protected int           poolMin                  = 3;
+   protected int           poolMax                  = 10;
+   protected int           idleConnectionTestPeriod = 3600;           // in seconds
+   protected boolean       autoCommit               = false;
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
-   protected boolean              calcRowsFound            = true;
+   protected boolean       calcRowsFound            = true;
 
-   protected int                  relatedMax               = 500;
+   protected int           relatedMax               = 500;
 
-   protected List<String>         ddlUrls                  = new ArrayList();
+   protected List<String>  ddlUrls                  = new ArrayList();
 
    static
    {
@@ -167,6 +166,13 @@ public class JdbcDb extends Db<JdbcDb>
       withDdlUrl(ddlUrls);
    }
 
+   public JdbcDb(String url, String user, String pass)
+   {
+      withUrl(url);
+      withUser(user);
+      withPass(pass);
+   }
+
    @Override
    protected void doStartup()
    {
@@ -223,7 +229,10 @@ public class JdbcDb extends Db<JdbcDb>
 
    protected void doShutdown()
    {
-      //pool.close();
+      if (pool != null)
+      {
+         ((HikariDataSource) pool).close();
+      }
    }
 
    @Override
@@ -233,6 +242,8 @@ public class JdbcDb extends Db<JdbcDb>
          return type;
 
       String driver = getDriver();
+      driver = driver != null ? driver : getUrl();
+
       if (driver != null)
       {
          if (driver.indexOf("mysql") >= 0)
@@ -288,6 +299,12 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
+   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   {
+      return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+   }
+
+   @Override
    public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws Exception
    {
       if (columnMappedIndexValues.size() == 0)
@@ -339,37 +356,67 @@ public class JdbcDb extends Db<JdbcDb>
 
    }
 
+   /**
+    * Shortcut for getConnection(true);
+    * 
+    */
    public Connection getConnection() throws ApiException
+   {
+      Connection conn = getConnection(true);
+      try
+      {
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@GLOBAL.sql_mode"));
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
+
+         //JdbcUtils.selectRows(conn, "SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION';");
+         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
+
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+      }
+      return conn;
+   }
+
+   /**
+    * Returns a JDBC connection that is shared on the ThreadLocal
+    * with autoCommit managed by this Db and an EngineListener.
+    * 
+    * @param managed
+    * @return
+    * @throws ApiException
+    */
+   public Connection getConnection(boolean managed) throws ApiException
+   {
+      return getConnection0(managed);
+   }
+
+   protected Connection getConnection0(boolean managed) throws ApiException
    {
       try
       {
-         Connection conn = ConnectionLocal.getConnection(this);
+         Connection conn = !managed ? null : ConnectionLocal.getConnection(this);
          if (conn == null && !isShutdown())
          {
-            String dsKey = "name=" + getName() + ", url=" + getUrl() + ", user=" + getUser();
-
-            DataSource pool = pools.get(dsKey);
-
             if (pool == null)
             {
-               synchronized (pools)
+               synchronized (this)
                {
-                  //System.out.println("CREATING CONNECTION POOL: " + dsKey);
-
-                  pool = pools.get(getName());
-
-                  if (pool == null && !isShutdown())
+                  if (pool == null)
                   {
                      pool = createConnectionPool();
-                     pools.put(dsKey, pool);
                   }
                }
             }
 
             conn = pool.getConnection();
-            conn.setAutoCommit(isAutoCommit());
 
-            ConnectionLocal.putConnection(this, conn);
+            if (managed)
+            {
+               conn.setAutoCommit(isAutoCommit());
+               ConnectionLocal.putConnection(this, conn);
+            }
          }
 
          return conn;
@@ -396,7 +443,10 @@ public class JdbcDb extends Db<JdbcDb>
          //connection errors for some dbs...specifically h2 in testing
          //so the initialization does not use the pool.
 
-         Class.forName(getDriver());
+         String driver = getDriver();
+         if (driver != null)
+            Class.forName(driver);
+
          Connection conn = null;
          try
          {
@@ -410,8 +460,9 @@ public class JdbcDb extends Db<JdbcDb>
          }
          catch (Exception ex)
          {
-            conn.rollback();
             log.warn("Error initializing db with supplied ddl.", ex);
+            if (conn != null)
+               conn.rollback();
             throw ex;
          }
          finally
@@ -427,6 +478,23 @@ public class JdbcDb extends Db<JdbcDb>
       config.setUsername(getUser());
       config.setPassword(getPass());
       config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
+
+      if (isType("mysql"))
+      {
+         //-- this is required to remove STRICT_TRANS_TABLES which prevents upserting
+         //-- existing rows without supplying the value of required columns
+         //-- hikari seemed to be overriding 'sessionVariables' set on the jdbc url
+         //-- so this was done to force the config
+         config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
+      }
+      else if (isType("sqlserver"))
+      {
+         //-- upserts won't work if you can't upsert an identity field
+         //-- https://stackoverflow.com/questions/10116759/set-identity-insert-off-for-all-tables
+         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
+
+      }
+
       DataSource pool = new HikariDataSource(config);
 
       return pool;
@@ -434,59 +502,86 @@ public class JdbcDb extends Db<JdbcDb>
 
    public static class ConnectionLocal
    {
-      static ThreadLocal<Map<Db, Connection>> connections = new ThreadLocal();
+      static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
+      static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
 
-      public static Map<Db, Connection> getConnections()
+      public static void closeAll()
       {
-         return connections.get();
+         for (Thread thread : threadToDbMap.keySet())
+         {
+            try
+            {
+               close(thread);
+            }
+            catch (Exception ex)
+            {
+               ex.printStackTrace();
+            }
+         }
+
+         //System.out.println(dbToThreadMap);
+         //System.out.println(threadToDbMap);
       }
 
       public static Connection getConnection(Db db)
       {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
-         {
-            conns = new HashMap();
-            connections.set(conns);
-         }
+         return getConnection(db, Thread.currentThread());
+      }
 
-         return conns.get(db);
+      static Connection getConnection(Db db, Thread thread)
+      {
+         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+         if (threadToConnMap == null)
+            return null;
+
+         return threadToConnMap.get(thread);
       }
 
       public static void putConnection(Db db, Connection connection)
       {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
+         putConnection(db, Thread.currentThread(), connection);
+      }
+
+      static void putConnection(Db db, Thread thread, Connection connection)
+      {
+         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+         if (threadToConnMap == null)
          {
-            conns = new HashMap();
-            connections.set(conns);
+            threadToConnMap = new Hashtable();
+            dbToThreadMap.put(db, threadToConnMap);
          }
-         conns.put(db, connection);
+         threadToConnMap.put(thread, connection);
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(thread);
+         if (dbToConnMap == null)
+         {
+            dbToConnMap = new Hashtable();
+            threadToDbMap.put(thread, dbToConnMap);
+         }
+         dbToConnMap.put(db, connection);
+
       }
 
       public static void commit() throws Exception
       {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
+         if (dbToConnMap != null)
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            java.util.Collection<Connection> connections = dbToConnMap.values();
+            for (Connection conn : connections)
             {
                try
                {
-                  Connection conn = conns.get(db);
-                  if (!conn.isClosed() && !conn.getAutoCommit())
+                  if (!(conn.isClosed() || conn.getAutoCommit()))
                   {
                      conn.commit();
                   }
                }
                catch (Exception ex)
                {
-                  String msg = (ex.getMessage() + "").toLowerCase();
-                  if (msg.indexOf("connection is closed") > -1)
-                     continue;
-
-                  if (toThrow != null)
+                  if (toThrow == null)
                      toThrow = ex;
                }
             }
@@ -499,19 +594,22 @@ public class JdbcDb extends Db<JdbcDb>
       public static void rollback() throws Exception
       {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
+         if (dbToConnMap != null)
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            for (Connection conn : dbToConnMap.values())
             {
-               Connection conn = conns.get(db);
                try
                {
-                  conn.rollback();
+                  if (!(conn.isClosed() || conn.getAutoCommit()))
+                  {
+                     conn.rollback();
+                  }
                }
                catch (Exception ex)
                {
-                  if (toThrow != null)
+                  if (toThrow == null)
                      toThrow = ex;
                }
             }
@@ -523,26 +621,49 @@ public class JdbcDb extends Db<JdbcDb>
 
       public static void close() throws Exception
       {
+         close(Thread.currentThread());
+      }
+
+      static void close(Thread thread) throws Exception
+      {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.remove(thread);
+
+         if (dbToConnMap != null)
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            List<Db> dbs = new ArrayList(dbToConnMap.keySet());
+
+            for (Db db : dbs)//Connection conn : dbToConnMap.values())
             {
-               Connection conn = conns.get(db);
+               //--
+               //-- cleanup the reverse mapping first
+               Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+               threadToConnMap.remove(thread);
+
+               if (threadToConnMap.size() == 0)
+                  dbToThreadMap.remove(db);
+               //--
+               //--
+
                try
                {
-                  conn.close();
+                  Connection conn = dbToConnMap.get(db);
+                  if (!conn.isClosed())
+                  {
+                     conn.close();
+                  }
                }
                catch (Exception ex)
                {
-                  if (toThrow != null)
+                  if (toThrow == null)
                      toThrow = ex;
                }
             }
-         }
 
-         connections.remove();
+            if (dbToConnMap.size() == 0)
+               threadToDbMap.remove(thread);
+         }
 
          if (toThrow != null)
             throw toThrow;
@@ -574,7 +695,11 @@ public class JdbcDb extends Db<JdbcDb>
       //-- that caputres all of the foreign key relationships.  You
       //-- have to do the fk loop second becuase the reference pk
       //-- object needs to exist so that it can be set on the fk Col
-      ResultSet rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
+      ResultSet rs = null;
+      if (isType("sqlserver"))
+         rs = dbmd.getTables(conn.getCatalog(), "dbo", "%", new String[]{"TABLE", "VIEW"});
+      else
+         rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
       //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
       boolean hasNext = rs.next();
       if (!hasNext)
@@ -624,6 +749,13 @@ public class JdbcDb extends Db<JdbcDb>
                String idxName = indexMd.getString("INDEX_NAME");
                String idxType = "Other";
                String colName = indexMd.getString("COLUMN_NAME");
+
+               if (idxName == null || colName == null)
+               {
+                  //WDB 2020-02-14 this was put in because SqlServer was 
+                  //found to be returning indexes without names.
+                  continue;
+               }
 
                switch (indexMd.getInt("TYPE"))
                {
@@ -759,7 +891,7 @@ public class JdbcDb extends Db<JdbcDb>
                //               if (rel == null)
                //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
 
-               String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
+               //String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
 
                Term join = null;
                for (int j = 0; j < 2; j++)
@@ -768,6 +900,8 @@ public class JdbcDb extends Db<JdbcDb>
 
                   if (rel.isManyToMany() && j == 0)
                      relatedTable = rel.getFk1Col1().getCollection().getTableName();
+
+                  String aliasPrefix = "_join~" + rel.getEntity().getName() + "~to~" + relatedTable + "~via~" + part + "~";
 
                   String tableAlias = aliasPrefix + (j + 1);
 

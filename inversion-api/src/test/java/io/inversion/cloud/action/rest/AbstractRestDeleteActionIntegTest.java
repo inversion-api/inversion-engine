@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,83 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.action;
+package io.inversion.cloud.action.rest;
 
-import java.util.Collection;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.jdbc.JdbcDbApiFactory;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
-import junit.framework.TestCase;
 
-@RunWith(Parameterized.class)
-public class TestSqlDeleteAction extends TestCase
+public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActionIntegTest
 {
 
-   @Parameterized.Parameters
-   public static Collection input()
+   public AbstractRestDeleteActionIntegTest(String dbType)
    {
-      return JdbcDbApiFactory.CONFIG_DBS_TO_TEST;
-   }
-
-   protected String url(String path)
-   {
-      if (path.startsWith("http"))
-         return path;
-
-      String cp = "northwind/" + db + "/";
-
-      if (cp.length() == 0)
-         return path;
-
-      if (!cp.endsWith("/"))
-         cp += "/";
-
-      while (path.startsWith("/"))
-         path = path.substring(1, path.length());
-
-      //      if (path.indexOf(cp) > -1 || path.startsWith("http"))
-      //         return path;
-
-      return "http://localhost/" + cp + path;
-   }
-
-   Engine engine = null;
-
-   protected Engine service() throws Exception
-   {
-      if (engine == null)
-      {
-         engine = JdbcDbApiFactory.service(true, false);
-      }
-      return engine;
-   }
-
-   String db = null;
-
-   public TestSqlDeleteAction(String db)
-   {
-      this.db = db;
-   }
-
-   @Before
-   public void before() throws Exception
-   {
-      JdbcDbApiFactory.prepData(db);
+      super(dbType);
    }
 
    @Test
    public void testSingleDelete() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
       res = engine.get(url("orderdetails?limit=1&sort=orderid"));
       res.dump();
@@ -108,9 +56,9 @@ public class TestSqlDeleteAction extends TestCase
    public void testBatchHrefDelete() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
-      res = engine.get(url("orderdetails?limit=10&sort=orderid")).assertOk();
+      res = engine.get(url("orderdetails?limit=10&sort=orderid")).dump().assertOk();
 
       JSArray hrefs = new JSArray();
 
@@ -128,9 +76,9 @@ public class TestSqlDeleteAction extends TestCase
    public void testBatchQueryDelete() throws Exception
    {
       Response res = null;
-      Engine engine = service();
+      Engine engine = engine();
 
-      JSArray hrefs = new JSArray(url("orderdetails/10257~27"), url("orderdetails?orderid=10395"), url("orderdetails?orderid=10476"));
+      JSArray hrefs = new JSArray(url("orderdetails/10248~11"), url("orderdetails?orderid=10249"), url("orderdetails?orderid=10250"));
 
       for (int i = 0; i < hrefs.size(); i++)
          assertTrue(engine.get(hrefs.getString(i)).assertOk().getFoundRows() > 0);
@@ -147,7 +95,7 @@ public class TestSqlDeleteAction extends TestCase
    @Test
    public void testBatchQueryDeleteWithMultipleConditionsOnMultiPKTable() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
 
       int allRecordsSize = engine.get(url("orderdetails")).getJson().findArray("data").size();
 
@@ -156,23 +104,23 @@ public class TestSqlDeleteAction extends TestCase
       String url = url("orderdetails?Quantity=60&gt(UnitPrice,10)");
 
       JSArray data = engine.get(url).getJson().findArray("data");
-      assertTrue("data should contain two records", data.size() == 2);
+      assertTrue(data.size() == 2, "data should contain two records");
 
       Response res = engine.delete(url("orderdetails"), new JSArray(url));
-      assertTrue("bulk delete should succeed", res.isSuccess());
+      assertTrue(res.isSuccess(), "bulk delete should succeed");
 
       data = engine.get(url).getJson().findArray("data");
-      assertTrue("data should contain zero records after delete", data.size() == 0);
+      assertTrue(data.size() == 0, "data should contain zero records after delete");
 
       int allRecordsSizeAfterDelete = engine.get(url("orderdetails")).getJson().findArray("data").size();
-      assertEquals("Wrong number of records were deleted", 2, (allRecordsSize - allRecordsSizeAfterDelete));
+      assertEquals(2, (allRecordsSize - allRecordsSizeAfterDelete), "Wrong number of records were deleted");
 
    }
 
    @Test
    public void testBatchQueryDeleteWithMultipleConditionsOnSinglePKtable() throws Exception
    {
-      Engine engine = service();
+      Engine engine = engine();
 
       Response res = engine.get(url("indexlogs"));
       int allRecordsSize = res.data().size();
@@ -186,19 +134,19 @@ public class TestSqlDeleteAction extends TestCase
       res = engine.get(url);
 
       JSArray data = res.getJson().findArray("data");
-      assertTrue("data should contain three records", data.size() == 3);
+      assertTrue(data.size() == 3, "data should contain three records");
 
       res = engine.delete(url("indexlogs"), new JSArray(url));
       res.dump();
-      assertTrue("bulk delete should succeed", res.isSuccess());
+      assertTrue(res.isSuccess(), "bulk delete should succeed");
 
       res = engine.get(url);
       data = res.getJson().findArray("data");
-      assertTrue("data should contain zero records after delete", data.size() == 0);
+      assertTrue(data.size() == 0, "data should contain zero records after delete");
 
       res = engine.get(url("indexlogs"));
       int allRecordsSizeAfterDelete = res.getJson().findArray("data").size();
-      assertEquals("Wrong number of records were deleted", 3, (allRecordsSize - allRecordsSizeAfterDelete));
+      assertEquals(3, (allRecordsSize - allRecordsSizeAfterDelete), "Wrong number of records were deleted");
    }
 
    //2019-05-16 this is currently failing because of the OrderDetails child records...not sure what to do with this test
