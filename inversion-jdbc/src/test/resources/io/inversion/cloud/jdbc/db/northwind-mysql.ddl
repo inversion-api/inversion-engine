@@ -181,7 +181,7 @@ CREATE INDEX `ProductName` ON `Products` (`ProductName`);
 # ---------------------------------------------------------------------- #
 
 CREATE TABLE `Region` (
-    `RegionID` INTEGER NOT NULL,
+    `RegionID` INTEGER NOT NULL AUTO_INCREMENT,
     `RegionDescription` VARCHAR(50) NOT NULL,
     CONSTRAINT `PK_Region` PRIMARY KEY (`RegionID`)
 );

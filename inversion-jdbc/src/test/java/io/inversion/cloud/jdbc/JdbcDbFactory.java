@@ -97,7 +97,7 @@ public class JdbcDbFactory
       Connection conn = null;
       try
       {
-         conn = DriverManager.getConnection(url + "?sessionVariables=sql_mode=NO_ENGINE_SUBSTITUTION", user, pass);
+         conn = DriverManager.getConnection(url, user, pass);
       }
       catch (Exception ex)
       {
@@ -108,10 +108,15 @@ public class JdbcDbFactory
       JdbcUtils.execute(conn, "DROP DATABASE IF EXISTS " + database);
       JdbcUtils.execute(conn, "CREATE DATABASE " + database);
       conn.close();
+      
+      conn = DriverManager.getConnection(url + database + "?sessionVariables=sql_mode=ANSI_QUOTES", user, pass);
+      JdbcUtils.runDdl(conn, JdbcDb.class.getResourceAsStream("northwind-mysql.ddl"));
+      conn.close();
+
 
       //sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'
 
-      JdbcDb db = new JdbcDb("mysql", driver, url + database + "?sessionVariables=sql_mode=ANSI_QUOTES", user, pass, JdbcDb.class.getResource("northwind-mysql.ddl").toString());
+      JdbcDb db = new JdbcDb("mysql", driver, url + database, user, pass);
       //JdbcDb db = new JdbcDb("mysql", driver, url + database + "?sessionVariables=sql_mode=NO_ENGINE_SUBSTITUTION", user, pass, JdbcDb.class.getResource("northwind-mysql.ddl").toString());
       return db;
    }

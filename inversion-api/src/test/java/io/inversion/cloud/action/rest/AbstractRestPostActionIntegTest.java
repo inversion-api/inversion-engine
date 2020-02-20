@@ -43,13 +43,10 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
 
       //the bootstrap process copies 25 orders into the orders table, they are not sequential
       res = engine.get(url("orders?limit=100&sort=orderid"));
-      System.out.println(res.getDebug());
       assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
       //post one new bogus order
-      res = engine.post(url("orders"), new JSNode("orderid", 100, "shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
-      res.dump();
-      assertEquals(res.find("data.0.href"), url("orders/100"));
+      res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
 
       //check the values we sent are the values we got back
       res = engine.get(res.findString("data.0.href"));
@@ -59,7 +56,6 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       //check total records
       res = engine.get(url("orders?limit=25&sort=orderid"));
       assertEquals(26, res.find("meta.foundRows"));
-      assertEquals(res.find("data.0.href"), url("orders/100"));
    }
 
    @Test
@@ -116,7 +112,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       res = engine.get(res.findString("data.0.territories.0.href") + "?expands=region");
 
       //-- confirms that a the new region was created and assigned to territory 30346
-      assertEquals("http://localhost/northwind/h2/regions/5", res.findString("data.0.region.href"));
+      assertEquals(url("regions/5"), res.findString("data.0.region.href"));
       assertEquals("HotLanta", res.findString("data.0.region.regiondescription"));
 
       //--now go back to steve and unhook several many-to-one reportsTo relationships

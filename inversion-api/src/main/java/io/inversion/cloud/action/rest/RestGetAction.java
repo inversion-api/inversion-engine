@@ -815,10 +815,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else if (sc == 500)
       {
-         if (res.getError() != null)
-            throw res.getError();
-         else
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getText());
+         res.rethrow();
       }
       else if (sc == 200)
       {

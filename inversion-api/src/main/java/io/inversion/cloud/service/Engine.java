@@ -600,14 +600,18 @@ public class Engine
          }
          else
          {
-            log.error("Non ApiException was caught in Engine.", ex);
+            ex = Utils.getCause(ex);
+            if (Chain.getDepth() == 1)
+               log.error("Non ApiException was caught in Engine.", ex);
          }
 
          res.withStatus(status);
-         JSNode response = new JSNode("message", ex.getMessage());
+         String message = ex.getMessage();
+         JSNode response = new JSNode("message", message);
          if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
             response.put("error", Utils.getShortCause(ex));
 
+         res.withError(ex);
          res.withJson(response);
 
          for (EngineListener listener : getListeners(req))

@@ -339,7 +339,8 @@ public class RestPostAction extends Action<RestPostAction>
             Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
             if (!res.isSuccess() || res.data().length() != childNodes.size())
             {
-               throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
+               res.rethrow();
+               //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
             }
 
             //-- now get response URLS and set them BACK on the source from this generation
@@ -375,11 +376,17 @@ public class RestPostAction extends Action<RestPostAction>
                Map primaryKey = getKey(collection, node);
                Map foreignKey = mapTo(getKey(rel.getRelated(), node.get(rel.getName())), rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
 
-               Map updatedRow = new HashMap();
-               updatedRow.putAll(primaryKey);
-               updatedRow.putAll(foreignKey);
-
-               updatedRows.add(updatedRow);
+               if (foreignKey.size() > 0)
+               {
+                  Map updatedRow = new HashMap();
+                  updatedRow.putAll(primaryKey);
+                  updatedRow.putAll(foreignKey);
+                  updatedRows.add(updatedRow);
+               }
+               else
+               {
+                  //this FK value was not provided by the caller
+               }
             }
 
             if (updatedRows.size() > 0)

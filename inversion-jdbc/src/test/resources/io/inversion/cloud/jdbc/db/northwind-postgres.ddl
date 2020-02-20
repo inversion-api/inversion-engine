@@ -101,7 +101,7 @@ ALTER TABLE public.customers OWNER TO postgres;
 --
 
 CREATE TABLE employees (
-    "EmployeeID" smallint NOT NULL,
+    "EmployeeID" SERIAL PRIMARY KEY,
     "LastName" character varying(20) NOT NULL,
     "FirstName" character varying(10) NOT NULL,
     "Title" character varying(30),
@@ -117,7 +117,7 @@ CREATE TABLE employees (
     "Extension" character varying(4),
     "Photo" bytea,
     "Notes" text,
-    "ReportsTo" smallint,
+    "ReportsTo" int,
     "PhotoPath" character varying(255)
 );
 
@@ -129,7 +129,7 @@ ALTER TABLE public.employees OWNER TO postgres;
 --
 
 CREATE TABLE employeeterritories (
-    "EmployeeID" smallint NOT NULL,
+    "EmployeeID" int NOT NULL,
     "TerritoryID" character varying(20) NOT NULL
 );
 
@@ -158,7 +158,7 @@ ALTER TABLE public.order_details OWNER TO postgres;
 CREATE TABLE orders (
     "OrderID" SERIAL PRIMARY KEY,
     "CustomerID" bpchar,
-    "EmployeeID" smallint,
+    "EmployeeID" int,
     "OrderDate" date,
     "RequiredDate" date,
     "ShippedDate" date,
@@ -787,14 +787,6 @@ ALTER TABLE ONLY customerdemographics
 
 ALTER TABLE ONLY customers
     ADD CONSTRAINT pk_customers PRIMARY KEY ("CustomerID");
-
-
---
--- Name: pk_employees; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY employees
-    ADD CONSTRAINT pk_employees PRIMARY KEY ("EmployeeID");
 
 
 --

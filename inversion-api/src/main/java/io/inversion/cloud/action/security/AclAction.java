@@ -74,27 +74,27 @@ public class AclAction extends Action<AclAction>
          withAclRules(aclRules);
    }
 
-   public AclAction requireAllPerms(String includePaths, String permission1, String... permissionsN)
+   public AclAction requireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN)
    {
-      withAclRules(AclRule.requireAllPerms(includePaths, permission1, permissionsN));
+      withAclRules(AclRule.requireAllPerms(httpMethods, includePaths, permission1, permissionsN));
       return this;
    }
 
-   public AclAction requireOnePerm(String includePaths, String permission1, String... permissionsN)
+   public AclAction requireOnePerm(String httpMethods, String includePaths, String permission1, String... permissionsN)
    {
-      withAclRules(AclRule.requireOnePerm(includePaths, permission1, permissionsN));
+      withAclRules(AclRule.requireOnePerm(httpMethods, includePaths, permission1, permissionsN));
       return this;
    }
 
-   public AclAction requireAllRoles(String includePaths, String role1, String... rolesN)
+   public AclAction requireAllRoles(String httpMethods, String includePaths, String role1, String... rolesN)
    {
-      withAclRules(AclRule.requireAllRoles(includePaths, role1, rolesN));
+      withAclRules(AclRule.requireAllRoles(httpMethods, includePaths, role1, rolesN));
       return this;
    }
 
-   public AclAction requireOneRole(String includePaths, String role1, String... rolesN)
+   public AclAction requireOneRole(String httpMethods, String includePaths, String role1, String... rolesN)
    {
-      withAclRules(AclRule.requireOneRole(includePaths, role1, rolesN));
+      withAclRules(AclRule.requireOneRole(httpMethods, includePaths, role1, rolesN));
       return this;
    }
 

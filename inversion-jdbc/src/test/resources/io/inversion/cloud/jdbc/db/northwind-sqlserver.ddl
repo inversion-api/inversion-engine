@@ -785,7 +785,7 @@ CREATE TABLE CustomerDemographics
 	
 CREATE TABLE "Region" 
 (
-	RegionID int NOT NULL ,
+	RegionID "int" IDENTITY (1, 1) NOT NULL ,
 	RegionDescription nchar (50) NOT NULL 
 );
 
@@ -804,11 +804,12 @@ CREATE TABLE "EmployeeTerritories"
 
 -- The following adds data to the tables just created.
 
-Insert Into "Region" Values (1,'Eastern');
-Insert Into "Region" Values (2,'Western');
-Insert Into "Region" Values (3,'Northern');
-Insert Into "Region" Values (4,'Southern');
-
+-- set identity_insert "Region" on;
+Insert Into "Region" ("RegionDescription") Values ('Eastern');
+Insert Into "Region" ("RegionDescription") Values ('Western');
+Insert Into "Region" ("RegionDescription") Values ('Northern');
+Insert Into "Region" ("RegionDescription") Values ('Southern');
+-- set identity_insert "Region" off;
 
 Insert Into Territories Values ('01581','Westboro',1);
 Insert Into Territories Values ('01730','Bedford',1);

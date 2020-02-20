@@ -49,6 +49,7 @@ import javax.swing.text.DefaultEditorKit.InsertBreakAction;
 import org.apache.commons.collections4.CollectionUtils;
 
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Status;
 import io.inversion.cloud.utils.Rows;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
@@ -377,22 +378,6 @@ public class JdbcUtils
       return null;
    }
 
-   public static List selectList(Connection conn, String sql, Object... vals) throws Exception
-   {
-      List objs = new ArrayList();
-
-      Rows rows = selectRows(conn, sql, vals);
-      Object key = null;
-      for (Row row : rows)
-      {
-         if (key == null)
-            key = row.keySet().iterator().next();
-
-         objs.add(row.get(key));
-      }
-      return objs;
-   }
-
    public static <T> T selectObject(Connection conn, String sql, Class<T> clazz, Object... vals) throws Exception
    {
       Row row = selectRow(conn, sql, vals);
@@ -404,30 +389,6 @@ public class JdbcUtils
       }
 
       return null;
-   }
-
-   public static <T> T selectObject(Connection conn, String sql, T o, Object... vals) throws Exception
-   {
-      Row row = selectRow(conn, sql, vals);
-      if (row != null)
-      {
-         poplulate(o, row);
-      }
-
-      return o;
-   }
-
-   public static List selectObjects(Connection conn, String sql, Class type, Object... vals) throws Exception
-   {
-      List objs = new ArrayList();
-      Rows rows = selectRows(conn, sql, vals);
-      for (Row row : rows)
-      {
-         Object o = type.newInstance();
-         poplulate(o, row);
-         objs.add(o);
-      }
-      return objs;
    }
 
    public static Object poplulate(Object o, Map<String, Object> row)
@@ -459,6 +420,115 @@ public class JdbcUtils
       }
 
       return o;
+   }
+
+   public static <T> T convert(Object value, Class<T> type)
+   {
+      if (type.isAssignableFrom(value.getClass()))
+      {
+         return (T) value;
+      }
+
+      if (type.equals(boolean.class) || type.equals(Boolean.class))
+      {
+         if (Number.class.isAssignableFrom(value.getClass()))
+         {
+            long num = Long.parseLong(value + "");
+            if (num <= 0)
+               return (T) Boolean.FALSE;
+            else
+               return (T) Boolean.TRUE;
+         }
+         if (value instanceof Boolean)
+            return (T) value;
+      }
+      if (value instanceof Number)
+      {
+         if (type.equals(Long.class) || type.equals(long.class))
+         {
+            value = ((Number) value).longValue();
+            return (T) value;
+         }
+         else if (type.equals(Integer.class) || type.equals(int.class))
+         {
+            value = ((Number) value).intValue();
+            return (T) value;
+         }
+         else if (type.isAssignableFrom(long.class))
+         {
+            value = ((Number) value).longValue();
+            return (T) value;
+         }
+      }
+
+      if (value == null)
+         return null;
+
+      String str = value + "";
+
+      if (String.class.isAssignableFrom(type))
+      {
+         return (T) str;
+      }
+      else if (boolean.class.isAssignableFrom(type))
+      {
+         str = str.toLowerCase();
+         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
+      }
+      else if (int.class.isAssignableFrom(type))
+      {
+         return (T) (Integer) Integer.parseInt(str);
+      }
+      else if (long.class.isAssignableFrom(type))
+      {
+         return (T) (Long) Long.parseLong(str);
+      }
+      else if (float.class.isAssignableFrom(type))
+      {
+         return (T) (Float) Float.parseFloat(str);
+      }
+      else if (Collection.class.isAssignableFrom(type))
+      {
+         Collection list = new ArrayList();
+         String[] parts = str.split(",");
+         for (String part : parts)
+         {
+            part = part.trim();
+            list.add(part);
+         }
+         return (T) list;
+      }
+      else
+      {
+         System.err.println("Can't cast: " + str + " - class " + type.getName());
+      }
+
+      return (T) value;
+   }
+
+   public static List<Field> getFields(Class clazz)
+   {
+      List<Field> fields = new ArrayList();
+
+      do
+      {
+         if (clazz.getName().startsWith("java"))
+            break;
+
+         Field[] farr = clazz.getDeclaredFields();
+         if (farr != null)
+         {
+            for (Field f : farr)
+            {
+               f.setAccessible(true);
+            }
+            fields.addAll(Arrays.asList(farr));
+         }
+         clazz = clazz.getSuperclass();
+      }
+      while (clazz != null && !Object.class.equals(clazz));
+
+      return fields;
    }
 
    /*
@@ -572,104 +642,24 @@ public class JdbcUtils
       {
          ex = e;
          notifyError("insertMaps", sql, rows, ex);
+         throw e;
       }
       finally
       {
-         JdbcUtils.close(stmt);
          notifyAfter("insertMap", sql, rows, ex, null);
+      }
+
+      if (returnKeys.size() == 0)
+      {
+         //the table must not use an auto increment key.
+         for (int i = 0; i < maps.size(); i++)
+            returnKeys.add(null);
       }
 
       if (returnKeys.size() != rows.size())
          throw new RuntimeException("insertMaps() did not return generatedKeys for all rows");
 
       return returnKeys;
-   }
-
-   public static void insert(Connection conn, Object o) throws Exception
-   {
-      insert(conn, o.getClass().getSimpleName(), o);
-   }
-
-   public static void insert(Connection conn, String table, Object o) throws Exception
-   {
-      Exception ex = null;
-      PreparedStatement stmt = null;
-      StringBuffer sql = null;
-      try
-      {
-         sql = new StringBuffer("INSERT INTO ").append(table);
-
-         StringBuffer namesClause = new StringBuffer(" (");
-         StringBuffer valuesClause = new StringBuffer(") VALUES (");
-
-         List values = new ArrayList();
-         List<Field> fields = getFields(o.getClass());
-         Field idField = null;
-         for (int i = 0; i < fields.size(); i++)
-         {
-            Field field = fields.get(i);
-
-            String name = field.getName();
-            Object value = field.get(o);
-
-            if (name.toLowerCase().equals("id") && (value == null || Long.parseLong(value + "") <= 0))
-            {
-               idField = field;
-               continue;
-            }
-
-            //if (value != null)
-            {
-               values.add(value);
-               namesClause.append(quoteCol(conn, name)).append(",");
-               valuesClause.append("?,");
-            }
-         }
-
-         sql.append(namesClause.substring(0, namesClause.length() - 1));
-         sql.append(valuesClause.substring(0, valuesClause.length() - 1));
-         sql.append(")");
-
-         notifyBefore("insert", sql.toString(), o);
-
-         if (idField == null)
-         {
-            stmt = conn.prepareStatement(sql.toString());
-            for (int i = 0; i < values.size(); i++)
-            {
-               stmt.setObject(i + 1, values.get(i));
-            }
-            stmt.execute();
-         }
-         else
-         {
-            stmt = conn.prepareStatement(sql.toString(), new String[]{idField.getName()});
-            for (int i = 0; i < values.size(); i++)
-            {
-               stmt.setObject(i + 1, values.get(i));
-            }
-            stmt.execute();
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next())
-            {
-               Object id = rs.getLong(1);
-               id = convert(id, idField.getType());
-               idField.set(o, id);
-            }
-         }
-      }
-      catch (Exception e)
-      {
-         ex = e;
-         notifyError("insertMap", sql.toString(), o, ex);
-         throw ex;
-      }
-      finally
-      {
-         close(stmt);
-         notifyAfter("insertMap", sql.toString(), o, ex, null);
-      }
-
    }
 
    /*
@@ -687,7 +677,7 @@ public class JdbcUtils
       sql.append(getWhereColumnStr(conn, setColumnNameArray, ","));
       if (whereColumnNames != null && whereColumnNames.length > 0)
       {
-         sql.append(" WHERE " + getWhereColumnStr(conn, whereColumnNames, ","));
+         sql.append(" WHERE " + getWhereColumnStr(conn, whereColumnNames, " AND "));
       }
       return sql.toString();
    }
@@ -695,136 +685,6 @@ public class JdbcUtils
    public static boolean isUpdate(String sql)
    {
       return sql.toLowerCase().trim().startsWith("update ");
-   }
-
-   public static int updateRow(Connection conn, String tableName, String keyCol, String keyVal, Map row) throws Exception
-   {
-      List colNames = new ArrayList();
-      List colValues = new ArrayList();
-      for (Object key : row.keySet())
-      {
-         if (!keyCol.equalsIgnoreCase(key + ""))
-         {
-            colNames.add(key);
-            colValues.add(row.get(key));
-         }
-      }
-      colValues.add(keyVal);
-
-      String sql = buildUpdateSQL(conn, tableName, colNames.toArray(), new String[]{keyCol});
-
-      return (Integer) execute(conn, sql, colValues.toArray());
-   }
-
-   public static int[] updateRows(Connection conn, String tableName, List<String> keyCols, List<Map<String, Object>> rows) throws Exception
-   {
-      if (rows.size() == 0)
-         return new int[0];
-
-      int[] returnInts = null;
-
-      List<String> valCols = new ArrayList(rows.get(0).keySet());
-      valCols.removeAll(keyCols);
-
-      String sql = buildUpdateSQL(conn, tableName, valCols.toArray(), keyCols.toArray());
-
-      Exception ex = null;
-      PreparedStatement stmt = conn.prepareStatement(sql);
-      try
-      {
-         notifyBefore("update", sql, rows);
-
-         for (Map<String, Object> row : rows)
-         {
-            for (int i = 0; i < valCols.size(); i++)
-            {
-               Object value = row.get(valCols.get(i));
-               ((PreparedStatement) stmt).setObject(i + 1, value);
-            }
-
-            for (int i = 0; i < keyCols.size(); i++)
-            {
-               Object value = row.get(keyCols.get(i));
-               ((PreparedStatement) stmt).setObject(i + 1 + valCols.size(), value);
-            }
-
-            stmt.addBatch();
-         }
-         returnInts = stmt.executeBatch();
-      }
-      catch (Exception e)
-      {
-         ex = e;
-         notifyError("update", sql, rows, ex);
-         throw e;
-      }
-      finally
-      {
-         JdbcUtils.close(stmt);
-         notifyAfter("update", sql, rows, ex, returnInts);
-      }
-      return returnInts;
-   }
-
-   public static void update(Connection conn, Object o) throws Exception
-   {
-      update(conn, o.getClass().getSimpleName(), o);
-   }
-
-   public static void update(Connection conn, String tableName, Object o) throws Exception
-   {
-      Exception ex = null;
-      PreparedStatement stmt = null;
-      StringBuffer sql = null;
-      try
-      {
-         sql = new StringBuffer("UPDATE ").append(quoteCol(conn, tableName)).append(" SET ");
-
-         Object id = null;
-
-         List values = new ArrayList();
-         List<Field> fields = getFields(o.getClass());
-         for (int i = 0; i < fields.size(); i++)
-         {
-            Field f = fields.get(i);
-            if (f.getName().equalsIgnoreCase("id"))
-            {
-               id = f.get(o);
-            }
-            else
-            {
-               values.add(f.get(o));
-               sql.append(quoteCol(conn, f.getName())).append(" = ?");
-               if (i < fields.size() - 1)
-               {
-                  sql.append(',');
-               }
-            }
-         }
-         sql.append(" WHERE id = ?");
-
-         notifyBefore("update", sql.toString(), values);
-
-         stmt = conn.prepareStatement(sql.toString());
-         for (int i = 0; i < values.size(); i++)
-         {
-            stmt.setObject(i + 1, values.get(i));
-         }
-         stmt.setObject(values.size() + 1, id);
-         stmt.execute();
-      }
-      catch (Exception e)
-      {
-         ex = e;
-         notifyError("update", sql.toString(), o, ex);
-         throw ex;
-      }
-      finally
-      {
-         close(stmt);
-         notifyAfter("update", sql.toString(), o, ex, null);
-      }
-
    }
 
    /*
@@ -877,9 +737,11 @@ public class JdbcUtils
          if (batch.size() > 0 && (hadKey != hasKey) || CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
          {
             if (hadKey == 0)
-               returnKeys.addAll(insertMaps(conn, tableName, batch));
+               returnKeys.addAll(insertBatch(conn, tableName, indexCols, batch));
             else
+            {
                returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+            }
 
             batch.clear();
          }
@@ -891,7 +753,7 @@ public class JdbcUtils
       if (batch.size() > 0)
       {
          if (hadKey == 0)
-            returnKeys.addAll(insertMaps(conn, tableName, batch));
+            returnKeys.addAll(insertBatch(conn, tableName, indexCols, batch));
          else
             returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
       }
@@ -899,34 +761,58 @@ public class JdbcUtils
       return returnKeys;
    }
 
+   static List insertBatch(Connection conn, String tableName, List<String> indexCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List returnKeys = insertMaps(conn, tableName, rows);
+      for (int i = 0; i < returnKeys.size(); i++)
+      {
+         Object key = returnKeys.get(i);
+         if (key == null)
+         {
+            key = rows.get(i).get(indexCols.get(0));
+            if (key == null)
+               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key for row: " + rows.get(i));
+
+            returnKeys.set(i, key);
+         }
+      }
+      return returnKeys;
+   }
+
    static List upsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
+      List returnKeys = new ArrayList();
       String type = getDbType(conn);
-      List returnKeys = null;
 
       switch (type)
       {
          case "mysql":
-            returnKeys = mysqlUpsertBatch(conn, tableName, idxCols, rows);
+            mysqlUpsertBatch(conn, tableName, idxCols, rows);
             break;
 
          case "postgres":
-            returnKeys = postgresUpsertBatch(conn, tableName, idxCols, rows);
+            postgresUpsertBatch(conn, tableName, idxCols, rows);
             break;
 
          case "sqlserver":
-            returnKeys = sqlserverUpsertBatch(conn, tableName, idxCols, rows);
+            sqlserverUpsertBatch(conn, tableName, idxCols, rows);
             break;
 
          default :
-            returnKeys = h2UpsertBatch(conn, tableName, idxCols, rows);
+            h2UpsertBatch(conn, tableName, idxCols, rows);
             break;
       }
 
-      if (returnKeys.size() != rows.size())
-         throw new ApiException("Return key size does not equal supplied row size.");
+      for (Map row : rows)
+      {
+         Object key = row.get(idxCols.get(0));
+         if (key == null)
+            System.out.println("Unable to determine key for row: " + row);
 
+         returnKeys.add(key);
+      }
       return returnKeys;
+
    }
 
    static List h2UpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
@@ -979,10 +865,9 @@ public class JdbcUtils
       }
    }
 
-   static List mysqlUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
+   static void mysqlUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
       LinkedHashSet keySet = new LinkedHashSet();
-      List returnKeys = new ArrayList();
 
       for (Map row : rows)
       {
@@ -1017,31 +902,10 @@ public class JdbcUtils
       }
       finally
       {
-         ResultSet rs = stmt.getGeneratedKeys();
-         boolean hadNext = false;
-         while (rs.next())
-         {
-            //this was an autogenerated key
-            hadNext = true;
-            String key = rs.getString(1);
-            returnKeys.add(key);
-         }
-         if (!hadNext)
-         {
-            //this was not an autogenerated key
-            for (Map row : rows)
-            {
-               Object key = row.get(idxCols.get(0));
-               if (key == null)
-                  throw new RuntimeException("Unable to determine key value for upserted row.");
-
-               returnKeys.add(key);
-            }
-         }
-         JdbcUtils.close(stmt);
+         close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
       }
-      return returnKeys;
+
    }
 
    static String mysqlBuildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray)
@@ -1122,7 +986,7 @@ public class JdbcUtils
             String key = rs.getString(1);
             returnKeys.add(key);
          }
-         JdbcUtils.close(stmt);
+         close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
       }
       return returnKeys;
@@ -1138,14 +1002,8 @@ public class JdbcUtils
       List returnKeys = new ArrayList();
       for (Map row : rows)
       {
-         Object key = sqlserverUpsertBatch(conn, tableName, idxCols, row);
-         if (key == null)
-            key = row.get(idxCols.get(0));
-
-         if (key == null)
-            throw new RuntimeException("Unable to determine primary key for upserted row: " + row);
-
-         returnKeys.add(key);
+         sqlserverUpsertBatch(conn, tableName, idxCols, row);
+         returnKeys.add(row.get(idxCols.get(0)));
       }
       return returnKeys;
    }
@@ -1162,25 +1020,22 @@ public class JdbcUtils
     * @return
     * @throws Exception
     */
-   static Object sqlserverUpsertBatch(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception
+   static void sqlserverUpsertBatch(Connection conn, String tableName, List<String> indexCols, Map<String, Object> row) throws Exception
    {
-      String returnKey = null;
-      Object[] keys = idxCols.toArray();
-      Object[] insertCols = row.keySet().toArray();
+      List updateCols = new ArrayList(row.keySet());
+      List insertCols = new ArrayList(row.keySet());
 
-      List temp = new ArrayList(row.keySet());
-      temp.removeAll(idxCols);
+      if (indexCols.size() < updateCols.size())
+         updateCols.removeAll(indexCols);
 
-      Object[] updateCols = temp.toArray();
-
-      String sql = buildUpdateSQL(conn, tableName, updateCols, keys);
+      String sql = buildUpdateSQL(conn, tableName, updateCols.toArray(), indexCols.toArray());
 
       sql += "\r\n IF @@ROWCOUNT = 0 ";
-      sql += "\r\n " + buildInsertSQL(conn, tableName, insertCols);
+      sql += "\r\n " + buildInsertSQL(conn, tableName, insertCols.toArray());
 
       Exception ex = null;
 
-      PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+      PreparedStatement stmt = conn.prepareStatement(sql);
       try
       {
          notifyBefore("upsert", sql, row);
@@ -1191,7 +1046,7 @@ public class JdbcUtils
             Object value = row.get(col);
             ((PreparedStatement) stmt).setObject(colNum++, value);
          }
-         for (Object key : keys)
+         for (Object key : indexCols)
          {
             Object value = row.get(key);
             ((PreparedStatement) stmt).setObject(colNum++, value);
@@ -1202,12 +1057,7 @@ public class JdbcUtils
             ((PreparedStatement) stmt).setObject(colNum++, value);
          }
 
-         stmt.executeUpdate();
-         ResultSet rs = stmt.getGeneratedKeys();
-         if (rs.next())
-         {
-            returnKey = rs.getString(1);
-         }
+         stmt.execute();
       }
       catch (Exception e)
       {
@@ -1217,96 +1067,8 @@ public class JdbcUtils
       }
       finally
       {
-         JdbcUtils.close(stmt);
-         notifyAfter("upsert", sql, row, ex, null);
-      }
-
-      return returnKey;
-   }
-
-   /*
-   +------------------------------------------------------------------------------+
-   | DELETE UTILS
-   +------------------------------------------------------------------------------+
-    */
-
-   public boolean isDelete(String sql)
-   {
-      return sql.toLowerCase().trim().startsWith("delete ");
-   }
-
-   public static int deleteRow(Connection conn, String table, String keyCol, Object keyVal) throws Exception
-   {
-      String sql = "";
-      sql += " DELETE FROM " + quoteCol(conn, table);
-      sql += " WHERE " + keyCol + " = ?";
-      Integer deletes = (Integer) execute(conn, sql, keyVal);
-      if (deletes == null)
-         deletes = -1;
-      return deletes;
-
-   }
-
-   public static int deleteRows(Connection conn, String table, String keyCol, Object... keyVals) throws Exception
-   {
-      if (keyVals != null && keyVals.length == 1 && Collection.class.isAssignableFrom(keyVals[0].getClass()))
-      {
-         keyVals = ((Collection) keyVals[0]).toArray();
-      }
-
-      String sql = "";
-      sql += " DELETE FROM " + quoteCol(conn, table);
-      sql += " WHERE " + keyCol + " in (" + getQuestionMarkStr(keyVals.length) + ")";
-      Integer deletes = (Integer) execute(conn, sql, keyVals);
-      if (deletes == null)
-         deletes = -1;
-      return deletes;
-
-   }
-
-   public static void delete(Connection conn, Object o) throws Exception
-   {
-      delete(conn, o.getClass().getSimpleName(), o);
-   }
-
-   public static void delete(Connection conn, String tableName, Object o) throws Exception
-   {
-      Exception ex = null;
-      PreparedStatement stmt = null;
-      StringBuffer sql = null;
-      try
-      {
-         sql = new StringBuffer("DELETE FROM ").append(quoteCol(conn, tableName));
-
-         Object id = null;
-
-         List<Field> fields = getFields(o.getClass());
-         for (int i = 0; i < fields.size(); i++)
-         {
-            Field f = fields.get(i);
-            if (f.getName().equalsIgnoreCase("id"))
-            {
-               id = f.get(o);
-               break;
-            }
-         }
-         sql.append(" WHERE id = ?");
-
-         notifyBefore("delete", sql.toString(), o);
-
-         stmt = conn.prepareStatement(sql.toString());
-         stmt.setObject(1, id);
-         stmt.execute();
-      }
-      catch (Exception e)
-      {
-         ex = e;
-         notifyError("delete", sql.toString(), o, ex);
-      }
-      finally
-      {
          close(stmt);
-         notifyAfter("delete", sql.toString(), o, ex, null);
+         notifyAfter("upsert", sql, row, ex, null);
       }
    }
 
@@ -1438,63 +1200,6 @@ public class JdbcUtils
       return sb.toString();
    }
 
-   public static String getInClauseStr(Collection vals)
-   {
-      StringBuffer sb = new StringBuffer();
-
-      int i = 0;
-      for (Object val : vals)
-      {
-         sb.append(val);
-         if (i < vals.size() - 1)
-         {
-            sb.append(", ");
-         }
-
-         i++;
-      }
-
-      return sb.toString();
-   }
-
-   public static String getQuotedStr(Collection vals, String quote)
-   {
-      StringBuffer sb = new StringBuffer();
-
-      int i = 0;
-      for (Object val : vals)
-      {
-         sb.append(quote).append(val).append(quote);
-         if (i < vals.size() - 1)
-         {
-            sb.append(", ");
-         }
-
-         i++;
-      }
-
-      return sb.toString();
-   }
-
-   public static String getQuotedInClauseStr(Collection vals)
-   {
-      StringBuffer sb = new StringBuffer();
-
-      int i = 0;
-      for (Object val : vals)
-      {
-         sb.append('"').append(val).append('"');
-         if (i < vals.size() - 1)
-         {
-            sb.append(", ");
-         }
-
-         i++;
-      }
-
-      return sb.toString();
-   }
-
    public static String getColumnStr(Connection conn, List columnNameArray)
    {
       StringBuffer sb = new StringBuffer();
@@ -1568,138 +1273,5 @@ public class JdbcUtils
       }
    }
 
-   public static <T> T convert(Object value, Class<T> type)
-   {
-      if (type.isAssignableFrom(value.getClass()))
-      {
-         return (T) value;
-      }
-
-      if (type.equals(boolean.class) || type.equals(Boolean.class))
-      {
-         if (Number.class.isAssignableFrom(value.getClass()))
-         {
-            long num = Long.parseLong(value + "");
-            if (num <= 0)
-               return (T) Boolean.FALSE;
-            else
-               return (T) Boolean.TRUE;
-         }
-         if (value instanceof Boolean)
-            return (T) value;
-      }
-      if (value instanceof Number)
-      {
-         if (type.equals(Long.class) || type.equals(long.class))
-         {
-            value = ((Number) value).longValue();
-            return (T) value;
-         }
-         else if (type.equals(Integer.class) || type.equals(int.class))
-         {
-            value = ((Number) value).intValue();
-            return (T) value;
-         }
-         else if (type.isAssignableFrom(long.class))
-         {
-            value = ((Number) value).longValue();
-            return (T) value;
-         }
-      }
-
-      if (value == null)
-         return null;
-
-      String str = value + "";
-
-      if (String.class.isAssignableFrom(type))
-      {
-         return (T) str;
-      }
-      else if (boolean.class.isAssignableFrom(type))
-      {
-         str = str.toLowerCase();
-         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
-      }
-      else if (int.class.isAssignableFrom(type))
-      {
-         return (T) (Integer) Integer.parseInt(str);
-      }
-      else if (long.class.isAssignableFrom(type))
-      {
-         return (T) (Long) Long.parseLong(str);
-      }
-      else if (float.class.isAssignableFrom(type))
-      {
-         return (T) (Float) Float.parseFloat(str);
-      }
-      else if (Collection.class.isAssignableFrom(type))
-      {
-         Collection list = new ArrayList();
-         String[] parts = str.split(",");
-         for (String part : parts)
-         {
-            part = part.trim();
-            list.add(part);
-         }
-         return (T) list;
-      }
-      else
-      {
-         System.err.println("Can't cast: " + str + " - class " + type.getName());
-      }
-
-      return (T) value;
-   }
-
-   public static Map<String, LinkedHashSet> getMetaData(Connection conn) throws Exception
-   {
-      Map tables = new HashMap();
-      DatabaseMetaData dbmd = conn.getMetaData();
-
-      ResultSet rs = dbmd.getTables(null, null, null, new String[]{"TABLE"});
-      while (rs.next())
-      {
-         String tableCat = rs.getString("TABLE_CAT");
-         String tableSchem = rs.getString("TABLE_SCHEM");
-         String tableName = rs.getString("TABLE_NAME");
-         ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, null);
-
-         LinkedHashSet cols = new LinkedHashSet();
-         tables.put(tableName, cols);
-
-         while (colsRs.next())
-         {
-            String colName = colsRs.getString("COLUMN_NAME");
-            cols.add(colName);
-         }
-      }
-      return tables;
-   }
-
-   public static List<Field> getFields(Class clazz)
-   {
-      List<Field> fields = new ArrayList();
-
-      do
-      {
-         if (clazz.getName().startsWith("java"))
-            break;
-
-         Field[] farr = clazz.getDeclaredFields();
-         if (farr != null)
-         {
-            for (Field f : farr)
-            {
-               f.setAccessible(true);
-            }
-            fields.addAll(Arrays.asList(farr));
-         }
-         clazz = clazz.getSuperclass();
-      }
-      while (clazz != null && !Object.class.equals(clazz));
-
-      return fields;
-   }
 
 }

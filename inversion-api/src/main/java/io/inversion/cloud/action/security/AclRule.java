@@ -45,21 +45,21 @@ public class AclRule extends Rule<AclRule>
       return rule;
    }
 
-   public static AclRule requireAllPerms(String includePaths, String permission1, String... permissionsN)
+   public static AclRule requireAllPerms(String methods, String includePaths, String permission1, String... permissionsN)
    {
       AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
       rule.withAllPermissionsMustMatch(true);
       return rule;
    }
 
-   public static AclRule requireOnePerm(String includePaths, String permission1, String... permissionsN)
+   public static AclRule requireOnePerm(String methods, String includePaths, String permission1, String... permissionsN)
    {
       AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
       rule.withAllPermissionsMustMatch(false);
       return rule;
    }
 
-   public static AclRule requireAllRoles(String includePaths, String role1, String... rolesN)
+   public static AclRule requireAllRoles(String methods, String includePaths, String role1, String... rolesN)
    {
       AclRule rule = new AclRule(null, null, includePaths, null);
       rule.withAllRolesMustMatch(true);
@@ -68,7 +68,7 @@ public class AclRule extends Rule<AclRule>
       return rule;
    }
 
-   public static AclRule requireOneRole(String includePaths, String role1, String... rolesN)
+   public static AclRule requireOneRole(String methods, String includePaths, String role1, String... rolesN)
    {
       AclRule rule = new AclRule(null, null, includePaths, null);
       rule.withAllRolesMustMatch(false);

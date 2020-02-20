@@ -476,7 +476,14 @@ public class JdbcDb extends Db<JdbcDb>
          //-- existing rows without supplying the value of required columns
          //-- hikari seemed to be overriding 'sessionVariables' set on the jdbc url
          //-- so this was done to force the config
-//         config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
+         config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
+      }
+      else if (isType("sqlserver"))
+      {
+         //-- upserts won't work if you can't upsert an identity field
+         //-- https://stackoverflow.com/questions/10116759/set-identity-insert-off-for-all-tables
+         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
+
       }
 
       DataSource pool = new HikariDataSource(config);
