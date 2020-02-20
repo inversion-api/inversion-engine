@@ -28,14 +28,17 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
 import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.jdbc.db.JdbcDb.ConnectionLocal;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 
 public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActionIntegTest
@@ -50,7 +53,10 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
 
       engine = new Engine().withApi(new Api("northwind") //
@@ -64,7 +70,10 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
    }
 
@@ -119,7 +128,7 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
       res.dump();
       assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/employees/1"));
-      assertEquals(res.findArray("data.0.orderdetails").length(), 3);
+      assertEquals(res.findArray("data.0.orderdetails").length(), 5);
       assertEquals(res.findString("data.0.orderdetails.0.orderid"), "10258");
 
       //joining back to yourself...have to alias table as join still
@@ -143,7 +152,7 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
       res.dump();
       assertEquals(1, res.getFoundRows());
       assertTrue(res.findString("data.0.href").endsWith("/employees/2"));
-      assertEquals(res.findArray("data.0.employees").length(), 1);
+      assertEquals(res.findArray("data.0.employees").length(), 5);
       assertEquals(res.find("data.0.employees.0.lastname"), "Davolio");
 
       res = engine.get(url("employees?orderdetails.orderid=10258&expands=orderdetails"));

@@ -391,7 +391,7 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (updatedRows.size() > 0)
             {
-               collection.getDb().upsert(collection, updatedRows);
+               collection.getDb().update(collection, updatedRows);
             }
          }
       }
@@ -501,7 +501,12 @@ public class RestPostAction extends Action<RestPostAction>
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
          Collection coll = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
-         if (rel.isManyToMany() || rel.isManyToOne())
+         if (rel.isManyToOne())
+         {
+            log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
+            coll.getDb().update(coll, upserts);
+         }
+         else if(rel.isManyToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);
@@ -541,7 +546,7 @@ public class RestPostAction extends Action<RestPostAction>
                }
 
                log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + results.getRows());
-               coll.getDb().upsert(coll, results.getRows());
+               coll.getDb().update(coll, results.getRows());
             }
             else if (rel.isManyToMany())
             {

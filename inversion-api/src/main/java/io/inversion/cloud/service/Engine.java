@@ -224,6 +224,16 @@ public class Engine
       return started;
    }
 
+   public void shutdown()
+   {
+      for (Api api : getApis())
+      {
+         removeApi(api);
+      }
+
+      Chain.resetAll();
+   }
+
    public Engine withEngineListener(EngineListener listener)
    {
       if (!listeners.contains(listener))
@@ -563,6 +573,7 @@ public class Engine
 
          run(chain, actions);
 
+         Exception listenerEx = null;
          for (EngineListener listener : getListeners(req))
          {
             try
@@ -571,10 +582,12 @@ public class Engine
             }
             catch (Exception ex)
             {
-               log.warn("Error notifying EngineListner.afterRequest", ex);
+               if (listenerEx == null)
+                  listenerEx = ex;
             }
-
          }
+         if (listenerEx != null)
+            throw listenerEx;
 
          return chain;
       }
@@ -846,7 +859,38 @@ public class Engine
       newList.remove(api);
       apis = newList;
 
-      api.shutdown();
+      for (EngineListener listener : api.getEngineListeners())
+      {
+         try
+         {
+            listener.onShutdown(this, api);
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error shutting down api '" + api.getName() + "'", ex);
+         }
+      }
+
+      for (EngineListener listener : listeners)
+      {
+         try
+         {
+            listener.onShutdown(this, api);
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error shutting down api '" + api.getName() + "'", ex);
+         }
+      }
+
+      try
+      {
+         api.shutdown();
+      }
+      catch (Exception ex)
+      {
+         log.warn("Error shutting down api '" + api.getName() + "'", ex);
+      }
    }
 
    public synchronized Api getApi(String apiCode)

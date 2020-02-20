@@ -21,7 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 
 import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
 import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.jdbc.db.JdbcDb.ConnectionLocal;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 
 public abstract class AbstractSqlDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest
@@ -36,7 +38,10 @@ public abstract class AbstractSqlDeleteActionIntegTest extends AbstractRestDelet
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
 
       engine = new Engine().withApi(new Api("northwind") //
@@ -50,7 +55,10 @@ public abstract class AbstractSqlDeleteActionIntegTest extends AbstractRestDelet
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
    }
 }

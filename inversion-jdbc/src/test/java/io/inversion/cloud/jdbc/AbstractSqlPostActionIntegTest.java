@@ -21,7 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 
 import io.inversion.cloud.action.rest.AbstractRestPostActionIntegTest;
 import io.inversion.cloud.action.rest.RestAction;
+import io.inversion.cloud.jdbc.db.JdbcDb.ConnectionLocal;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 
 public abstract class AbstractSqlPostActionIntegTest extends AbstractRestPostActionIntegTest
@@ -36,7 +38,10 @@ public abstract class AbstractSqlPostActionIntegTest extends AbstractRestPostAct
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
 
       engine = new Engine().withApi(new Api("northwind") //
@@ -44,14 +49,17 @@ public abstract class AbstractSqlPostActionIntegTest extends AbstractRestPostAct
                                                         .withDb(JdbcDbFactory.buildDb(dbType, getClass().getSimpleName())));
       engine.startup();
    }
-   
+
    @AfterAll
    public void finalizeDb() throws Exception
    {
       if (engine != null)
       {
-         engine.getApi("northwind").getDb(dbType).shutdown();
+         engine.shutdown();
+         engine = null;
+         Chain.resetAll();
+         ConnectionLocal.resetAll();
       }
    }
-   
+
 }

@@ -229,7 +229,9 @@ public class JdbcDb extends Db<JdbcDb>
    protected void doShutdown()
    {
       if (pool != null)
+      {
          ((HikariDataSource) pool).close();
+      }
    }
 
    @Override
@@ -293,6 +295,12 @@ public class JdbcDb extends Db<JdbcDb>
    public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       return JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+   }
+
+   @Override
+   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   {
+      return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
    }
 
    @Override
@@ -495,6 +503,11 @@ public class JdbcDb extends Db<JdbcDb>
    {
       static ThreadLocal<Map<Db, Connection>> connections = new ThreadLocal();
 
+      public static void resetAll()
+      {
+         connections = new ThreadLocal();
+      }
+
       public static Map<Db, Connection> getConnections()
       {
          return connections.get();
@@ -541,11 +554,7 @@ public class JdbcDb extends Db<JdbcDb>
                }
                catch (Exception ex)
                {
-                  String msg = (ex.getMessage() + "").toLowerCase();
-                  if (msg.indexOf("connection is closed") > -1)
-                     continue;
-
-                  if (toThrow != null)
+                  if (toThrow == null)
                      toThrow = ex;
                }
             }
@@ -570,7 +579,7 @@ public class JdbcDb extends Db<JdbcDb>
                }
                catch (Exception ex)
                {
-                  if (toThrow != null)
+                  if (toThrow == null)
                      toThrow = ex;
                }
             }
@@ -584,24 +593,29 @@ public class JdbcDb extends Db<JdbcDb>
       {
          Exception toThrow = null;
          Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+         try
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            if (conns != null)
             {
-               Connection conn = conns.get(db);
-               try
+               for (Db db : (List<Db>) new ArrayList(conns.keySet()))
                {
-                  conn.close();
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow != null)
-                     toThrow = ex;
+                  Connection conn = conns.get(db);
+                  try
+                  {
+                     conn.close();
+                  }
+                  catch (Exception ex)
+                  {
+                     if (toThrow == null)
+                        toThrow = ex;
+                  }
                }
             }
          }
-
-         connections.remove();
+         finally
+         {
+            connections.remove();
+         }
 
          if (toThrow != null)
             throw toThrow;

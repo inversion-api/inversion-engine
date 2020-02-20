@@ -172,6 +172,14 @@ public abstract class Db<T extends Db>
     */
    public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
 
+   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   {
+      upsert(table, rows);
+      List counts = new ArrayList();
+      rows.forEach(row -> counts.add(-1));
+      return counts;
+   }
+
    /**
     * Deletes rows identified by the unique index values from the underlying data source.
     * 

@@ -200,7 +200,7 @@ ALTER TABLE public.products OWNER TO postgres;
 --
 
 CREATE TABLE region (
-    "RegionID" smallint NOT NULL,
+    "RegionID" SERIAL PRIMARY KEY,
     "RegionDescription" bpchar NOT NULL
 );
 
@@ -249,8 +249,10 @@ ALTER TABLE public.suppliers OWNER TO postgres;
 
 CREATE TABLE territories (
     "TerritoryID" character varying(20) NOT NULL,
-    "TerritoryDescription" bpchar NOT NULL,
-    "RegionID" smallint NOT NULL
+--    "TerritoryDescription" bpchar NOT NULL,
+    "TerritoryDescription" bpchar,
+--    "RegionID" int NOT NULL
+    "RegionID" int
 );
 
 
@@ -641,10 +643,10 @@ INSERT INTO products VALUES (77, 'Original Frankfurter grüne Soße', 12, 2, '12
 -- Data for Name: region; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO region VALUES (1, 'Eastern');
-INSERT INTO region VALUES (2, 'Western');
-INSERT INTO region VALUES (3, 'Northern');
-INSERT INTO region VALUES (4, 'Southern');
+INSERT INTO region ("RegionDescription") VALUES ('Eastern');
+INSERT INTO region ("RegionDescription") VALUES ('Western');
+INSERT INTO region ("RegionDescription") VALUES ('Northern');
+INSERT INTO region ("RegionDescription") VALUES ('Southern');
 
 
 --
@@ -820,13 +822,6 @@ ALTER TABLE ONLY order_details
 ALTER TABLE ONLY products
     ADD CONSTRAINT pk_products PRIMARY KEY ("ProductID");
 
-
---
--- Name: pk_region; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY region
-    ADD CONSTRAINT pk_region PRIMARY KEY ("RegionID");
 
 
 --

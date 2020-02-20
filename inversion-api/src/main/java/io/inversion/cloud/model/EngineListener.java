@@ -25,6 +25,11 @@ public interface EngineListener
    {
 
    }
+   
+   default void onShutdown(Engine engine, Api api)
+   {
+
+   }
 
    default void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
    {

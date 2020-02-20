@@ -26,7 +26,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.sql.Clob;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -36,15 +35,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.swing.text.DefaultEditorKit.InsertBreakAction;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -668,6 +665,99 @@ public class JdbcUtils
    +------------------------------------------------------------------------------+
     */
 
+   /*
+   +------------------------------------------------------------------------------+
+   | UPDATE UTILS
+   +------------------------------------------------------------------------------+
+    */
+
+   public static boolean isUpdate(String sql)
+   {
+      return sql.toLowerCase().trim().startsWith("update ");
+   }
+
+   public static List<Integer> update(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception
+   {
+      List<Integer> updatedCounts = new ArrayList();
+      
+      Set cols = null;
+      List<Map<String, Object>> batch = new ArrayList();
+      for (Map row : rows)
+      {
+         if (cols == null)
+         {
+            cols = row.keySet();
+         }
+
+         if (batch.size() > 0 && CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
+         {
+            updatedCounts.addAll(updateBatch(conn, tableName, primaryKeyCols, batch));
+            batch.clear();
+         }
+         cols = row.keySet();
+         batch.add(row);
+      }
+      if (batch.size() > 0)
+      {
+         updatedCounts.addAll(updateBatch(conn, tableName, primaryKeyCols, batch));
+      }
+      return updatedCounts;
+   }
+
+   public static List<Integer> updateBatch(Connection conn, String tableName, List<String> keyCols, List<Map<String, Object>> rows) throws Exception
+   {
+      if (rows.size() == 0)
+         return Collections.EMPTY_LIST;
+
+      List returnCounts = new ArrayList();
+
+      List<String> valCols = new ArrayList(rows.get(0).keySet());
+      valCols.removeAll(keyCols);
+
+      String sql = buildUpdateSQL(conn, tableName, valCols.toArray(), keyCols.toArray());
+
+      Exception ex = null;
+      PreparedStatement stmt = conn.prepareStatement(sql);
+      try
+      {
+         notifyBefore("update", sql, rows);
+
+         for (Map<String, Object> row : rows)
+         {
+            for (int i = 0; i < valCols.size(); i++)
+            {
+               Object value = row.get(valCols.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1, value);
+            }
+
+            for (int i = 0; i < keyCols.size(); i++)
+            {
+               Object value = row.get(keyCols.get(i));
+               ((PreparedStatement) stmt).setObject(i + 1 + valCols.size(), value);
+            }
+
+            stmt.addBatch();
+         }
+         int[] updatedCounts = stmt.executeBatch();
+         for (int i = 0; i < updatedCounts.length; i++)
+         {
+            returnCounts.add(updatedCounts[i]);
+         }
+      }
+      catch (Exception e)
+      {
+         ex = e;
+         notifyError("update", sql, rows, ex);
+         throw e;
+      }
+      finally
+      {
+         JdbcUtils.close(stmt);
+         notifyAfter("update", sql, rows, ex, returnCounts);
+      }
+      return returnCounts;
+   }
+
    public static String buildUpdateSQL(Connection conn, String tableName, Object[] setColumnNameArray, Object[] whereColumnNames)
    {
       // UPDATE tmtuple SET model_id = ? , subj = ? , pred = ? , obj = ? , declared = ?
@@ -680,11 +770,6 @@ public class JdbcUtils
          sql.append(" WHERE " + getWhereColumnStr(conn, whereColumnNames, " AND "));
       }
       return sql.toString();
-   }
-
-   public static boolean isUpdate(String sql)
-   {
-      return sql.toLowerCase().trim().startsWith("update ");
    }
 
    /*
@@ -701,12 +786,12 @@ public class JdbcUtils
     * 
     * @param conn
     * @param tableName
-    * @param indexCols
+    * @param primaryKeyCols
     * @param rows
     * @return
     * @throws Exception
     */
-   public static List upsert(Connection conn, String tableName, List<String> indexCols, List<Map<String, Object>> rows) throws Exception
+   public static List upsert(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception
    {
       List returnKeys = new ArrayList();
       if (rows.isEmpty())
@@ -718,7 +803,7 @@ public class JdbcUtils
       for (Map row : rows)
       {
          int hasKey = 1;
-         for (String indexCol : indexCols)
+         for (String indexCol : primaryKeyCols)
          {
             if (Utils.empty(row.get(indexCol)))
             {
@@ -737,10 +822,10 @@ public class JdbcUtils
          if (batch.size() > 0 && (hadKey != hasKey) || CollectionUtils.disjunction(cols, row.keySet()).size() > 0)
          {
             if (hadKey == 0)
-               returnKeys.addAll(insertBatch(conn, tableName, indexCols, batch));
+               returnKeys.addAll(insertBatch(conn, tableName, primaryKeyCols, batch));
             else
             {
-               returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+               returnKeys.addAll(upsertBatch(conn, tableName, primaryKeyCols, batch));
             }
 
             batch.clear();
@@ -753,9 +838,9 @@ public class JdbcUtils
       if (batch.size() > 0)
       {
          if (hadKey == 0)
-            returnKeys.addAll(insertBatch(conn, tableName, indexCols, batch));
+            returnKeys.addAll(insertBatch(conn, tableName, primaryKeyCols, batch));
          else
-            returnKeys.addAll(upsertBatch(conn, tableName, indexCols, batch));
+            returnKeys.addAll(upsertBatch(conn, tableName, primaryKeyCols, batch));
       }
 
       return returnKeys;
@@ -1272,6 +1357,5 @@ public class JdbcUtils
          }
       }
    }
-
 
 }

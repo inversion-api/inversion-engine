@@ -39,8 +39,12 @@ import io.inversion.cloud.utils.Utils;
 
 public class Chain
 {
-
    static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
+
+   public static void resetAll()
+   {
+      chainLocal = new ThreadLocal();
+   }
 
    protected static Stack<Chain> get()
    {
@@ -187,7 +191,7 @@ public class Chain
       {
          //-- reuse the current endpoint path if linking to the same DB as the
          //-- inbound call and one was not configured on the target collection.
-         
+
          url += Chain.peek().getRequest().getEndpointPath();
          if (!url.endsWith("/"))
             url += "/";
