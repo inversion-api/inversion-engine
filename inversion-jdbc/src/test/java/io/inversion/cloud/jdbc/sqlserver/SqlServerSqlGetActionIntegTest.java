@@ -19,10 +19,10 @@ package io.inversion.cloud.jdbc.sqlserver;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlGetActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerSqlGetActionIntegTest extends AbstractSqlGetActionIntegTest
+public class SqlServerSqlGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
 {
    public SqlServerSqlGetActionIntegTest()
    {

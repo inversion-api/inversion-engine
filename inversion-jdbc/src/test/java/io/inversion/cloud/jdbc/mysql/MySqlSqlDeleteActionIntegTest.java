@@ -19,10 +19,10 @@ package io.inversion.cloud.jdbc.mysql;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlSqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
+public class MySqlSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
    public MySqlSqlDeleteActionIntegTest()
    {

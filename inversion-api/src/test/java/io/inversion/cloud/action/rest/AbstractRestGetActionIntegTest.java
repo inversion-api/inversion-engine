@@ -41,9 +41,9 @@ import io.inversion.cloud.utils.Utils;
 public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionIntegTest
 {
 
-   public AbstractRestGetActionIntegTest(String dbType)
+   public AbstractRestGetActionIntegTest(String type)
    {
-      super(dbType);
+      super(type);
    }
 
    @Test

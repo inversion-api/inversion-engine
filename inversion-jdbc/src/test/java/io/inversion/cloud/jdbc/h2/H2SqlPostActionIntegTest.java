@@ -16,17 +16,18 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlPostActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlPostActionIntegTest extends AbstractSqlPostActionIntegTest
+public class H2SqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
 {
    public H2SqlPostActionIntegTest()
    {
       super("h2");
    }
-
 }

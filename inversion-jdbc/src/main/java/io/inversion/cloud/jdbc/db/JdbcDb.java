@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -501,53 +502,79 @@ public class JdbcDb extends Db<JdbcDb>
 
    public static class ConnectionLocal
    {
-      static ThreadLocal<Map<Db, Connection>> connections = new ThreadLocal();
+      static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
+      static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
 
-      public static void resetAll()
+      public static void closeAll()
       {
-         connections = new ThreadLocal();
-      }
+         for (Thread thread : threadToDbMap.keySet())
+         {
+            try
+            {
+               close(thread);
+            }
+            catch (Exception ex)
+            {
+               ex.printStackTrace();
+            }
+         }
 
-      public static Map<Db, Connection> getConnections()
-      {
-         return connections.get();
+         //System.out.println(dbToThreadMap);
+         //System.out.println(threadToDbMap);
       }
 
       public static Connection getConnection(Db db)
       {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
-         {
-            conns = new HashMap();
-            connections.set(conns);
-         }
+         return getConnection(db, Thread.currentThread());
+      }
 
-         return conns.get(db);
+      static Connection getConnection(Db db, Thread thread)
+      {
+         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+         if (threadToConnMap == null)
+            return null;
+
+         return threadToConnMap.get(thread);
       }
 
       public static void putConnection(Db db, Connection connection)
       {
-         Map<Db, Connection> conns = connections.get();
-         if (conns == null)
+         putConnection(db, Thread.currentThread(), connection);
+      }
+
+      static void putConnection(Db db, Thread thread, Connection connection)
+      {
+         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+         if (threadToConnMap == null)
          {
-            conns = new HashMap();
-            connections.set(conns);
+            threadToConnMap = new Hashtable();
+            dbToThreadMap.put(db, threadToConnMap);
          }
-         conns.put(db, connection);
+         threadToConnMap.put(thread, connection);
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(thread);
+         if (dbToConnMap == null)
+         {
+            dbToConnMap = new Hashtable();
+            threadToDbMap.put(thread, dbToConnMap);
+         }
+         dbToConnMap.put(db, connection);
+
       }
 
       public static void commit() throws Exception
       {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
+         if (dbToConnMap != null)
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            java.util.Collection<Connection> connections = dbToConnMap.values();
+            for (Connection conn : connections)
             {
                try
                {
-                  Connection conn = conns.get(db);
-                  if (!conn.isClosed() && !conn.getAutoCommit())
+                  if (!(conn.isClosed() || conn.getAutoCommit()))
                   {
                      conn.commit();
                   }
@@ -567,15 +594,18 @@ public class JdbcDb extends Db<JdbcDb>
       public static void rollback() throws Exception
       {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         if (conns != null)
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
+         if (dbToConnMap != null)
          {
-            for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+            for (Connection conn : dbToConnMap.values())
             {
-               Connection conn = conns.get(db);
                try
                {
-                  conn.rollback();
+                  if (!(conn.isClosed() || conn.getAutoCommit()))
+                  {
+                     conn.rollback();
+                  }
                }
                catch (Exception ex)
                {
@@ -591,30 +621,48 @@ public class JdbcDb extends Db<JdbcDb>
 
       public static void close() throws Exception
       {
+         close(Thread.currentThread());
+      }
+
+      static void close(Thread thread) throws Exception
+      {
          Exception toThrow = null;
-         Map<Db, Connection> conns = connections.get();
-         try
+
+         Map<Db, Connection> dbToConnMap = threadToDbMap.remove(thread);
+
+         if (dbToConnMap != null)
          {
-            if (conns != null)
+            List<Db> dbs = new ArrayList(dbToConnMap.keySet());
+
+            for (Db db : dbs)//Connection conn : dbToConnMap.values())
             {
-               for (Db db : (List<Db>) new ArrayList(conns.keySet()))
+               //--
+               //-- cleanup the reverse mapping first
+               Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
+               threadToConnMap.remove(thread);
+
+               if (threadToConnMap.size() == 0)
+                  dbToThreadMap.remove(db);
+               //--
+               //--
+
+               try
                {
-                  Connection conn = conns.get(db);
-                  try
+                  Connection conn = dbToConnMap.get(db);
+                  if (!conn.isClosed())
                   {
                      conn.close();
                   }
-                  catch (Exception ex)
-                  {
-                     if (toThrow == null)
-                        toThrow = ex;
-                  }
+               }
+               catch (Exception ex)
+               {
+                  if (toThrow == null)
+                     toThrow = ex;
                }
             }
-         }
-         finally
-         {
-            connections.remove();
+
+            if (dbToConnMap.size() == 0)
+               threadToDbMap.remove(thread);
          }
 
          if (toThrow != null)

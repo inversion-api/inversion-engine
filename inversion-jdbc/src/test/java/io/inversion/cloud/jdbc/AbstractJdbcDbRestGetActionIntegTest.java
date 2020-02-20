@@ -26,55 +26,20 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb.ConnectionLocal;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 
-public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActionIntegTest
+public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestGetActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   public AbstractSqlGetActionIntegTest(String dbType)
+   public AbstractJdbcDbRestGetActionIntegTest(String type)
    {
-      super(dbType);
-   }
-
-   @BeforeAll
-   public void initializeDb() throws Exception
-   {
-      if (engine != null)
-      {
-         engine.shutdown();
-         engine = null;
-         Chain.resetAll();
-         ConnectionLocal.resetAll();
-      }
-
-      engine = new Engine().withApi(new Api("northwind") //
-                                                        .withEndpoint("*", dbType + "/*", new RestAction())//
-                                                        .withDb(JdbcDbFactory.buildDb(dbType, getClass().getSimpleName())));
-      engine.startup();
-   }
-
-   @AfterAll
-   public void finalizeDb() throws Exception
-   {
-      if (engine != null)
-      {
-         engine.shutdown();
-         engine = null;
-         Chain.resetAll();
-         ConnectionLocal.resetAll();
-      }
+      super(type);
    }
 
    @Test
@@ -176,7 +141,7 @@ public abstract class AbstractSqlGetActionIntegTest extends AbstractRestGetActio
 
       Api api = engine().getApi("northwind");
 
-      for (Collection coll : (List<Collection>) api.getDb(dbType).getCollections())
+      for (Collection coll : (List<Collection>) api.getDb(getType()).getCollections())
       {
          c2.add(coll.getName().toLowerCase());
       }

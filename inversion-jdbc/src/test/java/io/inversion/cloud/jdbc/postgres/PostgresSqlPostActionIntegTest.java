@@ -19,10 +19,10 @@ package io.inversion.cloud.jdbc.postgres;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlPostActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresSqlPostActionIntegTest extends AbstractSqlPostActionIntegTest
+public class PostgresSqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
 {
    public PostgresSqlPostActionIntegTest()
    {

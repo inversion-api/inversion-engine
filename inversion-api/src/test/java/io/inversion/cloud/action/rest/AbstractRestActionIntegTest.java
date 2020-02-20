@@ -16,19 +16,22 @@
  */
 package io.inversion.cloud.action.rest;
 
+import io.inversion.cloud.model.AbstractEngineTest;
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
 
-public abstract class AbstractRestActionIntegTest
+public abstract class AbstractRestActionIntegTest implements AbstractEngineTest
 {
    protected Engine engine = null;
-   protected String dbType     = null;
+   protected Db     db     = null;
+   protected String type   = null;
 
-   public AbstractRestActionIntegTest(String dbType)
+   public AbstractRestActionIntegTest(String type)
    {
-      this.dbType = dbType;
+      this.type = type;
    }
-   
+
    protected Engine engine() throws Exception
    {
       return engine;
@@ -36,9 +39,43 @@ public abstract class AbstractRestActionIntegTest
 
    protected String collectionPath()
    {
-      return "northwind/" + dbType + "/";
+      return "northwind/" + type + "/";
    }
-   
+
+   @Override
+   public Db getDb()
+   {
+      return db;
+   }
+
+   @Override
+   public void setDb(Db db)
+   {
+      this.db = db;
+
+   }
+
+   @Override
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   @Override
+   public void setEngine(Engine engine)
+   {
+      this.engine = engine;
+   }
+
+   public String getType()
+   {
+      return type;
+   }
+
+   public void setType(String type)
+   {
+      this.type = type;
+   }
 
    /**
     * Returns the last response handled by the engine.

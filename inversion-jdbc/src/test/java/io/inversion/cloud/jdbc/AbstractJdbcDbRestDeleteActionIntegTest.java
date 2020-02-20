@@ -14,18 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.sqlserver;
+package io.inversion.cloud.jdbc;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
+import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
 
-@TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
+public abstract class AbstractJdbcDbRestDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   public SqlServerSqlDeleteActionIntegTest()
+   public AbstractJdbcDbRestDeleteActionIntegTest(String dbType)
    {
-      super("sqlserver");
+      super(dbType);
    }
+
+   @BeforeEach
+   public void beforeEach()
+   {
+      beforeAll_initializeDb();
+      beforeAll_initializeEngine();
+   }
+
+   @AfterEach
+   public void afterEach()
+   {
+      afterAll_finalizeDb();
+      afterAll_finalizeEngine();
+   }
+
 }

@@ -19,10 +19,10 @@ package io.inversion.cloud.jdbc.mysql;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlPostActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlSqlPostActionIntegTest extends AbstractSqlPostActionIntegTest
+public class MySqlSqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
 {
    public MySqlSqlPostActionIntegTest()
    {

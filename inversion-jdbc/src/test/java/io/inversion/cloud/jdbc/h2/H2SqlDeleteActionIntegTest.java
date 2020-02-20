@@ -16,17 +16,18 @@
  */
 package io.inversion.cloud.jdbc.h2;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
+public class H2SqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
    public H2SqlDeleteActionIntegTest()
    {
       super("h2");
    }
-
 }

@@ -9,22 +9,30 @@ import io.inversion.cloud.utils.Utils;
 
 public class JdbcDbFactory
 {
-   public static JdbcDb buildDb(String type, String schemaName) throws Exception
+   public static JdbcDb buildDb(String type, String schemaName)
    {
-      type = type.toLowerCase();
-      switch (type)
+      try
       {
-         case "h2":
-            return bootstrapH2(schemaName);
-         case "mysql":
-            return bootstrapMySql(schemaName);
-         case "postgres":
-         case "redshift":
-            return bootstrapPostgres(schemaName);
-         case "sqlserver":
-            return bootstrapSqlServer(schemaName);
+         type = type.toLowerCase();
+         switch (type)
+         {
+            case "h2":
+               return bootstrapH2(schemaName);
+            case "mysql":
+               return bootstrapMySql(schemaName);
+            case "postgres":
+            case "redshift":
+               return bootstrapPostgres(schemaName);
+            case "sqlserver":
+               return bootstrapSqlServer(schemaName);
+         }
+         throw new RuntimeException("Unsupported db type: " + type);
       }
-      throw new RuntimeException("Unsupported db type: " + type);
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+      }
+      return null;
    }
 
    public static JdbcDb bootstrapH2(String database) throws Exception

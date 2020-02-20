@@ -19,10 +19,10 @@ package io.inversion.cloud.jdbc.postgres;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlDeleteActionIntegTest;
+import io.inversion.cloud.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresSqlDeleteActionIntegTest extends AbstractSqlDeleteActionIntegTest
+public class PostgresSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
    public PostgresSqlDeleteActionIntegTest()
    {
