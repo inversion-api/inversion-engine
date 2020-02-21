@@ -658,11 +658,13 @@ public class Engine
 
    LinkedHashSet<ApiListener> getApiListeners(Request req)
    {
-      LinkedHashSet listeners = new LinkedHashSet(this.listeners);
+      LinkedHashSet listeners = new LinkedHashSet();
       if (req.getApi() != null)
       {
          listeners.addAll(req.getApi().getApiListeners());
       }
+      listeners.addAll(this.listeners);
+
       return listeners;
    }
 
@@ -839,6 +841,15 @@ public class Engine
    {
       if (started)
       {
+         try
+         {
+            api.startup();
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error starting api '" + api.getName() + "'", ex);
+         }
+
          for (EngineListener listener : listeners)
          {
             try
@@ -849,15 +860,6 @@ public class Engine
             {
                log.warn("Error starting api '" + api.getName() + "'", ex);
             }
-         }
-
-         try
-         {
-            api.startup();
-         }
-         catch (Exception ex)
-         {
-            log.warn("Error starting api '" + api.getName() + "'", ex);
          }
       }
    }
@@ -879,6 +881,15 @@ public class Engine
    {
       if (api.isStarted())
       {
+         try
+         {
+            api.shutdown();
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error shutting down api '" + api.getName() + "'", ex);
+         }
+
          for (EngineListener listener : listeners)
          {
             try
@@ -891,14 +902,6 @@ public class Engine
             }
          }
 
-         try
-         {
-            api.shutdown();
-         }
-         catch (Exception ex)
-         {
-            log.warn("Error shutting down api '" + api.getName() + "'", ex);
-         }
       }
    }
 
