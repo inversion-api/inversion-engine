@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
@@ -146,42 +147,15 @@ public class Engine
       {
          startup0();
 
+         //this will cause withApi and we don't want that to actually startup
+         //-- the API until
          configurator.loadConfig(this);
 
-         for (Api api : apis)
-         {
-            api.startup();
-         }
-
-         for (EngineListener listener : listeners)
-         {
-            for (Api api : apis)
-            {
-               try
-               {
-                  listener.onStartup(this, api);
-               }
-               catch (Exception ex)
-               {
-                  log.warn("Error notifying listener init()", ex);
-               }
-            }
-
-         }
+         started = true;
 
          for (Api api : apis)
          {
-            for (EngineListener listener : api.getEngineListeners())
-            {
-               try
-               {
-                  listener.onStartup(this, api);
-               }
-               catch (Exception ex)
-               {
-                  log.warn("Error notifying listener init()", ex);
-               }
-            }
+            startupApi(api);
          }
 
          //-- the following block is only debug output
@@ -210,7 +184,6 @@ public class Engine
          }
          //-- end debug output
 
-         started = true;
          return this;
       }
       finally
@@ -229,6 +202,18 @@ public class Engine
       for (Api api : getApis())
       {
          removeApi(api);
+      }
+
+      for (EngineListener listener : listeners)
+      {
+         try
+         {
+            listener.onShutdown(this);
+         }
+         catch (Exception ex)
+         {
+            ex.printStackTrace();
+         }
       }
 
       Chain.resetAll();
@@ -574,11 +559,11 @@ public class Engine
          run(chain, actions);
 
          Exception listenerEx = null;
-         for (EngineListener listener : getListeners(req))
+         for (ApiListener listener : getApiListeners(req))
          {
             try
             {
-               listener.afterRequest(this, req.getApi(), req.getEndpoint(), chain, req, res);
+               listener.afterRequest(req, res);
             }
             catch (Exception ex)
             {
@@ -627,11 +612,11 @@ public class Engine
          res.withError(ex);
          res.withJson(response);
 
-         for (EngineListener listener : getListeners(req))
+         for (ApiListener listener : getApiListeners(req))
          {
             try
             {
-               listener.afterError(this, req.getApi(), req.getEndpoint(), chain, req, res);
+               listener.afterError(req, res);
             }
             catch (Exception ex2)
             {
@@ -643,11 +628,11 @@ public class Engine
       }
       finally
       {
-         for (EngineListener listener : getListeners(req))
+         for (ApiListener listener : getApiListeners(req))
          {
             try
             {
-               listener.beforeFinally(this, req.getApi(), req.getEndpoint(), chain, req, res);
+               listener.beforeFinally(req, res);
             }
             catch (Exception ex)
             {
@@ -671,15 +656,14 @@ public class Engine
       return chain;
    }
 
-   LinkedHashSet<EngineListener> getListeners(Request req)
+   LinkedHashSet<ApiListener> getApiListeners(Request req)
    {
       LinkedHashSet listeners = new LinkedHashSet(this.listeners);
       if (req.getApi() != null)
       {
-         listeners.addAll(req.getApi().getEngineListeners());
+         listeners.addAll(req.getApi().getApiListeners());
       }
       return listeners;
-
    }
 
    /**
@@ -812,26 +796,20 @@ public class Engine
       if (api == null)
       {
          api = new Api(apiCode);
-         addApi(api);
+         withApi(api);
       }
       return api;
    }
 
-   public Engine withApi(Api api)
-   {
-      addApi(api);
-      api.withEngine(this);
-      return this;
-   }
-
-   public synchronized void addApi(Api api)
+   public synchronized Engine withApi(Api api)
    {
       if (apis.contains(api))
-         return;
+         return this;
+
+      Api existingApi = getApi(api.getApiCode());
 
       List<Api> newList = new ArrayList(apis);
 
-      Api existingApi = getApi(api.getApiCode());
       if (existingApi != null && existingApi != api)
       {
          newList.remove(existingApi);
@@ -843,53 +821,84 @@ public class Engine
       }
 
       if (existingApi != api && isStarted())
+      {
          api.startup();
+      }
 
       apis = newList;
 
       if (existingApi != null && existingApi != api)
       {
-         existingApi.shutdown();
+         shutdownApi(existingApi);
+      }
+
+      return this;
+   }
+
+   protected void startupApi(Api api)
+   {
+      if (started)
+      {
+         for (EngineListener listener : listeners)
+         {
+            try
+            {
+               listener.onStartup(api);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error starting api '" + api.getName() + "'", ex);
+            }
+         }
+
+         try
+         {
+            api.startup();
+         }
+         catch (Exception ex)
+         {
+            log.warn("Error starting api '" + api.getName() + "'", ex);
+         }
       }
    }
 
+   /**
+    * Removes the api, notifies EngineListeners and calls api.shutdown()
+    * @param api
+    */
    public synchronized void removeApi(Api api)
    {
       List newList = new ArrayList(apis);
       newList.remove(api);
       apis = newList;
 
-      for (EngineListener listener : api.getEngineListeners())
+      shutdownApi(api);
+   }
+
+   protected void shutdownApi(Api api)
+   {
+      if (api.isStarted())
       {
+         for (EngineListener listener : listeners)
+         {
+            try
+            {
+               listener.onShutdown(api);
+            }
+            catch (Exception ex)
+            {
+               log.warn("Error shutting down api '" + api.getName() + "'", ex);
+            }
+         }
+
          try
          {
-            listener.onShutdown(this, api);
+            api.shutdown();
          }
          catch (Exception ex)
          {
             log.warn("Error shutting down api '" + api.getName() + "'", ex);
          }
-      }
-
-      for (EngineListener listener : listeners)
-      {
-         try
-         {
-            listener.onShutdown(this, api);
-         }
-         catch (Exception ex)
-         {
-            log.warn("Error shutting down api '" + api.getName() + "'", ex);
-         }
-      }
-
-      try
-      {
-         api.shutdown();
-      }
-      catch (Exception ex)
-      {
-         log.warn("Error shutting down api '" + api.getName() + "'", ex);
       }
    }
 

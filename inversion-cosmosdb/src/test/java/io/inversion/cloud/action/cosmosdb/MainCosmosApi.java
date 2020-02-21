@@ -16,8 +16,6 @@
  */
 package io.inversion.cloud.action.cosmosdb;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -34,7 +32,7 @@ public class MainCosmosApi
          {
 
             @Override
-            public void beforeFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            public void beforeFinally(Request req, Response res)
             {
                if (Chain.getDepth() <= 1)
                {

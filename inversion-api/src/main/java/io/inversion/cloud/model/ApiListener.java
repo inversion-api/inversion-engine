@@ -16,16 +16,29 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.service.Engine;
-
-public interface EngineListener extends ApiListener
+public interface ApiListener
 {
-   default void onStartup(Engine engine)
+   default void onStartup(Api api)
    {
 
    }
 
-   default void onShutdown(Engine engine)
+   default void onShutdown(Api api)
+   {
+
+   }
+
+   default void afterRequest(Request req, Response res)
+   {
+
+   }
+
+   default void afterError(Request req, Response res)
+   {
+
+   }
+
+   default void beforeFinally(Request req, Response res)
    {
 
    }
