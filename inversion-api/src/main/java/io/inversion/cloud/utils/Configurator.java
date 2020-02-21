@@ -243,7 +243,7 @@ public class Configurator
             {
                api.withHash(config.hash);
                api.removeExcludes();
-               engine.addApi(api);
+               engine.withApi(api);
             }
          }
 

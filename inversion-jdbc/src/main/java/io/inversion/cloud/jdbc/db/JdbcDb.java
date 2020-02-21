@@ -43,10 +43,10 @@ import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.jdbc.utils.JdbcUtils.SqlListener;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
@@ -56,7 +56,6 @@ import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
@@ -182,10 +181,10 @@ public class JdbcDb extends Db<JdbcDb>
 
       super.doStartup();
 
-      api.withEngineListener(new EngineListener()
+      api.withApiListener(new ApiListener()
          {
 
-            public void afterRequest(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            public void afterRequest(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
             {
                try
                {
@@ -197,7 +196,7 @@ public class JdbcDb extends Db<JdbcDb>
                }
             }
 
-            public void afterError(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            public void afterError(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
             {
 
                try
@@ -211,7 +210,7 @@ public class JdbcDb extends Db<JdbcDb>
 
             }
 
-            public void beforeFinally(Engine engine, Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            public void beforeFinally(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
             {
                try
                {
