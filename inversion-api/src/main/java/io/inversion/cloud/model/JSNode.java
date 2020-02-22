@@ -943,7 +943,7 @@ public class JSNode implements Map<String, Object>
             msg += "\r\nSource:" + json;
          }
 
-         throw new RuntimeException("400 Bad Request: '" + json + "'");
+         throw new RuntimeException("400 Bad Request: '" + msg + "'");
       }
    }
 

@@ -173,9 +173,6 @@ public class Api
       if (!collections.contains(coll))
          collections.add(coll);
 
-      if (coll.getApi() != this)
-         coll.withApi(this);
-
       return this;
    }
 
@@ -302,9 +299,6 @@ public class Api
 
          if (!inserted)
             endpoints.add(endpoint);
-
-         if (endpoint.getApi() != this)
-            endpoint.withApi(this);
       }
       return this;
    }
@@ -326,9 +320,6 @@ public class Api
    {
       if (!actions.contains(action))
          actions.add(action);
-
-      if (action.getApi() != this)
-         action.withApi(this);
 
       return this;
    }
@@ -367,17 +358,6 @@ public class Api
    {
       this.apiCode = apiCode;
       return this;
-   }
-
-   public Api withAccountCode(String accountCode)
-   {
-      this.accountCode = accountCode;
-      return this;
-   }
-
-   public String getAccountCode()
-   {
-      return accountCode != null ? accountCode : getApiCode();
    }
 
    public String getName()

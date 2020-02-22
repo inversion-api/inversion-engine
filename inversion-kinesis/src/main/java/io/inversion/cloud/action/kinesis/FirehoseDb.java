@@ -30,11 +30,11 @@ import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;

@@ -1,8 +1,8 @@
 package io.inversion.cloud.utils;
 
-import java.io.OutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This class applies a ASCII85 encoding to the stream.

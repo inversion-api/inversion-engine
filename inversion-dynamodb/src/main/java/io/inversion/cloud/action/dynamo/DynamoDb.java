@@ -39,12 +39,12 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Rows.Row;

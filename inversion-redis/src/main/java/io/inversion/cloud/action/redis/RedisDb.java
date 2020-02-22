@@ -22,9 +22,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;

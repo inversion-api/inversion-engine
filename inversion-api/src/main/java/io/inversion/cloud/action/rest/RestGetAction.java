@@ -16,7 +16,6 @@
  */
 package io.inversion.cloud.action.rest;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -389,7 +388,6 @@ public class RestGetAction extends Action<RestGetAction>
                      String link = null;
                      if (rel.isOneToMany())
                      {
-                        Index foreignKey = rel.getFkIndex1();
                         String fkval = Collection.encodeKey(row, rel.getFkIndex1());
 
                         if (fkval != null)

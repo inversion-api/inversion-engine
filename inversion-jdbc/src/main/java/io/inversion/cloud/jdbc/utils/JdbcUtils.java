@@ -421,6 +421,9 @@ public class JdbcUtils
 
    public static <T> T convert(Object value, Class<T> type)
    {
+      if (value == null)
+         return null;
+
       if (type.isAssignableFrom(value.getClass()))
       {
          return (T) value;
@@ -457,9 +460,6 @@ public class JdbcUtils
             return (T) value;
          }
       }
-
-      if (value == null)
-         return null;
 
       String str = value + "";
 
@@ -679,7 +679,7 @@ public class JdbcUtils
    public static List<Integer> update(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception
    {
       List<Integer> updatedCounts = new ArrayList();
-      
+
       Set cols = null;
       List<Map<String, Object>> batch = new ArrayList();
       for (Map row : rows)
@@ -1180,10 +1180,8 @@ public class JdbcUtils
       String line = null;
       String curLine = "";
       List<String> ddlList = new ArrayList<String>();
-      int num = 0;
       while ((line = br.readLine()) != null)
       {
-         num += 1;
          line = line.trim();
 
          if (line.length() == 0 || line.startsWith("--") || line.startsWith("#"))

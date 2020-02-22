@@ -169,10 +169,8 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
    {
       Engine engine = engine();
       Response res = null;
-      JSNode json = null;
       res = engine.get(url("orders?eq(orderid,10257)"));
       res.dump();
-      json = res.getJson();
       assertEquals(1, res.data().size());
       assertTrue(res.findString("data.0.orderid").equals("10257"));
    }
@@ -225,7 +223,6 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Engine engine = engine();
       Response res = null;
       JSNode json = null;
-      JSArray data = null;
 
       res = engine.get(url("orders?eq(employeeid,5)"));
       json = res.getJson();

@@ -15,11 +15,11 @@ import com.microsoft.azure.documentdb.SqlQuerySpec;
 
 import io.inversion.cloud.jdbc.rql.SqlQuery;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;

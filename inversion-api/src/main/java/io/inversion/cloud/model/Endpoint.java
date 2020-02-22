@@ -109,22 +109,12 @@ public class Endpoint extends Rule<Endpoint>
                return false;
          }
 
-         if(collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
+         if (collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
             return false;
-         
+
          return super.matchesPath(collectionPath);
       }
       return false;
-   }
-
-   public Endpoint withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         api.withEndpoint(this);
-      }
-      return this;
    }
 
    public Path getPath()
@@ -222,9 +212,6 @@ public class Endpoint extends Rule<Endpoint>
 
       if (!inserted)
          actions.add(action);
-
-      if (action.getApi() != getApi())
-         action.withApi(getApi());
 
       return this;
    }

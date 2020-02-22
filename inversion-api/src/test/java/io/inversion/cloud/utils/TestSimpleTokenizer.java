@@ -24,14 +24,14 @@ public class TestSimpleTokenizer
    @Test
    public void testJsonPathTokenizers1()
    {
-      SimpleTokenizer pathTok = new SimpleTokenizer(//
-                                                    "['\"", //openQuoteStr
-                                                    "]'\"", //closeQuoteStr
-                                                    "]", //breakIncludedChars
-                                                    ".", //breakExcludedChars
-                                                    "", //unquuotedIgnoredChars
-                                                    ". \t" //leadingIgoredChars
-      );
+      //      SimpleTokenizer pathTok = new SimpleTokenizer(//
+      //                                                    "['\"", //openQuoteStr
+      //                                                    "]'\"", //closeQuoteStr
+      //                                                    "]", //breakIncludedChars
+      //                                                    ".", //breakExcludedChars
+      //                                                    "", //unquuotedIgnoredChars
+      //                                                    ". \t" //leadingIgoredChars
+      //      );
 
       //      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
 

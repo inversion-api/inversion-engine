@@ -46,7 +46,6 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
@@ -184,7 +183,18 @@ public class JdbcDb extends Db<JdbcDb>
       api.withApiListener(new ApiListener()
          {
 
-            public void afterRequest(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void onStartup(Api api)
+            {
+            }
+
+            @Override
+            public void onShutdown(Api api)
+            {
+            }
+
+            @Override
+            public void afterRequest(Request req, Response res)
             {
                try
                {
@@ -196,7 +206,8 @@ public class JdbcDb extends Db<JdbcDb>
                }
             }
 
-            public void afterError(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void afterError(Request req, Response res)
             {
 
                try
@@ -210,7 +221,8 @@ public class JdbcDb extends Db<JdbcDb>
 
             }
 
-            public void beforeFinally(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void beforeFinally(Request req, Response res)
             {
                try
                {
@@ -722,10 +734,8 @@ public class JdbcDb extends Db<JdbcDb>
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
-            int columnNumber = 0;
             while (colsRs.next())
             {
-               columnNumber += 1;
                String colName = colsRs.getString("COLUMN_NAME");
                Object type = colsRs.getString("DATA_TYPE");
                String colType = types.get(type);
@@ -734,11 +744,6 @@ public class JdbcDb extends Db<JdbcDb>
 
                Property column = new Property(colName, colType, nullable);
                table.withProperties(column);
-
-               //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
-               //               {
-               //                  table.setDeletedFlag(column);
-               //               }
             }
             colsRs.close();
 
@@ -814,7 +819,7 @@ public class JdbcDb extends Db<JdbcDb>
             ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
             while (keyMd.next())
             {
-               String pkName = keyMd.getString("PK_NAME");
+               //String pkName = keyMd.getString("PK_NAME");
                String fkName = keyMd.getString("FK_NAME");
 
                String fkTableName = keyMd.getString("FKTABLE_NAME");

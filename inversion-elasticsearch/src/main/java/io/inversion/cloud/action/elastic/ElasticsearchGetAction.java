@@ -56,7 +56,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    public void run(Request req, Response res) throws Exception
    {
 
-      Collection collection = findCollectionOrThrow404(api, req.getChain(), req);
+      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
       ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
 
       // examples...

@@ -20,9 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Rows.Row;
 

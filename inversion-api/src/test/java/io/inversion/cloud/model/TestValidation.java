@@ -38,7 +38,7 @@ public class TestValidation
 
       req.validate("$.book.price").minMax(1, 100);
       req.validate("$.book.price").eq(50.00);
-      Double price = req.validate("$.book.price").eq("50").asDouble();
+      req.validate("$.book.price").eq("50").asDouble();
 
       boolean failed = false;
 

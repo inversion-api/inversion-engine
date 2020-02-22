@@ -29,11 +29,11 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.utils.Utils;
 
@@ -220,9 +220,9 @@ public class Chain
          url = newUrl + url.substring(url.indexOf("/", 8));
       }
 
-      if (collection.getApi() != null)
+      if (req.getApi() != null)
       {
-         if (Utils.empty(collection.getApi().getUrl()))
+         if (Utils.empty(req.getApi().getUrl()))
          {
             String proto = req.getHeader("x-forwarded-proto");
             if (!Utils.empty(proto))

@@ -458,13 +458,6 @@ public class Collection extends Rule<Collection>
       return this;
    }
 
-   @Override
-   public Collection withApi(Api api)
-   {
-      this.api = api;
-      return this;
-   }
-
    public String encodeKey(Map<String, Object> values)
    {
       Index index = getPrimaryIndex();

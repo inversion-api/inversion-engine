@@ -85,7 +85,7 @@ public class AuthAction extends Action<AuthAction>
          }
       }
 
-      User user = Chain.peek().getUser();
+      User user = Chain.getUser();
 
       if (user != null && !req.isDelete())
       {
@@ -95,11 +95,8 @@ public class AuthAction extends Action<AuthAction>
       }
 
       String collection = getConfig("collection", this.collection);
-      String authenticatedPerm = getConfig("authenticatedPerm", this.authenticatedPerm);
-      long failedMax = Long.parseLong(getConfig("failedMax", this.failedMax + ""));
       long sessionExp = Long.parseLong(getConfig("sessionExp", this.sessionExp + ""));
 
-      String accountCode = req.getApi().getAccountCode();
       String apiCode = req.getApi().getApiCode();
       String tenantCode = req.getTenantCode();
 
@@ -213,7 +210,7 @@ public class AuthAction extends Action<AuthAction>
                throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
             }
 
-            user = dao.getUser(username, accountCode, apiCode, tenantCode);
+            user = dao.getUser(username, apiCode, tenantCode);
 
             if (user != null)
             {
@@ -223,46 +220,6 @@ public class AuthAction extends Action<AuthAction>
                if (!(user.getPassword().equals(strongHash) || user.getPassword().equals(weakHash)))
                   user = null;
             }
-
-            //         Connection conn = db.getConnection();
-            //
-            //         User tempUser = getUser(conn, api, req.getTenantCode(), username, null);
-            //         boolean authorized = false;
-            //         if (tempUser != null)
-            //         {
-            //            long requestAt = tempUser.getRequestAt();
-            //            int failedNum = tempUser.getFailedNum();
-            //            if (failedNum < failedMax || now - requestAt > failedExp)
-            //            {
-            //               //only attempt to validate password and log the attempt 
-            //               //if the user has failed login fewer than failedMax times
-            //               String remoteAddr = req.getRemoteAddr();
-            //               authorized = checkPassword(conn, tempUser, password);
-            //
-            //               if (shouldTrackRequestTimes)
-            //               {
-            //                  String sql = "UPDATE User SET requestAt = ?, failedNum = ?, remoteAddr = ? WHERE id = ?";
-            //                  SqlUtils.execute(conn, sql, now, authorized ? 0 : failedNum + 1, remoteAddr, tempUser.getId());
-            //               }
-            //
-            //               if (authorized)
-            //               {
-            //                  tempUser.withRequestAt(now);
-            //                  tempUser.withRoles(getRoles(conn, req.getApi(), tempUser));
-            //                  tempUser.withPermissions(getPermissions(conn, req.getApi(), tempUser));
-            //                  if (!Utils.empty(authenticatedPerm))
-            //                  {
-            //                     tempUser.withPermissions(authenticatedPerm);
-            //                  }
-            //
-            //                  user = tempUser;
-            //               }
-            //            }
-            //         }
-            //
-            //         if (tempUser == null || !authorized)
-            //            throw new ApiException(SC.SC_401_UNAUTHORIZED);
-
          }
       }
 
@@ -332,36 +289,13 @@ public class AuthAction extends Action<AuthAction>
       if (Chain.getUser() != null)
       {
          User loggedIn = Chain.getUser();
-         if (api.isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
+         if (req.getApi().isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
             throw new ApiException(Status.SC_401_UNAUTHORIZED);
       }
 
       if (user == null && !sessionReq)
       {
-         user = new User();
-         user.withUsername("Anonymous");
-         user.withRoles("guest");
-
-         if (api.isMultiTenant())
-         {
-            //            String tenantCode = req.getTenantCode();
-            //
-            //            Integer tenantId = (Integer) api.getCache("TENANT_ID_" + tenantCode);
-            //            if (tenantId == null)
-            //            {
-            //               Connection conn = dao.getConnection();
-            //
-            //               Object tenant = SqlUtils.selectValue(conn, "SELECT id FROM Tenant WHERE tenantCode = ?", tenantCode);
-            //               if (tenant == null)
-            //                  throw new ApiException(SC.SC_404_NOT_FOUND);
-            //
-            //               tenantId = Integer.parseInt(tenant + "");
-            //               api.putCache("TENANT_ID_" + tenantCode, tenantId);
-            //            }
-            //
-            //            user.withTenantCode(tenantCode);
-            //            user.withTenantId(tenantId);
-         }
+         user = dao.getGuest(apiCode, tenantCode);
          Chain.peek().withUser(user);
       }
    }
@@ -429,13 +363,12 @@ public class AuthAction extends Action<AuthAction>
    List<String> getJwtSecrets()
    {
       Request req = Chain.peek().getRequest();
-      String accountCode = req.getApi().getAccountCode();
       String apiCode = req.getApi().getApiCode();
       String tenantCode = req.getTenantCode();
-      return getJwtSecrets(accountCode, apiCode, tenantCode);
+      return getJwtSecrets(apiCode, tenantCode);
    }
 
-   List<String> getJwtSecrets(String accountCode, String apiCode, String tenantCode)
+   List<String> getJwtSecrets(String apiCode, String tenantCode)
    {
       List secrets = new ArrayList();
 
@@ -445,9 +378,6 @@ public class AuthAction extends Action<AuthAction>
          for (int j = 2; j >= 0; j--)
          {
             String key = (getName() != null ? getName() : "") + ".jwt" + (i == 0 ? "" : ("." + i));
-
-            if (j > 0 && accountCode != null)
-               key += "." + accountCode;
 
             if (j > 1 && apiCode != null)
                key += "." + apiCode;
@@ -471,16 +401,15 @@ public class AuthAction extends Action<AuthAction>
    public String signJwt(JWTCreator.Builder jwtBuilder) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
       Request req = Chain.peek().getRequest();
-      String accountCode = req.getApi().getAccountCode();
       String apiCode = req.getApi().getApiCode();
       String tenantCode = req.getTenantCode();
 
-      return signJwt(jwtBuilder, accountCode, apiCode, tenantCode);
+      return signJwt(jwtBuilder, apiCode, tenantCode);
    }
 
-   public String signJwt(JWTCreator.Builder jwtBuilder, String accountCode, String apiCode, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
+   public String signJwt(JWTCreator.Builder jwtBuilder, String apiCode, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
-      String secret = getJwtSecrets(accountCode, apiCode, tenantCode).get(0);
+      String secret = getJwtSecrets(apiCode, tenantCode).get(0);
       return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 
@@ -631,7 +560,16 @@ public class AuthAction extends Action<AuthAction>
 
    public static interface UserDao
    {
-      User getUser(String username, String accountCode, String apiCode, String tenantCode) throws Exception;
+      User getUser(String username, String apiCode, String tenantCode) throws Exception;
+
+      default User getGuest(String apiCode, String tenantCode)
+      {
+         User user = new User();
+         user.withUsername("Anonymous");
+         user.withRoles("guest");
+         user.withTenantCode(tenantCode);
+         return user;
+      }
    }
 
 }

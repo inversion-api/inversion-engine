@@ -1,8 +1,5 @@
 package io.inversion.cloud.service.spring.config;
 
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.service.Servlet;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.core.StandardContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +9,9 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.service.Servlet;
 
 @Configuration
 public class InversionServletConfig

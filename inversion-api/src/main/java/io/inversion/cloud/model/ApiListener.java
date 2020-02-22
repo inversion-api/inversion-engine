@@ -18,29 +18,14 @@ package io.inversion.cloud.model;
 
 public interface ApiListener
 {
-   default void onStartup(Api api)
-   {
+   void onStartup(Api api);
 
-   }
+   void onShutdown(Api api);
 
-   default void onShutdown(Api api)
-   {
+   void afterRequest(Request req, Response res);
 
-   }
+   void afterError(Request req, Response res);
 
-   default void afterRequest(Request req, Response res)
-   {
-
-   }
-
-   default void afterError(Request req, Response res)
-   {
-
-   }
-
-   default void beforeFinally(Request req, Response res)
-   {
-
-   }
+   void beforeFinally(Request req, Response res);
 
 }

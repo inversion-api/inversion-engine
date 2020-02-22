@@ -25,10 +25,10 @@ import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
@@ -78,7 +78,7 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
       String firstProp = propertyList.get(0);
       String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
 
-      Collection collection = api.getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
+      Collection collection = req.getApi().getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
       if (collection == null)
          throw new ApiException(Status.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
 
@@ -103,8 +103,8 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
 
          sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + JdbcUtils.check(value) + "%' AND " + column + " != ''";
 
-         if (api.isMultiTenant() && api.getCollection(tableName).getProperty(tenantCol) != null)
-            sql += " AND " + tenantCol + "=" + Chain.peek().getUser().getTenantId();
+         if (req.getApi().isMultiTenant() && req.getApi().getCollection(tableName).getProperty(tenantCol) != null)
+            sql += " AND " + tenantCol + "=" + Chain.getUser().getTenantId();
 
          if (i + 1 < propertyList.size())
             sql += " \r\nUNION ";

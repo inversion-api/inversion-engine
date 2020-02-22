@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,20 +83,6 @@ public abstract class Action<A extends Action> extends Rule<A>
    public void doDelete(Request req, Response res) throws Exception
    {
       throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
-   }
-
-   @Override
-   public A withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         //intentionally not bidirectional because actions set 
-         //directly on the Api are not private to an endpoint but
-         //matched against all requests.
-         // api.withAction(this);
-      }
-      return (A) this;
    }
 
    public String getComment()

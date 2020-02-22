@@ -43,7 +43,13 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
@@ -59,7 +65,6 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Url;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row.E;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an

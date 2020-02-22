@@ -22,8 +22,8 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
-import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Results;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Page;

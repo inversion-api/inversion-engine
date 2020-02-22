@@ -223,7 +223,6 @@ public class TestJSNode
    @Test
    public void testDiff5()
    {
-      List found = null;
       JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
       JSNode doc2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
 

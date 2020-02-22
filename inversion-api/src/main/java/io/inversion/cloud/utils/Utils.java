@@ -632,8 +632,6 @@ public class Utils
                }
             }
             System.out.println(" ");
-
-            String err = "failed test: " + str1 + " != " + str2;
             return false;
          }
       }
@@ -808,8 +806,6 @@ public class Utils
     */
    public static List<Field> getFields(Class clazz)
    {
-      Class inClass = clazz;
-
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 
@@ -1215,7 +1211,7 @@ public class Utils
       {
          if (fileOrUrl.startsWith("file:/"))
          {
-            fileOrUrl = URLDecoder.decode(fileOrUrl);
+            fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
          }
          if (fileOrUrl.startsWith("file:///"))
          {

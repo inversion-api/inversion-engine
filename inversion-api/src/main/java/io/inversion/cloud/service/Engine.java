@@ -694,8 +694,11 @@ public class Engine
       }
       else
       {
-         res.debug("\r\n<< response -------------\r\n");
-         res.debug(res.getStatusCode());
+         if (debug)
+         {
+            res.debug("\r\n<< response -------------\r\n");
+            res.debug(res.getStatusCode());
+         }
 
          String output = res.getText();
          if (output != null)
@@ -721,28 +724,25 @@ public class Engine
                res.withContentType("application/json");
          }
 
-         JSNode headers = new JSNode();
-         for (String key : res.getHeaders().keySet())
+         if (debug)
          {
-            List values = res.getHeaders().get(key);
-            StringBuffer buff = new StringBuffer();
-            for (int i = 0; i < values.size(); i++)
+            for (String key : res.getHeaders().keySet())
             {
-               buff.append(values.get(i));
-               if (i < values.size() - 1)
-                  buff.append(",");
+               List values = res.getHeaders().get(key);
+               StringBuffer buff = new StringBuffer();
+               for (int i = 0; i < values.size(); i++)
+               {
+                  buff.append(values.get(i));
+                  if (i < values.size() - 1)
+                     buff.append(",");
+               }
+               res.debug(key + " " + buff);
             }
-            res.debug(key + " " + buff);
+
+            res.debug("\r\n-- done -----------------\r\n");
          }
 
          res.out(output);
-
-         res.debug("\r\n-- done -----------------\r\n");
-
-         //         if (debug)
-         //         {
-         //            requestLog.info(res.getDebug());
-         //         }
 
          if (explain)
          {

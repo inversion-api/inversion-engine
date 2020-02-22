@@ -183,8 +183,4 @@ public class Index
       return new ArrayList(columnNames);
    }
 
-   public void removeColumn(Property column)
-   {
-      columnNames.remove(column);
-   }
 }

@@ -114,8 +114,6 @@ public class TestRestClient
 
       Engine engine = new Engine();
       Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=a&param2=b", null, Utils.addToMap(new ArrayListValuedHashMap(), "header1", "header1Val", "header2", "header2Val", "header3", "header3Val", "headerX", "headerXVal"), -1);
-      Response response = new Response();
-
       Chain.push(engine, inboundRequest, new Response());
       try
       {
@@ -137,7 +135,7 @@ public class TestRestClient
 
          assertEquals(1, finalHeaders.get("header4").size());
          assertEquals("header4ChildRequestVal", finalHeaders.get("header4").get(0));
-         
+
          assertEquals(0, finalHeaders.get("headerX").size());
 
       }
@@ -162,7 +160,6 @@ public class TestRestClient
 
       Engine engine = new Engine();
       Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=param1val&param2=param2Val");
-      Response response = new Response();
 
       Chain.push(engine, inboundRequest, new Response());
       try
