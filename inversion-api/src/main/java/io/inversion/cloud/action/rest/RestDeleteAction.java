@@ -41,19 +41,9 @@ public class RestDeleteAction extends Action<RestDeleteAction>
 {
    public RestDeleteAction()
    {
-      this(null);
-   }
-
-   public RestDeleteAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestDeleteAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
       withMethods("DELETE");
    }
+
 
    @Override
    public void run(Request req, Response res) throws Exception

@@ -66,17 +66,6 @@ public class RestGetAction extends Action<RestGetAction>
 
    public RestGetAction()
    {
-      this(null);
-   }
-
-   public RestGetAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestGetAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
       withMethods("GET");
    }
 
@@ -756,11 +745,10 @@ public class RestGetAction extends Action<RestGetAction>
       {
          List idxToMatchVals = new ArrayList();
          idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
-            
+
          List idxToRetrieveVals = new ArrayList();
          idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
-         
-         
+
          String parentEk = Collection.encodeKey(idxToMatchVals);
          String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
@@ -777,30 +765,30 @@ public class RestGetAction extends Action<RestGetAction>
 
       String url = Chain.buildLink(collection, Utils.implode(",", entityKeys), null);
 
-//      //--
-//      //-- Nested param support
-//      //TODO: don't remember the use case here.  need to find and make a test case
-//      Map<String, String> params = Chain.peek().getRequest().getParams();
-//      String lcPath = expandsPath.toLowerCase();
-//      for (String key : params.keySet())
-//      {
-//         String lcKey = key.toLowerCase();
-//
-//         if (reservedParams.contains(lcKey))
-//            continue;
-//
-//         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
-//         {
-//            String value = params.get(key);
-//            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
-//
-//            if (url.indexOf("?") < 0)
-//               url += "?";
-//            url += URLEncoder.encode(lcKey, "UTF-8");
-//            if (!Utils.empty(value))
-//               url += "=" + URLEncoder.encode(value, "UTF-8");
-//         }
-//      }
+      //      //--
+      //      //-- Nested param support
+      //      //TODO: don't remember the use case here.  need to find and make a test case
+      //      Map<String, String> params = Chain.peek().getRequest().getParams();
+      //      String lcPath = expandsPath.toLowerCase();
+      //      for (String key : params.keySet())
+      //      {
+      //         String lcKey = key.toLowerCase();
+      //
+      //         if (reservedParams.contains(lcKey))
+      //            continue;
+      //
+      //         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
+      //         {
+      //            String value = params.get(key);
+      //            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
+      //
+      //            if (url.indexOf("?") < 0)
+      //               url += "?";
+      //            url += URLEncoder.encode(lcKey, "UTF-8");
+      //            if (!Utils.empty(value))
+      //               url += "=" + URLEncoder.encode(value, "UTF-8");
+      //         }
+      //      }
 
       Response res = Chain.peek().getEngine().get(url);
       int sc = res.getStatusCode();

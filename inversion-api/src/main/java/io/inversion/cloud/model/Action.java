@@ -27,23 +27,6 @@ import io.inversion.cloud.utils.Utils;
  */
 public abstract class Action<A extends Action> extends Rule<A>
 {
-   public Action()
-   {
-
-   }
-
-   public Action(String includePaths)
-   {
-      withIncludePaths(includePaths);
-   }
-
-   public Action(String includePaths, String excludePaths, String config)
-   {
-      withIncludePaths(includePaths);
-      withExcludePaths(excludePaths);
-      withConfig(config);
-   }
-
    public void run(Request req, Response res) throws Exception
    {
       if (req.isGet())

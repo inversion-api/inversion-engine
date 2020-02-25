@@ -37,21 +37,6 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
 {
    protected Set<String> params = new HashSet();
 
-   public RequireQueryParamAction()
-   {
-      this(null);
-   }
-
-   public RequireQueryParamAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RequireQueryParamAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-   }
-
    public void run(Request req, Response res) throws Exception
    {
       for (String requiredParam : params)

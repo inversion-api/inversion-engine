@@ -59,18 +59,7 @@ public class RestPostAction extends Action<RestPostAction>
 
    public RestPostAction()
    {
-      this(null);
-   }
-
-   public RestPostAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestPostAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-      withMethods("PUT,POST");
+      withMethods("PUT,POST,PATCH");
    }
 
    @Override
@@ -506,7 +495,7 @@ public class RestPostAction extends Action<RestPostAction>
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().update(coll, upserts);
          }
-         else if(rel.isManyToMany())
+         else if (rel.isManyToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);

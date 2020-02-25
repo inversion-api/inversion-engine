@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,21 +31,6 @@ public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
 {
    protected Set<String> properties = new HashSet();
    protected boolean     recursive  = false;
-
-   public RequireJsonPropertyAction()
-   {
-      this(null, null, null);
-   }
-
-   public RequireJsonPropertyAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RequireJsonPropertyAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-   }
 
    public void run(Request req, Response res) throws Exception
    {

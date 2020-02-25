@@ -26,21 +26,6 @@ public class RestAction extends Action<RestAction>
    protected RestDeleteAction delete = new RestDeleteAction();
    protected RestPostAction   post   = new RestPostAction();
 
-   public RestAction()
-   {
-      this(null);
-   }
-
-   public RestAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-   }
-
    @Override
    public void run(Request req, Response res) throws Exception
    {

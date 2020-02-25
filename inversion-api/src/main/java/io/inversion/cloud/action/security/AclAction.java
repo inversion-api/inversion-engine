@@ -53,27 +53,6 @@ public class AclAction extends Action<AclAction>
 
    protected List<AclRule> aclRules = new ArrayList();
 
-   public AclAction()
-   {
-      this(null);
-   }
-
-   public AclAction(String includePaths, AclRule... aclRules)
-   {
-      this(null, includePaths, null, null, aclRules);
-   }
-
-   public AclAction(String methods, String includePaths, String excludePaths, String config, AclRule... aclRules)
-   {
-      super(includePaths, excludePaths, config);
-
-      withOrder(500);
-      withMethods(methods);
-
-      if (aclRules != null)
-         withAclRules(aclRules);
-   }
-
    public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN)
    {
       withAclRules(AclRule.requireAllPerms(httpMethods, includePaths, permission1, permissionsN));
