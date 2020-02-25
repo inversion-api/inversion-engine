@@ -32,7 +32,9 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Order.Sort;
@@ -42,8 +44,6 @@ import io.inversion.cloud.rql.Select;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>

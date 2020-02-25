@@ -48,24 +48,22 @@ import io.inversion.cloud.utils.Utils;
 
 public class AuthAction extends Action<AuthAction>
 {
-   long                       sessionExp              = 1000 * 60 * 30; //30 minute default timeput
-   long                       sessionUpdate           = 1000 * 10;      //update a session every 10s to prevent spamming the cache with every request
-   protected int              sessionMax              = 10000;
+   long                 sessionExp              = 1000 * 60 * 30; //30 minute default timeput
+   long                 sessionUpdate           = 1000 * 10;      //update a session every 10s to prevent spamming the cache with every request
+   protected int        sessionMax              = 10000;
 
-   protected int              failedMax               = 10;
-   protected int              failedExp               = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
+   protected int        failedMax               = 10;
+   protected int        failedExp               = 1000 * 60 * 10; //10 minute timeout for failed password attemtps
 
-   protected String           collection              = null;
+   protected String     collection              = null;
 
-   protected String           authenticatedPerm       = null;           // apply this perm to all authenticated users, allows ACL to target all authenticated users
+   protected String     authenticatedPerm       = null;           // apply this perm to all authenticated users, allows ACL to target all authenticated users
 
-   protected AuthSessionCache sessionCache            = null;
+   protected SessionDao sessionDao              = null;
 
-   protected UserDao          dao                     = null;
+   protected UserDao    userDao                 = null;
 
-   protected boolean          shouldTrackRequestTimes = true;
-
-   protected String           salt                    = "CHANGE_ME";
+   protected boolean    shouldTrackRequestTimes = true;
 
    public AuthAction()
    {
@@ -76,12 +74,12 @@ public class AuthAction extends Action<AuthAction>
    public void run(Request req, Response resp) throws Exception
    {
       //one time init
-      if (sessionCache == null)
+      if (sessionDao == null)
       {
          synchronized (this)
          {
-            if (sessionCache == null)
-               sessionCache = new LRUAuthSessionCache(sessionMax);
+            if (sessionDao == null)
+               sessionDao = new LRUSessionDao(sessionMax);
          }
       }
 
@@ -199,27 +197,11 @@ public class AuthAction extends Action<AuthAction>
             if (sessionKey == null)
                throw new ApiException(Status.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
 
-            sessionCache.remove(sessionKey);
+            sessionDao.remove(sessionKey);
          }
          else if (!Utils.empty(username, password))
          {
-            String salt = getSalt();
-            if (salt == null)
-            {
-               log.warn("You must configure a salt value for password hashing.");
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
-            }
-
-            user = dao.getUser(username, apiCode, tenantCode);
-
-            if (user != null)
-            {
-               String strongHash = strongHash(salt, password);
-               String weakHash = weakHash(password);
-
-               if (!(user.getPassword().equals(strongHash) || user.getPassword().equals(weakHash)))
-                  user = null;
-            }
+            user = userDao.getUser(username, password, apiCode, tenantCode);
          }
       }
 
@@ -227,12 +209,12 @@ public class AuthAction extends Action<AuthAction>
       {
          if (sessionKey != null)
          {
-            user = sessionCache.get(sessionKey);
+            user = sessionDao.get(sessionKey);
             if (user != null && sessionExp > 0)
             {
                if (now - user.getRequestAt() > sessionExp)
                {
-                  sessionCache.remove(sessionKey);
+                  sessionDao.remove(sessionKey);
                   user = null;
                }
             }
@@ -256,7 +238,7 @@ public class AuthAction extends Action<AuthAction>
 
          if (sessionReq && req.isPost())
          {
-            sessionKey = req.getApi().getId() + "_" + newSessionId();
+            sessionKey = req.getApi().getApiCode() + "_" + newSessionId();
             updateSessionCache = true;
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
@@ -283,7 +265,7 @@ public class AuthAction extends Action<AuthAction>
          }
 
          if (updateSessionCache)
-            sessionCache.put(sessionKey, user);
+            sessionDao.put(sessionKey, user);
       }
 
       if (Chain.getUser() != null)
@@ -295,7 +277,7 @@ public class AuthAction extends Action<AuthAction>
 
       if (user == null && !sessionReq)
       {
-         user = dao.getGuest(apiCode, tenantCode);
+         user = userDao.getGuest(apiCode, tenantCode);
          Chain.peek().withUser(user);
       }
    }
@@ -413,49 +395,6 @@ public class AuthAction extends Action<AuthAction>
       return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 
-   public static String strongHash(Object salt, String password) throws ApiException
-   {
-      try
-      {
-         int iterationNb = 1000;
-         MessageDigest digest = MessageDigest.getInstance("SHA-512");
-         digest.reset();
-         digest.update(salt.toString().getBytes());
-         byte[] input = digest.digest(password.getBytes("UTF-8"));
-         for (int i = 0; i < iterationNb; i++)
-         {
-            digest.reset();
-            input = digest.digest(input);
-         }
-
-         String encoded = Base64.encodeBase64String(input).trim();
-         return encoded;
-      }
-      catch (Exception ex)
-      {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
-      }
-   }
-
-   public static String weakHash(String password)
-   {
-      try
-      {
-         byte[] byteArr = password.getBytes();
-         MessageDigest digest = MessageDigest.getInstance("MD5");
-         digest.update(byteArr);
-         byte[] bytes = digest.digest();
-
-         String hex = (new HexBinaryAdapter()).marshal(bytes);
-
-         return hex;
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException(ex);
-      }
-   }
-
    protected String newSessionId()
    {
       String id = UUID.randomUUID().toString();
@@ -493,9 +432,9 @@ public class AuthAction extends Action<AuthAction>
       return this;
    }
 
-   public AuthAction withSessionCache(AuthSessionCache sessionCache)
+   public AuthAction withSessionDao(SessionDao sessionDao)
    {
-      this.sessionCache = sessionCache;
+      this.sessionDao = sessionDao;
       return this;
    }
 
@@ -513,29 +452,18 @@ public class AuthAction extends Action<AuthAction>
 
    public AuthAction withDao(UserDao dao)
    {
-      this.dao = dao;
+      this.userDao = dao;
       return this;
    }
 
-   public AuthAction withSalt(String salt)
-   {
-      this.salt = salt;
-      return this;
-   }
-
-   public String getSalt()
-   {
-      return Utils.getSysEnvPropStr(getName() + ".salt", salt);
-   }
-
-   class LRUAuthSessionCache implements AuthSessionCache
+   class LRUSessionDao implements SessionDao
    {
       LRUMap map;
 
-      public LRUAuthSessionCache(int sessionMax)
+      public LRUSessionDao(int sessionMax)
       {
          super();
-         this.map = new LRUMap(sessionMax);;
+         this.map = new LRUMap(sessionMax);
       }
 
       @Override
@@ -560,7 +488,7 @@ public class AuthAction extends Action<AuthAction>
 
    public static interface UserDao
    {
-      User getUser(String username, String apiCode, String tenantCode) throws Exception;
+      User getUser(String username, String password, String apiCode, String tenantCode) throws Exception;
 
       default User getGuest(String apiCode, String tenantCode)
       {
@@ -570,6 +498,15 @@ public class AuthAction extends Action<AuthAction>
          user.withTenantCode(tenantCode);
          return user;
       }
+   }
+
+   public static interface SessionDao
+   {
+      public User get(String sessionKey);
+
+      public void put(String sessionKey, User user);
+
+      public void remove(String sessionKey);
    }
 
 }

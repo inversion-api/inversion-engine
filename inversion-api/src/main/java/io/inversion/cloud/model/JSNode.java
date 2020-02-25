@@ -38,7 +38,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.inversion.cloud.utils.SimpleTokenizer;
 import io.inversion.cloud.utils.Utils;
 
 public class JSNode implements Map<String, Object>
@@ -381,14 +380,14 @@ public class JSNode implements Map<String, Object>
 
    protected List collect0(String jsonPath, int qty)
    {
-      SimpleTokenizer tok = new SimpleTokenizer(//
-                                                "['\"", //openQuoteStr
-                                                "]'\"", //closeQuoteStr
-                                                "]", //breakIncludedChars
-                                                ".", //breakExcludedChars
-                                                "", //unquuotedIgnoredChars
-                                                ". \t", //leadingIgoredChars
-                                                jsonPath //chars
+      JSONPathTokenizer tok = new JSONPathTokenizer(//
+                                                    "['\"", //openQuoteStr
+                                                    "]'\"", //closeQuoteStr
+                                                    "]", //breakIncludedChars
+                                                    ".", //breakExcludedChars
+                                                    "", //unquuotedIgnoredChars
+                                                    ". \t", //leadingIgoredChars
+                                                    jsonPath //chars
       );
 
       List<String> path = tok.asList();
@@ -464,14 +463,14 @@ public class JSNode implements Map<String, Object>
             //                                                            expr //chars
             //            );
 
-            SimpleTokenizer tokenizer = new SimpleTokenizer(//
-                                                            "'\"", //openQuoteStr
-                                                            "'\"", //closeQuoteStr
-                                                            "?=<>!", //breakIncludedChars...breakAfter
-                                                            "]=<>! ", //breakExcludedChars...breakBefore
-                                                            "[()", //unquuotedIgnoredChars
-                                                            "]. \t", //leadingIgoredChars
-                                                            expr);
+            JSONPathTokenizer tokenizer = new JSONPathTokenizer(//
+                                                                "'\"", //openQuoteStr
+                                                                "'\"", //closeQuoteStr
+                                                                "?=<>!", //breakIncludedChars...breakAfter
+                                                                "]=<>! ", //breakExcludedChars...breakBefore
+                                                                "[()", //unquuotedIgnoredChars
+                                                                "]. \t", //leadingIgoredChars
+                                                                expr);
 
             String token = null;
             String func = null;
@@ -1196,7 +1195,7 @@ public class JSNode implements Map<String, Object>
       }
       json.writeEndObject();
    }
-   
+
    /**
     * Removes all empty objects from the tree
     * @param parent - parent node
@@ -1241,7 +1240,7 @@ public class JSNode implements Map<String, Object>
          return parent == null;
       }
    }
-   
+
    /**
     * Removes all empty objects from the tree
     * of current JSNode
@@ -1250,4 +1249,154 @@ public class JSNode implements Map<String, Object>
    {
       return prune0(this);
    }
+
+   public static class JSONPathTokenizer
+   {
+      char[]       chars           = null;
+      int          head            = 0;
+
+      char         escapeChar      = '\\';
+      boolean      escaped         = false;
+      boolean      quoted          = false;
+
+      StringBuffer next            = new StringBuffer();
+
+      Set          openQuotes      = null;
+      Set          closeQuotes     = null;
+      Set          breakIncluded   = null;
+      Set          breakExcluded   = null;
+      Set          unquotedIgnored = null;
+      Set          leadingIgnored  = null;
+
+      public JSONPathTokenizer(String openQuoteChars, String closeQuoteChars, String breakIncludedChars, String breakExcludedChars, String unquotedIgnoredChars, String leadingIgnoredChars)
+      {
+         this(openQuoteChars, closeQuoteChars, breakIncludedChars, breakExcludedChars, unquotedIgnoredChars, leadingIgnoredChars, null);
+      }
+
+      public JSONPathTokenizer(String openQuoteChars, String closeQuoteChars, String breakIncludedChars, String breakExcludedChars, String unquotedIgnoredChars, String leadingIgnoredChars, String chars)
+      {
+         openQuotes = toSet(openQuoteChars);
+         closeQuotes = toSet(closeQuoteChars);
+         breakIncluded = toSet(breakIncludedChars);
+         breakExcluded = toSet(breakExcludedChars);
+         unquotedIgnored = toSet(unquotedIgnoredChars);
+         leadingIgnored = toSet(leadingIgnoredChars);
+
+         withChars(chars);
+      }
+
+      /**
+       * Resets any ongoing tokenization to tokenize this new string;
+       * @param chars
+       */
+      public JSONPathTokenizer withChars(String chars)
+      {
+         if (chars != null)
+         {
+            this.chars = chars.toCharArray();
+         }
+         head = 0;
+         next = new StringBuffer();
+         escaped = false;
+         quoted = false;
+
+         return this;
+      }
+
+      public List<String> asList()
+      {
+         List<String> list = new ArrayList();
+         String next = null;
+         while ((next = next()) != null)
+            list.add(next);
+
+         return list;
+      }
+
+      Set toSet(String string)
+      {
+         Set resultSet = new HashSet();
+         for (int i = 0; i < string.length(); i++)
+            resultSet.add(new Character(string.charAt(i)));
+
+         return resultSet;
+      }
+
+      public String next()
+      {
+         if (head >= chars.length)
+         {
+            return null;
+         }
+
+         while (head < chars.length)
+         {
+            char c = chars[head];
+            head += 1;
+
+            //System.out.println("c = '" + c + "'");
+
+            if (next.length() == 0 && leadingIgnored.contains(c))
+               continue;
+
+            if (c == escapeChar)
+            {
+               if (escaped)
+                  append(c);
+
+               escaped = !escaped;
+               continue;
+            }
+
+            if (!quoted && unquotedIgnored.contains(c))
+            {
+               continue;
+            }
+
+            if (!quoted && !escaped && openQuotes.contains(c))
+            {
+               quoted = true;
+            }
+            else if (quoted && !escaped && closeQuotes.contains(c))
+            {
+               quoted = false;
+            }
+
+            if (!quoted && breakExcluded.contains(c) && next.length() > 0)
+            {
+               head--;
+               break;
+            }
+
+            if (!quoted && breakIncluded.contains(c))
+            {
+               append(c);
+               break;
+            }
+
+            append(c);
+         }
+
+         if (quoted)
+            throw new RuntimeException("Unable to parse unterminated quoted string: \"" + String.valueOf(chars) + "\": -> '" + new String(chars) + "'");
+
+         if (escaped)
+            throw new RuntimeException("Unable to parse hanging escape character: \"" + String.valueOf(chars) + "\": -> '" + new String(chars) + "'");
+
+         String str = next.toString().trim();
+         next = new StringBuffer();
+
+         if (str.length() == 0)
+            str = null;
+
+         return str;
+      }
+
+      protected void append(char c)
+      {
+         next.append(c);
+      }
+
+   }
+
 }

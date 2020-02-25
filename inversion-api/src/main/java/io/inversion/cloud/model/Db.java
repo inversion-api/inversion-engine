@@ -26,9 +26,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Pluralizer;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public abstract class Db<T extends Db>

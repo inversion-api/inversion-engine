@@ -23,8 +23,8 @@ import java.util.Map;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Rows.Row;
 
 public class MockDb extends Db<MockDb>
 {

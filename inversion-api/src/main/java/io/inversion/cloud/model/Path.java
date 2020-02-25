@@ -198,80 +198,80 @@ public class Path
       }
    }
 
-   public static boolean pathMatches(String wildcardPath, String path)
-   {
-      try
-      {
-         if (wildcardPath.indexOf("{") > -1)
-         {
-            List<String> regexParts = Utils.explode("/", wildcardPath);
-            List<String> pathParts = Utils.explode("/", path);
-
-            if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
-               return false;
-
-            boolean optional = false;
-
-            for (int i = 0; i < regexParts.size(); i++)
-            {
-               String matchPart = regexParts.get(i);
-
-               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
-               {
-                  matchPart = matchPart.substring(1, matchPart.length() - 1);
-                  optional = true;
-               }
-
-               if (pathParts.size() == i)
-               {
-                  if (optional)
-                     return true;
-                  return false;
-               }
-
-               String pathPart = pathParts.get(i);
-
-               if (matchPart.startsWith("{"))
-               {
-                  int colonIdx = matchPart.indexOf(":");
-                  if (colonIdx < 0)
-                     colonIdx = 0;
-
-                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
-
-                  Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                  Matcher matcher = pattern.matcher(pathPart);
-
-                  if (!matcher.matches())
-                     return false;
-               }
-               else if (!Utils.wildcardMatch(matchPart, pathPart))
-               {
-                  return false;
-               }
-
-               if (matchPart.endsWith("*") && i == regexParts.size() - 1)
-                  return true;
-            }
-
-            return true;
-         }
-         else
-         {
-            if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
-               wildcardPath += "/";
-            return Utils.wildcardMatch(wildcardPath, path);
-         }
-      }
-      catch (NullPointerException npe)
-      {
-         npe.printStackTrace();
-      }
-      catch (Exception ex)
-      {
-         //intentionally ignore
-      }
-
-      return false;
-   }
+//   public static boolean pathMatches(String wildcardPath, String path)
+//   {
+//      try
+//      {
+//         if (wildcardPath.indexOf("{") > -1)
+//         {
+//            List<String> regexParts = Utils.explode("/", wildcardPath);
+//            List<String> pathParts = Utils.explode("/", path);
+//
+//            if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
+//               return false;
+//
+//            boolean optional = false;
+//
+//            for (int i = 0; i < regexParts.size(); i++)
+//            {
+//               String matchPart = regexParts.get(i);
+//
+//               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
+//               {
+//                  matchPart = matchPart.substring(1, matchPart.length() - 1);
+//                  optional = true;
+//               }
+//
+//               if (pathParts.size() == i)
+//               {
+//                  if (optional)
+//                     return true;
+//                  return false;
+//               }
+//
+//               String pathPart = pathParts.get(i);
+//
+//               if (matchPart.startsWith("{"))
+//               {
+//                  int colonIdx = matchPart.indexOf(":");
+//                  if (colonIdx < 0)
+//                     colonIdx = 0;
+//
+//                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
+//
+//                  Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+//                  Matcher matcher = pattern.matcher(pathPart);
+//
+//                  if (!matcher.matches())
+//                     return false;
+//               }
+//               else if (!Utils.wildcardMatch(matchPart, pathPart))
+//               {
+//                  return false;
+//               }
+//
+//               if (matchPart.endsWith("*") && i == regexParts.size() - 1)
+//                  return true;
+//            }
+//
+//            return true;
+//         }
+//         else
+//         {
+//            if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
+//               wildcardPath += "/";
+//            return Utils.wildcardMatch(wildcardPath, path);
+//         }
+//      }
+//      catch (NullPointerException npe)
+//      {
+//         npe.printStackTrace();
+//      }
+//      catch (Exception ex)
+//      {
+//         //intentionally ignore
+//      }
+//
+//      return false;
+//   }
 }

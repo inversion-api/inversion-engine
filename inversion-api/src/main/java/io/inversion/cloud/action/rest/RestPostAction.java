@@ -40,11 +40,11 @@ import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class RestPostAction extends Action<RestPostAction>

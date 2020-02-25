@@ -21,7 +21,7 @@ import java.util.List;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.model.Rows.Row;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
 {

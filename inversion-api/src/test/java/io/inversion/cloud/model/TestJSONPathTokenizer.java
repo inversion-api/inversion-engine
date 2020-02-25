@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.cloud.model;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestSimpleTokenizer
+import io.inversion.cloud.model.JSNode.JSONPathTokenizer;
+
+public class TestJSONPathTokenizer
 {
    @Test
    public void testJsonPathTokenizers1()
@@ -35,7 +37,7 @@ public class TestSimpleTokenizer
 
       //      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
 
-      SimpleTokenizer exprTok = new SimpleTokenizer(//
+      JSONPathTokenizer exprTok = new JSONPathTokenizer(//
                                                     "'\"", //openQuoteStr
                                                     "'\"", //closeQuoteStr
                                                     "?=<>!", //breakIncludedChars...breakAfter
@@ -63,7 +65,7 @@ public class TestSimpleTokenizer
 
    }
 
-   void assertEquals(SimpleTokenizer tokenizer, String input, String output)
+   void assertEquals(JSONPathTokenizer tokenizer, String input, String output)
    {
       String tokenized = tokenizer.withChars(input).asList().toString();
       System.out.println(tokenized);

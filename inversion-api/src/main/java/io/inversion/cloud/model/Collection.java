@@ -26,10 +26,13 @@ import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
 
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
+/**
+ * Represents a REST collection as an interface into an underlying
+ * Db data store...such as an RDBMS table.
+ */
 public class Collection extends Rule<Collection>
 {
    protected Db                      db            = null;
@@ -56,6 +59,10 @@ public class Collection extends Rule<Collection>
    }
 
    /**
+    * Returns true if all columns are foreign keys.  In an RDBMS system, this
+    * would indicate that the table is used to link both sides of a many-to-many
+    * relationship and it should NOT be a public REST Collection
+    * 
     * @return the linkTbl
     */
    public boolean isLinkTbl()

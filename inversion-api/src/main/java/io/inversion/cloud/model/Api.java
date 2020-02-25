@@ -28,20 +28,14 @@ public class Api
 {
    protected Logger                      log         = LoggerFactory.getLogger(getClass());
 
-   //transient Engine                         engine      = null;
-
    transient volatile boolean            started     = false;
    transient volatile boolean            starting    = false;
    transient long                        loadTime    = 0;
-   transient Hashtable                   cache       = new Hashtable();
    transient protected String            hash        = null;
 
    protected boolean                     debug       = false;
 
-   protected int                         id          = 0;
-
    protected String                      name        = null;
-   protected String                      accountCode = null;
    protected String                      apiCode     = null;
    protected boolean                     multiTenant = false;
    protected String                      url         = null;
@@ -141,17 +135,6 @@ public class Api
             }
          }
       }
-   }
-
-   public int getId()
-   {
-      return id;
-   }
-
-   public Api withId(int id)
-   {
-      this.id = id;
-      return this;
    }
 
    public String getHash()
@@ -380,16 +363,6 @@ public class Api
    {
       this.multiTenant = multiTenant;
       return this;
-   }
-
-   public Object putCache(Object key, Object value)
-   {
-      return cache.put(key, value);
-   }
-
-   public Object getCache(Object key)
-   {
-      return cache.get(key);
    }
 
    public String getUrl()

@@ -30,14 +30,7 @@ import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
 
 /**
- * 
-   //      query q = new Query().where('field').gt(100)
-   //                           .where('ield2').lt(500)
-   //                           .where("field>200")
-   //                           .where("and(gt(field, 100)&lt(field2, 0))")
-   //                           .where(or(gt("field", 5), lt("field", 2)))
-   //                           .where().gt("field", 5).lt("field", 2)
- * @author wells
+ * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
  *
  */
 public class Query<T extends Query, D extends Db, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
@@ -59,9 +52,9 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
    //------------------------------------------------------------------
-   protected Parser createParser()
+   protected RqlParser createParser()
    {
-      return new Parser();
+      return new RqlParser();
    }
 
    protected S createSelect()
@@ -138,7 +131,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
    }
 
    @Override
-   public Parser getParser()
+   public RqlParser getParser()
    {
       if (parser == null)
          parser = createParser();

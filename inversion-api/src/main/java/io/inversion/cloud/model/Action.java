@@ -27,8 +27,6 @@ import io.inversion.cloud.utils.Utils;
  */
 public abstract class Action<A extends Action> extends Rule<A>
 {
-   protected String comment = null;
-
    public Action()
    {
 
@@ -83,17 +81,6 @@ public abstract class Action<A extends Action> extends Rule<A>
    public void doDelete(Request req, Response res) throws Exception
    {
       throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
-   }
-
-   public String getComment()
-   {
-      return comment;
-   }
-
-   public A withComment(String comment)
-   {
-      this.comment = comment;
-      return (A) this;
    }
 
    public static List<JSNode> find(Object parent, String... paths)

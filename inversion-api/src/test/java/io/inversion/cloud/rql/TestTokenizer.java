@@ -83,7 +83,7 @@ public class TestTokenizer
 
          try
          {
-            tokens = new Tokenizer(toParse).asList();
+            tokens = new RqlTokenizer(toParse).asList();
 
             assertTrue(tokens.size() == test.size() - 1, "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
 
@@ -119,7 +119,7 @@ public class TestTokenizer
 
          try
          {
-            new Tokenizer(test).asList();
+            new RqlTokenizer(test).asList();
          }
          catch (Exception ex)
          {

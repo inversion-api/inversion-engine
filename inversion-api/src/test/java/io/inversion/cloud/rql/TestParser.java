@@ -36,7 +36,7 @@ public class TestParser
    @Test
    public void test1() throws Exception
    {
-      Parser parser = new Parser();
+      RqlParser parser = new RqlParser();
 
       List<List> tests = new ArrayList();
 
@@ -100,7 +100,7 @@ public class TestParser
    @Test
    public void test2() throws Exception
    {
-      Parser parser = new Parser();
+      RqlParser parser = new RqlParser();
       Term t = parser.parse("w(name,'BANANA KG (RESEAU')");
       
       assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());

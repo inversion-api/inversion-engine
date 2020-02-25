@@ -27,7 +27,7 @@ import io.inversion.cloud.utils.Utils;
 
 public class Builder<T, P extends Builder>
 {
-   protected Parser        parser    = null;
+   protected RqlParser     parser    = null;
    protected P             parent    = null;
    protected List<Builder> builders  = null;
    protected List<Term>    terms     = new ArrayList();
@@ -78,13 +78,13 @@ public class Builder<T, P extends Builder>
          return (T) this;
    }
 
-   public T withParser(Parser parser)
+   public T withParser(RqlParser parser)
    {
       this.parser = parser;
       return r();
    }
 
-   public Parser getParser()
+   public RqlParser getParser()
    {
       if (parser != null)
          return parser;

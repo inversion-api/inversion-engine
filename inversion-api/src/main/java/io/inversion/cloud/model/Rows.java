@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.cloud.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.model.Rows.Row;
 
 /**
  * A list of ordered maps where all maps that all share the same keys.

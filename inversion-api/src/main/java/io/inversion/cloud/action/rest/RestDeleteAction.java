@@ -29,12 +29,12 @@ import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Url;
-import io.inversion.cloud.rql.Parser;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.rql.RqlParser;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
@@ -136,7 +136,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       Term or = Term.term(null, "or");
       Term in = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName());
 
-      Parser parser = new Parser();
+      RqlParser parser = new RqlParser();
       for (String u : urls)
       {
          Url url = new Url(u);

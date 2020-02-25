@@ -232,7 +232,7 @@ public class RqlValidationSuite
          //-- when a live call is made
          List<Term> terms = new ArrayList();
          String[] parts = rql.split("\\&");
-         Parser parser = new Parser();
+         RqlParser parser = new RqlParser();
          for (int i = 0; i < parts.length; i++)
          {
             if (parts[i] == null || parts[i].length() == 0)

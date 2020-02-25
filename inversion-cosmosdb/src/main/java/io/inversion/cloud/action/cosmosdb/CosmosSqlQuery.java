@@ -20,11 +20,11 @@ import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started

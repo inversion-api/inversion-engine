@@ -29,9 +29,9 @@ import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>

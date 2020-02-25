@@ -44,14 +44,14 @@ import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
+import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Url;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Parser;
+import io.inversion.cloud.rql.RqlParser;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class RestGetAction extends Action<RestGetAction>
@@ -261,7 +261,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (params.size() > 0)
       {
-         Parser parser = new Parser();
+         RqlParser parser = new RqlParser();
          for (String paramName : params.keySet())
          {
             String termStr = null;
@@ -890,7 +890,7 @@ public class RestGetAction extends Action<RestGetAction>
    public static String stripTerms(String url, String... tokens)
    {
       Url u = new Url(url);
-      Parser p = new Parser();
+      RqlParser p = new RqlParser();
 
       Map<String, String> params = u.getParams();
       for (String key : params.keySet())

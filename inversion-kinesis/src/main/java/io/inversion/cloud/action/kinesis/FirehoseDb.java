@@ -35,8 +35,8 @@ import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 /**
