@@ -202,7 +202,7 @@ public class JdbcDb extends Db<JdbcDb>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
+                  ApiException.throw500InternalServerError(ex, "Error committing tansaction");
                }
             }
 
@@ -434,8 +434,8 @@ public class JdbcDb extends Db<JdbcDb>
       }
       catch (Exception ex)
       {
-         log.error("Unable to get DB connection", ex);
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
+         ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
+         return null;
       }
    }
 

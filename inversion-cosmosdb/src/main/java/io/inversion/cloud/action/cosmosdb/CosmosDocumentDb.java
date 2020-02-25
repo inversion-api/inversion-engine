@@ -94,7 +94,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       {
          id = table.encodeKey(columnMappedTermsRow);
          if (id == null)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Your record does not contain the required key fields.");
+            ApiException.throw400BadRequest("Your record does not contain the required key fields.");
          doc.putFirst("id", id);
       }
 
@@ -124,12 +124,12 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       int statusCode = response.getStatusCode();
       if (statusCode > 299)
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+         ApiException.throw400BadRequest("Unexpected http status code returned from database: '%s'", statusCode);
       }
 
       String returnedId = response.getResource().getId();
       if (!Utils.equal(id, returnedId))
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "The supplied 'id' field does not match the returned 'id' field: " + id + " vs. " + returnedId);
+         ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '%s' vs. '%s'", id, returnedId);
 
       return id;
    }
@@ -172,9 +172,9 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          response = getDocumentClient().deleteDocument(documentUri, options);
 
          int statusCode = response.getStatusCode();
-         if (statusCode > 299)
+         if (statusCode >= 400)
          {
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unexpected http status code returned from database: '" + statusCode + "'");
+            ApiException.throw500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
          }
       }
       catch (DocumentClientException ex)
@@ -187,7 +187,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          }
          else
          {
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+            ApiException.throw500InternalServerError(ex);
          }
       }
    }
@@ -267,7 +267,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
          error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
          error += "values into your code is strongly discouraged as a poor security practice.";
 
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, error);
+         ApiException.throw500InternalServerError(error);
       }
 
       DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);

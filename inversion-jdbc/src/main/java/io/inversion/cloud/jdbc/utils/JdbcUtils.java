@@ -851,7 +851,7 @@ public class JdbcUtils
          {
             key = rows.get(i).get(indexCols.get(0));
             if (key == null)
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key for row: " + rows.get(i));
+               ApiException.throw500InternalServerError("Unable to determine key for row: " + rows.get(i));
 
             returnKeys.set(i, key);
          }

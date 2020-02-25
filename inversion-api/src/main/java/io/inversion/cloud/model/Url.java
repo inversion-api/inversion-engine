@@ -67,7 +67,7 @@ public class Url
    public Url(String parent, String child)
    {
       if (Utils.empty(parent) && Utils.empty(child))
-         throw new ApiException("Can't construct an empty url");
+         ApiException.throw500InternalServerError("Can't construct an empty url");
 
       if (Utils.empty(child))
       {

@@ -504,7 +504,7 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            throw new ApiException(Status.SC_404_NOT_FOUND, "No API found matching URL: \"" + req.getUrl() + "\"");
+            ApiException.throw404NotFound("No API found matching URL: '%s'", req.getUrl());
          }
 
          if (req.getEndpoint() == null)
@@ -521,7 +521,7 @@ public class Engine
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            throw new ApiException(Status.SC_404_NOT_FOUND, "No Endpoint found matching \"" + req.getMethod() + ": " + req.getUrl() + "\" Valid Endpoints include: " + buff);
+            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), req.getUrl(), buff);
          }
 
          //         if (Utils.empty(req.getCollectionKey()))
@@ -544,7 +544,7 @@ public class Engine
          }
 
          if (actions.size() == 0)
-            throw new ApiException(Status.SC_404_NOT_FOUND, "No Actions are configured to handle your request.  Check your server configuration.");
+            ApiException.throw404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
 
          Collections.sort(actions);
 

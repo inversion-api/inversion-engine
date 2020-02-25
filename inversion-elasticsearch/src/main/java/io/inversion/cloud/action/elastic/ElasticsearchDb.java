@@ -109,7 +109,8 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
                allResp.getError().printStackTrace();
                Utils.getCause(allResp.getError()).printStackTrace();
             }
-            throw new ApiException(allResp.hasStatus(allowedFailResponseCodes) ? allResp.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+            
+            allResp.rethrow();
          }
       }
       catch (Exception ex)

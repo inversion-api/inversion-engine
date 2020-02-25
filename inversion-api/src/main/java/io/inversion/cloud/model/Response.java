@@ -894,31 +894,18 @@ public class Response
       }
       catch (Exception ex)
       {
-
+         //igore
       }
 
       if (message != null)
          msg = msg + " " + message.trim();
 
-      throw new ApiException(statusCode + "", msg);
+      ApiException.throwApiException(statusCode + "",  null,  msg);
    }
 
    public Response assertStatus(int... statusCodes)
    {
-      boolean matched = false;
-      for (int statusCode : statusCodes)
-      {
-         if (statusCode == this.statusCode)
-         {
-            matched = true;
-            break;
-         }
-      }
-
-      if (!matched)
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Received unexpected status code '" + this.statusCode + "'");
-
-      return this;
+      return assertStatus(null, statusCodes);
    }
 
    public Response assertStatus(String message, int... statusCodes)
@@ -934,15 +921,20 @@ public class Response
       }
 
       if (!matched)
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
+      {
+         Object[] args = null;
+         if (message == null)
+         {
+            message = "The returned status '%s' was not in the approved list '%s'";
+            List debugList = new ArrayList();
+            for (int i = 0; statusCodes != null && i < statusCodes.length; i++)
+               debugList.add(statusCodes[i]);
 
-      return this;
-   }
+            args = new Object[]{this.statusCode, debugList};
+         }
 
-   public Response assertStatus(int statusCode, String message)
-   {
-      if (this.statusCode != statusCode)
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
+         ApiException.throw500InternalServerError(message, args);
+      }
 
       return this;
    }

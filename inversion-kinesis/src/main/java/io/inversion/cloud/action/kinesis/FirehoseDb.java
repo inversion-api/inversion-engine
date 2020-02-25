@@ -122,20 +122,21 @@ public class FirehoseDb extends Db<FirehoseDb>
       }
       else
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
+         ApiException.throw500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
       }
    }
 
    @Override
    public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
-      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      return null;
    }
 
    @Override
    public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
-      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override

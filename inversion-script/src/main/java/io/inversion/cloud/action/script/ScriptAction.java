@@ -579,22 +579,22 @@ public class ScriptAction extends Action<ScriptAction>
 
       public void throwApiException(String status, String message)
       {
-         throw new ApiException(status, message);
+         ApiException.throw500InternalServerError(status, message);
       }
 
       public void throwBadRequest(String message)
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, message);
+         ApiException.throw400BadRequest(message);
       }
 
       public void throwNotFound(String message)
       {
-         throw new ApiException(Status.SC_404_NOT_FOUND, message);
+         ApiException.throw404NotFound(message);
       }
 
       public void throwServerError(String message)
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
+         ApiException.throw500InternalServerError(message);
       }
 
       public List<Object> list(Object obj)

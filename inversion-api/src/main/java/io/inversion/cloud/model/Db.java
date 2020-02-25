@@ -319,7 +319,7 @@ public abstract class Db<T extends Db>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
+                  ApiException.throw500InternalServerError(ex, "Error creating relationship for index: %s", fkIdx);
                }
             }
          }

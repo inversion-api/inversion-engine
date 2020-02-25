@@ -1058,8 +1058,6 @@ public class Utils
       return null;
    }
 
-
-
    /**
     * Read all of the stream to a string and close the stream.  Throws RuntimeException instead of IOException
     * @param in
@@ -1543,7 +1541,7 @@ public class Utils
                   return JSNode.parseJsonNode(value + "");
 
             default :
-               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
+               ApiException.throw500InternalServerError("Error casting '%s' as type '%s'", value, type);
          }
       }
       catch (Exception ex)
@@ -1554,7 +1552,7 @@ public class Utils
 
       return null;
    }
-   
+
    /**
     * Utility to call a close() method on supplied objects if it exists and completely ignore any exceptions
     * @param toClose

@@ -58,7 +58,7 @@ public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
          for (JSNode aNode : node.asNodeList())
          {
             if (Utils.empty(aNode.get(prop)))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + prop + "' appears to be missing from your JSON body.");
+               ApiException.throw400BadRequest("Required property '%s' appears to be missing from your JSON body.",  prop);
          }
       }
    }

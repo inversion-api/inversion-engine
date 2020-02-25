@@ -154,7 +154,7 @@ public class Configurator
          for (Api api : wire.getBeans(Api.class))
          {
             if (Utils.empty(api.getApiCode()))
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Api '" + api.getApiCode() + "' is missing an 'apiCode'.  An Api cannot be loaded without one.");
+               ApiException.throw500InternalServerError("Api '%s' is missing an 'apiCode'.  An Api cannot be loaded without one.", api.getApiCode());
 
             Api existingApi = engine.getApi(api.getApiCode());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))

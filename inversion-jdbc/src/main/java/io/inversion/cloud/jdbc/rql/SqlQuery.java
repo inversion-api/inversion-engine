@@ -155,10 +155,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          }
          catch (Exception ex)
          {
-            System.out.println(sql);
-            ex.printStackTrace();
-
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, ex.getMessage());
+            //System.out.println(sql);
+            //ex.printStackTrace();
+            ApiException.throw500InternalServerError(ex);
          }
       }
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -231,7 +231,7 @@ public class Servlet extends HttpServlet
       }
       catch (Exception ex)
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to read request body", ex);
+         ApiException.throw400BadRequest(ex, "Unable to read request body");
       }
       finally
       {
@@ -272,7 +272,7 @@ public class Servlet extends HttpServlet
             }
             http.setHeader(key, buff.toString());
             res.debug(key + " " + buff);
-         } ;
+         }
          if ("OPTIONS".equals(method))
          {
             //

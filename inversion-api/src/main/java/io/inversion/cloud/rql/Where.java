@@ -67,7 +67,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
+               ApiException.throw400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
             transform(child);
          }
       }
@@ -78,7 +78,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
          Index index = getParent().getCollection().getIndex(indexName);
          if (index == null)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
+            ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
 
          if (index.size() == 1)
          {
@@ -108,7 +108,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                Term child = children.get(i);
                if (!child.isLeaf())
-                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
+                  ApiException.throw400BadRequest("Entity key value is not a leaf node: %s", child);
 
                Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");

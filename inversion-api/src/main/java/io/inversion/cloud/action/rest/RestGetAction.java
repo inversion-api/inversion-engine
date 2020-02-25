@@ -82,7 +82,7 @@ public class RestGetAction extends Action<RestGetAction>
          Relationship rel = collection.getRelationship(req.getSubCollectionKey());
 
          if (rel == null)
-            throw new ApiException(Status.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
+            ApiException.throw404NotFound("'%s' is not a valid relationship", req.getSubCollectionKey());
 
          String newHref = null;
 
@@ -108,7 +108,7 @@ public class RestGetAction extends Action<RestGetAction>
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
-                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
+                  ApiException.throw400BadRequest("Missing parameter for foreign key column '%s'", fk);
 
                newHref += fk.getColumnName() + "=" + pkVal + "&";
             }
@@ -338,7 +338,7 @@ public class RestGetAction extends Action<RestGetAction>
          Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
+            ApiException.throw400BadRequest("Unable to find collection for url '%s'", req.getUrl());
 
          results = db.select(null, terms);
       }
@@ -657,7 +657,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof JSArray)
-                        throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
+                        ApiException.throw500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
 
@@ -728,7 +728,8 @@ public class RestGetAction extends Action<RestGetAction>
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
       if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
+         ApiException.throw400BadRequest("You can only retrieve related index keys from the same Collection.");
+
       List<KeyValue> related = new ArrayList<>();
 
       LinkedHashSet columns = new LinkedHashSet();
@@ -811,14 +812,18 @@ public class RestGetAction extends Action<RestGetAction>
          {
             Object entityKey = getEntityKey((JSNode) node);
             if (pkCache.containsKey(collection, entityKey))
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
+            {
+               ApiException.throw500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
+               return null;
+            }
 
             pkCache.put(collection, entityKey, node);
          }
          return nodes;
       }
 
-      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getErrorContent());//"Unknow repose code \"" + sc + "\" or body type from nested query.");
+      res.rethrow();
+      return null;
    }
 
    public int getMaxRows()

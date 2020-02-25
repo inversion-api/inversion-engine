@@ -43,27 +43,27 @@ public abstract class Action<A extends Action> extends Rule<A>
 
    public void doGet(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+      ApiException.throw501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
    public void doPost(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+      ApiException.throw501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
    public void doPut(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+      ApiException.throw501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
    public void doPatch(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+      ApiException.throw501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
    public void doDelete(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
+      ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }
 
    public static List<JSNode> find(Object parent, String... paths)

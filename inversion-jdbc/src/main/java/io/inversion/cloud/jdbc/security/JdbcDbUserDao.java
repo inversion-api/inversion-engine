@@ -98,7 +98,7 @@ public class JdbcDbUserDao implements UserDao
       String salt = getSalt();
       if (salt == null)
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "You must configure a salt value for password hashing.");
+         ApiException.throw500InternalServerError("You must configure a salt value for password hashing.");
       }
 
       String strongHash = strongHash(salt, supplied);
@@ -191,8 +191,9 @@ public class JdbcDbUserDao implements UserDao
       }
       catch (Exception ex)
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR);
+         ApiException.throwApiException(null, ex, null);
       }
+      return null;
    }
 
    public static String weakHash(String password)

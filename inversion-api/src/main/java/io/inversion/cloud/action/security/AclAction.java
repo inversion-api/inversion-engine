@@ -23,16 +23,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
@@ -49,8 +45,6 @@ import io.inversion.cloud.utils.Utils;
  */
 public class AclAction extends Action<AclAction>
 {
-   Logger                  log      = LoggerFactory.getLogger(AclAction.class);
-
    protected List<AclRule> aclRules = new ArrayList();
 
    public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN)
@@ -131,7 +125,7 @@ public class AclAction extends Action<AclAction>
       if (!allowed)
       {
          Chain.debug("AclAction: NO_MATCH_DENY");
-         throw new ApiException(Status.SC_403_FORBIDDEN);
+         ApiException.throw403Forbidden();
       }
 
       Set requires = new HashSet();
@@ -209,7 +203,7 @@ public class AclAction extends Action<AclAction>
             String value = req.getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid query param '" + key + "=" + value + "'.");
+               ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
             }
          }
       }
@@ -257,7 +251,7 @@ public class AclAction extends Action<AclAction>
 
          if (!found)
          {
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing required param '" + required + "'");
+            ApiException.throw400BadRequest("Missing required param '%s'", required);
          }
       }
    }
@@ -293,7 +287,7 @@ public class AclAction extends Action<AclAction>
                if (!silent)
                {
                   if (target.containsKey(targetProp))
-                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Unknown or invalid JSON property '" + path + "'.");
+                     ApiException.throw400BadRequest("Unknown or invalid JSON property '%s'.", path);
                }
             }
          }
@@ -334,7 +328,7 @@ public class AclAction extends Action<AclAction>
                   if (value != null)
                      target.put(targetProp, value);
                   else
-                     throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + path + "' is missing from JSON body");
+                     ApiException.throw400BadRequest("Required property '%s' is missing from JSON body", path);
 
                }
             }

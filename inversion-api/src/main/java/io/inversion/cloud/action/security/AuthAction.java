@@ -17,12 +17,9 @@
 package io.inversion.cloud.action.security;
 
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
@@ -153,7 +150,7 @@ public class AuthAction extends Action<AuthAction>
             }
 
             if (jwt == null)
-               throw new ApiException(Status.SC_401_UNAUTHORIZED);
+               ApiException.throw401Unauthroized();
 
             user = createUserFromValidJwt(jwt);
          }
@@ -195,7 +192,7 @@ public class AuthAction extends Action<AuthAction>
                sessionKey = url.substring(url.lastIndexOf("/") + 1, url.length());
 
             if (sessionKey == null)
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Logout requires a session authroization or x-auth-token header");
+               ApiException.throw400BadRequest("Logout requires a session authroization or x-auth-token header");
 
             sessionDao.remove(sessionKey);
          }
@@ -220,7 +217,7 @@ public class AuthAction extends Action<AuthAction>
             }
 
             if (user == null)
-               throw new ApiException(Status.SC_401_UNAUTHORIZED);
+               ApiException.throw401Unauthroized();               
          }
       }
 
@@ -272,7 +269,7 @@ public class AuthAction extends Action<AuthAction>
       {
          User loggedIn = Chain.getUser();
          if (req.getApi().isMultiTenant() && (req.getTenantCode() == null || !req.getTenantCode().equalsIgnoreCase(loggedIn.getTenantCode())))
-            throw new ApiException(Status.SC_401_UNAUTHORIZED);
+            ApiException.throw401Unauthroized();
       }
 
       if (user == null && !sessionReq)

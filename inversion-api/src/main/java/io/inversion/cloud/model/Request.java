@@ -289,7 +289,7 @@ public class Request
       }
       catch (Exception ex)
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "Unparsable JSON body");
+         ApiException.throw400BadRequest( "Unparsable JSON body");
       }
 
       return json;
