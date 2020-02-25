@@ -900,7 +900,7 @@ public class Response
       if (message != null)
          msg = msg + " " + message.trim();
 
-      ApiException.throwApiException(statusCode + "",  null,  msg);
+      ApiException.throwEx(statusCode + "",  null,  msg);
    }
 
    public Response assertStatus(int... statusCodes)

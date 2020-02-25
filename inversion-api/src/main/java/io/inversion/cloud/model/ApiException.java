@@ -68,142 +68,142 @@ public class ApiException extends RuntimeException implements Status
 
    public static void throw400BadRequest() throws ApiException
    {
-      throwApiException(SC_400_BAD_REQUEST, null, null);
+      throwEx(SC_400_BAD_REQUEST, null, null);
    }
 
    public static void throw400BadRequest(Throwable cause) throws ApiException
    {
-      throwApiException(SC_400_BAD_REQUEST, cause, null);
+      throwEx(SC_400_BAD_REQUEST, cause, null);
    }
 
    public static void throw400BadRequest(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_400_BAD_REQUEST, null, messageFormat, messages);
+      throwEx(SC_400_BAD_REQUEST, null, messageFormat, messages);
    }
 
    public static void throw400BadRequest(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_400_BAD_REQUEST, cause, messageFormat, messages);
+      throwEx(SC_400_BAD_REQUEST, cause, messageFormat, messages);
    }
 
    public static void throw401Unauthroized() throws ApiException
    {
-      throwApiException(SC_401_UNAUTHORIZED, null, null);
+      throwEx(SC_401_UNAUTHORIZED, null, null);
    }
 
    public static void throw401Unauthroized(Throwable cause) throws ApiException
    {
-      throwApiException(SC_401_UNAUTHORIZED, cause, null);
+      throwEx(SC_401_UNAUTHORIZED, cause, null);
    }
 
    public static void throw401Unauthroized(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_401_UNAUTHORIZED, null, messageFormat, messages);
+      throwEx(SC_401_UNAUTHORIZED, null, messageFormat, messages);
    }
 
    public static void throw401Unauthroized(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_401_UNAUTHORIZED, cause, messageFormat, messages);
+      throwEx(SC_401_UNAUTHORIZED, cause, messageFormat, messages);
    }
 
    public static void throw403Forbidden() throws ApiException
    {
-      throwApiException(SC_403_FORBIDDEN, null, null);
+      throwEx(SC_403_FORBIDDEN, null, null);
    }
 
    public static void throw403Forbidden(Throwable cause) throws ApiException
    {
-      throwApiException(SC_403_FORBIDDEN, cause, null);
+      throwEx(SC_403_FORBIDDEN, cause, null);
    }
 
    public static void throw403Forbidden(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_403_FORBIDDEN, null, messageFormat, messages);
+      throwEx(SC_403_FORBIDDEN, null, messageFormat, messages);
    }
 
    public static void throw403Forbidden(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_403_FORBIDDEN, cause, messageFormat, messages);
+      throwEx(SC_403_FORBIDDEN, cause, messageFormat, messages);
    }
 
    public static void throw404NotFound() throws ApiException
    {
-      throwApiException(SC_404_NOT_FOUND, null, null);
+      throwEx(SC_404_NOT_FOUND, null, null);
    }
 
    public static void throw404NotFound(Throwable cause) throws ApiException
    {
-      throwApiException(SC_404_NOT_FOUND, cause, null);
+      throwEx(SC_404_NOT_FOUND, cause, null);
    }
 
    public static void throw404NotFound(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_404_NOT_FOUND, null, messageFormat, messages);
+      throwEx(SC_404_NOT_FOUND, null, messageFormat, messages);
    }
 
    public static void throw404NotFound(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_404_NOT_FOUND, cause, messageFormat, messages);
+      throwEx(SC_404_NOT_FOUND, cause, messageFormat, messages);
    }
 
    public static void throw429TooManyRequests() throws ApiException
    {
-      throwApiException(SC_429_TOO_MANY_REQUESTS, null, null);
+      throwEx(SC_429_TOO_MANY_REQUESTS, null, null);
    }
 
    public static void throw429TooManyRequests(Throwable cause) throws ApiException
    {
-      throwApiException(SC_429_TOO_MANY_REQUESTS, cause, null);
+      throwEx(SC_429_TOO_MANY_REQUESTS, cause, null);
    }
 
    public static void throw429TooManyRequests(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_429_TOO_MANY_REQUESTS, null, messageFormat, messages);
+      throwEx(SC_429_TOO_MANY_REQUESTS, null, messageFormat, messages);
    }
 
    public static void throw429TooManyRequests(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_429_TOO_MANY_REQUESTS, cause, messageFormat, messages);
+      throwEx(SC_429_TOO_MANY_REQUESTS, cause, messageFormat, messages);
    }
 
    public static void throw500InternalServerError() throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, null, null);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, null, null);
    }
 
    public static void throw500InternalServerError(Throwable cause) throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, cause, null);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, null);
    }
 
    public static void throw500InternalServerError(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, messages);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, messages);
    }
 
    public static void throw500InternalServerError(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, messages);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, messages);
    }
 
    public static void throw501NotImplemented() throws ApiException
    {
-      throwApiException(SC_501_NOT_IMPLEMENTED, null, null);
+      throwEx(SC_501_NOT_IMPLEMENTED, null, null);
    }
 
    public static void throw501NotImplemented(Throwable cause) throws ApiException
    {
-      throwApiException(SC_501_NOT_IMPLEMENTED, cause, null);
+      throwEx(SC_501_NOT_IMPLEMENTED, cause, null);
    }
 
    public static void throw501NotImplemented(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_501_NOT_IMPLEMENTED, null, messageFormat, messages);
+      throwEx(SC_501_NOT_IMPLEMENTED, null, messageFormat, messages);
    }
 
    public static void throw501NotImplemented(Throwable cause, String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_501_NOT_IMPLEMENTED, cause, messageFormat, messages);
+      throwEx(SC_501_NOT_IMPLEMENTED, cause, messageFormat, messages);
    }
 
    /**
@@ -212,9 +212,9 @@ public class ApiException extends RuntimeException implements Status
     * @param cause
     * @throws ApiException
     */
-   public static void throwApiException(Throwable cause) throws ApiException
+   public static void throwEx(Throwable cause) throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, cause, null);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, null);
    }
 
    /**
@@ -224,12 +224,12 @@ public class ApiException extends RuntimeException implements Status
     * @param messages
     * @throws ApiException
     */
-   public static void throwApiException(String messageFormat, Object... messages) throws ApiException
+   public static void throwEx(String messageFormat, Object... messages) throws ApiException
    {
-      throwApiException(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, messages);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, messages);
    }
 
-   public static void throwApiException(String status, Throwable cause, String messageFormat, Object... args) throws ApiException
+   public static void throwEx(String status, Throwable cause, String messageFormat, Object... args) throws ApiException
    {
       cause = cause != null ? Utils.getCause(cause) : cause;
 

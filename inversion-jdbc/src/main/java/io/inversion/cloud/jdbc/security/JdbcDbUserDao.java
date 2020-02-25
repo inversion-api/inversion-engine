@@ -191,7 +191,7 @@ public class JdbcDbUserDao implements UserDao
       }
       catch (Exception ex)
       {
-         ApiException.throwApiException(null, ex, null);
+         ApiException.throwEx(null, ex, null);
       }
       return null;
    }
