@@ -36,16 +36,10 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint(String method, String pathExpression, Action... actions)
    {
-      this(method, pathExpression, null, null, actions);
-
+      this(method, pathExpression, null, actions);
    }
 
    public Endpoint(String method, String endpointPath, String collectionPaths, Action... actions)
-   {
-      this(method, endpointPath, collectionPaths, null, actions);
-   }
-
-   public Endpoint(String method, String endpointPath, String collectionPaths, String name, Action... actions)
    {
       if (!Utils.empty(endpointPath) && !Utils.empty(collectionPaths))
       {
@@ -56,7 +50,6 @@ public class Endpoint extends Rule<Endpoint>
          }
       }
 
-      withName(name);
       withMethods(method);
       withPath(endpointPath);
       withIncludePaths(collectionPaths);

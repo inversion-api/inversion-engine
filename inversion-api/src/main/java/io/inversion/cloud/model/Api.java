@@ -242,17 +242,12 @@ public class Api
 
    public Api withEndpoint(String methods, String pathExpression, Action... actions)
    {
-      return withEndpoint(methods, pathExpression, null, null, actions);
+      return withEndpoint(methods, pathExpression, null, actions);
    }
 
    public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
    {
-      return withEndpoint(methods, endpointPath, collectionPaths, null, actions);
-   }
-
-   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
-   {
-      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, name, actions);
+      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, actions);
       withEndpoint(endpoint);
       return this;
    }
