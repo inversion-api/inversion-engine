@@ -74,7 +74,7 @@ public class JdbcLogAction extends Action<JdbcLogAction>
             {
                List<Change> changes = res.getChanges();
                int tenantId = 0;
-               if (api.isMultiTenant())
+               if (req.getApi().isMultiTenant())
                {
                   if (Chain.getUser() != null)
                   {
@@ -106,7 +106,7 @@ public class JdbcLogAction extends Action<JdbcLogAction>
 
                   logParams.put("url", req.getUrl().toString());
                   logParams.put("collectionKey", req.getCollectionKey());
-                  if (api.isMultiTenant())
+                  if (req.getApi().isMultiTenant())
                   {
                      logParams.put("tenantId", tenantId);
                   }
@@ -120,7 +120,7 @@ public class JdbcLogAction extends Action<JdbcLogAction>
                      changeParams.put("method", c.getMethod());
                      changeParams.put("collectionKey", c.getCollectionKey());
                      changeParams.put("entityKey", c.getEntityKey());
-                     if (api.isMultiTenant())
+                     if (req.getApi().isMultiTenant())
                      {
                         changeParams.put("tenantId", tenantId);
                      }

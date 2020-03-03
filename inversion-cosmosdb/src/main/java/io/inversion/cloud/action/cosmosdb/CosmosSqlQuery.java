@@ -15,16 +15,16 @@ import com.microsoft.azure.documentdb.SqlQuerySpec;
 
 import io.inversion.cloud.jdbc.rql.SqlQuery;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
@@ -55,7 +55,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
                   int idx = text.indexOf("*");
 
                   if (!(idx == 0 || idx == text.length() - 1) || idx != text.lastIndexOf("*"))
-                     throw new ApiException(Status.SC_400_BAD_REQUEST, "The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
+                     ApiException.throw400BadRequest("The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
 
                   if (idx == 0)
                   {
@@ -70,7 +70,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
                }
                else if (parent.hasToken("w", "wo"))
                {
-                  throw new ApiException(Status.SC_400_BAD_REQUEST, "CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
+                  ApiException.throw400BadRequest("CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
                }
 
                return super.transform(parent);

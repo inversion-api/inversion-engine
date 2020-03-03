@@ -16,36 +16,16 @@
  */
 package io.inversion.cloud.action.rest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Change;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public class RestPostAction extends Action<RestPostAction>
 {
@@ -59,18 +39,7 @@ public class RestPostAction extends Action<RestPostAction>
 
    public RestPostAction()
    {
-      this(null);
-   }
-
-   public RestPostAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestPostAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-      withMethods("PUT,POST");
+      withMethods("PUT,POST,PATCH");
    }
 
    @Override
@@ -79,9 +48,9 @@ public class RestPostAction extends Action<RestPostAction>
       if (strictRest)
       {
          if (req.isPost() && req.getEntityKey() != null)
-            throw new ApiException(Status.SC_404_NOT_FOUND, "You are trying to POST to a specific entity url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+            ApiException.throw404NotFound("You are trying to POST to a specific entity url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
          if (req.isPut() && req.getEntityKey() == null)
-            throw new ApiException(Status.SC_404_NOT_FOUND, "You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+            ApiException.throw404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
       }
 
       Collection collection = req.getCollection();
@@ -90,7 +59,7 @@ public class RestPostAction extends Action<RestPostAction>
       JSNode obj = req.getJson();
 
       if (obj == null)
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "You must pass a JSON body to the PostHandler");
+         ApiException.throw400BadRequest("You must pass a JSON body to the PostHandler");
 
       boolean collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
       Set<String> collapses = req.getChain().mergeEndpointActionParamsConfig("collapses");
@@ -105,7 +74,7 @@ public class RestPostAction extends Action<RestPostAction>
       {
          if (!Utils.empty(req.getEntityKey()))
          {
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't batch " + req.getMethod() + " an array of objects to a specific resource url.  You must " + req.getMethod() + " them to a collection.");
+            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
          }
          entityKeys = upsert(req, collection, (JSArray) obj);
       }
@@ -114,7 +83,7 @@ public class RestPostAction extends Action<RestPostAction>
          String href = obj.getString("href");
          if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
          {
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
+            ApiException.throw400BadRequest("You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
          }
 
          entityKeys = upsert(req, collection, new JSArray(obj));
@@ -417,7 +386,7 @@ public class RestPostAction extends Action<RestPostAction>
             String href = node.getString("href");
 
             if (href == null)
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "The child href should not be null at this point, this looks like an algorithm error.");
+               ApiException.throw500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
             Collection parentTbl = collection;
             Row parentPk = parentTbl.decodeKey(href);
@@ -506,7 +475,7 @@ public class RestPostAction extends Action<RestPostAction>
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().update(coll, upserts);
          }
-         else if(rel.isManyToMany())
+         else if (rel.isManyToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);
@@ -589,7 +558,7 @@ public class RestPostAction extends Action<RestPostAction>
    Map mapTo(Map srcRow, Index srcCols, Index destCols)
    {
       if (srcCols.size() != destCols.size())
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to map from index '" + srcCols.toString() + "' to '" + destCols + "'");
+         ApiException.throw500InternalServerError("Unable to map from index '%s' to '%s'", srcCols.toString(), destCols);
 
       if (srcRow == null)
          return Collections.EMPTY_MAP;

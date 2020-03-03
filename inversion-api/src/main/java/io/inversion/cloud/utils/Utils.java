@@ -16,29 +16,22 @@
  */
 package io.inversion.cloud.utils;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -47,15 +40,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -132,6 +123,20 @@ public class Utils
       return empty;
    }
 
+   public static Object first(List list)
+   {
+      if (list.size() > 0)
+         return list.get(0);
+      return null;
+   }
+
+   public static Object last(List list)
+   {
+      if (list.size() > 0)
+         return list.get(list.size() - 1);
+      return null;
+   }
+
    /**
     * @param glue
     * @param pieces
@@ -168,20 +173,6 @@ public class Utils
       return str.toString();
    }
 
-   public static Object first(List list)
-   {
-      if (list.size() > 0)
-         return list.get(0);
-      return null;
-   }
-
-   public static Object last(List list)
-   {
-      if (list.size() > 0)
-         return list.get(list.size() - 1);
-      return null;
-   }
-
    /**
     * @param delim
     * @param pieces
@@ -212,6 +203,50 @@ public class Utils
       return exploded;
    }
 
+   /**
+    * Breaks the string on <code>splitOn</code> but when inside a <code>quoteChars</code>
+    * quoted string.
+    * 
+    * @param string
+    * @param splitOn
+    * @param quoteChars
+    * @return
+    */
+   public static List<String> split(String string, char splitOn, char... quoteChars)
+   {
+      List<String> strings = new ArrayList();
+      Set quotes = new HashSet();
+      for (char c : quoteChars)
+         quotes.add(c);
+
+      boolean quoted = false;
+      StringBuffer buff = new StringBuffer("");
+      for (int i = 0; i < string.length(); i++)
+      {
+         char c = string.charAt(i);
+
+         if (c == splitOn && !quoted)
+         {
+            if (buff.length() > 0)
+            {
+               strings.add(buff.toString());
+               buff = new StringBuffer("");
+            }
+            continue;
+         }
+         else if (quotes.contains(c))
+         {
+            quoted = !quoted;
+         }
+
+         buff.append(c);
+      }
+      if (buff.length() > 0)
+         strings.add(buff.toString());
+
+      return strings;
+   }
+
    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs)
    {
       if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
@@ -234,33 +269,33 @@ public class Utils
       return map;
    }
 
-   public static List deconstructed(List found, Object... terms)
+   public static List asList(Object... objects)
    {
-      if (terms.length == 1 && terms[0].getClass().isArray())
-         terms = (Object[]) terms[0];
-
-      for (Object o : terms)
-      {
-         if (o instanceof Collection)
-         {
-            ((Collection) o).forEach(o2 -> deconstructed(found, o2));
-         }
-         else if (o.getClass().isArray())
-         {
-            Object[] arr = (Object[]) o;
-            for (Object o2 : arr)
-            {
-               deconstructed(found, o2);
-            }
-         }
-         else
-         {
-            found.add(o);
-         }
-      }
-      return found;
+      return Arrays.asList(objects);
    }
 
+   public static Set asSet(Object... objects)
+   {
+      return new HashSet(Arrays.asList(objects));
+   }
+
+   public static Map asMap(Object... objects)
+   {
+      Map map = new HashMap();
+      for (int i = 0; objects != null && i < objects.length - 1; i += 2)
+      {
+         map.put(objects[i], objects[i + 1]);
+      }
+      return map;
+   }
+
+   
+   /**
+    * Removes all matching pairs of '"` characters from the
+    * start and end of a string.
+    * @param str
+    * @return
+    */
    public static String dequote(String str)
    {
       return dequote(str, new char[]{'\'', '"', '`'});
@@ -579,29 +614,6 @@ public class Utils
 
    }
 
-   /**
-    * Tries to \"unwrap\" nested exceptions looking for the root cause
-    * @param t
-    */
-   public static Throwable getCause(Throwable t)
-   {
-      Throwable origional = t;
-
-      int guard = 0;
-      while (t != null && t.getCause() != null && t.getCause() != t && guard < 100)
-      {
-         t = t.getCause();
-         guard++;
-      }
-
-      if (t == null)
-      {
-         t = origional;
-      }
-
-      return t;
-   }
-
    public static boolean testCompare(String str1, String str2)
    {
       str1 = str1 != null ? str1 : "";
@@ -632,59 +644,33 @@ public class Utils
                }
             }
             System.out.println(" ");
-
-            String err = "failed test: " + str1 + " != " + str2;
             return false;
          }
       }
       return true;
    }
 
-   public static List<String> split(String string, char splitOn, char... quoteChars)
+   /**
+    * Tries to \"unwrap\" nested exceptions looking for the root cause
+    * @param t
+    */
+   public static Throwable getCause(Throwable t)
    {
-      List<String> strings = new ArrayList();
-      Set quotes = new HashSet();
-      for (char c : quoteChars)
-         quotes.add(c);
+      Throwable origional = t;
 
-      boolean quoted = false;
-      StringBuffer buff = new StringBuffer("");
-      for (int i = 0; i < string.length(); i++)
+      int guard = 0;
+      while (t != null && t.getCause() != null && t.getCause() != t && guard < 100)
       {
-         char c = string.charAt(i);
-
-         if (c == splitOn && !quoted)
-         {
-            if (buff.length() > 0)
-            {
-               strings.add(buff.toString());
-               buff = new StringBuffer("");
-            }
-            continue;
-         }
-         else if (quotes.contains(c))
-         {
-            quoted = !quoted;
-         }
-
-         buff.append(c);
+         t = t.getCause();
+         guard++;
       }
-      if (buff.length() > 0)
-         strings.add(buff.toString());
 
-      return strings;
-   }
+      if (t == null)
+      {
+         t = origional;
+      }
 
-   public static void assertEq(Object expected, Object found)
-   {
-      if (!equal(expected, found))
-         error("Expected '" + expected + "' but found '" + found + "'");
-   }
-
-   public static void assertEq(Object expected, Object found, String message)
-   {
-      if (!equal(expected, found))
-         error(message);
+      return t;
    }
 
    /**
@@ -749,26 +735,199 @@ public class Utils
       }
    }
 
-   /**
-    * Same as calling Class.getMethod but it returns null intead of throwing a NoSuchMethodException
-    * @param clazz
-    * @param name
-    * @param args
-    * @return
-    */
-   public static Method getMethod(Class clazz, String name, Class... args)
+   public static String getShortCause(Throwable t)
    {
-      try
-      {
-         return clazz.getMethod(name, args);
-      }
-      catch (NoSuchMethodException ex)
-      {
-
-      }
-      return null;
+      return getShortCause(t, 15);
    }
 
+   public static String getShortCause(Throwable t, int lines)
+   {
+      t = getCause(t);
+      //return System.getProperty("line.separator") + limitLines(clean(getStackTraceString(t)), lines);
+      return limitLines(cleanStackTrace(getStackTraceString(t)), lines);
+   }
+
+   public static List<String> getStackTraceLines(Throwable stackTrace)
+   {
+      ByteArrayOutputStream baos = null;
+      PrintWriter writer;
+
+      baos = new ByteArrayOutputStream();
+      writer = new PrintWriter(baos);
+
+      if (stackTrace != null)
+      {
+         stackTrace.printStackTrace(writer);
+      }
+      else
+      {
+         try
+         {
+            throw new Exception();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace(writer);
+         }
+      }
+
+      writer.close();
+
+      List lines = new ArrayList();
+      String s = new String(baos.toByteArray());
+      String[] sArr = s.split("\n");
+      lines.addAll(new ArrayList(Arrays.asList(sArr)));
+
+      return lines;
+   }
+
+   public static String getStackTraceString(Throwable stackTrace)
+   {
+      ByteArrayOutputStream baos = null;
+      PrintWriter writer;
+
+      baos = new ByteArrayOutputStream();
+      writer = new PrintWriter(baos);
+
+      boolean createNewTrace = false;
+
+      if (stackTrace != null)
+      {
+         try
+         {
+            stackTrace.printStackTrace(writer);
+         }
+         catch (Exception e)
+         {
+            createNewTrace = true;
+         }
+      }
+      else
+      {
+         createNewTrace = true;
+      }
+
+      if (createNewTrace)
+      {
+         try
+         {
+            throw new Exception("Unable to get original stacktrace.");
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace(writer);
+         }
+      }
+
+      writer.close();
+
+      return new String(baos.toByteArray());
+
+   }
+
+   static String cleanStackTrace(String stackTrace)
+   {
+      String[] ignoredCauses = new String[]{//
+            //
+            "java.lang.reflect.UndeclaredThrowableException", //
+            "java.lang.reflect.InvocationTargetException"};
+
+      String[] lines = splitLines(stackTrace);
+
+      boolean chop = false;
+      if (stackTrace.indexOf("Caused by: ") > 0)
+      {
+         for (int i = 0; i < ignoredCauses.length; i++)
+         {
+            if (lines[0].indexOf(ignoredCauses[i]) > -1)
+            {
+               chop = true;
+               break;
+            }
+         }
+      }
+
+      int start = 0;
+      if (chop)
+      {
+         for (int i = 0; i < lines.length; i++)
+         {
+            if (lines[i].startsWith("Caused by:"))
+            {
+               lines[i] = lines[i].substring(10, lines[i].length());
+               break;
+            }
+
+            start++;
+         }
+      }
+
+      StringBuffer buffer = new StringBuffer();
+      for (int i = start; i < lines.length; i++)
+      {
+         buffer.append(lines[i]).append("\r\n");
+      }
+
+      if (chop)
+      {
+         return cleanStackTrace(buffer.toString());
+      }
+      else
+      {
+         return buffer.toString();
+      }
+   }
+
+   public static String[] splitLines(String text)
+   {
+      if (text == null || "".equals(text))
+      {
+         return EMPTY_STRING_ARRAY;
+      }
+
+      String lineSeparator = text.indexOf(NEW_LINE) >= 0 ? NEW_LINE : "\n";
+      return text.split(lineSeparator);
+   }
+
+   public static final String limitLines(String text, int limit)
+   {
+      StringBuffer buffer = new StringBuffer("");
+      String[] lines = splitLines(text);
+      for (int i = 0; i < lines.length && i < limit; i++)
+      {
+         if (i == limit - 1 && i != lines.length - 1)
+         {
+            buffer.append("..." + (lines.length - i) + " more");
+         }
+         else
+         {
+            buffer.append(lines[i]).append(NEW_LINE);
+         }
+      }
+
+      return buffer.toString();
+   }
+
+   //   /**
+   //    * Same as calling Class.getMethod but it returns null intead of throwing a NoSuchMethodException
+   //    * @param clazz
+   //    * @param name
+   //    * @param args
+   //    * @return
+   //    */
+   //   public static Method getMethod(Class clazz, String name, Class... args)
+   //   {
+   //      try
+   //      {
+   //         return clazz.getMethod(name, args);
+   //      }
+   //      catch (NoSuchMethodException ex)
+   //      {
+   //
+   //      }
+   //      return null;
+   //   }
+   //
    /**
     * Searches the inheritance hierarchy for a field with the the given name and makes sure it is settable via Field.setAccesible
     * @param fieldName
@@ -808,8 +967,6 @@ public class Utils
     */
    public static List<Field> getFields(Class clazz)
    {
-      Class inClass = clazz;
-
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 
@@ -842,21 +999,22 @@ public class Utils
       return fields;
    }
 
-   /**
-    * Finds the Field in the inheritance heirarchy and sets it
-    * @param name
-    * @param value
-    * @param o
-    * @throws NoSuchFieldException
-    * @throws IllegalAccessException
-    */
-   public static void setField(String name, Object value, Object o) throws NoSuchFieldException, IllegalAccessException
-   {
-      Field f = getField(name, o.getClass());
-      f.setAccessible(true);
-      f.set(o, value);
-   }
-
+   //
+   //   /**
+   //    * Finds the Field in the inheritance heirarchy and sets it
+   //    * @param name
+   //    * @param value
+   //    * @param o
+   //    * @throws NoSuchFieldException
+   //    * @throws IllegalAccessException
+   //    */
+   //   public static void setField(String name, Object value, Object o) throws NoSuchFieldException, IllegalAccessException
+   //   {
+   //      Field f = getField(name, o.getClass());
+   //      f.setAccessible(true);
+   //      f.set(o, value);
+   //   }
+   //
    /**
     * Searches the inheritance hierarchy for the first method of the given name (ignores case).  No distinction is made for overloaded method names.
     * @param clazz
@@ -881,28 +1039,6 @@ public class Utils
       while (clazz != null && !Object.class.equals(clazz));
 
       return null;
-   }
-
-   /**
-    * @param clazz
-    * @param name
-    * @return all methods in the inheritance hierarchy with the given name
-    */
-   public static List<Method> getMethods(Class clazz, String name)
-   {
-      List<Method> methods = new ArrayList();
-
-      do
-      {
-         for (Method m : clazz.getMethods())
-         {
-            if (m.getName().equalsIgnoreCase(name))
-               methods.add(m);
-         }
-      }
-      while (clazz != null && !Object.class.equals(clazz));
-
-      return methods;
    }
 
    /**
@@ -932,82 +1068,6 @@ public class Utils
          ex.printStackTrace();
       }
       return null;
-   }
-
-   /**
-    * Tries to find a bean property getter then tries Field value, then defaults to the supplied defaultVal
-    * @param name
-    * @param object
-    * @param defaultVal
-    * @return
-    */
-   public static Object getProperty(String name, Object object, Object defaultVal)
-   {
-      Object value = getProperty(name, object);
-      if (empty(value))
-      {
-         value = defaultVal;
-      }
-
-      return value;
-   }
-
-   /**
-    * A best effort field by field shallow copier that will ignore all errors. This does not recurse.
-    * @param src
-    * @param dest
-    */
-   public static void copyFields(Object src, Object dest)
-   {
-      List<Field> fields = getFields(src.getClass());
-      for (Field f : fields)
-      {
-         try
-         {
-            Object value = f.get(src);
-            setField(f.getName(), value, dest);
-         }
-         catch (Exception ex)
-         {
-         }
-      }
-   }
-
-   /**
-    * Utility to call a close() method on supplied objects if it exists and completely ignore any errors
-    * @param toClose
-    */
-   public static void close(Object... toClose)
-   {
-      for (Object o : toClose)
-      {
-         if (o != null)
-         {
-            try
-            {
-               if (o instanceof Closeable)
-               {
-                  ((Closeable) o).close();
-               }
-               else
-               {
-                  Method m = o.getClass().getMethod("close");
-                  if (m != null)
-                  {
-                     m.invoke(o);
-                  }
-               }
-            }
-            catch (NoSuchMethodException nsme)
-            {
-               //nsme.printStackTrace();
-            }
-            catch (Exception ex)
-            {
-               //ex.printStackTrace();
-            }
-         }
-      }
    }
 
    /**
@@ -1109,45 +1169,6 @@ public class Utils
       }
    }
 
-   /**
-    * Copy all data from src to dst and close the reader/writer
-    * @param src
-    * @param dest
-    * @throws Exception
-    */
-   public static void pipe(Reader src, Writer dest) throws Exception
-   {
-      try
-      {
-         char buffer[] = new char[K64];
-         int len = buffer.length;
-         synchronized (src)
-         {
-            while (true)
-            {
-               len = src.read(buffer);
-               if (len == -1)
-                  break;
-               dest.write(buffer, 0, len);
-            }
-         }
-      }
-      finally
-      {
-         flush(dest);
-         close(src);
-         close(dest);
-      }
-   }
-
-   public static File createTempFile(File file) throws IOException
-   {
-      if (file == null)
-         return createTempFile("working.tmp");
-      else
-         return createTempFile(file.getName());
-   }
-
    public static File createTempFile(String fileName) throws IOException
    {
       if (empty(fileName))
@@ -1186,25 +1207,6 @@ public class Utils
    }
 
    /**
-    * Simply calls stream.flush() but throws RuntimeException instead of IOException
-    * @param stream
-    */
-   public static void flush(Flushable stream)
-   {
-      try
-      {
-         if (stream != null)
-         {
-            stream.flush();
-         }
-      }
-      catch (Exception ex)
-      {
-         rethrow(ex);
-      }
-   }
-
-   /**
     * Attempts to locate the stream as a file, url, or classpath resource
     * @param fileOrUrl
     * @return
@@ -1215,7 +1217,7 @@ public class Utils
       {
          if (fileOrUrl.startsWith("file:/"))
          {
-            fileOrUrl = URLDecoder.decode(fileOrUrl);
+            fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
          }
          if (fileOrUrl.startsWith("file:///"))
          {
@@ -1246,465 +1248,6 @@ public class Utils
 
          throw new RuntimeException(ex);
       }
-   }
-
-   /**
-    * Attempts to locate the stream as a file, url, or classpath resource and then reads it all as a string
-    * @param fileOrUrl
-    * @return
-    * @throws Exception
-    */
-   public static String read(String fileOrUrl) throws Exception
-   {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      InputStream in = findInputStream(fileOrUrl);
-      pipe(in, out);
-      return new String(out.toByteArray());
-   }
-
-   /**
-    * Recursively deletes the file or directory
-    * @param file
-    * @return
-    */
-   public static boolean delete(File file)
-   {
-      boolean deleted = true;
-      if (file != null && file.exists())
-      {
-         if (file.isDirectory())
-         {
-            for (File f : file.listFiles())
-            {
-               deleted &= delete(f);
-            }
-         }
-         deleted &= file.delete();
-      }
-      return deleted;
-   }
-
-   /**
-    * Copies the given file or recursively copies a directory
-    * @param src
-    * @param dst
-    */
-   public static void copy(File src, File dst)
-   {
-      if (src.isFile())
-      {
-         copyFile(src, dst);
-      }
-      else
-      {
-         copyDir(src, dst);
-      }
-   }
-
-   public static boolean copy(File srcDir, File srcFile, File dstDir)
-   {
-      try
-      {
-         String dest = srcFile.getCanonicalPath();
-         dest = dest.substring(srcDir.getCanonicalPath().length(), dest.length());
-         if (dest.startsWith("/") || dest.startsWith("\\"))
-         {
-            dest = dest.substring(1, dest.length());
-         }
-
-         File dstFile = new File(dstDir, dest);
-         return copyFile(srcFile, dstFile);
-      }
-      catch (Exception ex)
-      {
-         rethrow(ex);
-      }
-      return false;
-   }
-
-   protected static void copyDir(File srcDir, File dstDir)
-   {
-      File[] files = srcDir.listFiles();
-      for (int i = 0; files != null && i < files.length; i++)
-      {
-         copy(srcDir, files[i], dstDir);
-      }
-   }
-
-   protected static boolean copyFile(File srcFile, File dstFile)
-   {
-      FileInputStream fis = null;
-      FileOutputStream fos = null;
-      FileChannel sourceChannel = null;
-      FileChannel destinationChannel = null;
-
-      try
-      {
-         if (!dstFile.getParentFile().exists())
-         {
-            dstFile.getParentFile().mkdirs();
-         }
-         else
-         {
-            if (dstFile.exists() && dstFile.lastModified() >= srcFile.lastModified())
-            {
-               return false;
-            }
-         }
-
-         fis = new FileInputStream(srcFile);
-         fos = new FileOutputStream(dstFile);
-         sourceChannel = fis.getChannel();
-         destinationChannel = fos.getChannel();
-         destinationChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
-         sourceChannel.close();
-         destinationChannel.close();
-         fis.close();
-         fos.close();
-
-         dstFile.setLastModified(srcFile.lastModified());
-      }
-      catch (Exception ex)
-      {
-         return false;
-      }
-      finally
-      {
-         if (sourceChannel != null)
-         {
-            try
-            {
-               sourceChannel.close();
-            }
-            catch (Exception ex)
-            {
-
-            }
-         }
-
-         if (destinationChannel != null)
-         {
-            try
-            {
-               destinationChannel.close();
-            }
-            catch (Exception ex)
-            {
-
-            }
-         }
-
-         if (fis != null)
-         {
-            try
-            {
-               fis.close();
-            }
-            catch (Exception ex)
-            {
-
-            }
-         }
-
-         if (fos != null)
-         {
-            try
-            {
-               fos.close();
-            }
-            catch (Exception ex)
-            {
-
-            }
-         }
-      }
-      return true;
-   }
-
-   public static String replaceGroup(String regex, String source, int groupToReplace, String replacement)
-   {
-      return replaceGroup(regex, source, groupToReplace, 1, replacement);
-   }
-
-   public static String replaceGroup(String regex, String source, int groupToReplace, int groupOccurrence, String replacement)
-   {
-      Matcher m = Pattern.compile(regex).matcher(source);
-      for (int i = 0; i < groupOccurrence; i++)
-         if (!m.find())
-            return source; // pattern not met, may also throw an exception here
-      return new StringBuilder(source).replace(m.start(groupToReplace), m.end(groupToReplace), replacement).toString();
-   }
-
-   public static String substring(String string, String regex, int group)
-   {
-      Pattern p = Pattern.compile(regex);
-      Matcher m = p.matcher(string);
-      if (m.find())
-         return m.group(group);
-
-      return null;
-   }
-
-   public static String getShortCause(Throwable t)
-   {
-      return getShortCause(t, 15);
-   }
-
-   public static String getShortCause(Throwable t, int lines)
-   {
-      t = getCause(t);
-      //return System.getProperty("line.separator") + limitLines(clean(getStackTraceString(t)), lines);
-      return limitLines(clean(getStackTraceString(t)), lines);
-   }
-
-   public static List<String> getStackTraceLines(Throwable stackTrace)
-   {
-      ByteArrayOutputStream baos = null;
-      PrintWriter writer;
-
-      baos = new ByteArrayOutputStream();
-      writer = new PrintWriter(baos);
-
-      if (stackTrace != null)
-      {
-         stackTrace.printStackTrace(writer);
-      }
-      else
-      {
-         try
-         {
-            throw new Exception();
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace(writer);
-         }
-      }
-
-      writer.close();
-
-      List lines = new ArrayList();
-      String s = new String(baos.toByteArray());
-      String[] sArr = s.split("\n");
-      lines.addAll(new ArrayList(Arrays.asList(sArr)));
-
-      return lines;
-   }
-
-   public static String getStackTraceString(Thread t)
-   {
-      return getStackTraceString(t, t.getStackTrace());
-   }
-
-   public static String getStackTraceString(Thread t, StackTraceElement[] stackTrace)
-   {
-      StringBuffer buff = new StringBuffer();
-
-      buff.append("Thread -------------------------").append("\r\n");
-      buff.append("  id    = ").append(t.getId()).append("\r\n");
-      buff.append("  name  = ").append(t.getName()).append("\r\n");
-      buff.append("  state = ").append(t.getState()).append("\r\n");
-      buff.append("  trace: ").append("\r\n");
-      for (int i = 0; i < stackTrace.length; i++)
-      {
-         buff.append("\tat").append(stackTrace[i]).append("\r\n");
-      }
-
-      return buff.toString();
-   }
-
-   public static String getStackTraceString(Throwable stackTrace)
-   {
-      ByteArrayOutputStream baos = null;
-      PrintWriter writer;
-
-      baos = new ByteArrayOutputStream();
-      writer = new PrintWriter(baos);
-
-      boolean createNewTrace = false;
-
-      if (stackTrace != null)
-      {
-         try
-         {
-            stackTrace.printStackTrace(writer);
-         }
-         catch (Exception e)
-         {
-            createNewTrace = true;
-         }
-      }
-      else
-      {
-         createNewTrace = true;
-      }
-
-      if (createNewTrace)
-      {
-         try
-         {
-            throw new Exception("Unable to get original stacktrace.");
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace(writer);
-         }
-      }
-
-      writer.close();
-
-      return new String(baos.toByteArray());
-
-   }
-
-   /** Get the class from a line on the stack trace line. */
-
-   public static String getMethodNameFromStackLine(String line)
-   {
-      if (line != null)
-      {
-         line = line.trim();
-         int pos = line.indexOf("at ");
-         if (pos == 0)
-         {
-            line = line.substring(3);
-            pos = line.indexOf('(');
-            if (pos < 0)
-            {
-               pos = line.indexOf(' ');
-            }
-            if (pos > 0)
-            {
-               String clsStr = line.substring(0, pos);
-               clsStr = clsStr.trim();
-
-               pos = clsStr.lastIndexOf('.');
-               String methodName = clsStr.substring(pos + 1);
-
-               return methodName;
-            }
-         }
-      }
-
-      return null;
-   }
-
-   public static Class getClassFromStackLine(String line)
-   {
-      if (line != null)
-      {
-         line = line.trim();
-         int pos = line.indexOf("at ");
-         if (pos == 0)
-         {
-            line = line.substring(3);
-            pos = line.indexOf('(');
-            if (pos < 0)
-            {
-               pos = line.indexOf(' ');
-            }
-            if (pos > 0)
-            {
-               String clsStr = line.substring(0, pos);
-               clsStr = clsStr.trim();
-
-               pos = clsStr.lastIndexOf('.');
-               clsStr = clsStr.substring(0, pos);
-
-               try
-               {
-                  return Class.forName(clsStr);
-               }
-               catch (ClassNotFoundException e)
-               {
-               }
-            }
-         }
-      }
-      return null;
-   }
-
-   static String clean(String stackTrace)
-   {
-      String[] ignoredCauses = new String[]{//
-            //
-            "java.lang.reflect.UndeclaredThrowableException", //
-            "java.lang.reflect.InvocationTargetException"};
-
-      String[] lines = splitLines(stackTrace);
-
-      boolean chop = false;
-      if (stackTrace.indexOf("Caused by: ") > 0)
-      {
-         for (int i = 0; i < ignoredCauses.length; i++)
-         {
-            if (lines[0].indexOf(ignoredCauses[i]) > -1)
-            {
-               chop = true;
-               break;
-            }
-         }
-      }
-
-      int start = 0;
-      if (chop)
-      {
-         for (int i = 0; i < lines.length; i++)
-         {
-            if (lines[i].startsWith("Caused by:"))
-            {
-               lines[i] = lines[i].substring(10, lines[i].length());
-               break;
-            }
-
-            start++;
-         }
-      }
-
-      StringBuffer buffer = new StringBuffer();
-      for (int i = start; i < lines.length; i++)
-      {
-         buffer.append(lines[i]).append("\r\n");
-      }
-
-      if (chop)
-      {
-         return clean(buffer.toString());
-      }
-      else
-      {
-         return buffer.toString();
-      }
-   }
-
-   public static String[] splitLines(String text)
-   {
-      if (text == null || "".equals(text))
-      {
-         return EMPTY_STRING_ARRAY;
-      }
-
-      String lineSeparator = text.indexOf(NEW_LINE) >= 0 ? NEW_LINE : "\n";
-      return text.split(lineSeparator);
-   }
-
-   public static final String limitLines(String text, int limit)
-   {
-      StringBuffer buffer = new StringBuffer("");
-      String[] lines = splitLines(text);
-      for (int i = 0; i < lines.length && i < limit; i++)
-      {
-         if (i == limit - 1 && i != lines.length - 1)
-         {
-            buffer.append("..." + (lines.length - i) + " more");
-         }
-         else
-         {
-            buffer.append(lines[i]).append(NEW_LINE);
-         }
-      }
-
-      return buffer.toString();
    }
 
    /**
@@ -1897,7 +1440,7 @@ public class Utils
 
       if (Utils.empty(value))
       {
-         InputStream stream = Utils.findInputStream(".env");
+         InputStream stream = findInputStream(".env");
          if (stream != null)
          {
             Properties p = new Properties();
@@ -1914,62 +1457,6 @@ public class Utils
          }
       }
       return value;
-   }
-
-   public static String run(String... commands) throws IOException
-   {
-      Runtime rt = Runtime.getRuntime();
-      //String[] commands = {"/usr/local/bin/aws", "ec2", "describe-volumes"};
-      Process proc = rt.exec(commands);
-
-      BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-      String s = null;
-      StringBuffer out = new StringBuffer("");
-      while ((s = stdInput.readLine()) != null)
-      {
-         out.append(s).append("\r\n");
-      }
-
-      if (out.length() == 0)
-      {
-         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-         // read any errors from the attempted command
-         System.out.println("Here is the standard error of the command (if any):\n");
-         while ((s = stdError.readLine()) != null)
-         {
-            out.append(s).append("\r\n");
-         }
-      }
-
-      return out.toString();
-   }
-
-   public static String getAscii85Uuid()
-   {
-      try
-      {
-         UUID uuid = UUID.randomUUID();
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         ASCII85OutputStream os = new ASCII85OutputStream(baos);
-         os.write(getBytes(uuid));
-         os.flush();
-         String encoded = new String(baos.toByteArray(), "UTF-8");
-         os.close();
-         return encoded;
-      }
-      catch (Exception ex)
-      {
-         throw new RuntimeException(ex);
-      }
-   }
-
-   public static byte[] getBytes(UUID uuid)
-   {
-      ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-      bb.putLong(uuid.getMostSignificantBits());
-      bb.putLong(uuid.getLeastSignificantBits());
-      return bb.array();
    }
 
    public static Object cast(String type, Object value)
@@ -2066,7 +1553,7 @@ public class Utils
                   return JSNode.parseJsonNode(value + "");
 
             default :
-               throw new ApiException("Error casting '" + value + "' as type '" + type + "'");
+               ApiException.throw500InternalServerError("Error casting '%s' as type '%s'", value, type);
          }
       }
       catch (Exception ex)
@@ -2076,6 +1563,43 @@ public class Utils
       }
 
       return null;
+   }
+
+   /**
+    * Utility to call a close() method on supplied objects if it exists and completely ignore any exceptions
+    * @param toClose
+    */
+   public static void close(Object... toClose)
+   {
+      for (Object o : toClose)
+      {
+         if (o != null)
+         {
+            try
+            {
+               if (o instanceof Closeable)
+               {
+                  ((Closeable) o).close();
+               }
+               else
+               {
+                  Method m = o.getClass().getMethod("close");
+                  if (m != null)
+                  {
+                     m.invoke(o);
+                  }
+               }
+            }
+            catch (NoSuchMethodException nsme)
+            {
+               //nsme.printStackTrace();
+            }
+            catch (Exception ex)
+            {
+               //ex.printStackTrace();
+            }
+         }
+      }
    }
 
 }

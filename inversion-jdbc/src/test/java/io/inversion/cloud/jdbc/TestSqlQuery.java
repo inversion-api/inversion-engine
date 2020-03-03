@@ -32,13 +32,13 @@ public class TestSqlQuery
    @Test
    public void test1() throws Exception
    {
-      List<RqlTest> tests = new ArrayList();
-
-      String rql = null;
-      String select = null;
-      String dynamicSql = null;
-      String preprdStmt = null;
-      String[] params = null;
+//      List<RqlTest> tests = new ArrayList();
+//
+//      String rql = null;
+//      String select = null;
+//      String dynamicSql = null;
+//      String preprdStmt = null;
+//      String[] params = null;
 
 //      //these tests are run in reverse order so that you can test your most recently added tests
 //      //first (by adding them to the bottom of the list) and keep the comment lines referencing

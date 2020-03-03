@@ -19,8 +19,6 @@ package io.inversion.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.inversion.cloud.model.Index;
-
 public class Select<T extends Select, P extends Query> extends Builder<T, P>
 {
    public Select(P query)

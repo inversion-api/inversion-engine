@@ -16,6 +16,11 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.utils.Utils;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,13 +28,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.text.StringEscapeUtils;
-
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.Utils;
-
+/**
+ * Represents a REST collection as an interface into an underlying
+ * Db data store...such as an RDBMS table.
+ */
 public class Collection extends Rule<Collection>
 {
    protected Db                      db            = null;
@@ -56,6 +58,10 @@ public class Collection extends Rule<Collection>
    }
 
    /**
+    * Returns true if all columns are foreign keys.  In an RDBMS system, this
+    * would indicate that the table is used to link both sides of a many-to-many
+    * relationship and it should NOT be a public REST Collection
+    * 
     * @return the linkTbl
     */
    public boolean isLinkTbl()
@@ -458,13 +464,6 @@ public class Collection extends Rule<Collection>
       return this;
    }
 
-   @Override
-   public Collection withApi(Api api)
-   {
-      this.api = api;
-      return this;
-   }
-
    public String encodeKey(Map<String, Object> values)
    {
       Index index = getPrimaryIndex();
@@ -501,7 +500,7 @@ public class Collection extends Rule<Collection>
       {
          Object piece = pieces.get(i);
          if (piece == null)
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Trying to encode an entity key with a null component: '" + pieces + "'");
+            ApiException.throw500InternalServerError("Trying to encode an entity key with a null component: '%s'.", pieces);
 
          entityKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
          if (i < pieces.size() - 1)
@@ -582,7 +581,7 @@ public class Collection extends Rule<Collection>
    {
       Index index = getPrimaryIndex();
       if (index == null)
-         throw new ApiException("Table '" + this.getTableName() + "' does not have a unique index");
+         ApiException.throw500InternalServerError("Table '%s' does not have a unique index", this.getTableName());
 
       return decodeKeys(index, inKeys);
    }
@@ -600,14 +599,14 @@ public class Collection extends Rule<Collection>
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Supplied entity key '" + inKeys + "' has " + row.size() + "' parts but the primary index for table '" + this.getTableName() + "' has " + index.size());
+            ApiException.throw400BadRequest("Supplied entity key '%s' has %n parts but the primary index for table '%s' has %n parts" + index.size(), inKeys, rows.size(), getTableName(), index.size());
 
          for (int i = 0; i < colNames.size(); i++)
          {
             Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "A key component can not be empty '" + inKeys + "'");
+               ApiException.throw400BadRequest("A key component can not be empty '%s'", inKeys);
 
             value = getDb().cast(index.getColumn(i), value);
             row.set(i, value);

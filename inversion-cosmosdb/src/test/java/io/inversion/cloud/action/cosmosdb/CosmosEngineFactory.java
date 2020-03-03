@@ -127,7 +127,7 @@ public class CosmosEngineFactory
             }
 
             @Override
-            public void configApi() throws Exception
+            public void configApi()
             {
                super.configApi();
 

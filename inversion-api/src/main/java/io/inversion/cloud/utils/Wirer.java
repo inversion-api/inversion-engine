@@ -16,6 +16,9 @@
  */
 package io.inversion.cloud.utils;
 
+import io.inversion.cloud.model.Path;
+import org.apache.commons.collections4.map.MultiKeyMap;
+
 import java.io.ByteArrayInputStream;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,23 +28,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.SortedSet;
-
-import org.apache.commons.collections4.map.MultiKeyMap;
-
-import io.inversion.cloud.model.Path;
+import java.util.*;
 
 public class Wirer
 {

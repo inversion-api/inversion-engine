@@ -56,7 +56,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    public void run(Request req, Response res) throws Exception
    {
 
-      Collection collection = findCollectionOrThrow404(api, req.getChain(), req);
+      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
       ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
 
       // examples...
@@ -204,7 +204,8 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       {
          res.debug("", "Elastic Error Response", r.getErrorContent());
 
-         throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+         ///throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+         r.rethrow();
       }
 
    }
@@ -309,7 +310,8 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       }
       else
       {
-         throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus(): Status.SC_500_INTERNAL_SERVER_ERROR);
+         //throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+         r.rethrow();
       }
 
    }
@@ -527,12 +529,12 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
       if (collection == null)
       {
-         throw new ApiException(Status.SC_404_NOT_FOUND, "An elastic table is not configured for this collection key, please edit your query or your config and try again.");
+         ApiException.throw404NotFound("An elastic table is not configured for this collection key, please edit your query or your config and try again.");
       }
 
       if (!(collection.getDb() instanceof ElasticsearchDb))
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
+         ApiException.throw500InternalServerError("Bad server configuration. The endpoint is hitting the elastic handler, but this collection is not related to a elasticdb");
       }
 
       return collection;

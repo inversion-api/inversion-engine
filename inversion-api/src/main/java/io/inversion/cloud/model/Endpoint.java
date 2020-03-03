@@ -16,12 +16,12 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
 
 public class Endpoint extends Rule<Endpoint>
 {
@@ -36,16 +36,10 @@ public class Endpoint extends Rule<Endpoint>
 
    public Endpoint(String method, String pathExpression, Action... actions)
    {
-      this(method, pathExpression, null, null, actions);
-
+      this(method, pathExpression, null, actions);
    }
 
    public Endpoint(String method, String endpointPath, String collectionPaths, Action... actions)
-   {
-      this(method, endpointPath, collectionPaths, null, actions);
-   }
-
-   public Endpoint(String method, String endpointPath, String collectionPaths, String name, Action... actions)
    {
       if (!Utils.empty(endpointPath) && !Utils.empty(collectionPaths))
       {
@@ -56,7 +50,6 @@ public class Endpoint extends Rule<Endpoint>
          }
       }
 
-      withName(name);
       withMethods(method);
       withPath(endpointPath);
       withIncludePaths(collectionPaths);
@@ -109,22 +102,12 @@ public class Endpoint extends Rule<Endpoint>
                return false;
          }
 
-         if(collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
+         if (collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
             return false;
-         
+
          return super.matchesPath(collectionPath);
       }
       return false;
-   }
-
-   public Endpoint withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         api.withEndpoint(this);
-      }
-      return this;
    }
 
    public Path getPath()
@@ -222,9 +205,6 @@ public class Endpoint extends Rule<Endpoint>
 
       if (!inserted)
          actions.add(action);
-
-      if (action.getApi() != getApi())
-         action.withApi(getApi());
 
       return this;
    }

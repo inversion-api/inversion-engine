@@ -19,12 +19,12 @@ package io.inversion.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Parser
+public class RqlParser
 {
    public Term parse(String clause)
    {
       TermBuilder tb = new TermBuilder();
-      Tokenizer t = new Tokenizer(clause);
+      RqlTokenizer t = new RqlTokenizer(clause);
 
       String token = null;
       while ((token = t.next()) != null)

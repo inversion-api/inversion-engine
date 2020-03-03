@@ -17,10 +17,8 @@
 package io.inversion.cloud.action.script.velocity;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringBufferInputStream;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
@@ -29,7 +27,6 @@ import org.apache.velocity.util.ExtProperties;
 
 import io.inversion.cloud.action.script.ScriptAction;
 import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.service.Engine;
 
 public class VelocityResourceLoader extends ResourceLoader
 {

@@ -16,15 +16,14 @@
  */
 package io.inversion.cloud.rql;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.inversion.cloud.utils.Utils;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.utils.Utils;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestTokenizer
 {
@@ -83,7 +82,7 @@ public class TestTokenizer
 
          try
          {
-            tokens = new Tokenizer(toParse).asList();
+            tokens = new RqlTokenizer(toParse).asList();
 
             assertTrue(tokens.size() == test.size() - 1, "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
 
@@ -119,7 +118,7 @@ public class TestTokenizer
 
          try
          {
-            new Tokenizer(test).asList();
+            new RqlTokenizer(test).asList();
          }
          catch (Exception ex)
          {

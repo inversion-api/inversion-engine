@@ -78,6 +78,13 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
            .withResult("after", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("sort", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"shipCountry\\\"] DESC, orders[\\\"shipCity\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("order", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"shipCountry\\\"] ASC, orders[\\\"shipCity\\\"] DESC\"} FeedOptions={enableCrossPartitionQuery=true}")//
+
+           .withResult("onToManyExistsEq", "UNSUPPORTED")//
+           .withResult("onToManyNotExistsNe", "UNSUPPORTED")//
+           .withResult("manyToOneExistsEq", "UNSUPPORTED")//
+           .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
+           .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
+
       ;
    }
 

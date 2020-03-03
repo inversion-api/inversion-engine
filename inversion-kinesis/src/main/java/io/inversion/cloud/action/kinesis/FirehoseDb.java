@@ -30,13 +30,13 @@ import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -122,20 +122,21 @@ public class FirehoseDb extends Db<FirehoseDb>
       }
       else
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FirehoseDb must have 'includeStreams' configured to be used");
+         ApiException.throw500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
       }
    }
 
    @Override
    public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
-      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      return null;
    }
 
    @Override
    public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
-      throw new ApiException(Status.SC_400_BAD_REQUEST, "The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+      ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override

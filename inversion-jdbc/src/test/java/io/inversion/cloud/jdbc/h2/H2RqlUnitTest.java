@@ -20,7 +20,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
-import io.inversion.cloud.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class H2RqlUnitTest extends AbstractSqlQueryRqlTest

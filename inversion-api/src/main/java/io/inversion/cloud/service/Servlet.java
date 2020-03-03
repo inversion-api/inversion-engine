@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,12 @@
  */
 package io.inversion.cloud.service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Request.Upload;
+import io.inversion.cloud.model.Request.Uploader;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.utils.Utils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -33,14 +29,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Request.Upload;
-import io.inversion.cloud.model.Request.Uploader;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Utils;
+import java.io.*;
+import java.util.*;
 
 public class Servlet extends HttpServlet
 {
@@ -231,7 +221,7 @@ public class Servlet extends HttpServlet
       }
       catch (Exception ex)
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to read request body", ex);
+         ApiException.throw400BadRequest(ex, "Unable to read request body");
       }
       finally
       {
@@ -272,7 +262,7 @@ public class Servlet extends HttpServlet
             }
             http.setHeader(key, buff.toString());
             res.debug(key + " " + buff);
-         } ;
+         }
          if ("OPTIONS".equals(method))
          {
             //

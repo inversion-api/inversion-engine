@@ -17,8 +17,12 @@
 package io.inversion.cloud.model;
 
 /**
- * Static constants for HTTP status codes. 
+ * Static constants for HTTP status codes.  Yes there are many other files in JDK-land
+ * with this type of constant enumeration but I created this one because the other 
+ * usual suspect classed did not include the HTTP status number in the field name and 
+ * I really wanted to see both the numerical code and message at the same time in the source.
  * 
+ * @author wells
  * @see http://www.restapitutorial.com/httpstatuscodes.html
  */
 public interface Status

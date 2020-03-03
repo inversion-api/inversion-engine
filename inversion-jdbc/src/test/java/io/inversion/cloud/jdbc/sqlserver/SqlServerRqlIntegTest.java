@@ -19,10 +19,6 @@ package io.inversion.cloud.jdbc.sqlserver;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
-
 @TestInstance(Lifecycle.PER_CLASS)
 public class SqlServerRqlIntegTest extends SqlServerRqlUnitTest
 {

@@ -19,7 +19,7 @@ package io.inversion.cloud.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Tokenizer
+public class RqlTokenizer
 {
    char[]       chars    = null;
    int          head     = 0;
@@ -30,7 +30,7 @@ public class Tokenizer
 
    StringBuffer next     = new StringBuffer();
 
-   public Tokenizer(String chars)
+   public RqlTokenizer(String chars)
    {
       this.chars = chars.toCharArray();
    }

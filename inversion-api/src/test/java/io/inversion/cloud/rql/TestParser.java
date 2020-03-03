@@ -16,15 +16,14 @@
  */
 package io.inversion.cloud.rql;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import io.inversion.cloud.utils.Utils;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.utils.Utils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestParser
 {
@@ -36,7 +35,7 @@ public class TestParser
    @Test
    public void test1() throws Exception
    {
-      Parser parser = new Parser();
+      RqlParser parser = new RqlParser();
 
       List<List> tests = new ArrayList();
 
@@ -100,7 +99,7 @@ public class TestParser
    @Test
    public void test2() throws Exception
    {
-      Parser parser = new Parser();
+      RqlParser parser = new RqlParser();
       Term t = parser.parse("w(name,'BANANA KG (RESEAU')");
       
       assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());

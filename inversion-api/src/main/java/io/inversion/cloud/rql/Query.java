@@ -16,28 +16,15 @@
  */
 package io.inversion.cloud.rql;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import io.inversion.cloud.model.*;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 
-   //      query q = new Query().where('field').gt(100)
-   //                           .where('ield2').lt(500)
-   //                           .where("field>200")
-   //                           .where("and(gt(field, 100)&lt(field2, 0))")
-   //                           .where(or(gt("field", 5), lt("field", 2)))
-   //                           .where().gt("field", 5).lt("field", 2)
- * @author wells
+ * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
  *
  */
 public class Query<T extends Query, D extends Db, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
@@ -59,9 +46,9 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
    //------------------------------------------------------------------
-   protected Parser createParser()
+   protected RqlParser createParser()
    {
-      return new Parser();
+      return new RqlParser();
    }
 
    protected S createSelect()
@@ -138,7 +125,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
    }
 
    @Override
-   public Parser getParser()
+   public RqlParser getParser()
    {
       if (parser == null)
          parser = createParser();
@@ -245,13 +232,11 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          if (columnName.indexOf(".") > -1)
          {
             String collectionName = columnName.substring(0, columnName.indexOf("."));
-            if(columnName.startsWith("_join~"))
+            if(columnName.startsWith("~~relTbl_"))
             {
-               //ex: _join_customers_to_orders_via_orders_1
-               collectionName = columnName.split("~")[3];
+               collectionName = collectionName.substring(columnName.indexOf("_") + 1);
+               collectionName = getCollection().getRelationship(collectionName).getRelated().getName();
             }
-            
-            
             coll = coll.getDb().getCollection(collectionName);
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
@@ -260,7 +245,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          {
             Property col = coll.getProperty(shortName);
             if (col == null)
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, " unable to find column '" + columnName + "' on table '" + coll.getTableName() + "'");
+               ApiException.throw500InternalServerError("Unable to find column '%s' on table '%s'", columnName, coll.getTableName());
 
             value = db.cast(col, value);
 

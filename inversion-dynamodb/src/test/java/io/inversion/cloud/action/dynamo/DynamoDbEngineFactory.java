@@ -18,15 +18,11 @@ package io.inversion.cloud.action.dynamo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
@@ -39,13 +35,7 @@ import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Response;
 import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
 
 public class DynamoDbEngineFactory
 {
@@ -71,7 +61,7 @@ public class DynamoDbEngineFactory
       return engine;
    }
 
-   protected static Engine buildEngine(String apiCode, final String ddl, String dynamoTbl) throws Exception
+   protected static Engine buildEngine(String apiName, final String ddl, String dynamoTbl) throws Exception
    {
       return null;
       //      buildTables();
@@ -129,7 +119,7 @@ public class DynamoDbEngineFactory
       //      //--
       //      //--
       //
-      //      final Api api = engine.getApi(apiCode);
+      //      final Api api = engine.getApi(apiName);
       //      api.withDb(dynamoDb);
       //      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
       //

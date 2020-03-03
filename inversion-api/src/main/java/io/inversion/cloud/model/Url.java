@@ -16,14 +16,13 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import io.inversion.cloud.utils.Utils;
 
 /**
  * Url utilities
@@ -68,7 +67,7 @@ public class Url
    public Url(String parent, String child)
    {
       if (Utils.empty(parent) && Utils.empty(child))
-         throw new ApiException("Can't construct an empty url");
+         ApiException.throw500InternalServerError("Can't construct an empty url");
 
       if (Utils.empty(child))
       {

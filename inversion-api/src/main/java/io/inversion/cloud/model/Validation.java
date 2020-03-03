@@ -311,6 +311,6 @@ public class Validation
    protected void fail(String defaultErrorMessage)
    {
       String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
-      throw new ApiException(Status.SC_400_BAD_REQUEST, message);
+      ApiException.throw400BadRequest(message);
    }
 }

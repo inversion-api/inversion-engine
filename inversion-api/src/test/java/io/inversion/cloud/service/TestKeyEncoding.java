@@ -16,12 +16,11 @@
  */
 package io.inversion.cloud.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-
+import io.inversion.cloud.model.Collection;
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.model.Collection;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class TestKeyEncoding
 {

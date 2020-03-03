@@ -16,24 +16,15 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
+import io.inversion.cloud.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
    protected Logger           log          = LoggerFactory.getLogger(getClass().getName());
-
-   protected Api              api          = null;
 
    protected String           name         = null;
    protected int              order        = 1000;
@@ -60,17 +51,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return System.identityHashCode(this) + " - " + name;
    }
 
-   public abstract R withApi(Api api);
-   //   {
-   //      this.api = api;
-   //      api.addEndpoint(this);
-   //   }
-
-   public Api getApi()
-   {
-      return api;
-   }
-
    public boolean matches(String method, Path path)
    {
       if (isMethod(method))
@@ -87,7 +67,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
       if (includePaths.size() == 0)
       {
-         if (excludePaths.size() ==  0 || path.size() == 0)
+         if (excludePaths.size() == 0 || path.size() == 0)
             included = true;
       }
       else

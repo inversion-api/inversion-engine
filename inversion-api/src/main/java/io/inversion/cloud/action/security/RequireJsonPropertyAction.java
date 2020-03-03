@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,36 +16,16 @@
  */
 package io.inversion.cloud.action.security;
 
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.utils.Utils;
+
 import java.util.HashSet;
 import java.util.Set;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Utils;
 
 public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
 {
    protected Set<String> properties = new HashSet();
    protected boolean     recursive  = false;
-
-   public RequireJsonPropertyAction()
-   {
-      this(null, null, null);
-   }
-
-   public RequireJsonPropertyAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RequireJsonPropertyAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-   }
 
    public void run(Request req, Response res) throws Exception
    {
@@ -73,7 +53,7 @@ public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
          for (JSNode aNode : node.asNodeList())
          {
             if (Utils.empty(aNode.get(prop)))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Required property '" + prop + "' appears to be missing from your JSON body.");
+               ApiException.throw400BadRequest("Required property '%s' appears to be missing from your JSON body.",  prop);
          }
       }
    }

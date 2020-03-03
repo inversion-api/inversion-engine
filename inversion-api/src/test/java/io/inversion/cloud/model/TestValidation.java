@@ -1,11 +1,10 @@
 package io.inversion.cloud.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
+import io.inversion.cloud.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.utils.Utils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestValidation
 {
@@ -38,7 +37,7 @@ public class TestValidation
 
       req.validate("$.book.price").minMax(1, 100);
       req.validate("$.book.price").eq(50.00);
-      Double price = req.validate("$.book.price").eq("50").asDouble();
+      req.validate("$.book.price").eq("50").asDouble();
 
       boolean failed = false;
 
