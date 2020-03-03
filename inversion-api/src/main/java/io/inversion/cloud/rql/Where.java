@@ -17,19 +17,24 @@
 package io.inversion.cloud.rql;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.utils.Utils;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
 {
+   Set<String>         existsFunctions    = Utils.asSet("eq", "nn", "gt", "ge", "lt", "le", "like", "sw", "ew", "in", "w");
+   Set<String>         notExistsFunctions = Utils.asSet("ne", "n", "out", "wo", "emp");
+   Map<String, String> notExistsMap       = Utils.asMap("ne", "eq", "n", "nn", "out", "in", "wo", "w", "emp", "nemp");
 
    public Where(P query)
    {
       super(query);
-      withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+      withFunctions("_key", "_exists", "_notexists", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
    }
 
    protected boolean addTerm(String token, Term term)
@@ -67,18 +72,45 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid where function token '" + child.getToken() + "' : " + parent);
+               ApiException.throw400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
             transform(child);
          }
       }
+      
+      if (!parent.isLeaf())
+      {
+         //check the first child expecting that to be the column name
+         //if it is in the form "relationship.column then wrap this 
+         //in an "exists" or "notExists" function
 
+         if (parent.getTerm(0).isLeaf() && parent.getToken(0).indexOf(".") > 0)
+         {
+            Term relCol = parent.getTerm(0);
+            relCol.withToken("~~relTbl_" + relCol.getToken());
+            
+            
+            String token = parent.getToken().toLowerCase();
+            if (existsFunctions.contains(token))
+            {
+               transformed = Term.term(parent.getParent(), "_exists", parent);
+            }
+            else if (notExistsFunctions.contains(token))
+            {
+               parent.withToken(notExistsMap.get(token));
+               transformed = Term.term(parent.getParent(), "_notexists", parent);
+            }
+            
+            return transformed;
+         }
+      }
+      
       if (parent.hasToken("_key"))
       {
          String indexName = parent.getToken(0);
 
          Index index = getParent().getCollection().getIndex(indexName);
          if (index == null)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "You can't use the _key() function unless your table has a unique index");
+            ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
 
          if (index.size() == 1)
          {
@@ -108,7 +140,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                Term child = children.get(i);
                if (!child.isLeaf())
-                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Entity key value is not a leaf node: " + child);
+                  ApiException.throw400BadRequest("Entity key value is not a leaf node: %s", child);
 
                Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");

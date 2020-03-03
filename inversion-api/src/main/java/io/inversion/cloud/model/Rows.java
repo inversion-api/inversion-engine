@@ -7,32 +7,23 @@
  * You may obtain a copy of the License at
  * 
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import io.inversion.cloud.model.Rows.Row;
+
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import io.inversion.cloud.utils.Rows.Row;
+import java.util.*;
 
 /**
  * A list of ordered maps where all maps that all share the same keys.
- * 
+ *
  * @author wells
  *
  */

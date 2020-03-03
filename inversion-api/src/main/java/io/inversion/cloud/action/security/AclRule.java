@@ -16,22 +16,21 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Rule;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AclRule extends Rule<AclRule>
 {
-   protected boolean      allow                   = true;
-   protected boolean      info                    = false;
+   protected boolean allow = true;
+   protected boolean info  = false;
 
-   protected List<String> permissions             = new ArrayList();
-   protected List<String> roles                   = new ArrayList();
+   protected List<String> permissions = new ArrayList();
+   protected List<String> roles       = new ArrayList();
 
    protected List<String> restricts               = new ArrayList();
    protected List<String> requires                = new ArrayList();
@@ -93,16 +92,6 @@ public class AclRule extends Rule<AclRule>
 
       if (permissionsN != null)
          withPermissions(permissionsN);
-   }
-
-   @Override
-   public AclRule withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-      }
-      return (AclRule) this;
    }
 
    public boolean ruleMatches(Request req)

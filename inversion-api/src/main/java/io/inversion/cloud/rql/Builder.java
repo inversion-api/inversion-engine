@@ -7,7 +7,7 @@
  * You may obtain a copy of the License at
  * 
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,22 +16,17 @@
  */
 package io.inversion.cloud.rql;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.inversion.cloud.utils.Utils;
+
+import java.util.*;
 
 public class Builder<T, P extends Builder>
 {
-   protected Parser        parser    = null;
-   protected P             parent    = null;
-   protected List<Builder> builders  = null;
-   protected List<Term>    terms     = new ArrayList();
-   protected T             r         = null;
+   protected RqlParser     parser   = null;
+   protected P             parent   = null;
+   protected List<Builder> builders = null;
+   protected List<Term>    terms    = new ArrayList();
+   protected T             r        = null;
 
    /**
     * Term tokens this builder is willing to accept
@@ -78,13 +73,13 @@ public class Builder<T, P extends Builder>
          return (T) this;
    }
 
-   public T withParser(Parser parser)
+   public T withParser(RqlParser parser)
    {
       this.parser = parser;
       return r();
    }
 
-   public Parser getParser()
+   public RqlParser getParser()
    {
       if (parser != null)
          return parser;

@@ -54,9 +54,7 @@ import io.inversion.cloud.action.script.velocity.SaveDirective;
 import io.inversion.cloud.action.script.velocity.SwitchDirective;
 import io.inversion.cloud.action.script.velocity.VelocityResourceLoader;
 import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
@@ -215,7 +213,7 @@ public class ScriptAction extends Action<ScriptAction>
                   Value bindings = context.getBindings("js");
 
                   bindings.putMember("engine", req.getEngine());
-                  bindings.putMember("api", api);
+                  bindings.putMember("api", req.getApi());
                   bindings.putMember("endpoint", req.getEndpoint());
                   bindings.putMember("action", this);
                   bindings.putMember("chain", req.getChain());
@@ -249,7 +247,7 @@ public class ScriptAction extends Action<ScriptAction>
 
                   context.put("method", req.getMethod());
                   context.put("engine", req.getEngine());
-                  context.put("api", api);
+                  context.put("api", req.getApi());
                   context.put("endpoint", req.getEndpoint());
                   context.put("action", this);
                   context.put("chain", req.getChain());
@@ -581,22 +579,22 @@ public class ScriptAction extends Action<ScriptAction>
 
       public void throwApiException(String status, String message)
       {
-         throw new ApiException(status, message);
+         ApiException.throw500InternalServerError(status, message);
       }
 
       public void throwBadRequest(String message)
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, message);
+         ApiException.throw400BadRequest(message);
       }
 
       public void throwNotFound(String message)
       {
-         throw new ApiException(Status.SC_404_NOT_FOUND, message);
+         ApiException.throw404NotFound(message);
       }
 
       public void throwServerError(String message)
       {
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, message);
+         ApiException.throw500InternalServerError(message);
       }
 
       public List<Object> list(Object obj)

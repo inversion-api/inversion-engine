@@ -16,15 +16,14 @@
  */
 package io.inversion.cloud.action.rest;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestCollapse
 {

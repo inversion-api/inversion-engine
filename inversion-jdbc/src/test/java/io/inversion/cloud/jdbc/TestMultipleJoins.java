@@ -38,7 +38,6 @@ public class TestMultipleJoins
 
       Engine e = new Engine(new Api()//
                                      .withName("crm")//
-                                     .withApiCode("crm")//
                                      //.withDb(db)//
 
                                      .withDb(new JdbcDb("db", //the database name used as the properties key prefix when 

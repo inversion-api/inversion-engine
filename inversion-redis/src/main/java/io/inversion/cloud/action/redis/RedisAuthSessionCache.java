@@ -16,14 +16,12 @@
  */
 package io.inversion.cloud.action.redis;
 
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.inversion.cloud.action.security.AuthSessionCache;
+import io.inversion.cloud.action.security.AuthAction.SessionDao;
 import io.inversion.cloud.model.User;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -35,7 +33,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * 
  * @author tc-rocket
  */
-public class RedisAuthSessionCache implements AuthSessionCache
+public class RedisAuthSessionCache implements SessionDao
 {
    Logger            log                                = LoggerFactory.getLogger(RedisAuthSessionCache.class);
 

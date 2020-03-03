@@ -1,11 +1,10 @@
 package io.inversion.cloud.model;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-
 import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 public interface AbstractEngineTest extends AbstractDbTest
 {

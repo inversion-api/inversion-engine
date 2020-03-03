@@ -16,20 +16,14 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.utils.Pluralizer;
+import io.inversion.cloud.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Pluralizer;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public abstract class Db<T extends Db>
 {
@@ -202,7 +196,7 @@ public abstract class Db<T extends Db>
       }
    }
 
-   protected void configApi() throws Exception
+   public void configApi()
    {
       List<String> relationshipStrs = new ArrayList();
 
@@ -319,7 +313,7 @@ public abstract class Db<T extends Db>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error creating relationship for index: " + fkIdx, ex);
+                  ApiException.throw500InternalServerError(ex, "Error creating relationship for index: %s", fkIdx);
                }
             }
          }

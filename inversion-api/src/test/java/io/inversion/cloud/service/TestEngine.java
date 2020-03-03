@@ -16,20 +16,14 @@
  */
 package io.inversion.cloud.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import io.inversion.cloud.action.misc.MockAction;
+import io.inversion.cloud.model.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Response;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestEngine
 {
@@ -60,8 +54,8 @@ public class TestEngine
 
       api = new Api("test")//
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
-                           .withEndpoint(new Endpoint("GET", "*", null, "ep1").withExcludePaths("subpath/*"))//
-                           .withEndpoint("GET", "subpath/*", null, "ep2")//
+                           .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
+                           .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
       ;
 
       assertEndpointMatch("GET", "http://localhost/test/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api);
@@ -69,8 +63,8 @@ public class TestEngine
 
       api = new Api("test")//
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
-                           .withEndpoint(new Endpoint("GET", "/", null, "ep1").withIncludePaths("collection1/*,collection2/*"))//
-                           .withEndpoint("GET", "subpath3/*", null, "ep2")//
+                           .withEndpoint(new Endpoint("GET", "/").withName("ep1").withIncludePaths("collection1/*,collection2/*"))//
+                           .withEndpoint(new Endpoint("GET", "subpath3/*").withName("ep2"))//
       ;
 
       assertEndpointMatch("GET", "http://localhost/test/collection1/entKey/relKey", 200, "ep1", "", "collection1", "entKey", "relKey", api);
@@ -83,21 +77,21 @@ public class TestEngine
    public void test_endpoint_matches()
    {
       Api api0 = new Api()//
-                          .withEndpoint("GET", "endpoint_path/*", null, "ep0", new MockAction("all"));
+                          .withEndpoint(new Endpoint("GET", "endpoint_path/*", new MockAction("all")).withName("ep0"));
 
       //if you only have one API, you can leave the API code null...you can only really do this from code configured APIs not prop wired APIs
       assertEndpointMatch("GET", "http://localhost/endpoint_path/12345", 200, "ep0", "endpoint_path", "12345", null, null, api0);
 
       Api api1 = new Api("test")//
                                 .withAction(new MockAction("mock1").withIncludePaths("*"))//
-                                .withEndpoint("GET", "ep1/*", null, "ep1")//
-                                .withEndpoint("GET", "ep2/", null, "ep2")//
-                                .withEndpoint("GET", "bookstore/", "books/*,categories,authors", "ep3")//
-                                .withEndpoint("GET", "other/data", "table1,table2/*,other/data/*,data/*", "ep4")//
-                                .withEndpoint("GET", "cardealer", "ford/*,gm/*", "ep5")//
-                                .withEndpoint(new Endpoint("GET", "petstore/*", null, "ep6").withExcludePaths("rat", "snakes/bad", "cats/*"))//
-                                .withEndpoint("GET", "gamestop/*", "nintendo,xbox/*", "ep7")//
-                                .withEndpoint("GET", "carwash", "regular,delux/*", "ep8");
+                                .withEndpoint(new Endpoint("GET", "ep1/*").withName("ep1"))//
+                                .withEndpoint(new Endpoint("GET", "ep2/").withName("ep2"))//
+                                .withEndpoint(new Endpoint("GET", "bookstore/", "books/*,categories,authors").withName("ep3"))//
+                                .withEndpoint(new Endpoint("GET", "other/data", "table1,table2/*,other/data/*,data/*").withName("ep4"))//
+                                .withEndpoint(new Endpoint("GET", "cardealer", "ford/*,gm/*").withName("ep5"))//
+                                .withEndpoint(new Endpoint("GET", "petstore/*").withName("ep6").withExcludePaths("rat", "snakes/bad", "cats/*"))//
+                                .withEndpoint(new Endpoint("GET", "gamestop/*", "nintendo,xbox/*").withName("ep7"))//
+                                .withEndpoint(new Endpoint("GET", "carwash", "regular,delux/*").withName("ep8"));
 
       Api api2 = new Api("other");
 
@@ -313,6 +307,32 @@ public class TestEngine
 
    }
 
+   @Test public void test_api_with_version()
+   {
+      Api api1 = new Api("test")//
+                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
+            ;
+      Api api2 = new Api("test")//
+                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
+            ;
+
+      Api api3 = new Api("test")//
+                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
+            ;
+
+      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+
+   }
+
    public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
    {
       assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
@@ -322,7 +342,7 @@ public class TestEngine
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
-         {
+      {
             protected void run(Chain chain, List<Action> actions) throws Exception
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
@@ -354,7 +374,7 @@ public class TestEngine
                System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + entityKey + "," + subCollectionKey);
                System.err.println("url              :" + chain.getRequest().getUrl());
                System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
-               System.err.println("endpoint         :" + chain.getRequest().getEndpoint());
+               System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
                System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
                System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
                System.err.println("entityKey        :" + chain.getRequest().getEntityKey());
@@ -368,7 +388,7 @@ public class TestEngine
       for (Api api : apis)
       {
          if (api != null)
-            e.withApi(api);//without this additional API, any apiCode will match
+            e.withApi(api);//without this additional API, any apiName will match
       }
 
       Response resp = e.service(method, url);

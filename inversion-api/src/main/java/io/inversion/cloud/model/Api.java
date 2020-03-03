@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,42 +16,35 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Api
 {
-   protected Logger                      log         = LoggerFactory.getLogger(getClass());
+   protected Logger log = LoggerFactory.getLogger(getClass());
 
-   //transient Engine                         engine      = null;
+   transient volatile  boolean started  = false;
+   transient volatile  boolean starting = false;
+   transient           long    loadTime = 0;
+   transient protected String  hash     = null;
 
-   transient volatile boolean            started     = false;
-   transient volatile boolean            starting    = false;
-   transient long                        loadTime    = 0;
-   transient Hashtable                   cache       = new Hashtable();
-   transient protected String            hash        = null;
+   protected boolean debug = false;
 
-   protected boolean                     debug       = false;
+   protected String  name        = null;
+   protected String  version     = null;
+   protected boolean multiTenant = false;
+   protected String  url         = null;
 
-   protected int                         id          = 0;
+   protected List<Db>         dbs         = new ArrayList();
+   protected List<Endpoint>   endpoints   = new ArrayList();
+   protected List<Action>     actions     = new ArrayList();
+   protected List<Collection> collections = new ArrayList();
 
-   protected String                      name        = null;
-   protected String                      accountCode = null;
-   protected String                      apiCode     = null;
-   protected boolean                     multiTenant = false;
-   protected String                      url         = null;
-
-   protected List<Db>                    dbs         = new ArrayList();
-   protected List<Endpoint>              endpoints   = new ArrayList();
-   protected List<Action>                actions     = new ArrayList();
-   protected List<Collection>            collections = new ArrayList();
-
-   protected transient List<ApiListener> listeners   = new ArrayList();
+   protected transient List<ApiListener> listeners = new ArrayList();
 
    public Api()
    {
@@ -60,7 +53,6 @@ public class Api
    public Api(String name)
    {
       withName(name);
-      withApiCode(name);
    }
 
    public synchronized Api startup()
@@ -143,17 +135,6 @@ public class Api
       }
    }
 
-   public int getId()
-   {
-      return id;
-   }
-
-   public Api withId(int id)
-   {
-      this.id = id;
-      return this;
-   }
-
    public String getHash()
    {
       return hash;
@@ -172,9 +153,6 @@ public class Api
 
       if (!collections.contains(coll))
          collections.add(coll);
-
-      if (coll.getApi() != this)
-         coll.withApi(this);
 
       return this;
    }
@@ -262,17 +240,12 @@ public class Api
 
    public Api withEndpoint(String methods, String pathExpression, Action... actions)
    {
-      return withEndpoint(methods, pathExpression, null, null, actions);
+      return withEndpoint(methods, pathExpression, null, actions);
    }
 
    public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
    {
-      return withEndpoint(methods, endpointPath, collectionPaths, null, actions);
-   }
-
-   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, String name, Action... actions)
-   {
-      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, name, actions);
+      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, actions);
       withEndpoint(endpoint);
       return this;
    }
@@ -302,9 +275,6 @@ public class Api
 
          if (!inserted)
             endpoints.add(endpoint);
-
-         if (endpoint.getApi() != this)
-            endpoint.withApi(this);
       }
       return this;
    }
@@ -326,9 +296,6 @@ public class Api
    {
       if (!actions.contains(action))
          actions.add(action);
-
-      if (action.getApi() != this)
-         action.withApi(this);
 
       return this;
    }
@@ -358,28 +325,6 @@ public class Api
       this.debug = debug;
    }
 
-   public String getApiCode()
-   {
-      return apiCode != null ? apiCode : name;
-   }
-
-   public Api withApiCode(String apiCode)
-   {
-      this.apiCode = apiCode;
-      return this;
-   }
-
-   public Api withAccountCode(String accountCode)
-   {
-      this.accountCode = accountCode;
-      return this;
-   }
-
-   public String getAccountCode()
-   {
-      return accountCode != null ? accountCode : getApiCode();
-   }
-
    public String getName()
    {
       return name;
@@ -400,16 +345,6 @@ public class Api
    {
       this.multiTenant = multiTenant;
       return this;
-   }
-
-   public Object putCache(Object key, Object value)
-   {
-      return cache.put(key, value);
-   }
-
-   public Object getCache(Object key)
-   {
-      return cache.get(key);
    }
 
    public String getUrl()
@@ -435,4 +370,19 @@ public class Api
       return Collections.unmodifiableList(listeners);
    }
 
+   public String getVersion()
+   {
+      return version;
+   }
+
+   public void setVersion(String version)
+   {
+      this.version = version;
+   }
+
+   public Api withVersion(String version)
+   {
+      this.version = version;
+      return this;
+   }
 }

@@ -22,16 +22,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
@@ -109,7 +109,8 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
                allResp.getError().printStackTrace();
                Utils.getCause(allResp.getError()).printStackTrace();
             }
-            throw new ApiException(allResp.hasStatus(allowedFailResponseCodes) ? allResp.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+            
+            allResp.rethrow();
          }
       }
       catch (Exception ex)

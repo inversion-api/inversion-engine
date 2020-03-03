@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,36 +16,17 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wells
  */
 public abstract class Action<A extends Action> extends Rule<A>
 {
-   protected String comment = null;
-
-   public Action()
-   {
-
-   }
-
-   public Action(String includePaths)
-   {
-      withIncludePaths(includePaths);
-   }
-
-   public Action(String includePaths, String excludePaths, String config)
-   {
-      withIncludePaths(includePaths);
-      withExcludePaths(excludePaths);
-      withConfig(config);
-   }
-
    public void run(Request req, Response res) throws Exception
    {
       if (req.isGet())
@@ -62,52 +43,27 @@ public abstract class Action<A extends Action> extends Rule<A>
 
    public void doGet(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+      ApiException.throw501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
    public void doPost(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+      ApiException.throw501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
    public void doPut(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+      ApiException.throw501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
    public void doPatch(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+      ApiException.throw501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
    public void doDelete(Request req, Response res) throws Exception
    {
-      throw new ApiException(Status.SC_501_NOT_IMPLEMENTED, "Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
-   }
-
-   @Override
-   public A withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         //intentionally not bidirectional because actions set 
-         //directly on the Api are not private to an endpoint but
-         //matched against all requests.
-         // api.withAction(this);
-      }
-      return (A) this;
-   }
-
-   public String getComment()
-   {
-      return comment;
-   }
-
-   public A withComment(String comment)
-   {
-      this.comment = comment;
-      return (A) this;
+      ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }
 
    public static List<JSNode> find(Object parent, String... paths)
@@ -156,9 +112,9 @@ public abstract class Action<A extends Action> extends Rule<A>
       //         return chain.getRequest().getApi().getId() + "";
       //      }
       //      else 
-      if ("apiCode".equalsIgnoreCase(key))
+      if ("apiName".equalsIgnoreCase(key))
       {
-         return chain.getRequest().getApi().getApiCode();
+         return chain.getRequest().getApi().getName();
       }
       //      else if ("accountId".equalsIgnoreCase(key))
       //      {

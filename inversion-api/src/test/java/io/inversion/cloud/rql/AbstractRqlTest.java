@@ -16,11 +16,10 @@
  */
 package io.inversion.cloud.rql;
 
-import org.junit.jupiter.api.Test;
-
 import io.inversion.cloud.model.AbstractEngineTest;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.service.Engine;
+import org.junit.jupiter.api.Test;
 
 public abstract class AbstractRqlTest implements AbstractEngineTest
 {

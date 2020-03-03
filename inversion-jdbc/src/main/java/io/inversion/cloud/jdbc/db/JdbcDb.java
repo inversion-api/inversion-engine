@@ -46,7 +46,6 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
@@ -54,9 +53,9 @@ import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class JdbcDb extends Db<JdbcDb>
@@ -184,7 +183,18 @@ public class JdbcDb extends Db<JdbcDb>
       api.withApiListener(new ApiListener()
          {
 
-            public void afterRequest(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void onStartup(Api api)
+            {
+            }
+
+            @Override
+            public void onShutdown(Api api)
+            {
+            }
+
+            @Override
+            public void afterRequest(Request req, Response res)
             {
                try
                {
@@ -192,11 +202,12 @@ public class JdbcDb extends Db<JdbcDb>
                }
                catch (Exception ex)
                {
-                  throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Error comitting transaction.", ex);
+                  ApiException.throw500InternalServerError(ex, "Error committing tansaction");
                }
             }
 
-            public void afterError(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void afterError(Request req, Response res)
             {
 
                try
@@ -210,7 +221,8 @@ public class JdbcDb extends Db<JdbcDb>
 
             }
 
-            public void beforeFinally(Api api, Endpoint endpoint, Chain chain, Request req, Response res)
+            @Override
+            public void beforeFinally(Request req, Response res)
             {
                try
                {
@@ -422,8 +434,8 @@ public class JdbcDb extends Db<JdbcDb>
       }
       catch (Exception ex)
       {
-         log.error("Unable to get DB connection", ex);
-         throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to get DB connection", ex);
+         ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
+         return null;
       }
    }
 
@@ -722,10 +734,8 @@ public class JdbcDb extends Db<JdbcDb>
 
             ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
-            int columnNumber = 0;
             while (colsRs.next())
             {
-               columnNumber += 1;
                String colName = colsRs.getString("COLUMN_NAME");
                Object type = colsRs.getString("DATA_TYPE");
                String colType = types.get(type);
@@ -734,11 +744,6 @@ public class JdbcDb extends Db<JdbcDb>
 
                Property column = new Property(colName, colType, nullable);
                table.withProperties(column);
-
-               //               if (DELETED_FLAGS.contains(colName.toLowerCase()))
-               //               {
-               //                  table.setDeletedFlag(column);
-               //               }
             }
             colsRs.close();
 
@@ -814,7 +819,7 @@ public class JdbcDb extends Db<JdbcDb>
             ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
             while (keyMd.next())
             {
-               String pkName = keyMd.getString("PK_NAME");
+               //String pkName = keyMd.getString("PK_NAME");
                String fkName = keyMd.getString("FK_NAME");
 
                String fkTableName = keyMd.getString("FKTABLE_NAME");
@@ -873,92 +878,24 @@ public class JdbcDb extends Db<JdbcDb>
             {
                Property attr = collection.findProperty(parts[i]);
 
-               if (attr == null)
-                  break;
-               //throw new ApiException("Unable to identify related column for dotted attribute name: '" + token + "'");
-
-               name += attr.getColumnName();
-               break;
+               if (attr != null)
+                  name += attr.getColumnName();
+               else
+                  name += parts[i];
             }
             else
             {
                Relationship rel = collection.getRelationship(part);
 
-               if (rel == null)
-                  break;
-
-               //               if (rel == null)
-               //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
-
-               //String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
-
-               Term join = null;
-               for (int j = 0; j < 2; j++)
+               if (rel != null)
                {
-                  String relatedTable = rel.getRelated().getTableName();
-
-                  if (rel.isManyToMany() && j == 0)
-                     relatedTable = rel.getFk1Col1().getCollection().getTableName();
-
-                  String aliasPrefix = "_join~" + rel.getEntity().getName() + "~to~" + relatedTable + "~via~" + part + "~";
-
-                  String tableAlias = aliasPrefix + (j + 1);
-
-                  List joinTerms = new ArrayList();
-                  joinTerms.add(relatedTable);
-                  joinTerms.add(tableAlias);
-
-                  Index idx = j == 0 ? rel.getFkIndex1() : rel.getFkIndex2();
-                  if (idx == null)
-                     break;//will NOT be null only for M2M relationships
-
-                  name = tableAlias + ".";
-
-                  if (rel.isOneToMany())
-                  {
-                     for (int k = 0; k < idx.size(); k++)
-                     {
-                        Property col = idx.getColumn(k);
-                        joinTerms.add(col.getCollection().getTableName());
-                        joinTerms.add(col.getColumnName());
-                        joinTerms.add(tableAlias);
-                        joinTerms.add(col.getPk().getColumnName());
-                     }
-                  }
-                  else
-                  {
-                     if (j == 0)
-                     {
-                        for (int k = 0; k < idx.size(); k++)
-                        {
-                           Property col = idx.getColumn(k);
-                           joinTerms.add(col.getPk().getCollection().getTableName());
-                           joinTerms.add(col.getPk().getColumnName());
-                           joinTerms.add(tableAlias);
-                           joinTerms.add(col.getColumnName());
-                        }
-                     }
-                     else//second time through on M2M
-                     {
-                        for (int k = 0; k < idx.size(); k++)
-                        {
-                           Property col = idx.getColumn(k);
-                           String m2mTbl = join.getToken(1);
-
-                           joinTerms.add(m2mTbl);
-                           joinTerms.add(col.getColumnName());
-                           joinTerms.add(tableAlias);
-                           joinTerms.add(col.getPk().getColumnName());
-                        }
-                     }
-                  }
-
-                  join = Term.term(null, "join", joinTerms);
-                  terms.add(join);
+                  name += rel.getName() + ".";
+                  collection = rel.getRelated();
                }
-
-               collection = rel.getRelated();
-
+               else
+               {
+                  name += parts[i] + ".";
+               }
             }
          }
 

@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.action.cosmosdb;
 
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -38,6 +39,36 @@ public class MainCosmosApi
                {
                   res.dump();
                }
+            }
+
+            @Override
+            public void onStartup(Api api)
+            {
+            }
+
+            @Override
+            public void onShutdown(Api api)
+            {
+            }
+
+            @Override
+            public void afterRequest(Request req, Response res)
+            {
+            }
+
+            @Override
+            public void afterError(Request req, Response res)
+            {
+            }
+
+            @Override
+            public void onStartup(Engine engine)
+            {
+            }
+
+            @Override
+            public void onShutdown(Engine engine)
+            {
             }
 
          });

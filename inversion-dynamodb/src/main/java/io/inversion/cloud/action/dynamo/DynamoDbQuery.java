@@ -38,6 +38,7 @@ import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
 import io.inversion.cloud.rql.Page;
@@ -46,7 +47,6 @@ import io.inversion.cloud.rql.Select;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -122,7 +122,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       if (term.hasToken("n", "nn", "emp", "nemp"))
       {
          if (term.size() > 1)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "The n() and nn() functions only take one column name arg.");
+            ApiException.throw400BadRequest("The n() and nn() functions only take one column name arg.");
 
          if (term.hasToken("n", "emp"))
          {
@@ -261,7 +261,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       if (v.getBOOL() != null)
          return v.getBOOL();
 
-      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to get value from AttributeValue: " + v);
+      ApiException.throw500InternalServerError("Unable to get value from AttributeValue: %s", v);
+      return null;
    }
 
    /**
@@ -304,7 +305,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol.getColumnName())))
          {
             //TODO make test
-            throw new ApiException("The requested sort key does not match the supplied 'after' continuation token.");
+            ApiException.throw400BadRequest("The requested sort key does not match the supplied 'after' continuation token.");
          }
       }
 
@@ -357,13 +358,13 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          if (sortBy != null && foundIndex == null)
          {
             //TODO: create test case to trigger this exception
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find valid index to query.  The requested sort field '" + sortBy + " must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.");
+            ApiException.throw400BadRequest("Unable to find valid index to query.  The requested sort field '%s' must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.", sortBy);
          }
 
          if (foundPartKey == null && sortBy != null && !order.isAsc(0))
          {
             //an inverse/descending sort can only be run on a QuerySpec which requires a partition key.
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find valid index to query.  A descending sort on '" + sortBy + " is only possible when a partition key value is supplied.");
+            ApiException.throw400BadRequest("Unable to find valid index to query.  A descending sort on '%s' is only possible when a partition key value is supplied.", sortBy);
          }
 
          this.index = foundIndex;
@@ -474,7 +475,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+               ApiException.throw400BadRequest("Invalid column in 'after' key: %s", after);
 
             Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
             Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
@@ -530,7 +531,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
             if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-               throw new ApiException(Status.SC_400_BAD_REQUEST, "Invalid column in 'after' key: " + after);
+               ApiException.throw400BadRequest("Invalid column in 'after' key: %s");
 
             Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
             Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;

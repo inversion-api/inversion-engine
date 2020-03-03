@@ -46,9 +46,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections4.CollectionUtils;
 
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 /**
@@ -375,158 +375,158 @@ public class JdbcUtils
       return null;
    }
 
-   public static <T> T selectObject(Connection conn, String sql, Class<T> clazz, Object... vals) throws Exception
-   {
-      Row row = selectRow(conn, sql, vals);
-      if (row != null)
-      {
-         Object o = clazz.newInstance();
-         poplulate(o, row);
-         return (T) o;
-      }
+//   public static <T> T selectObject(Connection conn, String sql, Class<T> clazz, Object... vals) throws Exception
+//   {
+//      Row row = selectRow(conn, sql, vals);
+//      if (row != null)
+//      {
+//         Object o = clazz.newInstance();
+//         poplulate(o, row);
+//         return (T) o;
+//      }
+//
+//      return null;
+//   }
 
-      return null;
-   }
+//   public static Object poplulate(Object o, Map<String, Object> row)
+//   {
+//      for (Field field : getFields(o.getClass()))
+//      {
+//         try
+//         {
+//            Object val = row.get(field.getName());
+//            if (val != null)
+//            {
+//               val = convert(val, field.getType());
+//
+//               if (val != null && val instanceof Collection)
+//               {
+//                  Collection coll = (Collection) field.get(o);
+//                  coll.addAll((Collection) val);
+//               }
+//               else
+//               {
+//                  field.set(o, val);
+//               }
+//            }
+//         }
+//         catch (Exception ex)
+//         {
+//            //OK
+//         }
+//      }
+//
+//      return o;
+//   }
 
-   public static Object poplulate(Object o, Map<String, Object> row)
-   {
-      for (Field field : getFields(o.getClass()))
-      {
-         try
-         {
-            Object val = row.get(field.getName());
-            if (val != null)
-            {
-               val = convert(val, field.getType());
-
-               if (val != null && val instanceof Collection)
-               {
-                  Collection coll = (Collection) field.get(o);
-                  coll.addAll((Collection) val);
-               }
-               else
-               {
-                  field.set(o, val);
-               }
-            }
-         }
-         catch (Exception ex)
-         {
-            //OK
-         }
-      }
-
-      return o;
-   }
-
-   public static <T> T convert(Object value, Class<T> type)
-   {
-      if (type.isAssignableFrom(value.getClass()))
-      {
-         return (T) value;
-      }
-
-      if (type.equals(boolean.class) || type.equals(Boolean.class))
-      {
-         if (Number.class.isAssignableFrom(value.getClass()))
-         {
-            long num = Long.parseLong(value + "");
-            if (num <= 0)
-               return (T) Boolean.FALSE;
-            else
-               return (T) Boolean.TRUE;
-         }
-         if (value instanceof Boolean)
-            return (T) value;
-      }
-      if (value instanceof Number)
-      {
-         if (type.equals(Long.class) || type.equals(long.class))
-         {
-            value = ((Number) value).longValue();
-            return (T) value;
-         }
-         else if (type.equals(Integer.class) || type.equals(int.class))
-         {
-            value = ((Number) value).intValue();
-            return (T) value;
-         }
-         else if (type.isAssignableFrom(long.class))
-         {
-            value = ((Number) value).longValue();
-            return (T) value;
-         }
-      }
-
-      if (value == null)
-         return null;
-
-      String str = value + "";
-
-      if (String.class.isAssignableFrom(type))
-      {
-         return (T) str;
-      }
-      else if (boolean.class.isAssignableFrom(type))
-      {
-         str = str.toLowerCase();
-         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
-      }
-      else if (int.class.isAssignableFrom(type))
-      {
-         return (T) (Integer) Integer.parseInt(str);
-      }
-      else if (long.class.isAssignableFrom(type))
-      {
-         return (T) (Long) Long.parseLong(str);
-      }
-      else if (float.class.isAssignableFrom(type))
-      {
-         return (T) (Float) Float.parseFloat(str);
-      }
-      else if (Collection.class.isAssignableFrom(type))
-      {
-         Collection list = new ArrayList();
-         String[] parts = str.split(",");
-         for (String part : parts)
-         {
-            part = part.trim();
-            list.add(part);
-         }
-         return (T) list;
-      }
-      else
-      {
-         System.err.println("Can't cast: " + str + " - class " + type.getName());
-      }
-
-      return (T) value;
-   }
-
-   public static List<Field> getFields(Class clazz)
-   {
-      List<Field> fields = new ArrayList();
-
-      do
-      {
-         if (clazz.getName().startsWith("java"))
-            break;
-
-         Field[] farr = clazz.getDeclaredFields();
-         if (farr != null)
-         {
-            for (Field f : farr)
-            {
-               f.setAccessible(true);
-            }
-            fields.addAll(Arrays.asList(farr));
-         }
-         clazz = clazz.getSuperclass();
-      }
-      while (clazz != null && !Object.class.equals(clazz));
-
-      return fields;
-   }
+//   public static <T> T convert(Object value, Class<T> type)
+//   {
+//      if (value == null)
+//         return null;
+//
+//      if (type.isAssignableFrom(value.getClass()))
+//      {
+//         return (T) value;
+//      }
+//
+//      if (type.equals(boolean.class) || type.equals(Boolean.class))
+//      {
+//         if (Number.class.isAssignableFrom(value.getClass()))
+//         {
+//            long num = Long.parseLong(value + "");
+//            if (num <= 0)
+//               return (T) Boolean.FALSE;
+//            else
+//               return (T) Boolean.TRUE;
+//         }
+//         if (value instanceof Boolean)
+//            return (T) value;
+//      }
+//      if (value instanceof Number)
+//      {
+//         if (type.equals(Long.class) || type.equals(long.class))
+//         {
+//            value = ((Number) value).longValue();
+//            return (T) value;
+//         }
+//         else if (type.equals(Integer.class) || type.equals(int.class))
+//         {
+//            value = ((Number) value).intValue();
+//            return (T) value;
+//         }
+//         else if (type.isAssignableFrom(long.class))
+//         {
+//            value = ((Number) value).longValue();
+//            return (T) value;
+//         }
+//      }
+//
+//      String str = value + "";
+//
+//      if (String.class.isAssignableFrom(type))
+//      {
+//         return (T) str;
+//      }
+//      else if (boolean.class.isAssignableFrom(type))
+//      {
+//         str = str.toLowerCase();
+//         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
+//      }
+//      else if (int.class.isAssignableFrom(type))
+//      {
+//         return (T) (Integer) Integer.parseInt(str);
+//      }
+//      else if (long.class.isAssignableFrom(type))
+//      {
+//         return (T) (Long) Long.parseLong(str);
+//      }
+//      else if (float.class.isAssignableFrom(type))
+//      {
+//         return (T) (Float) Float.parseFloat(str);
+//      }
+//      else if (Collection.class.isAssignableFrom(type))
+//      {
+//         Collection list = new ArrayList();
+//         String[] parts = str.split(",");
+//         for (String part : parts)
+//         {
+//            part = part.trim();
+//            list.add(part);
+//         }
+//         return (T) list;
+//      }
+//      else
+//      {
+//         System.err.println("Can't cast: " + str + " - class " + type.getName());
+//      }
+//
+//      return (T) value;
+//   }
+//
+//   public static List<Field> getFields(Class clazz)
+//   {
+//      List<Field> fields = new ArrayList();
+//
+//      do
+//      {
+//         if (clazz.getName().startsWith("java"))
+//            break;
+//
+//         Field[] farr = clazz.getDeclaredFields();
+//         if (farr != null)
+//         {
+//            for (Field f : farr)
+//            {
+//               f.setAccessible(true);
+//            }
+//            fields.addAll(Arrays.asList(farr));
+//         }
+//         clazz = clazz.getSuperclass();
+//      }
+//      while (clazz != null && !Object.class.equals(clazz));
+//
+//      return fields;
+//   }
 
    /*
    +------------------------------------------------------------------------------+
@@ -659,11 +659,6 @@ public class JdbcUtils
       return returnKeys;
    }
 
-   /*
-   +------------------------------------------------------------------------------+
-   | UPDATE UTILS
-   +------------------------------------------------------------------------------+
-    */
 
    /*
    +------------------------------------------------------------------------------+
@@ -679,7 +674,7 @@ public class JdbcUtils
    public static List<Integer> update(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception
    {
       List<Integer> updatedCounts = new ArrayList();
-      
+
       Set cols = null;
       List<Map<String, Object>> batch = new ArrayList();
       for (Map row : rows)
@@ -856,7 +851,7 @@ public class JdbcUtils
          {
             key = rows.get(i).get(indexCols.get(0));
             if (key == null)
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine key for row: " + rows.get(i));
+               ApiException.throw500InternalServerError("Unable to determine key for row: " + rows.get(i));
 
             returnKeys.set(i, key);
          }
@@ -1180,10 +1175,8 @@ public class JdbcUtils
       String line = null;
       String curLine = "";
       List<String> ddlList = new ArrayList<String>();
-      int num = 0;
       while ((line = br.readLine()) != null)
       {
-         num += 1;
          line = line.trim();
 
          if (line.length() == 0 || line.startsWith("--") || line.startsWith("#"))

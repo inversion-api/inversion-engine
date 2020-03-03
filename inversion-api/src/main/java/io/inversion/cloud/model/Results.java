@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.rql.Query;
+import io.inversion.cloud.rql.Term;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Term;
 
 public class Results<M extends Map> implements Iterable<M>
 {

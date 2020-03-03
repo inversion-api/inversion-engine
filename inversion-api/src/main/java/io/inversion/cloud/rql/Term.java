@@ -17,9 +17,8 @@
 package io.inversion.cloud.rql;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-
-import io.inversion.cloud.utils.Utils;
 
 public class Term implements Comparable<Term>
 {
@@ -231,7 +230,7 @@ public class Term implements Comparable<Term>
    {
       terms.remove(term);
    }
-   
+
    public void clear()
    {
       terms.clear();
@@ -278,7 +277,7 @@ public class Term implements Comparable<Term>
    public static Term term(Term parent, String token, Object... terms)
    {
       Term newTerm = new Term(parent, token);
-      List deconstructed = Utils.deconstructed(new ArrayList(), terms);
+      List deconstructed = deconstructed(new ArrayList(), terms);
       for (Object aTerm : deconstructed)
       {
          if (aTerm instanceof Term)
@@ -292,6 +291,52 @@ public class Term implements Comparable<Term>
       }
 
       return newTerm;
+   }
+
+   static List deconstructed(List found, Object... terms)
+   {
+      if (terms.length == 1 && terms[0].getClass().isArray())
+         terms = (Object[]) terms[0];
+
+      for (Object o : terms)
+      {
+         if (o instanceof Collection)
+         {
+            ((Collection) o).forEach(o2 -> deconstructed(found, o2));
+         }
+         else if (o.getClass().isArray())
+         {
+            Object[] arr = (Object[]) o;
+            for (Object o2 : arr)
+            {
+               deconstructed(found, o2);
+            }
+         }
+         else
+         {
+            found.add(o);
+         }
+      }
+      return found;
+   }
+
+   /**
+    * Returns true if <code>toFind</code> is in <code>values</code> 
+    * ignoring case.
+    * 
+    * @param toFind
+    * @param values
+    * @return
+    */
+   public static boolean in(String toFind, String... values)
+   {
+      toFind = toFind.toLowerCase();
+      for (String val : values)
+      {
+         if (toFind.equals(val.toLowerCase()))
+            return true;
+      }
+      return false;
    }
 
 }

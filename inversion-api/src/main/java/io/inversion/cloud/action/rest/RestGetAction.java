@@ -16,44 +16,21 @@
  */
 package io.inversion.cloud.action.rest;
 
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.rql.Page;
+import io.inversion.cloud.rql.RqlParser;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Parser;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows;
-import io.inversion.cloud.utils.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public class RestGetAction extends Action<RestGetAction>
 {
@@ -67,17 +44,6 @@ public class RestGetAction extends Action<RestGetAction>
 
    public RestGetAction()
    {
-      this(null);
-   }
-
-   public RestGetAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RestGetAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
       withMethods("GET");
    }
 
@@ -94,7 +60,7 @@ public class RestGetAction extends Action<RestGetAction>
          Relationship rel = collection.getRelationship(req.getSubCollectionKey());
 
          if (rel == null)
-            throw new ApiException(Status.SC_404_NOT_FOUND, "'" + req.getSubCollectionKey() + "' is not a valid relationship");
+            ApiException.throw404NotFound("'%s' is not a valid relationship", req.getSubCollectionKey());
 
          String newHref = null;
 
@@ -120,7 +86,7 @@ public class RestGetAction extends Action<RestGetAction>
                Object pkVal = entityKeyRow.get(pkName);
 
                if (pkVal == null)
-                  throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing parameter for foreign key column '" + fk + "'");
+                  ApiException.throw400BadRequest("Missing parameter for foreign key column '%s'", fk);
 
                newHref += fk.getColumnName() + "=" + pkVal + "&";
             }
@@ -262,7 +228,7 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (params.size() > 0)
       {
-         Parser parser = new Parser();
+         RqlParser parser = new RqlParser();
          for (String paramName : params.keySet())
          {
             String termStr = null;
@@ -350,7 +316,7 @@ public class RestGetAction extends Action<RestGetAction>
          Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Unable to find collection for url '" + req.getUrl() + "'");
+            ApiException.throw400BadRequest("Unable to find collection for url '%s'", req.getUrl());
 
          results = db.select(null, terms);
       }
@@ -389,7 +355,6 @@ public class RestGetAction extends Action<RestGetAction>
                      String link = null;
                      if (rel.isOneToMany())
                      {
-                        Index foreignKey = rel.getFkIndex1();
                         String fkval = Collection.encodeKey(row, rel.getFkIndex1());
 
                         if (fkval != null)
@@ -670,7 +635,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof JSArray)
-                        throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Algorithm implementation error...this relationship seems to have already been expanded.");
+                        ApiException.throw500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
 
                      toMatchEks.add(parentEk);
 
@@ -741,7 +706,8 @@ public class RestGetAction extends Action<RestGetAction>
    protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
       if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "You can only retrieve corolated index keys from the same table.");
+         ApiException.throw400BadRequest("You can only retrieve related index keys from the same Collection.");
+
       List<KeyValue> related = new ArrayList<>();
 
       LinkedHashSet columns = new LinkedHashSet();
@@ -758,11 +724,10 @@ public class RestGetAction extends Action<RestGetAction>
       {
          List idxToMatchVals = new ArrayList();
          idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
-            
+
          List idxToRetrieveVals = new ArrayList();
          idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
-         
-         
+
          String parentEk = Collection.encodeKey(idxToMatchVals);
          String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
@@ -779,30 +744,30 @@ public class RestGetAction extends Action<RestGetAction>
 
       String url = Chain.buildLink(collection, Utils.implode(",", entityKeys), null);
 
-//      //--
-//      //-- Nested param support
-//      //TODO: don't remember the use case here.  need to find and make a test case
-//      Map<String, String> params = Chain.peek().getRequest().getParams();
-//      String lcPath = expandsPath.toLowerCase();
-//      for (String key : params.keySet())
-//      {
-//         String lcKey = key.toLowerCase();
-//
-//         if (reservedParams.contains(lcKey))
-//            continue;
-//
-//         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
-//         {
-//            String value = params.get(key);
-//            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
-//
-//            if (url.indexOf("?") < 0)
-//               url += "?";
-//            url += URLEncoder.encode(lcKey, "UTF-8");
-//            if (!Utils.empty(value))
-//               url += "=" + URLEncoder.encode(value, "UTF-8");
-//         }
-//      }
+      //      //--
+      //      //-- Nested param support
+      //      //TODO: don't remember the use case here.  need to find and make a test case
+      //      Map<String, String> params = Chain.peek().getRequest().getParams();
+      //      String lcPath = expandsPath.toLowerCase();
+      //      for (String key : params.keySet())
+      //      {
+      //         String lcKey = key.toLowerCase();
+      //
+      //         if (reservedParams.contains(lcKey))
+      //            continue;
+      //
+      //         if (lcKey.matches(".*\\b" + lcPath.replace(".", "\\.") + ".*"))
+      //         {
+      //            String value = params.get(key);
+      //            lcKey = key.replaceAll("\\b" + (lcPath + "\\."), "");
+      //
+      //            if (url.indexOf("?") < 0)
+      //               url += "?";
+      //            url += URLEncoder.encode(lcKey, "UTF-8");
+      //            if (!Utils.empty(value))
+      //               url += "=" + URLEncoder.encode(value, "UTF-8");
+      //         }
+      //      }
 
       Response res = Chain.peek().getEngine().get(url);
       int sc = res.getStatusCode();
@@ -825,14 +790,18 @@ public class RestGetAction extends Action<RestGetAction>
          {
             Object entityKey = getEntityKey((JSNode) node);
             if (pkCache.containsKey(collection, entityKey))
-               throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "FIX ME IF FOUND.  Algorithm Implementation Error");
+            {
+               ApiException.throw500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
+               return null;
+            }
 
             pkCache.put(collection, entityKey, node);
          }
          return nodes;
       }
 
-      throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, res.getErrorContent());//"Unknow repose code \"" + sc + "\" or body type from nested query.");
+      res.rethrow();
+      return null;
    }
 
    public int getMaxRows()
@@ -892,7 +861,7 @@ public class RestGetAction extends Action<RestGetAction>
    public static String stripTerms(String url, String... tokens)
    {
       Url u = new Url(url);
-      Parser p = new Parser();
+      RqlParser p = new RqlParser();
 
       Map<String, String> params = u.getParams();
       for (String key : params.keySet())

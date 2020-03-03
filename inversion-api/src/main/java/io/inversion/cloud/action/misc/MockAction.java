@@ -16,20 +16,14 @@
  */
 package io.inversion.cloud.action.misc;
 
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.utils.Utils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Utils;
 
 public class MockAction extends Action<MockAction>
 {
@@ -156,7 +150,7 @@ public class MockAction extends Action<MockAction>
          }
          else
          {
-            throw new ApiException(Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to locate jsonUrl '" + jsonUrl + "'. Please check your configuration");
+            ApiException.throw500InternalServerError("Unable to locate jsonUrl '%s'. Please check your configuration", jsonUrl);
          }
 
       }

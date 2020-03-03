@@ -25,10 +25,10 @@ import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
@@ -56,10 +56,10 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
       String properties = req.removeParam(propertyProp);
 
       if (Utils.empty(properties))
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "Missing query param '" + propertyProp + "' which should be a comma separated list of collection.property names to query");
+         ApiException.throw400BadRequest("Missing query param '%s' which should be a comma separated list of collection.property names to query", propertyProp);
 
       if (!properties.contains("."))
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be in the format '{collection}.{property}'");
+         ApiException.throw400BadRequest("Query param '%s' must be in the format '{collection}.{property}'", propertyProp);
 
       String value = req.removeParam(searchProp);
       if (Utils.empty(value))
@@ -78,9 +78,9 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
       String firstProp = propertyList.get(0);
       String collectionKey = firstProp.substring(0, firstProp.indexOf("."));
 
-      Collection collection = api.getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
+      Collection collection = req.getApi().getCollection(collectionKey);//getApi().getCollection(collectionKey, SqlDb.class);
       if (collection == null)
-         throw new ApiException(Status.SC_404_NOT_FOUND, "Collection '" + collectionKey + "' could not be found");
+         ApiException.throw404NotFound("Collection '%s' could not be found", collectionKey);
 
       String sql = "";
       sql += " SELECT DISTINCT " + searchProp;
@@ -91,10 +91,10 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
          String prop = propertyList.get(i);
 
          if (!whitelist.contains(prop.toLowerCase()))
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
+            ApiException.throw400BadRequest("One of the properties you requested is not in the SuggestHandler whitelist, please edit your query or your config and try again");
 
          if (prop.indexOf(".") < 0)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Query param '" + propertyProp + "' must be of the form '" + propertyProp + "=collection.property[,collection.property...]");
+            ApiException.throw400BadRequest("Query param '%s' must be of the form %s=collection.property[,collection.property...]", propertyProp, propertyProp);
 
          collectionKey = prop.substring(0, prop.indexOf("."));
 
@@ -103,8 +103,8 @@ public class JdbcAutoSuggestAction extends Action<JdbcAutoSuggestAction>
 
          sql += " \r\nSELECT DISTINCT " + column + " AS " + searchProp + " FROM " + tableName + " WHERE " + column + " LIKE '%" + JdbcUtils.check(value) + "%' AND " + column + " != ''";
 
-         if (api.isMultiTenant() && api.getCollection(tableName).getProperty(tenantCol) != null)
-            sql += " AND " + tenantCol + "=" + Chain.peek().getUser().getTenantId();
+         if (req.getApi().isMultiTenant() && req.getApi().getCollection(tableName).getProperty(tenantCol) != null)
+            sql += " AND " + tenantCol + "=" + Chain.getUser().getTenantId();
 
          if (i + 1 < propertyList.size())
             sql += " \r\nUNION ";

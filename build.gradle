@@ -130,6 +130,7 @@ subprojects {
 	//from running as part of the standard CICD pipeline build
 	//run intergration tests via:  ./gradlew test -Dtest.profile=integration 
 	test {
+		useJUnitPlatform()
   		if (System.properties['test.profile'] != 'integration') {
     		exclude '**/*IntegTest*'
   		}

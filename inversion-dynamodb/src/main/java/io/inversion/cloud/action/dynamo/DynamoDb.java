@@ -39,15 +39,15 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Rows.Row;
 import io.inversion.cloud.utils.Utils;
 
 public class DynamoDb extends Db<DynamoDb>
@@ -160,7 +160,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
       else
       {
-         throw new ApiException(Status.SC_400_BAD_REQUEST, "A dynamo delete must have a hash key and an optional sortKey and that is it: '" + row + "'");
+         ApiException.throw400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '%s'", row);
       }
    }
 

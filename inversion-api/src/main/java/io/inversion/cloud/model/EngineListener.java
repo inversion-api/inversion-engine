@@ -20,14 +20,8 @@ import io.inversion.cloud.service.Engine;
 
 public interface EngineListener extends ApiListener
 {
-   default void onStartup(Engine engine)
-   {
+   void onStartup(Engine engine);
 
-   }
-
-   default void onShutdown(Engine engine)
-   {
-
-   }
+   void onShutdown(Engine engine);
 
 }

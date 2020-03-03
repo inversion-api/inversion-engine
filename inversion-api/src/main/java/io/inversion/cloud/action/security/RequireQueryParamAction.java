@@ -16,14 +16,13 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Requires query string parameter "requiredName=anyValue" OR "eq(requiredName,anyValue)" be present on the Request.
@@ -36,21 +35,6 @@ import io.inversion.cloud.model.Status;
 public class RequireQueryParamAction extends Action<SetQueryParamAction>
 {
    protected Set<String> params = new HashSet();
-
-   public RequireQueryParamAction()
-   {
-      this(null);
-   }
-
-   public RequireQueryParamAction(String inludePaths)
-   {
-      this(inludePaths, null, null);
-   }
-
-   public RequireQueryParamAction(String inludePaths, String excludePaths, String config)
-   {
-      super(inludePaths, excludePaths, config);
-   }
 
    public void run(Request req, Response res) throws Exception
    {
@@ -68,7 +52,7 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
                hasParam = true;
          }
          if (!hasParam)
-            throw new ApiException(Status.SC_400_BAD_REQUEST, "Required query string parameter '" + requiredParam + "' appears to be missing.");
+            ApiException.throw400BadRequest("Required query string parameter '%s' appears to be missing.", requiredParam);
       }
    }
 

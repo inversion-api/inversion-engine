@@ -3,8 +3,6 @@ package io.inversion.cloud.model;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
-import io.inversion.cloud.model.Db;
-
 public interface AbstractDbTest
 {
    public String getType();
