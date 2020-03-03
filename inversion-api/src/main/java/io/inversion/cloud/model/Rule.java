@@ -16,17 +16,11 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
+import io.inversion.cloud.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {

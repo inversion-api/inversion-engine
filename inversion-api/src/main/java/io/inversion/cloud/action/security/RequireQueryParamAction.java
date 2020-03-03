@@ -16,14 +16,13 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Requires query string parameter "requiredName=anyValue" OR "eq(requiredName,anyValue)" be present on the Request.

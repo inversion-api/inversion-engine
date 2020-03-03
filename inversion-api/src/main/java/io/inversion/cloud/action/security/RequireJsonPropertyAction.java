@@ -16,16 +16,11 @@
  */
 package io.inversion.cloud.action.security;
 
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.utils.Utils;
+
 import java.util.HashSet;
 import java.util.Set;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.utils.Utils;
 
 public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
 {

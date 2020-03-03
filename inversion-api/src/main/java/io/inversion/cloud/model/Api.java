@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,36 +16,35 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Api
 {
-   protected Logger                      log         = LoggerFactory.getLogger(getClass());
+   protected Logger log = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean            started     = false;
-   transient volatile boolean            starting    = false;
-   transient long                        loadTime    = 0;
-   transient protected String            hash        = null;
+   transient volatile  boolean started  = false;
+   transient volatile  boolean starting = false;
+   transient           long    loadTime = 0;
+   transient protected String  hash     = null;
 
-   protected boolean                     debug       = false;
+   protected boolean debug = false;
 
-   protected String                      name        = null;
-   protected String                      apiCode     = null;
-   protected boolean                     multiTenant = false;
-   protected String                      url         = null;
+   protected String  name        = null;
+   protected String  version     = null;
+   protected boolean multiTenant = false;
+   protected String  url         = null;
 
-   protected List<Db>                    dbs         = new ArrayList();
-   protected List<Endpoint>              endpoints   = new ArrayList();
-   protected List<Action>                actions     = new ArrayList();
-   protected List<Collection>            collections = new ArrayList();
+   protected List<Db>         dbs         = new ArrayList();
+   protected List<Endpoint>   endpoints   = new ArrayList();
+   protected List<Action>     actions     = new ArrayList();
+   protected List<Collection> collections = new ArrayList();
 
-   protected transient List<ApiListener> listeners   = new ArrayList();
+   protected transient List<ApiListener> listeners = new ArrayList();
 
    public Api()
    {
@@ -54,7 +53,6 @@ public class Api
    public Api(String name)
    {
       withName(name);
-      withApiCode(name);
    }
 
    public synchronized Api startup()
@@ -327,17 +325,6 @@ public class Api
       this.debug = debug;
    }
 
-   public String getApiCode()
-   {
-      return apiCode != null ? apiCode : name;
-   }
-
-   public Api withApiCode(String apiCode)
-   {
-      this.apiCode = apiCode;
-      return this;
-   }
-
    public String getName()
    {
       return name;
@@ -383,4 +370,19 @@ public class Api
       return Collections.unmodifiableList(listeners);
    }
 
+   public String getVersion()
+   {
+      return version;
+   }
+
+   public void setVersion(String version)
+   {
+      this.version = version;
+   }
+
+   public Api withVersion(String version)
+   {
+      this.version = version;
+      return this;
+   }
 }

@@ -16,12 +16,12 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SetQueryParamAction extends Action<SetQueryParamAction>
 {

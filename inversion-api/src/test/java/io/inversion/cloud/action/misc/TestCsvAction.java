@@ -1,19 +1,14 @@
 package io.inversion.cloud.action.misc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.service.Chain;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TestCsvAction
 {

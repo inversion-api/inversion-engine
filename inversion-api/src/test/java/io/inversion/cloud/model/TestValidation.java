@@ -1,11 +1,10 @@
 package io.inversion.cloud.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
+import io.inversion.cloud.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.utils.Utils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestValidation
 {

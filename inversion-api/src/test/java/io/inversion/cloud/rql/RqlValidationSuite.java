@@ -16,21 +16,15 @@
  */
 package io.inversion.cloud.rql;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.collections4.CollectionUtils;
-
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
+import org.apache.commons.collections4.CollectionUtils;
+
+import java.util.*;
 
 public class RqlValidationSuite
 {

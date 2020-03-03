@@ -16,10 +16,10 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import io.inversion.cloud.utils.Utils;
 
 /**
  * @author tc-rocket

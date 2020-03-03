@@ -16,18 +16,17 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.utils.Utils;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.text.StringEscapeUtils;
-
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.utils.Utils;
 
 /**
  * Represents a REST collection as an interface into an underlying

@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import io.inversion.cloud.utils.Utils;
-
 public class Term implements Comparable<Term>
 {
    public Term       parent = null;

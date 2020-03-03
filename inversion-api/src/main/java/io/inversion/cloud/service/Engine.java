@@ -16,38 +16,21 @@
  */
 package io.inversion.cloud.service;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Vector;
-
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.utils.Configurator;
+import io.inversion.cloud.utils.Pluralizer;
+import io.inversion.cloud.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.ApiListener;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.EngineListener;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.Pluralizer;
-import io.inversion.cloud.utils.Utils;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Engine
 {
@@ -158,10 +141,11 @@ public class Engine
             startupApi(api);
          }
 
+         //todo need to include api version info here.
          //-- the following block is only debug output
          for (Api api : apis)
          {
-            System.out.println(api.getApiCode() + "--------------");
+            System.out.println(api.getName() + "--------------");
 
             for (Endpoint e : api.getEndpoints())
             {
@@ -400,15 +384,23 @@ public class Engine
          for (Api a : apis)
          {
             if (!((parts.size() == 0 && apis.size() == 1) //
-                  || (apis.size() == 1 && a.getApiCode() == null) //if you only have 1 API, you don't have to have an API code
-                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getApiCode()))))
+                  || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
+                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (parts.size() > 1 && a.getVersion().equalsIgnoreCase(parts.get(1)))))//
+            ))
                continue;
 
             req.withApi(a);
 
-            if (parts.size() > 0 && parts.get(0).equalsIgnoreCase((a.getApiCode())))
+            if (parts.size() > 0 && parts.get(0).equalsIgnoreCase((a.getName())))
             {
                apiPath.add(parts.remove(0));
+            }
+            /*
+            This API is the correct version. Remove version from parts so the correct endpoint can be applied. 
+             */
+            if (a.getVersion() != null)
+            {
+               parts.remove(0);
             }
 
             if (a.isMultiTenant() && parts.size() > 0)
@@ -792,15 +784,30 @@ public class Engine
       return new ArrayList(apis);
    }
 
-   public Api withApi(String apiCode)
+   /*
+   Gets all apis of the same apiName
+    */
+   public synchronized List<Api> findApis(String apiName)
    {
-      Api api = getApi(apiCode);
-      if (api == null)
+      return apis.stream().filter(api -> apiName.equalsIgnoreCase(api.getName())).collect(Collectors.toList());
+   }
+
+   public synchronized Api getApi(String apiName)
+   {
+      return getApi(apiName, null);
+   }
+
+   public synchronized Api getApi(String apiName, String apiVersion)
+   {
+      //only one api will have a name version pair so return the first one.
+      for (Api api : apis)
       {
-         api = new Api(apiCode);
-         withApi(api);
+         if (api.getName().equals(apiName) && Objects.equals(api.getVersion(), apiVersion))
+         {
+            return api;
+         }
       }
-      return api;
+      return null;
    }
 
    public synchronized Engine withApi(Api api)
@@ -808,31 +815,47 @@ public class Engine
       if (apis.contains(api))
          return this;
 
-      Api existingApi = getApi(api.getApiCode());
+      List<Api> existingApis = findApis(api.getName());
 
       List<Api> newList = new ArrayList(apis);
-
-      if (existingApi != null && existingApi != api)
-      {
-         newList.remove(existingApi);
-         newList.add(api);
-      }
-      else if (existingApi == null)
+      if (existingApis.isEmpty())
       {
          newList.add(api);
-      }
-
-      if (existingApi != api && isStarted())
-      {
          api.startup();
+      }
+      else
+      {
+         existingApis.forEach(existingApi -> {
+            if (existingApi != null && existingApi != api)
+            {
+               if (Objects.equals(existingApi.getVersion(), api.getVersion()))
+               {
+                  newList.remove(existingApi);
+                  shutdownApi(existingApi);
+                  newList.add(api);
+               }
+               else if (existingApi.getVersion() != null && api.getVersion() != null)
+               { //Different version with both using versions
+                  newList.add(api);
+               }
+               else
+               {
+                  ApiException.throw500InternalServerError("Existing Api %s found with version %s. " + "New Api %s found with version %s. " + "Apis with the same api code must all use versions or a single api with no versions is supported.", existingApi.getName(), existingApi.getVersion(), api.getName(), api.getVersion());
+               }
+            }
+            else if (existingApi == null)
+            {
+               newList.add(api);
+            }
+
+            if (existingApi != api && isStarted())
+            {
+               api.startup();
+            }
+         });
       }
 
       apis = newList;
-
-      if (existingApi != null && existingApi != api)
-      {
-         shutdownApi(existingApi);
-      }
 
       return this;
    }
@@ -903,16 +926,6 @@ public class Engine
          }
 
       }
-   }
-
-   public synchronized Api getApi(String apiCode)
-   {
-      for (Api api : apis)
-      {
-         if (apiCode.equalsIgnoreCase(api.getApiCode()))
-            return api;
-      }
-      return null;
    }
 
    public String getProfile()

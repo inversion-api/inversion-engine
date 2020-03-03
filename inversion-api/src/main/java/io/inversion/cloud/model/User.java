@@ -16,12 +16,12 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import io.inversion.cloud.utils.Utils;
 
 public class User
 {

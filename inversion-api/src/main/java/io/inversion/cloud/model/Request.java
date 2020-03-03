@@ -16,17 +16,16 @@
  */
 package io.inversion.cloud.model;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.HttpUtils;
 import io.inversion.cloud.utils.Utils;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 public class Request
 {
@@ -42,7 +41,6 @@ public class Request
    Engine                                 engine                 = null;
    Api                                    api                    = null;
    Path                                   apiPath                = null;
-   String                                 apiCode                = null;
    String                                 tenantCode             = null;
 
    Path                                   endpointPath           = null;
@@ -550,11 +548,6 @@ public class Request
    {
       this.endpointPath = endpointPath;
       return this;
-   }
-
-   public String getApiCode()
-   {
-      return api.getApiCode();
    }
 
    public String getTenantCode()

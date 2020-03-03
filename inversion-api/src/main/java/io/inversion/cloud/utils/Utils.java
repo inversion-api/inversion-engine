@@ -16,56 +16,24 @@
  */
 package io.inversion.cloud.utils;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.Flushable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
-import com.fasterxml.jackson.databind.util.ISO8601Utils;
-
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
+import java.util.*;
 
 /**
  * Collection of utility methods designed to make

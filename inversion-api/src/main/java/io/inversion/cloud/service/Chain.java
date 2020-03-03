@@ -16,26 +16,12 @@
  */
 package io.inversion.cloud.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.*;
+import io.inversion.cloud.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.User;
-import io.inversion.cloud.utils.Utils;
+import java.util.*;
 
 public class Chain
 {

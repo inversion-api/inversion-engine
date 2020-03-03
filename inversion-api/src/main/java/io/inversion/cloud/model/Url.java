@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import io.inversion.cloud.utils.Utils;
 
 /**
  * Url utilities

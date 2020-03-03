@@ -16,6 +16,9 @@
  */
 package io.inversion.cloud.service;
 
+import io.inversion.cloud.utils.Utils;
+import org.junit.jupiter.api.Test;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -23,10 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.utils.Utils;
 
 public class TestConfigurator
 {

@@ -16,11 +16,11 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wells
@@ -112,9 +112,9 @@ public abstract class Action<A extends Action> extends Rule<A>
       //         return chain.getRequest().getApi().getId() + "";
       //      }
       //      else 
-      if ("apiCode".equalsIgnoreCase(key))
+      if ("apiName".equalsIgnoreCase(key))
       {
-         return chain.getRequest().getApi().getApiCode();
+         return chain.getRequest().getApi().getName();
       }
       //      else if ("accountId".equalsIgnoreCase(key))
       //      {

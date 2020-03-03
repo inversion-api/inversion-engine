@@ -16,46 +16,18 @@
  */
 package io.inversion.cloud.utils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Rule;
-import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.*;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Wirer.Ignore;
 import io.inversion.cloud.utils.Wirer.Includer;
 import io.inversion.cloud.utils.Wirer.Namer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
 
 public class Configurator
 {
@@ -153,10 +125,11 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            if (Utils.empty(api.getApiCode()))
-               ApiException.throw500InternalServerError("Api '%s' is missing an 'apiCode'.  An Api cannot be loaded without one.", api.getApiCode());
+            if (Utils.empty(api.getName()))
+               ApiException.throw500InternalServerError("Api '%s' is missing an 'apiCode'.  An Api cannot be loaded without one.", api.getName());
 
-            Api existingApi = engine.getApi(api.getApiCode());
+            Api existingApi = engine.getApi(api.getName(), api.getVersion());
+
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                doLoad = true;
@@ -238,7 +211,7 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = engine.getApi(api.getApiCode());
+            Api existingApi = engine.getApi(api.getName(), api.getVersion());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.withHash(config.hash);

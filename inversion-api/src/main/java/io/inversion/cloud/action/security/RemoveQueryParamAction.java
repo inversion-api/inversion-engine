@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class RemoveQueryParamAction extends Action<SetQueryParamAction>
 {

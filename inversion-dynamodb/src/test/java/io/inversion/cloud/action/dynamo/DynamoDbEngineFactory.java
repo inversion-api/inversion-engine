@@ -61,7 +61,7 @@ public class DynamoDbEngineFactory
       return engine;
    }
 
-   protected static Engine buildEngine(String apiCode, final String ddl, String dynamoTbl) throws Exception
+   protected static Engine buildEngine(String apiName, final String ddl, String dynamoTbl) throws Exception
    {
       return null;
       //      buildTables();
@@ -119,7 +119,7 @@ public class DynamoDbEngineFactory
       //      //--
       //      //--
       //
-      //      final Api api = engine.getApi(apiCode);
+      //      final Api api = engine.getApi(apiName);
       //      api.withDb(dynamoDb);
       //      api.withEndpoint("GET,PUT,POST,DELETE", "dynamodb/*", new RestAction());
       //

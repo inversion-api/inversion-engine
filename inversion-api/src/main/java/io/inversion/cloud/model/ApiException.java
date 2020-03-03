@@ -16,11 +16,11 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.utils.Utils;
+
 import java.io.StringWriter;
 import java.util.Formatter;
 import java.util.Locale;
-
-import io.inversion.cloud.utils.Utils;
 
 public class ApiException extends RuntimeException implements Status
 {

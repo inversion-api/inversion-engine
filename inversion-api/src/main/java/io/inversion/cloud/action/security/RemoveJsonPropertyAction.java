@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class RemoveJsonPropertyAction extends Action<RemoveJsonPropertyAction>
 {

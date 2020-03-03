@@ -16,18 +16,13 @@
  */
 package io.inversion.cloud.action.misc;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-
+import io.inversion.cloud.model.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 /**
  * Converts a JSON object/array response value into CSV format.  

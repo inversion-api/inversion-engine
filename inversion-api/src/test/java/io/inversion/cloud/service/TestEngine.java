@@ -16,20 +16,14 @@
  */
 package io.inversion.cloud.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import io.inversion.cloud.action.misc.MockAction;
+import io.inversion.cloud.model.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Response;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestEngine
 {
@@ -313,6 +307,32 @@ public class TestEngine
 
    }
 
+   @Test public void test_api_with_version()
+   {
+      Api api1 = new Api("test")//
+                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
+            ;
+      Api api2 = new Api("test")//
+                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
+            ;
+
+      Api api3 = new Api("test")//
+                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
+                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
+                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
+            ;
+
+      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+
+   }
+
    public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
    {
       assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
@@ -322,7 +342,7 @@ public class TestEngine
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
-         {
+      {
             protected void run(Chain chain, List<Action> actions) throws Exception
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
@@ -368,7 +388,7 @@ public class TestEngine
       for (Api api : apis)
       {
          if (api != null)
-            e.withApi(api);//without this additional API, any apiCode will match
+            e.withApi(api);//without this additional API, any apiName will match
       }
 
       Response resp = e.service(method, url);

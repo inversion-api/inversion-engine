@@ -16,10 +16,9 @@
  */
 package io.inversion.cloud.model;
 
+import io.inversion.cloud.model.JSNode.JSONPathTokenizer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.model.JSNode.JSONPathTokenizer;
 
 public class TestJSONPathTokenizer
 {

@@ -16,14 +16,6 @@
  */
 package io.inversion.cloud.action.security;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections4.map.LRUMap;
-
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
@@ -31,17 +23,16 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.User;
+import io.inversion.cloud.model.*;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.map.LRUMap;
+
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class AuthAction extends Action<AuthAction>
 {
@@ -92,7 +83,7 @@ public class AuthAction extends Action<AuthAction>
       String collection = getConfig("collection", this.collection);
       long sessionExp = Long.parseLong(getConfig("sessionExp", this.sessionExp + ""));
 
-      String apiCode = req.getApi().getApiCode();
+      String apiName = req.getApi().getName();
       String tenantCode = req.getTenantCode();
 
       //-- END CONFIG
@@ -198,7 +189,7 @@ public class AuthAction extends Action<AuthAction>
          }
          else if (!Utils.empty(username, password))
          {
-            user = userDao.getUser(username, password, apiCode, tenantCode);
+            user = userDao.getUser(username, password, apiName, tenantCode);
          }
       }
 
@@ -235,7 +226,7 @@ public class AuthAction extends Action<AuthAction>
 
          if (sessionReq && req.isPost())
          {
-            sessionKey = req.getApi().getApiCode() + "_" + newSessionId();
+            sessionKey = req.getApi().getName() + "_" + newSessionId();
             updateSessionCache = true;
 
             resp.withHeader("x-auth-token", "Session " + sessionKey);
@@ -274,7 +265,7 @@ public class AuthAction extends Action<AuthAction>
 
       if (user == null && !sessionReq)
       {
-         user = userDao.getGuest(apiCode, tenantCode);
+         user = userDao.getGuest(apiName, tenantCode);
          Chain.peek().withUser(user);
       }
    }
@@ -331,23 +322,23 @@ public class AuthAction extends Action<AuthAction>
 
    /**
     * Looks gwt signing secrets up as environment vars or sysprops.
-    * 
+    *
     * Finds the most specific keys keys first
-    * 
+    *  //todo is this old java doc?
     * @param accountCode
-    * @param apiCode
+    * @param apiName
     * @param tenantCode
     * @return
     */
    List<String> getJwtSecrets()
    {
       Request req = Chain.peek().getRequest();
-      String apiCode = req.getApi().getApiCode();
+      String apiName = req.getApi().getName();
       String tenantCode = req.getTenantCode();
-      return getJwtSecrets(apiCode, tenantCode);
+      return getJwtSecrets(apiName, tenantCode);
    }
 
-   List<String> getJwtSecrets(String apiCode, String tenantCode)
+   List<String> getJwtSecrets(String apiName, String tenantCode)
    {
       List secrets = new ArrayList();
 
@@ -358,8 +349,8 @@ public class AuthAction extends Action<AuthAction>
          {
             String key = (getName() != null ? getName() : "") + ".jwt" + (i == 0 ? "" : ("." + i));
 
-            if (j > 1 && apiCode != null)
-               key += "." + apiCode;
+            if (j > 1 && apiName != null)
+               key += "." + apiName;
 
             if (j > 2 && tenantCode != null)
                key += "." + tenantCode;
@@ -380,15 +371,15 @@ public class AuthAction extends Action<AuthAction>
    public String signJwt(JWTCreator.Builder jwtBuilder) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
       Request req = Chain.peek().getRequest();
-      String apiCode = req.getApi().getApiCode();
+      String apiName = req.getApi().getName();
       String tenantCode = req.getTenantCode();
 
-      return signJwt(jwtBuilder, apiCode, tenantCode);
+      return signJwt(jwtBuilder, apiName, tenantCode);
    }
 
-   public String signJwt(JWTCreator.Builder jwtBuilder, String apiCode, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
+   public String signJwt(JWTCreator.Builder jwtBuilder, String apiName, String tenantCode) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException
    {
-      String secret = getJwtSecrets(apiCode, tenantCode).get(0);
+      String secret = getJwtSecrets(apiName, tenantCode).get(0);
       return jwtBuilder.sign(Algorithm.HMAC256(secret));
    }
 
@@ -485,9 +476,9 @@ public class AuthAction extends Action<AuthAction>
 
    public static interface UserDao
    {
-      User getUser(String username, String password, String apiCode, String tenantCode) throws Exception;
+      User getUser(String username, String password, String apiName, String tenantCode) throws Exception;
 
-      default User getGuest(String apiCode, String tenantCode)
+      default User getGuest(String apiName, String tenantCode)
       {
          User user = new User();
          user.withUsername("Anonymous");

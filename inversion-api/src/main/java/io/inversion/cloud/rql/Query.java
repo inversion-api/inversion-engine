@@ -16,18 +16,12 @@
  */
 package io.inversion.cloud.rql;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import io.inversion.cloud.model.*;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
