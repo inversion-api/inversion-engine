@@ -26,23 +26,62 @@ public class ApiException extends RuntimeException implements Status
 {
    protected String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
-   private ApiException(String status)
+   public ApiException() throws ApiException
    {
-      super(status);
-      if (status.matches("\\d\\d\\d .*"))
-         withStatus(status);
+      this(SC_500_INTERNAL_SERVER_ERROR, null, null);
    }
 
-   private ApiException(String status, String message)
+   public ApiException(Throwable cause) throws ApiException
    {
-      super(message);
-      withStatus(status);
+      this(SC_500_INTERNAL_SERVER_ERROR, cause, null);
    }
 
-   private ApiException(String status, String message, Throwable t)
+   public ApiException(String httpStatus) throws ApiException
    {
-      super(message, t);
-      withStatus(status);
+      this(httpStatus, null, null);
+   }
+
+   public ApiException(String messageFormat, Object... args) throws ApiException
+   {
+      this(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
+   }
+
+   public ApiException(String httpStatus, Throwable cause, String messageFormat, Object... args) throws ApiException
+   {
+      super(getMessage(httpStatus, cause, messageFormat, args), cause != null ? Utils.getCause(cause) : null);
+
+      if (httpStatus == null && messageFormat != null)
+         httpStatus = messageFormat;
+
+      if (httpStatus.matches("\\d\\d\\d .*"))
+         withStatus(httpStatus);
+   }
+
+   public static String getMessage(String status, Throwable cause, String messageFormat, Object... args)
+   {
+      String msg = status;
+      if (messageFormat == null && cause != null)
+      {
+         msg = Utils.getShortCause(cause);
+      }
+      else
+      {
+         if (messageFormat != null)
+         {
+            if (args != null && args.length > 0)
+            {
+               StringWriter sw = new StringWriter();
+               Formatter fmt = new Formatter(sw);
+               fmt.format(Locale.getDefault(), messageFormat, args);
+               fmt.close();
+               msg = sw.toString();
+            }
+            else
+               msg = messageFormat;
+         }
+
+      }
+      return msg;
    }
 
    public String getStatus()
@@ -176,14 +215,14 @@ public class ApiException extends RuntimeException implements Status
       throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, null);
    }
 
-   public static void throw500InternalServerError(String messageFormat, Object... messages) throws ApiException
+   public static void throw500InternalServerError(String messageFormat, Object... args) throws ApiException
    {
-      throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, messages);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
    }
 
-   public static void throw500InternalServerError(Throwable cause, String messageFormat, Object... messages) throws ApiException
+   public static void throw500InternalServerError(Throwable cause, String messageFormat, Object... args) throws ApiException
    {
-      throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, messages);
+      throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, args);
    }
 
    public static void throw501NotImplemented() throws ApiException
@@ -196,14 +235,14 @@ public class ApiException extends RuntimeException implements Status
       throwEx(SC_501_NOT_IMPLEMENTED, cause, null);
    }
 
-   public static void throw501NotImplemented(String messageFormat, Object... messages) throws ApiException
+   public static void throw501NotImplemented(String messageFormat, Object... args) throws ApiException
    {
-      throwEx(SC_501_NOT_IMPLEMENTED, null, messageFormat, messages);
+      throwEx(SC_501_NOT_IMPLEMENTED, null, messageFormat, args);
    }
 
-   public static void throw501NotImplemented(Throwable cause, String messageFormat, Object... messages) throws ApiException
+   public static void throw501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException
    {
-      throwEx(SC_501_NOT_IMPLEMENTED, cause, messageFormat, messages);
+      throwEx(SC_501_NOT_IMPLEMENTED, cause, messageFormat, args);
    }
 
    /**
@@ -231,32 +270,8 @@ public class ApiException extends RuntimeException implements Status
 
    public static void throwEx(String status, Throwable cause, String messageFormat, Object... args) throws ApiException
    {
-      cause = cause != null ? Utils.getCause(cause) : cause;
-
-      String msg = "";
-      if (messageFormat == null && cause != null)
-      {
-         msg = Utils.getShortCause(cause);
-      }
-      else
-      {
-         if (messageFormat != null)
-         {
-            if (args != null && args.length > 0)
-            {
-               StringWriter sw = new StringWriter();
-               Formatter fmt = new Formatter(sw);
-               fmt.format(Locale.getDefault(), messageFormat, args);
-               fmt.close();
-               msg = sw.toString();
-            }
-            else
-               msg = messageFormat;
-         }
-
-      }
-
-      throw new ApiException(status, msg, cause);
+      ApiException ex = new ApiException(status, cause, messageFormat, args);
+      throw ex;
    }
 
 }
