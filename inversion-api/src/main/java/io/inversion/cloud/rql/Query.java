@@ -232,13 +232,11 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          if (columnName.indexOf(".") > -1)
          {
             String collectionName = columnName.substring(0, columnName.indexOf("."));
-            if(columnName.startsWith("_join~"))
+            if(columnName.startsWith("~~relTbl_"))
             {
-               //ex: _join_customers_to_orders_via_orders_1
-               collectionName = columnName.split("~")[3];
+               collectionName = collectionName.substring(columnName.indexOf("_") + 1);
+               collectionName = getCollection().getRelationship(collectionName).getRelated().getName();
             }
-            
-            
             coll = coll.getDb().getCollection(collectionName);
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }

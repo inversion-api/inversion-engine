@@ -196,7 +196,7 @@ public abstract class Db<T extends Db>
       }
    }
 
-   protected void configApi() throws Exception
+   public void configApi()
    {
       List<String> relationshipStrs = new ArrayList();
 

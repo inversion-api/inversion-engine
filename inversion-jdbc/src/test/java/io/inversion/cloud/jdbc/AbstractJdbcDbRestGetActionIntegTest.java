@@ -65,6 +65,46 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    }
 
    @Test
+   public void testNegativeOneToManyFilters() throws Exception
+   {
+      Response resp = null;
+
+      //find everyone who reports to Andrew
+      resp = engine.get(url("employees" + "?eq(reportsTo.firstName,Andrew)"));
+      assertEquals(5, resp.data().size());
+
+      //find everyone who does not report to Andrew
+      resp = engine.get(url("employees" + "?ne(reportsTo.firstName,Andrew)"));
+      assertEquals(4, resp.data().size());
+   }
+
+   @Test
+   public void testNegativeManyToOneFilters() throws Exception
+   {
+      Response resp = null;
+
+      //"Andrew Fuller" is Nancy's manager in the Northwind datataset
+      resp = engine.get(url("employees" + "?eq(employees.firstName,Nancy)"));
+      assertEquals(1, resp.data().size());
+      assertTrue(resp.data().toString().toLowerCase().indexOf("fuller") > 0);
+
+      resp = engine.get(url("employees" + "?ne(employees.firstName,Nancy)"));
+      assertEquals(8, resp.data().size());
+      assertTrue(resp.data().toString().toLowerCase().indexOf("fuller") < 0);
+   }
+
+   @Test
+   public void testNegativeManyToManyFilters() throws Exception
+   {
+      Response resp = null;
+
+      //-- find everyone who has never sold something with a quantity of 12
+      resp = engine.get(url("employees" + "?ne(orderdetails.quantity,12)"));
+      resp.dump();
+      assertEquals(6, resp.data().size());
+   }
+
+   @Test
    public void testRelatedCollectionJoinSelect() throws Exception
    {
       Response res = null;

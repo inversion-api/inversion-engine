@@ -16,14 +16,17 @@
  */
 package io.inversion.cloud.utils;
 
-import com.fasterxml.jackson.databind.util.ISO8601Utils;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -33,7 +36,27 @@ import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
+
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
 
 /**
  * Collection of utility methods designed to make
@@ -246,6 +269,27 @@ public class Utils
       return map;
    }
 
+   public static List asList(Object... objects)
+   {
+      return Arrays.asList(objects);
+   }
+
+   public static Set asSet(Object... objects)
+   {
+      return new HashSet(Arrays.asList(objects));
+   }
+
+   public static Map asMap(Object... objects)
+   {
+      Map map = new HashMap();
+      for (int i = 0; objects != null && i < objects.length - 1; i += 2)
+      {
+         map.put(objects[i], objects[i + 1]);
+      }
+      return map;
+   }
+
+   
    /**
     * Removes all matching pairs of '"` characters from the
     * start and end of a string.

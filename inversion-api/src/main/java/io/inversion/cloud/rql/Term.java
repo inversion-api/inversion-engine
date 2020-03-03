@@ -320,4 +320,23 @@ public class Term implements Comparable<Term>
       return found;
    }
 
+   /**
+    * Returns true if <code>toFind</code> is in <code>values</code> 
+    * ignoring case.
+    * 
+    * @param toFind
+    * @param values
+    * @return
+    */
+   public static boolean in(String toFind, String... values)
+   {
+      toFind = toFind.toLowerCase();
+      for (String val : values)
+      {
+         if (toFind.equals(val.toLowerCase()))
+            return true;
+      }
+      return false;
+   }
+
 }

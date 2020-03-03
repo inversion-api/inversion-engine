@@ -16,15 +16,24 @@
  */
 package io.inversion.cloud.rql;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections4.CollectionUtils;
+
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.service.Engine;
 import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.CollectionUtils;
-
-import java.util.*;
 
 public class RqlValidationSuite
 {
@@ -55,24 +64,65 @@ public class RqlValidationSuite
       withQueryClass(queryClass);
       withDb(db);
       withTables(tables);
+      
+      Collection orders = new Collection("orders")//s
+                                                  .withProperty("orderId", "VARCHAR")//
+                                                  .withProperty("customerId", "INTEGER")//
+                                                  .withProperty("employeeId", "DATETIME")//
+                                                  .withProperty("orderDate", "DATETIME")//
+                                                  .withProperty("requiredDate", "DATETIME")//
+                                                  .withProperty("shippedDate", "DATETIME")//
+                                                  .withProperty("shipVia", "INTEGER")//
+                                                  .withProperty("freight", "DECIMAL")//
+                                                  .withProperty("shipName", "VARCHAR")//
+                                                  .withProperty("shipAddress", "VARCHAR")//
+                                                  .withProperty("shipCity", "VARCHAR")//
+                                                  .withProperty("shipRegion", "VARCHAR")//
+                                                  .withProperty("shipPostalCode", "VARCHAR")//
+                                                  .withProperty("shipCountry", "VARCHAR")//
+                                                  .withIndex("PK_Orders", "primary", true, "orderId");
 
-      withTables(new Collection("orders")//s
-                                         .withProperty("orderId", "VARCHAR")//
-                                         .withProperty("customerId", "INTEGER")//
-                                         .withProperty("employeeId", "DATETIME")//
-                                         .withProperty("orderDate", "DATETIME")//
-                                         .withProperty("requiredDate", "DATETIME")//
-                                         .withProperty("shippedDate", "DATETIME")//
-                                         .withProperty("shipVia", "INTEGER")//
-                                         .withProperty("freight", "DECIMAL")//
-                                         .withProperty("shipName", "VARCHAR")//
-                                         .withProperty("shipAddress", "VARCHAR")//
-                                         .withProperty("shipCity", "VARCHAR")//
-                                         .withProperty("shipRegion", "VARCHAR")//
-                                         .withProperty("shipPostalCode", "VARCHAR")//
-                                         .withProperty("shipCountry", "VARCHAR")//
-                                         .withIndex("PK_Orders", "primary", true, "orderId"));
+      Collection orderDetails = new Collection("orderDetails").withProperties("employeeId", "INTEGER")//
+                                                              .withProperty("orderId", "INTEGER")//
+                                                              .withProperty("productId", "INTEGER")//
+                                                              .withProperty("quantity", "INTEGER")//
+                                                              .withIndex("PK_orderDetails", "primary", true, "orderId", "productId");
 
+      orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
+
+      Collection employees = new Collection("employees").withProperty("employeeId", "INTEGER")//
+                                                        .withProperty("firstName", "VARCHAR")//
+                                                        .withProperty("lastName", "VARCHAR")//
+                                                        .withProperty("reportsTo", "INTEGER")//
+                                                        .withIndex("PK_Employees", "primary", true, "employeeId");
+
+      employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
+      employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
+      
+      employees.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+      employees.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+      
+      
+
+      Collection employeeOrderDetails = new Collection("employeeOrderDetails")//
+                                                                              .withProperty("employeeId", "INTEGER")//
+                                                                              .withProperty("orderId", "INTEGER")//
+                                                                              .withProperty("productId", "INTEGER")//
+                                                                              .withIndex("PK_EmployeeOrderDetails", "primary", true, "employeeId", "orderId", "productId");
+
+      employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
+      employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
+      employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
+
+      employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
+      employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
+      
+      
+      employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
+      
+
+      withTables(orders, orderDetails, employees, employeeOrderDetails);
+      
       withTest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
       withTest("ne", "orders?ne(shipCountry,France)");
 
@@ -137,9 +187,13 @@ public class RqlValidationSuite
       withTest("sort", "orders?sort(-shipCountry,shipCity)");
       withTest("order", "orders?order(shipCountry,-shipCity)");
 
-      //withTest("_key", "orders?");
-      //withTest("join", "orders?");
+      withTest("onToManyExistsEq", "employees?eq(reportsTo.firstName,Andrew)");
+      withTest("onToManyNotExistsNe", "employees?ne(reportsTo.firstName,Andrew)");
 
+      withTest("manyToOneExistsEq", "employees?eq(employees.firstName,Nancy)");
+      withTest("manyToOneNotExistsNe", "employees?ne(employees.firstName,Nancy)");
+
+      withTest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
    }
 
    public void runIntegTests(Engine engine, String urlPrefix) throws Exception

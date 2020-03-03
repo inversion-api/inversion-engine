@@ -18,10 +18,8 @@ package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import io.inversion.cloud.jdbc.db.JdbcDb;
@@ -31,9 +29,9 @@ import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Group;
 import io.inversion.cloud.rql.Order;
@@ -181,7 +179,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
       printInitialSelect(parts, this.selectSql);
       printTermsSelect(parts, preparedStmt);
-      printJoins(parts, joins);
+      //printJoins(parts, joins);
       printWhereClause(parts, getWhere().getFilters(), preparedStmt);
       printGroupClause(parts, getGroup().getGroupBy());
       printOrderClause(parts, getOrder().getSorts());
@@ -223,26 +221,28 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       {
          String quotedTable = printTable();
 
-         if (joins != null && joins.size() > 0)
-         {
-            Map joined = new HashMap();
-
-            initialSelect = "SELECT DISTINCT " + quotedTable + ".* FROM " + quotedTable;
-
-            for (Entry<String, Term> joinEntry : joins.entrySet())
-            {
-               Term join = joinEntry.getValue();
-               String tableName = join.getToken(0);
-               String tableAlias = join.getToken(1);
-
-               if (!joined.containsKey(tableAlias))
-               {
-                  joined.put(tableAlias, tableName);
-                  initialSelect += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
-               }
-            }
-         }
-         else
+         //         if (joins != null && joins.size() > 0)
+         //         {
+         //            Map joined = new HashMap();
+         //
+         //            initialSelect = "SELECT DISTINCT " + quotedTable + ".* FROM " + quotedTable;
+         //
+         //            for (Entry<String, Term> joinEntry : joins.entrySet())
+         //            {
+         //               Term join = joinEntry.getValue();
+         //               String tableName = join.getToken(0);
+         //               String tableAlias = join.getToken(1);
+         //
+         //               if (!joined.containsKey(tableAlias))
+         //               {
+         //                  joined.put(tableAlias, tableName);
+         //                  initialSelect += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
+         //               }
+         //            }
+         //
+         //            //initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
+         //         }
+         //         else
          {
             boolean distinct = find("distinct") != null;
 
@@ -387,6 +387,60 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       }
       return parts.where;
    }
+
+   //   protected Term findJoinTerm(Term term)
+   //   {
+   //      if (!this.joins.isEmpty())
+   //      {
+   //         String s = term.getToken(0);
+   //         if (s.contains("."))
+   //         {
+   //            String[] arr = s.split("\\.");
+   //            for (Entry<String, Term> joinTerm : joins.entrySet())
+   //            {
+   //               Term join = joinTerm.getValue();
+   //               if (join.getToken(1).equals(arr[0]))
+   //               {
+   //                  return join;
+   //               }
+   //            }
+   //         }
+   //      }
+   //      return null;
+   //   }
+
+   //   protected String printJoinSubselect(Term term, String col, boolean preparedStmt, Term joinTerm)
+   //   {
+   //      // (`Location`.`id` not in(select locationId from LocationTag where `content` LIKE '%froster%')) 
+   //
+   //      String t1 = joinTerm.getToken(2);
+   //      String c1 = joinTerm.getToken(3);
+   //
+   //      String t2 = joinTerm.getToken(0);
+   //      String c2 = joinTerm.getToken(5);
+   //
+   //      String alias = joinTerm.getToken(1);
+   //
+   //      boolean negation = term.hasToken("ne", "nw", "wo");
+   //
+   //      String in = " in (select ";
+   //      if (negation)
+   //      {
+   //         in = " not in (select ";
+   //
+   //         // need to swap to the positive form since it will be a "not in"
+   //         Map<String, String> ops = new HashMap<>();
+   //         ops.put("ne", "eq");
+   //         ops.put("nw", "w");
+   //         ops.put("wo", "w");
+   //         term.withToken(ops.get(term.getToken()));
+   //      }
+   //
+   //      String where = printTerm(term, col, preparedStmt);
+   //      String subselect = quoteCol(t1) + "." + quoteCol(c1) + in + quoteCol(c2) + " from " + quoteCol(t2) + " " + quoteCol(alias) + " where " + where + ") ";
+   //
+   //      return subselect;
+   //   }
 
    protected String printWhereClause(Parts parts, List<Term> terms, boolean preparedStmt)
    {
@@ -835,7 +889,103 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
       }
+      else if (Term.in(token.toLowerCase(), "_exists", "_notexists"))
+      {
+         if ("_notexists".equalsIgnoreCase(token))
+            sql.append("NOT ");
+         sql.append("EXISTS (SELECT 1 FROM ");
 
+         ///-----
+
+         //the RQL comes in looking like like eq(relationship.column,value), and Where.java 
+         //transforms it to eq(~~relTbl_relationship.column,value)
+
+         String relName = term.getTerm(0).getTerm(0).getToken();
+         relName = relName.substring(0, relName.indexOf("."));
+         relName = relName.substring(relName.indexOf("_") + 1);
+
+         Relationship rel = collection.getRelationship(relName);
+
+         if (rel == null)
+            ApiException.throw400BadRequest("Unable to find relationship for term '%s'", term);
+
+         String relTbl = rel.getRelated().getTableName();
+         String relAlias = "~~relTbl_" + relTbl;
+
+         String lnkTbl = rel.getFk1Col1().getCollection().getTableName();
+         String lnkAlias = "~~lnkTbl_" + lnkTbl;
+
+         sql.append(quoteCol(relTbl)).append(" ").append(quoteCol(relAlias));
+
+         if (rel.isManyToMany())
+         {
+            sql.append(", ").append(quoteCol(lnkTbl)).append(" ").append(quoteCol(lnkAlias));
+         }
+
+         ///-----
+
+         sql.append(" WHERE ");
+
+         Index fk1 = rel.getFkIndex1();
+
+         if (rel.isOneToMany())
+         {
+            for (int i = 0; i < fk1.size(); i++)
+            {
+               Property prop = fk1.getColumn(i);
+               String pkName = prop.getPk().getColumnName();
+               String fkName = prop.getColumnName();
+               sql.append(printTable()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
+
+               if (i < fk1.size() - 1)
+                  sql.append(" AND ");
+            }
+         }
+         else if (rel.isManyToOne())
+         {
+            for (int i = 0; i < fk1.size(); i++)
+            {
+               Property prop = fk1.getColumn(i);
+               String pkName = prop.getPk().getColumnName();
+               String fkName = prop.getColumnName();
+               sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
+               if (i < fk1.size() - 1)
+                  sql.append(" AND ");
+            }
+         }
+         else if (rel.isManyToMany())
+         {
+            for (int i = 0; i < fk1.size(); i++)
+            {
+               Property prop = fk1.getColumn(i);
+               String pkName = prop.getPk().getColumnName();
+               String fkName = prop.getColumnName();
+               sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
+               sql.append(" AND ");
+            }
+
+            Index fk2 = rel.getFkIndex2();
+            for (int i = 0; i < fk2.size(); i++)
+            {
+               Property prop = fk2.getColumn(i);
+               String pkName = prop.getPk().getColumnName();
+               String fkName = prop.getColumnName();
+               sql.append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
+
+               if (i < fk2.size() - 1)
+                  sql.append(" AND ");
+            }
+         }
+
+         sql.append(" AND ");
+         for (int i = 0; i < preparedStmtChildText.size(); i++)
+         {
+            sql.append(preparedStmtChildText.get(i));
+            if (i < preparedStmtChildText.size() - 1)
+               sql.append(" AND ");
+         }
+         sql.append(")");
+      }
       else if ("miles".equalsIgnoreCase(token))
       {
          sql.append("point(").append(preparedStmtChildText.get(0)).append(",").append(preparedStmtChildText.get(1)).append(") <@> point(").append(preparedStmtChildText.get(2)).append(",").append(preparedStmtChildText.get(3)).append(")");
@@ -908,9 +1058,26 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       for (int i = 0; i < parts.length; i++)
       {
          if ("*".equals(parts[i]))
+         {
             buff.append(parts[i]);
+         }
          else
+         {
+            if(parts[i].startsWith("~~relTbl_"))
+            {
+               String relName = parts[i];
+               relName = relName.substring(relName.indexOf("_") + 1);
+               
+               Relationship rel = collection.getRelationship(relName);
+               if(rel != null)
+               {
+                  parts[i] = "~~relTbl_" + rel.getRelated().getTableName();
+               }
+            }
+            
             buff.append(columnQuote).append(parts[i]).append(columnQuote);
+         }
+
          if (i < parts.length - 1)
             buff.append(".");
       }

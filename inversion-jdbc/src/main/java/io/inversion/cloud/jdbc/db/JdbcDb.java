@@ -878,92 +878,24 @@ public class JdbcDb extends Db<JdbcDb>
             {
                Property attr = collection.findProperty(parts[i]);
 
-               if (attr == null)
-                  break;
-               //throw new ApiException("Unable to identify related column for dotted attribute name: '" + token + "'");
-
-               name += attr.getColumnName();
-               break;
+               if (attr != null)
+                  name += attr.getColumnName();
+               else
+                  name += parts[i];
             }
             else
             {
                Relationship rel = collection.getRelationship(part);
 
-               if (rel == null)
-                  break;
-
-               //               if (rel == null)
-               //                  throw new ApiException("Unable to identify relationship for dotted attribute name: '" + token + "'");
-
-               //String aliasPrefix = "_join_" + rel.getEntity().getName() + "_" + part + "_";
-
-               Term join = null;
-               for (int j = 0; j < 2; j++)
+               if (rel != null)
                {
-                  String relatedTable = rel.getRelated().getTableName();
-
-                  if (rel.isManyToMany() && j == 0)
-                     relatedTable = rel.getFk1Col1().getCollection().getTableName();
-
-                  String aliasPrefix = "_join~" + rel.getEntity().getName() + "~to~" + relatedTable + "~via~" + part + "~";
-
-                  String tableAlias = aliasPrefix + (j + 1);
-
-                  List joinTerms = new ArrayList();
-                  joinTerms.add(relatedTable);
-                  joinTerms.add(tableAlias);
-
-                  Index idx = j == 0 ? rel.getFkIndex1() : rel.getFkIndex2();
-                  if (idx == null)
-                     break;//will NOT be null only for M2M relationships
-
-                  name = tableAlias + ".";
-
-                  if (rel.isOneToMany())
-                  {
-                     for (int k = 0; k < idx.size(); k++)
-                     {
-                        Property col = idx.getColumn(k);
-                        joinTerms.add(col.getCollection().getTableName());
-                        joinTerms.add(col.getColumnName());
-                        joinTerms.add(tableAlias);
-                        joinTerms.add(col.getPk().getColumnName());
-                     }
-                  }
-                  else
-                  {
-                     if (j == 0)
-                     {
-                        for (int k = 0; k < idx.size(); k++)
-                        {
-                           Property col = idx.getColumn(k);
-                           joinTerms.add(col.getPk().getCollection().getTableName());
-                           joinTerms.add(col.getPk().getColumnName());
-                           joinTerms.add(tableAlias);
-                           joinTerms.add(col.getColumnName());
-                        }
-                     }
-                     else//second time through on M2M
-                     {
-                        for (int k = 0; k < idx.size(); k++)
-                        {
-                           Property col = idx.getColumn(k);
-                           String m2mTbl = join.getToken(1);
-
-                           joinTerms.add(m2mTbl);
-                           joinTerms.add(col.getColumnName());
-                           joinTerms.add(tableAlias);
-                           joinTerms.add(col.getPk().getColumnName());
-                        }
-                     }
-                  }
-
-                  join = Term.term(null, "join", joinTerms);
-                  terms.add(join);
+                  name += rel.getName() + ".";
+                  collection = rel.getRelated();
                }
-
-               collection = rel.getRelated();
-
+               else
+               {
+                  name += parts[i] + ".";
+               }
             }
          }
 

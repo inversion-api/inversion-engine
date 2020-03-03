@@ -83,6 +83,13 @@ public class SqlServerRqlUnitTest extends AbstractSqlQueryRqlTest
            .withResult("sort", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" DESC, \"orders\".\"shipCity\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]")//
            .withResult("order", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" ASC, \"orders\".\"shipCity\" DESC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]")//
 
+           .withResult("onToManyExistsEq", "SELECT \"employees\".* FROM \"employees\" WHERE EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"reportsTo\" = \"~~relTbl_employees\".\"employeeId\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Andrew]")//
+           .withResult("onToManyNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"reportsTo\" = \"~~relTbl_employees\".\"employeeId\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Andrew]")//
+           .withResult("manyToOneExistsEq", "SELECT \"employees\".* FROM \"employees\" WHERE EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"employeeId\" = \"~~relTbl_employees\".\"reportsTo\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Nancy]")//
+           .withResult("manyToOneNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"employeeId\" = \"~~relTbl_employees\".\"reportsTo\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Nancy]")//
+           .withResult("manyTManyNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"orderDetails\" \"~~relTbl_orderDetails\", \"employeeOrderDetails\" \"~~lnkTbl_employeeOrderDetails\" WHERE \"employees\".\"employeeId\" = \"~~lnkTbl_employeeOrderDetails\".\"employeeId\" AND \"~~lnkTbl_employeeOrderDetails\".\"orderId\" = \"~~relTbl_orderDetails\".\"orderId\" AND \"~~lnkTbl_employeeOrderDetails\".\"productId\" = \"~~relTbl_orderDetails\".\"productId\" AND \"~~relTbl_orderDetails\".\"quantity\" = ?) ORDER BY \"employees\".\"employeeId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[12]")//
+           
+           
       ;
 
    }

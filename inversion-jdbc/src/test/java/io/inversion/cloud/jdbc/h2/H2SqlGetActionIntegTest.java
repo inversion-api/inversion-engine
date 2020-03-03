@@ -28,7 +28,4 @@ public class H2SqlGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTes
    {
       super("h2");
    }
-
-
-
 }

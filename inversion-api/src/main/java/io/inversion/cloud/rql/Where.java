@@ -16,20 +16,26 @@
  */
 package io.inversion.cloud.rql;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Rows.Row;
-
-import java.util.List;
+import io.inversion.cloud.utils.Utils;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
 {
+   Set<String>         existsFunctions    = Utils.asSet("eq", "nn", "gt", "ge", "lt", "le", "like", "sw", "ew", "in", "w");
+   Set<String>         notExistsFunctions = Utils.asSet("ne", "n", "out", "wo", "emp");
+   Map<String, String> notExistsMap       = Utils.asMap("ne", "eq", "n", "nn", "out", "in", "wo", "w", "emp", "nemp");
 
-    public Where(P query)
-    {
-        super(query);
-        withFunctions("_key", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
-    }
+   public Where(P query)
+   {
+      super(query);
+      withFunctions("_key", "_exists", "_notexists", "and", "or", "not", "eq", "ne", "n", "nn", "like", "sw", "ew", "lt", "le", "gt", "ge", "in", "out", "if", "w", "wo", "emp", "nemp");
+   }
 
    protected boolean addTerm(String token, Term term)
    {
@@ -70,7 +76,34 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             transform(child);
          }
       }
+      
+      if (!parent.isLeaf())
+      {
+         //check the first child expecting that to be the column name
+         //if it is in the form "relationship.column then wrap this 
+         //in an "exists" or "notExists" function
 
+         if (parent.getTerm(0).isLeaf() && parent.getToken(0).indexOf(".") > 0)
+         {
+            Term relCol = parent.getTerm(0);
+            relCol.withToken("~~relTbl_" + relCol.getToken());
+            
+            
+            String token = parent.getToken().toLowerCase();
+            if (existsFunctions.contains(token))
+            {
+               transformed = Term.term(parent.getParent(), "_exists", parent);
+            }
+            else if (notExistsFunctions.contains(token))
+            {
+               parent.withToken(notExistsMap.get(token));
+               transformed = Term.term(parent.getParent(), "_notexists", parent);
+            }
+            
+            return transformed;
+         }
+      }
+      
       if (parent.hasToken("_key"))
       {
          String indexName = parent.getToken(0);
