@@ -42,7 +42,7 @@ import io.inversion.cloud.service.Chain;
  */
 public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 {
-   Logger  log           = LoggerFactory.getLogger(ElasticsearchGetAction.class);
+   transient Logger  log           = LoggerFactory.getLogger(ElasticsearchGetAction.class);
 
    // The following properties can be assigned via snooze.properties
    int     maxRows       = 100;

@@ -27,6 +27,11 @@ public class Endpoint extends Rule<Endpoint>
 {
    protected Path         path     = null;
    protected List<Action> actions  = new ArrayList();
+
+   /**
+    * Internal endpoints can only be called by recursive 
+    * calls to the engine when Chain.depth() is > 1.  
+    */
    protected boolean      internal = false;
 
    public Endpoint()

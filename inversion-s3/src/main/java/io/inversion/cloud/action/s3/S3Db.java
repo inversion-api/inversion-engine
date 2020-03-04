@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Results;
@@ -58,7 +59,7 @@ public class S3Db extends Db<S3Db>
     * @see io.rcktapp.api.Db#bootstrapApi()
     */
    @Override
-   protected void doStartup()
+   protected void doStartup(Api api)
    {
       AmazonS3 client = getS3Client();
 

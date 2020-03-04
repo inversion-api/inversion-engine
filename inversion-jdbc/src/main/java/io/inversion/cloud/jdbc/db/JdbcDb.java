@@ -172,13 +172,13 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   protected void doStartup()
+   protected void doStartup(Api api)
    {
 
       if (isType("mysql"))
          withColumnQuote('`');
 
-      super.doStartup();
+      super.doStartup(api);
 
       api.withApiListener(new ApiListener()
          {

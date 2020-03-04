@@ -22,23 +22,20 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public abstract class Rule<R extends Rule> implements Comparable<Rule>
+public abstract class Rule<R extends Rule> extends PathRule<R> implements Comparable<Rule>
 {
-   protected Logger           log          = LoggerFactory.getLogger(getClass().getName());
+   protected final Logger     log       = LoggerFactory.getLogger(getClass().getName());
 
-   protected String           name         = null;
-   protected int              order        = 1000;
+   protected String           name      = null;
+   protected int              order     = 1000;
 
-   protected Set<String>      methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-
-   protected List<Path>       excludePaths = new ArrayList();
-   protected List<Path>       includePaths = new ArrayList();
+   protected Set<String>      methods   = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
    /**
     * JSMap is used because it implements a case insensitive map without modifying the keys
     */
-   protected transient JSNode configMap    = new JSNode();
-   protected String           configStr    = null;
+   protected transient JSNode configMap = new JSNode();
+   protected String           configStr = null;
 
    @Override
    public int compareTo(Rule a)
@@ -58,43 +55,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          return matchesPath(path);
       }
       return false;
-   }
-
-   public boolean matchesPath(Path path)
-   {
-      boolean included = false;
-      boolean excluded = false;
-
-      if (includePaths.size() == 0)
-      {
-         if (excludePaths.size() == 0 || path.size() == 0)
-            included = true;
-      }
-      else
-      {
-         for (Path includePath : includePaths)
-         {
-            if (includePath.matches(path))
-            {
-               included = true;
-               break;
-            }
-         }
-      }
-
-      if (included && path.size() > 0)
-      {
-         for (Path excludePath : excludePaths)
-         {
-            if (excludePath.matches(path))
-            {
-               excluded = true;
-               break;
-            }
-         }
-      }
-
-      return included && !excluded;
    }
 
    public boolean isMethod(String... methods)
@@ -145,61 +105,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
          if (!this.methods.contains(method))
             this.methods.add(method);
-      }
-      return (R) this;
-   }
-
-   public List<Path> getIncludePaths()
-   {
-      return new ArrayList(includePaths);
-   }
-
-   public R withIncludePaths(String... paths)
-   {
-      if (paths != null)
-      {
-         for (String path : Utils.explode(",", paths))
-         {
-            includePaths.add(new Path(path));
-         }
-      }
-      return (R) this;
-   }
-
-   public R withIncludePaths(Path... paths)
-   {
-      if (paths != null)
-      {
-         for (Path path : paths)
-         {
-            includePaths.add(path);
-         }
-      }
-      return (R) this;
-   }
-
-   public List<Path> getExcludePaths()
-   {
-      return new ArrayList(excludePaths);
-   }
-
-   public R withExcludePaths(String... paths)
-   {
-      if (paths != null)
-      {
-         for (String path : Utils.explode(",", paths))
-         {
-            excludePaths.add(new Path(path));
-         }
-      }
-      return (R) this;
-   }
-
-   public R withExcludePaths(Path... paths)
-   {
-      for (Path path : paths)
-      {
-         excludePaths.add(path);
       }
       return (R) this;
    }

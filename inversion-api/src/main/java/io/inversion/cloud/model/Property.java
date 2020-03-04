@@ -35,7 +35,7 @@ public class Property implements Comparable<Property>
     */
    protected Property   pk         = null;
 
-   protected Collection collection      = null;
+   protected Collection collection = null;
 
    public Property()
    {

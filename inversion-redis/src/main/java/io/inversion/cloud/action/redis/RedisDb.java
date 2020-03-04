@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisDb extends Db<RedisDb>
 {
-   protected transient Logger    log                           = LoggerFactory.getLogger(getClass());
+   protected final Logger        log                           = LoggerFactory.getLogger(getClass());
 
    protected transient JedisPool jedis                         = null;
 
@@ -56,8 +56,6 @@ public class RedisDb extends Db<RedisDb>
    protected int                 readSocketTimeout             = 2500;                               // time in milliseconds
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
-
-
    @Override
    public Results<Row> select(Collection table, List<Term> queryTerms) throws Exception
    {
@@ -76,7 +74,7 @@ public class RedisDb extends Db<RedisDb>
    public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
       // TODO Auto-generated method stub
-      
+
    }
 
    protected Jedis getRedisClient()

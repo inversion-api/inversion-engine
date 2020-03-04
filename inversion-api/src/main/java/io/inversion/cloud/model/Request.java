@@ -29,37 +29,34 @@ import java.util.Map;
 
 public class Request
 {
-   Chain                                  chain                  = null;
+   protected Chain                                  chain            = null;
 
-   String                                 referrer               = null;
-   String                                 remoteAddr             = null;
-   ArrayListValuedHashMap<String, String> headers                = new ArrayListValuedHashMap();
+   protected String                                 referrer         = null;
+   protected String                                 remoteAddr       = null;
+   protected ArrayListValuedHashMap<String, String> headers          = new ArrayListValuedHashMap();
 
-   Url                                    url                    = null;
-   String                                 method                 = null;
+   protected Url                                    url              = null;
+   protected String                                 method           = null;
 
-   Engine                                 engine                 = null;
-   Api                                    api                    = null;
-   Path                                   apiPath                = null;
-   String                                 tenantCode             = null;
+   protected Engine                                 engine           = null;
+   protected Api                                    api              = null;
+   protected Path                                   apiPath          = null;
+   protected String                                 tenantCode       = null;
 
-   Path                                   endpointPath           = null;
-   Endpoint                               endpoint               = null;
+   protected Path                                   endpointPath     = null;
+   protected Endpoint                               endpoint         = null;
 
-   Collection                             collection             = null;
-   String                                 collectionKey          = null;
-   String                                 entityKey              = null;
-   String                                 subCollectionKey       = null;
+   protected Collection                             collection       = null;
+   protected String                                 collectionKey    = null;
+   protected String                                 entityKey        = null;
+   protected String                                 subCollectionKey = null;
 
-   String                                 body                   = null;
-   JSNode                                 json                   = null;
+   protected String                                 body             = null;
+   protected JSNode                                 json             = null;
 
-   boolean                                browse                 = false;
+   protected Uploader                               uploader         = null;
 
-   public Uploader                        uploader               = null;
-
-   static final int                       DEFAULT_RETRY_ATTEMPTS = 1;
-   int                                    retryAttempts          = DEFAULT_RETRY_ATTEMPTS;
+   protected int                                    retryAttempts    = -1;
 
    public Request(String method, String url)
    {
@@ -287,7 +284,7 @@ public class Request
       }
       catch (Exception ex)
       {
-         ApiException.throw400BadRequest( "Unparsable JSON body");
+         ApiException.throw400BadRequest("Unparsable JSON body");
       }
 
       return json;
