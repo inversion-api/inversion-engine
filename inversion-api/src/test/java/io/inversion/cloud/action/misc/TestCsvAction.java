@@ -81,8 +81,7 @@ public class TestCsvAction
    {
       try
       {
-        
-         
+
          Response res = new Response();
          JSNode singleObject = new JSNode();
          singleObject.put("key1", "value1");
@@ -91,7 +90,7 @@ public class TestCsvAction
          Map<String, String> params = new HashMap<>();
          Request req = new Request("GET", "/", null, params, null);
          req.withEndpoint(new Endpoint());
-         
+
          Chain.push(null, req, res);
          action.run(req, res);
          assertEquals(singleObject, res.getJson());

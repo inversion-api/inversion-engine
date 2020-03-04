@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion.cloud.model;
 
 import io.inversion.cloud.model.Collection;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class TestKeyEncoding
+public class TestCollection
 {
    @Test
    public void test1() throws Exception

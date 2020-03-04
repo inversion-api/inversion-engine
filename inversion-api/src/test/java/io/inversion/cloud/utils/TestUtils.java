@@ -20,14 +20,15 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class UtilsTest
+public class TestUtils
 {
-    @Test public void testToDollarAmount1()
-    {
-        // test round down
-        printAssertEquals("45.00", 45.000001);
+   @Test
+   public void testToDollarAmount1()
+   {
+      // test round down
+      printAssertEquals("45.00", 45.000001);
 
-        // test round up
+      // test round up
       printAssertEquals("76.67", 76.6666666);
 
       // test a slightly different round down
