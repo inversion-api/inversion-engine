@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestParser
+public class RqlParserTest
 {
    void add(List tests, Object... vals)
    {

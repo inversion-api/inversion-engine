@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,29 +35,29 @@ import redis.clients.jedis.JedisPoolConfig;
  */
 public class RedisAuthSessionCache implements SessionDao
 {
-   Logger            log                                = LoggerFactory.getLogger(RedisAuthSessionCache.class);
+   protected final Logger log                                = LoggerFactory.getLogger(RedisAuthSessionCache.class);
 
-   ObjectMapper      om                                 = new ObjectMapper();
+   protected ObjectMapper om                                 = new ObjectMapper();
 
    // configurable inversion.props 
-   protected String  redisHost                          = null;
-   protected int     redisPort                          = 6379;
+   protected String       redisHost                          = null;
+   protected int          redisPort                          = 6379;
 
-   protected int     redisPoolMin                       = 16;
-   protected int     redisPoolMax                       = 128;
-   protected boolean redisTestOnBorrow                  = true;
-   protected boolean redisTestOnReturn                  = true;
-   protected boolean redisTestWhileIdle                 = true;
-   protected int     redisMinEvictableIdleTimeMillis    = 60000;
-   protected int     redisTimeBetweenEvictionRunsMillis = 30000;
-   protected int     redisNumTestsPerEvictionRun        = 3;
-   protected boolean redisBlockWhenExhausted            = true;
-   protected int     redisReadSocketTimeout             = 2500;
-   protected int     redisTtl                           = 8 * 60 * 60;                                         // 8 hours in seconds
+   protected int          redisPoolMin                       = 16;
+   protected int          redisPoolMax                       = 128;
+   protected boolean      redisTestOnBorrow                  = true;
+   protected boolean      redisTestOnReturn                  = true;
+   protected boolean      redisTestWhileIdle                 = true;
+   protected int          redisMinEvictableIdleTimeMillis    = 60000;
+   protected int          redisTimeBetweenEvictionRunsMillis = 30000;
+   protected int          redisNumTestsPerEvictionRun        = 3;
+   protected boolean      redisBlockWhenExhausted            = true;
+   protected int          redisReadSocketTimeout             = 2500;
+   protected int          redisTtl                           = 8 * 60 * 60;                                         // 8 hours in seconds
 
-   protected String  keyPrefix                          = "RedisAuthSess-";
+   protected String       keyPrefix                          = "RedisAuthSess-";
 
-   JedisPool         jedisPool;
+   JedisPool              jedisPool;
 
    @Override
    public User get(String sessionKey)
@@ -184,8 +184,8 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisHost = redisHost;
    }
-   
-   public RedisAuthSessionCache withRedisHost(String redisHost) 
+
+   public RedisAuthSessionCache withRedisHost(String redisHost)
    {
       setRedisHost(redisHost);
       return this;
@@ -195,7 +195,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisPort = redisPort;
    }
-   
+
    public RedisAuthSessionCache withRedisPort(int redisPort)
    {
       setRedisPort(redisPort);
@@ -206,7 +206,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisPoolMin = redisPoolMin;
    }
-   
+
    public RedisAuthSessionCache withRedisPoolMin(int redisPoolMin)
    {
       setRedisPoolMin(redisPoolMin);
@@ -217,7 +217,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisPoolMax = redisPoolMax;
    }
-   
+
    public RedisAuthSessionCache withRedisPoolMax(int redisPoolMax)
    {
       setRedisPoolMax(redisPoolMax);
@@ -228,7 +228,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisTestOnBorrow = redisTestOnBorrow;
    }
-   
+
    public RedisAuthSessionCache withRedisTestOnBorrow(boolean redisTestOnBorrow)
    {
       setRedisTestOnBorrow(redisTestOnBorrow);
@@ -239,7 +239,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisTestOnReturn = redisTestOnReturn;
    }
-   
+
    public RedisAuthSessionCache withRedisTestOnReturn(boolean redisTestOnReturn)
    {
       setRedisTestOnReturn(redisTestOnReturn);
@@ -250,7 +250,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisTestWhileIdle = redisTestWhileIdle;
    }
-   
+
    public RedisAuthSessionCache withRedisTestWhileIdle(boolean redistTestWhileIdle)
    {
       setRedisTestWhileIdle(redisTestWhileIdle);
@@ -261,7 +261,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisMinEvictableIdleTimeMillis = redisMinEvictableIdleTimeMillis;
    }
-   
+
    public RedisAuthSessionCache withRedisMinEvictableIdleTimeMillis(int redisMinEvictableIdleTimeMillis)
    {
       setRedisMinEvictableIdleTimeMillis(redisMinEvictableIdleTimeMillis);
@@ -272,7 +272,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisTimeBetweenEvictionRunsMillis = redisTimeBetweenEvictionRunsMillis;
    }
-   
+
    public RedisAuthSessionCache withRedisTimeBetweenEvictionRunsMillis(int redisTimeBetweenEvictionRunsMillis)
    {
       setRedisTimeBetweenEvictionRunsMillis(redisTimeBetweenEvictionRunsMillis);
@@ -283,7 +283,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisNumTestsPerEvictionRun = redisNumTestsPerEvictionRun;
    }
-   
+
    public RedisAuthSessionCache withRedisNumTestsPerEvictionRun(int redisNumTestsPerEvictionRun)
    {
       setRedisNumTestsPerEvictionRun(redisNumTestsPerEvictionRun);
@@ -294,7 +294,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisBlockWhenExhausted = redisBlockWhenExhausted;
    }
-   
+
    public RedisAuthSessionCache withRedisBlockWhenExhausted(boolean redisBlockWhenExhausted)
    {
       setRedisBlockWhenExhausted(redisBlockWhenExhausted);
@@ -305,7 +305,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisReadSocketTimeout = redisReadSocketTimeout;
    }
-   
+
    public RedisAuthSessionCache withRedisReadSocketTimeout(int redisReadSocketTimeout)
    {
       setRedisReadSocketTimeout(redisReadSocketTimeout);
@@ -316,7 +316,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.redisTtl = redisTtl;
    }
-   
+
    public RedisAuthSessionCache withRedisTtl(int redisTtl)
    {
       setRedisTtl(redisTtl);
@@ -327,7 +327,7 @@ public class RedisAuthSessionCache implements SessionDao
    {
       this.keyPrefix = keyPrefix;
    }
-   
+
    public RedisAuthSessionCache withKeyPrefix(String keyPrefix)
    {
       setKeyPrefix(keyPrefix);

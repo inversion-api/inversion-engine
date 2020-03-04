@@ -29,12 +29,12 @@ import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
+import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Utils;
@@ -99,7 +99,7 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   protected void doStartup()
+   protected void doStartup(Api api)
    {
       if (!Utils.empty(includeStreams))
       {

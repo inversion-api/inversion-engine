@@ -127,11 +127,11 @@ public class CosmosEngineFactory
             }
 
             @Override
-            public void configApi()
+            public void configApi(Api api)
             {
-               super.configApi();
+               super.configApi(api);
 
-               Collection employeesTbl = getApi().getCollection("employees");
+               Collection employeesTbl = api.getCollection("employees");
                employeesTbl.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employeesTbl, employeesTbl, getCollection("employees").getIndex("fkIdx_Employees_reportsTo"), null));
                employeesTbl.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employeesTbl, employeesTbl, getCollection("employees").getIndex("fkIdx_Employees_reportsTo"), null));
             }

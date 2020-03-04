@@ -46,7 +46,7 @@ import io.inversion.cloud.model.Action;
  */
 public class S3DownloadAction extends Action
 {
-//   Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
+//   protected transient Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
 //
 //   int    maxRows = 100;
 //

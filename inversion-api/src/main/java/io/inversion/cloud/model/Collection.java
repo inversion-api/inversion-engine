@@ -32,13 +32,13 @@ import java.util.regex.Pattern;
  * Represents a REST collection as an interface into an underlying
  * Db data store...such as an RDBMS table.
  */
-public class Collection extends Rule<Collection>
+public class Collection extends PathRule<Collection>
 {
    protected Db                      db            = null;
 
+   protected String                  tableName     = null;
    protected String                  name          = null;
    protected List<String>            aliases       = new ArrayList();
-   protected String                  tableName     = null;
 
    protected ArrayList<Property>     properties    = new ArrayList();
    protected ArrayList<Index>        indexes       = new ArrayList();

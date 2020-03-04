@@ -34,12 +34,12 @@ import java.util.stream.Collectors;
 
 public class Engine
 {
-   transient volatile boolean               started        = false;
-   transient volatile boolean               starting       = false;
-   transient volatile boolean               destroyed      = false;
+   protected transient volatile boolean     started        = false;
+   protected transient volatile boolean     starting       = false;
+   protected transient volatile boolean     destroyed      = false;
 
-   protected Logger                         log            = LoggerFactory.getLogger(getClass());
-   protected Logger                         requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
+   protected final Logger                   log            = LoggerFactory.getLogger(getClass());
+   protected final Logger                   requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
 
    protected List<Api>                      apis           = new Vector();
 
@@ -436,7 +436,7 @@ public class Engine
                                  && (collection.getIncludePaths().size() > 0 //
                                        || collection.getExcludePaths().size() > 0))
                            {
-                              if (collection.matches(req.getMethod(), endpointPath))
+                              if (collection.matchesPath(endpointPath))
                               {
                                  req.withCollection(collection);
                                  break;

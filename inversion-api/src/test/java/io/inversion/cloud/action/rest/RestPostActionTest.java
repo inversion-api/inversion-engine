@@ -25,7 +25,7 @@ import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TestCollapse
+public class RestPostActionTest
 {
    @Test
    public void testCollapses1()

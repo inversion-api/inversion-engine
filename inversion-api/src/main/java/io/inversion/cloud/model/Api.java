@@ -25,26 +25,26 @@ import java.util.List;
 
 public class Api
 {
-   protected Logger log = LoggerFactory.getLogger(getClass());
+   protected final Logger                      log         = LoggerFactory.getLogger(getClass());
 
-   transient volatile  boolean started  = false;
-   transient volatile  boolean starting = false;
-   transient           long    loadTime = 0;
-   transient protected String  hash     = null;
+   transient volatile boolean            started     = false;
+   transient volatile boolean            starting    = false;
+   transient protected String            hash        = null;
+   transient long                        loadTime    = 0;
 
-   protected boolean debug = false;
+   protected boolean                     debug       = false;
 
-   protected String  name        = null;
-   protected String  version     = null;
-   protected boolean multiTenant = false;
-   protected String  url         = null;
+   protected String                      name        = null;
+   protected String                      version     = null;
+   protected boolean                     multiTenant = false;
+   protected String                      url         = null;
 
-   protected List<Db>         dbs         = new ArrayList();
-   protected List<Endpoint>   endpoints   = new ArrayList();
-   protected List<Action>     actions     = new ArrayList();
-   protected List<Collection> collections = new ArrayList();
+   protected List<Db>                    dbs         = new ArrayList();
+   protected List<Endpoint>              endpoints   = new ArrayList();
+   protected List<Action>                actions     = new ArrayList();
+   protected List<Collection>            collections = new ArrayList();
 
-   protected transient List<ApiListener> listeners = new ArrayList();
+   protected transient List<ApiListener> listeners   = new ArrayList();
 
    public Api()
    {
@@ -65,7 +65,7 @@ public class Api
       {
          for (Db db : dbs)
          {
-            db.startup();
+            db.startup(this);
          }
 
          removeExcludes();
@@ -216,9 +216,6 @@ public class Api
             withCollection(coll);
          }
       }
-
-      if (db.getApi() != this)
-         db.withApi(this);
 
       return this;
    }

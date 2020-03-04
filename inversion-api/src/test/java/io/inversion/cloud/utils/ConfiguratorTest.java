@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion.cloud.utils;
 
 import io.inversion.cloud.utils.Utils;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-public class TestConfigurator
+public class ConfiguratorTest
 {
    @Test
    public void test_none()

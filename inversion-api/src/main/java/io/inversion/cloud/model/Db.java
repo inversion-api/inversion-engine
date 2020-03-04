@@ -16,24 +16,28 @@
  */
 package io.inversion.cloud.model;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public abstract class Db<T extends Db>
 {
-   transient protected Logger      log            = LoggerFactory.getLogger(getClass());
+   protected final  Logger      log            = LoggerFactory.getLogger(getClass());
 
    transient volatile boolean      started        = false;
    transient volatile boolean      starting       = false;
    transient volatile boolean      shutdown       = false;
-
-   protected Api                   api            = null;
 
    /**
     * A CSV of pipe delimited table name to collection pairs
@@ -53,7 +57,7 @@ public abstract class Db<T extends Db>
 
    protected String                collectionPath = null;
 
-   protected ArrayList<Collection> tables         = new ArrayList();
+   protected ArrayList<Collection> collections    = new ArrayList();
 
    public Db()
    {
@@ -64,7 +68,7 @@ public abstract class Db<T extends Db>
       this.name = name;
    }
 
-   public synchronized Db startup()
+   public synchronized Db startup(Api api)
    {
       if (started || starting) //starting is an accidental recursion guard
          return this;
@@ -72,7 +76,7 @@ public abstract class Db<T extends Db>
       starting = true;
       try
       {
-         doStartup();
+         doStartup(api);
 
          started = true;
          return this;
@@ -87,14 +91,14 @@ public abstract class Db<T extends Db>
     * Made to be overridden by subclasses 
     * or anonymous inner classes to do specific init
     */
-   protected void doStartup()
+   protected void doStartup(Api api)
    {
       try
       {
          if (isBootstrap())// && getTables().size() == 0)
          {
             configDb();
-            configApi();
+            configApi(api);
          }
       }
       catch (Exception ex)
@@ -196,7 +200,7 @@ public abstract class Db<T extends Db>
       }
    }
 
-   public void configApi()
+   public void configApi(Api api)
    {
       List<String> relationshipStrs = new ArrayList();
 
@@ -574,7 +578,7 @@ public abstract class Db<T extends Db>
 
    public Property getProperty(String table, String col)
    {
-      for (Collection t : tables)
+      for (Collection t : collections)
       {
          if (t.getTableName().equalsIgnoreCase(table))
          {
@@ -594,7 +598,7 @@ public abstract class Db<T extends Db>
 
    public Collection getCollection(String collectionOrTableName)
    {
-      for (Collection t : tables)
+      for (Collection t : collections)
       {
          if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
                || collectionOrTableName.equalsIgnoreCase(t.getName()))
@@ -606,7 +610,7 @@ public abstract class Db<T extends Db>
 
    public void removeCollection(Collection table)
    {
-      tables.remove(table);
+      collections.remove(table);
    }
 
    /**
@@ -614,7 +618,7 @@ public abstract class Db<T extends Db>
     */
    public List<Collection> getCollections()
    {
-      return tables;
+      return collections;
    }
 
    public T withIncludeTables(String includeTables)
@@ -646,8 +650,8 @@ public abstract class Db<T extends Db>
          if (tbl.getDb() != this)
             tbl.withDb(this);
 
-         if (!tables.contains(tbl))
-            tables.add(tbl);
+         if (!collections.contains(tbl))
+            collections.add(tbl);
       }
       return (T) this;
    }
@@ -692,21 +696,6 @@ public abstract class Db<T extends Db>
    {
       this.type = type;
       return (T) this;
-   }
-
-   public T withApi(Api api)
-   {
-      if (this.api != api)
-      {
-         this.api = api;
-         api.withDb(this);
-      }
-      return (T) this;
-   }
-
-   public Api getApi()
-   {
-      return api;
    }
 
    public boolean isBootstrap()

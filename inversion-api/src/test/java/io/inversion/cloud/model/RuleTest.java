@@ -18,7 +18,7 @@ package io.inversion.cloud.model;
 
 import org.junit.jupiter.api.Test;
 
-public class TestRule
+public class RuleTest
 {
    @Test
    public void test_pathMatches()

@@ -40,13 +40,13 @@ import io.inversion.cloud.utils.Utils;
 
 public class JdbcLogAction extends Action<JdbcLogAction>
 {
-   Logger                log            = LoggerFactory.getLogger(getClass());
+   protected final Logger log            = LoggerFactory.getLogger(getClass());
 
-   protected String      logMask        = "* * * * * * * * * *";
-   protected String      logTable       = null;
-   protected String      logChangeTable = null;;
+   protected String       logMask        = "* * * * * * * * * *";
+   protected String       logTable       = null;
+   protected String       logChangeTable = null;;
 
-   protected Set<String> logMaskFields  = new HashSet<>();
+   protected Set<String>  logMaskFields  = new HashSet<>();
 
    @Override
    public void run(Request req, Response res) throws Exception

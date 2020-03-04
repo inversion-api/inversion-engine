@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -75,7 +75,7 @@ public class ScriptAction extends Action<ScriptAction>
    static ThreadLocal<ScriptAction> scriptLocal        = new ThreadLocal();
    static ThreadLocal<Chain>        chainLocal         = new ThreadLocal();
 
-   Logger                           log                = LoggerFactory.getLogger(ScriptAction.class);
+   protected final Logger           log                = LoggerFactory.getLogger(ScriptAction.class);
    String                           scriptsCollection  = "scripts";
 
    long                             cacheExpireSeconds = 60 * 30;
