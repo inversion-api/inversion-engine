@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author tc-rocket
  *
  */
-public class TestUrl
+public class UrlTest
 {
    @Test
    public void testUrlWithParams()

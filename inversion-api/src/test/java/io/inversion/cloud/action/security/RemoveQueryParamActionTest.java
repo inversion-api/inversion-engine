@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TestRemoveQueryParamAction
+public class RemoveQueryParamActionTest
 {
    @Test
    public void test_containsParam_wholeword_matches()

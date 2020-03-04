@@ -20,7 +20,7 @@ import io.inversion.cloud.service.MockDb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestDb
+public class DbTest
 {
     public void testAttributeBeautification()
     {

@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TestTokenizer
+public class RqlTokenizerTest
 {
    public static void add(List tests, Object... vals)
    {

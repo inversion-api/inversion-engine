@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author tc-rocket
  *
  */
-public class TestJSArray
+public class JSArrayTest
 {
    @Test
    public void testIsEmpty()

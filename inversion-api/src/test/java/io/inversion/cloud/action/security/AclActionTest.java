@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 /**
  * @author tc-rocket
  */
-public class TestAclAction
+public class AclActionTest
 {
 
    @Test

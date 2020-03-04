@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestUtils
+public class UtilsTest
 {
    @Test
    public void testToDollarAmount1()
