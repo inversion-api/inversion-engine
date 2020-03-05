@@ -450,26 +450,35 @@ public class Url
       return this;
    }
 
-   public static String toQueryString(Map<String, String> params)
-   {
-      String query = "";
-      if (params != null)
-      {
-         for (String key : params.keySet())
-         {
-            try
+ public static String toQueryString(Map<String, String> params)
+    {
+        String query = "";
+        if (params != null)
+        {
+            for (String key : params.keySet())
             {
-               query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+                try
+                {
+                    if (params.get(key) != null)
+                    {
+                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+                    }
+                    else
+                    {
+                        query += URLEncoder.encode(key, "UTF-8") + "&";
+                    }
+
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    Utils.rethrow(e);
+                }
             }
-            catch (UnsupportedEncodingException e)
-            {
-               Utils.rethrow(e);
-            }
-         }
-         if (query.length() > 0)
-            query = query.substring(0, query.length() - 1);
-      }
-      return query;
-   }
+            if (query.length() > 0)
+                query = query.substring(0, query.length() - 1);
+        }
+        return query;
+    }
+
 
 }
