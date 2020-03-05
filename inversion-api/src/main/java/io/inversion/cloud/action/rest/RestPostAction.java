@@ -306,14 +306,14 @@ public class RestPostAction extends Action<RestPostAction>
          {
             String path = Chain.buildLink(rel.getRelated(), null, null);
             Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
-            if (!res.isSuccess() || res.data().length() != childNodes.size())
+            if (!res.isSuccess() || res.getData().length() != childNodes.size())
             {
                res.rethrow();
                //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
             }
 
             //-- now get response URLS and set them BACK on the source from this generation
-            JSArray data = res.data();
+            JSArray data = res.getData();
             for (int i = 0; i < data.length(); i++)
             {
                String childHref = ((JSNode) data.get(i)).getString("href");

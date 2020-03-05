@@ -289,7 +289,7 @@ public class Response
       return new Validation(this, jsonPath, customErrorMessage);
    }
 
-   public JSArray data()
+   public JSArray getData()
    {
       JSNode json = getJson();
       if (json != null)
@@ -307,25 +307,25 @@ public class Response
 
    public Response withRecord(Object record)
    {
-      data().add(record);
+      getData().add(record);
       return this;
    }
 
    public Response withRecords(List records)
    {
       for (Object record : records)
-         data().add(record);
+         getData().add(record);
       return this;
    }
 
-   public JSNode meta()
+   public JSNode getMeta()
    {
       return getJson().getNode("meta");
    }
 
    public Response withMeta(String key, Object value)
    {
-      meta().put(key, value);
+      getMeta().put(key, value);
       return this;
    }
 

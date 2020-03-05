@@ -125,9 +125,6 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            if (Utils.empty(api.getName()))
-               ApiException.throw500InternalServerError("Api '%s' is missing an 'apiCode'.  An Api cannot be loaded without one.", api.getName());
-
             Api existingApi = engine.getApi(api.getName(), api.getVersion());
 
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
@@ -276,10 +273,6 @@ public class Configurator
                   api.withAction(action);
             }
          }
-
-         //         found = wire.getBeans(AclRule.class);
-         //         if (api.getAclRules().size() == 0)
-         //            api.withAclRules((AclRule[]) found.toArray(new AclRule[found.size()]));
       }
    }
 
@@ -368,17 +361,17 @@ public class Configurator
          else if (o instanceof Collection)
          {
             Collection t = (Collection) o;
-            name = t.getDb().getName() + ".tables." + t.getTableName();
+            name = t.getDb().getName() + ".collections." + t.getTableName();
          }
          else if (o instanceof Property)
          {
             Property col = (Property) o;
-            name = col.getCollection().getDb().getName() + ".tables." + col.getCollection().getTableName() + ".columns." + col.getColumnName();
+            name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
          }
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            name = index.getCollection().getDb().getName() + ".tables." + index.getCollection().getTableName() + ".indexes." + index.getName();
+            name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
          }
          else if (o instanceof Relationship)
          {

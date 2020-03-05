@@ -180,14 +180,14 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          //TODO: need to do more tests here
          Response res = req.getEngine().get(url).assertOk();
 
-         if (res.data().size() == 0)
+         if (res.getData().size() == 0)
             break;
 
-         deleted += res.data().size();
+         deleted += res.getData().size();
 
          Rows rows = new Rows();
 
-         for (JSNode node : res.data().asNodeList())
+         for (JSNode node : res.getData().asNodeList())
          {
             String href = node.getString("href");
 

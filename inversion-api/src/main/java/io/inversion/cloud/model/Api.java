@@ -297,21 +297,6 @@ public class Api
       return this;
    }
 
-   public <T extends Action> T makeAction(T action)
-   {
-      return makeAction(action, null, null);
-   }
-
-   public <T extends Action> T makeAction(T action, String methods, String includePaths)
-   {
-      action.withMethods(methods);
-      action.withIncludePaths(includePaths);
-
-      withAction(action);
-
-      return action;
-   }
-
    public boolean isDebug()
    {
       return debug;

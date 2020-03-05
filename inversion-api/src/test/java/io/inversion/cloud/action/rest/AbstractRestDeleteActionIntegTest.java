@@ -61,7 +61,7 @@ public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActi
 
       JSArray hrefs = new JSArray();
 
-      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+      res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
       assertEquals(10, hrefs.size());
 
@@ -122,7 +122,7 @@ public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActi
       Engine engine = engine();
 
       Response res = engine.get(url("indexlogs"));
-      int allRecordsSize = res.data().size();
+      int allRecordsSize = res.getData().size();
 
       //res = engine.get(url("indexlogs/1,4,16,18"));
       //res.dump();

@@ -47,7 +47,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       json = res.getJson();
 
       assertEquals(5, json.find("meta.pageSize"));
-      assertEquals(5, res.data().length());
+      assertEquals(5, res.getData().length());
    }
 
    @Test
@@ -58,13 +58,13 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
 
       String url = url("orders?limit=2&sort=orderid");
       res = engine.get(url);
-      assertEquals(2, res.data().length());
+      assertEquals(2, res.getData().length());
 
       String href = res.findString("data.0.href");
       assertTrue(href.indexOf("/orders/10248") > 0);
 
       res = engine.get(url("orders?limit=2&sort=-orderid&type=ORDER"));
-      assertEquals(2, res.data().length());
+      assertEquals(2, res.getData().length());
 
       href = res.findString("data.0.href");
       assertTrue(href.indexOf("/orders/10272") > 0);
@@ -83,7 +83,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res.dump();
 
       List<String> hrefs = new ArrayList();
-      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+      res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
       //makes sure they are all unqique
       Set uniqueHrefs = new HashSet(hrefs);
@@ -112,7 +112,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
          assertTrue(next.indexOf("limit") == next.lastIndexOf("limit"), "There should be only one limit param");
          assertTrue(next.indexOf("after") == next.lastIndexOf("after"), "There should be only one after param");
 
-         if (res.data().size() == 0)
+         if (res.getData().size() == 0)
             break;
 
          //makes sure the indexing is correct
@@ -137,14 +137,14 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
          }
          alreadyFound.add(found);
 
-         total += res.data().length();
+         total += res.getData().length();
          pages += 1;
 
          next = res.next();
 
          if (next != null)
          {
-            assertEquals(3, res.data().length());
+            assertEquals(3, res.getData().length());
             assertEquals(3, res.find("meta.pageSize"));
          }
       }
@@ -161,7 +161,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
       res = engine.get(url("orders?eq(orderid,10257)"));
       res.dump();
-      assertEquals(1, res.data().size());
+      assertEquals(1, res.getData().size());
       assertTrue(res.findString("data.0.orderid").equals("10257"));
    }
 
@@ -191,16 +191,16 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
       res = engine.get(url("employees?w(city,ondo)")).assertOk();
 
-      assertEquals(4, res.data().length());
-      for (Object obj : res.data())
+      assertEquals(4, res.getData().length());
+      for (Object obj : res.getData())
       {
          assertTrue(((JSNode) obj).getString("city").contains("ondo"));
       }
 
       //--the *s should not be necessary
       res = engine.get(url("employees?w(city,*ondo*)")).assertOk();
-      assertEquals(4, res.data().length());
-      for (Object obj : res.data())
+      assertEquals(4, res.getData().length());
+      for (Object obj : res.getData())
       {
          assertTrue(((JSNode) obj).getString("city").contains("ondo"));
       }
@@ -232,7 +232,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
       res = engine.get(url("orders?limit=5&sw(customerId,VI)")).assertOk();
 
-      JSArray data = res.data();
+      JSArray data = res.getData();
       assertTrue(data.length() > 0);
       for (Object o : data)
       {
@@ -257,7 +257,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
       res = engine.get(url("orders?ew(shipname,Chevalier)"));
 
-      JSArray data = res.data();
+      JSArray data = res.getData();
       assertTrue(data.size() == 1);
       for (Object o : data)
       {
@@ -266,7 +266,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
 
       //check that the leading * is not doubled
       res = engine.get(url("orders?ew(shipname,*Chevalier)"));
-      data = res.data();
+      data = res.getData();
       assertTrue(data.size() == 1);
       for (Object o : data)
       {
@@ -303,8 +303,8 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
    public void testN02() throws Exception
    {
       Engine engine = engine();
-      assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().data().size() > 0);
-      assertTrue(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().data().size() == 0);
+      assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().getData().size() > 0);
+      assertTrue(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().getData().size() == 0);
    }
 
    @Test
@@ -316,7 +316,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res = engine.get(url("orders?limit=1&emp(shipregion)"));
       assertEquals(15, res.getFoundRows());
 
-      for (JSNode result : res.data().asNodeList())
+      for (JSNode result : res.getData().asNodeList())
       {
          assertTrue(Utils.empty(result.getString("shipregion")));
       }
@@ -350,7 +350,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res = engine.get(url("orders?limit=1&nemp(shipregion)"));
       assertEquals(10, res.getFoundRows());
 
-      for (JSNode result : res.data().asNodeList())
+      for (JSNode result : res.getData().asNodeList())
       {
          assertTrue(!Utils.empty(result.getString("shipregion")));
       }
@@ -363,7 +363,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
       res = engine.get(url("orders?in(orderid,10249,10258,10252)"));
 
-      JSArray data = res.data();
+      JSArray data = res.getData();
       List<String> list = Arrays.asList("10249", "10258", "10252");
       assertEquals(3, data.length());
       for (Object obj : data)
@@ -380,7 +380,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
 
       Set ids = new HashSet(Utils.explode(",", "10249,10258,10252"));
       assertTrue(res.getFoundRows() == 22);
-      for (Object obj : res.data())
+      for (Object obj : res.getData())
       {
          assertFalse(ids.contains(((JSNode) obj).find("orderId").toString()));
       }
@@ -397,7 +397,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res.dump();
       assertEquals(1, res.getFoundRows());
 
-      for (JSNode node : res.data().asNodeList())
+      for (JSNode node : res.getData().asNodeList())
       {
          float val = Float.parseFloat(node.getString("freight"));
          assertTrue(val < 3.25);
@@ -413,7 +413,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res = engine.get(url("orders?le(freight,3.2500)"));
       assertEquals(2, res.getFoundRows());
 
-      JSArray data = res.data();
+      JSArray data = res.getData();
       for (Object o : data)
       {
          float val = Float.parseFloat(((JSNode) o).getString("freight"));

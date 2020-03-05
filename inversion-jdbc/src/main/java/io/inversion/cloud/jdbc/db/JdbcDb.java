@@ -60,30 +60,30 @@ import io.inversion.cloud.utils.Utils;
 
 public class JdbcDb extends Db<JdbcDb>
 {
-   protected char          stringQuote              = '\'';
-   protected char          columnQuote              = '"';
+   protected char                 stringQuote              = '\'';
+   protected char                 columnQuote              = '"';
 
-   protected DataSource    pool                     = null;
+   protected transient DataSource pool                     = null;
 
-   public static final int MIN_POOL_SIZE            = 3;
-   public static final int MAX_POOL_SIZE            = 10;
+   public static final int        MIN_POOL_SIZE            = 3;
+   public static final int        MAX_POOL_SIZE            = 10;
 
-   protected String        driver                   = null;
-   protected String        url                      = null;
-   protected String        user                     = null;
-   protected String        pass                     = null;
-   protected int           poolMin                  = 3;
-   protected int           poolMax                  = 10;
-   protected int           idleConnectionTestPeriod = 3600;           // in seconds
-   protected boolean       autoCommit               = false;
+   protected String               driver                   = null;
+   protected String               url                      = null;
+   protected String               user                     = null;
+   protected String               pass                     = null;
+   protected int                  poolMin                  = 3;
+   protected int                  poolMax                  = 10;
+   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
+   protected boolean              autoCommit               = false;
 
    // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
    // Only impacts 'mysql' types
-   protected boolean       calcRowsFound            = true;
+   protected boolean              calcRowsFound            = true;
 
-   protected int           relatedMax               = 500;
+   protected int                  relatedMax               = 500;
 
-   protected List<String>  ddlUrls                  = new ArrayList();
+   protected List<String>         ddlUrls                  = new ArrayList();
 
    static
    {

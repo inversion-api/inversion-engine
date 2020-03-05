@@ -181,7 +181,7 @@ public class CosmosEngineFactory
          Set orderIds = new HashSet();
          Set customerIds = new HashSet();
 
-         for (JSNode order : res.data().asNodeList())
+         for (JSNode order : res.getData().asNodeList())
          {
             cleanSourceNode("orders", order);
 
@@ -190,14 +190,14 @@ public class CosmosEngineFactory
 
             res = e.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
 
-            for (JSNode details : res.data().asNodeList())
+            for (JSNode details : res.getData().asNodeList())
             {
                cleanSourceNode("orderDetails", details);
                details.remove("employees");
                details.remove("order");
                details.remove("orderid");
             }
-            order.put("orderDetails", res.data());
+            order.put("orderDetails", res.getData());
             e.post("/northwind/cosmos/orders", order).assertOk();
          }
 
@@ -211,14 +211,14 @@ public class CosmosEngineFactory
 
          String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
          res = e.get(getCustomers).assertOk();
-         for (JSNode customer : res.data().asNodeList())
+         for (JSNode customer : res.getData().asNodeList())
          {
             cleanSourceNode("customers", customer);
             e.post("/northwind/cosmos/customers", customer).assertOk();
          }
 
          res = e.get("/northwind/source/employees").assertOk();
-         for (JSNode employee : res.data().asNodeList())
+         for (JSNode employee : res.getData().asNodeList())
          {
             employee.remove("employees");
             cleanSourceNode("employees", employee);
@@ -274,7 +274,7 @@ public class CosmosEngineFactory
             throw new RuntimeException("Something is not right, your delete seems to be stuck in an infinate loop.");
 
          res = e.get(url).assertOk();
-         for (JSNode order : res.data().asNodeList())
+         for (JSNode order : res.getData().asNodeList())
          {
             res = e.delete(order.getString("href"));
             res.assertOk();

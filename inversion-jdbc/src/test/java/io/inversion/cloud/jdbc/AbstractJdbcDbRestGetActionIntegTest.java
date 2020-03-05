@@ -71,11 +71,11 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
 
       //find everyone who reports to Andrew
       resp = engine.get(url("employees" + "?eq(reportsTo.firstName,Andrew)"));
-      assertEquals(5, resp.data().size());
+      assertEquals(5, resp.getData().size());
 
       //find everyone who does not report to Andrew
       resp = engine.get(url("employees" + "?ne(reportsTo.firstName,Andrew)"));
-      assertEquals(4, resp.data().size());
+      assertEquals(4, resp.getData().size());
    }
 
    @Test
@@ -85,12 +85,12 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
 
       //"Andrew Fuller" is Nancy's manager in the Northwind datataset
       resp = engine.get(url("employees" + "?eq(employees.firstName,Nancy)"));
-      assertEquals(1, resp.data().size());
-      assertTrue(resp.data().toString().toLowerCase().indexOf("fuller") > 0);
+      assertEquals(1, resp.getData().size());
+      assertTrue(resp.getData().toString().toLowerCase().indexOf("fuller") > 0);
 
       resp = engine.get(url("employees" + "?ne(employees.firstName,Nancy)"));
-      assertEquals(8, resp.data().size());
-      assertTrue(resp.data().toString().toLowerCase().indexOf("fuller") < 0);
+      assertEquals(8, resp.getData().size());
+      assertTrue(resp.getData().toString().toLowerCase().indexOf("fuller") < 0);
    }
 
    @Test
@@ -101,7 +101,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       //-- find everyone who has never sold something with a quantity of 12
       resp = engine.get(url("employees" + "?ne(orderdetails.quantity,12)"));
       resp.dump();
-      assertEquals(6, resp.data().size());
+      assertEquals(6, resp.getData().size());
    }
 
    @Test
@@ -218,13 +218,13 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
       res = engine.get(url("orders?limit=5&sort=orderid"));
       res.dump();
-      assertEquals(5, res.data().size());
+      assertEquals(5, res.getData().size());
       assertTrue(res.findString("data.0.customer").endsWith("/customers/VINET"));
       assertTrue(res.findString("data.0.orderdetails").toLowerCase().endsWith("/orders/10248/orderdetails"));
       assertTrue(res.findString("data.0.employee").endsWith("/employees/5"));
 
       res = engine.get(url("employees/1/territories?limit=5&order=-territoryid"));
-      assertEquals(2, res.data().size());
+      assertEquals(2, res.getData().size());
       assertTrue(res.findString("data.0.href").endsWith("/territories/19713"));
       assertTrue(res.findString("data.0.employees").endsWith("/territories/19713/employees"));
    }
@@ -321,7 +321,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       String toMatch = JSNode.parseJson("[{\"href\":\"http://localhost/COLLECTION_PATHorders/10248\",\"employee\":{\"href\":\"http://localhost/COLLECTION_PATHemployees/5\",\"reportsto\":{\"href\":\"http://localhost/COLLECTION_PATHemployees/2\",\"territories\":\"http://localhost/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
       toMatch = toMatch.replace("COLLECTION_PATH", collectionPath);
 
-      assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
+      assertEquals(toMatch.toLowerCase(), res.getData().toString().toLowerCase());
    }
 
    @Test

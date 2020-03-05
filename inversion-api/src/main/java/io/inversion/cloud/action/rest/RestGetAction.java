@@ -784,7 +784,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
       else if (sc == 200)
       {
-         List<JSNode> nodes = (List<JSNode>) res.data().asList();
+         List<JSNode> nodes = (List<JSNode>) res.getData().asList();
 
          for (JSNode node : nodes)
          {

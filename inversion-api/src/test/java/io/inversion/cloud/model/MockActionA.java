@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion.cloud.model;
 
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.JSNode;

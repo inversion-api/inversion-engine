@@ -103,7 +103,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
 
       //-- make sure the new employee was POSTED
       res = engine.get(url("employees/99999991?expands=reportsTo,territories"));
-      assertEquals(1, res.data().size());
+      assertEquals(1, res.getData().size());
       assertTrue(res.findString("data.0.href").contains("/99999991"));
       assertTrue(res.findString("data.0.reportsTo.href").contains("employees/5"));
       assertTrue(res.findString("data.0.territories.0.TerritoryID").equals("30346"));

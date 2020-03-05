@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion.cloud.model;
 
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
@@ -28,6 +28,7 @@ import java.util.Map;
 
 public class MockDb extends Db<MockDb>
 {
+   String property1 = null;
 
    //   @Override
    //   protected void doStartup()
@@ -56,6 +57,17 @@ public class MockDb extends Db<MockDb>
    public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
 
+   }
+
+   public String getProperty1()
+   {
+      return property1;
+   }
+
+   public MockDb withProperty1(String property1)
+   {
+      this.property1 = property1;
+      return this;
    }
 
 }

@@ -16,8 +16,8 @@
  */
 package io.inversion.cloud.utils;
 
-import io.inversion.cloud.utils.Utils;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,41 +27,48 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.action.security.AuthAction;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.MockDb;
+import io.inversion.cloud.service.Engine;
+
 public class ConfiguratorTest
 {
-   @Test
-   public void test_none()
-   {
-   }
+   //   @Test
+   //   public void test_none()
+   //   {
+   //   }
 
    /**
     * Test that properties files are loaded for the given
     * profile in the correct order allowing keys to be
     * overridden. 
     */
-   //   @Test
-   //   public void testConfigSimple()
-   //   {
-   //      Engine dev = new Engine();
-   //      dev.withProfile("dev");
-   //      dev.withConfigPath("io/rocketpartners/cloud/service/config/");
-   //      dev.startup();
-   //
-   //      Api devApi = dev.getApi("northwind");
-   //      assertEquals(20, ((SqlDb) devApi.getDb("db")).getPoolMax());
-   //      assertEquals(0, devApi.getActions().size());
-   //
-   //      Engine prod = new Engine();
-   //      prod.withProfile("prod");
-   //      prod.withConfigPath("io/rocketpartners/cloud/service/config/");
-   //      prod.startup();
-   //
-   //      Api prodApi = prod.getApi("northwind");
-   //
-   //      assertEquals(70, ((SqlDb) prodApi.getDb("db")).getPoolMax());
-   //      assertEquals(1, prodApi.getActions().size());
-   //      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
-   //   }
+   @Test
+   public void testConfigSimple()
+   {
+      Engine dev = new Engine();
+      dev.withProfile("dev");
+      dev.withConfigPath("io/inversion/cloud/utils");
+      dev.startup();
+
+      Api devApi = dev.getApi("northwind");
+      assertEquals("20", ((MockDb) devApi.getDb("db")).getProperty1());
+      assertEquals(0, devApi.getActions().size());
+
+      Engine prod = new Engine();
+      prod.withProfile("prod");
+      prod.withConfigPath("io/inversion/cloud/utils");
+      prod.startup();
+
+      Api prodApi = prod.getApi("northwind");
+
+      assertEquals("70", ((MockDb) prodApi.getDb("db")).getProperty1());
+      assertEquals(1, prodApi.getActions().size());
+      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
+   }
 
    /**
     * Test the stability of properties file encoding/decoding
@@ -72,21 +79,29 @@ public class ConfiguratorTest
     *  
     * @throws Exception
     */
-   //   @Test
-   //   public void testEncodeDecodeEncodeAccuracy1() throws Exception
-   //   {
-   //      Engine engine = SqlEngineFactory.service(true, true);
-   //      Api source = engine.getApi("northwind");
-   //      Properties props1 = Configurator.encode(source);
-   //
-   //      Wirer w = new Wirer();
-   //      w.load(props1);
-   //
-   //      Api copy1 = (Api) w.getBean("northwind");
-   //      Properties props2 = Configurator.encode(copy1);
-   //
-   //      assertTrue(compare(props1, props2));
-   //   }
+   @Test
+   public void encodingDecodingEncoding_shouldNotChangeModel() throws Exception
+   {
+      Engine dev = new Engine();
+      dev.withProfile("dev");
+      dev.withConfigPath("io/inversion/cloud/utils");
+      dev.startup();
+      
+      //encode
+      Api source = dev.getApi("northwind");
+      Properties props1 = Configurator.encode(source);
+
+      //decode
+      Wirer w = new Wirer();
+      w.load(props1);
+
+      //encode again
+      Api copy1 = (Api) w.getBean("northwind");
+      Properties props2 = Configurator.encode(copy1);
+
+      //props should match
+      assertTrue(compare(props1, props2));
+   }
 
    //   @Test
    //   public void testEncodeDecodeEncodeAccuracy2() throws Exception
@@ -103,12 +118,12 @@ public class ConfiguratorTest
    //      assertTrue(compare(props1, props2));
    //   }
 
-   protected boolean compare(Properties props1, Properties props2) throws IOException
+   public static boolean compare(Properties props1, Properties props2) throws IOException
    {
       return compare(print(props1), print(props2));
    }
 
-   protected boolean compare(String str1, String str2) throws IOException
+   public static boolean compare(String str1, String str2) throws IOException
    {
       String line1 = null;
       String line2 = null;
@@ -139,7 +154,7 @@ public class ConfiguratorTest
       return true;
    }
 
-   protected String print(Properties props)
+   public static String print(Properties props)
    {
       StringBuffer buff = new StringBuffer();
       List<String> keys = new ArrayList(props.keySet());
@@ -150,5 +165,4 @@ public class ConfiguratorTest
       });
       return buff.toString();
    }
-
 }

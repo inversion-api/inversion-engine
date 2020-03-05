@@ -1,6 +1,5 @@
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.service.MockActionA;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
