@@ -27,10 +27,6 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
       }
    }
 
-   /**
-    * The majority of these should be postgres/h2 compatible.  Mysql and MsSQL 
-    * will probably have to customize most of these.
-    */
    @Override
    protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
