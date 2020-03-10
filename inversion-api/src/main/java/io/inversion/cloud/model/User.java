@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import java.util.Set;
 public class User
 {
    protected int         id          = 0;
+   protected String      tenant      = null;
    protected String      username    = null;
    protected String      password    = null;
 
@@ -37,9 +38,6 @@ public class User
 
    protected String      accessKey   = null;
    protected String      secretKey   = null;
-
-   protected int         tenantId    = 0;
-   protected String      tenantCode  = null;
 
    /**
     * the time of the last request
@@ -155,17 +153,6 @@ public class User
       return this;
    }
 
-   public int getTenantId()
-   {
-      return tenantId;
-   }
-
-   public User withTenantId(int tenantId)
-   {
-      this.tenantId = tenantId;
-      return this;
-   }
-
    public List<String> getPermissions()
    {
       return new ArrayList(permissions);
@@ -261,14 +248,14 @@ public class User
       return this;
    }
 
-   public String getTenantCode()
+   public String getTenant()
    {
-      return tenantCode;
+      return tenant;
    }
 
-   public User withTenantCode(String tenantCode)
+   public User withTenant(String tenant)
    {
-      this.tenantCode = tenantCode;
+      this.tenant = tenant;
       return this;
    }
 

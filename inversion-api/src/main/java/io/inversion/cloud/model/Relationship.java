@@ -16,7 +16,9 @@
  */
 package io.inversion.cloud.model;
 
-public class Relationship
+import java.io.Serializable;
+
+public class Relationship implements Serializable
 {
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";

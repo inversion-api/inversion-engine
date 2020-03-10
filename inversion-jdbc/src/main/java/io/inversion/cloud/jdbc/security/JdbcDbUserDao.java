@@ -27,13 +27,13 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import io.inversion.cloud.action.security.AuthAction.UserDao;
+import io.inversion.cloud.action.security.AuthAction;
+import io.inversion.cloud.action.security.AuthAction.JwtUserDao;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Rows;
 import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.utils.Utils;
 
@@ -62,15 +62,15 @@ import io.inversion.cloud.utils.Utils;
  * @author wells
  *
  */
-public class JdbcDbUserDao implements UserDao
+public class JdbcDbUserDao extends JwtUserDao
 {
    /**
     * Optional name param that is used for $name.salt
     * parameter configuration.
     */
-   String name = null;
-   JdbcDb db   = null;
-   String salt = null;
+   protected String name = null;
+   protected JdbcDb db   = null;
+   protected String salt = null;
 
    public JdbcDbUserDao()
    {
@@ -107,7 +107,7 @@ public class JdbcDbUserDao implements UserDao
       return actual.equals(strongHash) || actual.equals(weakHash);
    }
 
-   public User getUser(String username, String suppliedPassword, String apiCode, String tenantCode) throws Exception
+   public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws Exception
    {
       Connection conn = null;
       User user = null;
@@ -140,20 +140,14 @@ public class JdbcDbUserDao implements UserDao
                user.withId(Integer.parseInt(map.get("id") + ""))//
                    .withUsername((String) map.get("username"))//
                    .withAccessKey((String) map.get("accessKey"))//
-                   .withTenantCode((String) map.get("tenantCode"));//
-
-               Object tenantId = map.get("tenantId");
-               if (tenantId != null)
-               {
-                  user.withTenantId(Integer.parseInt(tenantId + ""));
-               }
+                   .withTenant((String) map.get("tenant"));//
             }
             if (user != null)
             {
-               Rows rows = findGRP(conn, user.getId(), apiCode, tenantCode);
+               Rows rows = findGRP(conn, user.getId(), apiName, tenant);
                if (rows == null || rows.size() == 0)
                {
-                  //-- there is a users with the given username but the don't have any association to this apiCode/tenantCode
+                  //-- there is a users with the given username but the don't have any association to this apiName/tenant
                   user = null;
                }
                else
@@ -255,7 +249,7 @@ public class JdbcDbUserDao implements UserDao
     * 
     * 
     */
-   protected Rows findGRP(Connection conn, int userId, String apiCode, String tenantCode) throws Exception
+   protected Rows findGRP(Connection conn, int userId, String api, String tenant) throws Exception
    {
       List vals = new ArrayList();
 
@@ -270,9 +264,9 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    WHERE u.userId = ?";
       vals.add(userId);
 
-      sql += "\r\n     AND ((p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
-      vals.addAll(Arrays.asList(apiCode, tenantCode, apiCode, tenantCode));
+      sql += "\r\n     AND ((p.api is null OR p.api = ?) AND (p.tenant is null OR p.tenant = ?))";
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
+      vals.addAll(Arrays.asList(api, tenant, api, tenant));
 
       //-- user -> group -> permission
       sql += "\r\n                                                           ";
@@ -283,11 +277,11 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    JOIN GroupPermission g ON p.id = g.permissionId";
       sql += "\r\n    JOIN UserGroup u ON u.groupId = g.groupId ";
       sql += "\r\n    WHERE u.userId = ?";
-      sql += "\r\n     AND ((p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
-      sql += "\r\n     AND ((g.apiCode is null OR g.apiCode = ?) AND (g.tenantCode is null OR g.tenantCode = ?))";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+      sql += "\r\n     AND ((p.api is null OR p.api = ?) AND (p.tenant is null OR p.tenant = ?))";
+      sql += "\r\n     AND ((g.api is null OR g.api = ?) AND (g.tenant is null OR g.tenant = ?))";
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-      vals.addAll(Arrays.asList(userId, apiCode, tenantCode, apiCode, tenantCode, apiCode, tenantCode));
+      vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
 
       //-- user -> role -> permission
       sql += "\r\n                                                           ";
@@ -298,11 +292,11 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    JOIN RolePermission r ON p.id = r.permissionId";
       sql += "\r\n    JOIN UserRole u ON u.roleId = r.roleId ";
       sql += "\r\n    WHERE u.userId = ?";
-      sql += "\r\n     AND ((p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
-      sql += "\r\n     AND ((r.apiCode is null OR r.apiCode = ?) AND (r.tenantCode is null OR r.tenantCode = ?))";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+      sql += "\r\n     AND ((p.api is null OR p.api = ?) AND (p.tenant is null OR p.tenant = ?))";
+      sql += "\r\n     AND ((r.api is null OR r.api = ?) AND (r.tenant is null OR r.tenant = ?))";
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-      vals.addAll(Arrays.asList(userId, apiCode, tenantCode, apiCode, tenantCode, apiCode, tenantCode));
+      vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
 
       //-- user -> group -> role -> permission
       sql += "\r\n                                                           ";
@@ -315,12 +309,12 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    JOIN UserGroup u ON g.groupId = u.groupId";
       sql += "\r\n    WHERE u.userId = ?";
 
-      sql += "\r\n     AND ((p.apiCode is null OR p.apiCode = ?) AND (p.tenantCode is null OR p.tenantCode = ?))";
-      sql += "\r\n     AND ((r.apiCode is null OR r.apiCode = ?) AND (r.tenantCode is null OR r.tenantCode = ?))";
-      sql += "\r\n     AND ((g.apiCode is null OR g.apiCode = ?) AND (g.tenantCode is null OR g.tenantCode = ?))";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
+      sql += "\r\n     AND ((p.api is null OR p.api = ?) AND (p.tenant is null OR p.tenant = ?))";
+      sql += "\r\n     AND ((r.api is null OR r.api = ?) AND (r.tenant is null OR r.tenant = ?))";
+      sql += "\r\n     AND ((g.api is null OR g.api = ?) AND (g.tenant is null OR g.tenant = ?))";
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-      vals.addAll(Arrays.asList(userId, apiCode, tenantCode, apiCode, tenantCode, apiCode, tenantCode, apiCode, tenantCode));
+      vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant, api, tenant));
 
       //-- user -> group
       sql += "\r\n                                                           ";
@@ -330,8 +324,8 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    FROM `Group` g";
       sql += "\r\n    JOIN UserGroup u ON g.id = u.groupId";
       sql += "\r\n    WHERE u.userId = ?";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
-      vals.addAll(Arrays.asList(userId, apiCode, tenantCode));
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
+      vals.addAll(Arrays.asList(userId, api, tenant));
 
       //-- user -> role
       sql += "\r\n                                                           ";
@@ -341,8 +335,8 @@ public class JdbcDbUserDao implements UserDao
       sql += "\r\n    FROM Role r";
       sql += "\r\n    JOIN UserRole u ON r.id = u.roleId";
       sql += "\r\n    WHERE u.userId = ?";
-      sql += "\r\n     AND ((u.apiCode is null OR u.apiCode = ?) AND (u.tenantCode is null OR u.tenantCode = ?))";
-      vals.addAll(Arrays.asList(userId, apiCode, tenantCode));
+      sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
+      vals.addAll(Arrays.asList(userId, api, tenant));
 
       sql += " ) as q ORDER BY type, name, via";
 

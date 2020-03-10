@@ -41,7 +41,7 @@ public class Request
    protected Engine                                 engine           = null;
    protected Api                                    api              = null;
    protected Path                                   apiPath          = null;
-   protected String                                 tenantCode       = null;
+   protected String                                 tenant           = null;
 
    protected Path                                   endpointPath     = null;
    protected Endpoint                               endpoint         = null;
@@ -547,14 +547,14 @@ public class Request
       return this;
    }
 
-   public String getTenantCode()
+   public String getTenant()
    {
-      return tenantCode;
+      return tenant;
    }
 
-   public Request withTenantCode(String tenantCode)
+   public Request withTenant(String tenant)
    {
-      this.tenantCode = tenantCode;
+      this.tenant = tenant;
       return this;
    }
 

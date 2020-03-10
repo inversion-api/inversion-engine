@@ -95,7 +95,7 @@ public class JdbcDbUserDaoTest
       assertTrue(findPermission(grps, "permission4", "user->group->role->permission"));
       assertTrue(findPermission(grps, "permission5", "user->role->permission"));
 
-      User user = userDao.getUser("api_admin", "password", "someApi", null);
+      User user = userDao.getUser(null, "api_admin", "password", "someApi", null);
 
       assertEquals(0, CollectionUtils.disjunction(Arrays.asList("Administrator", "Member"), user.getRoles()).size());
       assertEquals(0, CollectionUtils.disjunction(Arrays.asList("admin_users", "read_only"), user.getGroups()).size());

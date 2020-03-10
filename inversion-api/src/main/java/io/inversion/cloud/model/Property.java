@@ -16,9 +16,11 @@
  */
 package io.inversion.cloud.model;
 
+import java.io.Serializable;
+
 import io.inversion.cloud.utils.Utils;
 
-public class Property implements Comparable<Property>
+public class Property implements Comparable<Property>, Serializable
 {
    protected String     jsonName   = null;
    protected String     columnName = null;

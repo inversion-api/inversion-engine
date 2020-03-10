@@ -112,7 +112,7 @@ public abstract class Action<A extends Action> extends Rule<A>
       //         return chain.getRequest().getApi().getId() + "";
       //      }
       //      else 
-      if ("apiName".equalsIgnoreCase(key))
+      if ("api".equalsIgnoreCase(key))
       {
          return chain.getRequest().getApi().getName();
       }
@@ -120,17 +120,12 @@ public abstract class Action<A extends Action> extends Rule<A>
       //      {
       //         return chain.getRequest().getApi().getAccountId() + "";
       //      }
-      else if ("tenantId".equalsIgnoreCase(key))
+      else if ("tenant".equalsIgnoreCase(key))
       {
          if (Chain.getUser() != null)
-            return Chain.getUser().getTenantId() + "";
+            return Chain.getUser().getTenant() + "";
       }
-      else if ("tenantCode".equalsIgnoreCase(key))
-      {
-         if (Chain.getUser() != null)
-            return Chain.getUser().getTenantCode();
-      }
-      else if ("userId".equalsIgnoreCase(key))
+      else if ("user".equalsIgnoreCase(key))
       {
          if (Chain.getUser() != null)
             return Chain.getUser().getId() + "";

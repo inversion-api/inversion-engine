@@ -16,16 +16,17 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.utils.Utils;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.inversion.cloud.utils.Utils;
 
 /**
  * @author tc-rocket
  *
  */
-public class Index
+public class Index implements Serializable
 {
    protected Collection   collection  = null;
    protected String       name        = null;
@@ -36,6 +37,13 @@ public class Index
    public Index()
    {
       super();
+   }
+
+   public Index(String name, String type, boolean unique)
+   {
+      withName(name);
+      withType(type);
+      withUnique(unique);
    }
 
    public Index(String name, String type, boolean unique, String columnName1, String... columnNameN)
@@ -162,6 +170,20 @@ public class Index
    public int size()
    {
       return columnNames.size();
+   }
+
+   public Index setColumnName(int index, String columnName)
+   {
+      while (columnNames.size() < index - 1)
+         columnNames.add(null);
+
+      columnNames.set(index, columnName);
+      return this;
+   }
+
+   public String getColumnName(int index)
+   {
+      return index < columnNames.size() ? columnNames.get(index) : null;
    }
 
    public Index withColumnNames(String... columnNames)

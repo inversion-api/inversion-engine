@@ -16,11 +16,12 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.text.StringEscapeUtils;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,11 +29,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.text.StringEscapeUtils;
+
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.utils.Utils;
+
 /**
  * Represents a REST collection as an interface into an underlying
  * Db data store...such as an RDBMS table.
  */
-public class Collection extends PathRule<Collection>
+public class Collection extends PathRule<Collection> implements Serializable
 {
    protected Db                      db            = null;
 
@@ -55,6 +62,28 @@ public class Collection extends PathRule<Collection>
    {
       withName(defaultName);
       withTableName(defaultName);
+   }
+
+   public Collection copy()
+   {
+      try
+      {
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         ObjectOutputStream oos;
+
+         oos = new ObjectOutputStream(baos);
+
+         oos.writeObject(this);
+         oos.flush();
+
+         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+         return (Collection) ois.readObject();
+      }
+      catch (Exception e)
+      {
+         Utils.rethrow(e);
+      }
+      return null;
    }
 
    /**

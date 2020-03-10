@@ -405,9 +405,9 @@ public class Engine
 
             if (a.isMultiTenant() && parts.size() > 0)
             {
-               String tenantCode = parts.remove(0);
-               apiPath.add(tenantCode);
-               req.withTenantCode(tenantCode);
+               String tenant = parts.remove(0);
+               apiPath.add(tenant);
+               req.withTenant(tenant);
             }
 
             req.withApiPath(new Path(apiPath));
@@ -496,7 +496,8 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            ApiException.throw404NotFound("No API found matching URL: '%s'", req.getUrl());
+            //ApiException.throw404NotFound("No API found matching URL: '%s'", req.getUrl());
+            ApiException.throw400BadRequest("No API found matching URL: '%s'", req.getUrl());
          }
 
          if (req.getEndpoint() == null)
