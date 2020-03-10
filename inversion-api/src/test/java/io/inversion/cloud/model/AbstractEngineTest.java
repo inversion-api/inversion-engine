@@ -41,7 +41,7 @@ public interface AbstractEngineTest extends AbstractDbTest
 
          engine = new Engine().withApi(new Api("northwind") //
                                                            .withEndpoint("*", db.getType() + "/*", new RestAction())//
-                                                           .withDb(getDb()));
+                                                           .withDb(db));
          engine.startup();
       }
       setEngine(engine);

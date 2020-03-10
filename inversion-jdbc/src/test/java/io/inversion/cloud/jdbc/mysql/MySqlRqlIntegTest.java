@@ -19,6 +19,8 @@ package io.inversion.cloud.jdbc.mysql;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import io.inversion.cloud.rql.RqlValidationSuite;
+
 @TestInstance(Lifecycle.PER_CLASS)
 public class MySqlRqlIntegTest extends MySqlRqlUnitTest
 {
@@ -26,4 +28,14 @@ public class MySqlRqlIntegTest extends MySqlRqlUnitTest
    {
       super();
    }
+
+   @Override
+   protected void customizeIntegTestSuite(RqlValidationSuite suite)
+   {
+      super.customizeIntegTestSuite(suite);
+      suite.withResult("manyTManyNotExistsNe",
+            "SELECT `Employees`.* FROM `Employees` WHERE NOT EXISTS (SELECT 1 FROM `Order Details` `~~relTbl_Order Details`, `EmployeeOrderDetails` `~~lnkTbl_EmployeeOrderDetails` WHERE `Employees`.`EmployeeID` = `~~lnkTbl_EmployeeOrderDetails`.`EmployeeID` AND `~~lnkTbl_EmployeeOrderDetails`.`OrderID` = `~~relTbl_Order Details`.`OrderID` AND `~~lnkTbl_EmployeeOrderDetails`.`ProductID` = `~~relTbl_Order Details`.`ProductID` AND `~~relTbl_Order Details`.`Quantity` = ?) ORDER BY `Employees`.`EmployeeID` ASC LIMIT 100 args=[12]")//
+      ;
+   }
+
 }

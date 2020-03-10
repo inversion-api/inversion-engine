@@ -19,6 +19,8 @@ package io.inversion.cloud.jdbc.h2;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import io.inversion.cloud.rql.RqlValidationSuite;
+
 @TestInstance(Lifecycle.PER_CLASS)
 public class H2RqlIntegTest extends H2RqlUnitTest
 {
@@ -26,4 +28,5 @@ public class H2RqlIntegTest extends H2RqlUnitTest
    {
       super();
    }
+
 }

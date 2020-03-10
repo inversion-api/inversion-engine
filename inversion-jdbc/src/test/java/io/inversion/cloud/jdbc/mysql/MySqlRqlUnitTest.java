@@ -55,7 +55,7 @@ public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest
            .withResult("ge", "SELECT `orders`.* FROM `orders` WHERE `orders`.`freight` >= ? ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[3.67]")//
            .withResult("in", "SELECT `orders`.* FROM `orders` WHERE `orders`.`shipCity` IN(?, ?) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
            .withResult("out", "SELECT `orders`.* FROM `orders` WHERE `orders`.`shipCity` NOT IN(?, ?) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
-           .withResult("and", "SELECT `orders`.* FROM `orders` WHERE `orders`.`orderID` = ? AND `orders`.`shipCountry` = ? ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[10248, France]")//
+           .withResult("and", "SELECT `orders`.* FROM `orders` WHERE `orders`.`shipCity` = ? AND `orders`.`shipCountry` = ? ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Lyon, France]")//
            .withResult("or", "SELECT `orders`.* FROM `orders` WHERE (`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
            .withResult("not", "SELECT `orders`.* FROM `orders` WHERE NOT ((`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?)) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]")//
            .withResult("as", "SELECT `orders`.*, `orders`.`orderid` AS 'order_identifier' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]")//
