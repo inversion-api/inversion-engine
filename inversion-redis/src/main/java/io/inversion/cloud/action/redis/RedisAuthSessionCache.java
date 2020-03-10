@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.inversion.cloud.action.security.AuthAction.SessionDao;
+import io.inversion.cloud.action.security.AuthAction.InMemorySessionDao;
 import io.inversion.cloud.model.User;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -33,7 +33,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * 
  * @author tc-rocket
  */
-public class RedisAuthSessionCache implements SessionDao
+public class RedisAuthSessionCache extends InMemorySessionDao
 {
    protected final Logger log                                = LoggerFactory.getLogger(RedisAuthSessionCache.class);
 
@@ -60,7 +60,7 @@ public class RedisAuthSessionCache implements SessionDao
    JedisPool              jedisPool;
 
    @Override
-   public User get(String sessionKey)
+   public User doGet(String sessionKey)
    {
       return (User) execute(new JedisCallback()
          {
@@ -80,7 +80,7 @@ public class RedisAuthSessionCache implements SessionDao
    }
 
    @Override
-   public void put(String sessionKey, User user)
+   public void doPut(String sessionKey, User user)
    {
       if (sessionKey != null && user != null)
       {
@@ -97,7 +97,7 @@ public class RedisAuthSessionCache implements SessionDao
    }
 
    @Override
-   public void remove(String sessionKey)
+   public void doDelete(String sessionKey)
    {
       execute(new JedisCallback()
          {
