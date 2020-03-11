@@ -219,7 +219,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
            .withResult("max", "UNSUPPORTED")//
            .withResult("groupCount", "UNSUPPORTED")//
            .withResult("offset", "UNSUPPORTED")//
-           .withResult("limit", "QuerySpec:'gs3' maxPageSize=7 nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)'")//
+           .withResult("limit", "QuerySpec:'gs3' maxResultSize=7 nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)'")//
            .withResult("page", "UNSUPPORTED")//
            .withResult("pageNum", "UNSUPPORTED")//
 

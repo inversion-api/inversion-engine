@@ -259,7 +259,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("QuerySpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
          if (qs.getMaxResultSize() != 100)
-            debug.append(" maxPageSize=").append(qs.getMaxPageSize());
+            debug.append(" maxResultSize=").append(qs.getMaxResultSize());
 
          if (qs.getNameMap() != null)
             debug.append(" nameMap=").append(qs.getNameMap());
@@ -303,7 +303,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
          if (ss.getMaxResultSize() != 100)
-            debug.append(" maxPageSize=").append(ss.getMaxPageSize());
+            debug.append(" maxResultSize=").append(ss.getMaxResultSize());
 
          if (ss.getNameMap() != null)
             debug.append(" nameMap=").append(ss.getNameMap());
