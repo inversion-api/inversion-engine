@@ -64,13 +64,13 @@ public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest
            .withResult("nn", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("emp", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("nemp", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-           .withResult("likeMiddle", "")//contains operator
-           .withResult("likeStartsWith", "")//startswith
+           .withResult("likeMiddle", "UNSUPPORTED")
+           .withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
            .withResult("likeEndsWith", "UNSUPPORTED")//
            .withResult("sw", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("ew", "UNSUPPORTED")//
            .withResult("w", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='contains(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//contains
-           .withResult("wo", "")//not contains
+           .withResult("wo", "DynamoDb: QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='(NOT contains(#var2,:val2))' keyConditionExpression='(#var1 = :val1)'")//not contains
            .withResult("lt", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 < :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("le", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 <= :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("gt", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=freight} valueMap={:val1=ORDER, :val2=3.67} filterExpression='(#var2 > :val2)' keyConditionExpression='(#var1 = :val1)'")//
@@ -134,14 +134,14 @@ public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest
            .withTest("H_queryLs1WhenHkEqAndLs1Eq", "orders?eq(orderId, 12345)&sw(type, 'ORD')&eq(ShipCity,Atlanta)")//
            .withResult("H_queryLs1WhenHkEqAndLs1Eq", "QuerySpec:'ls1' nameMap={#var1=hk, #var2=ls1, #var3=sk} valueMap={:val1=12345, :val2=Atlanta, :val3=ORD} filterExpression='begins_with(#var3,:val3)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'")//
 
-           .withTest("I_queryGs1When", "orders?eq(orderId, 12345)&sw(type,ORD)&eq(customerId,9999)&eq(orderDate,'2013-01-08')")//
-           .withResult("I_queryGs1When", "")//
+           .withTest("I_queryGs1When", "orders?eq(orderId, 12345)&sw(type,ORD)&eq(employeeId,9999)&eq(orderDate,'2013-01-08')")//
+           .withResult("I_queryGs1When", "QuerySpec:'gs1' nameMap={#var4=sk, #var1=gs1hk, #var2=gs1sk, #var3=hk} valueMap={:val1=9999, :val2=2013-01-08, :val3=12345, :val4=ORD} filterExpression='(#var3 = :val3) and begins_with(#var4,:val4)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'")//
 
            .withTest("K_queryGs3", "orders?gt(orderId, 12345)&eq(type,ORDER)")//
            .withResult("K_queryGs3", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=hk} valueMap={:val1=ORDER, :val2=12345} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'")//
 
            .withTest("M_queryGs2WhenGs2HkEq", "orders?eq(customerId,1234)")//
-           .withResult("M_queryGs2WhenGs2HkEq", "")//
+           .withResult("M_queryGs2WhenGs2HkEq", "QuerySpec:'gs2' nameMap={#var1=gs2hk} valueMap={:val1=1234} keyConditionExpression='(#var1 = :val1)'")//
       //.withTest("", "").withResult("",  "")//
 
       ;

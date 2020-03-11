@@ -3,12 +3,20 @@ package io.inversion.cloud.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
+import io.inversion.cloud.action.rest.RestAction;
 import io.inversion.cloud.jdbc.db.JdbcDb;
 import io.inversion.cloud.jdbc.utils.JdbcUtils;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.service.spring.InversionApp;
 import io.inversion.cloud.utils.Utils;
 
 public class JdbcDbFactory
 {
+   public static void main(String[] args)
+   {
+      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new RestAction()).withDb(buildDb("mysql", "northwind-running")));
+   }
+
    public static JdbcDb buildDb(String type, String schemaName)
    {
       try

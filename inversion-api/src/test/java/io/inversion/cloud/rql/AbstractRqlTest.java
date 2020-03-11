@@ -73,7 +73,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
       Collection orders = new Collection("orders")//s
                                                   .withProperty("orderId", "VARCHAR")//
                                                   .withProperty("customerId", "INTEGER")//
-                                                  .withProperty("employeeId", "DATETIME")//
+                                                  .withProperty("employeeId", "INTEGER")//
                                                   .withProperty("orderDate", "DATETIME")//
                                                   .withProperty("requiredDate", "DATETIME")//
                                                   .withProperty("shippedDate", "DATETIME")//

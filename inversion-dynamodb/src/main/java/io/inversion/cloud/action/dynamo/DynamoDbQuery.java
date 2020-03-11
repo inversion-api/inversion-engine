@@ -113,7 +113,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
    protected Where createWhere()
    {
       Where where = new Where(this);
-      where.withFunctions("_key", "eq", "ne", "gt", "ge", "lt", "le", "w", "sw", "nn", "n", "emp", "nemp", "in", "out", "and", "or", "not", "attribute_not_exists", "attribute_exists");
+      where.withFunctions("_key", "eq", "ne", "gt", "ge", "lt", "le", "w", "wo", "sw", /* "ew" is not supported */ "nn", "n", "emp", "nemp", "in", "out", "and", "or", "not", "attribute_not_exists", "attribute_exists");
       return where;
    }
 
@@ -140,6 +140,32 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             term = Term.term(term.getParent(), "and", attrExists, neNull);
          }
       }
+
+      if (term.hasToken("like"))
+      {
+         String val = term.getToken(1);
+         int firstWc = val.indexOf("*");
+         if (firstWc > -1)
+         {
+            int wcCount = val.length() - val.replace("*", "").length();
+            int lastWc = val.lastIndexOf("*");
+            if (wcCount > 2// 
+                  || (wcCount == 1 && firstWc != val.length() - 1)//
+                  || (wcCount == 2 && !(firstWc == 0 && lastWc == val.length() - 1)))
+               ApiException.throw400BadRequest("DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.");
+
+            boolean sw = firstWc == val.length() - 1;
+
+            val = val.replace("*", "");
+            term.getTerm(1).withToken(val);
+
+            if (sw)
+               term.withToken("sw");
+            else
+               term.withToken("w");
+         }
+      }
+
       if (term.hasToken("sw"))//sw (startswith) includes a implicit trailing wild card
       {
          String val = term.getTerm(1).getToken();
@@ -150,6 +176,14 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          term.getTerm(1).withToken(val);
       }
 
+      if(term.hasToken("wo"))
+      {
+         term.withToken("w");
+         term = Term.term(null,  "not", term);//getParent().replaceTerm(, newTerm)
+         
+         
+      }
+      
       return super.addTerm(token, term);
    }
 
@@ -224,7 +258,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("QuerySpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
-         if (qs.getMaxPageSize() != 100)
+         if (qs.getMaxResultSize() != 100)
             debug.append(" maxPageSize=").append(qs.getMaxPageSize());
 
          if (qs.getNameMap() != null)
@@ -268,7 +302,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
-         if (ss.getMaxPageSize() != 100)
+         if (ss.getMaxResultSize() != 100)
             debug.append(" maxPageSize=").append(ss.getMaxPageSize());
 
          if (ss.getNameMap() != null)
@@ -546,8 +580,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       if (doQuery)
       {
          QuerySpec querySpec = new QuerySpec();//
-         querySpec.withMaxPageSize(pageSize);
-         //querySpec.withMaxResultSize(pageSize);
+         //querySpec.withMaxPageSize(pageSize);
+         querySpec.withMaxResultSize(pageSize);
          querySpec.withScanIndexForward(getOrder().isAsc(0));
 
          //-- https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SQLtoNoSQL.ReadData.Query.html
@@ -606,8 +640,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       else
       {
          ScanSpec scanSpec = new ScanSpec();
-         scanSpec.withMaxPageSize(pageSize);
-         //scanSpec.withMaxResultSize(maxResultSize)(pageSize);
+         //scanSpec.withMaxPageSize(pageSize);
+         scanSpec.withMaxResultSize(pageSize);
 
          Term after = getPage().getAfter();
          if (after != null)
@@ -657,9 +691,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
    String toString(StringBuffer buff, Term term, Map nameMap, Map valueMap)
    {
       space(buff);
-
-      if (term == null || term.getToken() == null)
-         System.out.println("asdfasd");
 
       String lc = term.getToken().toLowerCase();
       String op = OPERATOR_MAP.get(lc);

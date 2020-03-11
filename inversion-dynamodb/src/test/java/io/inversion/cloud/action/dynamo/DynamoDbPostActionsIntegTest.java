@@ -16,6 +16,10 @@
  */
 package io.inversion.cloud.action.dynamo;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+@TestInstance(Lifecycle.PER_CLASS)
 public class DynamoDbPostActionsIntegTest
 {
 //   protected Engine service() throws Exception

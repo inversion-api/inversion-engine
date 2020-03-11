@@ -246,7 +246,7 @@ public class RqlValidationSuite
          String actual = null;
          String expected = results.get(testKey);
 
-         if("order".equals(testKey))
+         if("likeStartsWith".equals(testKey))
          {
             System.out.println("asdfasd");
          }

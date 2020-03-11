@@ -63,7 +63,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       String href = res.findString("data.0.href");
       assertTrue(href.indexOf("/orders/10248") > 0);
 
-      res = engine.get(url("orders?limit=2&sort=-orderid&type=ORDER"));
+      res = engine.get(url("orders?limit=2&sort=-orderid"));
       assertEquals(2, res.getData().length());
 
       href = res.findString("data.0.href");
@@ -78,7 +78,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
 
       //--
       //-- gets a sorted list of all hrefs
-      res = engine.get(url("orders?type=ORDER&sort=orderId&includes=href&limit=1000"));
+      res = engine.get(url("orders?sort=orderId&includes=href&limit=1000"));
 
       res.dump();
 
@@ -314,6 +314,7 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       Response res = null;
 
       res = engine.get(url("orders?limit=1&emp(shipregion)"));
+      res.dump();
       assertEquals(15, res.getFoundRows());
 
       for (JSNode result : res.getData().asNodeList())
