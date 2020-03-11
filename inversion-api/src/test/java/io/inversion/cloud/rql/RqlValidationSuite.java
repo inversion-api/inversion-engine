@@ -59,70 +59,11 @@ public class RqlValidationSuite
    Db                      db         = null;
    String                  queryClass = null;
 
-   public RqlValidationSuite(String queryClass, Db db, Collection... tables)
+   public RqlValidationSuite(String queryClass, Db db)
    {
       withQueryClass(queryClass);
       withDb(db);
-      withTables(tables);
-      
-      Collection orders = new Collection("orders")//s
-                                                  .withProperty("orderId", "VARCHAR")//
-                                                  .withProperty("customerId", "INTEGER")//
-                                                  .withProperty("employeeId", "DATETIME")//
-                                                  .withProperty("orderDate", "DATETIME")//
-                                                  .withProperty("requiredDate", "DATETIME")//
-                                                  .withProperty("shippedDate", "DATETIME")//
-                                                  .withProperty("shipVia", "INTEGER")//
-                                                  .withProperty("freight", "DECIMAL")//
-                                                  .withProperty("shipName", "VARCHAR")//
-                                                  .withProperty("shipAddress", "VARCHAR")//
-                                                  .withProperty("shipCity", "VARCHAR")//
-                                                  .withProperty("shipRegion", "VARCHAR")//
-                                                  .withProperty("shipPostalCode", "VARCHAR")//
-                                                  .withProperty("shipCountry", "VARCHAR")//
-                                                  .withIndex("PK_Orders", "primary", true, "orderId");
 
-      Collection orderDetails = new Collection("orderDetails").withProperties("employeeId", "INTEGER")//
-                                                              .withProperty("orderId", "INTEGER")//
-                                                              .withProperty("productId", "INTEGER")//
-                                                              .withProperty("quantity", "INTEGER")//
-                                                              .withIndex("PK_orderDetails", "primary", true, "orderId", "productId");
-
-      orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
-
-      Collection employees = new Collection("employees").withProperty("employeeId", "INTEGER")//
-                                                        .withProperty("firstName", "VARCHAR")//
-                                                        .withProperty("lastName", "VARCHAR")//
-                                                        .withProperty("reportsTo", "INTEGER")//
-                                                        .withIndex("PK_Employees", "primary", true, "employeeId");
-
-      employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
-      employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
-      
-      employees.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-      employees.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-      
-      
-
-      Collection employeeOrderDetails = new Collection("employeeOrderDetails")//
-                                                                              .withProperty("employeeId", "INTEGER")//
-                                                                              .withProperty("orderId", "INTEGER")//
-                                                                              .withProperty("productId", "INTEGER")//
-                                                                              .withIndex("PK_EmployeeOrderDetails", "primary", true, "employeeId", "orderId", "productId");
-
-      employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
-      employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
-      employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
-
-      employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
-      employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
-      
-      
-      employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
-      
-
-      withTables(orders, orderDetails, employees, employeeOrderDetails);
-      
       withTest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
       withTest("ne", "orders?ne(shipCountry,France)");
 
@@ -146,7 +87,7 @@ public class RqlValidationSuite
       withTest("in", "orders?in(shipCity,Reims,Charleroi)");
       withTest("out", "orders?out(shipCity,Reims,Charleroi)");
 
-      withTest("and", "orders?and(eq(orderID, 10248),eq(shipCountry,France))");
+      withTest("and", "orders?and(eq(shipCity,Lyon),eq(shipCountry,France))");
       withTest("or", "orders?or(eq(shipCity, Reims),eq(shipCity,Charleroi))");
       withTest("not", "orders?not(or(eq(shipCity, Reims),eq(shipCity,Charleroi)))");
 
@@ -202,18 +143,35 @@ public class RqlValidationSuite
 
       for (String testKey : tests.keySet())
       {
+         if("order".equals(testKey))
+         {
+            System.out.println("asdfasd");
+         }
+         
          String queryString = tests.get(testKey);
 
          if (Utils.empty(testKey) || Utils.empty(queryString))
             continue;
 
+         String expected = results.get(testKey);
+         if ("UNSUPPORTED".equalsIgnoreCase(expected))
+            continue;
+
          System.out.println("\r\nTESTING: " + testKey + " - " + queryString);
 
+         Results.LAST_QUERY = null;
          Response res = engine.get(urlPrefix + queryString);
-         if (!verifyIntegTest(testKey, queryString, res))
+
+         if (Utils.empty(expected))
          {
-            failures.put(testKey, res.getDebug());
+            failures.put(testKey, "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + Results.LAST_QUERY);
          }
+         else if (!verifyIntegTest(testKey, queryString, expected, res))
+         {
+            res.dump();
+            failures.put(testKey, res.getStatus() + " - " + Results.LAST_QUERY);
+         }
+
       }
 
       if (failures.size() > 0)
@@ -241,16 +199,26 @@ public class RqlValidationSuite
    /**
     * Override me to add additional special case validations per test.
     * By default, all integ test pass if the return code is 200 or 404
+    * and the response debug dump contains the test result string...the
+    * string match is case insensitive
     * 
     * @param testKey
     * @param queryString
     * @param res
     * @return
     */
-   protected boolean verifyIntegTest(String testKey, String queryString, Response res)
+   protected boolean verifyIntegTest(String testKey, String queryString, String expectedMatch, Response res)
    {
-      boolean success = res.hasStatus(200, 404);
-      return success;
+      if(!res.hasStatus(200, 404))
+         return false;
+      
+      String debug = res.getDebug();
+      if(debug == null)
+         return false;
+      
+      debug = debug.replace("SQL_CALC_FOUND_ROWS ", "").toLowerCase();
+      
+      return debug.indexOf(expectedMatch.toLowerCase()) > -1;
    }
 
    public void runUnitTests() throws Exception
@@ -275,27 +243,32 @@ public class RqlValidationSuite
 
          String rql = queryString.substring(queryString.indexOf("?") + 1);
 
-         //-- RestGetAction sorts the terms so we do it here
-         //-- to try and mimic the order of terms in the sql
-         //-- when a live call is made
-         List<Term> terms = new ArrayList();
-         String[] parts = rql.split("\\&");
-         RqlParser parser = new RqlParser();
-         for (int i = 0; i < parts.length; i++)
-         {
-            if (parts[i] == null || parts[i].length() == 0)
-               continue;
-
-            Term parsed = parser.parse(parts[i]);
-            terms.add(parsed);
-         }
-         Collections.sort(terms);
-         //-- end sorting
-
          String actual = null;
-         String expected = results.get(testKey);;
+         String expected = results.get(testKey);
+
+         if("likeStartsWith".equals(testKey))
+         {
+            System.out.println("asdfasd");
+         }
+         
          try
          {
+            //-- RestGetAction sorts the terms so we do it here
+            //-- to try and mimic the order of terms in the sql
+            //-- when a live call is made
+            List<Term> terms = new ArrayList();
+            String[] parts = rql.split("\\&");
+            RqlParser parser = new RqlParser();
+            for (int i = 0; i < parts.length; i++)
+            {
+               if (parts[i] == null || parts[i].length() == 0)
+                  continue;
+
+               Term parsed = parser.parse(parts[i]);
+               terms.add(parsed);
+            }
+            Collections.sort(terms);
+            //-- end sorting
 
             query.withTerms(terms);
 
@@ -317,11 +290,14 @@ public class RqlValidationSuite
 
             Results results = query.doSelect();
             actual = results.getTestQuery();
+            if (actual == null)
+               actual = "NULL";
             actual = actual.substring(actual.indexOf(":") + 1).trim();
          }
          catch (Exception ex)
          {
             actual = ex.getMessage() + "";
+            ex.printStackTrace();
          }
 
          if (!verifyUnitTest(testKey, queryString, expected, actual, query))
@@ -330,7 +306,7 @@ public class RqlValidationSuite
          }
          else
          {
-            System.out.println("PASSED");
+            System.out.println("PASSED: " + actual);
          }
       }
 
@@ -370,13 +346,18 @@ public class RqlValidationSuite
       return Utils.testCompare(expected, actual);
    }
 
+   public Collection getTable(String table)
+   {
+      return tables.get(table);
+   }
+
    public RqlValidationSuite withTables(Collection... tables)
    {
       for (int i = 0; tables != null && i < tables.length; i++)
       {
          Collection t = tables[i];
          if (t != null)
-            this.tables.put(t.getTableName(), t);
+            this.tables.put(t.getName(), t);
       }
 
       return this;

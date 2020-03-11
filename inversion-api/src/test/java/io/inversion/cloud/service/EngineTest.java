@@ -98,8 +98,8 @@ public class EngineTest
       assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
       assertEndpointMatch("GET", "/test/ep1", 200, api1);
       assertEndpointMatch("GET", "test/ep1", 200, api1);
-      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 404, api1);
-      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 404, api1, api2);
+      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 400, api1);
+      assertEndpointMatch("GET", "http://localhost/WRONG/ep1", 400, api1, api2);
 
       assertEndpointMatch("GET", "http://localhost/test/ep1/collKey/entKey/relKey", 200, "ep1", "ep1", "collKey", "entKey", "relKey", api1);
       assertEndpointMatch("GET", "http://localhost/test/ep1/collKey/entKey/relKey", 500, "ep1", "ep1", "collKey", "entKey", "asdfasd", api1);
@@ -121,7 +121,7 @@ public class EngineTest
 
       assertEndpointMatch("GET", "/test/cardealer/ford/explorer", 200, "ep5", "cardealer", "ford", "explorer", null, api1);
       assertEndpointMatch("GET", "/test/cardealer/gm", 200, "ep5", "cardealer", "gm", null, null, api1);
-      assertEndpointMatch("GET", "/test/cardealer/ford/toyota", 404);
+      assertEndpointMatch("GET", "/test/cardealer/ford/toyota", 400);
 
       assertEndpointMatch("GET", "/test/petstore/dogs/1234/breed", 200, "ep6", "petstore", "dogs", "1234", "breed", api1);
       assertEndpointMatch("GET", "/test/petstore/rat/", 404, api1);
@@ -172,7 +172,7 @@ public class EngineTest
                                                       .withDb(new MockDb()));
 
       resp = engine.get("users");
-      assertEquals(404, resp.getStatusCode());
+      assertEquals(400, resp.getStatusCode());
 
       resp = engine.get("testApi/users");
       assertEquals(200, resp.getStatusCode());

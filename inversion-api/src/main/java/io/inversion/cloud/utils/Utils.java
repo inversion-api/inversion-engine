@@ -1534,6 +1534,7 @@ public class Utils
                throw new UnsupportedOperationException("Binary types are currently unsupporrted");
 
             case "date":
+            case "datetime":
                return new java.sql.Date(date(value.toString()).getTime());
             case "timestamp":
                return new java.sql.Timestamp(date(value.toString()).getTime());

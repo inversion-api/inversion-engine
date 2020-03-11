@@ -27,10 +27,6 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
       }
    }
 
-   /**
-    * The majority of these should be postgres/h2 compatible.  Mysql and MsSQL 
-    * will probably have to customize most of these.
-    */
    @Override
    protected void customizeUnitTestSuite(RqlValidationSuite suite)
    {
@@ -55,7 +51,7 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
            .withResult("ge", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"freight\\\"] >= @freight1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@freight1\",\"value\":3.67}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("in", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] IN(@shipCity1, @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("out", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] NOT IN(@shipCity1, @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-           .withResult("and", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderID\\\"] = @orderID1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderID1\",\"value\":\"10248\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("and", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] = @shipCity1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Lyon\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("or", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("not", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE NOT ((orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            .withResult("as", "SqlQuerySpec={\"query\":\"SELECT *, orders[\\\"orderid\\\"] AS \\\"order_identifier\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//

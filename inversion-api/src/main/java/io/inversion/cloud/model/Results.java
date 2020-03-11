@@ -26,6 +26,8 @@ import java.util.Map;
 
 public class Results<M extends Map> implements Iterable<M>
 {
+   public static String LAST_QUERY = null;
+
    protected Query      query      = null;
    protected List       rows       = new ArrayList();
    protected List<Term> next       = new ArrayList();
@@ -136,6 +138,7 @@ public class Results<M extends Map> implements Iterable<M>
 
    public Results withDebugQuery(String debugQuery)
    {
+      LAST_QUERY = debugQuery;
       this.debugQuery = debugQuery;
       return this;
    }
@@ -147,6 +150,7 @@ public class Results<M extends Map> implements Iterable<M>
 
    public Results withTestQuery(String testQuery)
    {
+      LAST_QUERY = testQuery;
       this.testQuery = testQuery;
       return this;
    }

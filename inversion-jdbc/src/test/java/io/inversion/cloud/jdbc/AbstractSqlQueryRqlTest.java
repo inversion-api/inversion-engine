@@ -26,6 +26,7 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
    public AbstractSqlQueryRqlTest(String type)
    {
       super(SqlQuery.class.getName(), type);
+      urlPrefix = "northwind/" + type + "/";
    }
 
    /**
@@ -56,8 +57,7 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
            .withResult("ge", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"freight\" >= ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[3.67]")//
            .withResult("in", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipCity\" IN(?, ?) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]")//
            .withResult("out", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipCity\" NOT IN(?, ?) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]")//
-           .withResult("and", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"orderID\" = ? AND \"orders\".\"shipCountry\" = ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[10248, France]")//
-           .withResult("or", "SELECT \"orders\".* FROM \"orders\" WHERE (\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]")//
+           .withResult("and", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipCity\" = ? AND \"orders\".\"shipCountry\" = ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Lyon, France]").withResult("or", "SELECT \"orders\".* FROM \"orders\" WHERE (\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]")//
            .withResult("not", "SELECT \"orders\".* FROM \"orders\" WHERE NOT ((\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?)) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]")//
            .withResult("as", "SELECT \"orders\".*, \"orders\".\"orderid\" AS \"order_identifier\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]")//
            .withResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]")//
@@ -79,12 +79,13 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
            .withResult("after", "UNSUPPORTED")//
            .withResult("sort", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" DESC, \"orders\".\"shipCity\" ASC LIMIT 100 OFFSET 0 args=[]")//
            .withResult("order", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" ASC, \"orders\".\"shipCity\" DESC LIMIT 100 OFFSET 0 args=[]")//
-           
+
            .withResult("onToManyExistsEq", "SELECT \"employees\".* FROM \"employees\" WHERE EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"reportsTo\" = \"~~relTbl_employees\".\"employeeId\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[Andrew]")//
            .withResult("onToManyNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"reportsTo\" = \"~~relTbl_employees\".\"employeeId\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[Andrew]")//
            .withResult("manyToOneExistsEq", "SELECT \"employees\".* FROM \"employees\" WHERE EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"employeeId\" = \"~~relTbl_employees\".\"reportsTo\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[Nancy]")//
            .withResult("manyToOneNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"employees\" \"~~relTbl_employees\" WHERE \"employees\".\"employeeId\" = \"~~relTbl_employees\".\"reportsTo\" AND \"~~relTbl_employees\".\"firstName\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[Nancy]")//
-           .withResult("manyTManyNotExistsNe", "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"orderDetails\" \"~~relTbl_orderDetails\", \"employeeOrderDetails\" \"~~lnkTbl_employeeOrderDetails\" WHERE \"employees\".\"employeeId\" = \"~~lnkTbl_employeeOrderDetails\".\"employeeId\" AND \"~~lnkTbl_employeeOrderDetails\".\"orderId\" = \"~~relTbl_orderDetails\".\"orderId\" AND \"~~lnkTbl_employeeOrderDetails\".\"productId\" = \"~~relTbl_orderDetails\".\"productId\" AND \"~~relTbl_orderDetails\".\"quantity\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[12]")//
+           .withResult("manyTManyNotExistsNe",
+                 "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"orderDetails\" \"~~relTbl_orderDetails\", \"employeeOrderDetails\" \"~~lnkTbl_employeeOrderDetails\" WHERE \"employees\".\"employeeId\" = \"~~lnkTbl_employeeOrderDetails\".\"employeeId\" AND \"~~lnkTbl_employeeOrderDetails\".\"orderId\" = \"~~relTbl_orderDetails\".\"orderId\" AND \"~~lnkTbl_employeeOrderDetails\".\"productId\" = \"~~relTbl_orderDetails\".\"productId\" AND \"~~relTbl_orderDetails\".\"quantity\" = ?) ORDER BY \"employees\".\"employeeId\" ASC LIMIT 100 OFFSET 0 args=[12]")//
       ;
    }
 }

@@ -19,6 +19,8 @@ package io.inversion.cloud.jdbc.postgres;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import io.inversion.cloud.rql.RqlValidationSuite;
+
 @TestInstance(Lifecycle.PER_CLASS)
 public class PostgresRqlIntegTest extends PostgresRqlUnitTest
 {
@@ -26,4 +28,14 @@ public class PostgresRqlIntegTest extends PostgresRqlUnitTest
    {
       super();
    }
+   
+   @Override
+   protected void customizeIntegTestSuite(RqlValidationSuite suite)
+   {
+      super.customizeIntegTestSuite(suite);
+      suite.withResult("manyTManyNotExistsNe",
+            "SELECT \"employees\".* FROM \"employees\" WHERE NOT EXISTS (SELECT 1 FROM \"order_details\" \"~~relTbl_order_details\", \"employeeorderdetails\" \"~~lnkTbl_employeeorderdetails\" WHERE \"employees\".\"EmployeeID\" = \"~~lnkTbl_employeeorderdetails\".\"EmployeeID\" AND \"~~lnkTbl_employeeorderdetails\".\"OrderID\" = \"~~relTbl_order_details\".\"OrderID\" AND \"~~lnkTbl_employeeorderdetails\".\"ProductID\" = \"~~relTbl_order_details\".\"ProductID\" AND \"~~relTbl_order_details\".\"Quantity\" = ?) ORDER BY \"employees\".\"EmployeeID\" ASC LIMIT 100 OFFSET 0 args=[12]")//
+      ;
+   }
+
 }
