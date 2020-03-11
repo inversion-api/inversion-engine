@@ -16,17 +16,22 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Utils;
 
 public class Response
 {
@@ -289,6 +294,11 @@ public class Response
       return new Validation(this, jsonPath, customErrorMessage);
    }
 
+   public JSArray data()
+   {
+      return getData();
+   }
+   
    public JSArray getData()
    {
       JSNode json = getJson();

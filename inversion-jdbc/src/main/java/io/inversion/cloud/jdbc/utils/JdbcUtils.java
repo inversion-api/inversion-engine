@@ -91,7 +91,7 @@ public class JdbcUtils
    public static char colQuote(Connection conn)
    {
       String connstr = conn.toString().toLowerCase();
-      if (connstr.indexOf("mysql") > -1 || connstr.indexOf("h2") > -1)
+      if (connstr.indexOf("mysql") > -1)
          return '`';
 
       return '"';

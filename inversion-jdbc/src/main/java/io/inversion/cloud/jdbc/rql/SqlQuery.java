@@ -17,6 +17,8 @@
 package io.inversion.cloud.jdbc.rql;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1063,18 +1065,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          }
          else
          {
-            if(parts[i].startsWith("~~relTbl_"))
+            if (parts[i].startsWith("~~relTbl_"))
             {
                String relName = parts[i];
                relName = relName.substring(relName.indexOf("_") + 1);
-               
+
                Relationship rel = collection.getRelationship(relName);
-               if(rel != null)
+               if (rel != null)
                {
                   parts[i] = "~~relTbl_" + rel.getRelated().getTableName();
                }
             }
-            
+
             buff.append(columnQuote).append(parts[i]).append(columnQuote);
          }
 

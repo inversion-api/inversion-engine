@@ -290,7 +290,6 @@ public class JdbcDb extends Db<JdbcDb>
       }
 
       String selectKey = (coll != null ? coll.getTableName() + "." : "") + "select";
-
       String selectSql = (String) Chain.peek().remove(selectKey);
 
       SqlQuery query = new SqlQuery(coll, columnMappedTerms);
@@ -374,19 +373,6 @@ public class JdbcDb extends Db<JdbcDb>
    public Connection getConnection() throws ApiException
    {
       Connection conn = getConnection(true);
-      try
-      {
-         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@GLOBAL.sql_mode"));
-         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
-
-         //JdbcUtils.selectRows(conn, "SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION';");
-         //System.out.println("SQL MODE: " + JdbcUtils.selectRows(conn, "SELECT @@SESSION.sql_mode"));
-
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-      }
       return conn;
    }
 
@@ -461,7 +447,8 @@ public class JdbcDb extends Db<JdbcDb>
          Connection conn = null;
          try
          {
-            conn = DriverManager.getConnection(getUrl(), getUser(), getPass());
+            String url = getUrl();
+            conn = DriverManager.getConnection(url, getUser(), getPass());
             conn.setAutoCommit(false);
             for (String ddlUrl : ddlUrls)
             {
