@@ -662,6 +662,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          {
             value = printCol(token);
          }
+         else if (isBool(term))
+         {
+            value = asBool(token);
+         }
          else if (isNum(term))
          {
             value = asNum(token);
@@ -1007,6 +1011,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
       if (parent.hasToken("if") && index > 0)
       {
+         if (isBool(leaf))
+            return asBool(val);
+         
          if (isNum(leaf))
             return val;
       }
@@ -1041,6 +1048,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       if (term.getQuote() == '\'')
          return false; //this a string as specified by the user in the parsed rql
 
+      if(isBool(term))
+         return false;
+      
       if (isNum(term))
          return false;
 
@@ -1184,6 +1194,30 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          return true;
 
       return false;
+   }
+
+   protected boolean isBool(Term term)
+   {
+      if (!term.isLeaf() || term.isQuoted())
+         return false;
+
+      String token = term.getToken();
+
+      if ("true".equalsIgnoreCase(token))
+         return true;
+
+      if ("false".equalsIgnoreCase(token))
+         return true;
+
+      return false;
+   }
+
+   public String asBool(String token)
+   {
+      if ("true".equalsIgnoreCase(token) || "1".equals(token))
+         return "true";
+
+      return "false";
    }
 
    public class Parts

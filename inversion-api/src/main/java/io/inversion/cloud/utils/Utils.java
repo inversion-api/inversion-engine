@@ -289,7 +289,6 @@ public class Utils
       return map;
    }
 
-   
    /**
     * Removes all matching pairs of '"` characters from the
     * start and end of a string.
@@ -1511,7 +1510,14 @@ public class Utils
             case "bool":
             case "boolean":
             case "bit":
+            {
+               if ("1".equals(value))
+                  value = "true";
+               else if ("0".equals(value))
+                  value = "false";
+               
                return Boolean.parseBoolean(value.toString());
+            }
 
             case "tinyint":
                return Byte.parseByte(value.toString());
