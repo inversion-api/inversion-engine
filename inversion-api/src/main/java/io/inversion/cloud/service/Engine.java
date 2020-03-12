@@ -381,99 +381,99 @@ public class Engine
             }
          }
 
-         for (Api a : apis)
+         //for (Api a : apis)
          {
-            if (!((parts.size() == 0 && apis.size() == 1) //
-                  || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
-                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (parts.size() > 1 && a.getVersion().equalsIgnoreCase(parts.get(1)))))//
-            ))
-               continue;
+            //            if (!((parts.size() == 0 && apis.size() == 1) //
+            //                  || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
+            //                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (parts.size() > 1 && a.getVersion().equalsIgnoreCase(parts.get(1)))))//
+            //            ))
+            //               continue;
 
-            req.withApi(a);
+            Api a = findApiForPath(parts);
 
-            if (parts.size() > 0 && parts.get(0).equalsIgnoreCase((a.getName())))
+            if (a != null)
             {
-               apiPath.add(parts.remove(0));
-            }
-            /*
-            This API is the correct version. Remove version from parts so the correct endpoint can be applied. 
-             */
-            if (a.getVersion() != null)
-            {
-               parts.remove(0);
-            }
+               req.withApi(a);
 
-            if (a.isMultiTenant() && parts.size() > 0)
-            {
-               String tenant = parts.remove(0);
-               apiPath.add(tenant);
-               req.withTenant(tenant);
-            }
-
-            req.withApiPath(new Path(apiPath));
-
-            Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
-            for (int i = 0; i <= parts.size(); i++)
-            {
-               Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
-               for (Endpoint e : a.getEndpoints())
+               //-- remove the api name from the endpoitn path
+               if (!parts.isEmpty() && parts.get(0).equalsIgnoreCase((a.getName())))
                {
-                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i, remainingPath.size())))
-                  {
-                     req.withEndpointPath(endpointPath);
-                     req.withEndpoint(e);
-
-                     if (i < parts.size())
-                     {
-                        String collectionKey = parts.get(i);
-
-                        req.withCollectionKey(collectionKey);
-                        i += 1;
-
-                        for (Collection collection : a.getCollections())
-                        {
-                           if (collection.hasName(collectionKey)//
-                                 && (collection.getIncludePaths().size() > 0 //
-                                       || collection.getExcludePaths().size() > 0))
-                           {
-                              if (collection.matchesPath(endpointPath))
-                              {
-                                 req.withCollection(collection);
-                                 break;
-                              }
-                           }
-                        }
-
-                        if (req.getCollection() == null)
-                        {
-                           for (Collection collection : a.getCollections())
-                           {
-                              if (collection.hasName(collectionKey) //
-                                    && collection.getIncludePaths().size() == 0 //
-                                    && collection.getExcludePaths().size() == 0)
-                              {
-                                 req.withCollection(collection);
-                                 break;
-                              }
-                           }
-                        }
-
-                     }
-                     if (i < parts.size())
-                     {
-                        req.withEntityKey(parts.get(i));
-                        i += 1;
-                     }
-                     if (i < parts.size())
-                     {
-                        req.withSubCollectionKey(parts.get(i));
-                     }
-                     break;
-                  }
+                  apiPath.add(parts.remove(0));
                }
 
-               if (req.getEndpoint() != null)
-                  break;
+               //-- remove version from the endpoint path 
+               if (!parts.isEmpty() && a.getVersion() != null && parts.get(0).equalsIgnoreCase(a.getVersion()))
+               {
+                  parts.remove(0);
+               }
+
+               //-- remove the tenant code prefix from the endpoint path
+               if (!parts.isEmpty() && a.isMultiTenant())
+               {
+                  String tenant = parts.remove(0);
+                  apiPath.add(tenant);
+                  req.withTenant(tenant);
+               }
+
+               req.withApiPath(new Path(apiPath));
+
+               EndpointMatch em = findEndpoint(req, a, parts);
+               if (em != null)
+               {
+                  Endpoint e = em.endpoint;
+                  Path endpointPath = em.endpointPath;
+                  int pathIndex = em.pathIndex;
+
+                  req.withEndpointPath(endpointPath);
+                  req.withEndpoint(e);
+
+                  if (pathIndex < parts.size())
+                  {
+                     String collectionKey = parts.get(pathIndex);
+
+                     req.withCollectionKey(collectionKey);
+                     pathIndex += 1;
+
+                     //-- this double loop
+                     for (Collection collection : a.getCollections())
+                     {
+                        if (collection.hasName(collectionKey)//
+                              && (collection.getIncludePaths().size() > 0 //
+                                    || collection.getExcludePaths().size() > 0))
+                        {
+                           if (collection.matchesPath(endpointPath))
+                           {
+                              req.withCollection(collection);
+                              break;
+                           }
+                        }
+                     }
+
+                     if (req.getCollection() == null)
+                     {
+                        for (Collection collection : a.getCollections())
+                        {
+                           if (collection.hasName(collectionKey) //
+                                 && collection.getIncludePaths().size() == 0 //
+                                 && collection.getExcludePaths().size() == 0)
+                           {
+                              req.withCollection(collection);
+                              break;
+                           }
+                        }
+                     }
+
+                  }
+                  if (pathIndex < parts.size())
+                  {
+                     req.withEntityKey(parts.get(pathIndex));
+                     pathIndex += 1;
+                  }
+                  if (pathIndex < parts.size())
+                  {
+                     req.withSubCollectionKey(parts.get(pathIndex));
+                  }
+               }
             }
          }
 
@@ -647,6 +647,53 @@ public class Engine
       }
 
       return chain;
+   }
+
+   protected Api findApiForPath(List<String> path)
+   {
+      for (Api a : apis)
+      {
+         if (!((path.size() == 0 && apis.size() == 1) //
+               || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
+               || (path.size() > 0 && path.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (path.size() > 1 && a.getVersion().equalsIgnoreCase(path.get(1)))))//
+         ))
+            continue;
+
+         return a;
+      }
+      return null;
+   }
+
+   protected EndpointMatch findEndpoint(Request req, Api a, List<String> parts)
+   {
+      Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
+      for (int i = 0; i <= parts.size(); i++)
+      {
+         Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
+         for (Endpoint e : a.getEndpoints())
+         {
+            if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i, remainingPath.size())))
+            {
+               return new EndpointMatch(e, endpointPath, i);
+            }
+         }
+      }
+      return null;
+   }
+
+   class EndpointMatch
+   {
+      Endpoint endpoint     = null;
+      Path     endpointPath = null;
+      int      pathIndex    = 0;
+
+      public EndpointMatch(Endpoint endpoint, Path endpointPath, int pathIndex)
+      {
+         this.endpoint = endpoint;
+         this.endpointPath = endpointPath;
+         this.pathIndex = pathIndex;
+      }
+
    }
 
    LinkedHashSet<ApiListener> getApiListeners(Request req)
