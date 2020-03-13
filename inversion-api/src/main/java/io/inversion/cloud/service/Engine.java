@@ -16,23 +16,45 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.Pluralizer;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
-public class Engine
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.ApiListener;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.EngineListener;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rule;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Url;
+import io.inversion.cloud.utils.Configurator;
+import io.inversion.cloud.utils.Pluralizer;
+import io.inversion.cloud.utils.Utils;
+
+public class Engine extends Rule
 {
    protected transient volatile boolean     started        = false;
    protected transient volatile boolean     starting       = false;
@@ -46,12 +68,6 @@ public class Engine
    protected ResourceLoader                 resourceLoader = null;
 
    protected Configurator                   configurator   = new Configurator();
-
-   /**
-    * Must be set to match your servlet path if your servlet is not 
-    * mapped to /*
-    */
-   protected Path                           servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -149,7 +165,7 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               //System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
@@ -360,126 +376,63 @@ public class Engine
 
          Url url = req.getUrl();
 
-         Path urlPath = url.getPath();
-         List<String> parts = urlPath.parts();
+         Path parts = new Path(url.getPath());
+         String method = req.getMethod();
 
-         List<String> apiPath = new ArrayList();
+         Map<String, String> pathParams = new HashMap();
 
-         if (servletMapping != null)
+         Path containerPath = match(method, parts);
+
+         if (containerPath == null)
+            ApiException.throw400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
+
+         if (containerPath != null)
+            containerPath = containerPath.extract(pathParams, parts);
+
+         for (Api api : apis)
          {
-            for (String servletPathPart : servletMapping.parts())
+            Path apiPath = api.match(method, parts);
+
+            if (apiPath != null)
             {
-               if (!servletPathPart.equalsIgnoreCase(parts.get(0)))
+               apiPath = apiPath.extract(pathParams, parts);
+               req.withApi(api, apiPath);
+
+               for (Endpoint endpoint : api.getEndpoints())
                {
-                  //the inbound URL does not match the expected servletMapping
-                  //this may be becuse you are localhost testing...going to 
-                  //optimistically skip 
-                  break;
+                  Path endpointPath = endpoint.match(req.getMethod(), parts);
+
+                  if (endpointPath != null)
+                  {
+                     endpointPath = endpointPath.extract(pathParams, parts);
+                     req.withEndpoint(endpoint, endpointPath);
+
+                     for (Collection collection : api.getCollections())
+                     {
+                        Path collectionPath = collection.match(method, parts);
+                        if (collectionPath != null)
+                        {
+                           collectionPath = collectionPath.extract(pathParams, parts);
+                           req.withCollection(collection, collectionPath);
+
+                           break;
+                        }
+                     }
+                     break;
+                  }
                }
-               apiPath.add(servletPathPart);
-               parts.remove(0);
+               break;
             }
          }
 
-         //for (Api a : apis)
-         {
-            //            if (!((parts.size() == 0 && apis.size() == 1) //
-            //                  || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
-            //                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (parts.size() > 1 && a.getVersion().equalsIgnoreCase(parts.get(1)))))//
-            //            ))
-            //               continue;
-
-            Api a = findApiForPath(parts);
-
-            if (a != null)
-            {
-               req.withApi(a);
-
-               //-- remove the api name from the endpoitn path
-               if (!parts.isEmpty() && parts.get(0).equalsIgnoreCase((a.getName())))
-               {
-                  apiPath.add(parts.remove(0));
-               }
-
-               //-- remove version from the endpoint path 
-               if (!parts.isEmpty() && a.getVersion() != null && parts.get(0).equalsIgnoreCase(a.getVersion()))
-               {
-                  parts.remove(0);
-               }
-
-               //-- remove the tenant code prefix from the endpoint path
-               if (!parts.isEmpty() && a.isMultiTenant())
-               {
-                  String tenant = parts.remove(0);
-                  apiPath.add(tenant);
-                  req.withTenant(tenant);
-               }
-
-               req.withApiPath(new Path(apiPath));
-
-               EndpointMatch em = findEndpoint(req, a, parts);
-               if (em != null)
-               {
-                  Endpoint e = em.endpoint;
-                  Path endpointPath = em.endpointPath;
-                  int pathIndex = em.pathIndex;
-
-                  req.withEndpointPath(endpointPath);
-                  req.withEndpoint(e);
-
-                  if (pathIndex < parts.size())
-                  {
-                     String collectionKey = parts.get(pathIndex);
-
-                     req.withCollectionKey(collectionKey);
-                     pathIndex += 1;
-
-                     //-- this double loop
-                     for (Collection collection : a.getCollections())
-                     {
-                        if (collection.hasName(collectionKey)//
-                              && (collection.getIncludePaths().size() > 0 //
-                                    || collection.getExcludePaths().size() > 0))
-                        {
-                           if (collection.matchesPath(endpointPath))
-                           {
-                              req.withCollection(collection);
-                              break;
-                           }
-                        }
-                     }
-
-                     if (req.getCollection() == null)
-                     {
-                        for (Collection collection : a.getCollections())
-                        {
-                           if (collection.hasName(collectionKey) //
-                                 && collection.getIncludePaths().size() == 0 //
-                                 && collection.getExcludePaths().size() == 0)
-                           {
-                              req.withCollection(collection);
-                              break;
-                           }
-                        }
-                     }
-
-                  }
-                  if (pathIndex < parts.size())
-                  {
-                     req.withEntityKey(parts.get(pathIndex));
-                     pathIndex += 1;
-                  }
-                  if (pathIndex < parts.size())
-                  {
-                     req.withSubCollectionKey(parts.get(pathIndex));
-                  }
-               }
-            }
-         }
+         //         List<Action> actions = new ArrayList(api.getActions());
+         //         actions.addAll(endpoint.getActions());
+         //         
+         //         Collections.sort(actions);
 
          //---------------------------------
 
-         if (req.getEndpoint() == null || req.getUrl().getHost().equals("localhost"))
+         if (req.getEndpoint() == null || req.isDebug())
          {
             res.debug("");
             res.debug("");
@@ -496,7 +449,6 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            //ApiException.throw404NotFound("No API found matching URL: '%s'", req.getUrl());
             ApiException.throw400BadRequest("No API found matching URL: '%s'", req.getUrl());
          }
 
@@ -517,23 +469,18 @@ public class Engine
             ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), req.getUrl(), buff);
          }
 
-         //         if (Utils.empty(req.getCollectionKey()))
-         //         {
-         //            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
-         //         }
-
          //this will get all actions specifically configured on the endpoint
          List<Action> actions = req.getEndpoint().getActions(req);
 
          //this matches for actions that can run across multiple endpoints.
          //this might be something like an authorization or logging action
          //that acts like a filter
-         for (Action a : req.getApi().getActions())
+         for (Action action : req.getApi().getActions())
          {
             //http://host/{apipath}/{endpointpath}/{subpath}
             //since these actions were not assigned to 
-            if (a.matches(req.getMethod(), req.getPath()))
-               actions.add(a);
+            if (action.matches(req.getMethod(), req.getPath()))
+               actions.add(action);
          }
 
          if (actions.size() == 0)
@@ -647,53 +594,6 @@ public class Engine
       }
 
       return chain;
-   }
-
-   protected Api findApiForPath(List<String> path)
-   {
-      for (Api a : apis)
-      {
-         if (!((path.size() == 0 && apis.size() == 1) //
-               || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
-               || (path.size() > 0 && path.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (path.size() > 1 && a.getVersion().equalsIgnoreCase(path.get(1)))))//
-         ))
-            continue;
-
-         return a;
-      }
-      return null;
-   }
-
-   protected EndpointMatch findEndpoint(Request req, Api a, List<String> parts)
-   {
-      Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
-      for (int i = 0; i <= parts.size(); i++)
-      {
-         Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
-         for (Endpoint e : a.getEndpoints())
-         {
-            if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i, remainingPath.size())))
-            {
-               return new EndpointMatch(e, endpointPath, i);
-            }
-         }
-      }
-      return null;
-   }
-
-   class EndpointMatch
-   {
-      Endpoint endpoint     = null;
-      Path     endpointPath = null;
-      int      pathIndex    = 0;
-
-      public EndpointMatch(Endpoint endpoint, Path endpointPath, int pathIndex)
-      {
-         this.endpoint = endpoint;
-         this.endpointPath = endpointPath;
-         this.pathIndex = pathIndex;
-      }
-
    }
 
    LinkedHashSet<ApiListener> getApiListeners(Request req)
@@ -1011,15 +911,15 @@ public class Engine
 
    public Path getServletMapping()
    {
-      return servletMapping;
+      return containerPaths;
    }
 
    public Engine withServletMapping(String servletMapping)
    {
       if (servletMapping != null)
-         this.servletMapping = new Path(servletMapping);
+         this.containerPaths = new Path(servletMapping);
       else
-         this.servletMapping = null;
+         this.containerPaths = null;
 
       return this;
    }

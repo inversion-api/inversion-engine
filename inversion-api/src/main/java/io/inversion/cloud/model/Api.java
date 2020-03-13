@@ -16,16 +16,16 @@
  */
 package io.inversion.cloud.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Api
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Api extends Rule
 {
-   protected final Logger                      log         = LoggerFactory.getLogger(getClass());
+   protected final Logger                log         = LoggerFactory.getLogger(getClass());
 
    transient volatile boolean            started     = false;
    transient volatile boolean            starting    = false;
@@ -45,6 +45,9 @@ public class Api
    protected List<Collection>            collections = new ArrayList();
 
    protected transient List<ApiListener> listeners   = new ArrayList();
+
+   //protected Path pathMatch = new Path("${api.name}/${api.version}/${tenant}/blah/blah2/*");
+   //protected Path pathMatch = new Path("$}/${api.version}/${tenant}/blah/blah2/*");
 
    public Api()
    {

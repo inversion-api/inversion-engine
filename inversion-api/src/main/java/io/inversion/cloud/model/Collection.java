@@ -39,7 +39,7 @@ import io.inversion.cloud.utils.Utils;
  * Represents a REST collection as an interface into an underlying
  * Db data store...such as an RDBMS table.
  */
-public class Collection extends PathRule<Collection> implements Serializable
+public class Collection extends Rule<Collection> implements Serializable
 {
    protected Db                      db            = null;
 

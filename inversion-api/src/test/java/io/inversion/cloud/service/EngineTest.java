@@ -16,17 +16,88 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.model.*;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.action.misc.MockAction;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.MockActionA;
+import io.inversion.cloud.model.MockActionB;
+import io.inversion.cloud.model.MockDb;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.utils.Utils;
 
 public class EngineTest
 {
+   @Test
+   public void configureRequest_version_and_tenant()
+   {
+      Api api1 = new Api("api1").withEndpoint("*", "ep1/*");
+      Api api2 = new Api("api2");
+
+      Engine e = new Engine(api1, api2);
+
+      Request req = null;
+      Response res = null;
+
+      req = e.get("http://localhost:8080/api1/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("api1"), req.getApiPath());
+
+      e.withServletMapping("/some/servlet/path");
+
+      req = e.get("http://localhost:8080/some/servlet/path/api1/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("/some/servlet/path/api1"), req.getApiPath());
+
+      api1.withVersion("v1");
+      req = e.get("http://localhost:8080/some/servlet/path/api1/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() == null);
+
+      req = e.get("http://localhost:8080/some/servlet/path/api1/v1/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("/some/servlet/path/api1/v1"), req.getApiPath());
+
+      api1.withMultiTenant(true);
+      req = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("/some/servlet/path/api1/v1/acme"), req.getApiPath());
+      assertEquals("acme", req.getTenant());
+   }
+
+   @Test
+   public void findApiForPath_selectApiVersion()
+   {
+      Engine e = new Engine().withApi(new Api("test").withVersion("v1"))//
+                             .withApi(new Api("test").withVersion("v2"))//
+                             .withApi(new Api("test2"))//
+      ;
+
+      assertNull(e.matchApi(Utils.explode("/", "")));
+      assertNull(e.matchApi(Utils.explode("/", "test/")));
+      assertNull(e.matchApi(Utils.explode("/", "test/blah")));
+
+      assertEquals("v2", e.matchApi(Utils.explode("/", "test/v2")).getVersion());
+      assertEquals("v2", e.matchApi(Utils.explode("/", "test/v2/collection")).getVersion());
+
+      assertEquals("test2", e.matchApi(Utils.explode("/", "test2")).getName());
+      assertEquals("test2", e.matchApi(Utils.explode("/", "test2/collection")).getName());
+   }
 
    @Test
    public void testEndpointMatching2()
@@ -307,24 +378,25 @@ public class EngineTest
 
    }
 
-   @Test public void test_api_with_version()
+   @Test
+   public void test_api_with_version()
    {
       Api api1 = new Api("test")//
                                 .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
                                 .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
                                 .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-            ;
+      ;
       Api api2 = new Api("test")//
                                 .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
                                 .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
                                 .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
-            ;
+      ;
 
       Api api3 = new Api("test")//
                                 .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
                                 .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
                                 .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
-            ;
+      ;
 
       assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
       assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
@@ -342,7 +414,7 @@ public class EngineTest
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
-      {
+         {
             protected void run(Chain chain, List<Action> actions) throws Exception
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))

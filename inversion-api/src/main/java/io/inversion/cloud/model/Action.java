@@ -16,11 +16,11 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
 
 /**
  * @author wells
@@ -64,87 +64,6 @@ public abstract class Action<A extends Action> extends Rule<A>
    public void doDelete(Request req, Response res) throws Exception
    {
       ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
-   }
-
-   public static List<JSNode> find(Object parent, String... paths)
-   {
-      List<JSNode> found = new ArrayList();
-      for (String apath : paths)
-      {
-         for (String path : (List<String>) Utils.explode(",", apath))
-         {
-            find(parent, found, path, ".");
-         }
-      }
-      return found;
-   }
-
-   public static void find(Object parent, List<JSNode> found, String targetPath, String currentPath)
-   {
-      if (parent instanceof JSArray)
-      {
-         for (Object child : (JSArray) parent)
-         {
-            if (child instanceof JSNode)
-               find(child, found, targetPath, currentPath);
-         }
-      }
-      else if (parent instanceof JSNode)
-      {
-         if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
-         {
-            found.add((JSNode) parent);
-         }
-
-         for (String key : ((JSNode) parent).keySet())
-         {
-            Object child = ((JSNode) parent).get(key);
-            String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
-            find(child, found, targetPath, nextPath);
-         }
-      }
-   }
-
-   public static String getValue(Chain chain, String key)
-   {
-      //      if ("apiId".equalsIgnoreCase(key))
-      //      {
-      //         return chain.getRequest().getApi().getId() + "";
-      //      }
-      //      else 
-      if ("api".equalsIgnoreCase(key))
-      {
-         return chain.getRequest().getApi().getName();
-      }
-      //      else if ("accountId".equalsIgnoreCase(key))
-      //      {
-      //         return chain.getRequest().getApi().getAccountId() + "";
-      //      }
-      else if ("tenant".equalsIgnoreCase(key))
-      {
-         if (Chain.getUser() != null)
-            return Chain.getUser().getTenant() + "";
-      }
-      else if ("user".equalsIgnoreCase(key))
-      {
-         if (Chain.getUser() != null)
-            return Chain.getUser().getId() + "";
-      }
-      else if ("username".equalsIgnoreCase(key))
-      {
-         if (Chain.getUser() != null)
-            return Chain.getUser().getUsername();
-      }
-
-      Object val = chain.get(key);
-      if (val != null)
-         return val.toString();
-      return null;
-   }
-
-   public static String nextPath(String path, String next)
-   {
-      return Utils.empty(path) ? next : path + "." + next;
    }
 
    public String toString()

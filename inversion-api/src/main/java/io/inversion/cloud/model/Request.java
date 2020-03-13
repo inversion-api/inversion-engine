@@ -47,6 +47,8 @@ public class Request
    protected Endpoint                               endpoint         = null;
 
    protected Collection                             collection       = null;
+   protected Path                                   collectionPath   = null;
+   
    protected String                                 collectionKey    = null;
    protected String                                 entityKey        = null;
    protected String                                 subCollectionKey = null;
@@ -57,6 +59,11 @@ public class Request
    protected Uploader                               uploader         = null;
 
    protected int                                    retryAttempts    = -1;
+
+   public Request()
+   {
+
+   }
 
    public Request(String method, String url)
    {
@@ -223,9 +230,10 @@ public class Request
       return false;
    }
 
-   public Request withCollection(Collection collection)
+   public Request withCollection(Collection collection, Path collectionPath)
    {
       this.collection = collection;
+      this.collectionPath = collectionPath;
       return this;
    }
 
@@ -234,15 +242,20 @@ public class Request
       return endpoint;
    }
 
-   public Request withEndpoint(Endpoint endpoint)
+   public Request withEndpoint(Endpoint endpoint, Path endpointPath)
    {
       this.endpoint = endpoint;
+      this.endpointPath = endpointPath;
       return this;
    }
 
    public boolean isDebug()
    {
-      if (getUrl().toString().indexOf("://localhost") > 0)
+      String url = getUrl().toString();
+      if (url.indexOf("://localhost/") > 0)
+         return true;
+
+      if (url.indexOf("://127.0.0.1/") > 0)
          return true;
 
       if (getApi() != null)
@@ -513,9 +526,10 @@ public class Request
       return this;
    }
 
-   public Request withApi(Api api)
+   public Request withApi(Api api, Path apiPath)
    {
       this.api = api;
+      this.apiPath = apiPath;
       return this;
    }
 
@@ -530,33 +544,21 @@ public class Request
       return apiPath;
    }
 
-   public Request withApiPath(Path apiPath)
-   {
-      this.apiPath = apiPath;
-      return this;
-   }
-
    public Path getEndpointPath()
    {
       return endpointPath;
    }
 
-   public Request withEndpointPath(Path endpointPath)
-   {
-      this.endpointPath = endpointPath;
-      return this;
-   }
-
-   public String getTenant()
-   {
-      return tenant;
-   }
-
-   public Request withTenant(String tenant)
-   {
-      this.tenant = tenant;
-      return this;
-   }
+   //   public String getTenant()
+   //   {
+   //      return tenant;
+   //   }
+   //
+   //   public Request withTenant(String tenant)
+   //   {
+   //      this.tenant = tenant;
+   //      return this;
+   //   }
 
    public String getSubCollectionKey()
    {

@@ -56,7 +56,7 @@ public class Endpoint extends Rule<Endpoint>
       }
 
       withMethods(method);
-      withPath(endpointPath);
+      //withPath(endpointPath);
       withIncludePaths(collectionPaths);
 
       if (actions != null)
@@ -74,91 +74,100 @@ public class Endpoint extends Rule<Endpoint>
       return (!Utils.empty(name) ? name + " " : "") + methods + " '/" + (!Utils.empty(path) ? path : "") + "' " + includePaths + " - " + excludePaths;
    }
 
-   public boolean matches(String method, String fullPath)
-   {
-      Path path = new Path(fullPath);
-      for (int i = 0; i <= path.size(); i++)
-      {
-         Path endpointPath = path.subpath(0, i);
-         Path collectionPath = path.subpath(i, path.size());
-         if (matches(method, endpointPath, collectionPath))
-            return true;
-      }
-      return false;
-   }
-
-   public boolean matches(String method, String endpointPath, String collectionPath)
-   {
-      return matches(method, new Path(endpointPath), new Path(collectionPath));
-   }
-
-   public boolean matches(String method, Path endpointPath, Path collectionPath)
-   {
-      if (internal && Chain.getDepth() < 2)
-      {
-         return false;
-      }
-
-      if (isMethod(method))
-      {
-         if (path == null || !path.matches(endpointPath))
-         {
-            if (!path.matches(endpointPath))
-               return false;
-         }
-
-         if (collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
-            return false;
-
-         return super.matchesPath(collectionPath);
-      }
-      return false;
-   }
-
-   public Path getPath()
-   {
-      return path;
-   }
-
-   public Endpoint withPath(String path)
-   {
-      return withPath(new Path(path));
-   }
-
-   public Endpoint withPath(Path path)
-   {
-      if (path.isRegex())
-      {
-         Path newPath = new Path();
-         List<String> pathParts = path.parts();
-         for (int i = 0; i < pathParts.size(); i++)
-         {
-            String part = pathParts.get(i);
-            if (part.indexOf("*") > -1 || part.indexOf("[") > -1 || part.indexOf("{") > -1)
-            {
-               Path subPath = new Path();
-
-               for (int j = i; j < pathParts.size(); j++)
-               {
-                  subPath.addPart(pathParts.get(j));
-               }
-               withIncludePaths(subPath);
-
-               break;
-            }
-            else
-            {
-               newPath.addPart(part);
-            }
-         }
-
-         path = newPath;
-      }
-
-      this.path = path;
-
-      return this;
-   }
+//   public boolean matches(String method, Path path)
+//   {
+//      for (int i = 0; i <= path.size(); i++)
+//      {
+//         Path endpointPath = path.subpath(0, i);
+//         Path collectionPath = path.subpath(i, path.size());
+//         if (matches(method, endpointPath, collectionPath))
+//            return true;
+//      }
+//      return false;
+//   }
+//
+//   public boolean matches(String method, List<String> fullPath)
+//   {
+//      return matches(method, new Path(fullPath));
+//   }
+//
+//   public boolean matches(String method, String fullPath)
+//   {
+//      return matches(method, new Path(fullPath));
+//   }
+//
+//   public boolean matches(String method, String endpointPath, String collectionPath)
+//   {
+//      return matches(method, new Path(endpointPath), new Path(collectionPath));
+//   }
+//
+//   public boolean matches(String method, Path endpointPath, Path collectionPath)
+//   {
+//      if (internal && Chain.getDepth() < 2)
+//      {
+//         return false;
+//      }
+//
+//      if (isMethod(method))
+//      {
+//         if (path == null || !path.matches(endpointPath))
+//         {
+//            if (!path.matches(endpointPath))
+//               return false;
+//         }
+//
+//         if (collectionPath.size() > 0 && includePaths.size() == 0 && excludePaths.size() == 0)
+//            return false;
+//
+//         return super.matchesPath(collectionPath);
+//      }
+//      return false;
+//   }
+//
+//   public Path getPath()
+//   {
+//      return path;
+//   }
+//
+//   public Endpoint withPath(String path)
+//   {
+//      return withPath(new Path(path));
+//   }
+//
+//   public Endpoint withPath(Path path)
+//   {
+//      if (path.isRegex())
+//      {
+//         Path newPath = new Path();
+//         List<String> pathParts = path.parts();
+//         for (int i = 0; i < pathParts.size(); i++)
+//         {
+//            String part = pathParts.get(i);
+//            if (part.indexOf("*") > -1 || part.indexOf("[") > -1 || part.indexOf("{") > -1)
+//            {
+//               Path subPath = new Path();
+//
+//               for (int j = i; j < pathParts.size(); j++)
+//               {
+//                  subPath.addPart(pathParts.get(j));
+//               }
+//               withIncludePaths(subPath);
+//
+//               break;
+//            }
+//            else
+//            {
+//               newPath.addPart(part);
+//            }
+//         }
+//
+//         path = newPath;
+//      }
+//
+//      this.path = path;
+//
+//      return this;
+//   }
 
    public Endpoint withInternal(boolean internal)
    {
@@ -166,12 +175,12 @@ public class Endpoint extends Rule<Endpoint>
       return this;
    }
 
-   public List<Action> getActions(Request req)
+   public List<Action> getActions(String method, Path path)
    {
       List<Action> filtered = new ArrayList();
       for (Action a : actions)
       {
-         if (a.matches(req.getMethod(), req.getSubpath()))
+         if (a.match(method, path))
             filtered.add(a);
       }
 
