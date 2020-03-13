@@ -16,11 +16,17 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import io.inversion.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
@@ -39,25 +45,24 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    protected transient JSNode configMap    = new JSNode();
    protected String           configStr    = null;
 
-//   public Path match(String method, List<String> path)
-//   {
-//      return match(method, new Path(path));
-//   }
-//
-//   public Path match(String method, Path path)
-//   {
-//      if (isMethod(method))
-//      {
-//         return match(path);
-//      }
-//      return null;
-//   }
-//
-//   public Path match(List<String> path)
-//   {
-//      return match(new Path(path));
-//   }
-
+   //   public Path match(String method, List<String> path)
+   //   {
+   //      return match(method, new Path(path));
+   //   }
+   //
+   //   public Path match(String method, Path path)
+   //   {
+   //      if (isMethod(method))
+   //      {
+   //         return match(path);
+   //      }
+   //      return null;
+   //   }
+   //
+   //   public Path match(List<String> path)
+   //   {
+   //      return match(new Path(path));
+   //   }
 
    public Path match(String method, Path path)
    {
@@ -67,9 +72,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       }
       return null;
    }
-   
-   
-   private Path match(Path path)
+
+   protected Path match(Path path)
    {
       Path included = null;
       boolean excluded = false;
@@ -106,12 +110,11 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       if (excluded)
          return null;
 
-      if (included == null)
+      if (included == null && includePaths.size() == 0)
          included = new Path("*");
 
       return included;
    }
-
 
    //   public final boolean matchesPath(Path path)
    //   {
@@ -149,6 +152,18 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    //
    //      return included && !excluded;
    //   }
+
+   public Rule clearIncludePaths()
+   {
+      includePaths.clear();
+      return this;
+   }
+
+   public Rule clearExcludePaths()
+   {
+      excludePaths.clear();
+      return this;
+   }
 
    public List<Path> getIncludePaths()
    {

@@ -125,7 +125,7 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = engine.getApi(api.getName(), api.getVersion());
+            Api existingApi = engine.getApi(api.getName());
 
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
@@ -208,7 +208,7 @@ public class Configurator
       {
          for (Api api : wire.getBeans(Api.class))
          {
-            Api existingApi = engine.getApi(api.getName(), api.getVersion());
+            Api existingApi = engine.getApi(api.getName());
             if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
             {
                api.withHash(config.hash);

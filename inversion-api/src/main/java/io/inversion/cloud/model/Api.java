@@ -35,8 +35,6 @@ public class Api extends Rule
    protected boolean                     debug       = false;
 
    protected String                      name        = null;
-   protected String                      version     = null;
-   protected boolean                     multiTenant = false;
    protected String                      url         = null;
 
    protected List<Db>                    dbs         = new ArrayList();
@@ -56,6 +54,28 @@ public class Api extends Rule
    public Api(String name)
    {
       withName(name);
+   }
+
+   @Override
+   public Path match(Path path)
+   {
+      if (includePaths.size() == 0 && excludePaths.size() == 0)
+      {
+         synchronized (this)
+         {
+            if (includePaths.size() == 0 && excludePaths.size() == 0)
+            {
+               List parts = new ArrayList();
+               if (name != null)
+               {
+                  parts.add(name);
+               }
+               parts.add("*");
+               includePaths.add(new Path(parts));
+            }
+         }
+      }
+      return super.match(path);
    }
 
    public synchronized Api startup()
@@ -321,17 +341,6 @@ public class Api extends Rule
       return this;
    }
 
-   public boolean isMultiTenant()
-   {
-      return multiTenant;
-   }
-
-   public Api withMultiTenant(boolean multiTenant)
-   {
-      this.multiTenant = multiTenant;
-      return this;
-   }
-
    public String getUrl()
    {
       return url;
@@ -355,19 +364,4 @@ public class Api extends Rule
       return Collections.unmodifiableList(listeners);
    }
 
-   public String getVersion()
-   {
-      return version;
-   }
-
-   public void setVersion(String version)
-   {
-      this.version = version;
-   }
-
-   public Api withVersion(String version)
-   {
-      this.version = version;
-      return this;
-   }
 }

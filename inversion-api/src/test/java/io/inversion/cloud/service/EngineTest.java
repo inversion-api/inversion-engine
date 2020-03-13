@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -40,35 +41,49 @@ public class EngineTest
       Response res = null;
 
       res = e.get("http://localhost:8080/api1/ep1");
-      res.du
+      res.dump();
       req = res.getChain().getRequest();
       
       assertTrue(req.getEndpoint() != null);
       assertEquals(new Path("ep1"), req.getEndpointPath());
       assertEquals(new Path("api1"), req.getApiPath());
 
-      e.withIncludePaths("/some/servlet/path");
+      e.withIncludePaths("/some/servlet/path/*");
 
       req = e.get("http://localhost:8080/some/servlet/path/api1/ep1").getChain().getRequest();
       assertTrue(req.getEndpoint() != null);
       assertEquals(new Path("ep1"), req.getEndpointPath());
-      assertEquals(new Path("/some/servlet/path/api1"), req.getApiPath());
+      assertEquals(new Path("api1"), req.getApiPath());
 
-      api1.withVersion("v1");
-      req = e.get("http://localhost:8080/some/servlet/path/api1/ep1").getChain().getRequest();
+      api1.clearIncludePaths();
+      api1.withIncludePaths(new Path("api1/v1/*"));
+      
+      res = e.get("http://localhost:8080/some/servlet/path/api1/ep1");
+      assertEquals(400,  res.getStatusCode());
+      
+      req = res.getChain().getRequest();
       assertTrue(req.getEndpoint() == null);
 
       req = e.get("http://localhost:8080/some/servlet/path/api1/v1/ep1").getChain().getRequest();
       assertTrue(req.getEndpoint() != null);
       assertEquals(new Path("ep1"), req.getEndpointPath());
-      assertEquals(new Path("/some/servlet/path/api1/v1"), req.getApiPath());
+      assertEquals(new Path("api1/v1"), req.getApiPath());
 
-      api1.withMultiTenant(true);
-      req = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1").getChain().getRequest();
+      
+      api1.clearIncludePaths();
+      api1.withIncludePaths("api1/v1/:tenant/*");
+      res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1");
+      req = res.getChain().getRequest();
       assertTrue(req.getEndpoint() != null);
       assertEquals(new Path("ep1"), req.getEndpointPath());
-      assertEquals(new Path("/some/servlet/path/api1/v1/acme"), req.getApiPath());
-      //assertEquals("acme", req.getTenant());
+      assertEquals(new Path("api1/v1/acme"), req.getApiPath());
+    
+      
+      
+      api1.withCollection(new Collection("employees"));
+      res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo");
+      res.dump();
+      
    }
 
    //   @Test

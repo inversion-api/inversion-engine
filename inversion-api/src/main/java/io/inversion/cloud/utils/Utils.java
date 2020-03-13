@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -287,6 +288,22 @@ public class Utils
          map.put(objects[i], objects[i + 1]);
       }
       return map;
+   }
+
+   /**
+    * Checks for a whole word case insensitive match of <code>findThisToken</code>
+    * in <code>inThisString</code>
+    * 
+    * https://www.baeldung.com/java-regexp-escape-char
+    * https://stackoverflow.com/questions/7459263/regex-whole-word
+    * 
+    * @param findThisToken
+    * @param inThisString
+    */
+   public static boolean containsToken(String findThisToken, String inThisString)
+   {
+      String regex = "\\b\\Q" + findThisToken + "\\E\\b";
+      return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(inThisString).find();
    }
 
    /**
@@ -1515,7 +1532,7 @@ public class Utils
                   value = "true";
                else if ("0".equals(value))
                   value = "false";
-               
+
                return Boolean.parseBoolean(value.toString());
             }
 

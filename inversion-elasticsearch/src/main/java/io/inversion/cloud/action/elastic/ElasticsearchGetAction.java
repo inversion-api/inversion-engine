@@ -229,11 +229,11 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
       // remove tenantId before looping over the params to ensure tenantId is not used as the field
       String tenantId = null;
       JSNode context = null;
-      if (req.getApi().isMultiTenant())
-      {
-         tenantId = req.removeParam("tenantId");
-         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
-      }
+//      if (req.getApi().isMultiTenant())
+//      {
+//         tenantId = req.removeParam("tenantId");
+//         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+//      }
 
       String field = null;
       String value = null;
@@ -295,10 +295,10 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
          // do a wildcard search of no type was defined.
          if (resultArray.length() == 0 && type == null)
          {
-            if (req.getApi().isMultiTenant())
-            {
-               req.withParam("tenantId", tenantId);
-            }
+//            if (req.getApi().isMultiTenant())
+//            {
+//               req.withParam("tenantId", tenantId);
+//            }
             handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
          }
          else

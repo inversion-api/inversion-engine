@@ -86,6 +86,22 @@ public class Collection extends Rule<Collection> implements Serializable
       return null;
    }
 
+   @Override
+   public Path match(Path path)
+   {
+      if (includePaths.size() == 0 && excludePaths.size() == 0)
+      {
+         synchronized (this)
+         {
+            if (includePaths.size() == 0 && excludePaths.size() == 0)
+            {
+               includePaths.add(new Path("{collection:" + name + "}/[:entity]/[:relationship]/*"));
+            }
+         }
+      }
+      return super.match(path);
+   }
+
    /**
     * Returns true if all columns are foreign keys.  In an RDBMS system, this
     * would indicate that the table is used to link both sides of a many-to-many

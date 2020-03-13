@@ -40,7 +40,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       JSNode json = req.getJson();
 
       int count = Utils.empty(entityKey) ? 0 : 1;
-      count += Utils.empty(req.getQuery()) ? 0 : 1;
+      count += Utils.empty(req.getUrl().getQuery()) ? 0 : 1;
       count += json == null ? 0 : 1;
 
       if (count != 1)

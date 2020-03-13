@@ -154,20 +154,20 @@ public class Path
       {
          String myPart = get(i);
 
-         if (i == size() -1 && myPart.equals("*"))
+         if (i == size() - 1 && myPart.equals("*"))
             return true;
-         
+
          boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
-         
-         if(i == toMatch.size())
+
+         if (i == toMatch.size())
          {
-            if(optional)
+            if (optional)
                return true;
             return false;
          }
-         
-         if(optional)
-            myPart = myPart.substring(1, myPart.length() -1);
+
+         if (optional)
+            myPart = myPart.substring(1, myPart.length() - 1);
 
          String theirPart = toMatch.get(i);
          matchedPath.add(theirPart);
@@ -207,15 +207,38 @@ public class Path
 
    public Path extract(Map params, Path toMatch)
    {
+      return extract(params, toMatch, false);
+   }
+
+   /**
+    * If <code>greedy</code> is true, the match will consume
+    * through matching optional path parts.  False indicates a 
+    * reluctant match where the match finishes as soon as the first
+    * optional or wildcard is hit.  A greedy match will still
+    * not include a trailing wildcard.  
+    * 
+    * 
+    * @param params
+    * @param toMatch
+    * @param greedy
+    * @return
+    */
+   public Path extract(Map params, Path toMatch, boolean greedy)
+   {
       Path matchedPath = new Path();
 
       for (int i = 0; i < size() && toMatch.size() > 0; i++)
       {
          String myPart = get(i);
 
-         if (myPart.equals("*") || myPart.startsWith("["))
+         boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
+         
+         if (myPart.equals("*") || (!greedy && optional))
             break;
 
+         if(optional)
+            myPart = myPart.substring(1, myPart.length()-1);
+         
          String theirPart = toMatch.remove(0);
          matchedPath.add(theirPart);
 

@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
@@ -171,7 +170,7 @@ public class Engine extends Rule
             List<String> strs = new ArrayList();
             for (Collection c : api.getCollections())
             {
-               if (c.getDb().getCollectionPath() != null)
+               if (c.getDb() != null && c.getDb().getCollectionPath() != null)
                   strs.add(c.getDb().getCollectionPath() + c.getName());
                else
                   strs.add(c.getName());
@@ -389,11 +388,10 @@ public class Engine extends Rule
          if (containerPath != null)
             containerPath = containerPath.extract(pathParams, parts);
 
-         
          Path afterContainerPath = new Path(parts);
          Path afterApiPath = null;
          Path afterEndpointPath = null;
-         
+
          for (Api api : apis)
          {
             Path apiPath = api.match(method, parts);
@@ -402,7 +400,7 @@ public class Engine extends Rule
             {
                apiPath = apiPath.extract(pathParams, parts);
                req.withApi(api, apiPath);
-               
+
                afterApiPath = new Path(parts);
 
                for (Endpoint endpoint : api.getEndpoints())
@@ -415,7 +413,7 @@ public class Engine extends Rule
                      req.withEndpoint(endpoint, endpointPath);
 
                      afterEndpointPath = new Path(parts);
-                     
+
                      for (Collection collection : api.getCollections())
                      {
                         Path collectionPath = collection.match(method, parts);
@@ -433,6 +431,8 @@ public class Engine extends Rule
                break;
             }
          }
+         
+         req.getUrl().replaceParams(pathParams);
 
          //         List<Action> actions = new ArrayList(api.getActions());
          //         actions.addAll(endpoint.getActions());
@@ -755,18 +755,12 @@ public class Engine extends Rule
 
    public synchronized Api getApi(String apiName)
    {
-      return getApi(apiName, null);
-   }
-
-   public synchronized Api getApi(String apiName, String apiVersion)
-   {
       //only one api will have a name version pair so return the first one.
       for (Api api : apis)
       {
-         if (api.getName().equals(apiName) && Objects.equals(api.getVersion(), apiVersion))
-         {
+         if (apiName.equalsIgnoreCase(api.getName()))
             return api;
-         }
+
       }
       return null;
    }
@@ -776,48 +770,29 @@ public class Engine extends Rule
       if (apis.contains(api))
          return this;
 
-      List<Api> existingApis = findApis(api.getName());
-
       List<Api> newList = new ArrayList(apis);
-      if (existingApis.isEmpty())
+
+      Api existingApi = getApi(api.getName());
+      if (existingApi != null && existingApi != api)
+      {
+         newList.remove(existingApi);
+         newList.add(api);
+      }
+      else if (existingApi == null)
       {
          newList.add(api);
-         api.startup();
       }
-      else
-      {
-         existingApis.forEach(existingApi -> {
-            if (existingApi != null && existingApi != api)
-            {
-               if (Objects.equals(existingApi.getVersion(), api.getVersion()))
-               {
-                  newList.remove(existingApi);
-                  shutdownApi(existingApi);
-                  newList.add(api);
-               }
-               else if (existingApi.getVersion() != null && api.getVersion() != null)
-               { //Different version with both using versions
-                  newList.add(api);
-               }
-               else
-               {
-                  ApiException.throw500InternalServerError("Existing Api %s found with version %s. " + "New Api %s found with version %s. " + "Apis with the same api code must all use versions or a single api with no versions is supported.", existingApi.getName(), existingApi.getVersion(), api.getName(), api.getVersion());
-               }
-            }
-            else if (existingApi == null)
-            {
-               newList.add(api);
-            }
 
-            if (existingApi != api && isStarted())
-            {
-               api.startup();
-            }
-         });
-      }
+      if (existingApi != api && isStarted())
+         api.startup();
 
       apis = newList;
 
+      if (existingApi != null && existingApi != api)
+      {
+         existingApi.shutdown();
+      }
+      
       return this;
    }
 

@@ -48,7 +48,7 @@ public class Request
 
    protected Collection                             collection       = null;
    protected Path                                   collectionPath   = null;
-   
+
    protected String                                 collectionKey    = null;
    protected String                                 entityKey        = null;
    protected String                                 subCollectionKey = null;
@@ -137,37 +137,6 @@ public class Request
       {
          return HttpUtils.rest(getMethod(), getUrl().toString(), getBody(), headers, -1).get();
       }
-
-      //      String url = this.url.toString();
-      //      if (url.indexOf("?") < 0)
-      //         url += "?";
-      //      else if (!url.endsWith("&"))
-      //         url += "&";
-      //
-      //      List<String> keys = new ArrayList(params.keySet());
-      //      for (int i = 0; i < keys.size(); i++)
-      //      {
-      //         String key = keys.get(i);
-      //         String value = params.getString(key);
-      //
-      //         url += key;
-      //
-      //         if (!Utils.empty(value))
-      //            url += "=" + value;
-      //
-      //         if (i < keys.size() - 1)
-      //            url += "&";
-      //      }
-      //
-      //      if (service != null)
-      //      {
-      //         return service.service(method, url, body);
-      //      }
-      //      else
-      //      {
-      //         //Web.rest()
-      //         return null;
-      //      }
    }
 
    public Engine getEngine()
@@ -493,11 +462,6 @@ public class Request
       return subpath;
    }
 
-   public String getQuery()
-   {
-      return url.getQuery();
-   }
-
    /**
     * @return the collectionKey
     */
@@ -635,6 +599,11 @@ public class Request
       return new Validation(this, propOrJsonPath, customErrorMessage);
    }
 
+   public List<Upload> getUploads()
+   {
+      return uploader.getUploads();
+   }
+
    public static interface Uploader
    {
       public List<Upload> getUploads();
@@ -698,156 +667,4 @@ public class Request
 
    }
 
-   public List<Upload> getUploads()
-   {
-      return uploader.getUploads();
-   }
-
-   public Request withTerm(String token, Object... terms)
-   {
-      url.withParam(Term.term(null, token, terms).toString(), null);
-      return this;
-   }
-
-   //   public RequestBuilder pop()
-   //   {
-   //      return getParent();
-   //   }
-   //   public RequestBuilder if()
-   //   {
-   //      Term or = term(this, "if");
-   //      return or;
-   //   }
-   //
-   //   public RequestBuilder and()
-   //   {
-   //      Term or = term(this, "and");
-   //      return or;
-   //   }
-   //
-   //   public RequestBuilder or()
-   //   {
-   //      Term or = term(this, "or");
-   //      return or;
-   //   }
-
-   public Request val(String value)
-   {
-      return withTerm(value);
-   }
-
-   public Request offset(int offset)
-   {
-      return withTerm("offset", offset);
-   }
-
-   public Request limit(int limit)
-   {
-      return withTerm("limit", limit);
-   }
-
-   public Request page(int page)
-   {
-      return withTerm("page", page);
-   }
-
-   public Request pageNum(int pageNum)
-   {
-      return withTerm("pageNum", pageNum);
-   }
-
-   public Request pageSize(int pageSize)
-   {
-      return withTerm("pageSize", pageSize);
-   }
-
-   public Request order(String... order)
-   {
-      return withTerm("order", (Object[]) order);
-   }
-
-   public Request eq(String field, String value)
-   {
-      return withTerm("eq", field, value);
-   }
-
-   public Request ne(String field, String value)
-   {
-      return withTerm("ne", field, value);
-   }
-
-   public Request nn(String field)
-   {
-      return withTerm("nn", field);
-   }
-
-   public Request n(String field)
-   {
-      return withTerm("n", field);
-   }
-
-   public Request like(String field, String value)
-   {
-      return withTerm("like", field, value);
-   }
-
-   public Request w(String field, String value)
-   {
-      return withTerm("w", field, value);
-   }
-
-   public Request sw(String field, String value)
-   {
-      return withTerm("sw", field, value);
-   }
-
-   public Request lt(String field, String value)
-   {
-      return withTerm("lt", field, value);
-   }
-
-   public Request le(String field, String value)
-   {
-      return withTerm("le", field, value);
-   }
-
-   public Request gt(String field, String value)
-   {
-      return withTerm("gt", field, value);
-   }
-
-   public Request ge(String field, String value)
-   {
-      return withTerm("ge", field, value);
-   }
-
-   public Request in(String field, String... values)
-   {
-      return withTerm("in", field, values);
-   }
-
-   public Request out(String field, String... values)
-   {
-      return withTerm("out", field, values);
-   }
-
-   public Request w(String field, String... values)
-   {
-      return withTerm("w", field, values);
-   }
-
-   public Request wo(String field, String... values)
-   {
-      return withTerm("wo", field, values);
-   }
-
-   public Request emp(String field, String... values)
-   {
-      return withTerm("emp", field, values);
-   }
-
-   public Request nemp(String field, String... values)
-   {
-      return withTerm("nemp", field, values);
-   }
 }
