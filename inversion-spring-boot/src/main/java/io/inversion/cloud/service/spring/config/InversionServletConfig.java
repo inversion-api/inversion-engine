@@ -19,27 +19,29 @@ public class InversionServletConfig
     @Bean
     public ServletRegistrationBean inversionServlet(@Autowired Engine engine)
     {
-        Servlet servlet = new Servlet();
-        servlet.setEngine(engine);
-
-        String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
-        if (servletMapping == null)
-            servletMapping = "/*";
-
-        if (!servletMapping.endsWith("*"))
-        {
-            if (!servletMapping.endsWith("/"))
-                servletMapping += "/";
-
-            servletMapping += "*";
-        }
-
-        if (!servletMapping.startsWith("/"))
-            servletMapping = "/" + servletMapping;
-
-        ServletRegistrationBean bean = new ServletRegistrationBean(servlet, servletMapping);
-        bean.setLoadOnStartup(1);
-        return bean;
+       return null;
+       
+//        Servlet servlet = new Servlet();
+//        servlet.setEngine(engine);
+//
+//        String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
+//        if (servletMapping == null)
+//            servletMapping = "/*";
+//
+//        if (!servletMapping.endsWith("*"))
+//        {
+//            if (!servletMapping.endsWith("/"))
+//                servletMapping += "/";
+//
+//            servletMapping += "*";
+//        }
+//
+//        if (!servletMapping.startsWith("/"))
+//            servletMapping = "/" + servletMapping;
+//
+//        ServletRegistrationBean bean = new ServletRegistrationBean(servlet, servletMapping);
+//        bean.setLoadOnStartup(1);
+//        return bean;
     }
     
     @Bean

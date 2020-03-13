@@ -93,14 +93,14 @@ public class Configurator
             // that should not be set directly on bean fields but should be passed the approperiate setter
             public boolean handleProp(Object bean, String prop, String value) throws Exception
             {
-               if (bean instanceof Endpoint && "path".equalsIgnoreCase(value))
-               {
-                  //this is done as a special case because of the 
-                  //special business logic in the setter
-                  ((Endpoint) bean).withPath(value);
-
-                  return true;
-               }
+//               if (bean instanceof Endpoint && "path".equalsIgnoreCase(value))
+//               {
+//                  //this is done as a special case because of the 
+//                  //special business logic in the setter
+//                  ((Endpoint) bean).withPath(value);
+//
+//                  return true;
+//               }
 
                return false;
             }

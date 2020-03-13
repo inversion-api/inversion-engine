@@ -194,9 +194,9 @@ public class ScriptAction extends Action<ScriptAction>
 
                if (reqPath.size() > 0)
                {
-                  caseVar = reqPath.part(reqPath.size() - 1);
+                  caseVar = reqPath.get(reqPath.size() - 1);
 
-                  if (switchPath.size() > 1 && switchPath.part(switchPath.size() - 2).equalsIgnoreCase(caseVar))
+                  if (switchPath.size() > 1 && switchPath.get(switchPath.size() - 2).equalsIgnoreCase(caseVar))
                      caseVar = null;
                }
             }

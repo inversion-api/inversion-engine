@@ -352,8 +352,8 @@ public class Url
 
    public String getFile()
    {
-      if (path != null && path.size() > 0)
-         return path.part(path.size() - 1);
+      if (path != null)
+         return path.last();
 
       return null;
    }
@@ -450,35 +450,34 @@ public class Url
       return this;
    }
 
- public static String toQueryString(Map<String, String> params)
-    {
-        String query = "";
-        if (params != null)
-        {
-            for (String key : params.keySet())
+   public static String toQueryString(Map<String, String> params)
+   {
+      String query = "";
+      if (params != null)
+      {
+         for (String key : params.keySet())
+         {
+            try
             {
-                try
-                {
-                    if (params.get(key) != null)
-                    {
-                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
-                    }
-                    else
-                    {
-                        query += URLEncoder.encode(key, "UTF-8") + "&";
-                    }
+               if (params.get(key) != null)
+               {
+                  query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+               }
+               else
+               {
+                  query += URLEncoder.encode(key, "UTF-8") + "&";
+               }
 
-                }
-                catch (UnsupportedEncodingException e)
-                {
-                    Utils.rethrow(e);
-                }
             }
-            if (query.length() > 0)
-                query = query.substring(0, query.length() - 1);
-        }
-        return query;
-    }
-
+            catch (UnsupportedEncodingException e)
+            {
+               Utils.rethrow(e);
+            }
+         }
+         if (query.length() > 0)
+            query = query.substring(0, query.length() - 1);
+      }
+      return query;
+   }
 
 }

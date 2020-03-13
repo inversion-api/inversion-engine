@@ -16,12 +16,27 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import java.util.*;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.User;
+import io.inversion.cloud.utils.Utils;
 
 public class Chain
 {
@@ -262,7 +277,7 @@ public class Chain
    }
 
    protected Engine             engine   = null;
-   protected List<Action>       actions  = new ArrayList();
+   protected List<ActionMatch>  actions  = new ArrayList();
    protected Request            request  = null;
    protected Response           response = null;
 
@@ -372,7 +387,7 @@ public class Chain
 
       for (int i = next - 1; i >= 0; i--)
       {
-         value = actions.get(i).getConfig(key);
+         value = actions.get(i).action.getConfig(key);
          if (value != null)
          {
             value = value.toLowerCase();
@@ -412,7 +427,7 @@ public class Chain
       Set<String> keys = request.getEndpoint().getConfigKeys();
       for (int i = next - 1; i >= 0; i--)
       {
-         keys.addAll(actions.get(i).getConfigKeys());
+         keys.addAll(actions.get(i).action.getConfigKeys());
       }
 
       return keys;
@@ -456,12 +471,15 @@ public class Chain
 
       for (int i = next - 1; i >= 0; i--)
       {
-         value = actions.get(i).getConfig(key);
+         value = actions.get(i).action.getConfig(key);
          if (!Utils.empty(value))
          {
             return value;
          }
       }
+
+      System.out.println(request.getEndpoint());
+      System.out.println(key);
 
       value = request.getEndpoint().getConfig(key);
       if (!Utils.empty(value))
@@ -484,9 +502,9 @@ public class Chain
    {
       if (!isCanceled() && next < actions.size())
       {
-         Action action = actions.get(next);
+         ActionMatch actionMatch = actions.get(next);
          next += 1;
-         action.run(request, response);
+         actionMatch.action.run(request, response);
          return true;
       }
       return false;
@@ -517,22 +535,21 @@ public class Chain
       return request.getEndpoint();
    }
 
-   public List<Action> getActions()
+   public List<ActionMatch> getActions()
    {
       return new ArrayList(actions);
    }
 
-   public Chain withActions(List<Action> actions)
+   public Chain withActions(List<ActionMatch> actions)
    {
-      this.actions.clear();
-      for (Action action : actions)
+      for (ActionMatch action : actions)
       {
          withAction(action);
       }
       return this;
    }
 
-   public Chain withAction(Action action)
+   public Chain withAction(ActionMatch action)
    {
       if (action != null && !actions.contains(action))
          actions.add(action);
@@ -548,6 +565,28 @@ public class Chain
    public Response getResponse()
    {
       return response;
+   }
+
+   public static class ActionMatch implements Comparable<ActionMatch>
+   {
+      Path   rule   = null;
+      Path   path   = null;
+      Action action = null;
+
+      public ActionMatch(Path rule, Path path, Action action)
+      {
+         super();
+         this.rule = rule;
+         this.path = path;
+         this.action = action;
+      }
+
+      @Override
+      public int compareTo(ActionMatch o)
+      {
+         return action.compareTo(o.action);
+      }
+
    }
 
 }

@@ -19,6 +19,7 @@ package io.inversion.cloud.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import io.inversion.cloud.utils.Utils;
 
@@ -49,7 +50,7 @@ public class Path
    {
 
    }
-   
+
    public Path(Path path)
    {
       parts.addAll(path.parts);
@@ -102,7 +103,6 @@ public class Path
       return null;
    }
 
-
    public void add(String part)
    {
       if (!Utils.empty(part))
@@ -121,8 +121,12 @@ public class Path
       }
       return null;
    }
-   
-   
+
+   public int size()
+   {
+      return parts.size();
+   }
+
    public String toString()
    {
       return Utils.implode("/", parts);
@@ -130,7 +134,10 @@ public class Path
 
    public boolean equals(Object o)
    {
-      return o instanceof Path && o.toString().equals(toString());
+      if (o == null)
+         return false;
+
+      return o.toString().equals(toString());
    }
 
    public Path subpath(int fromIndex, int toIndex)
@@ -139,124 +146,72 @@ public class Path
       return subpath;
    }
 
-   public boolean isRegex()
-   {
-      for (String part : parts)
-      {
-         if (part.indexOf("*") > -1 || part.indexOf("{") > -1)
-            return true;
-      }
-      return false;
-   }
-
-   public int size()
-   {
-      return parts.size();
-   }
-
-   public boolean isOptional(int index)
-   {
-      String part = get(index);
-      if (part != null && (part.startsWith("[") || part.equalsIgnoreCase("*")))
-      {
-         return true;
-      }
-      return false;
-   }
-
-   public boolean isVariable(int index)
-   {
-      String part = get(index);
-
-      if (part.startsWith("["))
-         part = part.substring(1);
-
-      if (part.equals("*") || part.startsWith("{") || part.startsWith("$") || part.startsWith(":"))
-      {
-         return true;
-      }
-
-      return false;
-   }
-
-   public boolean matchesLast(String toMatch)
-   {
-      return matches(size() - 1, toMatch);
-   }
-
    public boolean matches(Path toMatch)
    {
-      return matchesRest(0, toMatch);
-   }
+      Path matchedPath = new Path();
 
-   public boolean matches(List toMatch)
-   {
-      return matchesRest(0, new Path(toMatch));
-   }
-
-   public boolean matchesRest(int matchFrom, Path toMatch)
-   {
-      for (int i = 0; i < lc.size(); i++)
+      for (int i = 0; i < size(); i++)
       {
-         String myPart = lc.get(i);
+         String myPart = get(i);
 
-         if ("*".equals(myPart) && i == lc.size() - 1)
+         if (i == size() -1 && myPart.equals("*"))
             return true;
-
-         if (i + matchFrom >= toMatch.size())
+         
+         boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
+         
+         if(i == toMatch.size())
          {
-            if (myPart.equals("*"))
+            if(optional)
                return true;
-            else
-               return false;
+            return false;
+         }
+         
+         if(optional)
+            myPart = myPart.substring(1, myPart.length() -1);
+
+         String theirPart = toMatch.get(i);
+         matchedPath.add(theirPart);
+
+         if (myPart.startsWith(":"))
+         {
+            continue;
+         }
+         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}"))
+         {
+            int nameStart = myPart.indexOf("{") + 1;
+            int endName = myPart.indexOf(":");
+            if (endName < 0)
+               endName = myPart.length() - 1;
+
+            String name = myPart.substring(nameStart, endName).trim();
+
+            if (endName < myPart.length() - 1)
+            {
+               String regex = myPart.substring(endName + 1, myPart.length() - 1);
+               Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+               if (!pattern.matcher(theirPart).matches())
+               {
+                  return false;
+               }
+            }
+         }
+         else if (!myPart.equalsIgnoreCase(theirPart))
+         {
+            return false;
          }
 
-         String theirPart = toMatch.lc.get(i + matchFrom);
-
-         if (i == lc.size() - 1 && myPart.equals("*"))
-         {
-            return true;
-         }
-         if (myPart.indexOf("*") > -1)
-         {
-            if (!Utils.wildcardMatch(myPart, theirPart))
-               return false;
-         }
-         else
-         {
-            if (!myPart.equals(theirPart))
-               return false;
-         }
       }
-      return toMatch.size() - matchFrom == lc.size();
+
+      return true;
    }
-
-   private boolean matches(int index, String part)
-   {
-      if (index > -1 && index < lc.size())
-      {
-         String myPart = lc.get(index);
-         if (myPart.indexOf("*") > -1)
-         {
-            return Utils.wildcardMatch(myPart, part);
-         }
-         else
-         {
-            return lc.get(index).equals(part);
-         }
-
-      }
-      return false;
-   }
-
 
    public Path extract(Map params, Path toMatch)
    {
       Path matchedPath = new Path();
 
-      for (int i = 0; this.parts != null && i < this.size() && i < parts.size(); i++)
+      for (int i = 0; i < size() && toMatch.size() > 0; i++)
       {
-         String myPart = toMatch.get(i);
+         String myPart = get(i);
 
          if (myPart.equals("*") || myPart.startsWith("["))
             break;
@@ -269,97 +224,34 @@ public class Path
             String name = myPart.substring(1).trim();
             params.put(name, theirPart);
          }
-         else if (myPart.startsWith("{"))
+         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}"))
          {
-            int colon = myPart.indexOf(":");
-            if (colon > 0)
+            int nameStart = myPart.indexOf("{") + 1;
+            int endName = myPart.indexOf(":");
+            if (endName < 0)
+               endName = myPart.length() - 1;
+
+            String name = myPart.substring(nameStart, endName).trim();
+
+            if (endName < myPart.length() - 1)
             {
-               String name = myPart.substring(1, colon).trim();
-               params.put(name, theirPart);
+               String regex = myPart.substring(endName + 1, myPart.length() - 1);
+               Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+               if (!pattern.matcher(theirPart).matches())
+               {
+                  ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
+               }
             }
+
+            params.put(name, theirPart);
          }
          else if (!myPart.equalsIgnoreCase(theirPart))
          {
-            System.out.println("unmatced part:");
-            //            ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
+            ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
          }
 
       }
 
-      return null;
-
-      //      try
-      //      {
-      //         if (wildcardPath.indexOf("{") > -1)
-      //         {
-      //            List<String> regexParts = Utils.explode("/", wildcardPath);
-      //            List<String> pathParts = Utils.explode("/", path);
-      //
-      //            if (pathParts.size() > regexParts.size() && !regexParts.get(regexParts.size() - 1).endsWith("*"))
-      //               return false;
-      //
-      //            boolean optional = false;
-      //
-      //            for (int i = 0; i < regexParts.size(); i++)
-      //            {
-      //               String matchPart = regexParts.get(i);
-      //
-      //               while (matchPart.startsWith("[") && matchPart.endsWith("]"))
-      //               {
-      //                  matchPart = matchPart.substring(1, matchPart.length() - 1);
-      //                  optional = true;
-      //               }
-      //
-      //               if (pathParts.size() == i)
-      //               {
-      //                  if (optional)
-      //                     return true;
-      //                  return false;
-      //               }
-      //
-      //               String pathPart = pathParts.get(i);
-      //
-      //               if (matchPart.startsWith("{"))
-      //               {
-      //                  int colonIdx = matchPart.indexOf(":");
-      //                  if (colonIdx < 0)
-      //                     colonIdx = 0;
-      //
-      //                  String regex = matchPart.substring(colonIdx + 1, matchPart.lastIndexOf("}")).trim();
-      //
-      //                  Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-      //                  Matcher matcher = pattern.matcher(pathPart);
-      //
-      //                  if (!matcher.matches())
-      //                     return false;
-      //               }
-      //               else if (!Utils.wildcardMatch(matchPart, pathPart))
-      //               {
-      //                  return false;
-      //               }
-      //
-      //               if (matchPart.endsWith("*") && i == regexParts.size() - 1)
-      //                  return true;
-      //            }
-      //
-      //            return true;
-      //         }
-      //         else
-      //         {
-      //            if (!wildcardPath.endsWith("*") && !wildcardPath.endsWith("/") && path != null && path.endsWith("/"))
-      //               wildcardPath += "/";
-      //            return Utils.wildcardMatch(wildcardPath, path);
-      //         }
-      //      }
-      //      catch (NullPointerException npe)
-      //      {
-      //         npe.printStackTrace();
-      //      }
-      //      catch (Exception ex)
-      //      {
-      //         //intentionally ignore
-      //      }
-      //
-      //      return false;
+      return matchedPath;
    }
 }

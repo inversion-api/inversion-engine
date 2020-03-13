@@ -50,8 +50,8 @@ import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Rule;
 import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Url;
+import io.inversion.cloud.service.Chain.ActionMatch;
 import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.Pluralizer;
 import io.inversion.cloud.utils.Utils;
 
 public class Engine extends Rule
@@ -389,6 +389,11 @@ public class Engine extends Rule
          if (containerPath != null)
             containerPath = containerPath.extract(pathParams, parts);
 
+         
+         Path afterContainerPath = new Path(parts);
+         Path afterApiPath = null;
+         Path afterEndpointPath = null;
+         
          for (Api api : apis)
          {
             Path apiPath = api.match(method, parts);
@@ -397,6 +402,8 @@ public class Engine extends Rule
             {
                apiPath = apiPath.extract(pathParams, parts);
                req.withApi(api, apiPath);
+               
+               afterApiPath = new Path(parts);
 
                for (Endpoint endpoint : api.getEndpoints())
                {
@@ -407,6 +414,8 @@ public class Engine extends Rule
                      endpointPath = endpointPath.extract(pathParams, parts);
                      req.withEndpoint(endpoint, endpointPath);
 
+                     afterEndpointPath = new Path(parts);
+                     
                      for (Collection collection : api.getCollections())
                      {
                         Path collectionPath = collection.match(method, parts);
@@ -452,35 +461,39 @@ public class Engine extends Rule
             ApiException.throw400BadRequest("No API found matching URL: '%s'", req.getUrl());
          }
 
-         if (req.getEndpoint() == null)
-         {
-            //check to see if a non plural version of the collection endpoint 
-            //was passed in, if it was redirect to the plural version
-            if (redirectPlural(req, res))
-               return chain;
-         }
+         //         if (req.getEndpoint() == null)
+         //         {
+         //            //check to see if a non plural version of the collection endpoint 
+         //            //was passed in, if it was redirect to the plural version
+         //            if (redirectPlural(req, res))
+         //               return chain;
+         //         }
 
          if (req.getEndpoint() == null)
          {
             String buff = "";
             for (Endpoint e : req.getApi().getEndpoints())
-               buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+               buff += e.getMethods() + " path: " + e.getIncludePaths() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
             ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), req.getUrl(), buff);
          }
 
          //this will get all actions specifically configured on the endpoint
-         List<Action> actions = req.getEndpoint().getActions(req);
+         List<ActionMatch> actions = new ArrayList();
+
+         for (Action action : req.getEndpoint().getActions())
+         {
+            Path actionPath = action.match(method, afterApiPath);
+            actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+         }
 
          //this matches for actions that can run across multiple endpoints.
          //this might be something like an authorization or logging action
          //that acts like a filter
          for (Action action : req.getApi().getActions())
          {
-            //http://host/{apipath}/{endpointpath}/{subpath}
-            //since these actions were not assigned to 
-            if (action.matches(req.getMethod(), req.getPath()))
-               actions.add(action);
+            Path actionPath = action.match(method, afterEndpointPath);
+            actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
          }
 
          if (actions.size() == 0)
@@ -528,13 +541,13 @@ public class Engine extends Rule
             }
 
             status = ((ApiException) ex).getStatus();
-            if (Status.SC_404_NOT_FOUND.equals(status))
-            {
-               //an endpoint could have match the url "such as GET * but then not 
-               //known what to do with the URL because the collection was not pluralized
-               if (redirectPlural(req, res))
-                  return chain;
-            }
+            //            if (Status.SC_404_NOT_FOUND.equals(status))
+            //            {
+            //               //an endpoint could have match the url "such as GET * but then not 
+            //               //known what to do with the URL because the collection was not pluralized
+            //               if (redirectPlural(req, res))
+            //                  return chain;
+            //            }
          }
          else
          {
@@ -616,7 +629,7 @@ public class Engine extends Rule
     * @param actions
     * @throws Exception
     */
-   protected void run(Chain chain, List<Action> actions) throws Exception
+   protected void run(Chain chain, List<ActionMatch> actions) throws Exception
    {
       chain.withActions(actions).go();
    }
@@ -691,41 +704,41 @@ public class Engine extends Rule
       }
    }
 
-   boolean redirectPlural(Request req, Response res)
-   {
-      String collection = req.getCollectionKey();
-      if (!Utils.empty(collection))
-      {
-         String plural = Pluralizer.plural(collection);
-         if (!plural.equals(collection))
-         {
-            String path = req.getPath().toString();
-            path = path.replaceFirst(collection, plural);
-            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
-            if (rightEndpoint != null)
-            {
-               String redirect = req.getUrl().toString();
-               //redirect = req.getHttpServletRequest().getRequest
-               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
+   //   boolean redirectPlural(Request req, Response res)
+   //   {
+   //      String collection = req.getCollectionKey();
+   //      if (!Utils.empty(collection))
+   //      {
+   //         String plural = Pluralizer.plural(collection);
+   //         if (!plural.equals(collection))
+   //         {
+   //            String path = req.getPath().toString();
+   //            path = path.replaceFirst(collection, plural);
+   //            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
+   //            if (rightEndpoint != null)
+   //            {
+   //               String redirect = req.getUrl().toString();
+   //               //redirect = req.getHttpServletRequest().getRequest
+   //               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
+   //
+   //               res.withRedirect(redirect);
+   //               return true;
+   //            }
+   //         }
+   //      }
+   //      return false;
+   //   }
 
-               res.withRedirect(redirect);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   Endpoint findEndpoint(Api api, String method, String pathStr)
-   {
-      Path path = new Path(pathStr);
-      for (Endpoint endpoint : api.getEndpoints())
-      {
-         if (endpoint.matches(method, path))
-            return endpoint;
-      }
-      return null;
-   }
+   //   Endpoint findEndpoint(Api api, String method, String pathStr)
+   //   {
+   //      Path path = new Path(pathStr);
+   //      for (Endpoint endpoint : api.getEndpoints())
+   //      {
+   //         if (endpoint.match(method, path) != null)
+   //            return endpoint;
+   //      }
+   //      return null;
+   //   }
 
    public List<Api> getApis()
    {
@@ -909,20 +922,20 @@ public class Engine extends Rule
       return this;
    }
 
-   public Path getServletMapping()
-   {
-      return containerPaths;
-   }
-
-   public Engine withServletMapping(String servletMapping)
-   {
-      if (servletMapping != null)
-         this.containerPaths = new Path(servletMapping);
-      else
-         this.containerPaths = null;
-
-      return this;
-   }
+   //   public Path getServletMapping()
+   //   {
+   //      return containerPaths;
+   //   }
+   //
+   //   public Engine withServletMapping(String servletMapping)
+   //   {
+   //      if (servletMapping != null)
+   //         this.containerPaths = new Path(servletMapping);
+   //      else
+   //         this.containerPaths = null;
+   //
+   //      return this;
+   //   }
 
    public Engine withAllowHeaders(String allowedHeaders)
    {

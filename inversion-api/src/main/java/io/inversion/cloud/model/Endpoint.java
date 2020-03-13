@@ -175,18 +175,6 @@ public class Endpoint extends Rule<Endpoint>
       return this;
    }
 
-   public List<Action> getActions(String method, Path path)
-   {
-      List<Action> filtered = new ArrayList();
-      for (Action a : actions)
-      {
-         if (a.match(method, path))
-            filtered.add(a);
-      }
-
-      Collections.sort(filtered);
-      return filtered;
-   }
 
    public List<Action> getActions()
    {

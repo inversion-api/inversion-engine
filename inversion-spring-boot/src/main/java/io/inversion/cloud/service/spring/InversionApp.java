@@ -94,36 +94,37 @@ public class InversionApp
    @Bean
    public ServletRegistrationBean inversionServlet()
    {
-      try
-      {
-         Servlet servlet = new Servlet();
-         servlet.setEngine(engine);
+      //      try
+      //      {
+      //         Servlet servlet = new Servlet();
+      //         servlet.setEngine(engine);
+      //
+      //         String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
+      //         if (servletMapping == null)
+      //            servletMapping = "/*";
+      //
+      //         if (!servletMapping.endsWith("*"))
+      //         {
+      //            if (!servletMapping.endsWith("/"))
+      //               servletMapping += "/";
+      //
+      //            servletMapping += "*";
+      //         }
+      //
+      //         if (!servletMapping.startsWith("/"))
+      //            servletMapping = "/" + servletMapping;
+      //
+      //         ServletRegistrationBean bean = new ServletRegistrationBean(servlet, servletMapping);
+      //         bean.setLoadOnStartup(1);
+      //         return bean;
+      //      }
+      //      catch (Exception ex)
+      //      {
+      //         ex.printStackTrace();
+      //         throw new RuntimeException(ex);
+      //      }
 
-         String servletMapping = engine.getServletMapping() != null ? engine.getServletMapping().toString() : null;
-         if (servletMapping == null)
-            servletMapping = "/*";
-
-         if (!servletMapping.endsWith("*"))
-         {
-            if (!servletMapping.endsWith("/"))
-               servletMapping += "/";
-
-            servletMapping += "*";
-         }
-
-         if (!servletMapping.startsWith("/"))
-            servletMapping = "/" + servletMapping;
-
-         ServletRegistrationBean bean = new ServletRegistrationBean(servlet, servletMapping);
-         bean.setLoadOnStartup(1);
-         return bean;
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-         throw new RuntimeException(ex);
-      }
-
+      return null;
    }
 
    @Bean
