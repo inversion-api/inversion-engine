@@ -400,8 +400,12 @@ public class Engine
              */
             if (a.getVersion() != null)
             {
-               parts.remove(0);
+               String version = parts.remove(0);
+               apiPath.add(version);
+               //todo add version to request
+               //req.withVersion(version);
             }
+
 
             if (a.isMultiTenant() && parts.size() > 0)
             {
