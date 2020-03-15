@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -208,13 +208,13 @@ public class AuthAction extends Action<AuthAction>
             }
 
             if (user == null)
-               ApiException.throw401Unauthroized();               
+               ApiException.throw401Unauthroized();
          }
       }
 
       if (user != null)
       {
-         // update the session cache if this is a session request OR 
+         // update the session cache if this is a session request OR
          // if the session update time has passed.
          boolean updateSessionCache = false;
          long previousReqTime = user.getRequestAt();
@@ -263,7 +263,7 @@ public class AuthAction extends Action<AuthAction>
             ApiException.throw401Unauthroized();
       }
 
-      if (user == null && !sessionReq)
+      if (user == null && !sessionReq && userDao != null)
       {
          user = userDao.getGuest(apiName, tenantCode);
          Chain.peek().withUser(user);
