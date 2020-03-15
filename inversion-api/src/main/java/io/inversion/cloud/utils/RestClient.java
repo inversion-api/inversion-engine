@@ -77,7 +77,7 @@ public class RestClient
    protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
 
    //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
-   protected boolean                                forwardHeaders   = false;
+   protected boolean                                forwardHeaders   = true;
    protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
    protected Set                                    blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
 
