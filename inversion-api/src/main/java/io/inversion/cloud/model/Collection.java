@@ -55,7 +55,6 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public Collection()
    {
-      super();
    }
 
    public Collection(String defaultName)
@@ -64,42 +63,9 @@ public class Collection extends Rule<Collection> implements Serializable
       withTableName(defaultName);
    }
 
-   public Collection copy()
+   public Path getDefaultIncludes()
    {
-      try
-      {
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         ObjectOutputStream oos;
-
-         oos = new ObjectOutputStream(baos);
-
-         oos.writeObject(this);
-         oos.flush();
-
-         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-         return (Collection) ois.readObject();
-      }
-      catch (Exception e)
-      {
-         Utils.rethrow(e);
-      }
-      return null;
-   }
-
-   @Override
-   public Path match(Path path)
-   {
-      if (includePaths.size() == 0 && excludePaths.size() == 0)
-      {
-         synchronized (this)
-         {
-            if (includePaths.size() == 0 && excludePaths.size() == 0)
-            {
-               includePaths.add(new Path("{collection:" + name + "}/[:entity]/[:relationship]/*"));
-            }
-         }
-      }
-      return super.match(path);
+      return new Path("{collection:" + getName() + "}/[:entity]/[:relationship]/*");
    }
 
    /**
@@ -396,22 +362,6 @@ public class Collection extends Rule<Collection> implements Serializable
 
       return this;
    }
-
-   //   public Index makeIndex(Column column, String name, String type, boolean unique)
-   //   {
-   //      //System.out.println("WITH INDEX: " + name + " - " + column);
-   //      Index index = getIndex(name);
-   //      if (index != null)
-   //      {
-   //         index.withColumn(column);
-   //      }
-   //      else
-   //      {
-   //         index = new Index(this, column, name, type, unique);
-   //         withIndex(index);
-   //      }
-   //      return index;
-   //   }
 
    public void removeIndex(Index index)
    {
@@ -720,5 +670,35 @@ public class Collection extends Rule<Collection> implements Serializable
       }
 
       return rows;
+   }
+
+   /**
+    * This utility method performs a deep clone operation.  It is useful when you want to 
+    * manually wire up numerous copies of a collection but tweak each one a bit differently.
+    * For example, if you were connecting to a DynamoDb or CosmosDb where a single table
+    * is overloaded to support different domain objects.
+    * 
+    * @return
+    */
+   public Collection copy()
+   {
+      try
+      {
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         ObjectOutputStream oos;
+
+         oos = new ObjectOutputStream(baos);
+
+         oos.writeObject(this);
+         oos.flush();
+
+         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+         return (Collection) ois.readObject();
+      }
+      catch (Exception e)
+      {
+         Utils.rethrow(e);
+      }
+      return null;
    }
 }

@@ -38,18 +38,24 @@ public class Url
    protected Path   path     = null;
    protected JSNode params   = new JSNode();
 
+   public Url copy()
+   {
+      Url url = new Url();
+      url.original = original;
+      url.protocol = protocol;
+      url.host = host;
+      url.port = port;
+      url.path = path;
+      url.params.putAll(params);
+      return url;
+   }
+
    private Url()
    {
 
    }
 
    public Url(String url)
-   {
-      if (url != null)
-         parse(url);
-   }
-
-   protected void parse(String url)
    {
       String path = null;
 
@@ -283,26 +289,46 @@ public class Url
       return this;
    }
 
-   public Url replaceParams(Map<String, String> newParams)
-   {
-      for (String key : newParams.keySet())
-      {
-         replaceParam(key, newParams.get(key));
-      }
-      return this;
-   }
-
+   /**
+    * Replaces any param that has <code>key<code> as a whole 
+    * word case insensitive match in its key.
+    * 
+    * @param key
+    * @return
+    */
    public Url replaceParam(String key, String value)
    {
       for (String existing : (List<String>) new ArrayList(params.keySet()))
       {
          if (Utils.containsToken(key, existing))
          {
-            removeParam(key);
+            params.remove(existing);
          }
       }
 
       withParam(key, value);
+      return this;
+   }
+
+   /**
+    * Removes any param that has one of <code>tokens<code> as a whole 
+    * word case insensitive match in the key.
+    * 
+    * @param key
+    * @return
+    */
+   public Url clearParams(String... tokens)
+   {
+      for (int i = 0; i < tokens.length; i++)
+      {
+         for (String existing : (List<String>) new ArrayList(params.keySet()))
+         {
+            if (Utils.containsToken(tokens[i], existing))
+            {
+               params.remove(existing);
+            }
+         }
+      }
       return this;
    }
 
@@ -316,25 +342,9 @@ public class Url
       return params.asMap();
    }
 
-   public String removeParam(String param)
-   {
-      return (String) params.remove(param);
-   }
-
-   public void clearParams()
-   {
-      params.clear();
-   }
-
    public String getOriginal()
    {
       return original;
-   }
-
-   public Url withOriginal(String url)
-   {
-      this.original = url;
-      return this;
    }
 
    public static String toQueryString(Map<String, String> params)

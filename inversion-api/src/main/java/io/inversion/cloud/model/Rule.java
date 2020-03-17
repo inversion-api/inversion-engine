@@ -45,24 +45,15 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    protected transient JSNode configMap    = new JSNode();
    protected String           configStr    = null;
 
-   //   public Path match(String method, List<String> path)
-   //   {
-   //      return match(method, new Path(path));
-   //   }
-   //
-   //   public Path match(String method, Path path)
-   //   {
-   //      if (isMethod(method))
-   //      {
-   //         return match(path);
-   //      }
-   //      return null;
-   //   }
-   //
-   //   public Path match(List<String> path)
-   //   {
-   //      return match(new Path(path));
-   //   }
+   public boolean matches(String method, String path)
+   {
+      return matches(method, new Path(path));
+   }
+
+   public boolean matches(String method, Path path)
+   {
+      return match(method, path) != null;
+   }
 
    public Path match(String method, Path path)
    {
@@ -75,6 +66,19 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
    protected Path match(Path path)
    {
+      //-- reluctant lazy config defaultIncludes if no other 
+      //-- includes/excludes have been configured by the user.
+      if (includePaths.size() == 0 && excludePaths.size() == 0)
+      {
+         synchronized (this)
+         {
+            if (includePaths.size() == 0 && excludePaths.size() == 0)
+            {
+               includePaths.add(getDefaultIncludes());
+            }
+         }
+      }
+
       Path included = null;
       boolean excluded = false;
 
@@ -110,48 +114,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       if (excluded)
          return null;
 
-      if (included == null && includePaths.size() == 0)
-         included = new Path("*");
-
       return included;
    }
-
-   //   public final boolean matchesPath(Path path)
-   //   {
-   //      boolean included = false;
-   //      boolean excluded = false;
-   //
-   //      if (includePaths.size() == 0)
-   //      {
-   //         if (excludePaths.size() == 0 || path.size() == 0)
-   //            included = true;
-   //      }
-   //      else
-   //      {
-   //         for (Path includePath : includePaths)
-   //         {
-   //            if (includePath.matches(path))
-   //            {
-   //               included = true;
-   //               break;
-   //            }
-   //         }
-   //      }
-   //
-   //      if (included && path.size() > 0)
-   //      {
-   //         for (Path excludePath : excludePaths)
-   //         {
-   //            if (excludePath.matches(path))
-   //            {
-   //               excluded = true;
-   //               break;
-   //            }
-   //         }
-   //      }
-   //
-   //      return included && !excluded;
-   //   }
 
    public Rule clearIncludePaths()
    {
@@ -218,6 +182,11 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
          excludePaths.add(path);
       }
       return (R) this;
+   }
+
+   public Path getDefaultIncludes()
+   {
+      return new Path("*");
    }
 
    public boolean isMethod(String... methods)
@@ -335,7 +304,8 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    @Override
    public int compareTo(Rule a)
    {
-      return order <= a.order ? -1 : 1;
+      int compare =  order == a.order ? 0 : order < a.order ? -1 : 1;
+      return compare;
    }
 
    public String toString()

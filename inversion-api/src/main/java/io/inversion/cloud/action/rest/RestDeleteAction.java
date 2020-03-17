@@ -36,18 +36,11 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    public void run(Request req, Response res) throws Exception
    {
       String entityKey = req.getEntityKey();
-      String subcollectionKey = req.getSubCollectionKey();
+      String relationshipKey = req.getRelationshipKey();
       JSNode json = req.getJson();
 
-      int count = Utils.empty(entityKey) ? 0 : 1;
-      count += Utils.empty(req.getUrl().getQuery()) ? 0 : 1;
-      count += json == null ? 0 : 1;
-
-      if (count != 1)
-         ApiException.throw400BadRequest("DELETE expects an entity url, OR a query string OR a JSON array of entity urls, but only one at a time.");
-
-      if (!Utils.empty(subcollectionKey))
-         ApiException.throw400BadRequest("A subcollection key is not valid for a DELETE request");
+      if (!Utils.empty(relationshipKey))
+         ApiException.throw400BadRequest("A relationship key is not valid for a DELETE request");
 
       List<String> toDelete = new ArrayList();
 
@@ -80,7 +73,11 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       }
       else if (entityKey != null)
       {
-         toDelete.add(req.getUrl().toString());
+         String url = req.getUrl().toString();
+         if (url.indexOf("?") > 0)
+            url = url.substring(url.indexOf("?") + 1);
+
+         toDelete.add(url);
       }
       else
       {

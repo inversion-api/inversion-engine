@@ -216,15 +216,15 @@ public class RestClient
          if (chain != null)
          {
             Request originalInboundRequest = chain.getRequest();
-            Map<String, String> origionalParams = originalInboundRequest.getParams();
+            Map<String, String> origionalParams = originalInboundRequest.getUrl().getParams();
             if (origionalParams.size() > 0)
             {
                for (String key : origionalParams.keySet())
                {
                   if (forwardParam(key))
                   {
-                     if (request.getParam(key) == null)
-                        request.withParam(key, origionalParams.get(key));
+                     if (request.getUrl().getParam(key) == null)
+                        request.getUrl().withParam(key, origionalParams.get(key));
                   }
                }
             }

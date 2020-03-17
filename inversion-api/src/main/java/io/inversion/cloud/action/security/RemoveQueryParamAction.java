@@ -32,13 +32,7 @@ public class RemoveQueryParamAction extends Action<SetQueryParamAction>
    {
       for (String removedParam : params)
       {
-         for (String param : req.getParams().keySet())
-         {
-            if (Utils.containsToken(removedParam, param))
-            {
-               req.removeParam(param);
-            }
-         }
+         req.getUrl().clearParams(removedParam);
       }
    }
 

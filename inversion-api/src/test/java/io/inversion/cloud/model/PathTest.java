@@ -17,6 +17,7 @@
 package io.inversion.cloud.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -122,7 +123,7 @@ public class PathTest
       }
       assertTrue(error, "The test should have errored because 'the regex does not match'");
    }
-   
+
    @Test
    public void extract_pathDoesNotMatch_error()
    {
@@ -140,7 +141,6 @@ public class PathTest
       }
       assertTrue(error, "The test should have errored because 'the paths do not match'");
    }
-   
 
    @Test
    public void extract_stopsOnOptionalWithDollarVarParsing()
@@ -180,29 +180,29 @@ public class PathTest
    }
 
    @Test
-   public void test_pathMatches()
+   public void match()
    {
-      //      assertTrue(new Path().pathMatches("[{^$}]", ""));
-      //
-      //      assertTrue(new Path().pathMatches("*", "/something/asdfas/"));
-      //      assertTrue(new Path().pathMatches("*", "something/asdfas/"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}", "something/books"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}", "something/Books"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}", "something/customers"));
-      //      assertFalse(new Path().pathMatches("something/{collection:books|customers}", "something/blah"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/*", "something/customers/1234"));
-      //
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}", "something/customers/11111111"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}", "something/customers/aaaaaaaa"));
-      //      assertFalse(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}", "something/customers/aaaaaaaaaa"));
-      //      assertFalse(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}", "something/customers/1111111111"));
-      //      assertFalse(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}", "something/customers/zzzzzzzz"));
-      //
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}", "something/customers/1234/orders"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}", "something/customers/1234/orders/"));
-      //      assertTrue(new Path().pathMatches("something/{collection:books|customers}/[{entity:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]", "something/customers/1234/"));
-      //      assertFalse(new Path().pathMatches("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}", "something/customers/1234/"));
-      //
-      //      assertTrue(new Path().pathMatches("{collection:players|locations|ads}/[{entity:[0-9]{1,12}}]/{relationship:[a-z]*}", "Locations/698/players"));
+      assertTrue(new Path("[{^$}]").matches(""));
+
+      assertTrue(new Path("*").matches("/something/asdfas/"));
+      assertTrue(new Path("*").matches("something/asdfas/"));
+      assertTrue(new Path("something/{collection:books|customers}").matches("something/books"));
+      assertTrue(new Path("something/{collection:books|customers}").matches("something/Books"));
+      assertTrue(new Path("something/{collection:books|customers}").matches("something/customers"));
+      assertFalse(new Path("somsething/{collection:books|customers}").matches("something/blah"));
+      assertTrue(new Path("something/{collection:books|customers}/*").matches("something/customers/1234"));
+
+      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/11111111"));
+      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaa"));
+      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaaaa"));
+      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/1111111111"));
+      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/zzzzzzzz"));
+
+      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders"));
+      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders/"));
+      assertTrue(new Path("something/{collection:books|customers}/[{entity:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]").matches("something/customers/1234/"));
+      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/"));
+
+      assertTrue(new Path("{collection:players|locations|ads}/[{entity:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
    }
 }

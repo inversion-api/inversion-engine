@@ -223,10 +223,10 @@ public class ScriptAction extends Action<ScriptAction>
                   bindings.putMember("case", caseVar);
                   bindings.putMember("util", new Util());
 
-                  for (String key : req.getParams().keySet())
+                  for (String key : req.getUrl().getParams().keySet())
                   {
                      if (!bindings.hasMember(key))
-                        bindings.putMember(key, req.getParam(key));
+                        bindings.putMember(key, req.getUrl().getParam(key));
                   }
                }
 
@@ -257,10 +257,10 @@ public class ScriptAction extends Action<ScriptAction>
                   context.put("case", caseVar);
                   context.put("util", new Util());
 
-                  for (String key : req.getParams().keySet())
+                  for (String key : req.getUrl().getParams().keySet())
                   {
                      if (!context.containsKey(key))
-                        context.put(key, req.getParam(key));
+                        context.put(key, req.getUrl().getParam(key));
                   }
 
                   EventCartridge ec = new EventCartridge();

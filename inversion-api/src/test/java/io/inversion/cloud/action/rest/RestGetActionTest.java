@@ -54,8 +54,8 @@ public class RestGetActionTest
          String[] toStrip = new String[test.length - 2];
          System.arraycopy(test, 2, toStrip, 0, toStrip.length);
 
-         String stripped = RestGetAction.stripTerms(test[0], toStrip);
-         System.out.println(stripped);
+         String stripped = RestGetAction.stripTerms(test[1], toStrip);
+         //System.out.println(stripped);
 
          if (!test[0].equals(stripped))
          {

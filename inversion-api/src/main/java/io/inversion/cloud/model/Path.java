@@ -146,9 +146,55 @@ public class Path
       return subpath;
    }
 
+   public boolean isWildcard(int idx)
+   {
+      return "*".equals(get(idx));
+   }
+
+   public boolean isVar(int idx)
+   {
+      String part = get(idx);
+      if (part != null)
+      {
+         if (part.startsWith("["))
+            part = part.substring(1).trim();
+
+         char c = part.charAt(0);
+         return c == '$' || c == ':' || c == '{';
+      }
+      return false;
+   }
+
+   public String getVar(int idx)
+   {
+      String part = get(idx);
+      if (part != null)
+      {
+         if (part.startsWith("["))
+            part = part.substring(1, part.length()-1).trim();
+
+         int colon = part.indexOf(":");
+         if (colon == 0)
+            return part.substring(1).trim();
+         else if (part.startsWith("{") && colon > 1)
+            return part.substring(1, colon).trim();
+      }
+      return null;
+   }
+
+   public boolean matches(String toMatch)
+   {
+      return matches(new Path(toMatch));
+   }
+
    public boolean matches(Path toMatch)
    {
       Path matchedPath = new Path();
+
+      if (size() < toMatch.size() && !"*".equals(last()))
+      {
+         return false;
+      }
 
       for (int i = 0; i < size(); i++)
       {
@@ -227,18 +273,19 @@ public class Path
    {
       Path matchedPath = new Path();
 
-      for (int i = 0; i < size() && toMatch.size() > 0; i++)
+      int i = 0;
+      for (i = 0; i < size() && toMatch.size() > 0; i++)
       {
          String myPart = get(i);
 
          boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
-         
+
          if (myPart.equals("*") || (!greedy && optional))
             break;
 
-         if(optional)
-            myPart = myPart.substring(1, myPart.length()-1);
-         
+         if (optional)
+            myPart = myPart.substring(1, myPart.length() - 1);
+
          String theirPart = toMatch.remove(0);
          matchedPath.add(theirPart);
 
@@ -272,7 +319,14 @@ public class Path
          {
             ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
          }
+      }
 
+      //null out any trailing vars
+      for (i = i; i < size(); i++)
+      {
+         String var = getVar(i);
+         if(var != null)
+            params.put(var,  null);
       }
 
       return matchedPath;

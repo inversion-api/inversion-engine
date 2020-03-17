@@ -171,14 +171,8 @@ public class AclAction extends Action<AclAction>
             if (value.startsWith("${"))
                value = getValue(req.getChain(), value.substring(2, value.length() - 1));
 
-            if ("entitykey".equals(key1))
-            {
-               req.withEntityKey(value);
-            }
-            else
-            {
-               req.withParam(key1, value);
-            }
+            req.getUrl().withParam(key1, value);
+
             continue;
          }
 
@@ -188,9 +182,9 @@ public class AclAction extends Action<AclAction>
          if (restricted.indexOf(".") > 0)
             continue;
 
-         for (String key : req.getParams().keySet())
+         for (String key : req.getUrl().getParams().keySet())
          {
-            String value = req.getParam(key);
+            String value = req.getUrl().getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
                ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
@@ -209,16 +203,16 @@ public class AclAction extends Action<AclAction>
             continue;
 
          boolean found = false;
-         for (String key : req.getParams().keySet())
+         for (String key : req.getUrl().getParams().keySet())
          {
             if (matchesVal(required, key))
             {
-               String value = req.getParam(key);
+               String value = req.getUrl().getParam(key);
                if (Utils.empty(value))
                {
                   value = getValue(req.getChain(), key);
                   if (value != null)
-                     req.withParam(key, value);
+                     req.getUrl().withParam(key, value);
                }
 
                if (value != null)
@@ -234,7 +228,7 @@ public class AclAction extends Action<AclAction>
             String value = getValue(req.getChain(), required);
             if (value != null)
             {
-               req.withParam(required, value);
+               req.getUrl().withParam(required, value);
                found = true;
             }
          }

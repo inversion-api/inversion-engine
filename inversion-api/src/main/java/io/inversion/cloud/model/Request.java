@@ -16,49 +16,45 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.HttpUtils;
+import io.inversion.cloud.utils.Utils;
+
 public class Request
 {
-   protected Chain                                  chain            = null;
+   protected Chain                                  chain          = null;
 
-   protected String                                 referrer         = null;
-   protected String                                 remoteAddr       = null;
-   protected ArrayListValuedHashMap<String, String> headers          = new ArrayListValuedHashMap();
+   protected String                                 referrer       = null;
+   protected String                                 remoteAddr     = null;
+   protected ArrayListValuedHashMap<String, String> headers        = new ArrayListValuedHashMap();
 
-   protected Url                                    url              = null;
-   protected String                                 method           = null;
+   protected Url                                    url            = null;
+   protected String                                 method         = null;
 
-   protected Engine                                 engine           = null;
-   protected Api                                    api              = null;
-   protected Path                                   apiPath          = null;
-   protected String                                 tenant           = null;
+   protected Engine                                 engine         = null;
+   protected Api                                    api            = null;
+   protected Path                                   apiPath        = null;
+   protected String                                 tenant         = null;
 
-   protected Path                                   endpointPath     = null;
-   protected Endpoint                               endpoint         = null;
+   protected Path                                   endpointPath   = null;
+   protected Endpoint                               endpoint       = null;
 
-   protected Collection                             collection       = null;
-   protected Path                                   collectionPath   = null;
+   protected Collection                             collection     = null;
+   protected Path                                   collectionPath = null;
 
-   protected String                                 collectionKey    = null;
-   protected String                                 entityKey        = null;
-   protected String                                 subCollectionKey = null;
+   protected String                                 body           = null;
+   protected JSNode                                 json           = null;
 
-   protected String                                 body             = null;
-   protected JSNode                                 json             = null;
+   protected Uploader                               uploader       = null;
 
-   protected Uploader                               uploader         = null;
-
-   protected int                                    retryAttempts    = -1;
+   protected int                                    retryAttempts  = -1;
 
    public Request()
    {
@@ -184,6 +180,7 @@ public class Request
     */
    public boolean hasCollectionKey(String... collectionKeys)
    {
+      String collectionKey = getCollectionKey();
       if (collectionKey != null)
       {
          for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
@@ -235,7 +232,7 @@ public class Request
 
    public boolean isExplain()
    {
-      String str = getParam("explain");
+      String str = url.getParam("explain");
       boolean explain = isDebug() && !Utils.empty(str) && !"false".equalsIgnoreCase(str.trim());
       return explain;
    }
@@ -312,33 +309,6 @@ public class Request
    {
       this.json = json;
       return this;
-   }
-
-   public String getParam(String name)
-   {
-      return url.getParam(name);
-   }
-
-   public Request withParam(String name, String value)
-   {
-      url.withParam(name, value);
-      return this;
-   }
-
-   public Map<String, String> getParams()
-   {
-      Map<String, String> params = url.getParams();
-      return params;
-   }
-
-   public String removeParam(String param)
-   {
-      return url.removeParam(param);
-   }
-
-   public void clearParams()
-   {
-      url.clearParams();
    }
 
    /**
@@ -467,7 +437,7 @@ public class Request
     */
    public String getCollectionKey()
    {
-      return collectionKey;
+      return url.getParam("collection");
    }
 
    /**
@@ -475,19 +445,12 @@ public class Request
     */
    public String getEntityKey()
    {
-      return entityKey;
+      return url.getParam("entity");
    }
 
-   public Request withCollectionKey(String collectionKey)
+   public String getRelationshipKey()
    {
-      this.collectionKey = collectionKey;
-      return this;
-   }
-
-   public Request withEntityKey(String entityKey)
-   {
-      this.entityKey = entityKey;
-      return this;
+      return url.getParam("relationship");
    }
 
    public Request withApi(Api api, Path apiPath)
@@ -511,28 +474,6 @@ public class Request
    public Path getEndpointPath()
    {
       return endpointPath;
-   }
-
-   //   public String getTenant()
-   //   {
-   //      return tenant;
-   //   }
-   //
-   //   public Request withTenant(String tenant)
-   //   {
-   //      this.tenant = tenant;
-   //      return this;
-   //   }
-
-   public String getSubCollectionKey()
-   {
-      return subCollectionKey;
-   }
-
-   public Request withSubCollectionKey(String subCollectionKey)
-   {
-      this.subCollectionKey = subCollectionKey;
-      return this;
    }
 
    public int getRetryAttempts()

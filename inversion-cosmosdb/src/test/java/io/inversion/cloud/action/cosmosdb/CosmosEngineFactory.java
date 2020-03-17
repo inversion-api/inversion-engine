@@ -26,6 +26,7 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
@@ -42,7 +43,7 @@ public class CosmosEngineFactory
             public void configDb() throws Exception
             {
                withDb("inversion-testing-cosmos1");
-               withCollectionPath("cosmos/");
+               withEndpointPath(new Path("cosmos/"));
 
                Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 
@@ -148,7 +149,7 @@ public class CosmosEngineFactory
 
                if (req.isGet())
                {
-                  req.withParam("Type", collectionKey.toLowerCase());
+                  req.getUrl().withParam("Type", collectionKey.toLowerCase());
                }
 
                JSNode json = req.getJson();

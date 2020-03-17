@@ -56,24 +56,24 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    public void run(Request req, Response res) throws Exception
    {
 
-      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
-      ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
-
-      // examples...
-      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
-      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
-
-      // The path should include the Elastic index/type otherwise were gonna have a bad time.
-      String path = req.getPath().toString();
-      String[] paths = path != null ? path.split("/") : new String[]{};
-      if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
-      {
-         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, collection);
-      }
-      else
-      {
-         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, collection);
-      }
+//      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
+//      ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
+//
+//      // examples...
+//      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
+//      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
+//
+//      // The path should include the Elastic index/type otherwise were gonna have a bad time.
+//      String path = req.getPath().toString();
+//      String[] paths = path != null ? path.split("/") : new String[]{};
+//      if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
+//      {
+//         handleAutoSuggestRequest(req, res, paths, req.getUrl().clearParam("type"), db, collection);
+//      }
+//      else
+//      {
+//         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, collection);
+//      }
 
    }
 
@@ -87,14 +87,14 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     */
    private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticsearchDb db, Collection table) throws Exception
    {
-      if (req.getParam("source") == null && defaultSource != null)
+      if (req.getUrl().getParam("source") == null && defaultSource != null)
       {
-         req.withParam("source", defaultSource);
+         req.getUrl().withParam("source", defaultSource);
       }
 
       Collection collection = req.getCollectionKey() != null ? req.getCollection() : null;//getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
 
-      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getParams());
+      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getUrl().getParams());
 
       //      Integer wantedPage = null;
       //      if (req.getParam("wantedpage") != null)
@@ -224,95 +224,95 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticsearchDb db, Collection table) throws Exception
    {
 
-      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
-
-      // remove tenantId before looping over the params to ensure tenantId is not used as the field
-      String tenantId = null;
-      JSNode context = null;
-//      if (req.getApi().isMultiTenant())
+//      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
+//
+//      // remove tenantId before looping over the params to ensure tenantId is not used as the field
+//      String tenantId = null;
+//      JSNode context = null;
+////      if (req.getApi().isMultiTenant())
+////      {
+////         tenantId = req.removeParam("tenantId");
+////         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+////      }
+//
+//      String field = null;
+//      String value = null;
+//
+//      for (Map.Entry<String, String> entry : req.getParams().entrySet())
 //      {
-//         tenantId = req.removeParam("tenantId");
-//         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+//         field = entry.getKey();
+//         value = entry.getValue();
 //      }
-
-      String field = null;
-      String value = null;
-
-      for (Map.Entry<String, String> entry : req.getParams().entrySet())
-      {
-         field = entry.getKey();
-         value = entry.getValue();
-      }
-
-      JSNode completion = null;
-      JSNode autoSuggest = null;
-      JSNode payload = null;
-
-      if (type == null || (type != null && !type.equals("wildcard")))
-      {
-         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JSNode("prefix", value, "completion", completion);
-         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
-
-      }
-      else
-      {
-         // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
-         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
-      }
-
-      if (context != null)
-      {
-         completion.put("context", context);
-      }
-
-      List<String> headers = new ArrayList<String>();
-      String url = buildSearchUrlAndHeaders(table, paths, headers);
-
-      res.debug(url + "?pretty", payload.toString(), headers);
-
-      Response r = null;//HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
-
-      if (r.isSuccess())
-      {
-         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
-         JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
-         JSArray resultArray = new JSArray();
-         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
-         {
-            if (context != null)
-            {
-               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
-            }
-            else
-            {
-               resultArray.add(obj.getNode("_source").get(field));
-            }
-         }
-
-         // do a wildcard search of no type was defined.
-         if (resultArray.length() == 0 && type == null)
-         {
-//            if (req.getApi().isMultiTenant())
+//
+//      JSNode completion = null;
+//      JSNode autoSuggest = null;
+//      JSNode payload = null;
+//
+//      if (type == null || (type != null && !type.equals("wildcard")))
+//      {
+//         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+//         autoSuggest = new JSNode("prefix", value, "completion", completion);
+//         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
+//
+//      }
+//      else
+//      {
+//         // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
+//         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+//         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+//         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
+//      }
+//
+//      if (context != null)
+//      {
+//         completion.put("context", context);
+//      }
+//
+//      List<String> headers = new ArrayList<String>();
+//      String url = buildSearchUrlAndHeaders(table, paths, headers);
+//
+//      res.debug(url + "?pretty", payload.toString(), headers);
+//
+//      Response r = null;//HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+//
+//      if (r.isSuccess())
+//      {
+//         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
+//         JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
+//         JSArray resultArray = new JSArray();
+//         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
+//         {
+//            if (context != null)
 //            {
-//               req.withParam("tenantId", tenantId);
+//               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
 //            }
-            handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
-         }
-         else
-         {
-            JSNode data = new JSNode("field", field, "results", resultArray);
-            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-            res.withJson(new JSNode("meta", meta, "data", data));
-         }
-      }
-      else
-      {
-         //throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
-         r.rethrow();
-      }
+//            else
+//            {
+//               resultArray.add(obj.getNode("_source").get(field));
+//            }
+//         }
+//
+//         // do a wildcard search of no type was defined.
+//         if (resultArray.length() == 0 && type == null)
+//         {
+////            if (req.getApi().isMultiTenant())
+////            {
+////               req.withParam("tenantId", tenantId);
+////            }
+//            handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
+//         }
+//         else
+//         {
+//            JSNode data = new JSNode("field", field, "results", resultArray);
+//            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+//            res.withJson(new JSNode("meta", meta, "data", data));
+//         }
+//      }
+//      else
+//      {
+//         //throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+//         r.rethrow();
+//      }
 
    }
 

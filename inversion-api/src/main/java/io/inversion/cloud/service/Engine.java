@@ -39,6 +39,7 @@ import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Db;
 import io.inversion.cloud.model.Endpoint;
 import io.inversion.cloud.model.EngineListener;
 import io.inversion.cloud.model.JSArray;
@@ -170,8 +171,8 @@ public class Engine extends Rule
             List<String> strs = new ArrayList();
             for (Collection c : api.getCollections())
             {
-               if (c.getDb() != null && c.getDb().getCollectionPath() != null)
-                  strs.add(c.getDb().getCollectionPath() + c.getName());
+               if (c.getDb() != null && c.getDb().getEndpointPath() != null)
+                  strs.add(c.getDb().getEndpointPath() + c.getName());
                else
                   strs.add(c.getName());
             }
@@ -356,7 +357,9 @@ public class Engine extends Rule
             return chain;
          }
 
-         if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
+         Url url = req.getUrl();
+
+         if (url.toString().indexOf("/favicon.ico") >= 0)
          {
             res.withStatus(Status.SC_404_NOT_FOUND);
             return chain;
@@ -367,13 +370,11 @@ public class Engine extends Rule
          if (xfp != null || xfh != null)
          {
             if (xfp != null)
-               req.getUrl().withProtocol(xfp);
+               url.withProtocol(xfp);
 
             if (xfh != null)
-               req.getUrl().withHost(xfh);
+               url.withHost(xfh);
          }
-
-         Url url = req.getUrl();
 
          Path parts = new Path(url.getPath());
          String method = req.getMethod();
@@ -416,10 +417,14 @@ public class Engine extends Rule
 
                      for (Collection collection : api.getCollections())
                      {
+                        Db<Db> db = collection.getDb();
+                        if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
+                           continue;
+
                         Path collectionPath = collection.match(method, parts);
                         if (collectionPath != null)
                         {
-                           collectionPath = collectionPath.extract(pathParams, parts);
+                           collectionPath = collectionPath.extract(pathParams, parts, true);
                            req.withCollection(collection, collectionPath);
 
                            break;
@@ -431,8 +436,9 @@ public class Engine extends Rule
                break;
             }
          }
-         
-         req.getUrl().replaceParams(pathParams);
+
+         pathParams.keySet().forEach(param -> url.clearParams(param));
+         url.withParams(pathParams);
 
          //         List<Action> actions = new ArrayList(api.getActions());
          //         actions.addAll(endpoint.getActions());
@@ -458,7 +464,7 @@ public class Engine extends Rule
 
          if (req.getApi() == null)
          {
-            ApiException.throw400BadRequest("No API found matching URL: '%s'", req.getUrl());
+            ApiException.throw400BadRequest("No API found matching URL: '%s'", url);
          }
 
          //         if (req.getEndpoint() == null)
@@ -475,7 +481,7 @@ public class Engine extends Rule
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getIncludePaths() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), req.getUrl(), buff);
+            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), url, buff);
          }
 
          //this will get all actions specifically configured on the endpoint
@@ -484,7 +490,10 @@ public class Engine extends Rule
          for (Action action : req.getEndpoint().getActions())
          {
             Path actionPath = action.match(method, afterApiPath);
-            actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+            if (actionPath != null)
+            {
+               actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+            }
          }
 
          //this matches for actions that can run across multiple endpoints.
@@ -493,7 +502,10 @@ public class Engine extends Rule
          for (Action action : req.getApi().getActions())
          {
             Path actionPath = action.match(method, afterEndpointPath);
-            actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
+            if (actionPath != null)
+            {
+               actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
+            }
          }
 
          if (actions.size() == 0)
@@ -792,7 +804,7 @@ public class Engine extends Rule
       {
          existingApi.shutdown();
       }
-      
+
       return this;
    }
 

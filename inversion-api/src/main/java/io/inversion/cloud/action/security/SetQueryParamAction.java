@@ -31,7 +31,7 @@ public class SetQueryParamAction extends Action<SetQueryParamAction>
    {
       for (String name : params.keySet())
       {
-         req.withParam(name, params.get(name));
+         req.getUrl().withParam(name, params.get(name));
       }
    }
 

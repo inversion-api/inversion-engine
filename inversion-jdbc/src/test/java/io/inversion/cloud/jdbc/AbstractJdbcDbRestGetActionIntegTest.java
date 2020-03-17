@@ -337,6 +337,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       assertTrue(res.findString("data.0.order").endsWith("/orders/10248"));
 
       res = engine.get(url("orders/10248/orderdetails"));
+      res.dump();
       assertTrue(res.find("meta.foundRows") != null);
       assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
       assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10248~42"));
@@ -354,6 +355,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       assertEquals(1, res.getFoundRows());
 
       res = engine.get(url("orders/10248?expands=orderdetails"));
+      res.dump();
       res.assertOk();
       assertTrue(res.findString("data.0.orderdetails.0.href").toLowerCase().endsWith("orderdetails/10248~11"));
       assertTrue(res.findString("data.0.orderdetails.1.href").toLowerCase().endsWith("orderdetails/10248~42"));

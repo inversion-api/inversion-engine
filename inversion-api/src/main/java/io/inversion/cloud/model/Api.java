@@ -56,26 +56,15 @@ public class Api extends Rule
       withName(name);
    }
 
-   @Override
-   public Path match(Path path)
+   public Path getDefaultIncludes()
    {
-      if (includePaths.size() == 0 && excludePaths.size() == 0)
+      List parts = new ArrayList();
+      if (name != null)
       {
-         synchronized (this)
-         {
-            if (includePaths.size() == 0 && excludePaths.size() == 0)
-            {
-               List parts = new ArrayList();
-               if (name != null)
-               {
-                  parts.add(name);
-               }
-               parts.add("*");
-               includePaths.add(new Path(parts));
-            }
-         }
+         parts.add(name);
       }
-      return super.match(path);
+      parts.add("*");
+      return new Path(parts);
    }
 
    public synchronized Api startup()
@@ -258,14 +247,11 @@ public class Api extends Rule
       return new ArrayList(endpoints);
    }
 
-   public Api withEndpoint(String methods, String pathExpression, Action... actions)
-   {
-      return withEndpoint(methods, pathExpression, null, actions);
-   }
 
-   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
+
+   public Api withEndpoint(String methods, String includePaths, Action... actions)
    {
-      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, actions);
+      Endpoint endpoint = new Endpoint(methods, includePaths, actions);
       withEndpoint(endpoint);
       return this;
    }

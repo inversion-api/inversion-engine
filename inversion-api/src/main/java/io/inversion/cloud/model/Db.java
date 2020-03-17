@@ -33,11 +33,11 @@ import io.inversion.cloud.utils.Utils;
 
 public abstract class Db<T extends Db>
 {
-   protected final  Logger      log            = LoggerFactory.getLogger(getClass());
+   protected final Logger          log           = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean      started        = false;
-   transient volatile boolean      starting       = false;
-   transient volatile boolean      shutdown       = false;
+   transient volatile boolean      started       = false;
+   transient volatile boolean      starting      = false;
+   transient volatile boolean      shutdown      = false;
 
    /**
     * A CSV of pipe delimited table name to collection pairs
@@ -48,16 +48,16 @@ public abstract class Db<T extends Db>
     * 
     * Example: db.includeTables=orders,users,events
     */
-   protected Map<String, String>   includeTables  = new HashMap();
+   protected Map<String, String>   includeTables = new HashMap();
 
-   protected boolean               bootstrap      = true;
+   protected boolean               bootstrap     = true;
 
-   protected String                name           = null;
-   protected String                type           = null;
+   protected String                name          = null;
+   protected String                type          = null;
 
-   protected String                collectionPath = null;
+   protected Path                  endpointPath  = null;
 
-   protected ArrayList<Collection> collections    = new ArrayList();
+   protected ArrayList<Collection> collections   = new ArrayList();
 
    public Db()
    {
@@ -209,9 +209,6 @@ public abstract class Db<T extends Db>
          if (!coll.isLinkTbl() && !coll.isExclude())
          {
             api.withCollection(coll);
-
-            if (getCollectionPath() != null)
-               coll.withIncludePaths(getCollectionPath());
          }
       }
 
@@ -709,17 +706,14 @@ public abstract class Db<T extends Db>
       return (T) this;
    }
 
-   public String getCollectionPath()
+   public Path getEndpointPath()
    {
-      return collectionPath;
+      return endpointPath;
    }
 
-   public T withCollectionPath(String collectionPath)
+   public T withEndpointPath(Path endpointPath)
    {
-      if (collectionPath != null && !collectionPath.endsWith("/"))
-         collectionPath += "/";
-
-      this.collectionPath = collectionPath;
+      this.endpointPath = endpointPath;
       return (T) this;
    }
 
