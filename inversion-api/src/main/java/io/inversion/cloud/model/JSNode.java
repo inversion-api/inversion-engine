@@ -93,7 +93,7 @@ public class JSNode implements Map<String, Object>
          Object theirVal = diffAgainst.get(key);
 
          if (myVal == null && theirVal != null)
-            patches.add(new JSNode("op", "remove", "path", Utils.implode(".", path, key), myVal));
+            patches.add(new JSNode("op", "remove", "path", Utils.implode(".", path, key)));
       }
 
       return patches;
@@ -111,7 +111,7 @@ public class JSNode implements Map<String, Object>
       }
       else if (myVal == null && theirVal != null)
       {
-         patches.add(new JSNode("op", "remove", "path", path, myVal));
+         patches.add(new JSNode("op", "remove", "path", path));
       }
       else if (!myVal.getClass().equals(theirVal.getClass()))
       {
