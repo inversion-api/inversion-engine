@@ -24,7 +24,7 @@ public class Validation
 
    public Validation(Request req, String propOrPath, String customErrorMessage)
    {
-      value = req.getParam(propOrPath);
+      value = req.getUrl().getParam(propOrPath);
       if (value == null && req.getJson() != null)
          value = req.getJson().find(propOrPath);
 

@@ -96,7 +96,7 @@ public class AclRule extends Rule<AclRule>
 
    public boolean ruleMatches(Request req)
    {
-      if (!matches(req.getMethod(), req.getPath()))
+      if (match(req.getMethod(), req.getPath()) == null)
          return false;
 
       //short cut 

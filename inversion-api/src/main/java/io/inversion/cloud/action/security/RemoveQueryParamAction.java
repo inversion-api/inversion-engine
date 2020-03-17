@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.action.security;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
+import io.inversion.cloud.utils.Utils;
 
 public class RemoveQueryParamAction extends Action<SetQueryParamAction>
 {
@@ -32,13 +32,7 @@ public class RemoveQueryParamAction extends Action<SetQueryParamAction>
    {
       for (String removedParam : params)
       {
-         for (String param : req.getParams().keySet())
-         {
-            if (containsParam(removedParam, param))
-            {
-               req.removeParam(param);
-            }
-         }
+         req.getUrl().clearParams(removedParam);
       }
    }
 
@@ -46,22 +40,6 @@ public class RemoveQueryParamAction extends Action<SetQueryParamAction>
    {
       params.add(name);
       return this;
-   }
-
-   /**
-    * Checks for a whole word case insensitive match of <code>findThisParamName</code>
-    * in <code>inThisString</code>
-    * 
-    * https://www.baeldung.com/java-regexp-escape-char
-    * https://stackoverflow.com/questions/7459263/regex-whole-word
-    * 
-    * @param findThisParamName
-    * @param inThisString
-    */
-   public static boolean containsParam(String findThisParamName, String inThisString)
-   {
-      String regex = "\\b\\Q" + findThisParamName + "\\E\\b";
-      return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(inThisString).find();
    }
 
 }

@@ -16,12 +16,28 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import java.util.*;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Url;
+import io.inversion.cloud.model.User;
+import io.inversion.cloud.utils.Utils;
 
 public class Chain
 {
@@ -147,7 +163,7 @@ public class Chain
       if (!url.endsWith("/"))
          url += "/";
 
-      if (collection == req.getCollection())
+      if (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb())//
       {
          //going after the same collection...so must be going after the same endpoint
          //so get the endpoint path from the current request and ame sure it is on the url.
@@ -159,28 +175,45 @@ public class Chain
             url += epp + "/";
          }
       }
-      else if (collection != null && collection.getIncludePaths().size() > 0)
+      else if (collection.getDb().getEndpointPath() != null)
       {
-         String collectionPath = (String) collection.getIncludePaths().get(0).toString();
-         if (collectionPath.indexOf("*") > -1)
-            collectionPath = collectionPath.substring(0, collectionPath.indexOf("*"));
+         Path epP = collection.getDb().getEndpointPath();
 
-         url += collectionPath;
-         if (!url.endsWith("/"))
-            url += "/";
-      }
-      else if (collection != null //
-            && collection.getIncludePaths().size() == 0 //
-            && Chain.peek().getRequest().getCollection() != null //
-            && collection.getDb() == Chain.peek().getRequest().getCollection().getDb() //
-            && Chain.peek().getRequest().getEndpointPath() != null)
-      {
-         //-- reuse the current endpoint path if linking to the same DB as the
-         //-- inbound call and one was not configured on the target collection.
+         for (int i = 0; i < epP.size(); i++)
+         {
+            if (epP.isWildcard(i))
+               break;
 
-         url += Chain.peek().getRequest().getEndpointPath();
-         if (!url.endsWith("/"))
-            url += "/";
+            if (epP.isVar(i))
+            {
+               String value = null;
+               String name = epP.getVar(i);
+               switch (name.toLowerCase())
+               {
+                  case "collection":
+                     value = collection.getName();
+                     break;
+                  case "entity":
+                     value = entityKey + "";
+                     break;
+                  case "relationship":
+                     value = subCollectionKey;
+                     break;
+                  default :
+                     value = req.getUrl().getParam(name);
+               }
+               if (value == null)
+                  ApiException.throw500InternalServerError("Unable to determine path for link to collection '%s', entity '%s', relationship '%s'", collection.getName(), entityKey + "", subCollectionKey + "");
+
+               url += epP.get(i) + "/";
+            }
+            else
+            {
+               url += epP.get(i) + "/";
+            }
+         }
+
+         url += collection.getDb().getEndpointPath() + "/";
       }
 
       if (!Utils.empty(collectionKey))
@@ -220,49 +253,49 @@ public class Chain
       return url;
    }
 
-   public static String buildLink(String collectionKey, String entityKey)
-   {
-      Request req = Chain.peek().getRequest();
-      String url = req.getUrl().toString();
-      if (url.indexOf("?") >= 0)
-         url = url.substring(0, url.indexOf("?"));
-
-      if (req.getSubCollectionKey() != null)
-      {
-         url = url.substring(0, url.lastIndexOf("/"));
-      }
-
-      if (req.getEntityKey() != null)
-      {
-         url = url.substring(0, url.lastIndexOf("/"));
-      }
-
-      if (collectionKey != null && req.getCollectionKey() != null)
-      {
-         url = url.substring(0, url.lastIndexOf("/"));
-      }
-
-      if (collectionKey != null)
-         url += "/" + collectionKey;
-
-      if (entityKey != null)
-         url += "/" + entityKey;
-
-      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-      {
-         String newUrl = req.getApi().getUrl();
-         while (newUrl.endsWith("/"))
-            newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-         url = newUrl + url.substring(url.indexOf("/", 8));
-      }
-
-      return url;
-
-   }
+   //   public static String buildLink(String collectionKey, String entityKey)
+   //   {
+   //      Request req = Chain.peek().getRequest();
+   //      String url = req.getUrl().toString();
+   //      if (url.indexOf("?") >= 0)
+   //         url = url.substring(0, url.indexOf("?"));
+   //
+   //      if (req.getRelationshipKey() != null)
+   //      {
+   //         url = url.substring(0, url.lastIndexOf("/"));
+   //      }
+   //
+   //      if (req.getEntityKey() != null)
+   //      {
+   //         url = url.substring(0, url.lastIndexOf("/"));
+   //      }
+   //
+   //      if (collectionKey != null && req.getCollectionKey() != null)
+   //      {
+   //         url = url.substring(0, url.lastIndexOf("/"));
+   //      }
+   //
+   //      if (collectionKey != null)
+   //         url += "/" + collectionKey;
+   //
+   //      if (entityKey != null)
+   //         url += "/" + entityKey;
+   //
+   //      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
+   //      {
+   //         String newUrl = req.getApi().getUrl();
+   //         while (newUrl.endsWith("/"))
+   //            newUrl = newUrl.substring(0, newUrl.length() - 1);
+   //
+   //         url = newUrl + url.substring(url.indexOf("/", 8));
+   //      }
+   //
+   //      return url;
+   //
+   //   }
 
    protected Engine             engine   = null;
-   protected List<Action>       actions  = new ArrayList();
+   protected List<ActionMatch>  actions  = new ArrayList();
    protected Request            request  = null;
    protected Response           response = null;
 
@@ -372,7 +405,7 @@ public class Chain
 
       for (int i = next - 1; i >= 0; i--)
       {
-         value = actions.get(i).getConfig(key);
+         value = actions.get(i).action.getConfig(key);
          if (value != null)
          {
             value = value.toLowerCase();
@@ -380,7 +413,7 @@ public class Chain
          }
       }
 
-      value = request.getParam(key);
+      value = request.getUrl().getParam(key);
       if (value != null)
       {
          value = value.toLowerCase();
@@ -412,7 +445,7 @@ public class Chain
       Set<String> keys = request.getEndpoint().getConfigKeys();
       for (int i = next - 1; i >= 0; i--)
       {
-         keys.addAll(actions.get(i).getConfigKeys());
+         keys.addAll(actions.get(i).action.getConfigKeys());
       }
 
       return keys;
@@ -456,12 +489,15 @@ public class Chain
 
       for (int i = next - 1; i >= 0; i--)
       {
-         value = actions.get(i).getConfig(key);
+         value = actions.get(i).action.getConfig(key);
          if (!Utils.empty(value))
          {
             return value;
          }
       }
+
+      System.out.println(request.getEndpoint());
+      System.out.println(key);
 
       value = request.getEndpoint().getConfig(key);
       if (!Utils.empty(value))
@@ -484,9 +520,9 @@ public class Chain
    {
       if (!isCanceled() && next < actions.size())
       {
-         Action action = actions.get(next);
+         ActionMatch actionMatch = actions.get(next);
          next += 1;
-         action.run(request, response);
+         actionMatch.action.run(request, response);
          return true;
       }
       return false;
@@ -517,22 +553,21 @@ public class Chain
       return request.getEndpoint();
    }
 
-   public List<Action> getActions()
+   public List<ActionMatch> getActions()
    {
       return new ArrayList(actions);
    }
 
-   public Chain withActions(List<Action> actions)
+   public Chain withActions(List<ActionMatch> actions)
    {
-      this.actions.clear();
-      for (Action action : actions)
+      for (ActionMatch action : actions)
       {
          withAction(action);
       }
       return this;
    }
 
-   public Chain withAction(Action action)
+   public Chain withAction(ActionMatch action)
    {
       if (action != null && !actions.contains(action))
          actions.add(action);
@@ -548,6 +583,32 @@ public class Chain
    public Response getResponse()
    {
       return response;
+   }
+
+   public static class ActionMatch implements Comparable<ActionMatch>
+   {
+      Path   rule   = null;
+      Path   path   = null;
+      Action action = null;
+
+      public ActionMatch(Path rule, Path path, Action action)
+      {
+         super();
+         this.rule = rule;
+         this.path = path;
+         this.action = action;
+      }
+
+      @Override
+      public int compareTo(ActionMatch o)
+      {
+         return action.compareTo(o.action);
+      }
+
+      public String toString()
+      {
+         return rule + " " + path + " " + action;
+      }
    }
 
 }

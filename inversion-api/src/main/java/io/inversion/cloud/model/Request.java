@@ -16,47 +16,50 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.HttpUtils;
+import io.inversion.cloud.utils.Utils;
+
 public class Request
 {
-   protected Chain                                  chain            = null;
+   protected Chain                                  chain          = null;
 
-   protected String                                 referrer         = null;
-   protected String                                 remoteAddr       = null;
-   protected ArrayListValuedHashMap<String, String> headers          = new ArrayListValuedHashMap();
+   protected String                                 referrer       = null;
+   protected String                                 remoteAddr     = null;
+   protected ArrayListValuedHashMap<String, String> headers        = new ArrayListValuedHashMap();
 
-   protected Url                                    url              = null;
-   protected String                                 method           = null;
+   protected Url                                    url            = null;
+   protected String                                 method         = null;
 
-   protected Engine                                 engine           = null;
-   protected Api                                    api              = null;
-   protected Path                                   apiPath          = null;
-   protected String                                 tenant           = null;
+   protected Engine                                 engine         = null;
+   protected Api                                    api            = null;
+   protected Path                                   apiPath        = null;
+   protected String                                 tenant         = null;
 
-   protected Path                                   endpointPath     = null;
-   protected Endpoint                               endpoint         = null;
+   protected Path                                   endpointPath   = null;
+   protected Endpoint                               endpoint       = null;
 
-   protected Collection                             collection       = null;
-   protected String                                 collectionKey    = null;
-   protected String                                 entityKey        = null;
-   protected String                                 subCollectionKey = null;
+   protected Collection                             collection     = null;
+   protected Path                                   collectionPath = null;
 
-   protected String                                 body             = null;
-   protected JSNode                                 json             = null;
+   protected String                                 body           = null;
+   protected JSNode                                 json           = null;
 
-   protected Uploader                               uploader         = null;
+   protected Uploader                               uploader       = null;
 
-   protected int                                    retryAttempts    = -1;
+   protected int                                    retryAttempts  = -1;
+
+   public Request()
+   {
+
+   }
 
    public Request(String method, String url)
    {
@@ -130,37 +133,6 @@ public class Request
       {
          return HttpUtils.rest(getMethod(), getUrl().toString(), getBody(), headers, -1).get();
       }
-
-      //      String url = this.url.toString();
-      //      if (url.indexOf("?") < 0)
-      //         url += "?";
-      //      else if (!url.endsWith("&"))
-      //         url += "&";
-      //
-      //      List<String> keys = new ArrayList(params.keySet());
-      //      for (int i = 0; i < keys.size(); i++)
-      //      {
-      //         String key = keys.get(i);
-      //         String value = params.getString(key);
-      //
-      //         url += key;
-      //
-      //         if (!Utils.empty(value))
-      //            url += "=" + value;
-      //
-      //         if (i < keys.size() - 1)
-      //            url += "&";
-      //      }
-      //
-      //      if (service != null)
-      //      {
-      //         return service.service(method, url, body);
-      //      }
-      //      else
-      //      {
-      //         //Web.rest()
-      //         return null;
-      //      }
    }
 
    public Engine getEngine()
@@ -208,6 +180,7 @@ public class Request
     */
    public boolean hasCollectionKey(String... collectionKeys)
    {
+      String collectionKey = getCollectionKey();
       if (collectionKey != null)
       {
          for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
@@ -223,9 +196,10 @@ public class Request
       return false;
    }
 
-   public Request withCollection(Collection collection)
+   public Request withCollection(Collection collection, Path collectionPath)
    {
       this.collection = collection;
+      this.collectionPath = collectionPath;
       return this;
    }
 
@@ -234,15 +208,20 @@ public class Request
       return endpoint;
    }
 
-   public Request withEndpoint(Endpoint endpoint)
+   public Request withEndpoint(Endpoint endpoint, Path endpointPath)
    {
       this.endpoint = endpoint;
+      this.endpointPath = endpointPath;
       return this;
    }
 
    public boolean isDebug()
    {
-      if (getUrl().toString().indexOf("://localhost") > 0)
+      String url = getUrl().toString();
+      if (url.indexOf("://localhost/") > 0)
+         return true;
+
+      if (url.indexOf("://127.0.0.1/") > 0)
          return true;
 
       if (getApi() != null)
@@ -253,7 +232,7 @@ public class Request
 
    public boolean isExplain()
    {
-      String str = getParam("explain");
+      String str = url.getParam("explain");
       boolean explain = isDebug() && !Utils.empty(str) && !"false".equalsIgnoreCase(str.trim());
       return explain;
    }
@@ -330,33 +309,6 @@ public class Request
    {
       this.json = json;
       return this;
-   }
-
-   public String getParam(String name)
-   {
-      return url.getParam(name);
-   }
-
-   public Request withParam(String name, String value)
-   {
-      url.withParam(name, value);
-      return this;
-   }
-
-   public Map<String, String> getParams()
-   {
-      Map<String, String> params = url.getParams();
-      return params;
-   }
-
-   public String removeParam(String param)
-   {
-      return url.removeParam(param);
-   }
-
-   public void clearParams()
-   {
-      url.clearParams();
    }
 
    /**
@@ -480,17 +432,12 @@ public class Request
       return subpath;
    }
 
-   public String getQuery()
-   {
-      return url.getQuery();
-   }
-
    /**
     * @return the collectionKey
     */
    public String getCollectionKey()
    {
-      return collectionKey;
+      return url.getParam("collection");
    }
 
    /**
@@ -498,24 +445,18 @@ public class Request
     */
    public String getEntityKey()
    {
-      return entityKey;
+      return url.getParam("entity");
    }
 
-   public Request withCollectionKey(String collectionKey)
+   public String getRelationshipKey()
    {
-      this.collectionKey = collectionKey;
-      return this;
+      return url.getParam("relationship");
    }
 
-   public Request withEntityKey(String entityKey)
-   {
-      this.entityKey = entityKey;
-      return this;
-   }
-
-   public Request withApi(Api api)
+   public Request withApi(Api api, Path apiPath)
    {
       this.api = api;
+      this.apiPath = apiPath;
       return this;
    }
 
@@ -530,43 +471,9 @@ public class Request
       return apiPath;
    }
 
-   public Request withApiPath(Path apiPath)
-   {
-      this.apiPath = apiPath;
-      return this;
-   }
-
    public Path getEndpointPath()
    {
       return endpointPath;
-   }
-
-   public Request withEndpointPath(Path endpointPath)
-   {
-      this.endpointPath = endpointPath;
-      return this;
-   }
-
-   public String getTenant()
-   {
-      return tenant;
-   }
-
-   public Request withTenant(String tenant)
-   {
-      this.tenant = tenant;
-      return this;
-   }
-
-   public String getSubCollectionKey()
-   {
-      return subCollectionKey;
-   }
-
-   public Request withSubCollectionKey(String subCollectionKey)
-   {
-      this.subCollectionKey = subCollectionKey;
-      return this;
    }
 
    public int getRetryAttempts()
@@ -633,6 +540,11 @@ public class Request
       return new Validation(this, propOrJsonPath, customErrorMessage);
    }
 
+   public List<Upload> getUploads()
+   {
+      return uploader.getUploads();
+   }
+
    public static interface Uploader
    {
       public List<Upload> getUploads();
@@ -696,156 +608,4 @@ public class Request
 
    }
 
-   public List<Upload> getUploads()
-   {
-      return uploader.getUploads();
-   }
-
-   public Request withTerm(String token, Object... terms)
-   {
-      url.withParam(Term.term(null, token, terms).toString(), null);
-      return this;
-   }
-
-   //   public RequestBuilder pop()
-   //   {
-   //      return getParent();
-   //   }
-   //   public RequestBuilder if()
-   //   {
-   //      Term or = term(this, "if");
-   //      return or;
-   //   }
-   //
-   //   public RequestBuilder and()
-   //   {
-   //      Term or = term(this, "and");
-   //      return or;
-   //   }
-   //
-   //   public RequestBuilder or()
-   //   {
-   //      Term or = term(this, "or");
-   //      return or;
-   //   }
-
-   public Request val(String value)
-   {
-      return withTerm(value);
-   }
-
-   public Request offset(int offset)
-   {
-      return withTerm("offset", offset);
-   }
-
-   public Request limit(int limit)
-   {
-      return withTerm("limit", limit);
-   }
-
-   public Request page(int page)
-   {
-      return withTerm("page", page);
-   }
-
-   public Request pageNum(int pageNum)
-   {
-      return withTerm("pageNum", pageNum);
-   }
-
-   public Request pageSize(int pageSize)
-   {
-      return withTerm("pageSize", pageSize);
-   }
-
-   public Request order(String... order)
-   {
-      return withTerm("order", (Object[]) order);
-   }
-
-   public Request eq(String field, String value)
-   {
-      return withTerm("eq", field, value);
-   }
-
-   public Request ne(String field, String value)
-   {
-      return withTerm("ne", field, value);
-   }
-
-   public Request nn(String field)
-   {
-      return withTerm("nn", field);
-   }
-
-   public Request n(String field)
-   {
-      return withTerm("n", field);
-   }
-
-   public Request like(String field, String value)
-   {
-      return withTerm("like", field, value);
-   }
-
-   public Request w(String field, String value)
-   {
-      return withTerm("w", field, value);
-   }
-
-   public Request sw(String field, String value)
-   {
-      return withTerm("sw", field, value);
-   }
-
-   public Request lt(String field, String value)
-   {
-      return withTerm("lt", field, value);
-   }
-
-   public Request le(String field, String value)
-   {
-      return withTerm("le", field, value);
-   }
-
-   public Request gt(String field, String value)
-   {
-      return withTerm("gt", field, value);
-   }
-
-   public Request ge(String field, String value)
-   {
-      return withTerm("ge", field, value);
-   }
-
-   public Request in(String field, String... values)
-   {
-      return withTerm("in", field, values);
-   }
-
-   public Request out(String field, String... values)
-   {
-      return withTerm("out", field, values);
-   }
-
-   public Request w(String field, String... values)
-   {
-      return withTerm("w", field, values);
-   }
-
-   public Request wo(String field, String... values)
-   {
-      return withTerm("wo", field, values);
-   }
-
-   public Request emp(String field, String... values)
-   {
-      return withTerm("emp", field, values);
-   }
-
-   public Request nemp(String field, String... values)
-   {
-      return withTerm("nemp", field, values);
-   }
 }

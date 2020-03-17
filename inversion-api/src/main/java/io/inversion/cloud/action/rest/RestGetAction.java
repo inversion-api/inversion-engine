@@ -50,17 +50,17 @@ public class RestGetAction extends Action<RestGetAction>
    @Override
    public void run(Request req, Response res) throws Exception
    {
-      if (req.getSubCollectionKey() != null)
+      if (req.getRelationshipKey() != null)
       {
          //-- all URLs with a subcollection key will be rewritten and  
          //-- internally forwarded to the non-subcollection form.
 
          String entityKey = req.getEntityKey();
          Collection collection = req.getCollection();
-         Relationship rel = collection.getRelationship(req.getSubCollectionKey());
+         Relationship rel = collection.getRelationship(req.getRelationshipKey());
 
          if (rel == null)
-            ApiException.throw404NotFound("'%s' is not a valid relationship", req.getSubCollectionKey());
+            ApiException.throw404NotFound("'%s' is not a valid relationship", req.getRelationshipKey());
 
          String newHref = null;
 
@@ -145,7 +145,7 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<JSNode> results = select(req, req.getCollection(), req.getParams(), req.getApi());
+      Results<JSNode> results = select(req, req.getCollection(), req.getUrl().getParams(), req.getApi());
 
       if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
       {
@@ -861,23 +861,13 @@ public class RestGetAction extends Action<RestGetAction>
    public static String stripTerms(String url, String... tokens)
    {
       Url u = new Url(url);
-      RqlParser p = new RqlParser();
 
-      Map<String, String> params = u.getParams();
-      for (String key : params.keySet())
+      for (int i = 0; tokens != null && i < tokens.length; i++)
       {
-         Term t = p.parse(key);
-
-         for (String token : tokens)
+         String token = tokens[i];
+         if (token != null)
          {
-            if (key.equalsIgnoreCase(token) //
-                  || (t.hasToken("eq") && token.equalsIgnoreCase(t.getToken(0))) //
-                  || t.getToken().equalsIgnoreCase(token)//
-            )
-            {
-               u.removeParam(key);
-               break;
-            }
+            u.clearParams(token);
          }
       }
 

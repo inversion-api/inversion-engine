@@ -16,23 +16,45 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.Pluralizer;
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
-public class Engine
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.ApiListener;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Db;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.EngineListener;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rule;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.model.Url;
+import io.inversion.cloud.service.Chain.ActionMatch;
+import io.inversion.cloud.utils.Configurator;
+import io.inversion.cloud.utils.Utils;
+
+public class Engine extends Rule
 {
    protected transient volatile boolean     started        = false;
    protected transient volatile boolean     starting       = false;
@@ -46,12 +68,6 @@ public class Engine
    protected ResourceLoader                 resourceLoader = null;
 
    protected Configurator                   configurator   = new Configurator();
-
-   /**
-    * Must be set to match your servlet path if your servlet is not 
-    * mapped to /*
-    */
-   protected Path                           servletMapping = null;
 
    /**
     * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
@@ -149,14 +165,14 @@ public class Engine
 
             for (Endpoint e : api.getEndpoints())
             {
-               System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               //System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
             }
 
             List<String> strs = new ArrayList();
             for (Collection c : api.getCollections())
             {
-               if (c.getDb().getCollectionPath() != null)
-                  strs.add(c.getDb().getCollectionPath() + c.getName());
+               if (c.getDb() != null && c.getDb().getEndpointPath() != null)
+                  strs.add(c.getDb().getEndpointPath() + c.getName());
                else
                   strs.add(c.getName());
             }
@@ -341,7 +357,9 @@ public class Engine
             return chain;
          }
 
-         if (req.getUrl().toString().indexOf("/favicon.ico") >= 0)
+         Url url = req.getUrl();
+
+         if (url.toString().indexOf("/favicon.ico") >= 0)
          {
             res.withStatus(Status.SC_404_NOT_FOUND);
             return chain;
@@ -352,137 +370,84 @@ public class Engine
          if (xfp != null || xfh != null)
          {
             if (xfp != null)
-               req.getUrl().withProtocol(xfp);
+               url.withProtocol(xfp);
 
             if (xfh != null)
-               req.getUrl().withHost(xfh);
+               url.withHost(xfh);
          }
 
-         Url url = req.getUrl();
+         Path parts = new Path(url.getPath());
+         String method = req.getMethod();
 
-         Path urlPath = url.getPath();
-         List<String> parts = urlPath.parts();
+         Map<String, String> pathParams = new HashMap();
 
-         List<String> apiPath = new ArrayList();
+         Path containerPath = match(method, parts);
 
-         if (servletMapping != null)
+         if (containerPath == null)
+            ApiException.throw400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
+
+         if (containerPath != null)
+            containerPath = containerPath.extract(pathParams, parts);
+
+         Path afterContainerPath = new Path(parts);
+         Path afterApiPath = null;
+         Path afterEndpointPath = null;
+
+         for (Api api : apis)
          {
-            for (String servletPathPart : servletMapping.parts())
+            Path apiPath = api.match(method, parts);
+
+            if (apiPath != null)
             {
-               if (!servletPathPart.equalsIgnoreCase(parts.get(0)))
+               apiPath = apiPath.extract(pathParams, parts);
+               req.withApi(api, apiPath);
+
+               afterApiPath = new Path(parts);
+
+               for (Endpoint endpoint : api.getEndpoints())
                {
-                  //the inbound URL does not match the expected servletMapping
-                  //this may be becuse you are localhost testing...going to 
-                  //optimistically skip 
-                  break;
-               }
-               apiPath.add(servletPathPart);
-               parts.remove(0);
-            }
-         }
+                  Path endpointPath = endpoint.match(req.getMethod(), parts);
 
-         for (Api a : apis)
-         {
-            if (!((parts.size() == 0 && apis.size() == 1) //
-                  || (apis.size() == 1 && a.getName() == null) //if you only have 1 API, you don't have to have an API code
-                  || (parts.size() > 0 && parts.get(0).equalsIgnoreCase(a.getName()) && (a.getVersion() == null || (parts.size() > 1 && a.getVersion().equalsIgnoreCase(parts.get(1)))))//
-            ))
-               continue;
-
-            req.withApi(a);
-
-            if (parts.size() > 0 && parts.get(0).equalsIgnoreCase((a.getName())))
-            {
-               apiPath.add(parts.remove(0));
-            }
-            /*
-            This API is the correct version. Remove version from parts so the correct endpoint can be applied. 
-             */
-            if (a.getVersion() != null)
-            {
-               String version = parts.remove(0);
-               apiPath.add(version);
-               //todo add version to request
-//               req.withVersion(version);
-            }
-
-            if (a.isMultiTenant() && parts.size() > 0)
-            {
-               String tenant = parts.remove(0);
-               apiPath.add(tenant);
-               req.withTenant(tenant);
-            }
-
-            req.withApiPath(new Path(apiPath));
-
-            Path remainingPath = new Path(parts); //find the endpoint that matches the fewest path segments
-            for (int i = 0; i <= parts.size(); i++)
-            {
-               Path endpointPath = new Path(i == 0 ? Collections.EMPTY_LIST : parts.subList(0, i));
-               for (Endpoint e : a.getEndpoints())
-               {
-                  if (e.matches(req.getMethod(), endpointPath, remainingPath.subpath(i, remainingPath.size())))
+                  if (endpointPath != null)
                   {
-                     req.withEndpointPath(endpointPath);
-                     req.withEndpoint(e);
+                     endpointPath = endpointPath.extract(pathParams, parts);
+                     req.withEndpoint(endpoint, endpointPath);
 
-                     if (i < parts.size())
+                     afterEndpointPath = new Path(parts);
+
+                     for (Collection collection : api.getCollections())
                      {
-                        String collectionKey = parts.get(i);
+                        Db<Db> db = collection.getDb();
+                        if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
+                           continue;
 
-                        req.withCollectionKey(collectionKey);
-                        i += 1;
-
-                        for (Collection collection : a.getCollections())
+                        Path collectionPath = collection.match(method, parts);
+                        if (collectionPath != null)
                         {
-                           if (collection.hasName(collectionKey)//
-                                 && (collection.getIncludePaths().size() > 0 //
-                                       || collection.getExcludePaths().size() > 0))
-                           {
-                              if (collection.matchesPath(endpointPath))
-                              {
-                                 req.withCollection(collection);
-                                 break;
-                              }
-                           }
-                        }
+                           collectionPath = collectionPath.extract(pathParams, parts, true);
+                           req.withCollection(collection, collectionPath);
 
-                        if (req.getCollection() == null)
-                        {
-                           for (Collection collection : a.getCollections())
-                           {
-                              if (collection.hasName(collectionKey) //
-                                    && collection.getIncludePaths().size() == 0 //
-                                    && collection.getExcludePaths().size() == 0)
-                              {
-                                 req.withCollection(collection);
-                                 break;
-                              }
-                           }
+                           break;
                         }
-
-                     }
-                     if (i < parts.size())
-                     {
-                        req.withEntityKey(parts.get(i));
-                        i += 1;
-                     }
-                     if (i < parts.size())
-                     {
-                        req.withSubCollectionKey(parts.get(i));
                      }
                      break;
                   }
                }
-
-               if (req.getEndpoint() != null)
-                  break;
+               break;
             }
          }
 
+         pathParams.keySet().forEach(param -> url.clearParams(param));
+         url.withParams(pathParams);
+
+         //         List<Action> actions = new ArrayList(api.getActions());
+         //         actions.addAll(endpoint.getActions());
+         //         
+         //         Collections.sort(actions);
+
          //---------------------------------
 
-         if (req.getEndpoint() == null || req.getUrl().getHost().equals("localhost"))
+         if (req.getEndpoint() == null || req.isDebug())
          {
             res.debug("");
             res.debug("");
@@ -499,44 +464,48 @@ public class Engine
 
          if (req.getApi() == null)
          {
-            //ApiException.throw404NotFound("No API found matching URL: '%s'", req.getUrl());
-            ApiException.throw400BadRequest("No API found matching URL: '%s'", req.getUrl());
+            ApiException.throw400BadRequest("No API found matching URL: '%s'", url);
          }
 
-         if (req.getEndpoint() == null)
-         {
-            //check to see if a non plural version of the collection endpoint 
-            //was passed in, if it was redirect to the plural version
-            if (redirectPlural(req, res))
-               return chain;
-         }
+         //         if (req.getEndpoint() == null)
+         //         {
+         //            //check to see if a non plural version of the collection endpoint 
+         //            //was passed in, if it was redirect to the plural version
+         //            if (redirectPlural(req, res))
+         //               return chain;
+         //         }
 
          if (req.getEndpoint() == null)
          {
             String buff = "";
             for (Endpoint e : req.getApi().getEndpoints())
-               buff += e.getMethods() + " path: " + e.getPath() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+               buff += e.getMethods() + " path: " + e.getIncludePaths() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), req.getUrl(), buff);
+            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), url, buff);
          }
 
-         //         if (Utils.empty(req.getCollectionKey()))
-         //         {
-         //            throw new ApiException(SC.SC_400_BAD_REQUEST, "It looks like your collectionKey is empty.  You need at least one more part to your url request path.");
-         //         }
-
          //this will get all actions specifically configured on the endpoint
-         List<Action> actions = req.getEndpoint().getActions(req);
+         List<ActionMatch> actions = new ArrayList();
+
+         for (Action action : req.getEndpoint().getActions())
+         {
+            Path actionPath = action.match(method, afterApiPath);
+            if (actionPath != null)
+            {
+               actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+            }
+         }
 
          //this matches for actions that can run across multiple endpoints.
          //this might be something like an authorization or logging action
          //that acts like a filter
-         for (Action a : req.getApi().getActions())
+         for (Action action : req.getApi().getActions())
          {
-            //http://host/{apipath}/{endpointpath}/{subpath}
-            //since these actions were not assigned to 
-            if (a.matches(req.getMethod(), req.getPath()))
-               actions.add(a);
+            Path actionPath = action.match(method, afterEndpointPath);
+            if (actionPath != null)
+            {
+               actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
+            }
          }
 
          if (actions.size() == 0)
@@ -584,13 +553,13 @@ public class Engine
             }
 
             status = ((ApiException) ex).getStatus();
-            if (Status.SC_404_NOT_FOUND.equals(status))
-            {
-               //an endpoint could have match the url "such as GET * but then not 
-               //known what to do with the URL because the collection was not pluralized
-               if (redirectPlural(req, res))
-                  return chain;
-            }
+            //            if (Status.SC_404_NOT_FOUND.equals(status))
+            //            {
+            //               //an endpoint could have match the url "such as GET * but then not 
+            //               //known what to do with the URL because the collection was not pluralized
+            //               if (redirectPlural(req, res))
+            //                  return chain;
+            //            }
          }
          else
          {
@@ -672,7 +641,7 @@ public class Engine
     * @param actions
     * @throws Exception
     */
-   protected void run(Chain chain, List<Action> actions) throws Exception
+   protected void run(Chain chain, List<ActionMatch> actions) throws Exception
    {
       chain.withActions(actions).go();
    }
@@ -747,41 +716,41 @@ public class Engine
       }
    }
 
-   boolean redirectPlural(Request req, Response res)
-   {
-      String collection = req.getCollectionKey();
-      if (!Utils.empty(collection))
-      {
-         String plural = Pluralizer.plural(collection);
-         if (!plural.equals(collection))
-         {
-            String path = req.getPath().toString();
-            path = path.replaceFirst(collection, plural);
-            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
-            if (rightEndpoint != null)
-            {
-               String redirect = req.getUrl().toString();
-               //redirect = req.getHttpServletRequest().getRequest
-               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
+   //   boolean redirectPlural(Request req, Response res)
+   //   {
+   //      String collection = req.getCollectionKey();
+   //      if (!Utils.empty(collection))
+   //      {
+   //         String plural = Pluralizer.plural(collection);
+   //         if (!plural.equals(collection))
+   //         {
+   //            String path = req.getPath().toString();
+   //            path = path.replaceFirst(collection, plural);
+   //            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
+   //            if (rightEndpoint != null)
+   //            {
+   //               String redirect = req.getUrl().toString();
+   //               //redirect = req.getHttpServletRequest().getRequest
+   //               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
+   //
+   //               res.withRedirect(redirect);
+   //               return true;
+   //            }
+   //         }
+   //      }
+   //      return false;
+   //   }
 
-               res.withRedirect(redirect);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   Endpoint findEndpoint(Api api, String method, String pathStr)
-   {
-      Path path = new Path(pathStr);
-      for (Endpoint endpoint : api.getEndpoints())
-      {
-         if (endpoint.matches(method, path))
-            return endpoint;
-      }
-      return null;
-   }
+   //   Endpoint findEndpoint(Api api, String method, String pathStr)
+   //   {
+   //      Path path = new Path(pathStr);
+   //      for (Endpoint endpoint : api.getEndpoints())
+   //      {
+   //         if (endpoint.match(method, path) != null)
+   //            return endpoint;
+   //      }
+   //      return null;
+   //   }
 
    public List<Api> getApis()
    {
@@ -798,18 +767,12 @@ public class Engine
 
    public synchronized Api getApi(String apiName)
    {
-      return getApi(apiName, null);
-   }
-
-   public synchronized Api getApi(String apiName, String apiVersion)
-   {
       //only one api will have a name version pair so return the first one.
       for (Api api : apis)
       {
-         if (api.getName().equals(apiName) && Objects.equals(api.getVersion(), apiVersion))
-         {
+         if (apiName.equalsIgnoreCase(api.getName()))
             return api;
-         }
+
       }
       return null;
    }
@@ -819,47 +782,28 @@ public class Engine
       if (apis.contains(api))
          return this;
 
-      List<Api> existingApis = findApis(api.getName());
-
       List<Api> newList = new ArrayList(apis);
-      if (existingApis.isEmpty())
+
+      Api existingApi = getApi(api.getName());
+      if (existingApi != null && existingApi != api)
+      {
+         newList.remove(existingApi);
+         newList.add(api);
+      }
+      else if (existingApi == null)
       {
          newList.add(api);
-         api.startup();
       }
-      else
-      {
-         existingApis.forEach(existingApi -> {
-            if (existingApi != null && existingApi != api)
-            {
-               if (Objects.equals(existingApi.getVersion(), api.getVersion()))
-               {
-                  newList.remove(existingApi);
-                  shutdownApi(existingApi);
-                  newList.add(api);
-               }
-               else if (existingApi.getVersion() != null && api.getVersion() != null)
-               { //Different version with both using versions
-                  newList.add(api);
-               }
-               else
-               {
-                  ApiException.throw500InternalServerError("Existing Api %s found with version %s. " + "New Api %s found with version %s. " + "Apis with the same api code must all use versions or a single api with no versions is supported.", existingApi.getName(), existingApi.getVersion(), api.getName(), api.getVersion());
-               }
-            }
-            else if (existingApi == null)
-            {
-               newList.add(api);
-            }
 
-            if (existingApi != api && isStarted())
-            {
-               api.startup();
-            }
-         });
-      }
+      if (existingApi != api && isStarted())
+         api.startup();
 
       apis = newList;
+
+      if (existingApi != null && existingApi != api)
+      {
+         existingApi.shutdown();
+      }
 
       return this;
    }
@@ -965,20 +909,20 @@ public class Engine
       return this;
    }
 
-   public Path getServletMapping()
-   {
-      return servletMapping;
-   }
-
-   public Engine withServletMapping(String servletMapping)
-   {
-      if (servletMapping != null)
-         this.servletMapping = new Path(servletMapping);
-      else
-         this.servletMapping = null;
-
-      return this;
-   }
+   //   public Path getServletMapping()
+   //   {
+   //      return containerPaths;
+   //   }
+   //
+   //   public Engine withServletMapping(String servletMapping)
+   //   {
+   //      if (servletMapping != null)
+   //         this.containerPaths = new Path(servletMapping);
+   //      else
+   //         this.containerPaths = null;
+   //
+   //      return this;
+   //   }
 
    public Engine withAllowHeaders(String allowedHeaders)
    {

@@ -164,7 +164,7 @@ public class RestClientTest
       try
       {
          FutureResponse resp = client.get("somepath?param0=param0Val", "param1", "param1Override", "param3", "param3Val");
-         Map<String, String> finalParams = resp.getRequest().getParams();
+         Map<String, String> finalParams = resp.getRequest().getUrl().getParams();
 
          assertEquals("param0Val", finalParams.get("param0"));
          assertEquals("param1Override", finalParams.get("param1"));
@@ -172,7 +172,7 @@ public class RestClientTest
          assertEquals("param3Val", finalParams.get("param3"));
 
          resp = client.get("somepath?param0=param0Val&param1=param1Override&param3=param3Val");
-         finalParams = resp.getRequest().getParams();
+         finalParams = resp.getRequest().getUrl().getParams();
 
          assertEquals("param0Val", finalParams.get("param0"));
          assertEquals("param1Override", finalParams.get("param1"));

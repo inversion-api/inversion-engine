@@ -691,6 +691,11 @@ public class RestPostAction extends Action<RestPostAction>
       }
    }
 
+   public static String nextPath(String path, String next)
+   {
+      return Utils.empty(path) ? next : path + "." + next;
+   }
+
    public boolean isCollapseAll()
    {
       return collapseAll;

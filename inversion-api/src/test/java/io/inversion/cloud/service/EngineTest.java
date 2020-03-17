@@ -16,35 +16,93 @@
  */
 package io.inversion.cloud.service;
 
-import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.model.*;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.action.misc.MockAction;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.Api;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.MockActionA;
+import io.inversion.cloud.model.MockActionB;
+import io.inversion.cloud.model.MockDb;
+import io.inversion.cloud.model.Path;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.service.Chain.ActionMatch;
 
 public class EngineTest
 {
-
    @Test
-   public void testEndpointMatching2()
+   public void testPathVariables()
    {
-      Engine engine = null;
+      Api api1 = new Api("api1").withEndpoint("*", "ep1/*", new MockAction());
+      Api api2 = new Api("api2");
 
-      engine = new Engine()//
-                           .withApi(new Api("northwind")//
-                                                        .withEndpoint(null, "source/*", new MockAction("sourceAction"))//
-                                                        .withEndpoint(null, "h2/*", new MockAction("h2Action"))//
-                                                        .withEndpoint(null, "mysql/*", new MockAction("mysqlAction"))//
-                                                        .withEndpoint(null, "dynamo/*", new MockAction("dynamoAction")));
+      Engine e = new Engine(api1, api2);
 
-      engine.get("northwind/source/collection").assertDebug("Action:", "sourceAction");
-      engine.get("northwind/source").assertDebug("Action:", "sourceAction");
-      engine.get("northwind/h2/collection").assertDebug("Actio:n", "h2Action");
-      engine.get("northwind/mysql/collection/entity/subcollection").assertDebug("Action:", "mysqlAction");
-      engine.get("northwind/dynamo/collection").assertDebug("Action:", "dynamoAction");
+      Request req = null;
+      Response res = null;
+
+      res = e.get("http://localhost:8080/api1/ep1");
+      res.dump();
+      req = res.getChain().getRequest();
+
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("api1"), req.getApiPath());
+
+      e.clearIncludePaths();
+      e.withIncludePaths("/some/servlet/path/*");
+
+      res = e.get("http://localhost:8080/some/servlet/path/api1/ep1");
+      res.dump();
+      req = res.getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("api1"), req.getApiPath());
+
+      api1.clearIncludePaths();
+      api1.withIncludePaths(new Path("api1/v1/*"));
+
+      res = e.get("http://localhost:8080/some/servlet/path/api1/ep1");
+      assertEquals(400, res.getStatusCode());
+
+      req = res.getChain().getRequest();
+      assertTrue(req.getEndpoint() == null);
+
+      req = e.get("http://localhost:8080/some/servlet/path/api1/v1/ep1").getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("api1/v1"), req.getApiPath());
+
+      api1.clearIncludePaths();
+      api1.withIncludePaths("api1/v1/:tenant/*");
+      res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1");
+      req = res.getChain().getRequest();
+      assertTrue(req.getEndpoint() != null);
+      assertEquals(new Path("ep1"), req.getEndpointPath());
+      assertEquals(new Path("api1/v1/acme"), req.getApiPath());
+
+      api1.withCollection(new Collection("employees"));
+      res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo");
+      req = res.getChain().getRequest();
+      assertEquals("employees", req.getUrl().getParam("collection"));
+      assertEquals("12345", req.getUrl().getParam("entity"));
+      assertEquals("reportsTo", req.getUrl().getParam("relationship"));
+
+      api1.withCollection(new Collection("employees"));
+      res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo/some/other/params");
+      res.dump();
+      System.out.println(res.getChain().getRequest().getUrl());
+
    }
 
    @Test
@@ -56,16 +114,16 @@ public class EngineTest
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
                            .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
                            .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-      ;
+                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api);
       assertEndpointMatch("GET", "http://localhost/test/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api);
 
       api = new Api("test")//
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
-                           .withEndpoint(new Endpoint("GET", "/").withName("ep1").withIncludePaths("collection1/*,collection2/*"))//
+                           .withEndpoint(new Endpoint("GET", "/[{collection:collection1|collection2}]/*").withName("ep1"))//
                            .withEndpoint(new Endpoint("GET", "subpath3/*").withName("ep2"))//
-      ;
+                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/collection1/entKey/relKey", 200, "ep1", "", "collection1", "entKey", "relKey", api);
       assertEndpointMatch("GET", "http://localhost/test/collection2/entKey/relKey", 200, "ep1", "", "collection2", "entKey", "relKey", api);
@@ -76,24 +134,36 @@ public class EngineTest
    @Test
    public void test_endpoint_matches()
    {
-      Api api0 = new Api()//
-                          .withEndpoint(new Endpoint("GET", "endpoint_path/*", new MockAction("all")).withName("ep0"));
-
-      //if you only have one API, you can leave the API code null...you can only really do this from code configured APIs not prop wired APIs
-      assertEndpointMatch("GET", "http://localhost/endpoint_path/12345", 200, "ep0", "endpoint_path", "12345", null, null, api0);
+      //      Api api0 = new Api()//
+      //                          .withEndpoint(new Endpoint("GET", "endpoint_path/*", new MockAction("all")).withName("ep0"));
+      //
+      //      //if you only have one API, you can leave the API code null...you can only really do this from code configured APIs not prop wired APIs
+      //      assertEndpointMatch("GET", "http://localhost/endpoint_path/12345", 200, "ep0", "endpoint_path", "12345", null, null, api0);
 
       Api api1 = new Api("test")//
                                 .withAction(new MockAction("mock1").withIncludePaths("*"))//
                                 .withEndpoint(new Endpoint("GET", "ep1/*").withName("ep1"))//
                                 .withEndpoint(new Endpoint("GET", "ep2/").withName("ep2"))//
-                                .withEndpoint(new Endpoint("GET", "bookstore/", "books/*,categories,authors").withName("ep3"))//
-                                .withEndpoint(new Endpoint("GET", "other/data", "table1,table2/*,other/data/*,data/*").withName("ep4"))//
-                                .withEndpoint(new Endpoint("GET", "cardealer", "ford/*,gm/*").withName("ep5"))//
-                                .withEndpoint(new Endpoint("GET", "petstore/*").withName("ep6").withExcludePaths("rat", "snakes/bad", "cats/*"))//
-                                .withEndpoint(new Endpoint("GET", "gamestop/*", "nintendo,xbox/*").withName("ep7"))//
-                                .withEndpoint(new Endpoint("GET", "carwash", "regular,delux/*").withName("ep8"));
+                                .withEndpoint(new Endpoint().withName("ep3").withMethods("GET")//
+                                                            .withIncludePaths("bookstore/[books]/*")//
+                                                            .withIncludePaths("bookstore/{collection:categories|author}"))//
+                                .withEndpoint(new Endpoint().withName("ep4").withMethods("GET")//
+                                                            .withIncludePaths("other/data/[table1]")//
+                                                            .withIncludePaths("other/data/[table2]/*")//
+                                                            .withIncludePaths("other/data/[other]/data/*")//
+                                                            .withIncludePaths("other/data/[data]/*"))//
+                                .withEndpoint(new Endpoint("GET", "cardealer/[{type:ford|gm}]/*").withName("ep5"))//
+                                .withEndpoint(new Endpoint().withMethods("GET").withName("ep6")//
+                                                            .withIncludePaths("petstore/*")//
+                                                            .withExcludePaths("petstore/rat", "petstore/snakes/bad", "petstore/cats/*"))//
+                                .withEndpoint(new Endpoint().withName("ep7").withMethods("GET")//
+                                                            .withIncludePaths("gamestop/[{collection:nintendo}]/")//
+                                                            .withIncludePaths("gamestop/[{collection:xbox}]/*"))//
+                                .withEndpoint(new Endpoint("GET", "carwash/{collection:regular|delux}/*").withName("ep8"))//
+                                .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
 
       Api api2 = new Api("other");
+      api2.withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
       assertEndpointMatch("GET", "/test/ep1", 200, api1);
@@ -107,7 +177,7 @@ public class EngineTest
 
       assertEndpointMatch("GET", "test/ep2", 200, api1);
       assertEndpointMatch("GET", "http://localhost/test/ep2/", 200, api1);
-      assertEndpointMatch("GET", "http://localhost/test/ep2/asdf", 404, api1);
+      assertEndpointMatch("GET", "http://localhost/test/ep2/asdf", 404, api1);//ep2 does not match on '/*' only '/'
 
       assertEndpointMatch("GET", "http://localhost/test/bookstore/books/1/author", 200, "ep3", "bookstore", "books", "1", "author", api1);
       assertEndpointMatch("GET", "http://localhost/test/bookstore/categories/fiction/books", 404, "ep3", "bookstore", "categories", "fiction", "books", api1);
@@ -237,7 +307,7 @@ public class EngineTest
    public void testConfigParamOverrides()
    {
       //includes/excludes, expands, requires/restricts
-      Endpoint ep = new Endpoint("GET", "/", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
+      Endpoint ep = new Endpoint("GET", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
       Action actionA = new MockAction()
          {
             public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
@@ -307,31 +377,32 @@ public class EngineTest
 
    }
 
-   @Test public void test_api_with_version()
-   {
-      Api api1 = new Api("test")//
-                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
-                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
-                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-            ;
-      Api api2 = new Api("test")//
-                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
-                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
-                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
-            ;
-
-      Api api3 = new Api("test")//
-                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
-                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
-                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
-            ;
-
-      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
-      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-
-   }
+   //   @Test
+   //   public void test_api_with_version()
+   //   {
+   //      Api api1 = new Api("test")//
+   //                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
+   //                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
+   //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
+   //      ;
+   //      Api api2 = new Api("test")//
+   //                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
+   //                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
+   //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
+   //      ;
+   //
+   //      Api api3 = new Api("test")//
+   //                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
+   //                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
+   //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
+   //      ;
+   //
+   //      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
+   //      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+   //      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+   //      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+   //
+   //   }
 
    public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
    {
@@ -342,8 +413,9 @@ public class EngineTest
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
-      {
-            protected void run(Chain chain, List<Action> actions) throws Exception
+         {
+            @Override
+            protected void run(Chain chain, List<ActionMatch> actions) throws Exception
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
                   fail(chain, "endpoints don't match");
@@ -359,7 +431,7 @@ public class EngineTest
                if (entityKey != null && !entityKey.equals(chain.getRequest().getEntityKey()))
                   fail(chain, "entityKey don't match");
 
-               if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getSubCollectionKey()))
+               if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
                   fail(chain, "subCollectionKey don't match");
 
                success[0] = true;
@@ -378,7 +450,7 @@ public class EngineTest
                System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
                System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
                System.err.println("entityKey        :" + chain.getRequest().getEntityKey());
-               System.err.println("subCollectionKey :" + chain.getRequest().getSubCollectionKey());
+               System.err.println("subCollectionKey :" + chain.getRequest().getRelationshipKey());
                System.err.println("subPath          :" + chain.getRequest().getSubpath());
 
                throw new RuntimeException(message);

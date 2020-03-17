@@ -181,15 +181,15 @@ public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
    {
       Engine engine = new Engine();
 
-      Api api = buildApi();
-      if (api != null)
-         engine.withApi(api);
-
-      if (!Utils.empty(profile))
-         engine.withProfile(profile);
-
-      if (!Utils.empty(servletPath))
-         engine.withServletMapping(servletPath);
+//      Api api = buildApi();
+//      if (api != null)
+//         engine.withApi(api);
+//
+//      if (!Utils.empty(profile))
+//         engine.withProfile(profile);
+//
+//      if (!Utils.empty(servletPath))
+//         engine.withServletMapping(servletPath);
 
       return engine;
    }

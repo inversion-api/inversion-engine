@@ -66,162 +66,165 @@ public class AuthAction extends Action<AuthAction>
    @Override
    public void run(Request req, Response resp) throws Exception
    {
-      User user = Chain.getUser();
-
-      if (user != null && !req.isDelete())
-      {
-         //the users is already logged in, have to let
-         //deletes through because this could be a logout
+      if(true)
          return;
-      }
-
-      String apiName = req.getApi().getName();
-      String tenant = req.getTenant();
-
-      //-- END CONFIG
-
-      long now = System.currentTimeMillis();
-
-      String username = null;
-      String password = null;
-      //String sessionKey = null;
-      boolean sessionReq = collection != null && collection.equalsIgnoreCase(req.getCollectionKey());
-
-      String url = req.getUrl().toString().toLowerCase();
-      while (url.endsWith("/"))
-         url = url.substring(0, url.length() - 1);
-
-      String token = req.getHeader("authorization");
-      if (token == null)
-         token = req.getHeader("x-auth-token");
-
-      if (token != null)
-      {
-         token = token.trim();
-
-         if (token.toLowerCase().startsWith("bearer "))
-         {
-            token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
-            user = userDao.getUser(this, token, apiName, tenant);
-         }
-         else if (token.toLowerCase().startsWith("basic "))
-         {
-            token = token.substring(token.indexOf(" ") + 1, token.length());
-            token = new String(Base64.decodeBase64(token));
-            username = token.substring(0, token.indexOf(":"));
-            password = token.substring(token.indexOf(":") + 1, token.length());
-
-            user = userDao.getUser(this, username, password, apiName, tenant);
-         }
-         else if (token.toLowerCase().startsWith("session "))
-         {
-            if (sessionDao == null)
-               ApiException.throw400BadRequest("AuthAction has not been configured to support session authorization");
-
-            token = token.substring(8, token.length()).trim();
-
-            if (sessionReq && req.isDelete())
-            {
-               //the supplied authorization and the entityKey in the url
-               //must match on a delete.
-               String entityKey = req.getEntityKey();
-               if (!Utils.equal(token, entityKey))
-                  ApiException.throw401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url entityKey");
-
-               sessionDao.delete(token);
-               return;
-            }
-
-            user = sessionDao.get(token);
-         }
-         else
-         {
-            ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. %s ", token);
-         }
-
-         if (user == null)
-            ApiException.throw401Unauthroized();
-
-      }
-      else
-      {
-         if (req.isPost() && sessionReq && (Utils.empty(username, password)))
-         {
-            username = req.getJson().getString("username");
-            password = req.getJson().getString("password");
-         }
-
-         if (Utils.empty(username, password))
-         {
-            username = req.getHeader("x-auth-username");
-            password = req.getHeader("x-auth-password");
-         }
-
-         if (Utils.empty(username, password))
-         {
-            username = req.getHeader("username");
-            password = req.getHeader("password");
-         }
-
-         if (Utils.empty(username, password))
-         {
-            username = req.removeParam("username");
-            password = req.removeParam("password");
-         }
-
-         if (!Utils.empty(username, password))
-         {
-            user = userDao.getUser(this, username, password, apiName, tenant);
-
-            if (user == null)
-               ApiException.throw401Unauthroized();
-         }
-      }
-
-      if (user == null)//by here, we know that no credentials were provided
-      {
-         if (sessionReq)
-            ApiException.throw401Unauthroized();
-
-         user = userDao.getGuest(apiName, tenant);
-      }
-
-      if (user == null //
-            || (req.getApi().isMultiTenant() && (req.getTenant() == null //
-                  || !req.getTenant().equalsIgnoreCase(user.getTenant()))))
-      {
-         ApiException.throw401Unauthroized();
-      }
-
-      user.withRequestAt(now);
-      Chain.peek().withUser(user);
-
-      if (sessionDao != null && sessionReq && req.isPost())
-      {
-         String sessionKey = sessionDao.post(user);
-
-         resp.withHeader("x-auth-token", "Session " + sessionKey);
-         JSNode obj = new JSNode();
-         obj.put("id", user.getId());
-         obj.put("username", username);
-         obj.put("displayname", user.getDisplayName());
-
-         JSArray perms = new JSArray();
-         for (String perm : user.getPermissions())
-         {
-            perms.add(perm);
-         }
-         obj.put("perms", perms);
-
-         JSArray roles = new JSArray();
-         for (String role : user.getRoles())
-         {
-            roles.add(role);
-         }
-         obj.put("roles", roles);
-
-         resp.withJson(new JSNode("data", obj));
-      }
+      
+//      User user = Chain.getUser();
+//
+//      if (user != null && !req.isDelete())
+//      {
+//         //the users is already logged in, have to let
+//         //deletes through because this could be a logout
+//         return;
+//      }
+//
+//      String apiName = req.getApi().getName();
+//      String tenant = req.getTenant();
+//
+//      //-- END CONFIG
+//
+//      long now = System.currentTimeMillis();
+//
+//      String username = null;
+//      String password = null;
+//      //String sessionKey = null;
+//      boolean sessionReq = collection != null && collection.equalsIgnoreCase(req.getCollectionKey());
+//
+//      String url = req.getUrl().toString().toLowerCase();
+//      while (url.endsWith("/"))
+//         url = url.substring(0, url.length() - 1);
+//
+//      String token = req.getHeader("authorization");
+//      if (token == null)
+//         token = req.getHeader("x-auth-token");
+//
+//      if (token != null)
+//      {
+//         token = token.trim();
+//
+//         if (token.toLowerCase().startsWith("bearer "))
+//         {
+//            token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
+//            user = userDao.getUser(this, token, apiName, tenant);
+//         }
+//         else if (token.toLowerCase().startsWith("basic "))
+//         {
+//            token = token.substring(token.indexOf(" ") + 1, token.length());
+//            token = new String(Base64.decodeBase64(token));
+//            username = token.substring(0, token.indexOf(":"));
+//            password = token.substring(token.indexOf(":") + 1, token.length());
+//
+//            user = userDao.getUser(this, username, password, apiName, tenant);
+//         }
+//         else if (token.toLowerCase().startsWith("session "))
+//         {
+//            if (sessionDao == null)
+//               ApiException.throw400BadRequest("AuthAction has not been configured to support session authorization");
+//
+//            token = token.substring(8, token.length()).trim();
+//
+//            if (sessionReq && req.isDelete())
+//            {
+//               //the supplied authorization and the entityKey in the url
+//               //must match on a delete.
+//               String entityKey = req.getEntityKey();
+//               if (!Utils.equal(token, entityKey))
+//                  ApiException.throw401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url entityKey");
+//
+//               sessionDao.delete(token);
+//               return;
+//            }
+//
+//            user = sessionDao.get(token);
+//         }
+//         else
+//         {
+//            ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. %s ", token);
+//         }
+//
+//         if (user == null)
+//            ApiException.throw401Unauthroized();
+//
+//      }
+//      else
+//      {
+//         if (req.isPost() && sessionReq && (Utils.empty(username, password)))
+//         {
+//            username = req.getJson().getString("username");
+//            password = req.getJson().getString("password");
+//         }
+//
+//         if (Utils.empty(username, password))
+//         {
+//            username = req.getHeader("x-auth-username");
+//            password = req.getHeader("x-auth-password");
+//         }
+//
+//         if (Utils.empty(username, password))
+//         {
+//            username = req.getHeader("username");
+//            password = req.getHeader("password");
+//         }
+//
+//         if (Utils.empty(username, password))
+//         {
+//            username = req.removeParam("username");
+//            password = req.removeParam("password");
+//         }
+//
+//         if (!Utils.empty(username, password))
+//         {
+//            user = userDao.getUser(this, username, password, apiName, tenant);
+//
+//            if (user == null)
+//               ApiException.throw401Unauthroized();
+//         }
+//      }
+//
+//      if (user == null)//by here, we know that no credentials were provided
+//      {
+//         if (sessionReq)
+//            ApiException.throw401Unauthroized();
+//
+//         user = userDao.getGuest(apiName, tenant);
+//      }
+//
+//      if (user == null //
+//            || (req.getApi().isMultiTenant() && (req.getTenant() == null //
+//                  || !req.getTenant().equalsIgnoreCase(user.getTenant()))))
+//      {
+//         ApiException.throw401Unauthroized();
+//      }
+//
+//      user.withRequestAt(now);
+//      Chain.peek().withUser(user);
+//
+//      if (sessionDao != null && sessionReq && req.isPost())
+//      {
+//         String sessionKey = sessionDao.post(user);
+//
+//         resp.withHeader("x-auth-token", "Session " + sessionKey);
+//         JSNode obj = new JSNode();
+//         obj.put("id", user.getId());
+//         obj.put("username", username);
+//         obj.put("displayname", user.getDisplayName());
+//
+//         JSArray perms = new JSArray();
+//         for (String perm : user.getPermissions())
+//         {
+//            perms.add(perm);
+//         }
+//         obj.put("perms", perms);
+//
+//         JSArray roles = new JSArray();
+//         for (String role : user.getRoles())
+//         {
+//            roles.add(role);
+//         }
+//         obj.put("roles", roles);
+//
+//         resp.withJson(new JSNode("data", obj));
+//      }
    }
 
    public AuthAction withCollection(String collection)

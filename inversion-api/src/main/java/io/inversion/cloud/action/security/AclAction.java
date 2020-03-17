@@ -24,7 +24,7 @@ import java.util.*;
 
 /**
  * The AclAction secures an API by making sure that a requests matches one or 
- * more declared AclRules.apple.com
+ * more declared AclRules
  *
  * AclRules specify the roles and permissions that a user must have to access
  * specific method/path combinations and can also specify input/output
@@ -171,14 +171,8 @@ public class AclAction extends Action<AclAction>
             if (value.startsWith("${"))
                value = getValue(req.getChain(), value.substring(2, value.length() - 1));
 
-            if ("entitykey".equals(key1))
-            {
-               req.withEntityKey(value);
-            }
-            else
-            {
-               req.withParam(key1, value);
-            }
+            req.getUrl().withParam(key1, value);
+
             continue;
          }
 
@@ -188,9 +182,9 @@ public class AclAction extends Action<AclAction>
          if (restricted.indexOf(".") > 0)
             continue;
 
-         for (String key : req.getParams().keySet())
+         for (String key : req.getUrl().getParams().keySet())
          {
-            String value = req.getParam(key);
+            String value = req.getUrl().getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
                ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
@@ -209,16 +203,16 @@ public class AclAction extends Action<AclAction>
             continue;
 
          boolean found = false;
-         for (String key : req.getParams().keySet())
+         for (String key : req.getUrl().getParams().keySet())
          {
             if (matchesVal(required, key))
             {
-               String value = req.getParam(key);
+               String value = req.getUrl().getParam(key);
                if (Utils.empty(value))
                {
                   value = getValue(req.getChain(), key);
                   if (value != null)
-                     req.withParam(key, value);
+                     req.getUrl().withParam(key, value);
                }
 
                if (value != null)
@@ -234,7 +228,7 @@ public class AclAction extends Action<AclAction>
             String value = getValue(req.getChain(), required);
             if (value != null)
             {
-               req.withParam(required, value);
+               req.getUrl().withParam(required, value);
                found = true;
             }
          }
@@ -333,4 +327,74 @@ public class AclAction extends Action<AclAction>
 
       return value.toLowerCase().matches(".*\\b" + restricted.toLowerCase() + "\\b.*");
    }
+
+   public static String getValue(Chain chain, String key)
+   {
+      key = key.toLowerCase().trim();
+
+      if ("api".equals(key))
+      {
+         return chain.getRequest().getApi().getName();
+      }
+      else if (Utils.in(key, "tenant", "tenantid", "tenantcode"))
+      {
+         if (Chain.getUser() != null)
+            return Chain.getUser().getTenant();
+      }
+      else if ("user".equals(key))
+      {
+         if (Chain.getUser() != null)
+            return Chain.getUser().getId() + "";
+      }
+      else if ("username".equals(key))
+      {
+         if (Chain.getUser() != null)
+            return Chain.getUser().getUsername();
+      }
+
+      Object val = chain.get(key);
+      if (val != null)
+         return val.toString();
+      return null;
+   }
+
+   public static void find(Object parent, List<JSNode> found, String targetPath, String currentPath)
+   {
+      if (parent instanceof JSArray)
+      {
+         for (Object child : (JSArray) parent)
+         {
+            if (child instanceof JSNode)
+               find(child, found, targetPath, currentPath);
+         }
+      }
+      else if (parent instanceof JSNode)
+      {
+         if (!found.contains(parent) && Utils.wildcardMatch(targetPath, currentPath))
+         {
+            found.add((JSNode) parent);
+         }
+
+         for (String key : ((JSNode) parent).keySet())
+         {
+            Object child = ((JSNode) parent).get(key);
+            String nextPath = currentPath == null || currentPath.length() == 0 ? key : currentPath + key.toLowerCase() + ".";
+            find(child, found, targetPath, nextPath);
+         }
+      }
+   }
+
+   public static List<JSNode> find(Object parent, String... paths)
+   {
+      List<JSNode> found = new ArrayList();
+      for (String apath : paths)
+      {
+         for (String path : (List<String>) Utils.explode(",", apath))
+         {
+            find(parent, found, path, ".");
+         }
+      }
+      return found;
+   }
+
 }

@@ -16,16 +16,16 @@
  */
 package io.inversion.cloud.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Api
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Api extends Rule
 {
-   protected final Logger                      log         = LoggerFactory.getLogger(getClass());
+   protected final Logger                log         = LoggerFactory.getLogger(getClass());
 
    transient volatile boolean            started     = false;
    transient volatile boolean            starting    = false;
@@ -35,8 +35,6 @@ public class Api
    protected boolean                     debug       = false;
 
    protected String                      name        = null;
-   protected String                      version     = null;
-   protected boolean                     multiTenant = false;
    protected String                      url         = null;
 
    protected List<Db>                    dbs         = new ArrayList();
@@ -46,6 +44,9 @@ public class Api
 
    protected transient List<ApiListener> listeners   = new ArrayList();
 
+   //protected Path pathMatch = new Path("${api.name}/${api.version}/${tenant}/blah/blah2/*");
+   //protected Path pathMatch = new Path("$}/${api.version}/${tenant}/blah/blah2/*");
+
    public Api()
    {
    }
@@ -53,6 +54,17 @@ public class Api
    public Api(String name)
    {
       withName(name);
+   }
+
+   public Path getDefaultIncludes()
+   {
+      List parts = new ArrayList();
+      if (name != null)
+      {
+         parts.add(name);
+      }
+      parts.add("*");
+      return new Path(parts);
    }
 
    public synchronized Api startup()
@@ -235,14 +247,11 @@ public class Api
       return new ArrayList(endpoints);
    }
 
-   public Api withEndpoint(String methods, String pathExpression, Action... actions)
-   {
-      return withEndpoint(methods, pathExpression, null, actions);
-   }
 
-   public Api withEndpoint(String methods, String endpointPath, String collectionPaths, Action... actions)
+
+   public Api withEndpoint(String methods, String includePaths, Action... actions)
    {
-      Endpoint endpoint = new Endpoint(methods, endpointPath, collectionPaths, actions);
+      Endpoint endpoint = new Endpoint(methods, includePaths, actions);
       withEndpoint(endpoint);
       return this;
    }
@@ -318,17 +327,6 @@ public class Api
       return this;
    }
 
-   public boolean isMultiTenant()
-   {
-      return multiTenant;
-   }
-
-   public Api withMultiTenant(boolean multiTenant)
-   {
-      this.multiTenant = multiTenant;
-      return this;
-   }
-
    public String getUrl()
    {
       return url;
@@ -352,19 +350,4 @@ public class Api
       return Collections.unmodifiableList(listeners);
    }
 
-   public String getVersion()
-   {
-      return version;
-   }
-
-   public void setVersion(String version)
-   {
-      this.version = version;
-   }
-
-   public Api withVersion(String version)
-   {
-      this.version = version;
-      return this;
-   }
 }

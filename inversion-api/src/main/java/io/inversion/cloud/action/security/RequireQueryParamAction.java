@@ -42,7 +42,7 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
       {
          boolean hasParam = false;
          requiredParam = requiredParam.toLowerCase();
-         for (String param : req.getParams().keySet())
+         for (String param : req.getUrl().getParams().keySet())
          {
             param = param.toLowerCase();
 

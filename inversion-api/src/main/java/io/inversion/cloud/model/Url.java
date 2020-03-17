@@ -16,13 +16,13 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.utils.Utils;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import io.inversion.cloud.utils.Utils;
 
 /**
  * Url utilities
@@ -36,22 +36,18 @@ public class Url
    protected String host     = null;
    protected int    port     = 0;
    protected Path   path     = null;
-   protected String query    = null;
    protected JSNode params   = new JSNode();
 
    public Url copy()
    {
-      Url u = new Url();
-      u.original = original;
-      u.protocol = protocol;
-      u.host = host;
-      u.port = port;
-      u.path = path;
-      u.query = query;
-      if (params.size() > 0)
-         JSNode.parseJsonNode(params.toString());
-
-      return u;
+      Url url = new Url();
+      url.original = original;
+      url.protocol = protocol;
+      url.host = host;
+      url.port = port;
+      url.path = path;
+      url.params.putAll(params);
+      return url;
    }
 
    private Url()
@@ -60,47 +56,6 @@ public class Url
    }
 
    public Url(String url)
-   {
-      this(url, null);
-   }
-
-   public Url(String parent, String child)
-   {
-      if (Utils.empty(parent) && Utils.empty(child))
-         ApiException.throw500InternalServerError("Can't construct an empty url");
-
-      if (Utils.empty(child))
-      {
-         parse(parent);
-      }
-      else if (Utils.empty(parent) || (child.startsWith("http://") || child.startsWith("https://")))
-      {
-         parse(child);
-      }
-      else
-      {
-         if (!parent.endsWith("/"))
-         {
-            parent += "/";
-         }
-         while (child.startsWith("/"))
-            child = child.substring(1, child.length());
-
-         parse(parent + child);
-      }
-   }
-
-   //   public Url(Url parent, String url)
-   //   {
-   //      parse(parent, url);
-   //   }
-   //
-   //   public Url(String parent, String url)
-   //   {
-   //      this(new Url(parent), url);
-   //   }
-
-   protected void parse(String url)
    {
       String path = null;
 
@@ -118,7 +73,7 @@ public class Url
          int queryIndex = url.indexOf('?');
          if (queryIndex >= 0)
          {
-            query = url.substring(queryIndex + 1, url.length());
+            String query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
 
             withQuery(query);
@@ -130,51 +85,7 @@ public class Url
          int potocolEnd = url.indexOf("://");
          if (potocolEnd < 0)
          {
-            //            if (parent != null)
-            //            {
-            //               protocol = parent.protocol;
-            //               host = parent.host;
-            //               port = parent.port;
-            //            }
-
-            if (url.length() == 0 || url.charAt(0) == '/')
-            {
-               //-- absolute path form parent
-               path = url;
-            }
-            else
-            {
-               //               //-- path relative to parent
-               //               if (parent != null)
-               //               {
-               //                  String parentUri = parent.path;
-               //                  if (parentUri.charAt(parentUri.length() - 1) != '/')
-               //                  {
-               //                     if (parentUri.lastIndexOf('/') >= 0)
-               //                     {
-               //                        //chop off the file to make it path
-               //                        //realtive not file relative
-               //                        parentUri = parentUri.substring(0, parentUri.lastIndexOf('/') + 1);
-               //                     }
-               //                     else
-               //                     {
-               //                        parentUri += '/';
-               //                     }
-               //                  }
-               //
-               //                  if (url.charAt(0) == '/')
-               //                  {
-               //                     url = url.substring(1, url.length());
-               //                  }
-               //
-               //                  path = parentUri + url;
-               //
-               //               }
-               //               else
-               {
-                  path = url;
-               }
-            }
+            path = url;
          }
          else
          {
@@ -258,22 +169,8 @@ public class Url
          while (url.endsWith("/"))
             url = url.substring(0, url.length() - 1);
 
-         List<String> keys = new ArrayList(params.keySet());
-         for (int i = 0; i < keys.size(); i++)
-         {
-            String key = keys.get(i);
-            String value = params.getString(key);
-
-            if (i == 0)
-               url += "?";
-            else if (!key.startsWith("&"))
-               url += "&";
-
-            url += key;
-
-            if (value != null)
-               url += "=" + value;
-         }
+         url += "?";
+         url += toQueryString(params.asMap());
       }
 
       return url;
@@ -299,6 +196,14 @@ public class Url
       return domain;
    }
 
+   public String getQuery()
+   {
+      if (params.size() == 0)
+         return "";
+
+      return toQueryString(params.asMap());
+   }
+
    public String getHost()
    {
       return host;
@@ -312,13 +217,6 @@ public class Url
 
    public int getPort()
    {
-      //      if (port == 0)
-      //      {
-      //         if ("http".equalsIgnoreCase(protocol))
-      //            return 80;
-      //         if ("https".equalsIgnoreCase(protocol))
-      //            return 443;
-      //      }
       return port;
    }
 
@@ -352,46 +250,18 @@ public class Url
 
    public String getFile()
    {
-      if (path != null && path.size() > 0)
-         return path.part(path.size() - 1);
+      if (path != null)
+         return path.last();
 
       return null;
    }
 
-   public String getQuery()
-   {
-      return query;
-   }
-
    public Url withQuery(String query)
    {
-      this.query = query;
       params = new JSNode();
-      if (query != null)
-      {
-         params.putAll(Utils.parseQueryString(query));
-      }
+      params.putAll(Utils.parseQueryString(query));
       return this;
    }
-
-   //   public Url addPath(String path)
-   //   {
-   //      this.path = Utils.implode("/", this.path, path);
-   //      return this;
-   //   }
-   //
-   //   public String getFile()
-   //   {
-   //      if (path != null && !path.endsWith("/"))
-   //      {
-   //         if (path.lastIndexOf('/') > -1)
-   //            return path.substring(path.lastIndexOf('/') + 1, path.length());
-   //         return path;
-   //
-   //      }
-   //
-   //      return null;
-   //   }
 
    public Url withParams(Map<String, String> params)
    {
@@ -411,10 +281,53 @@ public class Url
       if (nvpairs != null)
       {
          for (int i = 0; i < nvpairs.length - 1; i = i + 2)
-            params.put(nvpairs[i], nvpairs[i + 1]);
+            withParam(nvpairs[i], nvpairs[i + 1]);
 
          if (nvpairs.length % 2 == 1)
-            params.put(nvpairs[nvpairs.length - 1], null);
+            withParam(nvpairs[nvpairs.length - 1], null);
+      }
+      return this;
+   }
+
+   /**
+    * Replaces any param that has <code>key<code> as a whole 
+    * word case insensitive match in its key.
+    * 
+    * @param key
+    * @return
+    */
+   public Url replaceParam(String key, String value)
+   {
+      for (String existing : (List<String>) new ArrayList(params.keySet()))
+      {
+         if (Utils.containsToken(key, existing))
+         {
+            params.remove(existing);
+         }
+      }
+
+      withParam(key, value);
+      return this;
+   }
+
+   /**
+    * Removes any param that has one of <code>tokens<code> as a whole 
+    * word case insensitive match in the key.
+    * 
+    * @param key
+    * @return
+    */
+   public Url clearParams(String... tokens)
+   {
+      for (int i = 0; i < tokens.length; i++)
+      {
+         for (String existing : (List<String>) new ArrayList(params.keySet()))
+         {
+            if (Utils.containsToken(tokens[i], existing))
+            {
+               params.remove(existing);
+            }
+         }
       }
       return this;
    }
@@ -429,56 +342,39 @@ public class Url
       return params.asMap();
    }
 
-   public String removeParam(String param)
-   {
-      return (String) params.remove(param);
-   }
-
-   public void clearParams()
-   {
-      params.clear();
-   }
-
    public String getOriginal()
    {
       return original;
    }
 
-   public Url withOriginal(String url)
+   public static String toQueryString(Map<String, String> params)
    {
-      this.original = url;
-      return this;
-   }
-
- public static String toQueryString(Map<String, String> params)
-    {
-        String query = "";
-        if (params != null)
-        {
-            for (String key : params.keySet())
+      String query = "";
+      if (params != null)
+      {
+         for (String key : params.keySet())
+         {
+            try
             {
-                try
-                {
-                    if (params.get(key) != null)
-                    {
-                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
-                    }
-                    else
-                    {
-                        query += URLEncoder.encode(key, "UTF-8") + "&";
-                    }
+               if (params.get(key) != null)
+               {
+                  query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+               }
+               else
+               {
+                  query += URLEncoder.encode(key, "UTF-8") + "&";
+               }
 
-                }
-                catch (UnsupportedEncodingException e)
-                {
-                    Utils.rethrow(e);
-                }
             }
-            if (query.length() > 0)
-                query = query.substring(0, query.length() - 1);
-        }
-        return query;
-    }
-
+            catch (UnsupportedEncodingException e)
+            {
+               Utils.rethrow(e);
+            }
+         }
+         if (query.length() > 0)
+            query = query.substring(0, query.length() - 1);
+      }
+      return query;
+   }
 
 }

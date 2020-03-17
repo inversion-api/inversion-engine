@@ -805,7 +805,7 @@ public class JSNode implements Map<String, Object>
 
    public Map asMap()
    {
-      Map map = new HashMap();
+      Map map = new LinkedHashMap();
       for (Property p : properties.values())
       {
          String name = p.name;

@@ -16,34 +16,36 @@
  */
 package io.inversion.cloud.action.security;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.utils.Utils;
 
 public class RemoveQueryParamActionTest
 {
    @Test
    public void test_containsParam_wholeword_matches()
    {
-      assertTrue(RemoveQueryParamAction.containsParam("param1", "param1"));
+      assertTrue(Utils.containsToken("param1", "param1"));
    }
 
    public void test_containsParam_wholewordMixedCase_matches()
    {
-      assertTrue(RemoveQueryParamAction.containsParam("param1", "PAram1"));
+      assertTrue(Utils.containsToken("param1", "PAram1"));
    }
 
    @Test
    public void test_containsParam_wordInRqlFunction_matches()
    {
-      assertTrue(RemoveQueryParamAction.containsParam("param1", "eq(param1,"));
+      assertTrue(Utils.containsToken("param1", "eq(param1,"));
    }
 
    @Test
    public void test_containsParam_wordAsSubstring_doesNotMatch()
    {
-      assertFalse(RemoveQueryParamAction.containsParam("param1", "param123"));
+      assertFalse(Utils.containsToken("param1", "param123"));
    }
 
 }
