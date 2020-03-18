@@ -133,11 +133,8 @@ public class AclAction extends Action<AclAction>
       if (!restricts.isEmpty())
          Chain.debug("AclAction: restricts: " + restricts);
 
-      if (Chain.getDepth() < 2)
-      {
-         cleanParams(req, restricts, requires);
-         cleanJson(req, req.getJson(), restricts, requires, false);
-      }
+      cleanParams(req, restricts, requires);
+      cleanJson(req, req.getJson(), restricts, requires, false);
 
       try
       {
@@ -162,41 +159,44 @@ public class AclAction extends Action<AclAction>
 
    void cleanParams(Request req, Set<String> restricts, Set<String> requires)
    {
-      for (String restricted : restricts)
+      if (Chain.getDepth() < 2)
       {
-         restricted = restricted.toLowerCase();
-
-         if (restricted.indexOf("=") > 0)
+         for (String restricted : restricts)
          {
-            String key1 = restricted.split("=")[0];
-            String value = restricted.split("=")[1].trim();
+            restricted = restricted.toLowerCase();
 
-            if (value.startsWith("${"))
-               value = getValue(req.getChain(), value.substring(2, value.length() - 1));
-
-            if ("entitykey".equals(key1))
+            if (restricted.indexOf("=") > 0)
             {
-               req.withEntityKey(value);
+               String key1 = restricted.split("=")[0];
+               String value = restricted.split("=")[1].trim();
+
+               if (value.startsWith("${"))
+                  value = getValue(req.getChain(), value.substring(2, value.length() - 1));
+
+               if ("entitykey".equals(key1))
+               {
+                  req.withEntityKey(value);
+               }
+               else
+               {
+                  req.withParam(key1, value);
+               }
+               continue;
             }
-            else
+
+            if (restricted.startsWith("query.") || restricted.startsWith("*."))
+               restricted = restricted.substring(restricted.indexOf(".") + 1, restricted.length());
+
+            if (restricted.indexOf(".") > 0)
+               continue;
+
+            for (String key : req.getParams().keySet())
             {
-               req.withParam(key1, value);
-            }
-            continue;
-         }
-
-         if (restricted.startsWith("query.") || restricted.startsWith("*."))
-            restricted = restricted.substring(restricted.indexOf(".") + 1, restricted.length());
-
-         if (restricted.indexOf(".") > 0)
-            continue;
-
-         for (String key : req.getParams().keySet())
-         {
-            String value = req.getParam(key);
-            if (matchesVal(restricted, key) || matchesVal(restricted, value))
-            {
-               ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
+               String value = req.getParam(key);
+               if (matchesVal(restricted, key) || matchesVal(restricted, value))
+               {
+                  ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
+               }
             }
          }
       }
@@ -255,32 +255,35 @@ public class AclAction extends Action<AclAction>
       {
          List objs = json instanceof JSArray ? ((JSArray) json).asList() : Arrays.asList(json);
 
-         for (String path : restricts)
+         if (Chain.getDepth() < 2)
          {
-            List<JSNode> found = new ArrayList();
-
-            String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
-            String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
-
-            if (parentPath.startsWith("query."))
-               continue;
-            if (parentPath.startsWith("*."))
-               parentPath = "*." + parentPath;
-            if (!parentPath.startsWith("body."))
-               parentPath = "body." + parentPath;
-
-            for (Object parent : objs)
+            for (String path : restricts)
             {
-               find(parent, found, parentPath, "body.");
-            }
+               List<JSNode> found = new ArrayList();
 
-            for (JSNode target : found)
-            {
-               target.remove(targetProp);
-               if (!silent)
+               String parentPath = (path.lastIndexOf(".") < 0 ? "" : path.substring(0, path.lastIndexOf("."))).toLowerCase();
+               String targetProp = path.lastIndexOf(".") < 0 ? path : path.substring(path.lastIndexOf(".") + 1, path.length());
+
+               if (parentPath.startsWith("query."))
+                  continue;
+               if (parentPath.startsWith("*."))
+                  parentPath = "*." + parentPath;
+               if (!parentPath.startsWith("body."))
+                  parentPath = "body." + parentPath;
+
+               for (Object parent : objs)
                {
-                  if (target.containsKey(targetProp))
-                     ApiException.throw400BadRequest("Unknown or invalid JSON property '%s'.", path);
+                  find(parent, found, parentPath, "body.");
+               }
+
+               for (JSNode target : found)
+               {
+                  target.remove(targetProp);
+                  if (!silent)
+                  {
+                     if (target.containsKey(targetProp))
+                        ApiException.throw400BadRequest("Unknown or invalid JSON property '%s'.", path);
+                  }
                }
             }
          }
