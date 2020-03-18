@@ -107,101 +107,103 @@ public class RestDeleteAction extends Action<RestDeleteAction>
       // Normalize all of the params and convert attribute
       // names to column names.
 
-      //      List<Term> terms = new ArrayList();
-      //      terms.add(Term.term(null, "eq", "includes", "href"));
+//      Term or = Term.term(null, "or");
+//      Term in = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName());
+//
+//      RqlParser parser = new RqlParser();
+//      for (String u : urls)
+//      {
+//         Url url = new Url(u);
+//         Map<String, String> params = url.getParams();
+//         if (params.size() == 0)
+//         {
+//            List<String> path = url.getPath().parts();
+//            String key = path.get(path.size() - 1);
+//            in.withTerm(Term.term(in, key));
+//         }
+//         else
+//         {
+//            Term and = Term.term(null, "and");
+//            for (String paramName : params.keySet())
+//            {
+//               String termStr = null;
+//               String paramValue = params.get(paramName);
+//
+//               if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
+//               {
+//                  termStr = paramName;
+//               }
+//               else
+//               {
+//                  termStr = "eq(" + paramName + "," + paramValue + ")";
+//               }
+//               Term term = parser.parse(termStr);
+//               and.withTerm(term);
+//            }
+//            if (and.size() == 0)
+//            {
+//               ApiException.throw400BadRequest("You can't DELETE to a collection unless you include an entityKey or query string");
+//            }
+//            else
+//            {
+//               or.withTerm(and);
+//            }
+//         }
+//      }
+//
+//      Term query = in;
+//      if (or.size() > 0)
+//      {
+//         if (in.size() > 1)
+//            or.withTerm(in);
+//
+//         if (or.size() == 1)
+//            query = or.getTerm(0);
+//         else
+//            query = or;
+//
+//      }
 
-      Term or = Term.term(null, "or");
-      Term in = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName());
-
-      RqlParser parser = new RqlParser();
-      for (String u : urls)
-      {
-         Url url = new Url(u);
-         Map<String, String> params = url.getParams();
-         if (params.size() == 0)
-         {
-            List<String> path = url.getPath().parts();
-            String key = path.get(path.size() - 1);
-            in.withTerm(Term.term(in, key));
-         }
-         else
-         {
-            Term and = Term.term(null, "and");
-            for (String paramName : params.keySet())
-            {
-               String termStr = null;
-               String paramValue = params.get(paramName);
-
-               if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
-               {
-                  termStr = paramName;
-               }
-               else
-               {
-                  termStr = "eq(" + paramName + "," + paramValue + ")";
-               }
-               Term term = parser.parse(termStr);
-               and.withTerm(term);
-            }
-            if (and.size() == 0)
-            {
-               ApiException.throw400BadRequest("You can't DELETE to a collection unless you include an entityKey or query string");
-            }
-            else
-            {
-               or.withTerm(and);
-            }
-         }
-      }
-
-      Term query = in;
-      if (or.size() > 0)
-      {
-         if (in.size() > 1)
-            or.withTerm(in);
-
-         if (or.size() == 1)
-            query = or.getTerm(0);
-         else
-            query = or;
-
-      }
-
-      String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
+      //String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
 
       Set alreadyDeleted = new HashSet();
 
-      for (int i = 0; i < 1000; i++)
+      for (String url : urls)
       {
-
-         //regardless of the query string passed in, this should resolve the keys 
-         //that need to be deleted and make sure the uses has read access to the key
-         //
-         //TODO: need to do more tests here
-         Response res = req.getEngine().get(url).assertOk();
-
-         if (res.data().size() == 0)
-            break;
-
-         deleted += res.data().size();
-
-         Rows rows = new Rows();
-
-         for (JSNode node : res.data().asNodeList())
+         for (int i = 0; i < 1000; i++)
          {
-            String href = node.getString("href");
 
-            if (alreadyDeleted.contains(href))
-               ApiException.throw500InternalServerError("Deletion of '%s' was not successful.", href);
-            else
-               alreadyDeleted.add(href);
+            //regardless of the query string passed in, this should resolve the keys 
+            //that need to be deleted and make sure the uses has read access to the key
+            //
+            //TODO: need to do more tests here
+            Response res = req.getEngine().get(url);
+            res.dump();
+            res.assertStatus(200, 404);
 
-            Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
-            rows.add(key);
+            if (res.data().size() == 0)
+               break;
+
+            deleted += res.data().size();
+
+            Rows rows = new Rows();
+
+            for (JSNode node : res.data().asNodeList())
+            {
+               String href = node.getString("href");
+
+               if (alreadyDeleted.contains(href))
+                  ApiException.throw500InternalServerError("Deletion of '%s' was not successful.", href);
+               else
+                  alreadyDeleted.add(href);
+
+               Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
+               rows.add(key);
+            }
+
+            //res.data().asList().forEach(o -> ));
+            req.getCollection().getDb().delete(collection, rows);
          }
-
-         //res.data().asList().forEach(o -> ));
-         req.getCollection().getDb().delete(collection, rows);
       }
 
       return deleted;
