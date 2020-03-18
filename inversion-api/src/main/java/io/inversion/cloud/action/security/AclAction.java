@@ -133,8 +133,11 @@ public class AclAction extends Action<AclAction>
       if (!restricts.isEmpty())
          Chain.debug("AclAction: restricts: " + restricts);
 
-      cleanParams(req, restricts, requires);
-      cleanJson(req, req.getJson(), restricts, requires, false);
+      if (Chain.getDepth() < 2)
+      {
+         cleanParams(req, restricts, requires);
+         cleanJson(req, req.getJson(), restricts, requires, false);
+      }
 
       try
       {
