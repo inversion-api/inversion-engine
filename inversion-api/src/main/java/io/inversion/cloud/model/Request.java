@@ -56,6 +56,8 @@ public class Request
 
    protected int                                    retryAttempts  = -1;
 
+   boolean                                          explain        = false;
+
    public Request()
    {
 
@@ -148,7 +150,20 @@ public class Request
 
    public Request withUrl(String url)
    {
-      this.url = new Url(url);
+      Url u = new Url(url);
+
+      String key = u.findKey("explain");
+      if (key != null)
+      {
+         String explain = u.clearParams(key);
+         if (Utils.empty(explain) || "true".equalsIgnoreCase(explain.trim()))
+            withExplain(true);
+
+         //-- makes the url.original look like it does not include the explain param;
+         u = new Url(u.toString());
+      }
+      this.url = u;
+
       return this;
    }
 
@@ -232,9 +247,13 @@ public class Request
 
    public boolean isExplain()
    {
-      String str = url.getParam("explain");
-      boolean explain = isDebug() && !Utils.empty(str) && !"false".equalsIgnoreCase(str.trim());
       return explain;
+   }
+
+   public Request withExplain(boolean explain)
+   {
+      this.explain = explain;
+      return this;
    }
 
    public String getBody()

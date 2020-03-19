@@ -16,14 +16,20 @@
  */
 package io.inversion.cloud.action.rest;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.RqlParser;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Utils;
+import java.util.HashSet;
+import java.util.Set;
 
-import java.util.*;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rows;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.service.Engine;
+import io.inversion.cloud.utils.Utils;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
 {
@@ -37,59 +43,17 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    {
       String entityKey = req.getEntityKey();
       String relationshipKey = req.getRelationshipKey();
-      JSNode json = req.getJson();
-
+      
+      if (Utils.empty(entityKey))
+         ApiException.throw400BadRequest("An entity key must be included in the url path for a DELETE request.");
+      
       if (!Utils.empty(relationshipKey))
-         ApiException.throw400BadRequest("A relationship key is not valid for a DELETE request");
-
-      List<String> toDelete = new ArrayList();
+         ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");
 
       if (req.getJson() != null)
-      {
-         if (!(json instanceof JSArray))
-         {
-            ApiException.throw400BadRequest("The JSON body to a DELETE must be an array that contains string urls.");
-         }
+         ApiException.throw501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
 
-         for (Object o : (JSArray) json)
-         {
-            if (!(o instanceof String))
-               ApiException.throw400BadRequest("The JSON body to a DELETE must be an array that contains string urls.");
-
-            String url = (String) o;
-
-            String path = req.getUrl().toString();
-            if (path.indexOf("?") > 0)
-            {
-               path = path.substring(0, path.indexOf("?") - 1);
-            }
-
-            if (!url.toLowerCase().startsWith(path.toLowerCase()))
-            {
-               ApiException.throw400BadRequest("All delete request must be for the collection in the original request: '" + path + "'");
-            }
-            toDelete.add((String) o);
-         }
-      }
-      else if (entityKey != null)
-      {
-         String url = req.getUrl().toString();
-         if (url.indexOf("?") > 0)
-            url = url.substring(url.indexOf("?") + 1);
-
-         toDelete.add(url);
-      }
-      else
-      {
-         toDelete.add(req.getUrl().toString());
-      }
-
-      String collectionUrl = req.getApiUrl();
-      if (!collectionUrl.endsWith("/"))
-         collectionUrl += "/";
-
-      collectionUrl += Utils.implode("/", req.getEndpointPath().toString(), req.getCollectionKey().toString());
-      int deleted = delete(req, req.getCollection(), collectionUrl, toDelete);
+      int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
 
       if (deleted < 1)
          res.withStatus(Status.SC_404_NOT_FOUND);
@@ -97,90 +61,20 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          res.withStatus(Status.SC_204_NO_CONTENT);
    }
 
-   protected int delete(Request req, Collection collection, String collectionUrl, List<String> urls) throws Exception
+   protected int delete(Engine engine, Collection collection, String url) throws Exception
    {
       int deleted = 0;
-      //------------------------------------------------
-      // Normalize all of the params and convert attribute
-      // names to column names.
-
-      //      List<Term> terms = new ArrayList();
-      //      terms.add(Term.term(null, "eq", "includes", "href"));
-
-      Term or = Term.term(null, "or");
-      Term in = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName());
-
-      RqlParser parser = new RqlParser();
-      for (String u : urls)
-      {
-         Url url = new Url(u);
-         Map<String, String> params = url.getParams();
-         if (params.size() == 0)
-         {
-            List<String> path = url.getPath().parts();
-            String key = path.get(path.size() - 1);
-            in.withTerm(Term.term(in, key));
-         }
-         else
-         {
-            Term and = Term.term(null, "and");
-            for (String paramName : params.keySet())
-            {
-               String termStr = null;
-               String paramValue = params.get(paramName);
-
-               if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
-               {
-                  termStr = paramName;
-               }
-               else
-               {
-                  termStr = "eq(" + paramName + "," + paramValue + ")";
-               }
-               Term term = parser.parse(termStr);
-               and.withTerm(term);
-            }
-            if (and.size() == 0)
-            {
-               ApiException.throw400BadRequest("You can't DELETE to a collection unless you include an entityKey or query string");
-            }
-            else
-            {
-               or.withTerm(and);
-            }
-         }
-      }
-
-      Term query = in;
-      if (or.size() > 0)
-      {
-         if (in.size() > 1)
-            or.withTerm(in);
-
-         if (or.size() == 1)
-            query = or.getTerm(0);
-         else
-            query = or;
-
-      }
-
-      String url = collectionUrl + "?" + query + "&page=1&pageSize=100&includes=href";
 
       Set alreadyDeleted = new HashSet();
 
       for (int i = 0; i < 1000; i++)
       {
-
-         //regardless of the query string passed in, this should resolve the keys 
-         //that need to be deleted and make sure the uses has read access to the key
-         //
-         //TODO: need to do more tests here
-         Response res = req.getEngine().get(url).assertOk();
+         //-- regardless of the query string passed in, this should resolve the keys 
+         //-- that need to be deleted and make sure the uses has read access to the key
+         Response res = engine.get(url).assertStatus(200, 404);
 
          if (res.getData().size() == 0)
             break;
-
-         deleted += res.getData().size();
 
          Rows rows = new Rows();
 
@@ -196,9 +90,9 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
             rows.add(key);
          }
+         collection.getDb().delete(collection, rows);
 
-         //res.data().asList().forEach(o -> ));
-         req.getCollection().getDb().delete(collection, rows);
+         deleted += res.getData().size();
       }
 
       return deleted;

@@ -296,7 +296,7 @@ public class Url
     * @param key
     * @return
     */
-   public Url replaceParam(String key, String value)
+   public void replaceParam(String key, String value)
    {
       for (String existing : (List<String>) new ArrayList(params.keySet()))
       {
@@ -307,7 +307,6 @@ public class Url
       }
 
       withParam(key, value);
-      return this;
    }
 
    /**
@@ -317,19 +316,35 @@ public class Url
     * @param key
     * @return
     */
-   public Url clearParams(String... tokens)
+   public String clearParams(String... tokens)
    {
+      String oldValue = null;
       for (int i = 0; i < tokens.length; i++)
       {
          for (String existing : (List<String>) new ArrayList(params.keySet()))
          {
             if (Utils.containsToken(tokens[i], existing))
             {
-               params.remove(existing);
+               String removed = (String) params.remove(existing);
+               if (oldValue == null)
+                  oldValue = removed;
             }
          }
       }
-      return this;
+
+      return oldValue;
+   }
+
+   public String findKey(String token)
+   {
+      for (String key : (List<String>) new ArrayList(params.keySet()))
+      {
+         if (Utils.containsToken(token, key))
+         {
+            return key;
+         }
+      }
+      return null;
    }
 
    public String getParam(String param)
