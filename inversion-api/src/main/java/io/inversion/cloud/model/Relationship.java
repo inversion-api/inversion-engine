@@ -39,6 +39,7 @@ public class Relationship implements Serializable
 
    }
 
+   //todo change the index param names.
    public Relationship(String name, String type, Collection entity, Collection related, Index fkIndex1, Index fkIndex2)
    {
       withName(name);

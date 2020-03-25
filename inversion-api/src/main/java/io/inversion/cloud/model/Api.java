@@ -23,7 +23,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Api extends Rule
+public class Api extends Rule<Api>
 {
    protected final Logger                log         = LoggerFactory.getLogger(getClass());
 
@@ -295,6 +295,13 @@ public class Api extends Rule
       for (Action action : actions)
          withAction(action);
 
+      return this;
+   }
+   public Api withActions(String methods, String includePaths, Action... actions){
+      for (Action action : actions)
+      {
+         withAction((Action) action.withMethods(methods).withIncludePaths(includePaths));
+      }
       return this;
    }
 
