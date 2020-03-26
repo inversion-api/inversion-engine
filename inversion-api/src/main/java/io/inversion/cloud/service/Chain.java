@@ -32,10 +32,10 @@ import io.inversion.cloud.model.Api;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Endpoint;
+import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Path;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Url;
 import io.inversion.cloud.model.User;
 import io.inversion.cloud.utils.Utils;
 
@@ -522,6 +522,23 @@ public class Chain
       {
          ActionMatch actionMatch = actions.get(next);
          next += 1;
+
+         Map<String, String> pathParams = new HashMap();
+         actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
+
+         pathParams.keySet().forEach(param -> request.getUrl().clearParams(param));
+         request.getUrl().withParams(pathParams);
+
+         if (request.getJson() != null)
+         {
+            request.getJson().asList().forEach(n -> {
+               if (n instanceof JSNode && !((JSNode) n).isArray())
+               {
+                  pathParams.keySet().forEach(param -> ((JSNode) n).put(param, pathParams.get(param)));
+               }
+            });
+         }
+
          actionMatch.action.run(request, response);
          return true;
       }

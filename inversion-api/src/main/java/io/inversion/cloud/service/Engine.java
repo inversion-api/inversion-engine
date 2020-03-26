@@ -440,6 +440,16 @@ public class Engine extends Rule<Engine>
          pathParams.keySet().forEach(param -> url.clearParams(param));
          url.withParams(pathParams);
 
+         if (req.getJson() != null)
+         {
+            req.getJson().asList().forEach(n -> {
+               if (n instanceof JSNode && !((JSNode) n).isArray())
+               {
+                  pathParams.keySet().forEach(param -> ((JSNode) n).put(param, pathParams.get(param)));
+               }
+            });
+         }
+
          //         List<Action> actions = new ArrayList(api.getActions());
          //         actions.addAll(endpoint.getActions());
          //         
@@ -489,10 +499,10 @@ public class Engine extends Rule<Engine>
 
          for (Action action : req.getEndpoint().getActions())
          {
-            Path actionPath = action.match(method, afterApiPath);
+            Path actionPath = action.match(method, afterEndpointPath);
             if (actionPath != null)
             {
-               actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+               actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
             }
          }
 
@@ -501,10 +511,10 @@ public class Engine extends Rule<Engine>
          //that acts like a filter
          for (Action action : req.getApi().getActions())
          {
-            Path actionPath = action.match(method, afterEndpointPath);
+            Path actionPath = action.match(method, afterApiPath);
             if (actionPath != null)
             {
-               actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
+               actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
             }
          }
 

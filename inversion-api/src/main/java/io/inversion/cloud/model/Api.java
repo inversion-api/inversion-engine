@@ -247,8 +247,6 @@ public class Api extends Rule<Api>
       return new ArrayList(endpoints);
    }
 
-
-
    public Api withEndpoint(String methods, String includePaths, Action... actions)
    {
       Endpoint endpoint = new Endpoint(methods, includePaths, actions);
@@ -290,10 +288,29 @@ public class Api extends Rule<Api>
       return new ArrayList(actions);
    }
 
+   public Api withActions(String methods, String includePaths, Action... actions)
+   {
+      for (Action action : actions)
+         withAction(methods, includePaths, action);
+
+      return this;
+   }
+
    public Api withActions(Action... actions)
    {
       for (Action action : actions)
          withAction(action);
+
+      return this;
+   }
+
+   public Api withAction(String methods, String includePaths, Action action)
+   {
+      action.withMethods(methods);
+      action.withIncludePaths(includePaths);
+
+      if (!actions.contains(action))
+         actions.add(action);
 
       return this;
    }

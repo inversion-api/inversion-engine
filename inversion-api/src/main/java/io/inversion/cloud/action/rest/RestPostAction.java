@@ -72,7 +72,11 @@ public class RestPostAction extends Action<RestPostAction>
 
       if (obj instanceof JSArray)
       {
-         ApiException.throw400BadRequest("Batch '%s' is not supported.", req.getMethod());
+         if (!Utils.empty(req.getEntityKey()))
+         {
+            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
+         }
+         entityKeys = upsert(req, collection, (JSArray) obj);
       }
       else
       {

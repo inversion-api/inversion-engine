@@ -305,12 +305,30 @@ public class JdbcDb extends Db<JdbcDb>
    @Override
    public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
+      for (Map<String, Object> row : rows)
+      {
+         for (String key : (Set<String>) new HashSet(row.keySet()))
+         {
+            if (table.getPropertyByColumnName(key) == null)
+               row.remove(key);
+         }
+      }
+
       return JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
    }
 
    @Override
    public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
    {
+      for (Map<String, Object> row : rows)
+      {
+         for (String key : (Set<String>) new HashSet(row.keySet()))
+         {
+            if (table.getPropertyByColumnName(key) == null)
+               row.remove(key);
+         }
+      }
+
       return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
    }
 

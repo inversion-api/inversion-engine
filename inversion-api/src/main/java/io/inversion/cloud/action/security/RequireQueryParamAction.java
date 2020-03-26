@@ -20,15 +20,18 @@ import io.inversion.cloud.model.Action;
 import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
+import io.inversion.cloud.rql.RqlParser;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.utils.Utils;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Requires query string parameter "requiredName=anyValue" OR "eq(requiredName,anyValue)" be present on the Request.
+ * Requires query string parameter "requiredParam=anyValue" OR "eq(requiredParam,anyValue)" be present on the request url querystring 
+ * with a non empty or 'null' value.
  * 
- * The param could have been supplied by the call or by another action as long as
- * it is there when this action runs.
+ * The param could have been supplied by the caller or by another action as long as it is there when this action runs.
  * 
  * @author wells
  */
@@ -44,12 +47,28 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
          requiredParam = requiredParam.toLowerCase();
          for (String param : req.getUrl().getParams().keySet())
          {
-            param = param.toLowerCase();
-
-            if (requiredParam.equals(param))
-               hasParam = true;
-            else if (param.startsWith("eq(" + requiredParam + ","))
-               hasParam = true;
+            if (Utils.containsToken(requiredParam, param))
+            {
+               String value = req.getUrl().getParam(param);
+               if (requiredParam.equalsIgnoreCase(param.trim()))
+               {
+                  if (!Utils.empty(value))
+                  {
+                     hasParam = true;
+                     break;
+                  }
+               }
+               else
+               {
+                  //-- eq(param,value) format
+                  Term t = new RqlParser().parse(param.toLowerCase());
+                  if (requiredParam.equalsIgnoreCase(t.getToken(0)) && t.hasToken("eq") && t.size() == 2 && t.getTerm(1).isLeaf() && !"null".equalsIgnoreCase(t.getToken(1)))
+                  {
+                     hasParam = true;
+                     break;
+                  }
+               }
+            }
          }
          if (!hasParam)
             ApiException.throw400BadRequest("Required query string parameter '%s' appears to be missing.", requiredParam);

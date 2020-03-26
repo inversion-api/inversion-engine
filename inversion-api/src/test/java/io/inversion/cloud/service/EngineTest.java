@@ -17,6 +17,7 @@
 package io.inversion.cloud.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -40,6 +41,76 @@ import io.inversion.cloud.service.Chain.ActionMatch;
 
 public class EngineTest
 {
+   @Test
+   public void actionPathVariablesAreAddedToQueryAndJson()
+   {
+      Api api = new Api("api");
+
+      api.withAction("*", "a/b/:named1/:named2/*", new Action()
+         {
+            public void run(Request req, Response res) throws Exception
+            {
+               res.data().add("action1");
+               assertEquals("a", req.getUrl().getParam("endpointNamed1"));
+               assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+               assertEquals("c", req.getUrl().getParam("named1"));
+               assertEquals("d", req.getUrl().getParam("named2"));
+               assertNull(req.getUrl().getParam("named3"));
+               assertNull(req.getUrl().getParam("named4"));
+
+               if (req.getJson() != null)
+               {
+                  assertEquals("a", req.getJson().get("endpointNamed1"));
+                  assertEquals("c", req.getJson().get("endpointNamed2"));
+                  assertEquals("c", req.getJson().get("named1"));
+                  assertEquals("d", req.getJson().get("named2"));
+                  assertNull(req.getJson().get("named3"));
+                  assertNull(req.getJson().get("named4"));
+               }
+            }
+         });
+
+      api.withAction("*", "a/b/:named3/:named4/*", new Action()
+         {
+            public void run(Request req, Response res) throws Exception
+            {
+               res.data().add("action2");
+               assertEquals("a", req.getUrl().getParam("endpointNamed1"));
+               assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+               assertEquals("c", req.getUrl().getParam("named1"));
+               assertEquals("d", req.getUrl().getParam("named2"));
+               assertEquals("c", req.getUrl().getParam("named3"));
+               assertEquals("d", req.getUrl().getParam("named4"));
+               
+               if (req.getJson() != null)
+               {
+                  assertEquals("a", req.getJson().get("endpointNamed1"));
+                  assertEquals("c", req.getJson().get("endpointNamed2"));
+                  assertEquals("c", req.getJson().get("named1"));
+                  assertEquals("d", req.getJson().get("named2"));
+                  assertEquals("c", req.getJson().get("named3"));
+                  assertEquals("d", req.getJson().get("named4"));
+               }
+            }
+         });
+
+      api.withEndpoint("GET", ":endpointNamed1/b/:endpointNamed2/*");
+
+      Engine e = new Engine(api);
+
+      Request req = null;
+      Response res = null;
+
+      res = e.get("http://localhost:8080/api/a/b/c/d/e");
+      res.dump();
+      res.assertOk();
+      assertTrue(res.getJson().toString().indexOf("action1") > 0);
+      assertTrue(res.getJson().toString().indexOf("action2") > 0);
+
+      res = e.post("http://localhost:8080/api/a/b/c/d/e", new JSNode());
+
+   }
+
    @Test
    public void testPathVariables()
    {

@@ -45,7 +45,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
       //post one new bogus order
-      res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString());
+      res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString()).dump().assertOk();
 
       //check the values we sent are the values we got back
       res = engine.get(res.findString("data.0.href"));

@@ -16,16 +16,22 @@
  */
 package io.inversion.cloud.action.security;
 
-import io.inversion.cloud.model.*;
+import java.util.List;
+
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
 import io.inversion.cloud.utils.Utils;
 
-import java.util.HashSet;
-import java.util.Set;
-
-public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
+public class RequireJsonPropertyAction<T extends RequireJsonPropertyAction> extends Action<T>
 {
-   protected Set<String> properties = new HashSet();
-   protected boolean     recursive  = false;
+   protected ArrayListValuedHashMap<String, String> properties = new ArrayListValuedHashMap();
+   protected boolean                                recursive  = false;
 
    public void run(Request req, Response res) throws Exception
    {
@@ -48,20 +54,32 @@ public class RequireJsonPropertyAction extends Action<RequireJsonPropertyAction>
 
    protected void checkProperties(JSNode node)
    {
-      for (String prop : properties)
+      for (String jsonPath : properties.keySet())
       {
-         for (JSNode aNode : node.asNodeList())
+         List<String> props = properties.get(jsonPath);
+
+         JSArray found = node.findAll(jsonPath);
+
+         for (JSNode obj : found.asNodeList())
          {
-            if (Utils.empty(aNode.get(prop)))
-               ApiException.throw400BadRequest("Required property '%s' appears to be missing from your JSON body.",  prop);
+            for (String prop : props)
+            {
+               checkProperty(obj, jsonPath, prop);
+            }
          }
       }
    }
 
-   public RequireJsonPropertyAction withProperty(String name)
+   protected void checkProperty(JSNode node, String jsonPath, String property)
    {
-      if (name != null)
-         properties.add(name.toLowerCase());
+      Object value = node.get(property);
+      if (Utils.empty(value))
+         ApiException.throw400BadRequest("Required property '%s'.'%s' appears to be missing from your JSON body.", jsonPath, property);
+   }
+
+   public RequireJsonPropertyAction withProperty(String jsonPath, String property)
+   {
+      properties.put(jsonPath, property);
       return this;
    }
 
