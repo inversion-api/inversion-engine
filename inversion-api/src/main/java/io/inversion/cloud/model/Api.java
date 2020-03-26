@@ -23,7 +23,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Api extends Rule
+public class Api extends Rule<Api>
 {
    protected final Logger                log         = LoggerFactory.getLogger(getClass());
 

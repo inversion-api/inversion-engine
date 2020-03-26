@@ -54,7 +54,7 @@ import io.inversion.cloud.service.Chain.ActionMatch;
 import io.inversion.cloud.utils.Configurator;
 import io.inversion.cloud.utils.Utils;
 
-public class Engine extends Rule
+public class Engine extends Rule<Engine>
 {
    protected transient volatile boolean     started        = false;
    protected transient volatile boolean     starting       = false;

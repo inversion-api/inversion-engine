@@ -67,6 +67,7 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       return new Path("{collection:" + getName() + "}/[:entity]/[:relationship]/*");
    }
+   
 
    /**
     * Returns true if all columns are foreign keys.  In an RDBMS system, this

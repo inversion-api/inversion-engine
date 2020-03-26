@@ -16,10 +16,6 @@
  */
 package io.inversion.cloud.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
 /**
