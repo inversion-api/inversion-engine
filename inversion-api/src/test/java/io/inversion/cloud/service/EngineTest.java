@@ -53,6 +53,8 @@ public class EngineTest
                res.data().add("action1");
                assertEquals("a", req.getUrl().getParam("endpointNamed1"));
                assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+               assertEquals("d", req.getUrl().getParam("Ecoll"));
+               assertEquals("f", req.getUrl().getParam("Eid"));
                assertEquals("c", req.getUrl().getParam("named1"));
                assertEquals("d", req.getUrl().getParam("named2"));
                assertNull(req.getUrl().getParam("named3"));
@@ -77,6 +79,8 @@ public class EngineTest
                res.data().add("action2");
                assertEquals("a", req.getUrl().getParam("endpointNamed1"));
                assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+               assertEquals("d", req.getUrl().getParam("Ecoll"));
+               assertEquals("f", req.getUrl().getParam("Eid"));
                assertEquals("c", req.getUrl().getParam("named1"));
                assertEquals("d", req.getUrl().getParam("named2"));
                assertEquals("c", req.getUrl().getParam("named3"));
@@ -94,20 +98,23 @@ public class EngineTest
             }
          });
 
-      api.withEndpoint("GET", ":endpointNamed1/b/:endpointNamed2/*");
+      api.withEndpoint("GET", ":endpointNamed1/b/:endpointNamed2/[:Ecoll]/[{Eent:e}]/[:Eid]/*");
 
       Engine e = new Engine(api);
 
       Request req = null;
       Response res = null;
 
-      res = e.get("http://localhost:8080/api/a/b/c/d/e");
+      res = e.get("http://localhost:8080/api/a/b/c/d/e/f/g");
       res.dump();
       res.assertOk();
       assertTrue(res.getJson().toString().indexOf("action1") > 0);
       assertTrue(res.getJson().toString().indexOf("action2") > 0);
 
       res = e.post("http://localhost:8080/api/a/b/c/d/e", new JSNode());
+      
+      
+      res = e.get("http://localhost:8080/api/a/b/c/d/f").assertStatus(400, 404);
 
    }
 

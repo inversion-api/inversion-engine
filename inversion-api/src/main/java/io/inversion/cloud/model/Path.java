@@ -171,7 +171,7 @@ public class Path
       if (part != null)
       {
          if (part.startsWith("["))
-            part = part.substring(1, part.length()-1).trim();
+            part = part.substring(1, part.length() - 1).trim();
 
          int colon = part.indexOf(":");
          if (colon == 0)
@@ -273,21 +273,35 @@ public class Path
    {
       Path matchedPath = new Path();
 
+      boolean restOptional = false;
       int i = 0;
+      int nextOptional = 0;
       for (i = 0; i < size() && toMatch.size() > 0; i++)
       {
          String myPart = get(i);
 
-         boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
+         boolean partOptional = myPart.startsWith("[") && myPart.endsWith("]");
 
-         if (myPart.equals("*") || (!greedy && optional))
+         if (partOptional)
+         {
+            restOptional = true;
+            myPart = myPart.substring(1, myPart.length() - 1);
+         }
+
+         if (myPart.equals("*"))
             break;
 
-         if (optional)
-            myPart = myPart.substring(1, myPart.length() - 1);
+         String theirPart = null;
 
-         String theirPart = toMatch.remove(0);
-         matchedPath.add(theirPart);
+         if (greedy || !restOptional)
+         {
+            theirPart = toMatch.remove(0);
+            matchedPath.add(theirPart);
+         }
+         else
+         {
+            theirPart = toMatch.get(nextOptional++);
+         }
 
          if (myPart.startsWith(":"))
          {
@@ -325,8 +339,8 @@ public class Path
       for (i = i; i < size(); i++)
       {
          String var = getVar(i);
-         if(var != null)
-            params.put(var,  null);
+         if (var != null)
+            params.put(var, null);
       }
 
       return matchedPath;

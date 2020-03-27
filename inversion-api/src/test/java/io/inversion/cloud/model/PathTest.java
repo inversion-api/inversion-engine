@@ -62,15 +62,18 @@ public class PathTest
    {
       Map<String, String> params = new HashMap();
 
-      Path rule = new Path("part1/:part2/part3/*");
-      Path path = new Path("part1/val2/part3/part4");
+      Path rule = new Path("part1/:part2/part3/[{varName1:part4}]/[:varName2]/*");
+      Path path = new Path("part1/val2/part3/part4/part5/part6/part7/part8/part9");
 
       Path matched = rule.extract(params, path);
 
-      assertEquals(1, params.size());
+      assertEquals(3, params.size());
       assertEquals("val2", params.get("part2"));
+      assertEquals("part4", params.get("varName1"));
+      assertEquals("part5", params.get("varName2"));
+      
       assertEquals("part1/val2/part3", matched.toString());
-      assertEquals("part4", path.toString());
+      assertEquals("part4/part5/part6/part7/part8/part9", path.toString());
    }
 
    @Test
