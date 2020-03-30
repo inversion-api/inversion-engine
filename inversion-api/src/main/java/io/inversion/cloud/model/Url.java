@@ -347,6 +347,15 @@ public class Url
       return null;
    }
 
+   public String findKeyValue(String token)
+   {
+      String key = findKey(token);
+      if (key != null)
+         return params.getString(key);
+
+      return null;
+   }
+
    public String getParam(String param)
    {
       return (String) params.get(param);
