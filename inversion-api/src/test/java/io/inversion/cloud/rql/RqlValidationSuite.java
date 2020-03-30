@@ -135,6 +135,9 @@ public class RqlValidationSuite
       withTest("manyToOneNotExistsNe", "employees?ne(employees.firstName,Nancy)");
 
       withTest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
+      
+      
+      withTest("eqNonexistantColumn", "orders?ge(orderId, 1000)&eq(nonexistantColumn,12)");
    }
 
    public void runIntegTests(Engine engine, String urlPrefix) throws Exception
@@ -143,7 +146,7 @@ public class RqlValidationSuite
 
       for (String testKey : tests.keySet())
       {
-         if("order".equals(testKey))
+         if("eqNonexistantColumn".equals(testKey))
          {
             System.out.println("asdfasd");
          }
@@ -246,7 +249,7 @@ public class RqlValidationSuite
          String actual = null;
          String expected = results.get(testKey);
 
-         if("likeStartsWith".equals(testKey))
+         if("eqNonexistantColumn".equals(testKey))
          {
             System.out.println("asdfasd");
          }
@@ -270,14 +273,15 @@ public class RqlValidationSuite
             Collections.sort(terms);
             //-- end sorting
 
-            query.withTerms(terms);
-
+            
             Collection coll = tables.get(tableName);
             if (coll == null)
                throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
             coll.withDb(db);
             query.withCollection(coll);
             query.withDryRun(true);
+            
+            query.withTerms(terms);
 
             if ("UNSUPPORTED".equalsIgnoreCase(expected))
             {

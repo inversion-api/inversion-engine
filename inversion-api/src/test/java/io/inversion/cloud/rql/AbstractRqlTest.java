@@ -179,6 +179,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
            .withResult("manyToOneExistsEq", "")//
            .withResult("manyToOneNotExistsNe", "")//
            .withResult("manyTManyNotExistsNe", "")//
+           .withResult("eqNonexistantColumn",  "");
       ;
    }
 
