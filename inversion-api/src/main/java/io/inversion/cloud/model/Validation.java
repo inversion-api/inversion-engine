@@ -5,16 +5,24 @@ import io.inversion.cloud.utils.Utils;
 /**
  * Utility designed to make it easy to validate request properties or request body
  * json values while you are retrieving them.  
- * 
- * Example:
+ *
+ * <h3>Required (Not Null)</h3>
+ *
+ * To ensure a field is not null, use the required() method:
+ * <ul>
+ *     <li>String nameFirst = request.validate("nameFirst", "A first name is required").required().asString();</li>
+ * </ul>
+ *
+ * <h3>Comparison</h3>
+ *
+ * To validate a number is greater than 5, then return its value:
  * <ul>
  * <li>int myParam = request.validate("myParamName", "optional_custom_error_message").gt(5).asInt();
  * </ul>
- *  
- * 
- * @see Request.validate()
- * @author wells
  *
+ * @see Request#validate(String)
+ * @see Request#validate(String,String)
+ * @author wells
  */
 public class Validation
 {
@@ -39,10 +47,14 @@ public class Validation
       this.customErrorMessage = customErrorMessage;
    }
 
+   /**
+    * @return
+    * @throws ApiException 400 if the referenced validation is null.
+    */
    public Validation required()
    {
       if (value == null)
-         fail("Requird field '" + propOrPath + "' is missing.");
+         fail("Required field '" + propOrPath + "' is missing.");
 
       return this;
    }
@@ -106,7 +118,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) < 1)
-         fail("Filed '" + propOrPath + "' is less than the required value.");
+         fail("Field '" + propOrPath + "' is less than the required value.");
 
       return this;
    }
@@ -117,7 +129,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) < 0)
-         fail("Filed '" + propOrPath + "' is less than the required value.");
+         fail("Field '" + propOrPath + "' is less than the required value.");
 
       return this;
    }
@@ -128,7 +140,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) > -1)
-         fail("Filed '" + propOrPath + "' is greater than the required value.");
+         fail("Field '" + propOrPath + "' is greater than the required value.");
 
       return this;
    }
@@ -139,7 +151,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) > 0)
-         fail("Filed '" + propOrPath + "' is greater than the required value.");
+         fail("Field '" + propOrPath + "' is greater than the required value.");
 
       return this;
    }
@@ -150,7 +162,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) != 0)
-         fail("Filed '" + propOrPath + "' is not equal to the required value.");
+         fail("Field '" + propOrPath + "' is not equal to the required value.");
 
       return this;
    }
@@ -161,7 +173,7 @@ public class Validation
          return this;
 
       if (compareTo(compareTo) != 0)
-         fail("Filed '" + propOrPath + "' is equal to a restricted value.");
+         fail("Field '" + propOrPath + "' is equal to a restricted value.");
 
       return this;
    }
@@ -308,6 +320,12 @@ public class Validation
       return false;
    }
 
+   /**
+    * Throws an ApiException 400 using the provided custom error message.  If a custom error message
+    * was not provided, a default error message is utilized.
+    * @param defaultErrorMessage
+    * @throws ApiException
+    */
    protected void fail(String defaultErrorMessage)
    {
       String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
