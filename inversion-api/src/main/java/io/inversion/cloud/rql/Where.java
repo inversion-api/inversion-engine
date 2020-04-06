@@ -83,7 +83,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          //if it is in the form "relationship.column then wrap this 
          //in an "exists" or "notExists" function
 
-         if (parent.getTerm(0).isLeaf() && parent.getToken(0).indexOf(".") > 0)
+         if (parent.getTerm(0).isLeaf() && parent.getToken(0).indexOf(".") > 0 && !parent.hasToken("_key"))
          {
             Term relCol = parent.getTerm(0);
             relCol.withToken("~~relTbl_" + relCol.getToken());
@@ -114,7 +114,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
          if (index.size() == 1)
          {
-            Term t = Term.term(null, "in", index.getColumn(0).getColumnName());
+            Term t = Term.term(null, "in", index.getProperty(0).getColumnName());
             List<Term> children = parent.getTerms();
             for (int i = 1; i < children.size(); i++)
             {

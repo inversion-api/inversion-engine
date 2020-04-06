@@ -20,8 +20,8 @@ import java.io.Serializable;
 
 public class Relationship implements Serializable
 {
-   public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
+   public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
 
    protected String           name             = null;
@@ -29,7 +29,7 @@ public class Relationship implements Serializable
    protected Index            fkIndex1         = null;
    protected Index            fkIndex2         = null;
 
-   protected Collection       entity           = null;
+   protected Collection       collection       = null;
    protected Collection       related          = null;
 
    protected boolean          exclude          = false;
@@ -39,11 +39,11 @@ public class Relationship implements Serializable
 
    }
 
-   public Relationship(String name, String type, Collection entity, Collection related, Index fkIndex1, Index fkIndex2)
+   public Relationship(String name, String type, Collection collection, Collection related, Index fkIndex1, Index fkIndex2)
    {
       withName(name);
       withType(type);
-      withEntity(entity);
+      withCollection(collection);
       withRelated(related);
       withFkIndex1(fkIndex1);
       withFkIndex2(fkIndex2);
@@ -61,23 +61,20 @@ public class Relationship implements Serializable
    }
 
    /**
-    * @return the entity
+    * @return the collection
     */
-   public Collection getEntity()
+   public Collection getCollection()
    {
-      return entity;
+      return collection;
    }
 
-   /**
-    * @param entity the entity to set
-    */
-   public Relationship withEntity(Collection entity)
+   public Relationship withCollection(Collection collection)
    {
-      if (this.entity != entity)
+      if (this.collection != collection)
       {
-         this.entity = entity;
-         if (entity != null)
-            entity.withRelationship(this);
+         this.collection = collection;
+         if (collection != null)
+            collection.withRelationship(this);
       }
       return this;
    }
@@ -109,10 +106,10 @@ public class Relationship implements Serializable
       {
          for (Relationship other : related.getRelationships())
          {
-            if (isOneToMany() && !other.isManyToOne())
+            if (isManyToOne() && !other.isOneToMany())
                continue;
 
-            if (isManyToMany() && !other.isOneToMany())
+            if (isManyToMany() && !other.isManyToOne())
                continue;
 
             if (getFkIndex1().equals(other.getFkIndex1()) //
@@ -140,14 +137,14 @@ public class Relationship implements Serializable
       return REL_MANY_TO_MANY.equalsIgnoreCase(type);
    }
 
-   public boolean isManyToOne()
-   {
-      return REL_MANY_TO_ONE.equalsIgnoreCase(type);
-   }
-
    public boolean isOneToMany()
    {
       return REL_ONE_TO_MANY.equalsIgnoreCase(type);
+   }
+
+   public boolean isManyToOne()
+   {
+      return REL_MANY_TO_ONE.equalsIgnoreCase(type);
    }
 
    /**
@@ -188,14 +185,14 @@ public class Relationship implements Serializable
    {
       try
       {
-         String str = "Relationship: " + entity + "." + getName() + ":" + getType() + " ";
-         if (isOneToMany())
-         {
-            str += entity.getPrimaryIndex() + " -> " + getFkIndex1();
-         }
+         String str = "Relationship: " + collection + "." + getName() + ":" + getType() + " ";
          if (isManyToOne())
          {
-            str += entity.getPrimaryIndex() + " <- " + getFkIndex1();
+            str += collection.getPrimaryIndex() + " -> " + getFkIndex1();
+         }
+         if (isOneToMany())
+         {
+            str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
          }
          else
          {
@@ -251,12 +248,12 @@ public class Relationship implements Serializable
 
    public Collection getPrimaryKeyTable1()
    {
-      return fkIndex1.getColumn(0).getCollection();
+      return fkIndex1.getProperty(0).getCollection();
    }
 
    public Collection getPrimaryKeyTable2()
    {
-      return fkIndex2.getColumn(0).getCollection();
+      return fkIndex2.getProperty(0).getCollection();
    }
 
    /**
@@ -264,7 +261,7 @@ public class Relationship implements Serializable
     */
    public Property getFk1Col1()
    {
-      return fkIndex1.getColumn(0);
+      return fkIndex1.getProperty(0);
    }
 
    //
@@ -282,7 +279,7 @@ public class Relationship implements Serializable
     */
    public Property getFk2Col1()
    {
-      return fkIndex2.getColumn(0);
+      return fkIndex2.getProperty(0);
    }
    //
    //   /**

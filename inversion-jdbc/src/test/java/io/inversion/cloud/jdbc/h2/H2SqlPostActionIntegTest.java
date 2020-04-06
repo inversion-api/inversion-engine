@@ -28,4 +28,6 @@ public class H2SqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegT
    {
       super("h2");
    }
+
+
 }

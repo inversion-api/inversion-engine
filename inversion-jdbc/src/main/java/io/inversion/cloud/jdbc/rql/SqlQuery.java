@@ -934,11 +934,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
          Index fk1 = rel.getFkIndex1();
 
-         if (rel.isOneToMany())
+         if (rel.isManyToOne())
          {
             for (int i = 0; i < fk1.size(); i++)
             {
-               Property prop = fk1.getColumn(i);
+               Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
                sql.append(printTable()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
@@ -947,11 +947,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                   sql.append(" AND ");
             }
          }
-         else if (rel.isManyToOne())
+         else if (rel.isOneToMany())
          {
             for (int i = 0; i < fk1.size(); i++)
             {
-               Property prop = fk1.getColumn(i);
+               Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
                sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
@@ -963,7 +963,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          {
             for (int i = 0; i < fk1.size(); i++)
             {
-               Property prop = fk1.getColumn(i);
+               Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
                sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
@@ -973,7 +973,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             Index fk2 = rel.getFkIndex2();
             for (int i = 0; i < fk2.size(); i++)
             {
-               Property prop = fk2.getColumn(i);
+               Property prop = fk2.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
                sql.append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));

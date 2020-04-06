@@ -129,24 +129,25 @@ public class RestPostAction extends Action<RestPostAction>
     * Algorithm:
     *
     * Step 1: Upsert all <code>nodes</code> in this generation...meaning not recursively including
-    *         key values for all one-to-many foreign keys but excluding all many-to-one and many-to-many
-    *         key changes...those many-to-x relationships involve modifying other tables, the many to many 
-    *         link tables and the many-to-one table that have foreign keys back to this collections 
-    *         table, not the direct modification of the single table underlying this collection.
+    *         key values for all many-to-one foreign keys but excluding all one-to-many and many-to-many
+    *         key changes...non many-to-one relationships involve modifying other tables that have foreign 
+    *         keys back to this collection's table, not the direct modification of the single table 
+    *         underlying this collection.
     *         
     * Step 2: For each relationship POST back through the "front door".  This is the primary
     *         recursion that enables nested documents to submitted all at once by client.  Putting
     *         this step first ensure that all new objects are POSTed, with their newly created hrefs
     *         placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
    
-    * Step 3: Set child foreign keys back on parent generation.       
+    * Step 3: PKs generated for child documents which are actually relationship parents, are set 
+    *         as foreign keys back on the parent json (which is actully the one-to-many child)       
     *        
-    * Step 4: Find the key values for all new/kept many-to-one and many-to-many relationships
+    * Step 4: Find the key values for all new/kept one-to-many and many-to-many relationships
     *
     * Step 5.1 Upsert all of those new/kept relationships and create the RQL queries needed find
     *          all relationships NOT in the upserts.
     * 
-    * Step 5.2 Null out all now invalid many-to-one foreign keys back to these notes
+    * Step 5.2 Null out all now invalid many-to-one foreign keys back
     *          and delete all now invalid many-to-many relationships rows.
     *   
     * @param req
@@ -199,15 +200,19 @@ public class RestPostAction extends Action<RestPostAction>
          {
             copied.add(rel.getName().toLowerCase());
 
-            if (rel.isOneToMany() && node.hasProperty(rel.getName()))
+            if (rel.isManyToOne() && node.hasProperty(rel.getName()))
             {
                for (String colName : rel.getFkIndex1().getColumnNames())
                {
                   copied.add(colName.toLowerCase());
                }
 
-               Map foreignKey = mapTo(getKey(rel.getRelated(), node.get(rel.getName())), rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-               mapped.putAll(foreignKey);
+               Map key = getKey(rel.getRelated(), node.get(rel.getName()));
+               if (key != null)
+               {
+                  Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                  mapped.putAll(foreignKey);
+               }
             }
          }
 
@@ -224,8 +229,10 @@ public class RestPostAction extends Action<RestPostAction>
             }
          }
 
+         System.out.println("mapped: " + mapped);
+
       }
-      List returnList = collection.getDb().upsert(collection, upsertMaps);
+      List<String> returnList = collection.getDb().upsert(collection, upsertMaps);
       for (int i = 0; i < nodes.length(); i++)
       {
          //-- new records need their newly assigned id/href assigned back on them
@@ -265,9 +272,9 @@ public class RestPostAction extends Action<RestPostAction>
                   if (child instanceof String)
                   {
                      //-- this was passed in as an href reference, not as an object
-                     if (rel.isManyToOne())
+                     if (rel.isOneToMany())
                      {
-                        //-- the child inverse of this a one-to-many that modifies the child row.  
+                        //-- the child inverse of this is a many-to-one that modifies the child row.  
                         child = new JSArray(child);
                         childArr.set(i, child);
                      }
@@ -280,12 +287,12 @@ public class RestPostAction extends Action<RestPostAction>
                   if (child instanceof JSNode)
                   {
                      JSNode childNode = (JSNode) child;
-                     if (rel.isManyToOne())
+                     if (rel.isOneToMany())
                      {
-                        //-- this generations many-to-one, are the next generation's one-to-manys
+                        //-- this generations one-to-many, are the next generation's many-to-ones
                         //-- the child generation receives an implicity relationship via nesting
                         //-- under the parent, have to set the inverse prop on the child so 
-                        //-- its one-to-many FK gets set to this parent.
+                        //-- its many-to-one FK gets set to this parent.
 
                         childNode.put(inverse.getName(), node.getString("href"));
                      }
@@ -324,10 +331,11 @@ public class RestPostAction extends Action<RestPostAction>
 
       //--
       //--
-      //-- Step 3. sets foreign keys on parent entities
+      //-- Step 3. sets foreign keys on json parent entities..this happens
+      //-- when a JSON parent is actually a ONE_TO_MANY child. 
       //-- 
       //-- ...important for when 
-      //-- new child entities are passed in...they won't have an href 
+      //-- new ONE_TO_MANY entities are passed in...they won't have an href 
       //-- on the initial record submit..the recursion has to happen to 
       //-- give them an href
       //--
@@ -336,25 +344,33 @@ public class RestPostAction extends Action<RestPostAction>
       for (Relationship rel : collection.getRelationships())
       {
          List<Map> updatedRows = new ArrayList();
-         if (rel.isOneToMany())
+         if (rel.isManyToOne())//this means we have a FK to the related element's PK
          {
-            //GOAL: set the value of the FK on this one record..then done
-
             for (JSNode node : nodes.asNodeList())
             {
                Map primaryKey = getKey(collection, node);
-               Map foreignKey = mapTo(getKey(rel.getRelated(), node.get(rel.getName())), rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+               Map foreignEntityKey = getKey(rel.getRelated(), node.get(rel.getName()));
 
-               if (foreignKey.size() > 0)
+               Index foreignIdx = rel.getFkIndex1();
+               Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
+
+               Object docChild = node.get(rel.getName());
+               if (docChild instanceof JSNode)
                {
                   Map updatedRow = new HashMap();
-                  updatedRow.putAll(primaryKey);
-                  updatedRow.putAll(foreignKey);
                   updatedRows.add(updatedRow);
-               }
-               else
-               {
-                  //this FK value was not provided by the caller
+                  updatedRow.putAll(primaryKey);
+                  
+                  if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
+                  {
+                     //-- the fk is an entityKey not a one-to-one column mapping to the primary composite key
+                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeKey(foreignEntityKey));
+                  }
+                  else
+                  {
+                     Map foreignKey = mapTo(foreignEntityKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                     updatedRow.putAll(foreignKey);
+                  }
                }
             }
 
@@ -367,7 +383,7 @@ public class RestPostAction extends Action<RestPostAction>
 
       //--
       //--
-      //-- Step 4: Now find all key values to keep for many-to-* relationships
+      //-- Step 4: Now find all key values to keep for one-to-many and many-to-many relationships
       //-- ... this step just collects them...then next steps updates new and removed relationships
       //--
 
@@ -375,7 +391,7 @@ public class RestPostAction extends Action<RestPostAction>
 
       for (Relationship rel : collection.getRelationships())
       {
-         if (rel.isOneToMany())//these were handled above
+         if (rel.isManyToOne())//these were handled in step 1 and 2
             continue;
 
          for (JSNode node : nodes.asNodeList())
@@ -406,7 +422,7 @@ public class RestPostAction extends Action<RestPostAction>
                   String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
                   Row childPk = rel.getRelated().decodeKey(childEk);
 
-                  if (rel.isManyToOne())
+                  if (rel.isOneToMany())
                   {
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childPk);
                   }
@@ -424,8 +440,8 @@ public class RestPostAction extends Action<RestPostAction>
       //--
       //-- Step 5 - 
       //--   1. upsert all new and kept relationships
-      //--   2. null out all now invalid many-to-one relationships
-      //--      AND delete all now invalid many-to-many relationships
+      //--   2. null out all now invalid many-to-one foreign keys
+      //--      AND delete all now invalid many-to-many rows
       //--
       //--   To update/delete all now invlaid relationships, we are going to construct
       //--   an RQL query to find all relationships that are NOT in the list we upserted
@@ -469,8 +485,8 @@ public class RestPostAction extends Action<RestPostAction>
          }
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
-         Collection coll = rel.isManyToOne() ? rel.getRelated() : rel.getFk1Col1().getCollection();
-         if (rel.isManyToOne())
+         Collection coll = rel.isOneToMany() ? rel.getRelated() : rel.getFk1Col1().getCollection();
+         if (rel.isOneToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().update(coll, upserts);
@@ -496,20 +512,20 @@ public class RestPostAction extends Action<RestPostAction>
 
          while (true)
          {
-            log.debug("...looking for many-to-* outdated relationships: " + rel + " -> " + queryTerms);
+            log.debug("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
 
             Results<Row> results = coll.getDb().select(coll, queryTerms);
 
             if (results.size() <= 0)
                break;
 
-            if (rel.isManyToOne())
+            if (rel.isOneToMany())
             {
                for (Row row : results.getRows())
                {
                   for (int i = 0; i < rel.getFkIndex1().size(); i++)
                   {
-                     Property col = rel.getFkIndex1().getColumn(i);
+                     Property col = rel.getFkIndex1().getProperty(i);
                      row.put(col.getColumnName(), null);
                   }
                }
@@ -557,22 +573,32 @@ public class RestPostAction extends Action<RestPostAction>
 
    Map mapTo(Map srcRow, Index srcCols, Index destCols)
    {
-      if (srcCols.size() != destCols.size())
-         ApiException.throw500InternalServerError("Unable to map from index '%s' to '%s'", srcCols.toString(), destCols);
-
-      if (srcRow == null)
-         return Collections.EMPTY_MAP;
-
-      if (srcCols != destCols)
+      if (srcCols.size() != destCols.size() && destCols.size() == 1)
       {
-         for (int i = 0; i < srcCols.size(); i++)
+         //when the foreign key is only one column but the related primary key is multiple 
+         //columns, encode the FK as an entityKey.
+         String entityKey = Collection.encodeKey(srcRow, srcCols);
+         srcRow.clear();
+         srcRow.put(destCols.getProperty(0).getColumnName(), entityKey);
+      }
+      else
+      {
+         if (srcCols.size() != destCols.size())
+            ApiException.throw500InternalServerError("Unable to map from index '%s' to '%s'", srcCols.toString(), destCols);
+
+         if (srcRow == null)
+            return Collections.EMPTY_MAP;
+
+         if (srcCols != destCols)
          {
-            String key = srcCols.getColumn(i).getColumnName();
-            Object value = srcRow.remove(key);
-            srcRow.put(destCols.getColumn(i).getColumnName(), value);
+            for (int i = 0; i < srcCols.size(); i++)
+            {
+               String key = srcCols.getProperty(i).getColumnName();
+               Object value = srcRow.remove(key);
+               srcRow.put(destCols.getProperty(i).getColumnName(), value);
+            }
          }
       }
-
       return srcRow;
    }
 
@@ -601,7 +627,7 @@ public class RestPostAction extends Action<RestPostAction>
    /*
     * Collapses nested objects so that relationships can be preserved but the fields
     * of the nested child objects are not saved (except for FKs back to the parent 
-    * object in the case of a MANY_TO_ONE relationship).
+    * object in the case of a ONE_TO_MANY relationship).
     * 
     * This is intended to be used as a reciprocal to GetHandler "expands" when
     * a client does not want to scrub their json model before posting changes to

@@ -91,7 +91,7 @@ public class Property implements Comparable<Property>, Serializable
 
    public String toString()
    {
-      return hint == null ? super.toString() : hint;
+      return hint == null ? getJsonName() : hint;
    }
 
    /**

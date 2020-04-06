@@ -238,8 +238,8 @@ public abstract class Db<T extends Db>
 
       //-- Now go back through and create relationships for all foreign keys
       //-- two relationships objects are created for every relationship type
-      //-- representing both sides of the relationship...ONE_TO_MANY also
-      //-- creates a MANY_TO_ONE and there are always two for a MANY_TO_MANY.
+      //-- representing both sides of the relationship...MANY_TO_ONE also
+      //-- creates a ONE_TO_MANY and there are always two for a MANY_TO_MANY.
       //-- API designers may want to represent one or both directions of the
       //-- relationship in their API and/or the names of the JSON properties
       //-- for the relationships will probably be different
@@ -260,8 +260,8 @@ public abstract class Db<T extends Db>
                   if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Collection entity1 = idx1.getColumn(0).getPk().getCollection();
-                  Collection entity2 = idx2.getColumn(0).getPk().getCollection();
+                  Collection entity1 = idx1.getProperty(0).getPk().getCollection();
+                  Collection entity2 = idx2.getProperty(0).getPk().getCollection();
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
@@ -270,7 +270,7 @@ public abstract class Db<T extends Db>
                   r.withFkIndex1(idx1);
                   r.withFkIndex2(idx2);
                   r.withName(makeRelationshipName(entity1, r));
-                  r.withEntity(entity1);
+                  r.withCollection(entity1);
                   relationshipStrs.add(r.toString());
                }
             }
@@ -284,31 +284,32 @@ public abstract class Db<T extends Db>
                   if (!fkIdx.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Collection pkEntity = fkIdx.getColumn(0).getPk().getCollection();
-                  Collection fkEntity = fkIdx.getColumn(0).getCollection();
+                  Collection pkEntity = fkIdx.getProperty(0).getPk().getCollection();
+                  Collection fkEntity = fkIdx.getProperty(0).getCollection();
 
+                  
                   //ONE_TO_MANY
                   {
                      Relationship r = new Relationship();
                      //TODO:this name may not be specific enough or certain types
                      //of relationships. For example where an entity is related
                      //to another entity twice
-                     r.withType(Relationship.REL_MANY_TO_ONE);
+                     r.withType(Relationship.REL_ONE_TO_MANY);
                      r.withFkIndex1(fkIdx);
                      r.withRelated(fkEntity);
                      r.withName(makeRelationshipName(pkEntity, r));
-                     r.withEntity(pkEntity);
+                     r.withCollection(pkEntity);
                      relationshipStrs.add(r.toString());
                   }
 
                   //MANY_TO_ONE
                   {
                      Relationship r = new Relationship();
-                     r.withType(Relationship.REL_ONE_TO_MANY);
+                     r.withType(Relationship.REL_MANY_TO_ONE);
                      r.withFkIndex1(fkIdx);
                      r.withRelated(pkEntity);
                      r.withName(makeRelationshipName(fkEntity, r));
-                     r.withEntity(fkEntity);
+                     r.withCollection(fkEntity);
                      relationshipStrs.add(r.toString());
                   }
                }
@@ -410,7 +411,7 @@ public abstract class Db<T extends Db>
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
-      if (type.equals(Relationship.REL_ONE_TO_MANY))
+      if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
          name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
@@ -418,7 +419,7 @@ public abstract class Db<T extends Db>
             name = name.substring(0, name.length() - 2);
          }
       }
-      else if (type.equals(Relationship.REL_MANY_TO_ONE))
+      else if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
          //Example
          //
@@ -486,7 +487,7 @@ public abstract class Db<T extends Db>
       String name = null;
       String type = rel.getType();
       boolean pluralize = false;
-      if (type.equals(Relationship.REL_ONE_TO_MANY))
+      if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
          name = rel.getFk1Col1().getColumnName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
@@ -494,7 +495,7 @@ public abstract class Db<T extends Db>
             name = name.substring(0, name.length() - 2);
          }
       }
-      else if (type.equals(Relationship.REL_MANY_TO_ONE))
+      else if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
          name = rel.getRelated().getName();
          pluralize = true;

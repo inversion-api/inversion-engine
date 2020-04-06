@@ -64,7 +64,7 @@ public class RestGetAction extends Action<RestGetAction>
 
          String newHref = null;
 
-         if (rel.isManyToOne())
+         if (rel.isOneToMany())
          {
             //-- CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
             //-- TO THIS : http://localhost/northwind/sql/orderdetails?orderid=10395
@@ -77,21 +77,33 @@ public class RestGetAction extends Action<RestGetAction>
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
             Row entityKeyRow = collection.decodeKey(req.getEntityKey());
 
-            //-- maps query string parameter names for the main collection's pk to the related collection's fk
-            Index fkIdx = rel.getFkIndex1();
-            for (int i = 0; i < fkIdx.size(); i++)
+            if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
+                  && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded entityKey
             {
-               Property fk = fkIdx.getColumn(i);
-               String pkName = fk.getPk().getColumnName();
-               Object pkVal = entityKeyRow.get(pkName);
+               String propName = rel.getFk1Col1().getJsonName();
+               newHref += propName + "=" + entityKey;
+            }
+            else
+            {
+               //TODO: test this change
+               Index fkIdx = rel.getFkIndex1();
+               Index pkIdx = collection.getPrimaryIndex();
 
-               if (pkVal == null)
-                  ApiException.throw400BadRequest("Missing parameter for foreign key column '%s'", fk);
+               for (int i = 0; i < fkIdx.size(); i++)
+               {
+                  Property fk = fkIdx.getProperty(i);
+                  String pkName = pkIdx.getPropertyName(i);
+                  Object pkVal = entityKeyRow.get(pkName);
 
-               newHref += fk.getColumnName() + "=" + pkVal + "&";
+                  if (pkVal == null)
+                     ApiException.throw400BadRequest("Missing parameter for foreign key property '%s'", fk.getJsonName());
+
+                  newHref += fk.getColumnName() + "=" + pkVal + "&";
+               }
+
+               newHref = newHref.substring(0, newHref.length() - 1);
             }
 
-            newHref = newHref.substring(0, newHref.length() - 1);
          }
          else if (rel.isManyToMany())
          {
@@ -276,7 +288,7 @@ public class RestGetAction extends Action<RestGetAction>
                      Index pk = collection.getPrimaryIndex();
                      for (int i = 0; i < pk.size(); i++)
                      {
-                        Property c = pk.getColumn(i);
+                        Property c = pk.getProperty(i);
                         boolean includesPkCol = false;
                         for (Term col : term.getTerms())
                         {
@@ -353,9 +365,19 @@ public class RestGetAction extends Action<RestGetAction>
                   for (Relationship rel : collection.getRelationships())
                   {
                      String link = null;
-                     if (rel.isOneToMany())
+                     if (rel.isManyToOne())
                      {
-                        String fkval = Collection.encodeKey(row, rel.getFkIndex1());
+                        String fkval = null;
+                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded entityKey
+                        {
+                           Object obj = row.get(rel.getFk1Col1().getColumnName());
+                           if (obj != null)
+                              fkval = obj.toString();
+                        }
+                        else
+                        {
+                           fkval = Collection.encodeKey(row, rel.getFkIndex1());
+                        }
 
                         if (fkval != null)
                         {
@@ -508,7 +530,7 @@ public class RestGetAction extends Action<RestGetAction>
    }
 
    /**
-    * This is more complicated that it seems like it would need to be because 
+    * This is more complicated than it seems like it would need to be because 
     * it attempts to retrieve all values of a relationship at a time for the whole 
     * document.  It does not run a recursive query for each entity and each relationship
     * which could mean hundreds and hundreds of queries per document.  This should
@@ -567,8 +589,8 @@ public class RestGetAction extends Action<RestGetAction>
                }
             }
 
-            //ONE_TO_MANY - Player.locationId -> Location.id
-            //MANY_TO_ONE - Location.id <- Player.locationId  
+            //ONE_TO_MANY - Location.id <- Player.locationId  
+            //MANY_TO_ONE - Player.locationId -> Location.id (one playe
             //MANY_TO_MANY, ex going from Category(id)->CategoryBooks(categoryId, bookId)->Book(id)
 
             final Collection relatedCollection = rel.getRelated();
@@ -579,12 +601,12 @@ public class RestGetAction extends Action<RestGetAction>
             Index idxToRetrieve = null;
             List<KeyValue> relatedEks = null;
 
-            if (rel.isOneToMany())
+            if (rel.isManyToOne())
             {
                idxToMatch = collection.getPrimaryIndex();
                idxToRetrieve = rel.getFkIndex1();
 
-               //NOTE: expands() is only getting the paired up related keys.  For a ONE_TO_MANY
+               //NOTE: expands() is only getting the paired up related keys.  For a MANY_TO_ONE
                //relationship that data is already in the parent object you are trying to expand
                //so we don't need to query the db to find those relationships as we do for the 
                //MANY_TO relationships.
@@ -611,7 +633,7 @@ public class RestGetAction extends Action<RestGetAction>
                   }
                }
             }
-            else if (rel.isManyToOne())
+            else if (rel.isOneToMany())
             {
                //               idxToMatch = rel.getFkIndex1();
                //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
@@ -639,7 +661,7 @@ public class RestGetAction extends Action<RestGetAction>
 
                      toMatchEks.add(parentEk);
 
-                     if (rel.isOneToMany())
+                     if (rel.isManyToOne())
                      {
                         parentObj.remove(rel.getName());
                      }
@@ -682,7 +704,7 @@ public class RestGetAction extends Action<RestGetAction>
                JSNode parentObj = (JSNode) pkCache.get(collection, parentEk);
                JSNode childObj = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
-               if (rel.isOneToMany())
+               if (rel.isManyToOne())
                {
                   parentObj.put(rel.getName(), childObj);
                }
@@ -719,7 +741,7 @@ public class RestGetAction extends Action<RestGetAction>
       Term sort = Term.term(null, "sort", columns);
       Term notNull = Term.term(null, "nn", columns);
 
-      Rows rows = ((Rows) idxToMatch.getColumn(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
+      Rows rows = ((Rows) idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
       for (Row row : rows)
       {
          List idxToMatchVals = new ArrayList();

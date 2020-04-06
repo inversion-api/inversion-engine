@@ -436,24 +436,9 @@ public class Engine extends Rule<Engine>
                break;
             }
          }
-
-         pathParams.keySet().forEach(param -> url.clearParams(param));
-         url.withParams(pathParams);
-
-         if (req.getJson() != null)
-         {
-            req.getJson().asList().forEach(n -> {
-               if (n instanceof JSNode && !((JSNode) n).isArray())
-               {
-                  pathParams.keySet().forEach(param -> ((JSNode) n).put(param, pathParams.get(param)));
-               }
-            });
-         }
-
-         //         List<Action> actions = new ArrayList(api.getActions());
-         //         actions.addAll(endpoint.getActions());
-         //         
-         //         Collections.sort(actions);
+         
+         applyPathParams(pathParams, url, req.getJson());
+        
 
          //---------------------------------
 
@@ -629,6 +614,32 @@ public class Engine extends Rule<Engine>
       }
 
       return chain;
+   }
+
+   public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json)
+   {
+      pathParams.keySet().forEach(param -> url.clearParams(param));
+      pathParams.keySet().forEach(param -> {
+         if (pathParams.get(param) != null)
+         {
+            url.withParam(param, pathParams.get(param));
+         }
+      });
+
+      if (json != null)
+      {
+         json.asList().forEach(n -> {
+            if (n instanceof JSNode && !((JSNode) n).isArray())
+            {
+               pathParams.keySet().forEach(param -> {
+                  if (pathParams.get(param) != null)
+                  {
+                     ((JSNode) n).put(param, pathParams.get(param));
+                  }
+               });
+            }
+         });
+      }
    }
 
    LinkedHashSet<ApiListener> getApiListeners(Request req)

@@ -17,6 +17,7 @@
 package io.inversion.cloud.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -280,6 +281,41 @@ public class Api extends Rule<Api>
          if (!inserted)
             endpoints.add(endpoint);
       }
+      return this;
+   }
+
+   /**
+    * This method takes String instead of actual Collections and Properties as a convenience to people hand wiring up an Api.
+    * The referenced Collections and Properties actually have to exist already or you will get a NPE.  
+    */
+   public Api withRelationship(String parentCollectionName, String parentPropertyName, String childCollectionName, String childPropertyName, String... childFkProps)
+   {
+      Collection parentCollection = getCollection(parentCollectionName);
+      Collection childCollection = getCollection(childCollectionName);
+      
+      Property[] properties = new Property[childFkProps.length];
+      for (int i = 0; i < childFkProps.length; i++)
+         properties[i] = childCollection.getProperty(childFkProps[i]);
+      
+      return withRelationship(parentCollection, parentPropertyName, childCollection, childPropertyName, properties);
+   }
+   
+   /**
+    * Creates a ONE_TO_MANY Relationship from the parent to child collection and the inverse MANY_TO_ONE from the child to the parent. 
+    * The Relationship object along with the required Index objects are created.
+    * 
+    * For collections backed by relational data sources (like a SQL db) the length of <code>childFkProps</code> will generally match the 
+    * length of <code>parentCollections</code> primary index.  If the two don't match, then <code>childFkProps</code> must be 1.  In this 
+    * case, the compound primary index of parentCollection will be encoded as an entityKey in the single child table property.
+    */
+   public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
+   {
+      Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+      childCollection.withIndexes(fkIdx);
+
+      childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, parentCollection, fkIdx, null));
+      parentCollection.withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, parentCollection, childCollection, fkIdx, null));
+
       return this;
    }
 

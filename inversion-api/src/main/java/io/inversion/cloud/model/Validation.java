@@ -48,13 +48,28 @@ public class Validation
    }
 
    /**
+    * If there are any <code>childProps</code> they must exist on the JSNode
+    * found at <code>pathOrProp</code>.  If <code>childProps</code> are null/empty
+    * then  <code>pathOrProp</code> must not be null.
+    * 
     * @return
     * @throws ApiException 400 if the referenced validation is null.
     */
-   public Validation required()
+   public Validation required(String... childProps)
    {
-      if (value == null)
+      if (Utils.empty(value))
          fail("Required field '" + propOrPath + "' is missing.");
+
+      if (childProps != null && value instanceof JSNode && !((JSNode) value).isArray())
+      {
+         for (String childProp : childProps)
+         {
+            if (Utils.empty(((JSNode) value).get(childProp)))
+            {
+               fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
+            }
+         }
+      }
 
       return this;
    }

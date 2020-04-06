@@ -28,7 +28,7 @@ public class MainCosmosApi
 {
    public static void main(String[] args) throws Exception
    {
-      Engine e = CosmosEngineFactory.buildEngine();
+      Engine e = CosmosDbFactory.buildEngine();
       e.withEngineListener(new EngineListener()
          {
 

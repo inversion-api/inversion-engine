@@ -526,18 +526,7 @@ public class Chain
          Map<String, String> pathParams = new HashMap();
          actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
 
-         pathParams.keySet().forEach(param -> request.getUrl().clearParams(param));
-         request.getUrl().withParams(pathParams);
-
-         if (request.getJson() != null)
-         {
-            request.getJson().asList().forEach(n -> {
-               if (n instanceof JSNode && !((JSNode) n).isArray())
-               {
-                  pathParams.keySet().forEach(param -> ((JSNode) n).put(param, pathParams.get(param)));
-               }
-            });
-         }
+         Engine.applyPathParams(pathParams, request.getUrl(), request.getJson());
 
          actionMatch.action.run(request, response);
          return true;

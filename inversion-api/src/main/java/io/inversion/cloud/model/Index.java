@@ -19,6 +19,7 @@ package io.inversion.cloud.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.inversion.cloud.utils.Utils;
 
@@ -28,31 +29,23 @@ import io.inversion.cloud.utils.Utils;
  */
 public class Index implements Serializable
 {
-   protected Collection   collection  = null;
-   protected String       name        = null;
-   protected String       type        = null;           // primary, partition, sort, localsecondary, etc
-   protected boolean      unique      = true;
-   protected List<String> columnNames = new ArrayList();
+   protected Collection     collection = null;
+   protected String         name       = null;
+   protected String         type       = null;           // primary, partition, sort, localsecondary, etc
+   protected boolean        unique     = true;
+   protected List<Property> properties = new ArrayList();
 
    public Index()
    {
       super();
    }
 
-   public Index(String name, String type, boolean unique)
+   public Index(String name, String type, boolean unique, Property... properties)
    {
       withName(name);
       withType(type);
       withUnique(unique);
-   }
-
-   public Index(String name, String type, boolean unique, String columnName1, String... columnNameN)
-   {
-      withName(name);
-      withType(type);
-      withUnique(unique);
-      withColumnNames(columnName1);
-      withColumnNames(columnNameN);
+      withProperties(properties);
    }
 
    public boolean equals(Object object)
@@ -71,10 +64,10 @@ public class Index implements Serializable
    public String toString()
    {
       StringBuffer buff = new StringBuffer(getCollection().getTableName()).append(".").append(name).append("(");
-      for (int i = 0; i < columnNames.size(); i++)
+      for (int i = 0; i < size(); i++)
       {
-         buff.append(columnNames.get(i));
-         if (i < columnNames.size() - 1)
+         buff.append(getPropertyName(i));
+         if (i < size() - 1)
             buff.append(", ");
       }
       buff.append(")");
@@ -86,8 +79,8 @@ public class Index implements Serializable
       if (collection.isExclude())
          return true;
 
-      for (String c : columnNames)
-         if (collection.getProperty(c).isExclude())
+      for (Property property : properties)
+         if (property.isExclude())
             return true;
 
       return false;
@@ -152,57 +145,67 @@ public class Index implements Serializable
       return this;
    }
 
-   public boolean hasColumn(String name)
+   public Index withProperties(Property... properties)
    {
-      for (String col : columnNames)
+      for (int i = 0; properties != null && i < properties.length; i++)
       {
-         if (col.equalsIgnoreCase(name))
-            return true;
+         if (properties[i] != null && !this.properties.contains(properties[i]))
+            this.properties.add(properties[i]);
       }
-      return false;
+      return this;
    }
 
-   public Property getColumn(int idx)
+   //   public boolean hasProperty(String name)
+   //   {
+   //      for (String col : columnNames)
+   //      {
+   //         if (col.equalsIgnoreCase(name))
+   //            return true;
+   //      }
+   //      return false;
+   //   }
+
+   public Property getProperty(int idx)
    {
-      return collection.getProperty(columnNames.get(idx));
+      return properties.get(idx);
    }
 
    public int size()
    {
-      return columnNames.size();
+      return properties.size();
    }
 
-   public Index setColumnName(int index, String columnName)
+   //   public Index setColumnName(int index, String columnName)
+   //   {
+   //      while (columnNames.size() < index - 1)
+   //         columnNames.add(null);
+   //
+   //      columnNames.set(index, columnName);
+   //      return this;
+   //   }
+
+   public String getPropertyName(int index)
    {
-      while (columnNames.size() < index - 1)
-         columnNames.add(null);
-
-      columnNames.set(index, columnName);
-      return this;
+      return index < properties.size() ? properties.get(index).getJsonName() : null;
    }
 
-   public String getColumnName(int index)
-   {
-      return index < columnNames.size() ? columnNames.get(index) : null;
-   }
-
-   public Index withColumnNames(String... columnNames)
-   {
-      for (int i = 0; columnNames != null && i < columnNames.length; i++)
-      {
-         String columnName = columnNames[i];
-         if (!Utils.empty(columnName) && !this.columnNames.contains(columnName))
-         {
-            this.columnNames.add(columnName);
-         }
-      }
-
-      return this;
-   }
+   //   public Index withColumnNames(String... columnNames)
+   //   {
+   //      for (int i = 0; columnNames != null && i < columnNames.length; i++)
+   //      {
+   //         String columnName = columnNames[i];
+   //         if (!Utils.empty(columnName) && !this.columnNames.contains(columnName))
+   //         {
+   //            this.columnNames.add(columnName);
+   //         }
+   //      }
+   //
+   //      return this;
+   //   }
 
    public List<String> getColumnNames()
    {
-      return new ArrayList(columnNames);
+      return properties.stream().map(Property::getColumnName).collect(Collectors.toList());
    }
 
 }

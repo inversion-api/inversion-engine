@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.cloud.action.cosmosdb;
 
 import org.junit.jupiter.api.TestInstance;
@@ -22,7 +38,7 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
       Db db = getDb();
       if (db == null)
       {
-         db = new CosmosDocumentDb("cosmos");
+         db = CosmosDbFactory.buildDb();
          setDb(db);
       }
    }
@@ -80,6 +96,8 @@ public class CosmosRqlUnitTest extends AbstractRqlTest
            .withResult("manyToOneExistsEq", "UNSUPPORTED")//
            .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
            .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
+
+           .withResult("eqNonexistantColumn", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderId\\\"] >= @orderId1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderId1\",\"value\":\"1000\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
 
       ;
    }

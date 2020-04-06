@@ -55,6 +55,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public Collection()
    {
+      System.out.println("asdf");
    }
 
    public Collection(String defaultName)
@@ -67,7 +68,6 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       return new Path("{collection:" + getName() + "}/[:entity]/[:relationship]/*");
    }
-   
 
    /**
     * Returns true if all columns are foreign keys.  In an RDBMS system, this
@@ -316,16 +316,16 @@ public class Collection extends Rule<Collection> implements Serializable
       return new ArrayList(indexes);
    }
 
-   public List<Index> getIndexes(String column)
-   {
-      List<Index> found = new ArrayList();
-      for (Index index : indexes)
-      {
-         if (index.hasColumn(column))
-            found.add(index);
-      }
-      return found;
-   }
+   //   public List<Index> getIndexes(String column)
+   //   {
+   //      List<Index> found = new ArrayList();
+   //      for (Index index : indexes)
+   //      {
+   //         if (index.hasProperty(column))
+   //            found.add(index);
+   //      }
+   //      return found;
+   //   }
 
    public Collection withIndexes(Index... indexes)
    {
@@ -345,20 +345,23 @@ public class Collection extends Rule<Collection> implements Serializable
       return this;
    }
 
-   public Collection withIndex(String name, String type, boolean unique, String column1Name, String... columnsN)
+   public Collection withIndex(String name, String type, boolean unique, String... propertyNames)
    {
+      Property[] properties = new Property[propertyNames.length];
+      for (int i = 0; i < propertyNames.length; i++)
+         properties[i] = getProperty(propertyNames[i]);
+
       Index index = getIndex(name);
       if (index == null)
       {
-         index = new Index(name, type, unique, column1Name, columnsN);
+         index = new Index(name, type, unique, properties);
          withIndexes(index);
       }
       else
       {
          index.withType(type);
          index.withUnique(unique);
-         index.withColumnNames(column1Name);
-         index.withColumnNames(columnsN);
+         index.withProperties(properties);
       }
 
       return this;
@@ -413,8 +416,8 @@ public class Collection extends Rule<Collection> implements Serializable
       if (!relationships.contains(relationship))
          relationships.add(relationship);
 
-      if (relationship.getEntity() != this)
-         relationship.withEntity(this);
+      if (relationship.getCollection() != this)
+         relationship.withCollection(this);
 
       return this;
    }
@@ -595,7 +598,7 @@ public class Collection extends Rule<Collection> implements Serializable
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
-            ApiException.throw400BadRequest("Supplied entity key '%s' has %n parts but the primary index for table '%s' has %n parts" + index.size(), inKeys, rows.size(), getTableName(), index.size());
+            ApiException.throw400BadRequest("Supplied entity key '%s' has %s part(s) but the primary index for table '%s' has %s part(s)", row, row.size(), getTableName(), index.size());
 
          for (int i = 0; i < colNames.size(); i++)
          {
@@ -604,7 +607,7 @@ public class Collection extends Rule<Collection> implements Serializable
             if (((String) value).length() == 0)
                ApiException.throw400BadRequest("A key component can not be empty '%s'", inKeys);
 
-            value = getDb().cast(index.getColumn(i), value);
+            value = getDb().cast(index.getProperty(i), value);
             row.set(i, value);
          }
          rows.addRow(row);

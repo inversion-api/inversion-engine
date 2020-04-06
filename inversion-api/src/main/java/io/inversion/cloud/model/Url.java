@@ -319,11 +319,11 @@ public class Url
    public String clearParams(String... tokens)
    {
       String oldValue = null;
-      for (int i = 0; i < tokens.length; i++)
+      for (String token : tokens)
       {
          for (String existing : (List<String>) new ArrayList(params.keySet()))
          {
-            if (Utils.containsToken(tokens[i], existing))
+            if (Utils.containsToken(token, existing))
             {
                String removed = (String) params.remove(existing);
                if (oldValue == null)

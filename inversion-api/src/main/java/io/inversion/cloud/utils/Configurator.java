@@ -376,7 +376,7 @@ public class Configurator
          else if (o instanceof Relationship)
          {
             Relationship a = (Relationship) o;
-            name = getName(a.getEntity()) + ".relationships." + a.getName();
+            name = getName(a.getCollection()) + ".relationships." + a.getName();
          }
 
          if (name == null)

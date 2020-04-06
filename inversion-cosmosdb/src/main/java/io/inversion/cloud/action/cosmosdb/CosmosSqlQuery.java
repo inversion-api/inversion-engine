@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.cloud.action.cosmosdb;
 
 import java.util.Arrays;
@@ -30,14 +46,14 @@ import io.inversion.cloud.service.Chain;
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
  * @author wells
  */
-public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
+public class CosmosSqlQuery extends SqlQuery<CosmosDb>
 {
    public CosmosSqlQuery()
    {
 
    }
 
-   public CosmosSqlQuery(CosmosDocumentDb db, Collection table, List<Term> terms)
+   public CosmosSqlQuery(CosmosDb db, Collection table, List<Term> terms)
    {
       super(table, terms);
       super.withDb(db);
@@ -81,7 +97,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
    public Results<Row> doSelect() throws Exception
    {
       Results results = new Results(this);
-      CosmosDocumentDb db = getDb();
+      CosmosDb db = getDb();
 
       String collectionUri = db.getCollectionUri(collection);
 
@@ -105,7 +121,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDocumentDb>
       Index partKey = collection.getIndex("PartitionKey");
       if (partKey != null)
       {
-         String partKeyCol = partKey.getColumn(0).getColumnName();
+         String partKeyCol = partKey.getProperty(0).getColumnName();
          //-- the only way to turn cross partition querying off is to 
          //-- have a single partition key identified in your query.
          //-- If we have a pk term but it is nested in an expression

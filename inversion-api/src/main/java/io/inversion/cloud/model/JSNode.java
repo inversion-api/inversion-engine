@@ -720,6 +720,16 @@ public class JSNode implements Map<String, Object>
       return old != null ? old.getValue() : old;
    }
 
+   public Object removeAll(Object... names)
+   {
+      Object val = null;
+      for (int i = 0; names != null && i < names.length; i++)
+      {
+         val = remove(names[i]);
+      }
+      return val;
+   }
+
    @Override
    public Set<String> keySet()
    {

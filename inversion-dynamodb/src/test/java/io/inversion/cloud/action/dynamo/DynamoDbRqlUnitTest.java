@@ -133,8 +133,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
       employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
       employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
       employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
-      employees.withRelationship(new Relationship("reportsTo", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-      employees.withRelationship(new Relationship("employees", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+      employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+      employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
 
       employeeOrderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "orderId", "productId");
       employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));

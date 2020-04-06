@@ -66,9 +66,6 @@ public class AuthAction extends Action<AuthAction>
    @Override
    public void run(Request req, Response resp) throws Exception
    {
-      if (true)
-         return;
-
       User user = Chain.getUser();
 
       if (user != null && !req.isDelete())

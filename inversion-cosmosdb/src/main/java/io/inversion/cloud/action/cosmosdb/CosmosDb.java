@@ -41,7 +41,7 @@ import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
-public class CosmosDocumentDb extends Db<CosmosDocumentDb>
+public class CosmosDb extends Db<CosmosDb>
 {
    protected String                   uri            = null;
    protected String                   db             = "";
@@ -49,12 +49,12 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
 
    transient protected DocumentClient documentClient = null;
 
-   public CosmosDocumentDb()
+   public CosmosDb()
    {
       this.withType("cosmosdb");
    }
 
-   public CosmosDocumentDb(String name)
+   public CosmosDb(String name)
    {
       this();
       withName(name);
@@ -158,7 +158,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
    protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
    {
       Object id = table.encodeKey(indexValues);
-      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getColumn(0).getColumnName());
+      Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());
       String documentUri = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
 
       RequestOptions options = new RequestOptions();
@@ -203,7 +203,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return uri;
    }
 
-   public CosmosDocumentDb withUri(String uri)
+   public CosmosDb withUri(String uri)
    {
       this.uri = uri;
       return this;
@@ -214,7 +214,7 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return db;
    }
 
-   public CosmosDocumentDb withDb(String db)
+   public CosmosDb withDb(String db)
    {
       this.db = db;
       return this;
@@ -225,13 +225,13 @@ public class CosmosDocumentDb extends Db<CosmosDocumentDb>
       return key;
    }
 
-   public CosmosDocumentDb withKey(String key)
+   public CosmosDb withKey(String key)
    {
       this.key = key;
       return this;
    }
 
-   public synchronized CosmosDocumentDb withDocumentClient(DocumentClient documentClient)
+   public synchronized CosmosDb withDocumentClient(DocumentClient documentClient)
    {
       this.documentClient = documentClient;
       return this;

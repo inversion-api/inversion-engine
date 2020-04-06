@@ -87,6 +87,10 @@ public class InversionApp
             System.err.println(msg);
             throw new RuntimeException(msg, e);
          }
+         else
+         {
+            e.printStackTrace();
+         }
          Utils.rethrow(e);
       }
    }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Rocket Partners, LLC
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,19 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.h2;
+package io.inversion.cloud.action.cosmosdb;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractJdbcDbRestGetActionIntegTest;
+import io.inversion.cloud.model.Db;
+import io.inversion.cloud.service.Engine;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
+public class CosmosRqlIntegTest extends CosmosRqlUnitTest
 {
-   public H2SqlGetActionIntegTest()
+   public Engine buildEngine(Db db)
    {
-      super("h2");
+      Engine engine = null;
+      try
+      {
+         engine = CosmosDbFactory.buildEngine((CosmosDb) db);
+      }
+      catch (Exception e)
+      {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+      return engine;
    }
-
 }

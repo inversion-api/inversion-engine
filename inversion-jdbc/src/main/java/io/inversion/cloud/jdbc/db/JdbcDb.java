@@ -46,13 +46,11 @@ import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.ApiListener;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Relationship;
 import io.inversion.cloud.model.Request;
 import io.inversion.cloud.model.Response;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.service.Chain;
@@ -314,7 +312,15 @@ public class JdbcDb extends Db<JdbcDb>
          }
       }
 
-      return JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+      List upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+
+      for (int i = 0; i < upserted.size(); i++)
+      {
+         String entityKey = table.encodeKey((Row) upserted.get(i));
+         upserted.set(i, entityKey);
+      }
+
+      return upserted;
    }
 
    @Override
