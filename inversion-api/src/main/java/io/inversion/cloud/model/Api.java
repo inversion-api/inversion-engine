@@ -292,14 +292,11 @@ public class Api extends Rule<Api>
    {
       Collection parentCollection = getCollection(parentCollectionName);
       Collection childCollection = getCollection(childCollectionName);
-      
-      Property[] properties = new Property[childFkProps.length];
-      for (int i = 0; i < childFkProps.length; i++)
-         properties[i] = childCollection.getProperty(childFkProps[i]);
-      
-      return withRelationship(parentCollection, parentPropertyName, childCollection, childPropertyName, properties);
+
+      parentCollection.withRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
+      return this;
    }
-   
+
    /**
     * Creates a ONE_TO_MANY Relationship from the parent to child collection and the inverse MANY_TO_ONE from the child to the parent. 
     * The Relationship object along with the required Index objects are created.
@@ -310,12 +307,7 @@ public class Api extends Rule<Api>
     */
    public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {
-      Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
-      childCollection.withIndexes(fkIdx);
-
-      childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, parentCollection, fkIdx, null));
-      parentCollection.withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, parentCollection, childCollection, fkIdx, null));
-
+      parentCollection.withRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
       return this;
    }
 

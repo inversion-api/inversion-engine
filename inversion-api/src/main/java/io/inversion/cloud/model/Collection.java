@@ -23,6 +23,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -418,6 +419,26 @@ public class Collection extends Rule<Collection> implements Serializable
 
       if (relationship.getCollection() != this)
          relationship.withCollection(this);
+
+      return this;
+   }
+
+   public Collection withRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps)
+   {
+      Property[] properties = new Property[childFkProps.length];
+      for (int i = 0; i < childFkProps.length; i++)
+         properties[i] = childCollection.getProperty(childFkProps[i]);
+
+      return withRelationship(parentPropertyName, childCollection, childPropertyName, properties);
+   }
+
+   public Collection withRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
+   {
+      Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+      childCollection.withIndexes(fkIdx);
+
+      withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
+      childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
       return this;
    }
