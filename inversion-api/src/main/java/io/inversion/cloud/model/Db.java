@@ -281,7 +281,7 @@ public abstract class Db<T extends Db>
             {
                try
                {
-                  if (!fkIdx.getType().equals("FOREIGN_KEY"))
+                  if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
                      continue;
 
                   Collection pkEntity = fkIdx.getProperty(0).getPk().getCollection();
