@@ -122,6 +122,19 @@ public class Path
       return null;
    }
 
+   public boolean startsWith(List<String> parts)
+   {
+      if (parts.size() > this.parts.size())
+         return false;
+
+      for (int i = 0; i < parts.size(); i++)
+      {
+         if (!parts.get(i).equalsIgnoreCase(this.parts.get(i)))
+            return false;
+      }
+      return true;
+   }
+
    public int size()
    {
       return parts.size();
@@ -146,6 +159,11 @@ public class Path
       return subpath;
    }
 
+   public boolean isStatic(int idx)
+   {
+      return !(isWildcard(idx) || isVar(idx) || isOptional(idx));
+   }
+
    public boolean isWildcard(int idx)
    {
       return "*".equals(get(idx));
@@ -161,6 +179,16 @@ public class Path
 
          char c = part.charAt(0);
          return c == '$' || c == ':' || c == '{';
+      }
+      return false;
+   }
+
+   public boolean isOptional(int idx)
+   {
+      String part = get(idx);
+      if (part != null)
+      {
+         return part.startsWith("[") && part.endsWith("]");
       }
       return false;
    }
