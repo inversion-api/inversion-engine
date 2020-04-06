@@ -136,19 +136,19 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          }
          else if ("id".equalsIgnoreCase(partKeyCol))
          {
-            partKey = Chain.peek().getRequest().getUrl().getParam("entity");
+            partKey = Chain.peek().getRequest().getEntityKey();
          }
       }
 
       if (partKey != null)
       {
          partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
-         options.setEnableCrossPartitionQuery(true);
+         options.setEnableCrossPartitionQuery(false);
          options.setPartitionKey(new PartitionKey(partKey));
       }
       else
       {
-         options.setEnableCrossPartitionQuery(false);
+         options.setEnableCrossPartitionQuery(true);
       }
 
       //-- for test cases and query explain
