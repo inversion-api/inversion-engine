@@ -440,6 +440,16 @@ public class Collection extends Rule<Collection> implements Serializable
       withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
       childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
+      Index primaryIdx = getPrimaryIndex();
+      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
+      {
+         for (int i = 0; i < childFkProps.length; i++)
+         {
+            childFkProps[i].withPk(primaryIdx.getProperty(i));
+         }
+      }
+
+      
       return this;
    }
 

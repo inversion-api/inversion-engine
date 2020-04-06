@@ -25,6 +25,7 @@ import com.microsoft.azure.documentdb.Document;
 import com.microsoft.azure.documentdb.DocumentClient;
 import com.microsoft.azure.documentdb.FeedOptions;
 import com.microsoft.azure.documentdb.FeedResponse;
+import com.microsoft.azure.documentdb.PartitionKey;
 import com.microsoft.azure.documentdb.SqlParameter;
 import com.microsoft.azure.documentdb.SqlParameterCollection;
 import com.microsoft.azure.documentdb.SqlQuerySpec;
@@ -35,7 +36,6 @@ import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Index;
 import io.inversion.cloud.model.JSNode;
 import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Order.Sort;
 import io.inversion.cloud.rql.Term;
@@ -116,24 +116,43 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
       FeedOptions options = new FeedOptions();
 
-      boolean enableCrossPartitionQuery = true;
-
-      Index partKey = collection.getIndex("PartitionKey");
-      if (partKey != null)
+      Object partKey = null;
+      String partKeyCol = null;
+      Index partKeyIdx = collection.getIndex("PartitionKey");
+      if (partKeyIdx != null)
       {
-         String partKeyCol = partKey.getProperty(0).getColumnName();
          //-- the only way to turn cross partition querying off is to 
          //-- have a single partition key identified in your query.
          //-- If we have a pk term but it is nested in an expression
          //-- the we can't be sure the cosmos query planner can use it.
+
+         partKey = null;
+         partKeyCol = partKeyIdx.getProperty(0).getColumnName();
          Term partKeyTerm = findTerm(partKeyCol, "eq");
-         enableCrossPartitionQuery = partKeyTerm == null || partKeyTerm.getParent() != null;
+
+         if (partKeyTerm != null && partKeyTerm.getParent() == null)
+         {
+            partKey = partKeyTerm.getToken(1);
+         }
+         else if ("id".equalsIgnoreCase(partKeyCol))
+         {
+            partKey = Chain.peek().getRequest().getUrl().getParam("entity");
+         }
       }
 
-      options.setEnableCrossPartitionQuery(enableCrossPartitionQuery);
+      if (partKey != null)
+      {
+         partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
+         options.setEnableCrossPartitionQuery(true);
+         options.setPartitionKey(new PartitionKey(partKey));
+      }
+      else
+      {
+         options.setEnableCrossPartitionQuery(false);
+      }
 
       //-- for test cases and query explain
-      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + enableCrossPartitionQuery + "}";
+      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey != null) + "}";
       debug = debug.replaceAll("\r", "");
       debug = debug.replaceAll("\n", " ");
       debug = debug.replaceAll(" +", " ");
