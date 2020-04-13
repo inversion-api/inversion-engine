@@ -160,8 +160,6 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       results.withTestQuery(debug);
       //-- end test case debug stuff
 
-      System.out.println();
-
       if (!isDryRun())
       {
          DocumentClient cosmos = db.getDocumentClient();

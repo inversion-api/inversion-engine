@@ -60,6 +60,10 @@ public class InversionServletConfig
                break;
             }
          }
+         
+         if(part == null)
+            break;
+         
          if (!done)
             parts.add(part);
       }

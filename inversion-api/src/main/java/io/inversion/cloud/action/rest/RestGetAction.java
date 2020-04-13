@@ -741,8 +741,9 @@ public class RestGetAction extends Action<RestGetAction>
       Term sort = Term.term(null, "sort", columns);
       Term notNull = Term.term(null, "nn", columns);
 
-      Rows rows = ((Rows) idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
-      for (Row row : rows)
+      Results obj = idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull));
+      List<Map> rows = obj.getRows();
+      for (Map row : rows)
       {
          List idxToMatchVals = new ArrayList();
          idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
