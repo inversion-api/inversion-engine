@@ -406,6 +406,9 @@ public class Engine extends Rule<Engine>
 
                for (Endpoint endpoint : api.getEndpoints())
                {
+                  if(Chain.getDepth() < 2 && endpoint.isInternal())
+                     continue;
+                  
                   Path endpointPath = endpoint.match(req.getMethod(), parts);
 
                   if (endpointPath != null)

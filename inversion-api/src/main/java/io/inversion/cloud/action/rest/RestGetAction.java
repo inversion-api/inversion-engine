@@ -98,7 +98,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (pkVal == null)
                      ApiException.throw400BadRequest("Missing parameter for foreign key property '%s'", fk.getJsonName());
 
-                  newHref += fk.getColumnName() + "=" + pkVal + "&";
+                  newHref += fk.getJsonName() + "=" + pkVal + "&";
                }
 
                newHref = newHref.substring(0, newHref.length() - 1);

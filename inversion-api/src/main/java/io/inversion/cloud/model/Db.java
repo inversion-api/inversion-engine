@@ -489,7 +489,7 @@ public abstract class Db<T extends Db>
       boolean pluralize = false;
       if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getFk1Col1().getColumnName();
+         name = rel.getFk1Col1().getJsonName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);

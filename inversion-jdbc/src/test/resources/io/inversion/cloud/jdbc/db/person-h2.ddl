@@ -1,4 +1,5 @@
 CREATE TABLE `Person` (
+    
     `Type` VARCHAR(20),
     `Identifier` INTEGER,
     `LastName` VARCHAR(20),

@@ -165,6 +165,12 @@ public class Index implements Serializable
    //      return false;
    //   }
 
+   public List<Property> getProperties()
+   {
+      return new ArrayList(properties);
+   }
+
+   
    public Property getProperty(int idx)
    {
       return properties.get(idx);

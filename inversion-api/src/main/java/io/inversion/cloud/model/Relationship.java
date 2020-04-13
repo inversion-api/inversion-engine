@@ -160,6 +160,8 @@ public class Relationship implements Serializable
     */
    public Relationship withName(String name)
    {
+      if(name.equals("value1"))
+         System.out.println("asdfas");
       this.name = name;
       return this;
    }

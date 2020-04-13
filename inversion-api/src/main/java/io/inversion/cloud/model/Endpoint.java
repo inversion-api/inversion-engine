@@ -52,6 +52,11 @@ public class Endpoint extends Rule<Endpoint>
       return this;
    }
 
+   public boolean isInternal()
+   {
+      return internal;
+   }
+
    public List<Action> getActions()
    {
       return new ArrayList(actions);

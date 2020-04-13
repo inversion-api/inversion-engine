@@ -659,6 +659,8 @@ public class JSNode implements Map<String, Object>
    @Override
    public Object put(String name, Object value)
    {
+//      if(name.equals("value1") && value.toString().startsWith("http://localhost/crm/acmeco/customers/"))
+//         System.out.println("Sdasf");
       Property prop = properties.put(name.toLowerCase(), new Property(name, value));
       return prop;
    }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+R * Copyright (c) 2015-2020 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -168,7 +168,6 @@ public class CosmosDb extends Db<CosmosDb>
       try
       {
          Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
-
          response = getDocumentClient().deleteDocument(documentUri, options);
 
          int statusCode = response.getStatusCode();

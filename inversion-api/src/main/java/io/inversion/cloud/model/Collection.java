@@ -42,7 +42,7 @@ import io.inversion.cloud.utils.Utils;
  */
 public class Collection extends Rule<Collection> implements Serializable
 {
-   protected Db                      db            = null;
+   transient protected Db            db            = null;
 
    protected String                  tableName     = null;
    protected String                  name          = null;
@@ -98,19 +98,14 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public Property getProperty(String name)
    {
-      for (Property prop : properties)
-      {
-         if (name.equalsIgnoreCase(prop.getColumnName()))
-            return prop;
-      }
-      return null;
+      return findProperty(name);
    }
 
    public Property findProperty(String jsonOrColumnName)
    {
-      Property prop = getPropertyByColumnName(jsonOrColumnName);
+      Property prop = getPropertyByJsonName(jsonOrColumnName);
       if (prop == null)
-         prop = getPropertyByJsonName(jsonOrColumnName);
+         prop = getPropertyByColumnName(jsonOrColumnName);
 
       return prop;
    }
@@ -427,7 +422,14 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       Property[] properties = new Property[childFkProps.length];
       for (int i = 0; i < childFkProps.length; i++)
-         properties[i] = childCollection.getProperty(childFkProps[i]);
+      {
+         Property prop = childCollection.getProperty(childFkProps[i]);
+
+         if (prop == null)
+            ApiException.throw500InternalServerError("Child foreign key property '%s.%s' can not be found.", childCollection.getName(), childFkProps[i]);
+
+         properties[i] = prop;
+      }
 
       return withRelationship(parentPropertyName, childCollection, childPropertyName, properties);
    }
@@ -449,7 +451,6 @@ public class Collection extends Rule<Collection> implements Serializable
          }
       }
 
-      
       return this;
    }
 
@@ -544,13 +545,18 @@ public class Collection extends Rule<Collection> implements Serializable
     * hex code equivalent preceded by a "*".  Similar to Java's unicode
     * escape sequences but designed for URLs.
     * 
+    * @see https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url
     * 
     * @param string
     * @return
     */
    public static String encodeStr(String string)
    {
-      Pattern p = Pattern.compile("[^A-Za-z0-9]");
+      //Pattern p = Pattern.compile("[^A-Za-z0-9]");
+      
+      Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
+      //- . _ ~ ( ) ' ! * : @ , ;
+      
       Matcher m = p.matcher(string);
       StringBuffer sb = new StringBuffer();
       while (m.find())
@@ -561,7 +567,7 @@ public class Collection extends Rule<Collection> implements Serializable
             hex = "0" + hex;
 
          //System.out.println(chars + " -> " + hex);
-         m.appendReplacement(sb, "*" + hex);
+         m.appendReplacement(sb, "@" + hex);
       }
       m.appendTail(sb);
       return sb.toString();
@@ -577,7 +583,7 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       try
       {
-         Pattern p = Pattern.compile("\\*[0-9a-f]{4}");
+         Pattern p = Pattern.compile("\\@[0-9a-f]{4}");
          Matcher m = p.matcher(string);
          StringBuffer sb = new StringBuffer();
          while (m.find())
@@ -728,7 +734,9 @@ public class Collection extends Rule<Collection> implements Serializable
          oos.flush();
 
          ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-         return (Collection) ois.readObject();
+         Collection c = (Collection) ois.readObject();
+         c.db = this.db;
+         return c;
       }
       catch (Exception e)
       {
