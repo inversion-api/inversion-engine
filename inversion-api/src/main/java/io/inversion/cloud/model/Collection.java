@@ -56,7 +56,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public Collection()
    {
-      System.out.println("asdf");
+
    }
 
    public Collection(String defaultName)
@@ -417,6 +417,42 @@ public class Collection extends Rule<Collection> implements Serializable
 
       return this;
    }
+   
+   
+   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps)
+   {
+      Property[] properties = new Property[childFkProps.length];
+      for (int i = 0; i < childFkProps.length; i++)
+      {
+         Property prop = getProperty(childFkProps[i]);
+
+         if (prop == null)
+            ApiException.throw500InternalServerError("Child foreign key property '%s.%s' can not be found.", getName(), childFkProps[i]);
+
+         properties[i] = prop;
+      }
+
+      return withManyToOneRelationship(parentCollection, childPropertyName, properties);
+   }
+
+   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps)
+   {
+      Index fkIdx = new Index(this + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+      withIndexes(fkIdx);
+
+      withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
+
+      Index primaryIdx = parentCollection.getPrimaryIndex();
+      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
+      {
+         for (int i = 0; i < childFkProps.length; i++)
+         {
+            childFkProps[i].withPk(primaryIdx.getProperty(i));
+         }
+      }
+
+      return this;
+   }
 
    public Collection withRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps)
    {
@@ -433,29 +469,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
       return withRelationship(parentPropertyName, childCollection, childPropertyName, properties);
    }
-   
-//   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps)
-//   {
-//      Index fkIdx = new Index(this + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
-//      withIndexes(fkIdx);
-//      
-//      withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
-//      
-//      Index primaryIdx = parentCollection.getPrimaryIndex();
-//      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
-//      {
-//         for (int i = 0; i < childFkProps.length; i++)
-//         {
-//            childFkProps[i].withPk(primaryIdx.getProperty(i));
-//         }
-//      }
-//      
-//      return this;
-//   }
-//
-//   public Collection withOneToManyRelationship()
-   
-   
+
    public Collection withRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {
       Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
@@ -575,10 +589,10 @@ public class Collection extends Rule<Collection> implements Serializable
    public static String encodeStr(String string)
    {
       //Pattern p = Pattern.compile("[^A-Za-z0-9]");
-      
+
       Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
       //- . _ ~ ( ) ' ! * : @ , ;
-      
+
       Matcher m = p.matcher(string);
       StringBuffer sb = new StringBuffer();
       while (m.find())
