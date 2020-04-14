@@ -234,15 +234,22 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
             String collectionName = columnName.substring(0, columnName.indexOf("."));
             if(columnName.startsWith("~~relTbl_"))
             {
-               collectionName = collectionName.substring(columnName.indexOf("_") + 1);
-               collectionName = getCollection().getRelationship(collectionName).getRelated().getName();
+               columnName = columnName.substring(columnName.indexOf("_") + 1);
+               collectionName = collectionName.substring(collectionName.indexOf("_") + 1);
+               
+               Relationship rel =  getCollection().getRelationship(collectionName);
+               if(rel != null)
+               {
+                  collectionName = rel.getRelated().getName();
+               }
             }
             coll = coll.getDb().getCollection(collectionName);
-            shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
          }
 
          if (coll != null)
          {
+            shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
+            
             Property col = coll.getProperty(shortName);
             if (col == null)
                ApiException.throw500InternalServerError("Unable to find column '%s' on table '%s'", columnName, coll.getTableName());

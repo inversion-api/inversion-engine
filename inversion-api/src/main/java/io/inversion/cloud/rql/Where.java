@@ -76,7 +76,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             transform(child);
          }
       }
-      
+
       if (!parent.isLeaf())
       {
          //check the first child expecting that to be the column name
@@ -85,25 +85,30 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
 
          if (parent.getTerm(0).isLeaf() && parent.getToken(0).indexOf(".") > 0 && !parent.hasToken("_key"))
          {
-            Term relCol = parent.getTerm(0);
-            relCol.withToken("~~relTbl_" + relCol.getToken());
-            
-            
-            String token = parent.getToken().toLowerCase();
-            if (existsFunctions.contains(token))
+            String rel = parent.getToken(0);
+            rel = rel.substring(0, rel.indexOf("."));
+
+            if (getParent().getCollection().getRelationship(rel) != null)
             {
-               transformed = Term.term(parent.getParent(), "_exists", parent);
+               Term relCol = parent.getTerm(0);
+               relCol.withToken("~~relTbl_" + relCol.getToken());
+
+               String token = parent.getToken().toLowerCase();
+               if (existsFunctions.contains(token))
+               {
+                  transformed = Term.term(parent.getParent(), "_exists", parent);
+               }
+               else if (notExistsFunctions.contains(token))
+               {
+                  parent.withToken(notExistsMap.get(token));
+                  transformed = Term.term(parent.getParent(), "_notexists", parent);
+               }
+
+               return transformed;
             }
-            else if (notExistsFunctions.contains(token))
-            {
-               parent.withToken(notExistsMap.get(token));
-               transformed = Term.term(parent.getParent(), "_notexists", parent);
-            }
-            
-            return transformed;
          }
       }
-      
+
       if (parent.hasToken("_key"))
       {
          String indexName = parent.getToken(0);

@@ -383,7 +383,7 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       for (Relationship r : relationships)
       {
-         if (r.getName().equalsIgnoreCase(name))
+         if (name.equalsIgnoreCase(r.getName()))
             return r;
       }
       return null;
@@ -433,7 +433,29 @@ public class Collection extends Rule<Collection> implements Serializable
 
       return withRelationship(parentPropertyName, childCollection, childPropertyName, properties);
    }
-
+   
+//   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps)
+//   {
+//      Index fkIdx = new Index(this + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+//      withIndexes(fkIdx);
+//      
+//      withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
+//      
+//      Index primaryIdx = parentCollection.getPrimaryIndex();
+//      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
+//      {
+//         for (int i = 0; i < childFkProps.length; i++)
+//         {
+//            childFkProps[i].withPk(primaryIdx.getProperty(i));
+//         }
+//      }
+//      
+//      return this;
+//   }
+//
+//   public Collection withOneToManyRelationship()
+   
+   
    public Collection withRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {
       Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
