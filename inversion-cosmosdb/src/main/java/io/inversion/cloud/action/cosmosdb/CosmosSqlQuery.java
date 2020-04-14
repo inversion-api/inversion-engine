@@ -152,7 +152,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       }
 
       //-- for test cases and query explain
-      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey != null) + "}";
+      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
       debug = debug.replaceAll("\r", "");
       debug = debug.replaceAll("\n", " ");
       debug = debug.replaceAll(" +", " ");
