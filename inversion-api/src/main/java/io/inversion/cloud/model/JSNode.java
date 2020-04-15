@@ -773,6 +773,17 @@ public class JSNode implements Map<String, Object>
       return keys;
    }
 
+   /**
+    * @param name
+    * @return true if the property key exists and the value is not null or empty string
+    */
+   public boolean hasPropertyValue(String name)
+   {
+      Property property = properties.get(name.toLowerCase());
+
+      return property != null && !Utils.empty(property.getValue());
+   }
+
    public boolean hasProperty(String name)
    {
       Property property = properties.get(name.toLowerCase());
