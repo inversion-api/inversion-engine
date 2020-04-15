@@ -335,21 +335,24 @@ public class Url
       return oldValue;
    }
 
-   public String findKey(String token)
+   public String findKey(String... tokens)
    {
-      for (String key : (List<String>) new ArrayList(params.keySet()))
+      for (String token : tokens)
       {
-         if (Utils.containsToken(token, key))
+         for (String key : (List<String>) new ArrayList(params.keySet()))
          {
-            return key;
+            if (Utils.containsToken(token, key))
+            {
+               return key;
+            }
          }
       }
       return null;
    }
 
-   public String findKeyValue(String token)
+   public String findKeyValue(String tokens)
    {
-      String key = findKey(token);
+      String key = findKey(tokens);
       if (key != null)
          return params.getString(key);
 
