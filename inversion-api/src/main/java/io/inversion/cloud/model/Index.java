@@ -155,22 +155,11 @@ public class Index implements Serializable
       return this;
    }
 
-   //   public boolean hasProperty(String name)
-   //   {
-   //      for (String col : columnNames)
-   //      {
-   //         if (col.equalsIgnoreCase(name))
-   //            return true;
-   //      }
-   //      return false;
-   //   }
-
    public List<Property> getProperties()
    {
       return new ArrayList(properties);
    }
 
-   
    public Property getProperty(int idx)
    {
       return properties.get(idx);
@@ -181,33 +170,15 @@ public class Index implements Serializable
       return properties.size();
    }
 
-   //   public Index setColumnName(int index, String columnName)
-   //   {
-   //      while (columnNames.size() < index - 1)
-   //         columnNames.add(null);
-   //
-   //      columnNames.set(index, columnName);
-   //      return this;
-   //   }
-
    public String getPropertyName(int index)
    {
       return index < properties.size() ? properties.get(index).getJsonName() : null;
    }
 
-   //   public Index withColumnNames(String... columnNames)
-   //   {
-   //      for (int i = 0; columnNames != null && i < columnNames.length; i++)
-   //      {
-   //         String columnName = columnNames[i];
-   //         if (!Utils.empty(columnName) && !this.columnNames.contains(columnName))
-   //         {
-   //            this.columnNames.add(columnName);
-   //         }
-   //      }
-   //
-   //      return this;
-   //   }
+   public List<String> getJsonNames()
+   {
+      return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
+   }
 
    public List<String> getColumnNames()
    {
