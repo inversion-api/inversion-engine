@@ -170,7 +170,7 @@ public abstract class Db<T extends Db>
     */
    public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
 
-   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       upsert(table, rows);
       List counts = new ArrayList();
@@ -457,7 +457,7 @@ public abstract class Db<T extends Db>
                && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
          {
             name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
-            System.out.println("RELATIONSHIP: " + name + " " + rel);
+            //System.out.println("RELATIONSHIP: " + name + " " + rel);
          }
          else
          {

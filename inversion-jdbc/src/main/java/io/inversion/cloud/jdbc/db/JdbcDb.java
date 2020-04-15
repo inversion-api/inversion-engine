@@ -324,7 +324,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       for (Map<String, Object> row : rows)
       {
