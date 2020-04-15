@@ -250,14 +250,9 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public Response put(String url, Object body)
+   public Response patch(String url, JSNode body)
    {
-      return service("PUT", url, (body != null ? body.toString() : null));
-   }
-
-   public Response post(String url, Object body)
-   {
-      return service("POST", url, (body != null ? body.toString() : null));
+      return service("PATCH", url, body.toString());
    }
 
    public Response put(String url, JSNode body)
@@ -268,16 +263,6 @@ public class Engine extends Rule<Engine>
    public Response post(String url, JSNode body)
    {
       return service("POST", url, body.toString());
-   }
-
-   public Response put(String url, String body)
-   {
-      return service("PUT", url, body);
-   }
-
-   public Response post(String url, String body)
-   {
-      return service("POST", url, body);
    }
 
    public Response delete(String url)

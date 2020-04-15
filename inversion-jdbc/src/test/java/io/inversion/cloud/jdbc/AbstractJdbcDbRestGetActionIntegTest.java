@@ -176,7 +176,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    @Test
    public void testCollections() throws Exception
    {
-      List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemo", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
+      List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemoes", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
       List<String> c2 = new ArrayList();
 
       Api api = engine().getApi("northwind");
@@ -223,7 +223,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       assertTrue(res.findString("data.0.orderdetails").toLowerCase().endsWith("/orders/10248/orderdetails"));
       assertTrue(res.findString("data.0.employee").endsWith("/employees/5"));
 
-      res = engine.get(url("employees/1/territories?limit=5&order=-territoryid"));
+      res = engine.get(url("employees/1/territories?limit=5&order=-territoryid")).assertOk();
       assertEquals(2, res.getData().size());
       assertTrue(res.findString("data.0.href").endsWith("/territories/19713"));
       assertTrue(res.findString("data.0.employees").endsWith("/territories/19713/employees"));

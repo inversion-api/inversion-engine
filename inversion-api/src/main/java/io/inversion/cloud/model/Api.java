@@ -161,7 +161,8 @@ public class Api extends Rule<Api>
 
    public Api withCollection(Collection coll)
    {
-      if (coll.isLinkTbl() || coll.isExclude())
+      //if (coll.isLinkTbl() || coll.isExclude())
+      if (coll.isExclude())
          return this;
 
       if (!collections.contains(coll))

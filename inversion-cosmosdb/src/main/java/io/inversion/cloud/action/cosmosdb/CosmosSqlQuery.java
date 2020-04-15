@@ -148,7 +148,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       }
       else
       {
-         if (getDb() != null && !getDb().isAllowCrossPartitionQueries())
+         if (!isDryRun() && getDb() != null && !getDb().isAllowCrossPartitionQueries())
             ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
 
          options.setEnableCrossPartitionQuery(true);

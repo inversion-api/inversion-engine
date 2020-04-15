@@ -16,16 +16,33 @@
  */
 package io.inversion.cloud.action.rest;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 
-import java.util.*;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Change;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Relationship;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
 
 public class RestPostAction extends Action<RestPostAction>
 {
@@ -45,6 +62,131 @@ public class RestPostAction extends Action<RestPostAction>
    @Override
    public void run(Request req, Response res) throws Exception
    {
+      if (req.isMethod("PUT", "POST"))
+      {
+         upsert(req, res);
+      }
+      else if (req.isMethod("PATCH"))
+      {
+         patch(req, res);
+      }
+      else
+      {
+         ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
+      }
+
+   }
+
+   /**
+    * Unlike upsert for POST/PUT, this method is specifically NOT recursive for patching 
+    * nested documents. It will only patch the parent collection/table.
+    * 
+    * TODO: add support for JSON patching...maybe
+    * 
+    * @param req
+    * @param res
+    * @throws Exception
+    */
+   public void patch(Request req, Response res) throws Exception
+   {
+      JSNode body = req.getJson();
+      if (body.isArray())
+      {
+         if (!Utils.empty(req.getEntityKey()))
+         {
+            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
+         }
+      }
+      else
+      {
+         String href = body.getString("href");
+         if (req.getEntityKey() != null)
+         {
+            if (href == null)
+               body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
+            else if (!req.getUrl().toString().startsWith(href))
+               ApiException.throw400BadRequest("You are PATCHING-ing an entity with a different href property than the entity URL you are PATCHING-ing to.");
+         }
+      }
+
+      List<Row> rows = new ArrayList();
+      Collection coll = req.getCollection();
+
+      List<String> entityKeys = new ArrayList();
+      for (JSNode node : body.asNodeList())
+      {
+         if (node.size() == 1)
+            continue;//patching an "href" only so no changes.
+
+         Row row = new Row();
+         rows.add(row);
+
+         for (String jsonProp : node.keySet())
+         {
+            Object value = node.get(jsonProp);
+
+            if ("href".equalsIgnoreCase(jsonProp))
+            {
+               String entityKey = Utils.substringAfter(value.toString(), "/");
+               entityKeys.add(entityKey);
+               row.putAll(coll.decodeKey(entityKey));
+            }
+            else
+            {
+
+               Property collProp = coll.getProperty(jsonProp);
+               if (collProp != null)
+               {
+                  value = coll.getDb().cast(collProp, value);
+                  row.put(collProp.getColumnName(), value);
+               }
+               else
+               {
+                  //TODO: need test case here
+                  Relationship rel = coll.getRelationship(jsonProp);
+                  if (rel != null)
+                  {
+                     if (rel.isManyToOne())
+                     {
+                        if (value != null)
+                        {
+                           Map fk = rel.getRelated().decodeKey(value.toString());
+                           mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
+                           row.putAll(fk);
+                        }
+                        else
+                        {
+                           for (Property fkProp : rel.getFkIndex1().getProperties())
+                           {
+                              row.put(fkProp.getColumnName(), null);
+                           }
+                        }
+                     }
+                     else
+                     {
+                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related entity.");
+                     }
+                  }
+                  else
+                  {
+                     row.put(jsonProp, value);
+                  }
+               }
+            }
+         }
+      }
+      coll.getDb().patch(coll, rows);
+
+      if (entityKeys.size() > 0)
+      {
+         String location = Chain.buildLink(coll, Utils.implode(",", entityKeys), null);
+         res.withHeader("Location", location);
+      }
+
+   }
+
+   public void upsert(Request req, Response res) throws Exception
+   {
       if (strictRest)
       {
          if (req.isPost() && req.getEntityKey() != null)
@@ -59,7 +201,7 @@ public class RestPostAction extends Action<RestPostAction>
       JSNode obj = req.getJson();
 
       if (obj == null)
-         ApiException.throw400BadRequest("You must pass a JSON body to the PostHandler");
+         ApiException.throw400BadRequest("You must pass a JSON body to the RestPostHandler");
 
       boolean collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
       Set<String> collapses = req.getChain().mergeEndpointActionParamsConfig("collapses");
@@ -256,7 +398,7 @@ public class RestPostAction extends Action<RestPostAction>
          for (JSNode node : (List<JSNode>) ((JSArray) nodes).asList())
          {
             Object value = node.get(rel.getName());
-            if (value instanceof JSArray) //this is a many-to-*
+            if (value instanceof JSArray) //this is a one-to-many or many-to-many
             {
                JSArray childArr = ((JSArray) value);
                for (int i = 0; i < childArr.size(); i++)
@@ -309,7 +451,7 @@ public class RestPostAction extends Action<RestPostAction>
          if (childNodes.size() > 0)
          {
             String path = Chain.buildLink(rel.getRelated(), null, null);
-            Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
+            Response res = req.getEngine().post(path, new JSArray(childNodes));
             if (!res.isSuccess() || res.getData().length() != childNodes.size())
             {
                res.rethrow();
@@ -373,6 +515,9 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (updatedRows.size() > 0)
             {
+               //-- don't need to "go back through the front door and PATCH to the engine
+               //-- here because we are updating our own collection.
+               //-- TODO...make sure of above statement.
                collection.getDb().patch(collection, updatedRows);
             }
          }
@@ -484,11 +629,13 @@ public class RestPostAction extends Action<RestPostAction>
          Collection coll = rel.isOneToMany() ? rel.getRelated() : rel.getFk1Col1().getCollection();
          if (rel.isOneToMany())
          {
+            //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().patch(coll, upserts);
          }
          else if (rel.isManyToMany())
          {
+            //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);
          }
@@ -520,28 +667,31 @@ public class RestPostAction extends Action<RestPostAction>
             if (toUnlink.data().length() == 0)
                break;
 
-            Set toKeep = new HashSet(coll.getPrimaryIndex().getJsonNames());
-            toKeep.addAll(rel.getFkIndex1().getJsonNames());
-
-            for (JSNode node : toUnlink.data().asNodeList())
-            {
-               node.retain(toKeep);
-            }
-
             if (rel.isOneToMany())
             {
-               //log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + toUnlink.data());
-               req.getEngine().put(Chain.buildLink(coll), toUnlink.data());
+               for (JSNode node : toUnlink.data().asNodeList())
+               {
+                  for (String prop : rel.getFkIndex1().getJsonNames())
+                  {
+                     node.put(prop, null);
+                  }
+               }
+
+               req.getEngine().patch(Chain.buildLink(coll), toUnlink.data());
 
             }
             //TODO: put back in support for many to many rels recursing through engine
-            //            else if (rel.isManyToMany())
-            //            {
-            //               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + coll + " -> " + results.getRows());
-            //               Rows rows = new Rows();
-            //               rows.addAll(results.getRows());
-            //               coll.getDb().delete(coll, rows);
-            //            }
+            else if (rel.isManyToMany())
+            {
+               List entityKeys = new ArrayList();
+               for (JSNode node : toUnlink.data().asNodeList())
+               {
+                  entityKeys.add(Utils.substringAfter(node.getString("href"), "/"));
+               }
+
+               String url = Chain.buildLink(coll) + "/" + Utils.implode(",", entityKeys);
+               req.getEngine().delete(url);
+            }
 
             if (toUnlink.data().size() < 100)
                break;
