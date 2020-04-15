@@ -231,6 +231,25 @@ public class Engine extends Rule<Engine>
       return service("GET", url, (String) null);
    }
 
+   public Response get(String url, Map<String, String> params)
+   {
+      return service("GET", url, null, params);
+   }
+
+   public Response get(String url, List queryTerms)
+   {
+      if (queryTerms != null && queryTerms.size() > 0)
+      {
+         Map<String, String> params = new HashMap();
+         queryTerms.forEach(key -> params.put(key.toString(), null));
+         return service("GET", url, null, params);
+      }
+      else
+      {
+         return service("GET", url, null, null);
+      }
+   }
+
    public Response put(String url, Object body)
    {
       return service("PUT", url, (body != null ? body.toString() : null));
@@ -294,8 +313,21 @@ public class Engine extends Rule<Engine>
 
    public Response service(String method, String url, String body)
    {
+      return service(method, url, body, null);
+   }
+
+   public Response service(String method, String url, String body, Map<String, String> params)
+   {
       Request req = new Request(method, url, body);
       req.withEngine(this);
+
+      if (params != null)
+      {
+         for (String key : params.keySet())
+         {
+            req.getUrl().withParam(key, params.get(key));
+         }
+      }
 
       Response res = new Response();
 
@@ -406,9 +438,9 @@ public class Engine extends Rule<Engine>
 
                for (Endpoint endpoint : api.getEndpoints())
                {
-                  if(Chain.getDepth() < 2 && endpoint.isInternal())
+                  if (Chain.getDepth() < 2 && endpoint.isInternal())
                      continue;
-                  
+
                   Path endpointPath = endpoint.match(req.getMethod(), parts);
 
                   if (endpointPath != null)
@@ -439,9 +471,8 @@ public class Engine extends Rule<Engine>
                break;
             }
          }
-         
+
          applyPathParams(pathParams, url, req.getJson());
-        
 
          //---------------------------------
 
