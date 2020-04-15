@@ -1,5 +1,5 @@
 /*
-R * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,11 +43,13 @@ import io.inversion.cloud.utils.Utils;
 
 public class CosmosDb extends Db<CosmosDb>
 {
-   protected String                   uri            = null;
-   protected String                   db             = "";
-   protected String                   key            = null;
+   protected String                   uri                      = null;
+   protected String                   db                       = "";
+   protected String                   key                      = null;
 
-   transient protected DocumentClient documentClient = null;
+   boolean                            allowCrossPartitionQueries = false;
+
+   transient protected DocumentClient documentClient           = null;
 
    public CosmosDb()
    {
@@ -227,6 +229,17 @@ public class CosmosDb extends Db<CosmosDb>
    public CosmosDb withKey(String key)
    {
       this.key = key;
+      return this;
+   }
+
+   public boolean isAllowCrossPartitionQueries()
+   {
+      return allowCrossPartitionQueries;
+   }
+
+   public CosmosDb withAllowCrossPartitionQueries(boolean allowCrossPartitionQueries)
+   {
+      this.allowCrossPartitionQueries = allowCrossPartitionQueries;
       return this;
    }
 
