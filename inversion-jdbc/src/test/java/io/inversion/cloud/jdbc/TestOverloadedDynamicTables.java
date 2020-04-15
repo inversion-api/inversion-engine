@@ -42,7 +42,7 @@ public class TestOverloadedDynamicTables
             public void configDb() throws Exception
             {
                super.configDb();
-               Collection object = getCollection("Object");
+               Collection object = getCollectionByTableName("Object");
                removeCollection(object);
 
                Collection addresses = object.copy().withName("addresses");

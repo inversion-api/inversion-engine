@@ -179,8 +179,7 @@ public class Api extends Rule<Api>
    {
       for (Collection coll : collections)
       {
-         if (name.equalsIgnoreCase(coll.getName()) //
-               || name.equalsIgnoreCase(coll.getTableName()))
+         if (name.equalsIgnoreCase(coll.getName()))
             return coll;
       }
       return null;

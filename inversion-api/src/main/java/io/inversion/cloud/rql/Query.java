@@ -243,7 +243,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
                   collectionName = rel.getRelated().getName();
                }
             }
-            coll = coll.getDb().getCollection(collectionName);
+            coll = coll.getDb().getCollectionByTableName(collectionName);
          }
 
          if (coll != null)

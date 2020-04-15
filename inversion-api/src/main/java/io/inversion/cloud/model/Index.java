@@ -175,6 +175,11 @@ public class Index implements Serializable
       return index < properties.size() ? properties.get(index).getJsonName() : null;
    }
 
+   public String getColumnName(int index)
+   {
+      return index < properties.size() ? properties.get(index).getColumnName() : null;
+   }
+
    public List<String> getJsonNames()
    {
       return properties.stream().map(Property::getJsonName).collect(Collectors.toList());

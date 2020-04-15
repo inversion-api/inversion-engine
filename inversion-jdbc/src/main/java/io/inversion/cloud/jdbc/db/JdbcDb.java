@@ -842,7 +842,7 @@ public class JdbcDb extends Db<JdbcDb>
                Property pk = getProperty(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               Collection coll = getCollection(fkTableName);
+               Collection coll = getCollectionByTableName(fkTableName);
                if (coll != null)
                {
                   //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);

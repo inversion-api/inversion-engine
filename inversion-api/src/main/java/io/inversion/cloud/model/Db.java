@@ -594,12 +594,11 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Collection getCollection(String collectionOrTableName)
+   public Collection getCollectionByTableName(String tableName)
    {
       for (Collection t : collections)
       {
-         if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
-               || collectionOrTableName.equalsIgnoreCase(t.getName()))
+         if (tableName.equalsIgnoreCase(t.getTableName()))
             return t;
       }
 
