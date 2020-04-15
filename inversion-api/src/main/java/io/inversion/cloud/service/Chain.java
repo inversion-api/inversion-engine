@@ -496,9 +496,6 @@ public class Chain
          }
       }
 
-      System.out.println(request.getEndpoint());
-      System.out.println(key);
-
       value = request.getEndpoint().getConfig(key);
       if (!Utils.empty(value))
       {
