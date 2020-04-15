@@ -16,18 +16,29 @@
  */
 package io.inversion.cloud.model;
 
+import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.inversion.cloud.utils.Utils;
 
-import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collection;
-import java.util.*;
+import io.inversion.cloud.utils.Utils;
 
 public class JSNode implements Map<String, Object>
 {
@@ -710,6 +721,25 @@ public class JSNode implements Map<String, Object>
       return properties.containsKey(name.toString().toLowerCase());
    }
 
+   public JSNode retain(String... propertyNames)
+   {
+      return retain(Arrays.asList(propertyNames));
+   }
+
+   public JSNode retain(Collection<String> propertyNames)
+   {
+      if (!(propertyNames instanceof Set))
+         propertyNames = new HashSet(propertyNames);
+
+      for (String key : keySet())
+      {
+         if (!propertyNames.contains(key))
+            remove(key);
+      }
+
+      return this;
+   }
+
    @Override
    public Object remove(Object name)
    {
@@ -741,6 +771,17 @@ public class JSNode implements Map<String, Object>
          keys.add(p.getName());
       }
       return keys;
+   }
+
+   /**
+    * @param name
+    * @return true if the property key exists and the value is not null or empty string
+    */
+   public boolean hasPropertyValue(String name)
+   {
+      Property property = properties.get(name.toLowerCase());
+
+      return property != null && !Utils.empty(property.getValue());
    }
 
    public boolean hasProperty(String name)

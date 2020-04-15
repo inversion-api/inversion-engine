@@ -16,16 +16,33 @@
  */
 package io.inversion.cloud.action.rest;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 
-import java.util.*;
+import io.inversion.cloud.model.Action;
+import io.inversion.cloud.model.ApiException;
+import io.inversion.cloud.model.Change;
+import io.inversion.cloud.model.Collection;
+import io.inversion.cloud.model.Index;
+import io.inversion.cloud.model.JSArray;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Property;
+import io.inversion.cloud.model.Relationship;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Rows.Row;
+import io.inversion.cloud.model.Status;
+import io.inversion.cloud.rql.Term;
+import io.inversion.cloud.service.Chain;
+import io.inversion.cloud.utils.Utils;
 
 public class RestPostAction extends Action<RestPostAction>
 {
@@ -45,6 +62,131 @@ public class RestPostAction extends Action<RestPostAction>
    @Override
    public void run(Request req, Response res) throws Exception
    {
+      if (req.isMethod("PUT", "POST"))
+      {
+         upsert(req, res);
+      }
+      else if (req.isMethod("PATCH"))
+      {
+         patch(req, res);
+      }
+      else
+      {
+         ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
+      }
+
+   }
+
+   /**
+    * Unlike upsert for POST/PUT, this method is specifically NOT recursive for patching 
+    * nested documents. It will only patch the parent collection/table.
+    * 
+    * TODO: add support for JSON patching...maybe
+    * 
+    * @param req
+    * @param res
+    * @throws Exception
+    */
+   public void patch(Request req, Response res) throws Exception
+   {
+      JSNode body = req.getJson();
+      if (body.isArray())
+      {
+         if (!Utils.empty(req.getEntityKey()))
+         {
+            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
+         }
+      }
+      else
+      {
+         String href = body.getString("href");
+         if (req.getEntityKey() != null)
+         {
+            if (href == null)
+               body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
+            else if (!req.getUrl().toString().startsWith(href))
+               ApiException.throw400BadRequest("You are PATCHING-ing an entity with a different href property than the entity URL you are PATCHING-ing to.");
+         }
+      }
+
+      List<Row> rows = new ArrayList();
+      Collection coll = req.getCollection();
+
+      List<String> entityKeys = new ArrayList();
+      for (JSNode node : body.asNodeList())
+      {
+         if (node.size() == 1)
+            continue;//patching an "href" only so no changes.
+
+         Row row = new Row();
+         rows.add(row);
+
+         for (String jsonProp : node.keySet())
+         {
+            Object value = node.get(jsonProp);
+
+            if ("href".equalsIgnoreCase(jsonProp))
+            {
+               String entityKey = Utils.substringAfter(value.toString(), "/");
+               entityKeys.add(entityKey);
+               row.putAll(coll.decodeKey(entityKey));
+            }
+            else
+            {
+
+               Property collProp = coll.getProperty(jsonProp);
+               if (collProp != null)
+               {
+                  value = coll.getDb().cast(collProp, value);
+                  row.put(collProp.getColumnName(), value);
+               }
+               else
+               {
+                  //TODO: need test case here
+                  Relationship rel = coll.getRelationship(jsonProp);
+                  if (rel != null)
+                  {
+                     if (rel.isManyToOne())
+                     {
+                        if (value != null)
+                        {
+                           Map fk = rel.getRelated().decodeKey(value.toString());
+                           mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
+                           row.putAll(fk);
+                        }
+                        else
+                        {
+                           for (Property fkProp : rel.getFkIndex1().getProperties())
+                           {
+                              row.put(fkProp.getColumnName(), null);
+                           }
+                        }
+                     }
+                     else
+                     {
+                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related entity.");
+                     }
+                  }
+                  else
+                  {
+                     row.put(jsonProp, value);
+                  }
+               }
+            }
+         }
+      }
+      coll.getDb().patch(coll, rows);
+
+      if (entityKeys.size() > 0)
+      {
+         String location = Chain.buildLink(coll, Utils.implode(",", entityKeys), null);
+         res.withHeader("Location", location);
+      }
+
+   }
+
+   public void upsert(Request req, Response res) throws Exception
+   {
       if (strictRest)
       {
          if (req.isPost() && req.getEntityKey() != null)
@@ -59,7 +201,7 @@ public class RestPostAction extends Action<RestPostAction>
       JSNode obj = req.getJson();
 
       if (obj == null)
-         ApiException.throw400BadRequest("You must pass a JSON body to the PostHandler");
+         ApiException.throw400BadRequest("You must pass a JSON body to the RestPostHandler");
 
       boolean collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
       Set<String> collapses = req.getChain().mergeEndpointActionParamsConfig("collapses");
@@ -228,9 +370,6 @@ public class RestPostAction extends Action<RestPostAction>
                   mapped.put(key, node.get(key));
             }
          }
-
-         System.out.println("mapped: " + mapped);
-
       }
       List<String> returnList = collection.getDb().upsert(collection, upsertMaps);
       for (int i = 0; i < nodes.length(); i++)
@@ -259,7 +398,7 @@ public class RestPostAction extends Action<RestPostAction>
          for (JSNode node : (List<JSNode>) ((JSArray) nodes).asList())
          {
             Object value = node.get(rel.getName());
-            if (value instanceof JSArray) //this is a many-to-*
+            if (value instanceof JSArray) //this is a one-to-many or many-to-many
             {
                JSArray childArr = ((JSArray) value);
                for (int i = 0; i < childArr.size(); i++)
@@ -312,7 +451,7 @@ public class RestPostAction extends Action<RestPostAction>
          if (childNodes.size() > 0)
          {
             String path = Chain.buildLink(rel.getRelated(), null, null);
-            Response res = req.getEngine().post(path, new JSArray(childNodes).toString());
+            Response res = req.getEngine().post(path, new JSArray(childNodes));
             if (!res.isSuccess() || res.getData().length() != childNodes.size())
             {
                res.rethrow();
@@ -360,7 +499,7 @@ public class RestPostAction extends Action<RestPostAction>
                   Map updatedRow = new HashMap();
                   updatedRows.add(updatedRow);
                   updatedRow.putAll(primaryKey);
-                  
+
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
                   {
                      //-- the fk is an entityKey not a one-to-one column mapping to the primary composite key
@@ -376,7 +515,10 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (updatedRows.size() > 0)
             {
-               collection.getDb().update(collection, updatedRows);
+               //-- don't need to "go back through the front door and PATCH to the engine
+               //-- here because we are updating our own collection.
+               //-- TODO...make sure of above statement.
+               collection.getDb().patch(collection, updatedRows);
             }
          }
       }
@@ -469,7 +611,6 @@ public class RestPostAction extends Action<RestPostAction>
          includesKeys.addAll(parentKey.keySet());
          includesKeys.addAll(rel.getRelated().getPrimaryIndex().getColumnNames());
 
-         Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
 
@@ -488,11 +629,13 @@ public class RestPostAction extends Action<RestPostAction>
          Collection coll = rel.isOneToMany() ? rel.getRelated() : rel.getFk1Col1().getCollection();
          if (rel.isOneToMany())
          {
+            //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-            coll.getDb().update(coll, upserts);
+            coll.getDb().patch(coll, upserts);
          }
          else if (rel.isManyToMany())
          {
+            //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().upsert(coll, upserts);
          }
@@ -500,48 +643,57 @@ public class RestPostAction extends Action<RestPostAction>
          //-- now find all relationships that are NOT in the group that we just upserted
          //-- they need to be nulled out if many-to-one and deleted if many-to-many
 
+         Map<String, String> queryTerms = new HashMap();
+         queryTerms.put("limit", "100");
+         queryTerms.put("includes", Utils.implode(",", includesKeys));
+
+         for (Object parentKeyProp : parentKey.keySet())
+         {
+            queryTerms.put(parentKeyProp.toString(), parentKey.get(parentKeyProp).toString());
+         }
+
          if (childOr.size() > 0)
-            findOr.withTerm(Term.term(findOr, "and", asTerm(parentKey), childNot));
-         else
-            findOr.withTerm(asTerm(parentKey));
+         {
+            queryTerms.put(childNot.toString(), null);
+         }
 
-         if (findOr.size() == 1)
-            findOr = findOr.getTerm(0);
-
-         List queryTerms = new ArrayList(Arrays.asList(Term.term(null, "includes", includesKeys), Term.term(null, "limit", 100), findOr));
-
+         String next = Chain.buildLink(coll);
          while (true)
          {
             log.debug("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
 
-            Results<Row> results = coll.getDb().select(coll, queryTerms);
+            Response toUnlink = req.getEngine().get(next, queryTerms).assertOk();
 
-            if (results.size() <= 0)
+            if (toUnlink.data().length() == 0)
                break;
 
             if (rel.isOneToMany())
             {
-               for (Row row : results.getRows())
+               for (JSNode node : toUnlink.data().asNodeList())
                {
-                  for (int i = 0; i < rel.getFkIndex1().size(); i++)
+                  for (String prop : rel.getFkIndex1().getJsonNames())
                   {
-                     Property col = rel.getFkIndex1().getProperty(i);
-                     row.put(col.getColumnName(), null);
+                     node.put(prop, null);
                   }
                }
 
-               log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + results.getRows());
-               coll.getDb().update(coll, results.getRows());
+               req.getEngine().patch(Chain.buildLink(coll), toUnlink.data());
+
             }
+            //TODO: put back in support for many to many rels recursing through engine
             else if (rel.isManyToMany())
             {
-               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + coll + " -> " + results.getRows());
-               Rows rows = new Rows();
-               rows.addAll(results.getRows());
-               coll.getDb().delete(coll, rows);
+               List entityKeys = new ArrayList();
+               for (JSNode node : toUnlink.data().asNodeList())
+               {
+                  entityKeys.add(Utils.substringAfter(node.getString("href"), "/"));
+               }
+
+               String url = Chain.buildLink(coll) + "/" + Utils.implode(",", entityKeys);
+               req.getEngine().delete(url);
             }
 
-            if (results.size() < 100)
+            if (toUnlink.data().size() < 100)
                break;
          }
       }

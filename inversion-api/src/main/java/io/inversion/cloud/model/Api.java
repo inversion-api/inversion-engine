@@ -161,7 +161,8 @@ public class Api extends Rule<Api>
 
    public Api withCollection(Collection coll)
    {
-      if (coll.isLinkTbl() || coll.isExclude())
+      //if (coll.isLinkTbl() || coll.isExclude())
+      if (coll.isExclude())
          return this;
 
       if (!collections.contains(coll))
@@ -179,8 +180,7 @@ public class Api extends Rule<Api>
    {
       for (Collection coll : collections)
       {
-         if (name.equalsIgnoreCase(coll.getName()) //
-               || name.equalsIgnoreCase(coll.getTableName()))
+         if (name.equalsIgnoreCase(coll.getName()))
             return coll;
       }
       return null;

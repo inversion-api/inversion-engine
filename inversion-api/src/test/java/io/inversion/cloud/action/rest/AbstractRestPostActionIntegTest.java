@@ -45,7 +45,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
       //post one new bogus order
-      res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta").toString()).dump().assertOk();
+      res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta")).dump().assertOk();
 
       //check the values we sent are the values we got back
       res = engine.get(res.findString("data.0.href"));
@@ -67,7 +67,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
 
       JSNode employee5 = res.findNode("data.0");
 
-      engine.put(employee5.getString("href"), employee5.toString()).assertOk();
+      engine.put(employee5.getString("href"), employee5).assertOk();
 
       res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
       JSNode updated5 = res.findNode("data.0");
@@ -129,8 +129,8 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
          }
       }
 
-      res = engine.put(steve.getString("href"), steve);
-      res = engine.get(url("employees?employeeId=5&expands=employees"));
+      res = engine.put(steve.getString("href"), steve).dump();
+      res = engine.get(url("employees?employeeId=5&expands=employees")).dump();
 
       assertEquals(1, res.findArray("data.0.employees").size());
       assertTrue(res.findString("data.0.employees.0.href").contains("/99999991"));
@@ -155,7 +155,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       manager.findArray("territories").clear();
 
       res = engine.put(manager.getString("href"), manager);
-      res = engine.get(url("employees?employeeId=5&expands=territories"));
+      res = engine.get(url("employees?employeeId=5&expands=territories")).dump();
       assertEquals(0, res.findArray("data.0.territories").size());
 
       res.dump();

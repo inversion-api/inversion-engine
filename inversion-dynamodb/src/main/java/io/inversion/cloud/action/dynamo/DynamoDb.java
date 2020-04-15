@@ -157,11 +157,11 @@ public class DynamoDb extends Db<DynamoDb>
 
       if (pk.size() == 1)
       {
-         dynamo.deleteItem(pk.getColumn(0).getColumnName(), row.get(pk.getColumn(0).getColumnName()));
+         dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()));
       }
       else if (pk.size() == 2)
       {
-         dynamo.deleteItem(pk.getColumn(0).getColumnName(), row.get(pk.getColumn(0).getColumnName()), pk.getColumn(1).getColumnName(), row.get(pk.getColumn(1).getColumnName()));
+         dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()), pk.getProperty(1).getColumnName(), row.get(pk.getProperty(1).getColumnName()));
       }
       else
       {
@@ -254,19 +254,23 @@ public class DynamoDb extends Db<DynamoDb>
 
       for (KeySchemaElement keyInfo : keySchemaList)
       {
-         Property column = table.getProperty(keyInfo.getAttributeName());
+         Property property = table.getProperty(keyInfo.getAttributeName());
 
-         index.withColumnNames(column.getColumnName());
-
-         if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
-         {
-            index.setColumnName(0, keyInfo.getAttributeName());
-         }
-
-         else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
-         {
-            index.setColumnName(1, keyInfo.getAttributeName());
-         }
+         index.withProperties(property);
+         property.withColumnName(keyInfo.getAttributeName());
+         
+         //TODO: was this refactor correct
+//         index.withColumnNames(column.getColumnName());
+//
+//         if (keyInfo.getKeyType().equalsIgnoreCase("HASH"))
+//         {
+//            index.setColumnName(0, keyInfo.getAttributeName());
+//         }
+//
+//         else if (keyInfo.getKeyType().equalsIgnoreCase("RANGE"))
+//         {
+//            index.setColumnName(1, keyInfo.getAttributeName());
+//         }
       }
 
       table.withIndexes(index);

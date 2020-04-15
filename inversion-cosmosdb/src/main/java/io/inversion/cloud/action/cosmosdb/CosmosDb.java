@@ -43,11 +43,13 @@ import io.inversion.cloud.utils.Utils;
 
 public class CosmosDb extends Db<CosmosDb>
 {
-   protected String                   uri            = null;
-   protected String                   db             = "";
-   protected String                   key            = null;
+   protected String                   uri                      = null;
+   protected String                   db                       = "";
+   protected String                   key                      = null;
 
-   transient protected DocumentClient documentClient = null;
+   boolean                            allowCrossPartitionQueries = false;
+
+   transient protected DocumentClient documentClient           = null;
 
    public CosmosDb()
    {
@@ -168,7 +170,6 @@ public class CosmosDb extends Db<CosmosDb>
       try
       {
          Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
-
          response = getDocumentClient().deleteDocument(documentUri, options);
 
          int statusCode = response.getStatusCode();
@@ -228,6 +229,17 @@ public class CosmosDb extends Db<CosmosDb>
    public CosmosDb withKey(String key)
    {
       this.key = key;
+      return this;
+   }
+
+   public boolean isAllowCrossPartitionQueries()
+   {
+      return allowCrossPartitionQueries;
+   }
+
+   public CosmosDb withAllowCrossPartitionQueries(boolean allowCrossPartitionQueries)
+   {
+      this.allowCrossPartitionQueries = allowCrossPartitionQueries;
       return this;
    }
 

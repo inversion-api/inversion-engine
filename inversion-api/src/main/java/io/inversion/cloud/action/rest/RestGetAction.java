@@ -98,7 +98,7 @@ public class RestGetAction extends Action<RestGetAction>
                   if (pkVal == null)
                      ApiException.throw400BadRequest("Missing parameter for foreign key property '%s'", fk.getJsonName());
 
-                  newHref += fk.getColumnName() + "=" + pkVal + "&";
+                  newHref += fk.getJsonName() + "=" + pkVal + "&";
                }
 
                newHref = newHref.substring(0, newHref.length() - 1);
@@ -110,7 +110,7 @@ public class RestGetAction extends Action<RestGetAction>
             //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
             //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
-            List<KeyValue> rows = getRelatedKeys(rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
+            List<KeyValue> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
             if (rows.size() > 0)
             {
                List foreignKeys = new ArrayList();
@@ -618,8 +618,8 @@ public class RestGetAction extends Action<RestGetAction>
                //idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
                //idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
 
-               cols.addAll(idxToMatch.getColumnNames());
-               cols.addAll(idxToRetrieve.getColumnNames());
+               cols.addAll(idxToMatch.getJsonNames());
+               cols.addAll(idxToRetrieve.getJsonNames());
 
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
@@ -671,7 +671,7 @@ public class RestGetAction extends Action<RestGetAction>
                      }
                   }
                }
-               relatedEks = getRelatedKeys(idxToMatch, idxToRetrieve, toMatchEks);
+               relatedEks = getRelatedKeys(rel, idxToMatch, idxToRetrieve, toMatchEks);
             }
 
             List unfetchedChildEks = new ArrayList();
@@ -725,7 +725,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
    }
 
-   protected List<KeyValue> getRelatedKeys(Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
+   protected List<KeyValue> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
    {
       if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
          ApiException.throw400BadRequest("You can only retrieve related index keys from the same Collection.");
@@ -741,20 +741,66 @@ public class RestGetAction extends Action<RestGetAction>
       Term sort = Term.term(null, "sort", columns);
       Term notNull = Term.term(null, "nn", columns);
 
-      Rows rows = ((Rows) idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), Arrays.asList(termKeys, includes, sort, notNull)).getRows());
-      for (Row row : rows)
+      String link = Chain.buildLink(idxToRetrieve.getCollection());
+      Response res = Chain.peek().getEngine().get(link, Arrays.asList(termKeys, includes, sort, notNull)).assertOk();
+
+      for (JSNode node : res.data().asNodeList())
       {
          List idxToMatchVals = new ArrayList();
-         idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
+
+         for (String property : idxToMatch.getJsonNames())
+         {
+            Object propVal = node.get(property);
+
+            if (propVal instanceof String)
+            {
+               propVal = Utils.substringAfter(propVal.toString(), "/");
+               if (((String) propVal).indexOf("~") > -1)
+               {
+                  idxToMatchVals.addAll(Utils.explode("~", (String) propVal));
+                  continue;
+               }
+            }
+
+            idxToMatchVals.add(propVal);
+         }
 
          List idxToRetrieveVals = new ArrayList();
-         idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
+         for (String property : idxToRetrieve.getJsonNames())
+         {
+            Object propVal = node.get(property);
+
+            propVal = Utils.substringAfter(propVal.toString(), "/");
+            if (((String) propVal).indexOf("~") > -1)
+            {
+               idxToRetrieveVals.addAll(Utils.explode("~", (String) propVal));
+               continue;
+            }
+
+            idxToRetrieveVals.add(propVal);
+         }
 
          String parentEk = Collection.encodeKey(idxToMatchVals);
          String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }
+
+      //      Results obj = idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), );
+      //      List<Map> rows = obj.getRows();
+      //      for (Map row : rows)
+      //      {
+      //         List idxToMatchVals = new ArrayList();
+      //         idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
+      //
+      //         List idxToRetrieveVals = new ArrayList();
+      //         idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
+      //
+      //         String parentEk = Collection.encodeKey(idxToMatchVals);
+      //         String relatedEk = Collection.encodeKey(idxToRetrieveVals);
+      //
+      //         related.add(new DefaultKeyValue(parentEk, relatedEk));
+      //      }
 
       return related;
    }

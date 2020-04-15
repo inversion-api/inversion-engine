@@ -324,7 +324,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws Exception
    {
       for (Map<String, Object> row : rows)
       {
@@ -842,7 +842,7 @@ public class JdbcDb extends Db<JdbcDb>
                Property pk = getProperty(pkTableName, pkColumnName);
                fk.withPk(pk);
 
-               Collection coll = getCollection(fkTableName);
+               Collection coll = getCollectionByTableName(fkTableName);
                if (coll != null)
                {
                   //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);

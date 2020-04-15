@@ -248,6 +248,24 @@ public class Utils
       return strings;
    }
 
+   public static String substringBefore(String string, String breakBefore)
+   {
+      int idx = string.indexOf(breakBefore);
+      if (idx > -1)
+         string = string.substring(0, idx);
+
+      return string;
+   }
+
+   public static String substringAfter(String string, String breakAfterLast)
+   {
+      int idx = string.lastIndexOf(breakAfterLast);
+      if (idx > -1)
+         string = string.substring(idx + breakAfterLast.length());
+
+      return string;
+   }
+
    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs)
    {
       if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
@@ -1574,7 +1592,16 @@ public class Utils
                if (value instanceof JSNode)
                   return value;
                else
-                  return JSNode.parseJsonNode(value + "");
+               {
+                  String json = value.toString().trim();
+                  if (json.length() > 0)
+                  {
+                     char c = json.charAt(0);
+                     if (c == '[' || c == '{')
+                        return JSNode.parseJson(value + "");
+                  }
+                  return json;
+               }
 
             default :
                ApiException.throw500InternalServerError("Error casting '%s' as type '%s'", value, type);

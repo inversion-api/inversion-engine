@@ -148,19 +148,21 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       }
       else
       {
+         if (!isDryRun() && getDb() != null && !getDb().isAllowCrossPartitionQueries())
+            ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
+
          options.setEnableCrossPartitionQuery(true);
       }
 
       //-- for test cases and query explain
-      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey != null) + "}";
+      String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
       debug = debug.replaceAll("\r", "");
       debug = debug.replaceAll("\n", " ");
       debug = debug.replaceAll(" +", " ");
       Chain.debug(debug);
       results.withTestQuery(debug);
-      //-- end test case debug stuff
 
-      System.out.println();
+      //-- end test case debug stuff
 
       if (!isDryRun())
       {
@@ -324,4 +326,5 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
 
       return sql.toString();
    }
+
 }

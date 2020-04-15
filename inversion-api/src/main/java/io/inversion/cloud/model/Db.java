@@ -143,7 +143,7 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract Results<Row> select(Collection table, List<Term> queryTerms) throws Exception;
+   public abstract Results<Row> select(Collection collection, List<Term> queryTerms) throws Exception;
 
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
@@ -168,11 +168,11 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception;
+   public abstract List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws Exception;
 
-   public List<Integer> update(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<Integer> patch(Collection collection, List<Map<String, Object>> rows) throws Exception
    {
-      upsert(table, rows);
+      upsert(collection, rows);
       List counts = new ArrayList();
       rows.forEach(row -> counts.add(-1));
       return counts;
@@ -190,7 +190,7 @@ public abstract class Db<T extends Db>
     * @param indexValues
     * @throws Exception
     */
-   public abstract void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception;
+   public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws Exception;
 
    public void configDb() throws Exception
    {
@@ -206,7 +206,8 @@ public abstract class Db<T extends Db>
 
       for (Collection coll : getCollections())
       {
-         if (!coll.isLinkTbl() && !coll.isExclude())
+         //if (!coll.isLinkTbl() && !coll.isExclude())
+         if (!coll.isExclude())
          {
             api.withCollection(coll);
          }
@@ -214,8 +215,8 @@ public abstract class Db<T extends Db>
 
       for (Collection coll : getCollections())
       {
-         if (coll.isLinkTbl())
-            continue;
+         //         if (coll.isLinkTbl())
+         //            continue;
 
          if (coll.getName().equals(coll.getTableName()))
          {
@@ -287,7 +288,6 @@ public abstract class Db<T extends Db>
                   Collection pkEntity = fkIdx.getProperty(0).getPk().getCollection();
                   Collection fkEntity = fkIdx.getProperty(0).getCollection();
 
-                  
                   //ONE_TO_MANY
                   {
                      Relationship r = new Relationship();
@@ -457,7 +457,7 @@ public abstract class Db<T extends Db>
                && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
          {
             name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
-            System.out.println("RELATIONSHIP: " + name + " " + rel);
+            //System.out.println("RELATIONSHIP: " + name + " " + rel);
          }
          else
          {
@@ -489,7 +489,7 @@ public abstract class Db<T extends Db>
       boolean pluralize = false;
       if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getFk1Col1().getColumnName();
+         name = rel.getFk1Col1().getJsonName();
          if (name.toLowerCase().endsWith("id") && name.length() > 2)
          {
             name = name.substring(0, name.length() - 2);
@@ -594,12 +594,11 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Collection getCollection(String collectionOrTableName)
+   public Collection getCollectionByTableName(String tableName)
    {
       for (Collection t : collections)
       {
-         if (collectionOrTableName.equalsIgnoreCase(t.getTableName()) //
-               || collectionOrTableName.equalsIgnoreCase(t.getName()))
+         if (tableName.equalsIgnoreCase(t.getTableName()))
             return t;
       }
 

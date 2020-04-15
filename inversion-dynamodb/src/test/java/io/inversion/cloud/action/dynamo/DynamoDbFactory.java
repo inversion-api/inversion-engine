@@ -68,7 +68,7 @@ public class DynamoDbFactory
       @Override
       public void configApi(Api api)
       {
-         Collection northwind = getCollection("northwind");
+         Collection northwind = getCollectionByTableName("northwind");
          removeCollection(northwind);
          
          Collection orders = northwind.copy().withName("orders");
