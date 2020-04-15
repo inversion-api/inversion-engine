@@ -228,9 +228,6 @@ public class RestPostAction extends Action<RestPostAction>
                   mapped.put(key, node.get(key));
             }
          }
-
-         System.out.println("mapped: " + mapped);
-
       }
       List<String> returnList = collection.getDb().upsert(collection, upsertMaps);
       for (int i = 0; i < nodes.length(); i++)
@@ -360,7 +357,7 @@ public class RestPostAction extends Action<RestPostAction>
                   Map updatedRow = new HashMap();
                   updatedRows.add(updatedRow);
                   updatedRow.putAll(primaryKey);
-                  
+
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
                   {
                      //-- the fk is an entityKey not a one-to-one column mapping to the primary composite key
@@ -376,7 +373,7 @@ public class RestPostAction extends Action<RestPostAction>
 
             if (updatedRows.size() > 0)
             {
-               collection.getDb().update(collection, updatedRows);
+               collection.getDb().patch(collection, updatedRows);
             }
          }
       }
@@ -469,7 +466,6 @@ public class RestPostAction extends Action<RestPostAction>
          includesKeys.addAll(parentKey.keySet());
          includesKeys.addAll(rel.getRelated().getPrimaryIndex().getColumnNames());
 
-         Term findOr = Term.term(null, "or");
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
 
@@ -489,7 +485,7 @@ public class RestPostAction extends Action<RestPostAction>
          if (rel.isOneToMany())
          {
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-            coll.getDb().update(coll, upserts);
+            coll.getDb().patch(coll, upserts);
          }
          else if (rel.isManyToMany())
          {
@@ -500,48 +496,54 @@ public class RestPostAction extends Action<RestPostAction>
          //-- now find all relationships that are NOT in the group that we just upserted
          //-- they need to be nulled out if many-to-one and deleted if many-to-many
 
+         Map<String, String> queryTerms = new HashMap();
+         queryTerms.put("limit", "100");
+         queryTerms.put("includes", Utils.implode(",", includesKeys));
+
+         for (Object parentKeyProp : parentKey.keySet())
+         {
+            queryTerms.put(parentKeyProp.toString(), parentKey.get(parentKeyProp).toString());
+         }
+
          if (childOr.size() > 0)
-            findOr.withTerm(Term.term(findOr, "and", asTerm(parentKey), childNot));
-         else
-            findOr.withTerm(asTerm(parentKey));
+         {
+            queryTerms.put(childNot.toString(), null);
+         }
 
-         if (findOr.size() == 1)
-            findOr = findOr.getTerm(0);
-
-         List queryTerms = new ArrayList(Arrays.asList(Term.term(null, "includes", includesKeys), Term.term(null, "limit", 100), findOr));
-
+         String next = Chain.buildLink(coll);
          while (true)
          {
             log.debug("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
 
-            Results<Row> results = coll.getDb().select(coll, queryTerms);
+            Response toUnlink = req.getEngine().get(next, queryTerms).assertOk();
 
-            if (results.size() <= 0)
+            if (toUnlink.data().length() == 0)
                break;
+
+            Set toKeep = new HashSet(coll.getPrimaryIndex().getJsonNames());
+            toKeep.addAll(rel.getFkIndex1().getJsonNames());
+
+            for (JSNode node : toUnlink.data().asNodeList())
+            {
+               node.retain(toKeep);
+            }
 
             if (rel.isOneToMany())
             {
-               for (Row row : results.getRows())
-               {
-                  for (int i = 0; i < rel.getFkIndex1().size(); i++)
-                  {
-                     Property col = rel.getFkIndex1().getProperty(i);
-                     row.put(col.getColumnName(), null);
-                  }
-               }
+               //log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + toUnlink.data());
+               req.getEngine().put(Chain.buildLink(coll), toUnlink.data());
 
-               log.debug("...nulling out many-to-one outdated relationships foreign keys: " + rel + " -> " + coll + " -> " + results.getRows());
-               coll.getDb().update(coll, results.getRows());
             }
-            else if (rel.isManyToMany())
-            {
-               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + coll + " -> " + results.getRows());
-               Rows rows = new Rows();
-               rows.addAll(results.getRows());
-               coll.getDb().delete(coll, rows);
-            }
+            //TODO: put back in support for many to many rels recursing through engine
+            //            else if (rel.isManyToMany())
+            //            {
+            //               log.debug("...deleting outdated many-to-many relationships rows: " + rel + " -> " + coll + " -> " + results.getRows());
+            //               Rows rows = new Rows();
+            //               rows.addAll(results.getRows());
+            //               coll.getDb().delete(coll, rows);
+            //            }
 
-            if (results.size() < 100)
+            if (toUnlink.data().size() < 100)
                break;
          }
       }
