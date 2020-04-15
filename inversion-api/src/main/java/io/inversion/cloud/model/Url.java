@@ -350,7 +350,7 @@ public class Url
       return null;
    }
 
-   public String findKeyValue(String tokens)
+   public String findKeyValue(String... tokens)
    {
       String key = findKey(tokens);
       if (key != null)
