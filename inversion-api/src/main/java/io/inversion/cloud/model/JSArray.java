@@ -196,10 +196,10 @@ public class JSArray extends JSNode implements Iterable
    @Override
    protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
    {
-      return diff(diffAgainst, path, patches, 0, 0, "");
+      return diff(diffAgainst, path, patches, 0, 0);
    }
 
-   protected JSArray diff(JSNode diffAgainst, String path, JSArray patches, int myStart, int theirStart, String buff)
+   protected JSArray diff(JSNode diffAgainst, String path, JSArray patches, int myStart, int theirStart)
    {
       JSArray otherArray = (JSArray) diffAgainst;
 
@@ -235,8 +235,6 @@ public class JSArray extends JSNode implements Iterable
       }
       else if (otherArray.size() < size())//we have to add some of ours to them
       {
-         System.out.println(buff + myStart + " - " + theirStart + " - " + objects.subList(myStart, objects.size()) + " - " + otherArray.objects.subList(theirStart, otherArray.objects.size()) + " - " + diffAgainst);
-
          JSArray copy = new JSArray();
          copy.objects.addAll(otherArray.objects);
 
@@ -255,8 +253,7 @@ public class JSArray extends JSNode implements Iterable
                {
                   copy.add(k, get(j));
                   
-                  buff += "   ";
-                  JSArray tempAddPatches = diff(copy, path, new JSArray(), j + 1, k + 1, buff + "   ");
+                  JSArray tempAddPatches = diff(copy, path, new JSArray(), j + 1, k + 1);
                   if (minAddPatches == null || minAddPatches.size() > tempAddPatches.size())
                   {
                      minAddPatches = tempAddPatches;

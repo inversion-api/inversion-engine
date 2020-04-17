@@ -71,13 +71,16 @@ public class JSNode implements Map<String, Object>
 
    /**
     * Returns an array of JSON patches that when applied to <code>diffAgainst.patch(patches)</code>
-    * will make <code>diffAgainst</code> match this node.
+    * will make <code>diffAgainst.toString()</code> match thisNode.toString().
+    * <p>
+    * SPECIAL NOTE: JSArray overrides diff(JSNode, String, JSArray) becuase arrays required speical
+    * handling for adds and deletes.
     * 
     * @see http://jsonpatch.com/
     * @see https://tools.ietf.org/html/rfc6902
-    * 
+    * @see JSNode.diff(JSNode, String, JSArray)
+    * @see patch(JSArray)
     * @param diffAgainst
-    * @return
     */
    public JSArray diff(JSNode diffAgainst)
    {
@@ -90,11 +93,14 @@ public class JSNode implements Map<String, Object>
       return diffs;
    }
 
+   /**
+    * @see JSNode.diff(JSNode, String, JSArray)
+    */
    protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
    {
       for (String key : keySet())
       {
-         String nextPath = Utils.implode(".", path, key);
+         String nextPath = Utils.implode("/", path, key);
 
          Object myVal = get(key);
          Object theirVal = diffAgainst.get(key);
@@ -108,7 +114,7 @@ public class JSNode implements Map<String, Object>
          Object theirVal = diffAgainst.get(key);
 
          if (myVal == null && theirVal != null)
-            patches.add(new JSNode("op", "remove", "path", Utils.implode(".", path, key)));
+            patches.add(new JSNode("op", "remove", "path", Utils.implode("/", path, key)));
       }
 
       return patches;
@@ -143,12 +149,16 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * Applies JSON patches to this node.
-    * 
-    * @see http://jsonpatch.com/
-    * @see https://tools.ietf.org/html/rfc6902
+    * Applies JSON patches to this node.  You can generate a list
+    * of JSON Patches via diff(JSNode).  The JSON Patch standared uses JSON Pointer
+    * syntax to specify paths to nodes. This methods supports JSON Pointer AND 
+    * JSON Path AND the relaxed dotted wildcard pattern supported by findAll()
     * 
     * @param diffs
+    * @see http://jsonpatch.com/
+    * @see https://tools.ietf.org/html/rfc6902
+    * @see findAll(String pathExpression, int quantity)
+    * @see diff(JSNode)
     */
    public void patch(JSArray patches)
    {
@@ -191,20 +201,20 @@ public class JSNode implements Map<String, Object>
          }
          else
          {
-            if(parent.isArray())
+            if (parent.isArray())
             {
-               if("add".equalsIgnoreCase(op))
+               if ("add".equalsIgnoreCase(op))
                {
-                  ((JSArray)parent).add(Integer.parseInt(prop), diff.get("value"));
+                  ((JSArray) parent).add(Integer.parseInt(prop), diff.get("value"));
                }
-               else if("replace".equalsIgnoreCase(op))
+               else if ("replace".equalsIgnoreCase(op))
                {
                   parent.put(prop, diff.get("value"));
                }
             }
             else
             {
-               parent.put(prop, diff.get("value"));               
+               parent.put(prop, diff.get("value"));
             }
 
          }
@@ -332,16 +342,43 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * Runs the JsonPath dot-notation expression against this node and
-    * its children and returns any matching values.
-    *
-    * For an json path reference see:
-    * <ul>
-    *   <li> https://goessner.net/articles/JsonPath/
-    *   <li> https://github.com/json-path/JsonPath
-    * </ul>
+    * A heroically permissive node finder supporting JSON Pointer, JSON Path and
+    * a simple 'dot and wildcard' type of system like so:
+    * 'propName.childPropName.*.skippedGenerationPropsName.4.fifthArrayNodeChildPropsName.**.recursivelyFoundPropsName'.
     * 
-    * Below is the implementation status of various JsonPath features:
+    * <p>
+    * All forms are internally converted into a 'master' form before processing.  This master 
+    * simply uses '.' to separate property names and array indexes and uses uses '*' to represent 
+    * a single level wildcard and '**' to represent a recursive wildcard.  For example:
+    * <ul>
+    *   <li>'myProp' finds 'myProp' in this node.
+    *   <li>'myProp.childProp' finds 'childProp' on 'myProp'
+    *   <li>'myArrayProp.2.*' finds all properties of the third element of the 'myArrayProp' 
+    *   <li>'*.myProp' finds 'myProp' in any of the children of this node.
+    *   <li>'**.myProp' finds 'myProp' anywhere in my descendents.
+    *   <li>'**.myProp.*.value' finds 'value' as a grandchild anywhere under me.
+    *   <li>'**.*' returns every element of the document.
+    *   <li>'**.5' gets the 6th element of every array.
+    *   <li>'**.book[?(@.isbn)]' finds all books with an isbn
+    *   <il>'**.[?(@.author = 'Herman Melville')]' fins all book with author 'Herman Melville'
+    * </ul>
+    * <p>
+    * Arrays indexes are treated just like property names but with integer names.
+    * For example "myObject.4.nextProperty" finds "nextProperty" on the 5th element
+    * in the "myObject" array.
+    * 
+    * <p>
+    * JSON Pointer is the least expressive supported form and uses '/' characters to separate properties.
+    * To support JSON Pointer, we simply replace all '/' characters for "." characters before
+    * processing.
+    * 
+    * <p>
+    * JSON Path is more like XML XPath but uses '.' instead of '/' to separate properties.
+    * Technically JSON Path statements are supposed to start with '$.' but that is optional here.
+    * The best part about JSON Path is the query filters that let you conditionally select
+    * elements.
+    * 
+    * Below is the implementation status of various JSON Path features:
     * <ul>
     *  <li>SUPPORTED $.store.book[*].author                     //the authors of all books in the store
     *  <li>SUPPORTED $..author                                  //all authors
@@ -357,7 +394,7 @@ public class JSNode implements Map<String, Object>
     *  <li>SUPPORTED $..book[?(@.isbn)]                         //filter all books with isbn number
     * </ul>
     * 
-    * The following boolean comparison operators are supported: 
+    * The JSON Path following boolean comparison operators are supported: 
     * <ul>
     *  <li> =
     *  <li>>
@@ -371,25 +408,36 @@ public class JSNode implements Map<String, Object>
     * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
     * is currently not supported.
     * 
-    * 
-    * <p>
-    * In addition to the above JsonPath syntax, a "relaxed" wildcard
-    * syntax is also supported. '*' is used to represent a single level
-    * of freedom and '**' is used to represent freedom to match at any
-    * depth.  Additionally, JsonPath uses array[idx] or array[*] notation
-    * and the simplified wildcard supports array.INDEX_NUMBER.property
-    * (ex, "myArray.2.property")
-    * or array.*.property or array.**.property
-    * 
-    * 
+    * @see JSON Pointer - https://tools.ietf.org/html/rfc6901
+    * @see JSON Path - https://goessner.net/articles/JsonPath/
+    * @see JSON Path - https://github.com/json-path/JsonPath
     */
-   public JSArray findAll(String jsonPath, int qty)
+   public JSArray findAll(String pathExpression, int qty)
    {
-      jsonPath = fromJsonPath(jsonPath);
-      return new JSArray(collect0(jsonPath, qty));
+      pathExpression = fromJsonPointer(pathExpression);
+      pathExpression = fromJsonPath(pathExpression);
+      return new JSArray(collect0(pathExpression, qty));
    }
 
-   public static String fromJsonPath(String jsonPath)
+   /**
+    * Simply replaces "/"s with "."
+    * 
+    * Slashes in property names (seriously a stupid idea anyway) which is supported
+    * by JSON Pointer is not supported.
+    * 
+    * @param jsonPointer
+    * @return
+    */
+   protected static String fromJsonPointer(String jsonPointer)
+   {
+      return jsonPointer.replace('/', '.');
+   }
+
+   /**
+    * Converts a proper json path statement into its "relaxed dotted wildcard" form
+    * so that it is easier to parse.
+    */
+   protected static String fromJsonPath(String jsonPath)
    {
       if (jsonPath.charAt(0) == '$')
          jsonPath = jsonPath.substring(1, jsonPath.length());
@@ -481,16 +529,6 @@ public class JSNode implements Map<String, Object>
          String expr = nextSegment.substring(1, nextSegment.length() - 1).trim();
          if (expr.startsWith("?(") && expr.endsWith(")"))
          {
-            //            SimpleTokenizer tokenizer = new SimpleTokenizer(//
-            //                                                            "'\"", //openQuoteStr
-            //                                                            "'\"", //closeQuoteStr
-            //                                                            "]?", //breakIncludedChars
-            //                                                            " ", //breakExcludedChars
-            //                                                            "()", //unquuotedIgnoredChars
-            //                                                            ". \t", //leadingIgoredChars
-            //                                                            expr //chars
-            //            );
-
             JSONPathTokenizer tokenizer = new JSONPathTokenizer(//
                                                                 "'\"", //openQuoteStr
                                                                 "'\"", //closeQuoteStr
