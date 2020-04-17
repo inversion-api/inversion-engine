@@ -18,7 +18,6 @@ package io.inversion.cloud.model;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -45,7 +44,6 @@ public class Collection extends Rule<Collection> implements Serializable
    transient protected Db            db            = null;
 
    protected String                  tableName     = null;
-   protected String                  name          = null;
    protected List<String>            aliases       = new ArrayList();
 
    protected ArrayList<Property>     properties    = new ArrayList();
@@ -185,18 +183,10 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return the name
     */
+   @Override
    public String getName()
    {
       return name != null ? name : tableName;
-   }
-
-   /**
-    * @param name the name to set
-    */
-   public Collection withName(String name)
-   {
-      this.name = name;
-      return this;
    }
 
    /**
@@ -417,8 +407,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
       return this;
    }
-   
-   
+
    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps)
    {
       Property[] properties = new Property[childFkProps.length];

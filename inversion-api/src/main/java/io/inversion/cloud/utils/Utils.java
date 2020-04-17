@@ -1001,6 +1001,7 @@ public class Utils
     */
    public static List<Field> getFields(Class clazz)
    {
+      Class inClass = clazz;
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 

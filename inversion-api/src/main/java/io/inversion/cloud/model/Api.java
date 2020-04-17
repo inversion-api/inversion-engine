@@ -26,8 +26,6 @@ import org.slf4j.LoggerFactory;
 
 public class Api extends Rule<Api>
 {
-   protected final Logger                log         = LoggerFactory.getLogger(getClass());
-
    transient volatile boolean            started     = false;
    transient volatile boolean            starting    = false;
    transient protected String            hash        = null;
@@ -35,7 +33,6 @@ public class Api extends Rule<Api>
 
    protected boolean                     debug       = false;
 
-   protected String                      name        = null;
    protected String                      url         = null;
 
    protected List<Db>                    dbs         = new ArrayList();
@@ -359,17 +356,6 @@ public class Api extends Rule<Api>
    public void setDebug(boolean debug)
    {
       this.debug = debug;
-   }
-
-   public String getName()
-   {
-      return name;
-   }
-
-   public Api withName(String name)
-   {
-      this.name = name;
-      return this;
    }
 
    public String getUrl()

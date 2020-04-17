@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * // * Copyright (c) 2015-2018 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,20 +30,20 @@ import io.inversion.cloud.utils.Utils;
 
 public abstract class Rule<R extends Rule> implements Comparable<Rule>
 {
-   protected final Logger     log          = LoggerFactory.getLogger(getClass().getName());
+   protected final transient Logger log          = LoggerFactory.getLogger(getClass().getName());
 
-   protected String           name         = null;
-   protected int              order        = 1000;
+   protected String                 name         = null;
+   protected int                    order        = 1000;
 
-   protected Set<String>      methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-   protected List<Path>       excludePaths = new ArrayList();
-   protected List<Path>       includePaths = new ArrayList();
+   protected Set<String>            methods      = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+   protected List<Path>             excludePaths = new ArrayList();
+   protected List<Path>             includePaths = new ArrayList();
 
    /**
     * JSMap is used because it implements a case insensitive map without modifying the keys
     */
-   protected transient JSNode configMap    = new JSNode();
-   protected String           configStr    = null;
+   protected transient JSNode       configMap    = new JSNode();
+   protected String                 configStr    = null;
 
    public boolean matches(String method, String path)
    {
@@ -304,7 +304,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    @Override
    public int compareTo(Rule a)
    {
-      int compare =  order == a.order ? 0 : order < a.order ? -1 : 1;
+      int compare = order == a.order ? 0 : order < a.order ? -1 : 1;
       return compare;
    }
 

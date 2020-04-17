@@ -237,6 +237,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
            .withResult("manyToOneExistsEq", "UNSUPPORTED")//
            .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
            .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
+           
+           .withResult("eqNonexistantColumn",  "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId, #var3=nonexistantColumn} valueMap={:val1=ORDER, :val2=1000, :val3=12} filterExpression='(#var3 = :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 >= :val2)'")//
 
            .withTest("A_scanWhenUnindexedFieldProvided", "orders?shipPostalCode=30305")//
            .withResult("A_scanWhenUnindexedFieldProvided", "ScanSpec nameMap={#var1=shipPostalCode} valueMap={:val1=30305} filterExpression='(#var1 = :val1)'")//
@@ -270,7 +272,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
 
            .withTest("M_queryGs2WhenGs2HkEq", "orders?eq(customerId,1234)")//
            .withResult("M_queryGs2WhenGs2HkEq", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=1234} keyConditionExpression='(#var1 = :val1)'")//
-      //.withTest("", "").withResult("",  "")//
+           
+           
       ;
 
    }
