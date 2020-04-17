@@ -51,6 +51,11 @@ public class JSNode implements Map<String, Object>
       }
    }
 
+   public JSNode copy()
+   {
+      return JSNode.parseJsonNode(toString());
+   }
+
    public void sortKeys()
    {
       List<String> keys = new ArrayList(properties.keySet());
@@ -64,6 +69,16 @@ public class JSNode implements Map<String, Object>
       properties = newProps;
    }
 
+   /**
+    * Returns an array of JSON patches that when applied to <code>diffAgainst.patch(patches)</code>
+    * will make <code>diffAgainst</code> match this node.
+    * 
+    * @see http://jsonpatch.com/
+    * @see https://tools.ietf.org/html/rfc6902
+    * 
+    * @param diffAgainst
+    * @return
+    */
    public JSArray diff(JSNode diffAgainst)
    {
       JSArray diffs = diff(diffAgainst, "", new JSArray());
@@ -127,12 +142,20 @@ public class JSNode implements Map<String, Object>
       }
    }
 
-   public void patch(JSArray diffs)
+   /**
+    * Applies JSON patches to this node.
+    * 
+    * @see http://jsonpatch.com/
+    * @see https://tools.ietf.org/html/rfc6902
+    * 
+    * @param diffs
+    */
+   public void patch(JSArray patches)
    {
       //we do this to prevent unintended consequences of copying in the same object references
-      diffs = parseJsonArray(diffs.toString());
+      patches = parseJsonArray(patches.toString());
 
-      for (JSNode diff : diffs.asNodeList())
+      for (JSNode diff : patches.asNodeList())
       {
          String op = diff.getString("op");
          String path = diff.getString("path");
@@ -168,7 +191,22 @@ public class JSNode implements Map<String, Object>
          }
          else
          {
-            parent.put(prop, diff.get("value"));
+            if(parent.isArray())
+            {
+               if("add".equalsIgnoreCase(op))
+               {
+                  ((JSArray)parent).add(Integer.parseInt(prop), diff.get("value"));
+               }
+               else if("replace".equalsIgnoreCase(op))
+               {
+                  parent.put(prop, diff.get("value"));
+               }
+            }
+            else
+            {
+               parent.put(prop, diff.get("value"));               
+            }
+
          }
       }
    }
@@ -339,7 +377,8 @@ public class JSNode implements Map<String, Object>
     * syntax is also supported. '*' is used to represent a single level
     * of freedom and '**' is used to represent freedom to match at any
     * depth.  Additionally, JsonPath uses array[idx] or array[*] notation
-    * and the simplified wildcard supports array.${idxNum}.property 
+    * and the simplified wildcard supports array.INDEX_NUMBER.property
+    * (ex, "myArray.2.property")
     * or array.*.property or array.**.property
     * 
     * 
