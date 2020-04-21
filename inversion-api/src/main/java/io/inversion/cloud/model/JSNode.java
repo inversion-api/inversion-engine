@@ -16,19 +16,45 @@
  */
 package io.inversion.cloud.model;
 
+import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flipkart.zjsonpatch.JsonDiff;
+import com.flipkart.zjsonpatch.JsonPatch;
+
 import io.inversion.cloud.utils.Utils;
 
-import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collection;
-import java.util.*;
-
+/**
+ * 
+ * TODO: 
+ *  Replace diff/patch with open source versions 
+ *   https://stackoverflow.com/questions/50967015/how-to-compare-json-documents-and-return-the-differences-with-jackson-or-gson
+ *   https://github.com/flipkart-incubator/zjsonpatch
+ *   https://github.com/java-json-tools/json-patch
+ *   https://javaee.github.io/javaee-spec/javadocs/javax/json/JsonPatch.html
+ *   
+ * TODO: Investigate MergePatch  
+ * 
+ * @author wells
+ */
 public class JSNode implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
@@ -69,156 +95,65 @@ public class JSNode implements Map<String, Object>
       properties = newProps;
    }
 
-   /**
-    * Returns an array of JSON patches that when applied to <code>diffAgainst.patch(patches)</code>
-    * will make <code>diffAgainst.toString()</code> match thisNode.toString().
-    * <p>
-    * SPECIAL NOTE: JSArray overrides diff(JSNode, String, JSArray) becuase arrays required speical
-    * handling for adds and deletes.
-    * 
-    * @see http://jsonpatch.com/
-    * @see https://tools.ietf.org/html/rfc6902
-    * @see JSNode.diff(JSNode, String, JSArray)
-    * @see patch(JSArray)
-    * @param diffAgainst
-    */
-   public JSArray diff(JSNode diffAgainst)
+   public JSArray diff(JSNode source)
    {
-      JSArray diffs = diff(diffAgainst, "", new JSArray());
+      ObjectMapper mapper = new ObjectMapper();
 
-      //we do this to prevent unintended consequences of copying in the same object references
-      if (diffs.size() > 0)
-         diffs = parseJsonArray(diffs.toString());
+      JsonNode patch;
+      try
+      {
+         patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
+         return patchesArray;
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         Utils.rethrow(e);
+      }
 
-      return diffs;
+      return null;
    }
 
-   /**
-    * @see JSNode.diff(JSNode, String, JSArray)
-    */
-   protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
+   public JSArray patch(JSArray patches)
    {
-      for (String key : keySet())
+      //-- migrate legacy "." based paths to JSONPointer
+      for (JSNode patch : patches.asNodeList())
       {
-         String nextPath = Utils.implode("/", path, key);
-
-         Object myVal = get(key);
-         Object theirVal = diffAgainst.get(key);
-
-         diff(nextPath, myVal, theirVal, patches);
-      }
-
-      for (String key : diffAgainst.keySet())
-      {
-         Object myVal = get(key);
-         Object theirVal = diffAgainst.get(key);
-
-         if (myVal == null && theirVal != null)
-            patches.add(new JSNode("op", "remove", "path", Utils.implode("/", path, key)));
-      }
-
-      return patches;
-   }
-
-   protected void diff(String path, Object myVal, Object theirVal, JSArray patches)
-   {
-      if (myVal == null && theirVal == null)
-      {
-
-      }
-      else if (myVal != null && theirVal == null)
-      {
-         patches.add(new JSNode("op", "add", "path", path, "value", myVal));
-      }
-      else if (myVal == null && theirVal != null)
-      {
-         patches.add(new JSNode("op", "remove", "path", path));
-      }
-      else if (!myVal.getClass().equals(theirVal.getClass()))
-      {
-         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
-      }
-      else if (myVal instanceof JSNode)
-      {
-         ((JSNode) myVal).diff((JSNode) theirVal, path, patches);
-      }
-      else if (!myVal.toString().equals(theirVal.toString()))
-      {
-         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
-      }
-   }
-
-   /**
-    * Applies JSON patches to this node.  You can generate a list
-    * of JSON Patches via diff(JSNode).  The JSON Patch standared uses JSON Pointer
-    * syntax to specify paths to nodes. This methods supports JSON Pointer AND 
-    * JSON Path AND the relaxed dotted wildcard pattern supported by findAll()
-    * 
-    * @param diffs
-    * @see http://jsonpatch.com/
-    * @see https://tools.ietf.org/html/rfc6902
-    * @see findAll(String pathExpression, int quantity)
-    * @see diff(JSNode)
-    */
-   public void patch(JSArray patches)
-   {
-      //we do this to prevent unintended consequences of copying in the same object references
-      patches = parseJsonArray(patches.toString());
-
-      for (JSNode diff : patches.asNodeList())
-      {
-         String op = diff.getString("op");
-         String path = diff.getString("path");
-         String prop = null;
-         int idx = path.lastIndexOf(".");
-         if (idx < 0)
+         String path = patch.getString("path");
+         if (path != null && !path.startsWith("/"))
          {
-            prop = path;
-            path = null;
+            path = "/" + path.replace(".", "/");
          }
-         else
+         patch.put("path", path);
+
+         path = patch.getString("from");
+         if (path != null && !path.startsWith("/"))
          {
-            prop = path.substring(idx + 1, path.length());
-            path = path.substring(0, idx);
+            path = "/" + path.replace(".", "/");
          }
+         patch.put("from", path);
+      }
 
-         JSNode parent = path == null || path.length() == 0 ? this : findNode(path);
+      ObjectMapper mapper = new ObjectMapper();
 
-         if (parent == null)
-            throw new RuntimeException("Unable to find parent path for patch '" + path + "'");
-         if ("remove".equals(op))
+      try
+      {
+         JsonNode target = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSNode patched = JSNode.parseJsonNode(target.toString());
+
+         this.properties = patched.properties;
+         if (this.isArray())
          {
-            try
-            {
-               parent.remove(prop);
-            }
-            catch (Exception e)
-            {
-               e.printStackTrace();
-               System.err.println("You are trying to apply a property patch to an array: " + diff);
-               throw e;
-            }
-         }
-         else
-         {
-            if (parent.isArray())
-            {
-               if ("add".equalsIgnoreCase(op))
-               {
-                  ((JSArray) parent).add(Integer.parseInt(prop), diff.get("value"));
-               }
-               else if ("replace".equalsIgnoreCase(op))
-               {
-                  parent.put(prop, diff.get("value"));
-               }
-            }
-            else
-            {
-               parent.put(prop, diff.get("value"));
-            }
-
+            ((JSArray) this).objects = ((JSArray) patched).objects;
          }
       }
+      catch (Exception e)
+      {
+         Utils.rethrow(e);
+      }
+
+      return null;
    }
 
    public boolean isArray()

@@ -245,7 +245,6 @@ public class JSNodeTest
       JSArray arr2 = new JSArray("one", "two", "three", "four");
 
       JSArray patches = arr1.diff(arr2);
-      System.out.println(patches);
    }
 
    @Test
@@ -286,6 +285,21 @@ public class JSNodeTest
       jsonLong.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
+   
+   @Test
+   public void diff_remove_elements_from_middle_of_array2()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "e", "f", "g", "h"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      System.out.println(patches);
+      assertEquals(2, patches.size());
+
+      jsonLong.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
    
    @Test
    public void diff_remove_elements_from_start_middle_end_of_array()
