@@ -16,8 +16,12 @@
  */
 package io.inversion.cloud.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class JSArray extends JSNode implements Iterable
 {
@@ -176,5 +180,4 @@ public class JSArray extends JSNode implements Iterable
    {
       return asList();
    }
-
 }

@@ -16,15 +16,15 @@
  */
 package io.inversion.cloud.model;
 
-import io.inversion.cloud.utils.Utils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.apache.commons.collections4.CollectionUtils;
+import org.junit.jupiter.api.Test;
+
+import io.inversion.cloud.utils.Utils;
 
 public class JSNodeTest
 {
@@ -245,7 +245,119 @@ public class JSNodeTest
       JSArray arr2 = new JSArray("one", "two", "three", "four");
 
       JSArray patches = arr1.diff(arr2);
-      System.out.println(patches);
    }
+
+   @Test
+   public void diff_remove_element_from_end_of_array()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "c", "d", "e"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      assertEquals(3, patches.size());
+
+      jsonLong.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+
+   @Test
+   public void diff_remove_element_from_start_of_array()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("e", "f", "g", "h"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      System.out.println(patches);
+
+      assertEquals(4, patches.size());
+   }
+
+   @Test
+   public void diff_remove_elements_from_middle_of_array()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "e", "f", "g", "h"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      System.out.println(patches);
+      assertEquals(2, patches.size());
+
+      jsonLong.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
+   @Test
+   public void diff_remove_elements_from_middle_of_array2()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "e", "f", "g", "h"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      System.out.println(patches);
+      assertEquals(2, patches.size());
+
+      jsonLong.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
+   
+   @Test
+   public void diff_remove_elements_from_start_middle_end_of_array()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("b", "e", "f", "g"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
+
+      JSArray patches = jsonShort.diff(jsonLong);
+      System.out.println(patches);
+      assertEquals(4, patches.size());
+
+      jsonLong.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
+   
+   @Test
+   public void diff_add_elements_at_start_of_array()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("c", "d"));
+      JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d"));
+
+      JSArray patches = jsonLong.diff(jsonShort);
+      System.out.println(patches);
+      assertEquals(2, patches.size());
+
+      jsonShort.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
+   @Test
+   public void diff_array_swap()
+   {
+      JSNode jsonShort = new JSNode("array", new JSArray("a"));
+      JSNode jsonLong = new JSNode("array", new JSArray("b"));
+
+      JSArray patches = jsonLong.diff(jsonShort);
+      System.out.println(patches);
+      assertEquals(1, patches.size());
+
+      jsonShort.patch(patches);
+      assertEquals(jsonShort.toString(), jsonLong.toString());
+   }
+   
+
+   //   @Test
+   //   public void diff_add_element_to_start_of_array2()
+   //   {
+   //      JSNode jsonShort = new JSNode("array", new JSArray("a", new JSNode("B", "b"), "d", "e", "i"));
+   //      JSNode jsonShort = new JSNode("array", new JSArray("x", "a", new JSNode("B", "b"), "d", "e", "i"));
+   //      //      JSNode jsonLong = new JSNode("array", new JSArray("x""a", new JSNode("B", "b"), "c", "d", "e", "f", "g", "h", "i", "j", "k"));
+   //
+   //      JSArray patches = jsonShort.diff(jsonLong);
+   //      System.out.println(patches);
+   //
+   //      jsonLong.patch(patches);
+   //      assertEquals(jsonShort.toString(), jsonLong.toString());
+   //
+   //   }
 
 }
