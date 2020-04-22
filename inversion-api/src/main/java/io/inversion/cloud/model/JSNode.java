@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -71,10 +70,7 @@ public class JSNode implements Map<String, Object>
 
    public JSNode(Map map)
    {
-      for (Object key : map.keySet())
-      {
-         put(key + "", map.get(key));
-      }
+      putAll(map);
    }
 
    public JSNode copy()
@@ -680,7 +676,7 @@ public class JSNode implements Map<String, Object>
    {
       for (Object key : map.keySet())
       {
-         put(key.toString(), map.get(key.toString()));
+         put(key.toString(), map.get(key));
       }
    }
 
@@ -817,7 +813,7 @@ public class JSNode implements Map<String, Object>
 
    public Map asMap()
    {
-      Map map = new HashMap();
+      Map map = new LinkedHashMap();
       for (Property p : properties.values())
       {
          String name = p.name;

@@ -258,8 +258,7 @@ public class Url
 
    public Url withQuery(String query)
    {
-      params = new JSNode();
-      params.putAll(Utils.parseQueryString(query));
+      params = new JSNode(Utils.parseQueryString(query));
       return this;
    }
 
@@ -321,7 +320,8 @@ public class Url
       String oldValue = null;
       for (String token : tokens)
       {
-         for (String existing : (List<String>) new ArrayList(params.keySet()))
+         List<String> keys = (List<String>) new ArrayList(params.keySet());
+         for (String existing : keys)
          {
             if (Utils.containsToken(token, existing))
             {
