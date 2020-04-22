@@ -1372,7 +1372,7 @@ public class Utils
       return (s.toString());
    }
 
-   public static Map<String, String> parseQueryString(String query)
+   public static LinkedHashMap<String, String> parseQueryString(String query)
    {
       LinkedHashMap params = new LinkedHashMap();
       try
