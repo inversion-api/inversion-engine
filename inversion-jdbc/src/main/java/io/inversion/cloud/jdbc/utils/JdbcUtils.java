@@ -841,18 +841,18 @@ public class JdbcUtils
       for (int i = 0; i < generatedKeys.size(); i++)
       {
          Row row = new Row();
-         for(String col : primaryKeyCols)
+         for (String col : primaryKeyCols)
          {
             Object val = rows.get(i).get(col);
-            if(val == null)
+            if (val == null)
             {
                val = generatedKeys.get(i);
                generatedKeys.set(i, null);
             }
-            
-            if(val == null)
+
+            if (val == null)
                ApiException.throw500InternalServerError("Unable to determine upsert key or column '%s'", col);
-            
+
             row.put(col, val);
          }
          generatedKeys.set(i, row);
@@ -1174,22 +1174,43 @@ public class JdbcUtils
 
    /*
    +------------------------------------------------------------------------------+
-   | DDL UTILS
+   | BATCH RUNNER UTILS
    +------------------------------------------------------------------------------+
     */
 
-   public static void runDdl(Connection conn, InputStream ddlStream) throws Exception
+   /**
+    * @see readSql(InputStream)
+    * @param conn
+    * @param ddlStream
+    * @throws Exception
+    */
+   public static void runSql(Connection conn, InputStream ddlStream) throws Exception
    {
-      List<String> script = readDdl(ddlStream);
-      runDdl(conn, script.toArray(new String[script.size()]));
+      List<String> script = readSql(ddlStream);
+      runSql(conn, script.toArray(new String[script.size()]));
    }
 
-   public static List<String> readDdl(String string) throws IOException
+   /**
+    * @see readSql(InputStream)
+    * @param string
+    * @return
+    * @throws IOException
+    */
+   public static List<String> readSql(String string) throws IOException
    {
-      return readDdl(new ByteArrayInputStream(string.getBytes()));
+      return readSql(new ByteArrayInputStream(string.getBytes()));
    }
 
-   public static List<String> readDdl(InputStream ddlStream) throws IOException
+   /**
+    * Breaks the input stream up into a list of sql statements where statements are
+    * terminated by ";".  Lines starting with "--" or "#" are considred comments are
+    * are ignored.
+    * 
+    * @param ddlStream
+    * @return
+    * @throws IOException
+    */
+   public static List<String> readSql(InputStream ddlStream) throws IOException
    {
       BufferedReader br = new BufferedReader(new InputStreamReader(ddlStream));
       String line = null;
@@ -1209,16 +1230,18 @@ public class JdbcUtils
             curLine = "";
          }
       }
+      if (!Utils.empty(curLine.trim())) //the final statement was not terminated with a ";"
+         ddlList.add(curLine.trim());
 
       return ddlList;
    }
 
-   public static void runDdl(Connection con, List<String> sql) throws SQLException
+   public static void runSql(Connection con, List<String> sql) throws SQLException
    {
-      runDdl(con, sql.toArray(new String[sql.size()]));
+      runSql(con, sql.toArray(new String[sql.size()]));
    }
 
-   public static void runDdl(Connection con, String[] sql) throws SQLException
+   public static void runSql(Connection con, String[] sql) throws SQLException
    {
       //System.out.print("running ddl: ");
 

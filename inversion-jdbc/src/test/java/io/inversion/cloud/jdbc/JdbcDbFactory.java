@@ -126,7 +126,7 @@ public class JdbcDbFactory
       conn.close();
 
       conn = DriverManager.getConnection(url + database + "?sessionVariables=sql_mode=ANSI_QUOTES", user, pass);
-      JdbcUtils.runDdl(conn, JdbcDb.class.getResourceAsStream("northwind-mysql.ddl"));
+      JdbcUtils.runSql(conn, JdbcDb.class.getResourceAsStream("northwind-mysql.ddl"));
       conn.close();
 
       //sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'

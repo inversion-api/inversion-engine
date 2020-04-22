@@ -476,7 +476,7 @@ public class JdbcDb extends Db<JdbcDb>
             conn.setAutoCommit(false);
             for (String ddlUrl : ddlUrls)
             {
-               JdbcUtils.runDdl(conn, new URL(ddlUrl).openStream());
+               JdbcUtils.runSql(conn, new URL(ddlUrl).openStream());
             }
             conn.commit();
          }
