@@ -189,9 +189,9 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
            .withResult("nn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("emp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("nemp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-           .withResult("likeMiddle", "DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//contains operator
+           .withResult("likeMiddle", "400 Bad Request DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//contains operator
            .withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
-           .withResult("likeEndsWith", "DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//
+           .withResult("likeEndsWith", "400 Bad Request DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//
            .withResult("sw", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("ew", "UNSUPPORTED")//
            .withResult("w", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='contains(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//contains
@@ -237,8 +237,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
            .withResult("manyToOneExistsEq", "UNSUPPORTED")//
            .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
            .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
-           
-           .withResult("eqNonexistantColumn",  "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId, #var3=nonexistantColumn} valueMap={:val1=ORDER, :val2=1000, :val3=12} filterExpression='(#var3 = :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 >= :val2)'")//
+
+           .withResult("eqNonexistantColumn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId, #var3=nonexistantColumn} valueMap={:val1=ORDER, :val2=1000, :val3=12} filterExpression='(#var3 = :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 >= :val2)'")//
 
            .withTest("A_scanWhenUnindexedFieldProvided", "orders?shipPostalCode=30305")//
            .withResult("A_scanWhenUnindexedFieldProvided", "ScanSpec nameMap={#var1=shipPostalCode} valueMap={:val1=30305} filterExpression='(#var1 = :val1)'")//
@@ -272,8 +272,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
 
            .withTest("M_queryGs2WhenGs2HkEq", "orders?eq(customerId,1234)")//
            .withResult("M_queryGs2WhenGs2HkEq", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=1234} keyConditionExpression='(#var1 = :val1)'")//
-           
-           
+
       ;
 
    }

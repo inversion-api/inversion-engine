@@ -351,7 +351,7 @@ public class Path
                Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                if (!pattern.matcher(theirPart).matches())
                {
-                  ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
+                  ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), toMatch.toString());
                }
             }
 
@@ -359,7 +359,7 @@ public class Path
          }
          else if (!myPart.equalsIgnoreCase(theirPart))
          {
-            ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '%s', '%s'", this.parts.toString(), toMatch.toString());
+            ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), toMatch.toString());
          }
       }
 

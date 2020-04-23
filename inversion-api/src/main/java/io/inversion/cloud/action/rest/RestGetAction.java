@@ -60,7 +60,7 @@ public class RestGetAction extends Action<RestGetAction>
          Relationship rel = collection.getRelationship(req.getRelationshipKey());
 
          if (rel == null)
-            ApiException.throw404NotFound("'%s' is not a valid relationship", req.getRelationshipKey());
+            ApiException.throw404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
 
          String newHref = null;
 
@@ -96,7 +96,7 @@ public class RestGetAction extends Action<RestGetAction>
                   Object pkVal = entityKeyRow.get(pkName);
 
                   if (pkVal == null)
-                     ApiException.throw400BadRequest("Missing parameter for foreign key property '%s'", fk.getJsonName());
+                     ApiException.throw400BadRequest("Missing parameter for foreign key property '{}'", fk.getJsonName());
 
                   newHref += fk.getJsonName() + "=" + pkVal + "&";
                }
@@ -328,7 +328,7 @@ public class RestGetAction extends Action<RestGetAction>
          Db db = api.getDb((String) Chain.peek().get("db"));
 
          if (db == null)
-            ApiException.throw400BadRequest("Unable to find collection for url '%s'", req.getUrl());
+            ApiException.throw400BadRequest("Unable to find collection for url '{}'", req.getUrl());
 
          results = db.select(null, terms);
       }

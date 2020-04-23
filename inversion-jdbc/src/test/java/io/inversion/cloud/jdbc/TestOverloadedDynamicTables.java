@@ -156,7 +156,7 @@ public class TestOverloadedDynamicTables
    //
    //                                                   break;
    //                                                default :
-   //                                                   ApiException.throw400BadRequest("Collection '%s' is unsupported: '%s'", req.getCollectionKey(), req.getUrl());
+   //                                                   ApiException.throw400BadRequest("Collection '{}' is unsupported: '{}'", req.getCollectionKey(), req.getUrl());
    //                                             }
    //                                          }
    //                                       }
@@ -164,7 +164,7 @@ public class TestOverloadedDynamicTables
    //                                       if (req.isGet() || req.isDelete())
    //                                       {
    //                                          if (req.getUrl().findKey("type") == null || (req.getEntityKey() == null && req.getUrl().findKey("partition") == null))
-   //                                             ApiException.throw400BadRequest("Unable to GET/DELTE collection '%s' without a 'type' and 'partition' param: '%s'", req.getCollectionKey(), req.getUrl());
+   //                                             ApiException.throw400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
    //                                       }
    //
    //                                       req.getChain().go();

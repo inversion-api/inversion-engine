@@ -136,7 +136,7 @@ public class AuthAction extends Action<AuthAction>
          }
          else
          {
-            ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. %s ", token);
+            ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. {} ", token);
          }
 
          if (user == null)

@@ -165,7 +165,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
       else
       {
-         ApiException.throw400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '%s'", row);
+         ApiException.throw400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '{}'", row);
       }
    }
 

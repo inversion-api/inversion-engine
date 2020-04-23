@@ -851,7 +851,7 @@ public class JdbcUtils
             }
 
             if (val == null)
-               ApiException.throw500InternalServerError("Unable to determine upsert key or column '%s'", col);
+               ApiException.throw500InternalServerError("Unable to determine upsert key or column '{}'", col);
 
             row.put(col, val);
          }
