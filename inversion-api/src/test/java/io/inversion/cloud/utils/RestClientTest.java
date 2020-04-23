@@ -16,6 +16,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RestClientTest
 {
+   @Test
+   public void buildUrl_variable_replaced()
+   {
+      System.setProperty("theirService.url", "http://somehost/${tenant}/books/${something}/abcd");
+
+      Request req = new Request("GET", "http://myservice?tenant=12345");
+      RestClient client = new RestClient("theirService");
+
+      try
+      {
+         Chain.push(null, req, null);
+         String url = client.buildUrl();
+         assertEquals("http://somehost/12345/books/${something}/abcd", url);
+      }
+      finally
+      {
+         Chain.pop();
+      }
+
+   }
 
    @Test
    public void test_retriesMax()

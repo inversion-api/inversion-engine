@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -76,14 +78,14 @@ import io.inversion.cloud.service.Chain;
  *  
  *  <li>header forwarding w/ whitelists and blacklists
  *  
- *  <li>lazy runtime host url discover through lookup of
+ *  <li>lazy runtime host url construction through lookup of
  *      "${name}.url" in the environment
  *      
- *  <li>dynamic host url variables - any "${varname}" tokens in
- *      the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(varname).
+ *  <li>dynamic host url variables - any "${paramName}" tokens in
+ *      the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(paramName).
  *      
  *  <li>short circuit or transform Requests/Responses with a single
- *      override of <code>getResponse(Reqeust)</code>
+ *      override of <code>getResponse(Request)</code>
  *  <li>
  * </ul>    
  * 
@@ -207,7 +209,7 @@ public class RestClient
 
    public FutureResponse call(String method, String path, Map<String, String> params, JSNode body, int retries, ArrayListValuedHashMap<String, String> headers)
    {
-      String url = getUrl();
+      String url = buildUrl();
       if (url != null && path != null)
       {
          url += (url.endsWith("/") ? "" : "/") + Utils.implode("/", Utils.explode("/", path));
@@ -662,10 +664,46 @@ public class RestClient
       }
    }
 
-   public String getUrl()
+   /**
+    * Finds and composes the URL for the remote host.
+    * <p>
+    * If "${this.name}.url" is found in the environment it is 
+    * used, otherwise this.url is used.  
+    * <p>
+    * After the base string is located, any "${paramName}" tokens
+    * found in the string are replaced with any URL variables
+    * form the current Inversion request via 
+    * <code>Chain.peek().getRequest().getParam(paramName)</code> 
+    * 
+    * @return
+    */
+   public String buildUrl()
    {
-      String key = getName() + ".url";
-      return Utils.getSysEnvPropStr(key, url);
+      String propKey = getName() + ".url";
+      String url = Utils.getSysEnvPropStr(propKey, this.url);
+
+      if (Chain.peek() != null && url.indexOf('$') > 0)
+      {
+         Request request = Chain.peek().getRequest();
+
+         StringBuffer buff = new StringBuffer("");
+         Pattern p = Pattern.compile("\\$\\{([^\\}]*)\\}");
+         Matcher m = p.matcher(url);
+         while (m.find())
+         {
+            String key = m.group(1);
+            String param = request.getUrl().getParam(key);
+            if (param == null)//replacement value was not there
+               param = "${" + key + "}";
+
+            String value = Matcher.quoteReplacement(param);
+            m.appendReplacement(buff, value);
+         }
+         m.appendTail(buff);
+         return buff.toString();
+      }
+
+      return url;
    }
 
    public RestClient withUrl(String url)
