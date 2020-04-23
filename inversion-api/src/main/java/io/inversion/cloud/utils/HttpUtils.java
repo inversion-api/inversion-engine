@@ -149,9 +149,9 @@ public class HttpUtils
                   {
                      req = new HttpGet(url);
 
-                     if (this.getRetryFile() != null && this.getRetryFile().length() > 0)
+                     if (request.getRetryFile() != null && request.getRetryFile().length() > 0)
                      {
-                        long range = this.getRetryFile().length();
+                        long range = request.getRetryFile().length();
                         headers.remove("Range");
                         headers.put("Range", "bytes=" + range + "-");
 
@@ -212,7 +212,7 @@ public class HttpUtils
                   if (response.getStatusCode() >= 200 && response.getStatusCode() <= 300)
                   {
                      debug("Resetting retry count");
-                     this.resetRetryCount();
+                     request.resetRetryCount();
                   }
 
                   Url u = new Url(url);
@@ -226,9 +226,9 @@ public class HttpUtils
                      retryable = false; // do not allow this to retry on a 404
                      return; //will go to finally block
                   }
-                  else if (this.getRetryFile() != null && this.getRetryFile().length() == response.getContentRangeStart() && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
+                  else if (request.getRetryFile() != null && request.getRetryFile().length() == response.getContentRangeStart() && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
                   {
-                     tempFile = this.getRetryFile();
+                     tempFile = request.getRetryFile();
                      debug("## Using existing file .. " + tempFile);
                   }
                   else if (response.getStatusCode() == 206)
@@ -293,18 +293,18 @@ public class HttpUtils
 
                   // If this is a retryable response, submit it later
                   // Since we resetRetryCount upon any successful response, we are still guarding against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
-                  if (retryable && this.getRetryCount() < request.getRetryAttempts() && !response.isSuccess() && this.getTotalRetries() < TOTAL_MAX_RETRY_ATTEMPTS)
+                  if (retryable && request.getRetryCount() < request.getRetryAttempts() && !response.isSuccess() && request.getTotalRetries() < TOTAL_MAX_RETRY_ATTEMPTS)
                   {
-                     this.incrementRetryCount();
+                     request.incrementRetryCount();
 
-                     long timeout = (1000 * this.getRetryCount() * this.getRetryCount()) + (int) (1000 * Math.random() * this.getRetryCount());
+                     long timeout = (1000 * request.getRetryCount() * request.getRetryCount()) + (int) (1000 * Math.random() * request.getRetryCount());
 
-                     debug("retrying: " + this.getRetryCount() + " - " + timeout + " - " + url);
+                     debug("retrying: " + request.getRetryCount() + " - " + timeout + " - " + url);
 
                      // Set this for possible resumable download on the next try
-                     if (this.getRetryFile() == null && response.getStatusCode() == 200)
+                     if (request.getRetryFile() == null && response.getStatusCode() == 200)
                      {
-                        this.setRetryFile(response.getFile());
+                        request.setRetryFile(response.getFile());
                      }
 
                      submitLater(this, timeout);
