@@ -83,6 +83,7 @@ def bintrayKey = System.getProperty("bintray.key")
 def buildNumber = System.getProperty("build.number")
 
 
+
 allprojects {
 
 	apply plugin: 'com.jfrog.artifactory'
@@ -92,7 +93,6 @@ allprojects {
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")    
 }
-
 
 subprojects {
 	
@@ -135,7 +135,20 @@ subprojects {
     		exclude '**/*IntegTest*'
   		}
 	}
+
+	//causes a new ${subpoject}/pom.xml file to be generated after each build
+	gradle.buildFinished { buildResult ->
+  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
+	}
+	project.getGradle().getTaskGraph().whenReady {
+	    tasks.withType(GenerateMavenPom.class) {
+	        //destination = file("$buildDir/pom.xml")
+	        //destination = file("pom.xml")
+	        destination = file("$buildDir/../pom.xml")
+	    }
+	}
 	
+
 	
 	publishing {
 	    publications {
