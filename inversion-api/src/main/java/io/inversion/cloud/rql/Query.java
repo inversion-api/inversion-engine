@@ -252,7 +252,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
             
             Property col = coll.getProperty(shortName);
             if (col == null)
-               ApiException.throw500InternalServerError("Unable to find column '%s' on table '%s'", columnName, coll.getTableName());
+               ApiException.throw500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
 
             value = db.cast(col, value);
 

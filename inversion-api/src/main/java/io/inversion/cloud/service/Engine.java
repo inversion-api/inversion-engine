@@ -478,7 +478,7 @@ public class Engine extends Rule<Engine>
 
          if (req.getApi() == null)
          {
-            ApiException.throw400BadRequest("No API found matching URL: '%s'", url);
+            ApiException.throw400BadRequest("No API found matching URL: '{}'", url);
          }
 
          //         if (req.getEndpoint() == null)
@@ -495,7 +495,7 @@ public class Engine extends Rule<Engine>
             for (Endpoint e : req.getApi().getEndpoints())
                buff += e.getMethods() + " path: " + e.getIncludePaths() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
 
-            ApiException.throw404NotFound("No Endpoint found matching '%s' : '%s' Valid endpoints include %s", req.getMethod(), url, buff);
+            ApiException.throw404NotFound("No Endpoint found matching '{}' : '{}' Valid endpoints include {}", req.getMethod(), url, buff);
          }
 
          //this will get all actions specifically configured on the endpoint

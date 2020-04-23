@@ -203,7 +203,7 @@ public class Chain
                      value = req.getUrl().getParam(name);
                }
                if (value == null)
-                  ApiException.throw500InternalServerError("Unable to determine path for link to collection '%s', entity '%s', relationship '%s'", collection.getName(), entityKey + "", subCollectionKey + "");
+                  ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', entity '{}', relationship '{}'", collection.getName(), entityKey + "", subCollectionKey + "");
 
                url += epP.get(i) + "/";
             }

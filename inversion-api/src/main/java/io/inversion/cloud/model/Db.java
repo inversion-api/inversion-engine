@@ -315,7 +315,7 @@ public abstract class Db<T extends Db>
                }
                catch (Exception ex)
                {
-                  ApiException.throw500InternalServerError(ex, "Error creating relationship for index: %s", fkIdx);
+                  ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
                }
             }
          }

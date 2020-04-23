@@ -126,12 +126,12 @@ public class CosmosDb extends Db<CosmosDb>
       int statusCode = response.getStatusCode();
       if (statusCode > 299)
       {
-         ApiException.throw400BadRequest("Unexpected http status code returned from database: '%s'", statusCode);
+         ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
       }
 
       String returnedId = response.getResource().getId();
       if (!Utils.equal(id, returnedId))
-         ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '%s' vs. '%s'", id, returnedId);
+         ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
       return id;
    }
@@ -175,7 +175,7 @@ public class CosmosDb extends Db<CosmosDb>
          int statusCode = response.getStatusCode();
          if (statusCode >= 400)
          {
-            ApiException.throw500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
+            ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
          }
       }
       catch (DocumentClientException ex)
