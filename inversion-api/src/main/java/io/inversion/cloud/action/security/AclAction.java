@@ -187,7 +187,7 @@ public class AclAction extends Action<AclAction>
             String value = req.getUrl().getParam(key);
             if (matchesVal(restricted, key) || matchesVal(restricted, value))
             {
-               ApiException.throw500InternalServerError("Unknown or invalid query param '%s'='%s'.", key, value);
+               ApiException.throw500InternalServerError("Unknown or invalid query param '{}'='{}'.", key, value);
             }
          }
       }
@@ -235,7 +235,7 @@ public class AclAction extends Action<AclAction>
 
          if (!found)
          {
-            ApiException.throw400BadRequest("Missing required param '%s'", required);
+            ApiException.throw400BadRequest("Missing required param '{}'", required);
          }
       }
    }
@@ -271,7 +271,7 @@ public class AclAction extends Action<AclAction>
                if (!silent)
                {
                   if (target.containsKey(targetProp))
-                     ApiException.throw400BadRequest("Unknown or invalid JSON property '%s'.", path);
+                     ApiException.throw400BadRequest("Unknown or invalid JSON property '{}'.", path);
                }
             }
          }
@@ -312,7 +312,7 @@ public class AclAction extends Action<AclAction>
                   if (value != null)
                      target.put(targetProp, value);
                   else
-                     ApiException.throw400BadRequest("Required property '%s' is missing from JSON body", path);
+                     ApiException.throw400BadRequest("Required property '{}' is missing from JSON body", path);
 
                }
             }

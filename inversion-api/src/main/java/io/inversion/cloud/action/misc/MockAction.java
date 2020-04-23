@@ -150,7 +150,7 @@ public class MockAction extends Action<MockAction>
          }
          else
          {
-            ApiException.throw500InternalServerError("Unable to locate jsonUrl '%s'. Please check your configuration", jsonUrl);
+            ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
          }
 
       }

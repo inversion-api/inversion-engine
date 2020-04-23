@@ -94,7 +94,7 @@ public class RestPostAction extends Action<RestPostAction>
       {
          if (!Utils.empty(req.getEntityKey()))
          {
-            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
+            ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
       }
       else
@@ -216,7 +216,7 @@ public class RestPostAction extends Action<RestPostAction>
       {
          if (!Utils.empty(req.getEntityKey()))
          {
-            ApiException.throw400BadRequest("You can't batch '%s' an array of objects to a specific resource url.  You must '%s' them to a collection.", req.getMethod(), req.getMethod());
+            ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
          entityKeys = upsert(req, collection, (JSArray) obj);
       }
@@ -736,7 +736,7 @@ public class RestPostAction extends Action<RestPostAction>
       else
       {
          if (srcCols.size() != destCols.size())
-            ApiException.throw500InternalServerError("Unable to map from index '%s' to '%s'", srcCols.toString(), destCols);
+            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
 
          if (srcRow == null)
             return Collections.EMPTY_MAP;

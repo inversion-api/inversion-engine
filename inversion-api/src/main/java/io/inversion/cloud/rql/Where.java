@@ -72,7 +72,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
          if (!child.isLeaf())
          {
             if (!functions.contains(child.getToken()))
-               ApiException.throw400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
+               ApiException.throw400BadRequest("Invalid where function token '{}' : {}", child.getToken(), parent);
             transform(child);
          }
       }
@@ -145,7 +145,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
             {
                Term child = children.get(i);
                if (!child.isLeaf())
-                  ApiException.throw400BadRequest("Entity key value is not a leaf node: %s", child);
+                  ApiException.throw400BadRequest("Entity key value is not a leaf node: {}", child);
 
                Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
                Term and = Term.term(or, "and");

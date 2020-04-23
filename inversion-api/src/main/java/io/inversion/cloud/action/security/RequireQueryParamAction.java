@@ -71,7 +71,7 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
             }
          }
          if (!hasParam)
-            ApiException.throw400BadRequest("Required query string parameter '%s' appears to be missing.", requiredParam);
+            ApiException.throw400BadRequest("Required query string parameter '{}' appears to be missing.", requiredParam);
       }
    }
 

@@ -1605,7 +1605,7 @@ public class Utils
                }
 
             default :
-               ApiException.throw500InternalServerError("Error casting '%s' as type '%s'", value, type);
+               ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
          }
       }
       catch (Exception ex)

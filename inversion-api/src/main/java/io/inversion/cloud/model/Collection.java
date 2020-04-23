@@ -416,7 +416,7 @@ public class Collection extends Rule<Collection> implements Serializable
          Property prop = getProperty(childFkProps[i]);
 
          if (prop == null)
-            ApiException.throw500InternalServerError("Child foreign key property '%s.%s' can not be found.", getName(), childFkProps[i]);
+            ApiException.throw500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), childFkProps[i]);
 
          properties[i] = prop;
       }
@@ -451,7 +451,7 @@ public class Collection extends Rule<Collection> implements Serializable
          Property prop = childCollection.getProperty(childFkProps[i]);
 
          if (prop == null)
-            ApiException.throw500InternalServerError("Child foreign key property '%s.%s' can not be found.", childCollection.getName(), childFkProps[i]);
+            ApiException.throw500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), childFkProps[i]);
 
          properties[i] = prop;
       }
@@ -556,7 +556,7 @@ public class Collection extends Rule<Collection> implements Serializable
       {
          Object piece = pieces.get(i);
          if (piece == null)
-            ApiException.throw500InternalServerError("Trying to encode an entity key with a null component: '%s'.", pieces);
+            ApiException.throw500InternalServerError("Trying to encode an entity key with a null component: '{}'.", pieces);
 
          entityKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
          if (i < pieces.size() - 1)
@@ -642,7 +642,7 @@ public class Collection extends Rule<Collection> implements Serializable
    {
       Index index = getPrimaryIndex();
       if (index == null)
-         ApiException.throw500InternalServerError("Table '%s' does not have a unique index", this.getTableName());
+         ApiException.throw500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
 
       return decodeKeys(index, inKeys);
    }
@@ -660,14 +660,14 @@ public class Collection extends Rule<Collection> implements Serializable
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
-            ApiException.throw400BadRequest("Supplied entity key '%s' has %s part(s) but the primary index for table '%s' has %s part(s)", row, row.size(), getTableName(), index.size());
+            ApiException.throw400BadRequest("Supplied entity key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
 
          for (int i = 0; i < colNames.size(); i++)
          {
             Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
-               ApiException.throw400BadRequest("A key component can not be empty '%s'", inKeys);
+               ApiException.throw400BadRequest("A key component can not be empty '{}'", inKeys);
 
             value = getDb().cast(index.getProperty(i), value);
             row.set(i, value);

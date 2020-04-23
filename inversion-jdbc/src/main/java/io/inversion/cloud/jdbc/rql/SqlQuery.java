@@ -913,7 +913,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          Relationship rel = collection.getRelationship(relName);
 
          if (rel == null)
-            ApiException.throw400BadRequest("Unable to find relationship for term '%s'", term);
+            ApiException.throw400BadRequest("Unable to find relationship for term '{}'", term);
 
          String relTbl = rel.getRelated().getTableName();
          String relAlias = "~~relTbl_" + relTbl;

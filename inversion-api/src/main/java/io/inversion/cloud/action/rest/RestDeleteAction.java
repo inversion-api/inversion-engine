@@ -83,7 +83,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             String href = node.getString("href");
 
             if (alreadyDeleted.contains(href))
-               ApiException.throw500InternalServerError("Deletion of '%s' was not successful.", href);
+               ApiException.throw500InternalServerError("Deletion of '{}' was not successful.", href);
             else
                alreadyDeleted.add(href);
 

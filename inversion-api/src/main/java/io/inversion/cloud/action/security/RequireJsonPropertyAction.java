@@ -74,7 +74,7 @@ public class RequireJsonPropertyAction<T extends RequireJsonPropertyAction> exte
    {
       Object value = node.get(property);
       if (Utils.empty(value))
-         ApiException.throw400BadRequest("Required property '%s'.'%s' appears to be missing from your JSON body.", jsonPath, property);
+         ApiException.throw400BadRequest("Required property '{}'.'{}' appears to be missing from your JSON body.", jsonPath, property);
    }
 
    public RequireJsonPropertyAction withProperty(String jsonPath, String property)

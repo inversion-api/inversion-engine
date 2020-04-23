@@ -930,7 +930,7 @@ public class Response
          Object[] args = null;
          if (message == null)
          {
-            message = "The returned status '%s' was not in the approved list '%s'";
+            message = "The returned status '{}' was not in the approved list '{}'";
             List debugList = new ArrayList();
             for (int i = 0; statusCodes != null && i < statusCodes.length; i++)
                debugList.add(statusCodes[i]);

@@ -57,30 +57,48 @@ public class ApiException extends RuntimeException implements Status
          withStatus(httpStatus);
    }
 
-   public static String getMessage(String status, Throwable cause, String messageFormat, Object... args)
+   /**
+    * Supports error message construction including variable replacement supporting
+    * logging framework "{}" placesholders OR java.util.Formatter style placeholders.
+    * <p> Any "{}" substrings in <code>messageFormat</code> are replaced with "{}"
+    * before <code>messageFormat</code> and <code>args</code> are passed to a 
+    * java.util.Formatter.
+    * <p>
+    * All arguments are optional but if everything is null you will get an empty string.
+    *
+    *  
+    * @param httpStatus 
+    * @param cause
+    * @param messageFormat
+    * @param args
+    * @return
+    */
+   public static String getMessage(String httpStatus, Throwable cause, String messageFormat, Object... args)
    {
-      String msg = status;
-      if (messageFormat == null && cause != null)
+      String msg = httpStatus != null ? httpStatus : "";
+      if (messageFormat != null)
       {
-         msg = Utils.getShortCause(cause);
-      }
-      else
-      {
-         if (messageFormat != null)
+         if (args != null && args.length > 0)
          {
-            if (args != null && args.length > 0)
-            {
-               StringWriter sw = new StringWriter();
-               Formatter fmt = new Formatter(sw);
-               fmt.format(Locale.getDefault(), messageFormat, args);
-               fmt.close();
-               msg = sw.toString();
-            }
-            else
-               msg = messageFormat;
-         }
+            //-- most logging frameworks are using "{}" to indicate
+            //-- var placeholders these days
+            messageFormat = messageFormat.replace("{}", "{}");
 
+            StringWriter sw = new StringWriter();
+            Formatter fmt = new Formatter(sw);
+            fmt.format(Locale.getDefault(), messageFormat, args);
+            fmt.close();
+            messageFormat = sw.toString();
+         }
+         msg += msg.length() > 0 ? " " + messageFormat : messageFormat;
       }
+
+      if (cause != null)
+      {
+         String causeStr = Utils.getShortCause(cause);
+         msg = msg.length() > 0 ? (msg + "\r\n") + causeStr : causeStr;
+      }
+
       return msg;
    }
 
