@@ -1001,6 +1001,7 @@ public class Utils
     */
    public static List<Field> getFields(Class clazz)
    {
+      Class inClass = clazz;
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 
@@ -1371,7 +1372,7 @@ public class Utils
       return (s.toString());
    }
 
-   public static Map<String, String> parseQueryString(String query)
+   public static LinkedHashMap<String, String> parseQueryString(String query)
    {
       LinkedHashMap params = new LinkedHashMap();
       try

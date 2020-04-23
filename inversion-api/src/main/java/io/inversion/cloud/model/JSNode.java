@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -37,9 +36,24 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flipkart.zjsonpatch.JsonDiff;
+import com.flipkart.zjsonpatch.JsonPatch;
 
 import io.inversion.cloud.utils.Utils;
 
+/**
+ * 
+ * TODO: 
+ *  Replace diff/patch with open source versions 
+ *   https://stackoverflow.com/questions/50967015/how-to-compare-json-documents-and-return-the-differences-with-jackson-or-gson
+ *   https://github.com/flipkart-incubator/zjsonpatch
+ *   https://github.com/java-json-tools/json-patch
+ *   https://javaee.github.io/javaee-spec/javadocs/javax/json/JsonPatch.html
+ *   
+ * TODO: Investigate MergePatch  
+ * 
+ * @author wells
+ */
 public class JSNode implements Map<String, Object>
 {
    LinkedHashMap<String, Property> properties = new LinkedHashMap();
@@ -56,10 +70,12 @@ public class JSNode implements Map<String, Object>
 
    public JSNode(Map map)
    {
-      for (Object key : map.keySet())
-      {
-         put(key + "", map.get(key));
-      }
+      putAll(map);
+   }
+
+   public JSNode copy()
+   {
+      return JSNode.parseJsonNode(toString());
    }
 
    public void sortKeys()
@@ -75,113 +91,65 @@ public class JSNode implements Map<String, Object>
       properties = newProps;
    }
 
-   public JSArray diff(JSNode diffAgainst)
+   public JSArray diff(JSNode source)
    {
-      JSArray diffs = diff(diffAgainst, "", new JSArray());
+      ObjectMapper mapper = new ObjectMapper();
 
-      //we do this to prevent unintended consequences of copying in the same object references
-      if (diffs.size() > 0)
-         diffs = parseJsonArray(diffs.toString());
+      JsonNode patch;
+      try
+      {
+         patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
+         return patchesArray;
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         Utils.rethrow(e);
+      }
 
-      return diffs;
+      return null;
    }
 
-   protected JSArray diff(JSNode diffAgainst, String path, JSArray patches)
+   public JSArray patch(JSArray patches)
    {
-      for (String key : keySet())
+      //-- migrate legacy "." based paths to JSONPointer
+      for (JSNode patch : patches.asNodeList())
       {
-         String nextPath = Utils.implode(".", path, key);
-
-         Object myVal = get(key);
-         Object theirVal = diffAgainst.get(key);
-
-         diff(nextPath, myVal, theirVal, patches);
-      }
-
-      for (String key : diffAgainst.keySet())
-      {
-         Object myVal = get(key);
-         Object theirVal = diffAgainst.get(key);
-
-         if (myVal == null && theirVal != null)
-            patches.add(new JSNode("op", "remove", "path", Utils.implode(".", path, key)));
-      }
-
-      return patches;
-   }
-
-   protected void diff(String path, Object myVal, Object theirVal, JSArray patches)
-   {
-      if (myVal == null && theirVal == null)
-      {
-
-      }
-      else if (myVal != null && theirVal == null)
-      {
-         patches.add(new JSNode("op", "add", "path", path, "value", myVal));
-      }
-      else if (myVal == null && theirVal != null)
-      {
-         patches.add(new JSNode("op", "remove", "path", path));
-      }
-      else if (!myVal.getClass().equals(theirVal.getClass()))
-      {
-         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
-      }
-      else if (myVal instanceof JSNode)
-      {
-         ((JSNode) myVal).diff((JSNode) theirVal, path, patches);
-      }
-      else if (!myVal.toString().equals(theirVal.toString()))
-      {
-         patches.add(new JSNode("op", "replace", "path", path, "value", myVal));
-      }
-   }
-
-   public void patch(JSArray diffs)
-   {
-      //we do this to prevent unintended consequences of copying in the same object references
-      diffs = parseJsonArray(diffs.toString());
-
-      for (JSNode diff : diffs.asNodeList())
-      {
-         String op = diff.getString("op");
-         String path = diff.getString("path");
-         String prop = null;
-         int idx = path.lastIndexOf(".");
-         if (idx < 0)
+         String path = patch.getString("path");
+         if (path != null && !path.startsWith("/"))
          {
-            prop = path;
-            path = null;
+            path = "/" + path.replace(".", "/");
          }
-         else
-         {
-            prop = path.substring(idx + 1, path.length());
-            path = path.substring(0, idx);
-         }
+         patch.put("path", path);
 
-         JSNode parent = path == null || path.length() == 0 ? this : findNode(path);
-
-         if (parent == null)
-            throw new RuntimeException("Unable to find parent path for patch '" + path + "'");
-         if ("remove".equals(op))
+         path = patch.getString("from");
+         if (path != null && !path.startsWith("/"))
          {
-            try
-            {
-               parent.remove(prop);
-            }
-            catch (Exception e)
-            {
-               e.printStackTrace();
-               System.err.println("You are trying to apply a property patch to an array: " + diff);
-               throw e;
-            }
+            path = "/" + path.replace(".", "/");
          }
-         else
+         patch.put("from", path);
+      }
+
+      ObjectMapper mapper = new ObjectMapper();
+
+      try
+      {
+         JsonNode target = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSNode patched = JSNode.parseJsonNode(target.toString());
+
+         this.properties = patched.properties;
+         if (this.isArray())
          {
-            parent.put(prop, diff.get("value"));
+            ((JSArray) this).objects = ((JSArray) patched).objects;
          }
       }
+      catch (Exception e)
+      {
+         Utils.rethrow(e);
+      }
+
+      return null;
    }
 
    public boolean isArray()
@@ -305,16 +273,43 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * Runs the JsonPath dot-notation expression against this node and
-    * its children and returns any matching values.
-    *
-    * For an json path reference see:
-    * <ul>
-    *   <li> https://goessner.net/articles/JsonPath/
-    *   <li> https://github.com/json-path/JsonPath
-    * </ul>
+    * A heroically permissive node finder supporting JSON Pointer, JSON Path and
+    * a simple 'dot and wildcard' type of system like so:
+    * 'propName.childPropName.*.skippedGenerationPropsName.4.fifthArrayNodeChildPropsName.**.recursivelyFoundPropsName'.
     * 
-    * Below is the implementation status of various JsonPath features:
+    * <p>
+    * All forms are internally converted into a 'master' form before processing.  This master 
+    * simply uses '.' to separate property names and array indexes and uses uses '*' to represent 
+    * a single level wildcard and '**' to represent a recursive wildcard.  For example:
+    * <ul>
+    *   <li>'myProp' finds 'myProp' in this node.
+    *   <li>'myProp.childProp' finds 'childProp' on 'myProp'
+    *   <li>'myArrayProp.2.*' finds all properties of the third element of the 'myArrayProp' 
+    *   <li>'*.myProp' finds 'myProp' in any of the children of this node.
+    *   <li>'**.myProp' finds 'myProp' anywhere in my descendents.
+    *   <li>'**.myProp.*.value' finds 'value' as a grandchild anywhere under me.
+    *   <li>'**.*' returns every element of the document.
+    *   <li>'**.5' gets the 6th element of every array.
+    *   <li>'**.book[?(@.isbn)]' finds all books with an isbn
+    *   <il>'**.[?(@.author = 'Herman Melville')]' fins all book with author 'Herman Melville'
+    * </ul>
+    * <p>
+    * Arrays indexes are treated just like property names but with integer names.
+    * For example "myObject.4.nextProperty" finds "nextProperty" on the 5th element
+    * in the "myObject" array.
+    * 
+    * <p>
+    * JSON Pointer is the least expressive supported form and uses '/' characters to separate properties.
+    * To support JSON Pointer, we simply replace all '/' characters for "." characters before
+    * processing.
+    * 
+    * <p>
+    * JSON Path is more like XML XPath but uses '.' instead of '/' to separate properties.
+    * Technically JSON Path statements are supposed to start with '$.' but that is optional here.
+    * The best part about JSON Path is the query filters that let you conditionally select
+    * elements.
+    * 
+    * Below is the implementation status of various JSON Path features:
     * <ul>
     *  <li>SUPPORTED $.store.book[*].author                     //the authors of all books in the store
     *  <li>SUPPORTED $..author                                  //all authors
@@ -330,7 +325,7 @@ public class JSNode implements Map<String, Object>
     *  <li>SUPPORTED $..book[?(@.isbn)]                         //filter all books with isbn number
     * </ul>
     * 
-    * The following boolean comparison operators are supported: 
+    * The JSON Path following boolean comparison operators are supported: 
     * <ul>
     *  <li> =
     *  <li>>
@@ -344,24 +339,36 @@ public class JSNode implements Map<String, Object>
     * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
     * is currently not supported.
     * 
-    * 
-    * <p>
-    * In addition to the above JsonPath syntax, a "relaxed" wildcard
-    * syntax is also supported. '*' is used to represent a single level
-    * of freedom and '**' is used to represent freedom to match at any
-    * depth.  Additionally, JsonPath uses array[idx] or array[*] notation
-    * and the simplified wildcard supports array.${idxNum}.property 
-    * or array.*.property or array.**.property
-    * 
-    * 
+    * @see JSON Pointer - https://tools.ietf.org/html/rfc6901
+    * @see JSON Path - https://goessner.net/articles/JsonPath/
+    * @see JSON Path - https://github.com/json-path/JsonPath
     */
-   public JSArray findAll(String jsonPath, int qty)
+   public JSArray findAll(String pathExpression, int qty)
    {
-      jsonPath = fromJsonPath(jsonPath);
-      return new JSArray(collect0(jsonPath, qty));
+      pathExpression = fromJsonPointer(pathExpression);
+      pathExpression = fromJsonPath(pathExpression);
+      return new JSArray(collect0(pathExpression, qty));
    }
 
-   public static String fromJsonPath(String jsonPath)
+   /**
+    * Simply replaces "/"s with "."
+    * 
+    * Slashes in property names (seriously a stupid idea anyway) which is supported
+    * by JSON Pointer is not supported.
+    * 
+    * @param jsonPointer
+    * @return
+    */
+   protected static String fromJsonPointer(String jsonPointer)
+   {
+      return jsonPointer.replace('/', '.');
+   }
+
+   /**
+    * Converts a proper json path statement into its "relaxed dotted wildcard" form
+    * so that it is easier to parse.
+    */
+   protected static String fromJsonPath(String jsonPath)
    {
       if (jsonPath.charAt(0) == '$')
          jsonPath = jsonPath.substring(1, jsonPath.length());
@@ -453,16 +460,6 @@ public class JSNode implements Map<String, Object>
          String expr = nextSegment.substring(1, nextSegment.length() - 1).trim();
          if (expr.startsWith("?(") && expr.endsWith(")"))
          {
-            //            SimpleTokenizer tokenizer = new SimpleTokenizer(//
-            //                                                            "'\"", //openQuoteStr
-            //                                                            "'\"", //closeQuoteStr
-            //                                                            "]?", //breakIncludedChars
-            //                                                            " ", //breakExcludedChars
-            //                                                            "()", //unquuotedIgnoredChars
-            //                                                            ". \t", //leadingIgoredChars
-            //                                                            expr //chars
-            //            );
-
             JSONPathTokenizer tokenizer = new JSONPathTokenizer(//
                                                                 "'\"", //openQuoteStr
                                                                 "'\"", //closeQuoteStr
@@ -679,7 +676,7 @@ public class JSNode implements Map<String, Object>
    {
       for (Object key : map.keySet())
       {
-         put(key.toString(), map.get(key.toString()));
+         put(key.toString(), map.get(key));
       }
    }
 
@@ -721,25 +718,6 @@ public class JSNode implements Map<String, Object>
       return properties.containsKey(name.toString().toLowerCase());
    }
 
-   public JSNode retain(String... propertyNames)
-   {
-      return retain(Arrays.asList(propertyNames));
-   }
-
-   public JSNode retain(Collection<String> propertyNames)
-   {
-      if (!(propertyNames instanceof Set))
-         propertyNames = new HashSet(propertyNames);
-
-      for (String key : keySet())
-      {
-         if (!propertyNames.contains(key))
-            remove(key);
-      }
-
-      return this;
-   }
-
    @Override
    public Object remove(Object name)
    {
@@ -748,16 +726,6 @@ public class JSNode implements Map<String, Object>
 
       Property old = removeProperty(name.toString());
       return old != null ? old.getValue() : old;
-   }
-
-   public Object removeAll(Object... names)
-   {
-      Object val = null;
-      for (int i = 0; names != null && i < names.length; i++)
-      {
-         val = remove(names[i]);
-      }
-      return val;
    }
 
    @Override
@@ -771,17 +739,6 @@ public class JSNode implements Map<String, Object>
          keys.add(p.getName());
       }
       return keys;
-   }
-
-   /**
-    * @param name
-    * @return true if the property key exists and the value is not null or empty string
-    */
-   public boolean hasPropertyValue(String name)
-   {
-      Property property = properties.get(name.toLowerCase());
-
-      return property != null && !Utils.empty(property.getValue());
    }
 
    public boolean hasProperty(String name)
