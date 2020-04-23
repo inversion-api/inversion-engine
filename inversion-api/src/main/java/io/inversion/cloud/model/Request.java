@@ -16,6 +16,7 @@
  */
 package io.inversion.cloud.model;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,10 @@ public class Request
    protected Uploader                               uploader       = null;
 
    protected int                                    retryAttempts  = -1;
+
+   int                                              retryCount     = 0;
+   File                                             retryFile;
+   int                                              totalRetries   = 0;                           // this number doesn't get reset and is the true measure of how many retries occured
 
    boolean                                          explain        = false;
 
@@ -557,6 +562,43 @@ public class Request
    public Validation validate(String propOrJsonPath, String customErrorMessage)
    {
       return new Validation(this, propOrJsonPath, customErrorMessage);
+   }
+
+   public boolean isLocalRequest()
+   {
+      String url = getUrl().toString();
+      return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
+   }
+
+   public int getRetryCount()
+   {
+      return retryCount;
+   }
+
+   public void incrementRetryCount()
+   {
+      this.totalRetries++;
+      this.retryCount++;
+   }
+
+   public void resetRetryCount()
+   {
+      this.retryCount = 0;
+   }
+
+   public int getTotalRetries()
+   {
+      return totalRetries;
+   }
+
+   public File getRetryFile()
+   {
+      return retryFile;
+   }
+
+   public void setRetryFile(File retryFile)
+   {
+      this.retryFile = retryFile;
    }
 
    public List<Upload> getUploads()

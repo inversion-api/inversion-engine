@@ -33,19 +33,16 @@ import java.util.concurrent.TimeoutException;
 
 public abstract class FutureResponse implements RunnableFuture<Response>
 {
-   static Log            log          = LogFactory.getLog(HttpUtils.class);
+   static Log            log        = LogFactory.getLog(HttpUtils.class);
 
-   long                  createdAt    = System.currentTimeMillis();
+   long                  createdAt  = System.currentTimeMillis();
 
-   Chain                 chain        = Chain.peek();
-   Request               request      = null;
-   Response              response     = null;
-   List<ResponseHandler> onSuccess    = new ArrayList();
-   List<ResponseHandler> onFailure    = new ArrayList();
-   List<ResponseHandler> onResponse   = new ArrayList();
-   int                   retryCount   = 0;
-   File                  retryFile;
-   int                   totalRetries = 0;                                 // this number doesn't get reset and is the true measure of how many retries occured
+   Chain                 chain      = Chain.peek();
+   Request               request    = null;
+   Response              response   = null;
+   List<ResponseHandler> onSuccess  = new ArrayList();
+   List<ResponseHandler> onFailure  = new ArrayList();
+   List<ResponseHandler> onResponse = new ArrayList();
 
    public FutureResponse()
    {
@@ -262,12 +259,6 @@ public abstract class FutureResponse implements RunnableFuture<Response>
       return response;
    }
 
-   public boolean isLocalRequest()
-   {
-      String url = request.getUrl().toString();
-      return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
-   }
-
    public Request getRequest()
    {
       return request;
@@ -283,37 +274,6 @@ public abstract class FutureResponse implements RunnableFuture<Response>
    public boolean isDone()
    {
       return response != null;
-   }
-
-   protected int getRetryCount()
-   {
-      return retryCount;
-   }
-
-   public void incrementRetryCount()
-   {
-      this.totalRetries++;
-      this.retryCount++;
-   }
-
-   public void resetRetryCount()
-   {
-      this.retryCount = 0;
-   }
-
-   public int getTotalRetries()
-   {
-      return totalRetries;
-   }
-
-   public File getRetryFile()
-   {
-      return retryFile;
-   }
-
-   public void setRetryFile(File retryFile)
-   {
-      this.retryFile = retryFile;
    }
 
    public static interface ResponseHandler

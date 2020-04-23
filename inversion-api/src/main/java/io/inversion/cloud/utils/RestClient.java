@@ -17,11 +17,24 @@
 
 package io.inversion.cloud.utils;
 
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.service.Chain;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,7 +43,13 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
@@ -41,27 +60,66 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.*;
+import io.inversion.cloud.model.JSNode;
+import io.inversion.cloud.model.Request;
+import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Url;
+import io.inversion.cloud.service.Chain;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an
- * Inversion Action that adds async and retry support and make it
- * easy to proxy in-bound params and headers on to other services
- *
- * Designed to have host "url" set manually or discovered at runtime
- * out of the environment as "${name}.url=http://somehost.com"
- *
- * This file was forked from the Inversion HttpUtils class to
- * give authors options in tuning the underlying Apache HttpClient
- * configuration and thread pooling.
+ * Inversion Action that gives you easy or built in:
+ * <ul>
+ *  <li>retry support (built in)
+ *  
+ *  <li>asynchronous call support (built in)
+ *  
+ *  <li>header forwarding w/ whitelists and blacklists
+ *  
+ *  <li>lazy runtime host url discover through lookup of
+ *      "${name}.url" in the environment
+ *      
+ *  <li>dynamic host url variables - any "${varname}" tokens in
+ *      the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(varname).
+ *      
+ *  <li>short circuit or transform Requests/Responses with a single
+ *      override of <code>getResponse(Reqeust)</code>
+ *  <li>
+ * </ul>    
+ * 
+ * 
+ * <b>Transforming requests / responses<b>
+ * <p> 
+ * You can easily override the <code>getResponse(Request)</code> 
+ * method to potentially short circuit calls or perform 
+ * request/response transforms.  For example:
+ * 
+ * <pre>
+ * protected RestClient client = new RestClient("myservice"){
+ * 
+ *  @Override
+ *  protected Response getResponse(Request request)
+ *  {
+ *      if(checkMyCondition(request))
+ *      {
+ *          //-- short circuit the remote call "faking" a
+ *          //-- remote 200 response (the default status code for a Response)
+ *          return new Response(request.getUrl());
+ *      }
+ *      else
+ *      {
+ *          doMyRequestTransformation(request);
+ *          
+ *          Response response = super.getResponse(request);
+ *          
+ *          doMyResponseTransformation(response);
+ *          
+ *          return response;
+ *      }
+ *  }
+ * }
+ * </pre>
+ * 
  *
  * @author Wells Burke
  */
@@ -159,8 +217,9 @@ public class RestClient
          url = path;
       }
 
-      FutureResponse future = buildFuture(method, url, params, (body != null ? body.toString() : null), headers, retries);
-      boolean localCall = future.isLocalRequest();
+      Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retries);
+      FutureResponse future = buildFuture(request);
+      boolean localCall = future.request.isLocalRequest();
 
       if ((localCall && !localAsync) || (!localCall && !remoteAsync))
       {
@@ -174,7 +233,7 @@ public class RestClient
       return future;
    }
 
-   protected FutureResponse buildFuture(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
+   protected Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
    {
       Request request = new Request(method, url, body, callParams, callHeaders, retryAttempts);
 
@@ -231,6 +290,11 @@ public class RestClient
          }
       }
 
+      return request;
+   }
+
+   protected FutureResponse buildFuture(Request request)
+   {
       final FutureResponse future = new FutureResponse(request)
          {
             public void run()
@@ -238,7 +302,7 @@ public class RestClient
                Response response = null;
                try
                {
-                  response = getResponse(this);
+                  response = getResponse(request);
                }
                finally
                {
@@ -246,18 +310,18 @@ public class RestClient
                   if (response.getStatusCode() >= 200 && response.getStatusCode() <= 300)
                   {
                      debug("Resetting retry count");
-                     resetRetryCount();
+                     request.resetRetryCount();
                   }
 
                   if (!response.isSuccess() //
                         && 404 != response.getStatusCode() //don't retry 404...it won't help
-                        && getRetryCount() < request.getRetryAttempts() //
-                        && getTotalRetries() < totalRetryMax) // since we resetRetryCount upon any successful response, this guards against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
+                        && request.getRetryCount() < request.getRetryAttempts() //
+                        && request.getTotalRetries() < totalRetryMax) // since we resetRetryCount upon any successful response, this guards against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
                   {
-                     incrementRetryCount();
+                     request.incrementRetryCount();
 
-                     long timeout = computeTimeout(this);
-                     debug("retrying " + getTotalRetries() + "th attempt in " + timeout + "ms: " + getRetryCount());
+                     long timeout = computeTimeout(request);
+                     debug("retrying " + request.getTotalRetries() + "th attempt in " + timeout + "ms: " + request.getRetryCount());
                      submitLater(this, timeout);
                   }
                   else
@@ -274,21 +338,20 @@ public class RestClient
          };
 
       return future;
-
    }
 
-   protected Response getResponse(FutureResponse future)
+   protected Response getResponse(Request request)
    {
-      String url = future.request.getUrl().toString();
+      String url = request.getUrl().toString();
       Response response = new Response(url);
 
       try
       {
          //this is a local call...send it back to the engine
-         if (future.isLocalRequest())
-            return getLocalResponse(future);
+         if (request.isLocalRequest())
+            return getLocalResponse(request);
          else
-            return getRemoteResponse(future);
+            return getRemoteResponse(request);
       }
       catch (Exception ex)
       {
@@ -306,29 +369,28 @@ public class RestClient
       return response;
    }
 
-   protected Response getLocalResponse(FutureResponse future) throws Exception
+   protected Response getLocalResponse(Request request) throws Exception
    {
-      String url = future.request.getUrl().toString();
+      String url = request.getUrl().toString();
       Response response = new Response(url);
 
-      future.request.withEngine(future.chain.getEngine());
-      future.chain.getEngine().service(future.request, response);
+      request.withEngine(request.getChain().getEngine());
+      request.getChain().getEngine().service(request, response);
       return response;
 
    }
 
-   protected Response getRemoteResponse(FutureResponse future) throws Exception
+   protected Response getRemoteResponse(Request request) throws Exception
    {
-      String m = future.request.getMethod();
+      String m = request.getMethod();
       HttpRequestBase req = null;
       File tempFile = null;
 
-      String url = future.request.getUrl().toString();
+      String url = request.getUrl().toString();
       Response response = new Response(url);
 
       try
       {
-
          HttpClient h = getHttpClient();
          HttpResponse hr = null;
 
@@ -347,18 +409,18 @@ public class RestClient
          {
             req = new HttpGet(url);
 
-            if (future.getRetryFile() != null && future.getRetryFile().length() > 0)
+            if (request.getRetryFile() != null && request.getRetryFile().length() > 0)
             {
-               long range = future.getRetryFile().length();
-               future.request.getHeaders().remove("Range");
-               future.request.getHeaders().put("Range", "bytes=" + range + "-");
+               long range = request.getRetryFile().length();
+               request.getHeaders().remove("Range");
+               request.getHeaders().put("Range", "bytes=" + range + "-");
 
                debug("RANGE REQUEST HEADER ** " + range);
             }
          }
          else if ("delete".equalsIgnoreCase(m))
          {
-            if (future.request.getBody() != null)
+            if (request.getBody() != null)
             {
                req = new HttpDeleteWithBody(url);
             }
@@ -372,19 +434,19 @@ public class RestClient
             req = new HttpPatch(url);
          }
 
-         for (String key : future.request.getHeaders().keySet())
+         for (String key : request.getHeaders().keySet())
          {
-            List<String> values = future.request.getHeaders().get(key);
+            List<String> values = request.getHeaders().get(key);
             for (String value : values)
             {
                req.setHeader(key, value);
                response.debug(key, value);
             }
          }
-         if (future.request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
+         if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
          {
             response.debug("\r\n--request body--------");
-            ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(future.request.getBody(), "UTF-8"));
+            ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
          }
 
          RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(requestTimeout).build();
@@ -418,11 +480,11 @@ public class RestClient
             skip = true;
          }
          // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
-         else if (future.getRetryFile() != null //
-               && future.getRetryFile().length() == response.getContentRangeStart() //
+         else if (request.getRetryFile() != null //
+               && request.getRetryFile().length() == response.getContentRangeStart() //
                && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
          {
-            tempFile = future.getRetryFile();
+            tempFile = request.getRetryFile();
             debug("## Using existing file .. " + tempFile);
          }
          else if (response.getStatusCode() == 206)
@@ -490,9 +552,9 @@ public class RestClient
       ;
    }
 
-   protected long computeTimeout(FutureResponse future)
+   protected long computeTimeout(Request request)
    {
-      long timeout = (retryTimeoutMin * future.getRetryCount() * future.getRetryCount()) + (int) (retryTimeoutMin * Math.random() * future.getRetryCount());
+      long timeout = (retryTimeoutMin * request.getRetryCount() * request.getRetryCount()) + (int) (retryTimeoutMin * Math.random() * request.getRetryCount());
       if (retryTimeoutMax > 0 && timeout > retryTimeoutMax)
          timeout = retryTimeoutMax;
 

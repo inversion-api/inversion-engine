@@ -23,11 +23,12 @@ public class RestClientTest
       final int[] tries = new int[]{0};
       RestClient client = new RestClient()
          {
-            protected Response getResponse(FutureResponse future)
+            @Override
+            protected Response getResponse(Request request)
             {
                tries[0] += 1;
                Response resp = new Response();
-               if (future.getRetryCount() >= 4)
+               if (request.getRetryCount() >= 4)
                {
                   //simulates an HTTP response that was initially successful
                   //but then threw an exception on content download
@@ -45,7 +46,7 @@ public class RestClientTest
       FutureResponse fut = client.call("GET", "url", null, null, 5, null);
       fut.get();
       assertEquals(21, tries[0]);
-      assertEquals(20, fut.getTotalRetries());
+      assertEquals(20, fut.request.getTotalRetries());
    }
 
    @Test
@@ -54,7 +55,8 @@ public class RestClientTest
       final int[] statusCode = new int[]{404};
       RestClient client = new RestClient()
          {
-            protected Response getResponse(FutureResponse future)
+            @Override
+            protected Response getResponse(Request request)
             {
                Response resp = new Response();
                resp.withStatusCode(statusCode[0]);
@@ -64,12 +66,12 @@ public class RestClientTest
          };
       FutureResponse resp = client.call("GET", "url", null, null, 5, null);
       resp.get();
-      assertEquals(0, resp.getRetryCount());
+      assertEquals(0, resp.request.getRetryCount());
 
       statusCode[0] = 500;
       resp = client.call("GET", "url", null, null, 5, null);
       resp.get();
-      assertEquals(5, resp.getRetryCount());
+      assertEquals(5, resp.request.getRetryCount());
 
    }
 
@@ -80,7 +82,8 @@ public class RestClientTest
 
       RestClient client = new RestClient()
          {
-            protected Response getResponse(FutureResponse future)
+            @Override
+            protected Response getResponse(Request request)
             {
                thread[0] = Thread.currentThread();
                return new Response(null);
