@@ -48,7 +48,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../io/inversion/Relationship.html" title="class in io.inversion"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../io/inversion/Response.html" title="class in io.inversion"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../io/inversion/Request.Upload.html" title="class in io.inversion"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../index.html?io/inversion/Request.html" target="_top">Frames</a></li>
@@ -72,7 +72,7 @@ var activeTableTab = "activeTableTab";
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -115,6 +115,36 @@ extends java.lang.Object</pre>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Nested Class Summary table, listing nested classes, and an explanation">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.Upload.html" title="class in io.inversion">Request.Upload</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></span></code>
+<div class="block">Utility designed to make it easy to validate request properties or request body
+ json values while you are retrieving them.</div>
+</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- =========== FIELD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="field.summary">
@@ -192,7 +222,7 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#tenant">tenant</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected <a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a></code></td>
+<td class="colFirst"><code>protected <a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#uploader">uploader</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -375,11 +405,11 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getTotalRetries--">getTotalRetries</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i25" class="rowColor">
-<td class="colFirst"><code><a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a></code></td>
+<td class="colFirst"><code><a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getUploader--">getUploader</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i26" class="altColor">
-<td class="colFirst"><code>java.util.List&lt;<a href="../../io/inversion/Uploader.Upload.html" title="class in io.inversion">Uploader.Upload</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.List&lt;<a href="../../io/inversion/Request.Upload.html" title="class in io.inversion">Request.Upload</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getUploads--">getUploads</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i27" class="rowColor">
@@ -447,11 +477,11 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#setRetryFile-java.io.File-">setRetryFile</a></span>(java.io.File&nbsp;retryFile)</code>&nbsp;</td>
 </tr>
 <tr id="i43" class="rowColor">
-<td class="colFirst"><code><a href="../../io/inversion/Validation.html" title="class in io.inversion">Validation</a></code></td>
+<td class="colFirst"><code><a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#validate-java.lang.String-">validate</a></span>(java.lang.String&nbsp;propOrJsonPath)</code>&nbsp;</td>
 </tr>
 <tr id="i44" class="altColor">
-<td class="colFirst"><code><a href="../../io/inversion/Validation.html" title="class in io.inversion">Validation</a></code></td>
+<td class="colFirst"><code><a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#validate-java.lang.String-java.lang.String-">validate</a></span>(java.lang.String&nbsp;propOrJsonPath,
         java.lang.String&nbsp;customErrorMessage)</code>&nbsp;</td>
 </tr>
@@ -514,7 +544,7 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i58" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withUploader-io.inversion.Uploader-">withUploader</a></span>(<a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a>&nbsp;uploader)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withUploader-io.inversion.Request.Uploader-">withUploader</a></span>(<a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a>&nbsp;uploader)</code>&nbsp;</td>
 </tr>
 <tr id="i59" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
@@ -692,7 +722,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>uploader</h4>
-<pre>protected&nbsp;<a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a> uploader</pre>
+<pre>protected&nbsp;<a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a> uploader</pre>
 </li>
 </ul>
 <a name="retryAttempts">
@@ -1281,16 +1311,16 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getUploader</h4>
-<pre>public&nbsp;<a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a>&nbsp;getUploader()</pre>
+<pre>public&nbsp;<a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a>&nbsp;getUploader()</pre>
 </li>
 </ul>
-<a name="withUploader-io.inversion.Uploader-">
+<a name="withUploader-io.inversion.Request.Uploader-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>withUploader</h4>
-<pre>public&nbsp;<a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a>&nbsp;withUploader(<a href="../../io/inversion/Uploader.html" title="interface in io.inversion">Uploader</a>&nbsp;uploader)</pre>
+<pre>public&nbsp;<a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a>&nbsp;withUploader(<a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a>&nbsp;uploader)</pre>
 </li>
 </ul>
 <a name="validate-java.lang.String-">
@@ -1299,7 +1329,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>validate</h4>
-<pre>public&nbsp;<a href="../../io/inversion/Validation.html" title="class in io.inversion">Validation</a>&nbsp;validate(java.lang.String&nbsp;propOrJsonPath)</pre>
+<pre>public&nbsp;<a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a>&nbsp;validate(java.lang.String&nbsp;propOrJsonPath)</pre>
 </li>
 </ul>
 <a name="validate-java.lang.String-java.lang.String-">
@@ -1308,8 +1338,8 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>validate</h4>
-<pre>public&nbsp;<a href="../../io/inversion/Validation.html" title="class in io.inversion">Validation</a>&nbsp;validate(java.lang.String&nbsp;propOrJsonPath,
-                           java.lang.String&nbsp;customErrorMessage)</pre>
+<pre>public&nbsp;<a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a>&nbsp;validate(java.lang.String&nbsp;propOrJsonPath,
+                                   java.lang.String&nbsp;customErrorMessage)</pre>
 </li>
 </ul>
 <a name="isLocalRequest--">
@@ -1381,7 +1411,7 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getUploads</h4>
-<pre>public&nbsp;java.util.List&lt;<a href="../../io/inversion/Uploader.Upload.html" title="class in io.inversion">Uploader.Upload</a>&gt;&nbsp;getUploads()</pre>
+<pre>public&nbsp;java.util.List&lt;<a href="../../io/inversion/Request.Upload.html" title="class in io.inversion">Request.Upload</a>&gt;&nbsp;getUploads()</pre>
 </li>
 </ul>
 </li>
@@ -1412,7 +1442,7 @@ extends java.lang.Object</pre>
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../io/inversion/Relationship.html" title="class in io.inversion"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../io/inversion/Response.html" title="class in io.inversion"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../io/inversion/Request.Upload.html" title="class in io.inversion"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../index.html?io/inversion/Request.html" target="_top">Frames</a></li>
@@ -1436,7 +1466,7 @@ extends java.lang.Object</pre>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>

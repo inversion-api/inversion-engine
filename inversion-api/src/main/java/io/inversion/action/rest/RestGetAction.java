@@ -363,7 +363,7 @@ public class RestGetAction extends Action<RestGetAction>
 
          for (int i = 0; i < results.size(); i++)
          {
-            //convert the map into a JSMap
+            //convert the map into a JSNode
             Map<String, Object> row = results.getRow(i);
 
             if (collection == null)

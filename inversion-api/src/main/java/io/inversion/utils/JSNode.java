@@ -357,7 +357,7 @@ public class JSNode implements Map<String, Object>
     * @param jsonPointer
     * @return
     */
-   protected static String fromJsonPointer(String jsonPointer)
+   static String fromJsonPointer(String jsonPointer)
    {
       return jsonPointer.replace('/', '.');
    }
@@ -366,7 +366,7 @@ public class JSNode implements Map<String, Object>
     * Converts a proper json path statement into its "relaxed dotted wildcard" form
     * so that it is easier to parse.
     */
-   protected static String fromJsonPath(String jsonPath)
+   static String fromJsonPath(String jsonPath)
    {
       if (jsonPath.charAt(0) == '$')
          jsonPath = jsonPath.substring(1, jsonPath.length());
@@ -383,7 +383,7 @@ public class JSNode implements Map<String, Object>
       return jsonPath;
    }
 
-   protected List collect0(String jsonPath, int qty)
+   List collect0(String jsonPath, int qty)
    {
       JSONPathTokenizer tok = new JSONPathTokenizer(//
                                                     "['\"", //openQuoteStr
@@ -399,7 +399,7 @@ public class JSNode implements Map<String, Object>
       return collect0(path, qty, new ArrayList());
    }
 
-   protected List collect0(List<String> path, int qty, List collected)
+   List collect0(List<String> path, int qty, List collected)
    {
       if (qty > 1 && collected.size() >= qty)
          return collected;
@@ -1387,7 +1387,7 @@ public class JSNode implements Map<String, Object>
          return str;
       }
 
-      protected void append(char c)
+      void append(char c)
       {
          next.append(c);
       }

@@ -42,7 +42,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    protected List<Path>             includePaths = new ArrayList();
 
    /**
-    * JSMap is used because it implements a case insensitive map without modifying the keys
+    * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
     */
    protected transient JSNode       configMap    = new JSNode();
    protected String                 configStr    = null;
@@ -119,16 +119,16 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return included;
    }
 
-   public Rule clearIncludePaths()
+   public R clearIncludePaths()
    {
       includePaths.clear();
-      return this;
+      return (R) this;
    }
 
-   public Rule clearExcludePaths()
+   public R clearExcludePaths()
    {
       excludePaths.clear();
-      return this;
+      return (R) this;
    }
 
    public List<Path> getIncludePaths()

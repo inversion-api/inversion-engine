@@ -37,9 +37,9 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.inversion.Action;
 import io.inversion.Chain;
 import io.inversion.Request;
+import io.inversion.Request.Upload;
 import io.inversion.Response;
 import io.inversion.Status;
-import io.inversion.Uploader.Upload;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 

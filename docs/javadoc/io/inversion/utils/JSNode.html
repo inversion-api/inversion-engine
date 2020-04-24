@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":42,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":9,"i24":9,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":9,"i37":9,"i38":9,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":42,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":9,"i33":9,"i34":9,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -203,17 +203,6 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#clear--">clear</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>protected java.util.List</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#collect0-java.util.List-int-java.util.List-">collect0</a></span>(java.util.List&lt;java.lang.String&gt;&nbsp;path,
-        int&nbsp;qty,
-        java.util.List&nbsp;collected)</code>&nbsp;</td>
-</tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code>protected java.util.List</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#collect0-java.lang.String-int-">collect0</a></span>(java.lang.String&nbsp;jsonPath,
-        int&nbsp;qty)</code>&nbsp;</td>
-</tr>
-<tr id="i7" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#collectNodes-java.lang.String-">collectNodes</a></span>(java.lang.String&nbsp;jsonPath)</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -221,27 +210,27 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
 </div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#containsKey-java.lang.Object-">containsKey</a></span>(java.lang.Object&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#containsValue-java.lang.Object-">containsValue</a></span>(java.lang.Object&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#copy--">copy</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#diff-io.inversion.utils.JSNode-">diff</a></span>(<a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;source)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>java.util.Set</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#entrySet--">entrySet</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#find-java.lang.String-">find</a></span>(java.lang.String&nbsp;jsonPath)</code>
 <div class="block">Calls collect(jsonPath, 1) and returns
@@ -249,11 +238,11 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
  or returns null it nothing was found.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findAll-java.lang.String-">findAll</a></span>(java.lang.String&nbsp;jsonPath)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findAll-java.lang.String-int-">findAll</a></span>(java.lang.String&nbsp;pathExpression,
        int&nbsp;qty)</code>
@@ -262,163 +251,147 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
  'propName.childPropName.*.skippedGenerationPropsName.4.fifthArrayNodeChildPropsName.**.recursivelyFoundPropsName'.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findAllNodes-java.lang.String-">findAllNodes</a></span>(java.lang.String&nbsp;jsonPath)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findArray-java.lang.String-">findArray</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findBoolean-java.lang.String-">findBoolean</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findDouble-java.lang.String-">findDouble</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findInt-java.lang.String-">findInt</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findNode-java.lang.String-">findNode</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#findString-java.lang.String-">findString</a></span>(java.lang.String&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
-<td class="colFirst"><code>protected static java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#fromJsonPath-java.lang.String-">fromJsonPath</a></span>(java.lang.String&nbsp;jsonPath)</code>
-<div class="block">Converts a proper json path statement into its "relaxed dotted wildcard" form
- so that it is easier to parse.</div>
-</td>
-</tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code>protected static java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#fromJsonPointer-java.lang.String-">fromJsonPointer</a></span>(java.lang.String&nbsp;jsonPointer)</code>
-<div class="block">Simply replaces "/"s with "."
- 
- Slashes in property names (seriously a stupid idea anyway) which is supported
- by JSON Pointer is not supported.</div>
-</td>
-</tr>
-<tr id="i25" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#get-java.lang.Object-">get</a></span>(java.lang.Object&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getArray-java.lang.String-">getArray</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getBoolean-java.lang.String-">getBoolean</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getDouble-java.lang.String-">getDouble</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getInt-java.lang.String-">getInt</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getNode-java.lang.String-">getNode</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#getString-java.lang.String-">getString</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#hasProperty-java.lang.String-">hasProperty</a></span>(java.lang.String&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#isArray--">isArray</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#isEmpty--">isEmpty</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>java.util.Set&lt;java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#keySet--">keySet</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>static java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#parseJson-java.lang.String-">parseJson</a></span>(java.lang.String&nbsp;json)</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#parseJsonArray-java.lang.String-">parseJsonArray</a></span>(java.lang.String&nbsp;json)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>static <a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#parseJsonNode-java.lang.String-">parseJsonNode</a></span>(java.lang.String&nbsp;json)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#patch-io.inversion.utils.JSArray-">patch</a></span>(<a href="../../../io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;patches)</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#prune--">prune</a></span>()</code>
 <div class="block">Removes all empty objects from the tree
  of current JSNode</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#put-java.lang.String-java.lang.Object-">put</a></span>(java.lang.String&nbsp;name,
    java.lang.Object&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#putAll-java.util.Map-">putAll</a></span>(java.util.Map&nbsp;map)</code>&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#putFirst-java.lang.String-java.lang.Object-">putFirst</a></span>(java.lang.String&nbsp;name,
         java.lang.Object&nbsp;value)</code>
 <div class="block">Vanity method to make sure the attributes prints out first</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#remove-java.lang.Object-">remove</a></span>(java.lang.Object&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#size--">size</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#sortKeys--">sortKeys</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#toString-boolean-">toString</a></span>(boolean&nbsp;pretty)</code>&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#toString-boolean-boolean-">toString</a></span>(boolean&nbsp;pretty,
         boolean&nbsp;tolowercase)</code>&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>java.util.Collection</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#values--">values</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/JSNode.html#with-java.lang.Object...-">with</a></span>(java.lang.Object...&nbsp;nvPairs)</code>&nbsp;</td>
 </tr>
@@ -765,56 +738,6 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
 <code>Path - https://goessner.net/articles/JsonPath/</code>, 
 <code>Path - https://github.com/json-path/JsonPath</code></dd>
 </dl>
-</li>
-</ul>
-<a name="fromJsonPointer-java.lang.String-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>fromJsonPointer</h4>
-<pre>protected static&nbsp;java.lang.String&nbsp;fromJsonPointer(java.lang.String&nbsp;jsonPointer)</pre>
-<div class="block">Simply replaces "/"s with "."
- 
- Slashes in property names (seriously a stupid idea anyway) which is supported
- by JSON Pointer is not supported.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>jsonPointer</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-</dl>
-</li>
-</ul>
-<a name="fromJsonPath-java.lang.String-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>fromJsonPath</h4>
-<pre>protected static&nbsp;java.lang.String&nbsp;fromJsonPath(java.lang.String&nbsp;jsonPath)</pre>
-<div class="block">Converts a proper json path statement into its "relaxed dotted wildcard" form
- so that it is easier to parse.</div>
-</li>
-</ul>
-<a name="collect0-java.lang.String-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>collect0</h4>
-<pre>protected&nbsp;java.util.List&nbsp;collect0(java.lang.String&nbsp;jsonPath,
-                                  int&nbsp;qty)</pre>
-</li>
-</ul>
-<a name="collect0-java.util.List-int-java.util.List-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>collect0</h4>
-<pre>protected&nbsp;java.util.List&nbsp;collect0(java.util.List&lt;java.lang.String&gt;&nbsp;path,
-                                  int&nbsp;qty,
-                                  java.util.List&nbsp;collected)</pre>
 </li>
 </ul>
 <a name="get-java.lang.Object-">

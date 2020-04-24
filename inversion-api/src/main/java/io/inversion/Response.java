@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import io.inversion.Request.Validation;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;

@@ -34,6 +34,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
+import io.inversion.Request.Upload;
+import io.inversion.Request.Uploader;
 import io.inversion.utils.Utils;
 
 public class EngineServlet extends HttpServlet
