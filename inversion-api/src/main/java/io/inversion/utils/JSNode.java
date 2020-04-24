@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -39,8 +39,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 
-import io.inversion.cloud.utils.Utils;
-
 /**
  * 
  * TODO: 
@@ -52,11 +50,11 @@ import io.inversion.cloud.utils.Utils;
  *   
  * TODO: Investigate MergePatch  
  * 
- * @author wells
+ *
  */
 public class JSNode implements Map<String, Object>
 {
-   LinkedHashMap<String, Property> properties = new LinkedHashMap();
+   LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
 
    public JSNode()
    {
@@ -83,7 +81,7 @@ public class JSNode implements Map<String, Object>
       List<String> keys = new ArrayList(properties.keySet());
       Collections.sort(keys);
 
-      LinkedHashMap<String, Property> newProps = new LinkedHashMap();
+      LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
       for (String key : keys)
       {
          newProps.put(key, properties.get(key));
@@ -637,7 +635,7 @@ public class JSNode implements Map<String, Object>
       if (name == null)
          return null;
 
-      Property p = getProperty(name.toString());
+      JSProperty p = getProperty(name.toString());
       if (p != null)
          return p.getValue();
 
@@ -653,9 +651,9 @@ public class JSNode implements Map<String, Object>
     */
    public Object putFirst(String name, Object value)
    {
-      LinkedHashMap<String, Property> temp = new LinkedHashMap();
+      LinkedHashMap<String, JSProperty> temp = new LinkedHashMap();
 
-      Property prop = temp.put(name.toLowerCase(), new Property(name, value));
+      JSProperty prop = temp.put(name.toLowerCase(), new JSProperty(name, value));
 
       this.properties.remove(name.toLowerCase());
       temp.putAll(this.properties);
@@ -667,7 +665,7 @@ public class JSNode implements Map<String, Object>
    @Override
    public Object put(String name, Object value)
    {
-      Property prop = properties.put(name.toLowerCase(), new Property(name, value));
+      JSProperty prop = properties.put(name.toLowerCase(), new JSProperty(name, value));
       return prop;
    }
 
@@ -704,7 +702,7 @@ public class JSNode implements Map<String, Object>
       return this;
    }
 
-   public Property getProperty(String name)
+   JSProperty getProperty(String name)
    {
       return properties.get(name.toLowerCase());
    }
@@ -724,7 +722,7 @@ public class JSNode implements Map<String, Object>
       if (name == null)
          return null;
 
-      Property old = removeProperty(name.toString());
+      JSProperty old = removeProperty(name.toString());
       return old != null ? old.getValue() : old;
    }
 
@@ -735,7 +733,7 @@ public class JSNode implements Map<String, Object>
       LinkedHashSet keys = new LinkedHashSet();
       for (String key : properties.keySet())
       {
-         Property p = properties.get(key);
+         JSProperty p = properties.get(key);
          keys.add(p.getName());
       }
       return keys;
@@ -743,30 +741,30 @@ public class JSNode implements Map<String, Object>
 
    public boolean hasProperty(String name)
    {
-      Property property = properties.get(name.toLowerCase());
+      JSProperty property = properties.get(name.toLowerCase());
       return property != null;
    }
 
-   public List<Property> getProperties()
+   List<JSProperty> getProperties()
    {
       return new ArrayList(properties.values());
    }
 
-   public Property removeProperty(String name)
+   JSProperty removeProperty(String name)
    {
-      Property property = properties.get(name.toLowerCase());
+      JSProperty property = properties.get(name.toLowerCase());
       if (property != null)
          properties.remove(name.toLowerCase());
 
       return property;
    }
 
-   public static class Property
+   static class JSProperty
    {
       String name  = null;
       Object value = null;
 
-      public Property(String name, Object value)
+      public JSProperty(String name, Object value)
       {
          super();
          this.name = name;
@@ -814,7 +812,7 @@ public class JSNode implements Map<String, Object>
    public Map asMap()
    {
       Map map = new LinkedHashMap();
-      for (Property p : properties.values())
+      for (JSProperty p : properties.values())
       {
          String name = p.name;
          Object value = p.value;
@@ -867,7 +865,7 @@ public class JSNode implements Map<String, Object>
       if (value == null)
          return false;
 
-      for (Property prop : properties.values())
+      for (JSProperty prop : properties.values())
          if (value.equals(prop.getValue()))
             return true;
 
@@ -1092,7 +1090,7 @@ public class JSNode implements Map<String, Object>
 
    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
-      Property href = node.getProperty("href");
+      JSProperty href = node.getProperty("href");
 
       if (visited.contains(node))
       {
@@ -1120,7 +1118,7 @@ public class JSNode implements Map<String, Object>
 
       for (String key : node.keySet())
       {
-         Property p = node.getProperty(key);
+         JSProperty p = node.getProperty(key);
          if (p == href)
             continue;
 
@@ -1247,7 +1245,7 @@ public class JSNode implements Map<String, Object>
       return prune0(this);
    }
 
-   public static class JSONPathTokenizer
+   static class JSONPathTokenizer
    {
       char[]       chars           = null;
       int          head            = 0;

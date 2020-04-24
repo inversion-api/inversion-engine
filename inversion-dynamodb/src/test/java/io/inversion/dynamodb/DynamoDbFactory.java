@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.dynamo;
+package io.inversion.dynamodb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,14 +36,15 @@ import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.JdbcDbFactory;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
+import io.inversion.Api;
+import io.inversion.Collection;
+import io.inversion.Engine;
+import io.inversion.Response;
+import io.inversion.action.rest.RestAction;
+import io.inversion.dynamodb.DynamoDb;
+import io.inversion.jdbc.JdbcDbFactory;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
 
 public class DynamoDbFactory
 {

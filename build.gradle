@@ -62,6 +62,8 @@ buildscript {
         //but artifactoryPublish was hanging, never completing.  Downgrading
         //seemed to fix the problem
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
+        
+        classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
     
     configurations.classpath {
@@ -76,22 +78,42 @@ plugins {
   id "java-library"
   id "maven-publish"
 }
-	
+apply plugin: 'nebula-aggregate-javadocs'
 
 def bintrayUser = System.getProperty("bintray.user")
 def bintrayKey = System.getProperty("bintray.key")
 def buildNumber = System.getProperty("build.number")
 
 
+/**
+ * The gradle-aggregate-javadocs-plugin generates a combined
+ * javadoc for all subprojects but as of this writing, the
+ * plugin did not seem to offer the ability to change the output
+ * directory.  Running 'allJavadocs' instead of 'aggregateJavadocs' 
+ * will generate the combined docs and put them into /docs/javadoc
+ * where they can be checked into github and served up from
+ * github pages.
+ */ 
+task allJavadocs {
+    dependsOn 'aggregateJavadocs'
+    doLast {
+    	ant.delete(dir: 'docs/javadoc/')
+        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
+    }
+}
+
 
 allprojects {
 
 	apply plugin: 'com.jfrog.artifactory'
-    
-
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
-	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")    
+	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
+	
+	//required for generating comprehensive javadocs with
+	//gradle-aggregate-javadocs-plugin and not failing on error
+	allprojects { tasks.withType(Javadoc) { failOnError false } }
+	    
 }
 
 subprojects {

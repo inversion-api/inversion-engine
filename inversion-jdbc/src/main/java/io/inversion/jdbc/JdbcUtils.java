@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.utils;
+package io.inversion.jdbc;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,11 +45,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.ApiException;
+import io.inversion.Status;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * TODO: http://www.symantec.com/connect/articles/detection-sql-injection-and-cross-site-scripting-attacks

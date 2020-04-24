@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.rest;
+package io.inversion.action.rest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,22 +27,22 @@ import java.util.Set;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Change;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Change;
+import io.inversion.Collection;
+import io.inversion.Index;
+import io.inversion.Property;
+import io.inversion.Relationship;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Status;
+import io.inversion.rql.Term;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class RestPostAction extends Action<RestPostAction>
 {

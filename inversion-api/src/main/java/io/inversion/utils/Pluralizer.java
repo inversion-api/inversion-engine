@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  */
 public class Pluralizer
 {
-   public static enum MODE {
+   static enum MODE {
       ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
    }
 

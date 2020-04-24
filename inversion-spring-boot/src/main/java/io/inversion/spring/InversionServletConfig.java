@@ -1,4 +1,4 @@
-package io.inversion.cloud.service.spring.config;
+package io.inversion.spring;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,9 +13,9 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.service.Servlet;
+import io.inversion.Engine;
+import io.inversion.EngineServlet;
+import io.inversion.utils.Path;
 
 @Configuration
 public class InversionServletConfig
@@ -28,7 +28,7 @@ public class InversionServletConfig
 
    public static ServletRegistrationBean createDefaultInversionServlet(Engine engine)
    {
-      Servlet servlet = new Servlet();
+      EngineServlet servlet = new EngineServlet();
       servlet.setEngine(engine);
 
       String servletMapping = buildServletMapping(engine);

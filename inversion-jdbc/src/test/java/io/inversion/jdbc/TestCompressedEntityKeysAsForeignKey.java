@@ -1,18 +1,17 @@
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
+import io.inversion.Api;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.Response;
+import io.inversion.action.rest.RestAction;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
 
 /**
  * Tests that a compound primary key (multiple fields) can be foreign key referenced by

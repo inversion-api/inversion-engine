@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,7 +24,9 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 public class JSNodeTest
 {

@@ -1,6 +1,8 @@
-package io.inversion.cloud.model;
+package io.inversion;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 /**
  * Utility designed to make it easy to validate request properties or request body
@@ -22,7 +24,7 @@ import io.inversion.cloud.utils.Utils;
  *
  * @see Request#validate(String)
  * @see Request#validate(String,String)
- * @author wells
+ *
  */
 public class Validation
 {

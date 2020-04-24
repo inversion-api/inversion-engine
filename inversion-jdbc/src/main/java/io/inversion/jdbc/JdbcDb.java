@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.db;
+package io.inversion.jdbc;
 
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -38,23 +38,21 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ch.qos.logback.classic.Level;
-import io.inversion.cloud.jdbc.rql.SqlQuery;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.jdbc.utils.JdbcUtils.SqlListener;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.ApiListener;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.Api.ApiListener;
+import io.inversion.jdbc.JdbcUtils.SqlListener;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Property;
+import io.inversion.Relationship;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class JdbcDb extends Db<JdbcDb>
 {
@@ -522,7 +520,7 @@ public class JdbcDb extends Db<JdbcDb>
       return pool;
    }
 
-   public static class ConnectionLocal
+   static class ConnectionLocal
    {
       static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
       static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();

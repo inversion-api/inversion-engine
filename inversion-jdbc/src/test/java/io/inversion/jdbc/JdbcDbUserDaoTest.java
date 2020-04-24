@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.security;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,11 +28,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.model.User;
+import io.inversion.User;
+import io.inversion.jdbc.JdbcDb;
+import io.inversion.jdbc.JdbcDbUserDao;
+import io.inversion.jdbc.JdbcUtils;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Rows.Row;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class JdbcDbUserDaoTest

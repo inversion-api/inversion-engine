@@ -1,4 +1,4 @@
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -8,23 +8,22 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.Api;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.Index;
+import io.inversion.Property;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.action.rest.RestAction;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class TestOverloadedDynamicTables
 {

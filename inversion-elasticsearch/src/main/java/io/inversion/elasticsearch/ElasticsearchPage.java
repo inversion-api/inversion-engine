@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.elastic;
+package io.inversion.elasticsearch;
 
-import io.inversion.cloud.rql.Page;
+import io.inversion.rql.Page;
 
 public class ElasticsearchPage<T extends ElasticsearchPage, P extends ElasticsearchQuery> extends Page<T, P>
 {

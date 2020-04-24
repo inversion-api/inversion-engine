@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion.utils;
 
 import org.junit.jupiter.api.Test;
+
+import io.inversion.utils.JSArray;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author tc-rocket
+ * 
  *
  */
 public class JSArrayTest

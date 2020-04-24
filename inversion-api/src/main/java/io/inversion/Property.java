@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
 import java.io.Serializable;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 
 public class Property implements Comparable<Property>, Serializable
 {

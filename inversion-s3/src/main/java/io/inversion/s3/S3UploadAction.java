@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.s3;
+package io.inversion.s3;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,14 +34,14 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Request.Upload;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Status;
+import io.inversion.Uploader.Upload;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 /**
  * Sends browser multi-part file uploads to a defined S3 location

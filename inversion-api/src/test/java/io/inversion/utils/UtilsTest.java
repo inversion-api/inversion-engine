@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import org.junit.jupiter.api.Test;
 

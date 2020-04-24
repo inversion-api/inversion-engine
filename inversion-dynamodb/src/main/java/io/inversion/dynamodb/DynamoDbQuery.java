@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.dynamo;
+package io.inversion.dynamodb;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,24 +31,24 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Group;
-import io.inversion.cloud.rql.Order;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Select;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.rql.Where;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Index;
+import io.inversion.Property;
+import io.inversion.Results;
+import io.inversion.rql.Group;
+import io.inversion.rql.Order;
+import io.inversion.rql.Page;
+import io.inversion.rql.Query;
+import io.inversion.rql.Select;
+import io.inversion.rql.Term;
+import io.inversion.rql.Where;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
- * @author tc-rocket, wells
+ * 
  * 
  * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
  * 
@@ -443,7 +443,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          Term foundPartKey = null;
          Term foundSortKey = null;
 
-         for (io.inversion.cloud.model.Index idx : getCollection().getIndexes())
+         for (io.inversion.Index idx : getCollection().getIndexes())
          {
             Index index = (Index) idx;
 

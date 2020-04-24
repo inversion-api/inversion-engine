@@ -14,14 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
-
-import io.inversion.cloud.model.*;
-import org.apache.commons.collections4.KeyValue;
-import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+package io.inversion.rql;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+
+import io.inversion.ApiException;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Property;
+import io.inversion.Relationship;
+import io.inversion.Results;
 
 /**
  * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.

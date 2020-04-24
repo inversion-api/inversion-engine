@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
+import io.inversion.Action;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.JSNode;
 
 public class MockActionA extends Action<MockActionA>
 {

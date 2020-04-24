@@ -1,4 +1,4 @@
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,11 +7,11 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.Response;
+import io.inversion.action.rest.RestAction;
+import io.inversion.jdbc.JdbcDb;
 
 public class JdbcConfiguratorTest
 {

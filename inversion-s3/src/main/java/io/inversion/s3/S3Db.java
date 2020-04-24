@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.s3;
+package io.inversion.s3;
 
 import java.util.List;
 import java.util.Map;
@@ -25,13 +25,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * Bucket ~= Table
@@ -40,8 +40,6 @@ import io.inversion.cloud.utils.Utils;
  * since, as of now, you can't request files by size, or content-type, or some 
  * custom header.
  * 
- * @author kfrankic
- *
  */
 public class S3Db extends Db<S3Db>
 {

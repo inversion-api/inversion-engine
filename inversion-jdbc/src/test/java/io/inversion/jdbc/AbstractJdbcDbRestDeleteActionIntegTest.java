@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.cloud.action.rest.AbstractRestDeleteActionIntegTest;
+import io.inversion.action.rest.AbstractRestDeleteActionIntegTest;
 
 public abstract class AbstractJdbcDbRestDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest implements AbstractJdbcDbEngineTest
 {

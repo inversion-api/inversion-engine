@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.script.velocity;
+package io.inversion.script.velocity;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -25,8 +25,8 @@ import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.util.ExtProperties;
 
-import io.inversion.cloud.action.script.ScriptAction;
-import io.inversion.cloud.model.JSNode;
+import io.inversion.script.ScriptAction;
+import io.inversion.utils.JSNode;
 
 public class VelocityResourceLoader extends ResourceLoader
 {

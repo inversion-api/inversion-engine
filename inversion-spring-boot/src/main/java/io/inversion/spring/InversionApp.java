@@ -14,24 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service.spring;
+package io.inversion.spring;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.service.spring.config.InversionServletConfig;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.utils.Utils;
 
 /**
  * Launches your Api in an SpringBoot embedded Tomcat.
  * 
  * This is a super simple way to launch an Api with an embedded Tomcat but if you are a
  * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
- * way, please check out <code>io.inversion.cloud.service.spring.config.EnableInversion</code>
+ * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
  */
 public class InversionApp
 {

@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.cloud.action.rest.AbstractRestPostActionIntegTest;
+import io.inversion.action.rest.AbstractRestPostActionIntegTest;
 
 public abstract class AbstractJdbcDbRestPostActionIntegTest extends AbstractRestPostActionIntegTest implements AbstractJdbcDbEngineTest
 {

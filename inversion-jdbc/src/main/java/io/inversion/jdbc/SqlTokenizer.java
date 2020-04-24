@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.jdbc;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 
 public class SqlTokenizer
 {

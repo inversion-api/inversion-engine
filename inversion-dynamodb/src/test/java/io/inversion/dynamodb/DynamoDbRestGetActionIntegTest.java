@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.dynamo;
+package io.inversion.dynamodb;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Db;
+import io.inversion.action.rest.AbstractRestGetActionIntegTest;
+import io.inversion.utils.Utils;
 
 /**
  * @see README.md

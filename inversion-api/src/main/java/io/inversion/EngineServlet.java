@@ -14,14 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Request.Upload;
-import io.inversion.cloud.model.Request.Uploader;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.utils.Utils;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -29,12 +33,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.io.*;
-import java.util.*;
 
-public class Servlet extends HttpServlet
+import io.inversion.utils.Utils;
+
+public class EngineServlet extends HttpServlet
 {
-   public static class ServletLocal
+   static class EngineServletLocal
    {
       static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
       static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
@@ -91,7 +95,7 @@ public class Servlet extends HttpServlet
    @Override
    public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
    {
-      ServletLocal.set(httpReq, httpResp);
+      EngineServletLocal.set(httpReq, httpResp);
 
       Response res = null;
       Request req = null;

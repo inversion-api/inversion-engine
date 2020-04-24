@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.s3;
+package io.inversion.s3;
 
-import io.inversion.cloud.model.Action;
+import io.inversion.Action;
 
 /**
  * Accepts RQL parameters and responds with json or files to the client.
@@ -41,7 +41,7 @@ import io.inversion.cloud.model.Action;
  * occur.  If a multipart form is received, it is expected that a binary file
  * was sent and possibly json
  * 
- * @author kfrankic
+ * 
  *
  */
 public class S3DownloadAction extends Action

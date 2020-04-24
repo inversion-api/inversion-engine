@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.inversion.utils.Path;
 
 public class Api extends Rule<Api>
 {
@@ -44,6 +46,29 @@ public class Api extends Rule<Api>
 
    //protected Path pathMatch = new Path("${api.name}/${api.version}/${tenant}/blah/blah2/*");
    //protected Path pathMatch = new Path("$}/${api.version}/${tenant}/blah/blah2/*");
+
+   public static interface ApiListener
+   {
+      default void onStartup(Api api)
+      {
+      }
+
+      default void onShutdown(Api api)
+      {
+      }
+
+      default void afterRequest(Request req, Response res)
+      {
+      }
+
+      default void afterError(Request req, Response res)
+      {
+      }
+
+      default void beforeFinally(Request req, Response res)
+      {
+      }
+   }
 
    public Api()
    {

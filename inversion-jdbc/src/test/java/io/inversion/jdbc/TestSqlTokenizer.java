@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,8 +24,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.jdbc.rql.SqlTokenizer;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 
 public class TestSqlTokenizer
 {

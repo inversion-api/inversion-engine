@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.cosmosdb;
+package io.inversion.cosmosdb;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,21 +30,21 @@ import com.microsoft.azure.documentdb.SqlParameter;
 import com.microsoft.azure.documentdb.SqlParameterCollection;
 import com.microsoft.azure.documentdb.SqlQuerySpec;
 
-import io.inversion.cloud.jdbc.rql.SqlQuery;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Order.Sort;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.rql.Where;
-import io.inversion.cloud.service.Chain;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Index;
+import io.inversion.Results;
+import io.inversion.jdbc.SqlQuery;
+import io.inversion.rql.Order.Sort;
+import io.inversion.rql.Term;
+import io.inversion.rql.Where;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Rows.Row;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
- * @author wells
+ *
  */
 public class CosmosSqlQuery extends SqlQuery<CosmosDb>
 {

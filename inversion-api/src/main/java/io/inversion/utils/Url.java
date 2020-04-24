@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion.utils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -22,12 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.inversion.cloud.utils.Utils;
-
 /**
  * Url utilities
  * 
- * @author wells
+ *
  */
 public class Url
 {

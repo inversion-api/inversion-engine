@@ -14,15 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.misc;
-
-import io.inversion.cloud.model.*;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+package io.inversion.action.misc;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
+import io.inversion.Action;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
 
 /**
  * Converts a JSON object/array response value into CSV format.  
@@ -30,7 +35,7 @@ import java.util.List;
  * Works for a status code 200 GET request when 'format=csv' is passed in on the query string 
  * or the Endpoint or an action has 'format=csv' as part of its config.
  *
- * @author wells
+ *
  */
 public class CsvAction extends Action<CsvAction>
 {

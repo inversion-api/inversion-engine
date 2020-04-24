@@ -1,0 +1,17 @@
+io.inversion
+io.inversion.action.misc
+io.inversion.action.rest
+io.inversion.action.security
+io.inversion.cosmosdb
+io.inversion.dynamodb
+io.inversion.elasticsearch
+io.inversion.jdbc
+io.inversion.kinesis
+io.inversion.lambda
+io.inversion.redis
+io.inversion.rql
+io.inversion.s3
+io.inversion.script
+io.inversion.script.velocity
+io.inversion.spring
+io.inversion.utils

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.s3;
+package io.inversion.s3;
 
 import java.util.List;
 
@@ -22,21 +22,19 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Group;
-import io.inversion.cloud.rql.Order;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Select;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.rql.Where;
-import io.inversion.cloud.service.Chain;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Results;
+import io.inversion.rql.Group;
+import io.inversion.rql.Order;
+import io.inversion.rql.Page;
+import io.inversion.rql.Query;
+import io.inversion.rql.Select;
+import io.inversion.rql.Term;
+import io.inversion.rql.Where;
+import io.inversion.utils.Rows.Row;
 
 /**
- * @author tc-rocket, wells
- * 
  * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
  * 
  * @see https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.security;
+package io.inversion.jdbc;
 
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -27,15 +27,13 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import io.inversion.cloud.action.security.AuthAction;
-import io.inversion.cloud.action.security.AuthAction.JwtUserDao;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.model.User;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.ApiException;
+import io.inversion.User;
+import io.inversion.action.security.AuthAction;
+import io.inversion.action.security.AuthAction.JwtUserDao;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * Looks up a user from the configured <code>db</code> JdbcDb.
@@ -59,7 +57,7 @@ import io.inversion.cloud.utils.Utils;
  *   
  * @see users-h2.ddl for full underlying schema  
  * 
- * @author wells
+ *
  *
  */
 public class JdbcDbUserDao extends JwtUserDao

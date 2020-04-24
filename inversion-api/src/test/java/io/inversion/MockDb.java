@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.Rows.Row;
 
 import java.util.Collections;
 import java.util.List;

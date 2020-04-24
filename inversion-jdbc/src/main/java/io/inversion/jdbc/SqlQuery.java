@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.rql;
+package io.inversion.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -24,27 +24,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Group;
-import io.inversion.cloud.rql.Order;
-import io.inversion.cloud.rql.Order.Sort;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Select;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.rql.Where;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Index;
+import io.inversion.Property;
+import io.inversion.Relationship;
+import io.inversion.Results;
+import io.inversion.rql.Group;
+import io.inversion.rql.Order;
+import io.inversion.rql.Order.Sort;
+import io.inversion.rql.Page;
+import io.inversion.rql.Query;
+import io.inversion.rql.Select;
+import io.inversion.rql.Term;
+import io.inversion.rql.Where;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.script;
+package io.inversion.script;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -49,25 +49,24 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.action.script.velocity.LayoutDirective;
-import io.inversion.cloud.action.script.velocity.SaveDirective;
-import io.inversion.cloud.action.script.velocity.SwitchDirective;
-import io.inversion.cloud.action.script.velocity.VelocityResourceLoader;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.script.velocity.LayoutDirective;
+import io.inversion.script.velocity.SaveDirective;
+import io.inversion.script.velocity.SwitchDirective;
+import io.inversion.script.velocity.VelocityResourceLoader;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import net.jodah.expiringmap.ExpiringMap;
 
 /**
- * @author tc-rocket
+ * 
  *
  */
 public class ScriptAction extends Action<ScriptAction>
@@ -576,7 +575,6 @@ public class ScriptAction extends Action<ScriptAction>
 
    public static class Util
    {
-
       public void throwApiException(String status, String message)
       {
          ApiException.throw500InternalServerError(status, message);

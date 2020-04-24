@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.rest;
+package io.inversion.action.rest;
 
-import io.inversion.cloud.model.AbstractEngineTest;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
+import io.inversion.AbstractEngineTest;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.Response;
 
 public abstract class AbstractRestActionIntegTest implements AbstractEngineTest
 {

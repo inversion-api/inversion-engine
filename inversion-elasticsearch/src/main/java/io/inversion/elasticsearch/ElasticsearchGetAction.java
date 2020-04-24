@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.elastic;
+package io.inversion.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,21 +23,21 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.service.Chain;
+import io.inversion.Action;
+import io.inversion.Api;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Status;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client
  * 
- * @author kfrankic
+ * 
  *
  */
 public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
@@ -50,7 +50,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    boolean isOneSrcArray = true;
 
    /**
-    * @see io.inversion.cloud.service.Handler#run(io.inversion.cloud.model.Request, io.inversion.cloud.model.Response)
+    * @see io.inversion.service.Handler#run(io.inversion.Request, io.inversion.Response)
     */
    @Override
    public void run(Request req, Response res) throws Exception
@@ -156,7 +156,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
 
          JSNode jsObj = JSNode.parseJsonNode(r.getContent());
 
-         int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
+         int totalHits = Integer.parseInt(jsObj.getNode("hits").getString("total").toString());
          JSArray hits = jsObj.getNode("hits").getArray("hits");
 
          //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");

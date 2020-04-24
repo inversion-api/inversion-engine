@@ -1,14 +1,12 @@
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.service.spring.InversionApp;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.action.rest.RestAction;
+import io.inversion.spring.InversionApp;
+import io.inversion.utils.Utils;
 
 public class JdbcDbFactory
 {

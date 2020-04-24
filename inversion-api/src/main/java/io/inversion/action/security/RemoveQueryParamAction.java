@@ -14,15 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.Request;
+import io.inversion.Response;
 
 public class RemoveQueryParamAction extends Action<SetQueryParamAction>
 {

@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.mysql;
+package io.inversion.jdbc.mysql;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class MySqlRqlIntegTest extends MySqlRqlUnitTest

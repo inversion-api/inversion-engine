@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.lambda;
+package io.inversion.lambda;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -28,19 +28,19 @@ import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.Chain;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Url;
+import io.inversion.utils.Utils;
 
 /**
- * @author wells
+ *
  */
-public class ApiGatewayRequestStreamHandler implements RequestStreamHandler
+public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
    Engine  engine = null;
    boolean debug  = false;

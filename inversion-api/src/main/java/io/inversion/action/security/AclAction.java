@@ -14,13 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import java.util.*;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 /**
  * The AclAction secures an API by making sure that a requests matches one or 
@@ -30,7 +40,7 @@ import java.util.*;
  * specific method/path combinations and can also specify input/output
  * parameters that are either required or restricted
  *
- * @author wells
+ *
  *
  */
 public class AclAction extends Action<AclAction>

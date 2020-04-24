@@ -14,16 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
+package io.inversion.rql;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.ApiException;
+import io.inversion.Index;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P>
 {

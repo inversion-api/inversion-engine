@@ -1,4 +1,4 @@
-package io.inversion.cloud.action.dynamo;
+package io.inversion.dynamodb;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,13 +6,14 @@ import java.util.List;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Index;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.rql.AbstractRqlTest;
-import io.inversion.cloud.rql.RqlValidationSuite;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Index;
+import io.inversion.Relationship;
+import io.inversion.dynamodb.DynamoDb;
+import io.inversion.dynamodb.DynamoDbQuery;
+import io.inversion.rql.AbstractRqlTest;
+import io.inversion.rql.RqlValidationSuite;
 
 /**
  * Implements supported RQL test cases and adds extended cases to support
@@ -60,7 +61,7 @@ import io.inversion.cloud.utils.Utils;
  * |  M   |        |        | =      |        |  =     |        |        |        |        |        |        |          | Query - GS2       | eq(customerId,val)      
  * 
  * </pre>
- * @author wells
+ *
  *
  */
 @TestInstance(Lifecycle.PER_CLASS)

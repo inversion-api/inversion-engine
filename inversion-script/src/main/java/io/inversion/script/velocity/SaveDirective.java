@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.script.velocity;
+package io.inversion.script.velocity;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -26,11 +26,10 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.directive.InputBase;
 import org.apache.velocity.runtime.parser.node.Node;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 
 /**
  * 
- * @author Wells Burke
  *
  */
 public class SaveDirective extends InputBase

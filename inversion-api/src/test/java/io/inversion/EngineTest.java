@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -25,19 +25,18 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.misc.MockAction;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.MockActionA;
-import io.inversion.cloud.model.MockActionB;
-import io.inversion.cloud.model.MockDb;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain.ActionMatch;
+import io.inversion.Action;
+import io.inversion.Api;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Endpoint;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Chain.ActionMatch;
+import io.inversion.action.misc.MockAction;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
 
 public class EngineTest
 {
@@ -388,7 +387,7 @@ public class EngineTest
       Endpoint ep = new Endpoint("GET", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
       Action actionA = new MockAction()
          {
-            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
@@ -400,7 +399,7 @@ public class EngineTest
 
       Action actionB = new MockAction()
          {
-            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
@@ -413,7 +412,7 @@ public class EngineTest
 
       Action actionC = new MockAction()
          {
-            public void run(io.inversion.cloud.model.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws Exception
             {
                Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -55,15 +55,11 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
+import io.inversion.ApiException;
 
 /**
  * Collection of utility methods designed to make
  * java programming less verbose
- *
- * @author Wells Burke
  */
 public class Utils
 {

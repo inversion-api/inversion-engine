@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.cosmosdb;
+package io.inversion.cosmosdb;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.EngineListener;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.service.spring.InversionApp;
+import io.inversion.Api;
+import io.inversion.Chain;
+import io.inversion.Engine;
+import io.inversion.Engine.EngineListener;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.spring.InversionApp;
 
 public class MainCosmosApi
 {

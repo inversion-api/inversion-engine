@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
 import java.util.List;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 public class RequireJsonPropertyAction<T extends RequireJsonPropertyAction> extends Action<T>
 {

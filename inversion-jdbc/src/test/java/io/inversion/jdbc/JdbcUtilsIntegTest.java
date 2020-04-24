@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,9 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.utils.JdbcUtils;
 
 public class JdbcUtilsIntegTest
 {

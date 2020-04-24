@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.dynamo;
+package io.inversion.dynamodb;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +22,10 @@ import java.util.List;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.rql.RqlValidationSuite;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.rql.RqlValidationSuite;
+import io.inversion.utils.Utils;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest

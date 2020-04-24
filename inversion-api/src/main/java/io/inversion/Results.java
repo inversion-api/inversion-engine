@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Term;
+import io.inversion.rql.Query;
+import io.inversion.rql.Term;
 
 import java.util.ArrayList;
 import java.util.Iterator;

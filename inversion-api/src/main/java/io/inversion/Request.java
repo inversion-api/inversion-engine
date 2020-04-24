@@ -14,19 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Uploader.Upload;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Url;
+import io.inversion.utils.Utils;
 
 public class Request
 {
@@ -128,18 +129,6 @@ public class Request
 
       if (retryAttempts > 0)
          this.retryAttempts = retryAttempts;
-   }
-
-   public Response go()
-   {
-      if (engine != null)
-      {
-         return engine.service(this, new Response()).getResponse();
-      }
-      else
-      {
-         return HttpUtils.rest(getMethod(), getUrl().toString(), getBody(), headers, -1).get();
-      }
    }
 
    public Engine getEngine()
@@ -604,69 +593,6 @@ public class Request
    public List<Upload> getUploads()
    {
       return uploader.getUploads();
-   }
-
-   public static interface Uploader
-   {
-      public List<Upload> getUploads();
-   }
-
-   public static class Upload
-   {
-      String      fileName    = null;
-      long        fileSize    = 0;
-      String      requestPath = null;
-      InputStream inputStream = null;
-
-      public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream)
-      {
-         super();
-         this.fileName = fileName;
-         this.fileSize = fileSize;
-         this.requestPath = requestPath;
-         this.inputStream = inputStream;
-      }
-
-      public String getFileName()
-      {
-         return fileName;
-      }
-
-      public void setFileName(String fileName)
-      {
-         this.fileName = fileName;
-      }
-
-      public long getFileSize()
-      {
-         return fileSize;
-      }
-
-      public void setFileSize(long fileSize)
-      {
-         this.fileSize = fileSize;
-      }
-
-      public String getRequestPath()
-      {
-         return requestPath;
-      }
-
-      public void setRequestPath(String requestPath)
-      {
-         this.requestPath = requestPath;
-      }
-
-      public InputStream getInputStream()
-      {
-         return inputStream;
-      }
-
-      public void setInputStream(InputStream inputStream)
-      {
-         this.inputStream = inputStream;
-      }
-
    }
 
 }

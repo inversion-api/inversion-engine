@@ -14,16 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.misc;
-
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.utils.Utils;
+package io.inversion.action.misc;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Status;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 public class MockAction extends Action<MockAction>
 {

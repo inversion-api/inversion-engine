@@ -1,10 +1,11 @@
-package io.inversion.cloud.service.spring.config;
+package io.inversion.spring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.service.Engine;
+import io.inversion.Engine;
+import io.inversion.spring.InversionServletConfig;
 
 public class InversionServletConfigTest
 {

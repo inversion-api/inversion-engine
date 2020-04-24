@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,8 +32,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
 
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Path;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * Represents a REST collection as an interface into an underlying

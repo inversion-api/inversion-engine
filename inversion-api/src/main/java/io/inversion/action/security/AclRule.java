@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
-
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Rule;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+package io.inversion.action.security;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Rule;
+import io.inversion.utils.Utils;
 
 public class AclRule extends Rule<AclRule>
 {

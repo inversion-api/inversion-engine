@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 
 public class RemoveQueryParamActionTest
 {

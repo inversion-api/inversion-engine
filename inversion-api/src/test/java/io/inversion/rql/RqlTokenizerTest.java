@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
+package io.inversion.rql;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

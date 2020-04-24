@@ -14,25 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.elastic;
+package io.inversion.elasticsearch;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Property;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.HttpUtils;
-import io.inversion.cloud.utils.Utils;
+import javax.servlet.http.HttpUtils;
+
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Property;
+import io.inversion.Response;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
@@ -83,7 +82,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       {
          // 'GET _all' returns all indices/aliases/mappings
          String url = getUrl();
-         Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
+         Response allResp = null;//HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
 
          if (allResp.isSuccess())
          {

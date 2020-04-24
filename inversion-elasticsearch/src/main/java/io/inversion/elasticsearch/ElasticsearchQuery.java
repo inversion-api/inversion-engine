@@ -14,25 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.elastic;
+package io.inversion.elasticsearch;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.rql.Group;
-import io.inversion.cloud.rql.Order;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.Query;
-import io.inversion.cloud.rql.Select;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.rql.Where;
+import io.inversion.Collection;
+import io.inversion.jdbc.JdbcDb;
+import io.inversion.rql.Group;
+import io.inversion.rql.Order;
+import io.inversion.rql.Page;
+import io.inversion.rql.Query;
+import io.inversion.rql.Select;
+import io.inversion.rql.Term;
+import io.inversion.rql.Where;
+import io.inversion.utils.JSNode;
 
 /**
- * @author kfrankic
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // 

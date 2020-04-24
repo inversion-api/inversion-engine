@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.sqlserver;
+package io.inversion.jdbc.sqlserver;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.jdbc.AbstractSqlQueryRqlTest;
+import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class SqlServerRqlUnitTest extends AbstractSqlQueryRqlTest

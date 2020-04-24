@@ -14,23 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.rest;
+package io.inversion.action.rest;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.*;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Page;
-import io.inversion.cloud.rql.RqlParser;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import java.util.*;
+import io.inversion.Action;
+import io.inversion.Api;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Index;
+import io.inversion.Property;
+import io.inversion.Relationship;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Results;
+import io.inversion.Status;
+import io.inversion.rql.Page;
+import io.inversion.rql.RqlParser;
+import io.inversion.rql.Term;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Url;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class RestGetAction extends Action<RestGetAction>
 {

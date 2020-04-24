@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,17 +27,9 @@ import java.util.Stack;
 
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.User;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 
 public class Chain
 {
@@ -588,7 +580,7 @@ public class Chain
       return response;
    }
 
-   public static class ActionMatch implements Comparable<ActionMatch>
+   static class ActionMatch implements Comparable<ActionMatch>
    {
       Path   rule   = null;
       Path   path   = null;

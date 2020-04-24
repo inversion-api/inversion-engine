@@ -1,4 +1,4 @@
-package io.inversion.cloud.model;
+package io.inversion;
 
 public class RequestTest
 {

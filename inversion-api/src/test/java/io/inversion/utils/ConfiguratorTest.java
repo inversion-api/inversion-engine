@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,10 +29,11 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.security.AuthAction;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.MockDb;
-import io.inversion.cloud.service.Engine;
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.MockDb;
+import io.inversion.action.security.AuthAction;
+import io.inversion.utils.Configurator.Wirer;
 
 public class ConfiguratorTest
 {
@@ -51,7 +52,7 @@ public class ConfiguratorTest
    {
       Engine dev = new Engine();
       dev.withProfile("dev");
-      dev.withConfigPath("io/inversion/cloud/utils");
+      dev.withConfigPath("io/inversion/utils");
       dev.startup();
 
       Api devApi = dev.getApi("northwind");
@@ -60,7 +61,7 @@ public class ConfiguratorTest
 
       Engine prod = new Engine();
       prod.withProfile("prod");
-      prod.withConfigPath("io/inversion/cloud/utils");
+      prod.withConfigPath("io/inversion/utils");
       prod.startup();
 
       Api prodApi = prod.getApi("northwind");
@@ -84,7 +85,7 @@ public class ConfiguratorTest
    {
       Engine dev = new Engine();
       dev.withProfile("dev");
-      dev.withConfigPath("io/inversion/cloud/utils");
+      dev.withConfigPath("io/inversion/utils");
       dev.startup();
       
       //encode

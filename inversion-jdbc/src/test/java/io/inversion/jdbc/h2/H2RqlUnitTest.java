@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc.h2;
+package io.inversion.jdbc.h2;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.jdbc.AbstractSqlQueryRqlTest;
+import io.inversion.jdbc.AbstractSqlQueryRqlTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class H2RqlUnitTest extends AbstractSqlQueryRqlTest

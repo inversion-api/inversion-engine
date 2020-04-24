@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.redis;
+package io.inversion.redis;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.inversion.cloud.action.security.AuthAction.InMemorySessionDao;
-import io.inversion.cloud.model.User;
+import io.inversion.User;
+import io.inversion.action.security.AuthAction.InMemorySessionDao;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -31,7 +31,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * This is to be used with the AuthHandler to provide a central session cache, which 
  * is needed when running Snooze on multiple instances behind a load balancer
  * 
- * @author tc-rocket
+ * 
  */
 public class RedisAuthSessionCache extends InMemorySessionDao
 {

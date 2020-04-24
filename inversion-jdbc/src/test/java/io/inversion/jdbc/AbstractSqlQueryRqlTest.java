@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
-import io.inversion.cloud.jdbc.rql.SqlQuery;
-import io.inversion.cloud.rql.AbstractRqlTest;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.rql.AbstractRqlTest;
+import io.inversion.rql.RqlValidationSuite;
 
 public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements AbstractJdbcDbEngineTest
 {

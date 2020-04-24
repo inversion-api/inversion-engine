@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,12 +28,12 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.action.rest.AbstractRestGetActionIntegTest;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
+import io.inversion.Api;
+import io.inversion.Collection;
+import io.inversion.Engine;
+import io.inversion.Response;
+import io.inversion.action.rest.AbstractRestGetActionIntegTest;
+import io.inversion.utils.JSNode;
 
 public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestGetActionIntegTest implements AbstractJdbcDbEngineTest
 {

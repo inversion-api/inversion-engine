@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.rest;
+package io.inversion.action.rest;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Rows;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Collection;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.Status;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
 {

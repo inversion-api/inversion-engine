@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
+package io.inversion.rql;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -27,13 +27,13 @@ import java.util.Map;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.Relationship;
+import io.inversion.Response;
+import io.inversion.Results;
+import io.inversion.utils.Utils;
 
 public class RqlValidationSuite
 {

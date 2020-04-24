@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * @author tc-rocket
+ *
  */
 public class AclActionTest
 {
@@ -45,7 +45,7 @@ public class AclActionTest
    //   }
    //
    //   /**
-   //    * @see io.inversion.cloud.demo.security.DemoAclRules1
+   //    * @see io.inversion.demo.security.DemoAclRules1
    //    */
    //   @Test
    //   public void testAclAction2()

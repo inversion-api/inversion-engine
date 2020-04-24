@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.redis;
+package io.inversion.redis;
 
 import java.util.List;
 import java.util.Map;
@@ -22,12 +22,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;

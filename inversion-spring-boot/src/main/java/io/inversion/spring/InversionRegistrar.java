@@ -1,4 +1,4 @@
-package io.inversion.cloud.service.spring.config;
+package io.inversion.spring;
 
 import static org.springframework.beans.factory.config.AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR;
 
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 
-import io.inversion.cloud.service.Engine;
+import io.inversion.Engine;
 
 /**
  *

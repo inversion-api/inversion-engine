@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,19 +23,28 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.swing.SwingUtilities;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.logging.Log;
@@ -62,11 +71,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.service.Chain;
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Response;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an
@@ -122,8 +129,6 @@ import io.inversion.cloud.service.Chain;
  * }
  * </pre>
  * 
- *
- * @author Wells Burke
  */
 public class RestClient
 {
@@ -646,7 +651,7 @@ public class RestClient
       }
    }
 
-   public static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase
+   static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase
    {
 
       static final String methodName = "DELETE";
@@ -976,6 +981,525 @@ public class RestClient
    {
       this.retryTimeoutMax = retryTimeoutMax;
       return this;
+   }
+
+   public static abstract class FutureResponse implements RunnableFuture<Response>
+   {
+      Log                   log        = LogFactory.getLog(getClass());
+
+      long                  createdAt  = System.currentTimeMillis();
+
+      Request               request    = null;
+      Response              response   = null;
+      List<ResponseHandler> onSuccess  = new ArrayList();
+      List<ResponseHandler> onFailure  = new ArrayList();
+      List<ResponseHandler> onResponse = new ArrayList();
+
+      public FutureResponse()
+      {
+
+      }
+
+      public FutureResponse(Request request)
+      {
+         this.request = request;
+      }
+
+      public FutureResponse onSuccess(ResponseHandler handler)
+      {
+         boolean done = false;
+         synchronized (this)
+         {
+            done = isDone();
+            if (!done)
+            {
+               onSuccess.add(handler);
+            }
+         }
+
+         if (done && isSuccess())
+         {
+            try
+            {
+               handler.onResponse(response);
+            }
+            catch (Throwable ex)
+            {
+               log.error("Error handling onSuccess", ex);
+            }
+         }
+
+         return this;
+      }
+
+      public FutureResponse onFailure(ResponseHandler handler)
+      {
+         boolean done = false;
+         synchronized (this)
+         {
+            done = isDone();
+            if (!done)
+            {
+               onFailure.add(handler);
+            }
+         }
+
+         if (done && !isSuccess())
+         {
+            try
+            {
+               handler.onResponse(response);
+            }
+            catch (Throwable ex)
+            {
+               log.error("Error handling onFailure", ex);
+            }
+         }
+
+         return this;
+      }
+
+      public FutureResponse onResponse(ResponseHandler handler)
+      {
+         boolean done = false;
+         synchronized (this)
+         {
+            done = isDone();
+            if (!done)
+            {
+               onResponse.add(handler);
+            }
+         }
+
+         if (done)
+         {
+            try
+            {
+               handler.onResponse(response);
+            }
+            catch (Throwable ex)
+            {
+               log.error("Error handling onResponse", ex);
+            }
+         }
+
+         return this;
+      }
+
+      public void setResponse(Response response)
+      {
+         synchronized (this)
+         {
+            this.response = response;
+
+            if (isSuccess())
+            {
+               for (ResponseHandler h : onSuccess)
+               {
+                  try
+                  {
+                     h.onResponse(response);
+                  }
+                  catch (Throwable ex)
+                  {
+                     log.error("Error handling success callbacks in setResponse", ex);
+                  }
+               }
+            }
+            else
+            {
+               for (ResponseHandler h : onFailure)
+               {
+                  try
+                  {
+                     h.onResponse(response);
+                  }
+                  catch (Throwable ex)
+                  {
+                     log.error("Error handling failure callbacks in setResponse", ex);
+                  }
+               }
+            }
+
+            for (ResponseHandler h : onResponse)
+            {
+               try
+               {
+                  h.onResponse(response);
+               }
+               catch (Throwable ex)
+               {
+                  log.error("Error handling callbacks in setResponse", ex);
+               }
+            }
+
+            notifyAll();
+         }
+      }
+
+      @Override
+      public boolean cancel(boolean arg0)
+      {
+         return false;
+      }
+
+      @Override
+      public Response get()
+      {
+         if (SwingUtilities.isEventDispatchThread())
+         {
+            String msg = "Blocking on the Swing thread. Your code is blocking the UI by calling FutureResponse.get() on the Swing event dispatch thread.  You should consider moving your call into a background thread.";
+            Exception ex = new Exception();
+            ex.fillInStackTrace();
+            log.warn(msg, ex);
+         }
+
+         while (response == null)
+         {
+            synchronized (this)
+            {
+               if (response == null)
+               {
+                  try
+                  {
+                     wait();
+                  }
+                  catch (Exception ex)
+                  {
+
+                  }
+               }
+            }
+         }
+
+         return response;
+      }
+
+      public boolean isSuccess()
+      {
+         if (response != null && response.getError() == null && response.getStatusCode() >= 200 && response.getStatusCode() < 300)
+            return true;
+
+         return false;
+      }
+
+      public Response get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+      {
+         if (SwingUtilities.isEventDispatchThread())
+         {
+            String msg = "Blocking on the Swing thread. Your code is blocking the UI by calling FutureResponse.get() on the Swing event dispatch thread.  You should consider moving your call into a background thread.";
+            Exception ex = new Exception();
+            ex.fillInStackTrace();
+            log.warn(msg, ex);
+         }
+
+         timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
+         while (response == null)
+         {
+            synchronized (this)
+            {
+               if (response == null)
+               {
+                  wait(timeout);
+                  if (response == null)
+                     throw new TimeoutException(timeout + " millisecond timeout reached");
+               }
+            }
+         }
+
+         return response;
+      }
+
+      public Request getRequest()
+      {
+         return request;
+      }
+
+      @Override
+      public boolean isCancelled()
+      {
+         return false;
+      }
+
+      @Override
+      public boolean isDone()
+      {
+         return response != null;
+      }
+
+      public long getCreatedAt()
+      {
+         return createdAt;
+      }
+
+   }
+
+   public static interface ResponseHandler
+   {
+      public void onResponse(Response response) throws Exception;
+   }
+
+   /**
+    * A thread pool executor that will expand the number of threads up to <code>poolMax</code>
+    * with a queue depth of <code>queueMax</code>.  If more than <code>queueMax</code> jobs
+    * are submitted, the submit() will block until the queue has room.
+    */
+   public static class Executor
+   {
+      int                        poolMin  = 1;
+      int                        poolMax  = 3;
+
+      long                       queueMax = Integer.MAX_VALUE;
+
+      LinkedList<RunnableFuture> queue    = new LinkedList();
+      Vector<Thread>             threads  = new Vector();
+
+      boolean                    daemon   = true;
+
+      String                     poolName = "Executor";
+
+      boolean                    shutdown = false;
+      long                       delay    = 1000;
+
+      static Timer               timer    = null;
+
+      public Executor(int poolMin, int poolMax, long queueMax)
+      {
+         this(poolMin, poolMax, queueMax, true, "Executor");
+      }
+
+      public Executor(int poolMin, int poolMax, long queueMax, boolean daemon, String poolName)
+      {
+         this.poolMin = Math.max(this.poolMin, poolMin);
+         this.poolMax = poolMax;
+         this.queueMax = queueMax;
+         this.daemon = daemon;
+         this.poolName = poolName;
+      }
+
+      public synchronized Future submit(final Runnable task)
+      {
+         return submit(new RunnableFuture()
+            {
+               boolean started  = false;
+               boolean canceled = false;
+               boolean done     = false;
+
+               @Override
+               public void run()
+               {
+                  try
+                  {
+                     if (canceled || done)
+                        return;
+
+                     started = true;
+                     task.run();
+                  }
+                  finally
+                  {
+                     synchronized (this)
+                     {
+                        done = true;
+                        notifyAll();
+                     }
+                  }
+               }
+
+               @Override
+               public boolean cancel(boolean mayInterruptIfRunning)
+               {
+                  canceled = true;
+                  return !started;
+               }
+
+               @Override
+               public boolean isCancelled()
+               {
+                  return canceled;
+               }
+
+               @Override
+               public boolean isDone()
+               {
+                  return false;
+               }
+
+               @Override
+               public Object get() throws InterruptedException, ExecutionException
+               {
+                  synchronized (this)
+                  {
+                     while (!done)
+                     {
+                        wait();
+                     }
+                  }
+                  return null;
+               }
+
+               @Override
+               public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+               {
+                  synchronized (this)
+                  {
+                     while (!done)
+                     {
+                        wait(unit.toMillis(timeout));
+                     }
+                  }
+                  return null;
+               }
+
+            });
+      }
+
+      public synchronized RunnableFuture submit(RunnableFuture task)
+      {
+         put(task);
+         checkStartThread();
+         return task;
+      }
+
+      public synchronized RunnableFuture submit(final RunnableFuture task, long delay)
+      {
+         getTimer().schedule(new TimerTask()
+            {
+               @Override
+               public void run()
+               {
+                  Thread t = new Thread(new Runnable()
+                     {
+                        @Override
+                        public void run()
+                        {
+                           submit(task);
+                        }
+                     });
+                  t.setDaemon(daemon);
+                  t.start();
+               }
+            }, delay);
+
+         return task;
+      }
+
+      static synchronized Timer getTimer()
+      {
+         if (timer == null)
+            timer = new Timer("Executor timer");
+
+         return timer;
+      }
+
+      synchronized boolean checkStartThread()
+      {
+         if (queue.size() > 0 && threads.size() < poolMax)
+         {
+            Thread t = new Thread(new Runnable()
+               {
+                  public void run()
+                  {
+                     processQueue();
+                  }
+               }, poolName + " worker");
+            t.setDaemon(daemon);
+            threads.add(t);
+            t.start();
+            return true;
+         }
+         return false;
+      }
+
+      synchronized boolean checkEndThread()
+      {
+         if (queue.size() == 0 && threads.size() > poolMin)
+         {
+            threads.remove(Thread.currentThread());
+            return true;
+         }
+         return false;
+      }
+
+      int queued()
+      {
+         synchronized (queue)
+         {
+            return queue.size();
+         }
+      }
+
+      void put(RunnableFuture task)
+      {
+         synchronized (queue)
+         {
+            while (queue.size() >= queueMax)
+            {
+               try
+               {
+                  queue.wait();
+               }
+               catch (Exception ex)
+               {
+
+               }
+            }
+            queue.add(task);
+            queue.notifyAll();
+         }
+      }
+
+      RunnableFuture take()
+      {
+         RunnableFuture t = null;
+         synchronized (queue)
+         {
+            while (queue.size() == 0)
+            {
+               try
+               {
+                  queue.wait();
+               }
+               catch (InterruptedException ex)
+               {
+
+               }
+            }
+
+            t = queue.removeFirst();
+            queue.notifyAll();
+         }
+         return t;
+      }
+
+      void processQueue()
+      {
+         try
+         {
+            while (true && !shutdown && !checkEndThread())
+            {
+               do
+               {
+                  RunnableFuture task = take();
+                  task.run();
+               }
+               while (queue.size() > 0);
+
+               //            if (!shutdown)
+               //            {
+               //               Thread.sleep(delay);
+               //            }
+               //
+               //            if (queue.size() == 0)
+               //               break;
+            }
+         }
+         catch (Exception ex)
+         {
+            ex.printStackTrace();
+         }
+      }
+
    }
 
 }

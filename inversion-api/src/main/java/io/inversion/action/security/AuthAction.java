@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
+package io.inversion.action.security;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -35,16 +35,16 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
-import io.inversion.cloud.action.security.AuthAction.JwtUserDao.RevokedTokenCache;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.User;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.User;
+import io.inversion.action.security.AuthAction.JwtUserDao.RevokedTokenCache;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 public class AuthAction extends Action<AuthAction>
 {

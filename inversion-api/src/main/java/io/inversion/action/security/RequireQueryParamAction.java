@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.security;
-
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.rql.RqlParser;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Utils;
+package io.inversion.action.security;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.rql.RqlParser;
+import io.inversion.rql.Term;
+import io.inversion.utils.Utils;
 
 /**
  * Requires query string parameter "requiredParam=anyValue" OR "eq(requiredParam,anyValue)" be present on the request url querystring 
@@ -33,7 +33,7 @@ import java.util.Set;
  * 
  * The param could have been supplied by the caller or by another action as long as it is there when this action runs.
  * 
- * @author wells
+ *
  */
 public class RequireQueryParamAction extends Action<SetQueryParamAction>
 {

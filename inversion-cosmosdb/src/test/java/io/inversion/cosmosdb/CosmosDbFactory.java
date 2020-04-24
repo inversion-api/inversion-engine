@@ -14,24 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.cosmosdb;
+package io.inversion.cosmosdb;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.inversion.cloud.action.rest.RestAction;
-import io.inversion.cloud.jdbc.JdbcDbFactory;
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Engine;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Action;
+import io.inversion.Api;
+import io.inversion.Collection;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.action.rest.RestAction;
+import io.inversion.cosmosdb.CosmosDb;
+import io.inversion.jdbc.JdbcDbFactory;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 
 public class CosmosDbFactory
 {

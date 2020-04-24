@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
+package io.inversion.rql;
 
-import io.inversion.cloud.model.AbstractEngineTest;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Relationship;
-import io.inversion.cloud.service.Engine;
+import io.inversion.AbstractEngineTest;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Engine;
+import io.inversion.Relationship;
+
 import org.junit.jupiter.api.Test;
 
 public abstract class AbstractRqlTest implements AbstractEngineTest

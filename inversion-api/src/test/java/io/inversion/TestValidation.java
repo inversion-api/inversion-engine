@@ -1,6 +1,7 @@
-package io.inversion.cloud.model;
+package io.inversion;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Request;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

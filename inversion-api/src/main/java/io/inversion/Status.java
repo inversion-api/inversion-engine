@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion;
 
 /**
  * Static constants for HTTP status codes.  Yes there are many other files in JDK-land
@@ -22,7 +22,7 @@ package io.inversion.cloud.model;
  * usual suspect classed did not include the HTTP status number in the field name and 
  * I really wanted to see both the numerical code and message at the same time in the source.
  * 
- * @author wells
+ *
  * @see http://www.restapitutorial.com/httpstatuscodes.html
  */
 public interface Status

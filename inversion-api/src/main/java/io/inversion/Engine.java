@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.service;
+package io.inversion;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -34,25 +34,14 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.model.Action;
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.ApiListener;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.Endpoint;
-import io.inversion.cloud.model.EngineListener;
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Path;
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.model.Rule;
-import io.inversion.cloud.model.Status;
-import io.inversion.cloud.model.Url;
-import io.inversion.cloud.service.Chain.ActionMatch;
-import io.inversion.cloud.utils.Configurator;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api.ApiListener;
+import io.inversion.Chain.ActionMatch;
+import io.inversion.utils.Configurator;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Url;
+import io.inversion.utils.Utils;
 
 public class Engine extends Rule<Engine>
 {
@@ -110,6 +99,14 @@ public class Engine extends Rule<Engine>
     */
    protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
+   public static interface EngineListener extends ApiListener
+   {
+      default void onStartup(Engine engine) {}
+
+      default void onShutdown(Engine engine) {}
+
+   }
+   
    public Engine()
    {
 
@@ -755,42 +752,6 @@ public class Engine extends Rule<Engine>
          }
       }
    }
-
-   //   boolean redirectPlural(Request req, Response res)
-   //   {
-   //      String collection = req.getCollectionKey();
-   //      if (!Utils.empty(collection))
-   //      {
-   //         String plural = Pluralizer.plural(collection);
-   //         if (!plural.equals(collection))
-   //         {
-   //            String path = req.getPath().toString();
-   //            path = path.replaceFirst(collection, plural);
-   //            Endpoint rightEndpoint = findEndpoint(req.getApi(), req.getMethod(), path);
-   //            if (rightEndpoint != null)
-   //            {
-   //               String redirect = req.getUrl().toString();
-   //               //redirect = req.getHttpServletRequest().getRequest
-   //               redirect = redirect.replaceFirst("\\/" + collection, "\\/" + plural);
-   //
-   //               res.withRedirect(redirect);
-   //               return true;
-   //            }
-   //         }
-   //      }
-   //      return false;
-   //   }
-
-   //   Endpoint findEndpoint(Api api, String method, String pathStr)
-   //   {
-   //      Path path = new Path(pathStr);
-   //      for (Endpoint endpoint : api.getEndpoints())
-   //      {
-   //         if (endpoint.match(method, path) != null)
-   //            return endpoint;
-   //      }
-   //      return null;
-   //   }
 
    public List<Api> getApis()
    {

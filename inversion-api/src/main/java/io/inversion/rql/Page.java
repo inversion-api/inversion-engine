@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.rql;
+package io.inversion.rql;
 
 /**
  * 
@@ -25,7 +25,7 @@ package io.inversion.cloud.rql;
  * pageSize(pageSize)
  * 
  * 
- * @author wells
+ *
  *
  * @param <T>
  * @param <P>

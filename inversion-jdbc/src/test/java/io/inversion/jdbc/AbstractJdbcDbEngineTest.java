@@ -1,11 +1,10 @@
-package io.inversion.cloud.jdbc;
+package io.inversion.jdbc;
 
-import io.inversion.cloud.jdbc.db.JdbcDb;
-import io.inversion.cloud.jdbc.db.JdbcDb.ConnectionLocal;
-import io.inversion.cloud.model.AbstractDbTest;
-import io.inversion.cloud.model.AbstractEngineTest;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.service.Chain;
+import io.inversion.AbstractDbTest;
+import io.inversion.AbstractEngineTest;
+import io.inversion.Chain;
+import io.inversion.Db;
+import io.inversion.jdbc.JdbcDb.ConnectionLocal;
 
 public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest
 {

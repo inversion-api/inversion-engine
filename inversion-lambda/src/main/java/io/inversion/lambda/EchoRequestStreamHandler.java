@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.lambda;
+package io.inversion.lambda;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -25,12 +25,12 @@ import java.io.OutputStreamWriter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
 
 /**
  * Simple handler to echo the request back
- * @author wells
+ *
  */
 public class EchoRequestStreamHandler implements RequestStreamHandler
 {

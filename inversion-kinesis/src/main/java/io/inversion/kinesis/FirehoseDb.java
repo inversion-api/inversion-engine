@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.action.kinesis;
+package io.inversion.kinesis;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -29,15 +29,15 @@ import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 
-import io.inversion.cloud.model.Api;
-import io.inversion.cloud.model.ApiException;
-import io.inversion.cloud.model.Collection;
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Results;
-import io.inversion.cloud.model.Rows.Row;
-import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.Utils;
+import io.inversion.Api;
+import io.inversion.ApiException;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Results;
+import io.inversion.rql.Term;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * Posts records to a mapped AWS Kinesis Firehose stream. 
@@ -66,7 +66,7 @@ import io.inversion.cloud.utils.Utils;
  * the FireshoseDb.includeStreams property.
  * 
  * 
- * @author wells
+ *
  *
  */
 public class FirehoseDb extends Db<FirehoseDb>

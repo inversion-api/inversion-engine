@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
+package io.inversion.utils;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.cloud.utils.Utils;
+import io.inversion.utils.Url;
+import io.inversion.utils.Utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * @author tc-rocket
+ * 
  *
  */
 public class UrlTest

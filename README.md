@@ -100,7 +100,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 
 ## Quick Start
 
-With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/inversion-api/inversion-demos/blob/master/src/main/java/io/rocketpartners/cloud/demo/demo001/Demo001SqlDbNorthwind.java)
+With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/inversion-api/inversion-demos/blob/master/src/main/java/io/rocketpartners/demo/demo001/Demo001SqlDbNorthwind.java)
 launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  The demo 
 supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
  
@@ -213,20 +213,20 @@ The properties file below will create an identical API to the Java coded example
 Place the example below into a file "./inversion.properties". 
 
 ```properties
-demo.class=io.inversion.cloud.model.Api
+demo.class=io.inversion.model.Api
 
-db.class=io.inversion.cloud.action.sql.SqlDb
+db.class=io.inversion.action.sql.SqlDb
 db.driver=${YOUR_JDBC_DRIVER}
 db.url=${YOUR_JDBC_URL}
 db.user=${YOUR_JDBC_USERNAME}
 db.pass=${YOUR_JDBC_PASSWORD}
 
-ep.class=io.inversion.cloud.model.Endpoint
+ep.class=io.inversion.model.Endpoint
 ep.methods=GET,PUT,POST,DELETE
 ep.path=/*
 ep.actions=rest
 
-rest.class=io.inversion.cloud.action.rest.RestAction
+rest.class=io.inversion.action.rest.RestAction
 ```
 
 Then launch Inversion and it will wire up your API from the configuration.  If 
@@ -334,7 +334,7 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
   For example, for SQL backends '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
-[See TestSqlQuery.java for many examples of complex RQL queries and how they translate into SQL](https://github.com/RocketPartners/rocket-inversion/blob/master/src/test/java/io/rocketpartners/cloud/action/sql/TestSqlQuery.java)
+[See TestSqlQuery.java for many examples of complex RQL queries and how they translate into SQL](https://github.com/RocketPartners/rocket-inversion/blob/master/src/test/java/io/rocketpartners/action/sql/TestSqlQuery.java)
 
 
 ### Query Functions

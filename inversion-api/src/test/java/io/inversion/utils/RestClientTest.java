@@ -1,18 +1,20 @@
 
-package io.inversion.cloud.utils;
+package io.inversion.utils;
 
-import io.inversion.cloud.model.Request;
-import io.inversion.cloud.model.Response;
-import io.inversion.cloud.service.Chain;
-import io.inversion.cloud.service.Engine;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.ConnectException;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.junit.jupiter.api.Test;
+
+import io.inversion.Chain;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
+import io.inversion.utils.RestClient.FutureResponse;
 
 public class RestClientTest
 {

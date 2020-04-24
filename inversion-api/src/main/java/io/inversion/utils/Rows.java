@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.cloud.model;
-
-import io.inversion.cloud.model.Rows.Row;
+package io.inversion.utils;
 
 import java.util.Collection;
+
+import io.inversion.utils.Rows.Row;
+
 import java.util.*;
 
 /**
  * A list of ordered maps where all maps that all share the same keys.
  *
- * @author wells
+ *
  *
  */
 public class Rows extends ArrayList<Row>
@@ -199,8 +200,6 @@ public class Rows extends ArrayList<Row>
 
    /**
     * Case insensitive map implementation
-    *
-    * @author Wells Burke
     */
    public static class Row implements Map<String, Object>
    {
