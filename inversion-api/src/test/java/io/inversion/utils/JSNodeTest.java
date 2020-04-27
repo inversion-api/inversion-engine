@@ -18,6 +18,7 @@ package io.inversion.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
@@ -31,13 +32,17 @@ import io.inversion.utils.Utils;
 public class JSNodeTest
 {
    @Test
-   public void testJsonPath1()
+   void fromJsonPath()
    {
       assertEquals("**.book.[(@_length-1)]", JSNode.fromJsonPath("$..book[(@.length-1)]"));
       assertEquals("**.book.[0,1]", JSNode.fromJsonPath("$..book[0,1]"));
       assertEquals("book.0.asdf", JSNode.fromJsonPath("book[0].asdf"));
       assertEquals(".store.**.price", JSNode.fromJsonPath(".store..price"));
+   }
 
+   @Test
+   public void testJsonPath1()
+   {
       JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
       JSArray found1 = null;
       JSArray found2 = null;
@@ -90,6 +95,10 @@ public class JSNodeTest
       System.out.println(found1);
       assertEquals(1, found1.size());
 
+      found1 = doc.findAll("**.*.[?(@.price)]");
+      System.out.println(found1);
+      assertEquals(5, found1.size());
+
       found1 = doc.findAll("**.*.[?(@.price != 100)]");
       System.out.println(found1);
       assertEquals(5, found1.size());
@@ -113,6 +122,42 @@ public class JSNodeTest
       found1 = doc.findAll("$..book[?(@.isbn)]", 2);
       System.out.println(found1);
       assertEquals(2, found1.size());
+
+      found1 = doc.findAll("$..[?(@.*.*.isbn)]", -1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.findAll("$..[?(@.price<10)]", -1);
+      assertEquals(2, found1.size());
+
+      found1 = doc.findAll("$..[?(@.*.price<10)]", -1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.findAll("$..[?(@.bicycle.price)]", -1);
+      assertEquals(1, found1.size());
+
+      assertEquals("19.95", doc.findString("store.bicycle.price"));
+      assertEquals("19.95", doc.findString("*.bicycle.price"));
+      assertEquals("red", doc.findString("store.bicycle.color"));
+      assertEquals("red", doc.findString("*.bicycle.color"));
+      assertEquals("red", doc.findString("*.*.color"));
+      assertEquals("red", doc.findString("**.color"));
+      assertEquals(null, doc.findString("*.*.*.color"));
+
+      found1 = doc.findAll("$..[?(@.store.bicycle.price)]", -1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
+      assertEquals(1, found1.size());
+      assertTrue(found1.getNode(0).getProperty("store") != null);
+
+      found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.findAll("$..[?(@.bicycle.price>10)]", -1);
+      assertEquals(1, found1.size());
+
+      found1 = doc.findAll("$..[?(@.store.bicycle.price>10)]", -1);
+      assertEquals(1, found1.size());
 
    }
 
@@ -287,7 +332,7 @@ public class JSNodeTest
       jsonLong.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
-   
+
    @Test
    public void diff_remove_elements_from_middle_of_array2()
    {
@@ -301,8 +346,7 @@ public class JSNodeTest
       jsonLong.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
-   
-   
+
    @Test
    public void diff_remove_elements_from_start_middle_end_of_array()
    {
@@ -316,8 +360,7 @@ public class JSNodeTest
       jsonLong.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
-   
-   
+
    @Test
    public void diff_add_elements_at_start_of_array()
    {
@@ -331,7 +374,7 @@ public class JSNodeTest
       jsonShort.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
-   
+
    @Test
    public void diff_array_swap()
    {
@@ -345,7 +388,6 @@ public class JSNodeTest
       jsonShort.patch(patches);
       assertEquals(jsonShort.toString(), jsonLong.toString());
    }
-   
 
    //   @Test
    //   public void diff_add_element_to_start_of_array2()

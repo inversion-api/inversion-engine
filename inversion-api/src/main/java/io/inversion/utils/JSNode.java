@@ -314,13 +314,20 @@ public class JSNode implements Map<String, Object>
     *  <li>SUPPORTED $.store..price                             //the prices of all books
     *  <li>SUPPORTED $..book[2]                                 //the third book
     *  <li>SUPPORTED $..book[?(@.price<10)]                     //all books priced < 10
+    *  <li>SUPPORTED $..[?(@.price<10)]                         //find any node with a price property
+    *  <li>SUPPORTED $..[?(@.*.price<10)]                       //find the parent of any node with a price property
     *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]   //all books where 'Herman Melville' is the author
     *  <li>SUPPORTED $..*                                       //all members of JSON structure.
     *  <li>TODO      $..book[(@.length-1)]                      //the last book in order
     *  <li>TODO      $..book[-1:]                               //the last book in order
     *  <li>TODO      $..book[0,1]                               //the first two books
     *  <li>TODO      $..book[:2]                                //the first two books
-    *  <li>SUPPORTED $..book[?(@.isbn)]                         //filter all books with isbn number
+    *  <li>SUPPORTED $..book[?(@.isbn)]                         //find all books with an isbn property
+    *  <li>SUPPORTED $..[?(@.isbn)]                             //find any node with an isbn property
+    *  <li>SUPPORTED $..[?(@.*.isbn)]                           //find the parent of any node with an isbn property
+    *  <li>SUPPORTED $..[?(@.*.*.isbn)]                         //find the grandparent of any node with an isbn property
+    *  
+    *  
     * </ul>
     * 
     * The JSON Path following boolean comparison operators are supported: 
@@ -345,7 +352,7 @@ public class JSNode implements Map<String, Object>
    {
       pathExpression = fromJsonPointer(pathExpression);
       pathExpression = fromJsonPath(pathExpression);
-      return new JSArray(collect0(pathExpression, qty));
+      return new JSArray(findAll0(pathExpression, qty));
    }
 
    /**
@@ -383,7 +390,7 @@ public class JSNode implements Map<String, Object>
       return jsonPath;
    }
 
-   List collect0(String jsonPath, int qty)
+   List findAll0(String jsonPath, int qty)
    {
       JSONPathTokenizer tok = new JSONPathTokenizer(//
                                                     "['\"", //openQuoteStr
@@ -396,10 +403,10 @@ public class JSNode implements Map<String, Object>
       );
 
       List<String> path = tok.asList();
-      return collect0(path, qty, new ArrayList());
+      return findAll0(path, qty, new ArrayList());
    }
 
-   List collect0(List<String> path, int qty, List collected)
+   List findAll0(List<String> path, int qty, List collected)
    {
       if (qty > 1 && collected.size() >= qty)
          return collected;
@@ -414,7 +421,7 @@ public class JSNode implements Map<String, Object>
 
             for (Object value : values)
             {
-               if (qty < 1 || collected.size() < qty)
+               if (!collected.contains(value) && (qty < 1 || collected.size() < qty))
                   collected.add(value);
             }
          }
@@ -425,7 +432,7 @@ public class JSNode implements Map<String, Object>
             {
                if (value instanceof JSNode)
                {
-                  ((JSNode) value).collect0(nextPath, qty, collected);
+                  ((JSNode) value).findAll0(nextPath, qty, collected);
                }
             }
          }
@@ -440,13 +447,13 @@ public class JSNode implements Map<String, Object>
          {
             List<String> nextPath = path.subList(1, path.size());
 
-            this.collect0(nextPath, qty, collected);
+            this.findAll0(nextPath, qty, collected);
 
             for (Object value : values())
             {
                if (value instanceof JSNode)
                {
-                  ((JSNode) value).collect0(path, qty, collected);
+                  ((JSNode) value).findAll0(path, qty, collected);
                }
             }
          }
@@ -506,21 +513,40 @@ public class JSNode implements Map<String, Object>
                {
                   value = token;
 
-                  for (Object child : values())
+                  if (isArray())
                   {
-                     if (child instanceof JSNode)
+                     for (Object child : values())
                      {
-                        List found = ((JSNode) child).collect0(subpath, -1);
-                        for (Object val : found)
+                        if (child instanceof JSNode)
                         {
-                           if (eval(val, op, value))
+                           List found = ((JSNode) child).findAll0(subpath, -1);
+                           for (Object val : found)
                            {
-                              if (qty < 1 || collected.size() < qty)
-                                 collected.add(child);
+                              if (eval(val, op, value))
+                              {
+                                 if (!collected.contains(child) && (qty < 1 || collected.size() < qty))
+                                    collected.add(child);
+                              }
                            }
                         }
                      }
                   }
+                  else
+                  {
+                     List found = findAll0(subpath, -1);
+                     for (Object val : found)
+                     {
+                        if (eval(val, op, value))
+                        {
+                           if (!collected.contains(this) && (qty < 1 || collected.size() < qty))
+                           {
+                              collected.add(this);
+                              break;
+                           }
+                        }
+                     }
+                  }
+
                   func = null;
                   subpath = null;
                   op = null;
@@ -535,21 +561,31 @@ public class JSNode implements Map<String, Object>
                   //unparseable...do nothing
                }
 
-               for (Object child : values())
+               if (isArray())
                {
-                  if (child instanceof JSNode)
+                  for (Object child : values())
                   {
-                     List found = ((JSNode) child).collect0(subpath, -1);
-                     for (Object val : found)
+                     if (child instanceof JSNode)
                      {
-                        if (qty < 1 || collected.size() < qty)
-                           collected.add(child);
+                        List found = ((JSNode) child).findAll0(subpath, -1);
+                        for (Object val : found)
+                        {
+                           if (!collected.contains(child) && (qty < 1 || collected.size() < qty))
+                              collected.add(child);
+                        }
                      }
                   }
                }
-
+               else
+               {
+                  List found = findAll0(subpath, -1);
+                  if (found.size() > 0)
+                  {
+                     if (!collected.contains(this) && (qty < 1 || collected.size() < qty))
+                        collected.add(this);
+                  }
+               }
             }
-
          }
       }
       else
@@ -567,12 +603,12 @@ public class JSNode implements Map<String, Object>
          {
             if (path.size() == 1)
             {
-               if (qty < 1 || collected.size() < qty)
+               if (!collected.contains(found) && (qty < 1 || collected.size() < qty))
                   collected.add(found);
             }
             else if (found instanceof JSNode)
             {
-               ((JSNode) found).collect0(path.subList(1, path.size()), qty, collected);
+               ((JSNode) found).findAll0(path.subList(1, path.size()), qty, collected);
             }
          }
       }
