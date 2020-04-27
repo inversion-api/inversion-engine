@@ -65,7 +65,7 @@ public class Url
     * implementation here simply because it is an affective case insensitive map that preserves 
     * the original key case key iteration order.
     */
-   protected Map params   = new JSNode();
+   protected Map    params   = new JSNode();
 
    /**
     * Parses <code>url</code> into its protocol, host, port, path and query string param parts.
@@ -194,7 +194,7 @@ public class Url
             url = url.substring(0, url.length() - 1);
 
          url += "?";
-         url += toQueryString(((JSNode)params).asMap());
+         url += toQueryString(((JSNode) params).asMap());
       }
 
       return url;
@@ -236,7 +236,7 @@ public class Url
       if (params.size() == 0)
          return "";
 
-      return toQueryString(((JSNode)params).asMap());
+      return toQueryString(((JSNode) params).asMap());
    }
 
    public String getHost()
@@ -431,7 +431,7 @@ public class Url
    {
       String key = findKey(tokens);
       if (key != null)
-         return ((JSNode)params).getString(key);
+         return ((JSNode) params).getString(key);
 
       return null;
    }
@@ -452,7 +452,7 @@ public class Url
     */
    public Map<String, String> getParams()
    {
-      return ((JSNode)params).asMap();
+      return ((JSNode) params).asMap();
    }
 
    /**

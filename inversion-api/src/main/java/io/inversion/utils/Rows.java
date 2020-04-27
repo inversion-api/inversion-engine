@@ -23,52 +23,97 @@ import io.inversion.utils.Rows.Row;
 import java.util.*;
 
 /**
- * A list of ordered maps where all maps that all share the same keys.
- *
- *
- *
+ * An utility abstraction of a database result set where all child <code>Row</code> objects are themselves maps that share the same case insensitive key set.
+ * <p>
+ * The idea is to be a little more memory efficient, offer zero base integer index or case insensitive key/column name access, and have key/column order match on all rows.
+ * <p>
+ * This was initially developed so that a JDBC {@link java.sql.ResultSet} could be loaded into a list of maps without having to replicate the keys for every row.
+ * <p>
+ * Implementation Notes: 
+ * <p>
+ * While Row implements Map, it actually uses a List to maintain its values.
+ * <p>  
+ * A instance of the <code>RowKeys</code>, which maintains a Map from case insensitive string keys their index position in each Row's list, is shared by all Row instances.
  */
 public class Rows extends ArrayList<Row>
 {
+   /**
+    * A case insensitive map from column name to column index 
+    */
    RowKeys keys    = null;
-   Row     lastRow = null;
-   int     idx     = 0;
 
+   /**
+    * The row currently being added to {@code #put(String, Object)}
+    */
+   Row     lastRow = null;
+
+   /**
+    * Creates an empty Rows with no keys/columns.
+    */
    public Rows()
    {
       this.keys = new RowKeys();
    }
 
+   /**
+    * Creates a Rows with a single Row with keys/columns equal to <code>row.getKeySet()</code>
+    * @param row
+    */
    public Rows(Map row)
    {
       addRow(row);
    }
-   
+
+   /**
+    * Creates a Rows with keys/columns equal to <code>keys</code>
+    * @param keys
+    */
    public Rows(String[] keys)
    {
       this.keys = new RowKeys(Arrays.asList(keys));
    }
 
+   /**
+    * Creates a Rows with keys/columns equal to <code>keys</code>
+    * @param keys
+    */
    public Rows(List<String> keys)
    {
       this.keys = new RowKeys(keys);
    }
 
+   /**
+    * @return the ordered key/column names
+    */
    public List<String> keyList()
    {
       return new ArrayList(keys.keys);
    }
 
+   /**
+    * @return key/column names as a set that preserves iteration order  
+    */
    public Set<String> keySet()
    {
       return keys.keySet();
    }
 
+   /**
+    * Adds a key/column for each Row at the end of the iteration order.
+    * 
+    * @param key  the new key to add
+    * @return the integer index of key/column which will be <code>keys.size() -1</code> if the key is new or the existing index if a case insensitive match of <code>key</code> already exited
+    */
    public int addKey(String key)
    {
       return keys.addKey(key);
    }
 
+   /**
+    * Adds a new empty Row to the end of the list.
+    * 
+    * @return
+    */
    public Row addRow()
    {
       lastRow = new Row(keys);
@@ -76,11 +121,30 @@ public class Rows extends ArrayList<Row>
       return lastRow;
    }
 
+   /**
+    * Adds key/values from <code>map</code> to a new Row.
+    * 
+    * @param map the key/values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Map)}
+    */
    public Row addRow(Map map)
    {
       return addRow(-1, map);
    }
 
+   /**
+    * Insert key/values from <code>map</code> as the new <code>index</code>th Row.
+    * <p>
+    * If RowKeys has not been initialized, it will be initialized with <code>map.keySet()</code>. 
+    * <p>
+    * If RowKeys has been initialized, only keys/values with a case insensitive matching key in RowKeys will be copied into the new Row.   
+    * 
+    * @param index the position to insert the new Row or -1 to indicate the 'at the end'
+    * @param map the key/values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Object[])
+    */
    public Row addRow(int index, Map map)
    {
       if (keys == null || keys.size() == 0)
@@ -91,28 +155,60 @@ public class Rows extends ArrayList<Row>
       ArrayList arr = new ArrayList(keys.keys.size());
       for (int i = 0; i < keys.keys.size(); i++)
       {
-         Object value = map.get(keys.keys.get(i)); 
+         Object value = map.get(keys.keys.get(i));
          arr.add(value);
       }
 
       return addRow(index, arr.toArray());
    }
 
+   /**
+    * Adds <code>values</code>as a new Row to the end of the list.
+    * 
+    * @param values  the values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Object[])}
+    */
    public Row addRow(List values)
    {
-      return addRow(-1, values);
+      return addRow(-1, values.toArray());
    }
 
+   /**
+    * Adds <code>values</code> as the new <code>index</code>th Row.
+    *
+    * @param index the position to insert the new Row or -1 to indicate the 'at the end'
+    * @param values  the values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Object[])}
+    */
    public Row addRow(int index, List values)
    {
       return addRow(index, values.toArray());
    }
 
+   /**
+    * Adds <code>values</code>as a new Row to the end of the list.
+    * 
+    * @param values  the values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Object[])}
+    */
    public Row addRow(Object[] values)
    {
       return addRow(-1, values);
    }
 
+   /**
+    * Adds <code>values</code> as the new <code>index</code>th Row.
+    * <p>
+    * The returned Row becomes <code>lastRow</code>
+    * 
+    * @param index  the position to insert the new Row or -1 to indicate the 'at the end'
+    * @param values  the values to add to the new Row
+    * @return the new Row
+    * @see {@link #addRow(int, Object[])}
+    */
    public Row addRow(int index, Object[] values)
    {
       lastRow = new Row(keys, values);
@@ -124,30 +220,65 @@ public class Rows extends ArrayList<Row>
       return lastRow;
    }
 
+   /**
+    * Sets key/value on <code>lastRow</code>.
+    * <p>
+    * If RowKeys does not have a case insensitive match for <code>key</code> then <code>key</code>
+    * automatically becomes the new last column for all rows.
+    *  
+    * @param key
+    * @param value
+    */
    public void put(String key, Object value)
    {
       lastRow.put(key, value);
    }
 
+   /**
+    * Adds <code>value</code> to the end of <code>lastRow</code>. 
+    * 
+    * @param value
+    */
    public void put(Object value)
    {
       lastRow.add(value);
    }
 
+   /**
+    * Adds the key/values from <code>row</code> as a new Row.
+    * <p>
+    * The actual Row object is not added to the Rows list because its RowKeys object
+    * will not be the same.  Instead all key/values are copied into a new Row.
+    * 
+    * @param row a map containing the key/values to add
+    * @see {@link #addRow(Map)}
+    */
    @Override
-   public boolean add(Row e)
+   public boolean add(Row row)
    {
-      addRow(e);
+      addRow(row);
       return true;
    }
 
-   @Override
-   public void add(int index, Row element)
-   {
-      // TODO Auto-generated method stub
-      super.add(index, element);
-   }
+   //   /**
+   //    * Inserts the key/values from <code>row</code> as the new <code>index</code>th Row.
+   //    * <p>
+   //    * The actual Row object is not added to the Rows list because its RowKeys object
+   //    * will not be the same.  Instead all key/values are copied into a new Row.
+   //    * 
+   //    * @param 
+   //    * @param row a map containing the key/values to add
+   //    * @see {@link #addRow(Map)}
+   //    */
+   //   public void add(int index, Row element)
+   //   {
+   //      // TODO Auto-generated method stub
+   //      super.add(index, element);
+   //   }
 
+   /**
+    * Calls {@code #addRow(Map)} for each Row in <code>rows</code>
+    */
    @Override
    public boolean addAll(Collection<? extends Row> rows)
    {
@@ -158,6 +289,9 @@ public class Rows extends ArrayList<Row>
       return true;
    }
 
+   /**
+    * Calls {@code #addRow(int, Map)} for each Row in <code>rows</code>
+    */
    @Override
    public boolean addAll(int index, Collection<? extends Row> rows)
    {
@@ -168,41 +302,46 @@ public class Rows extends ArrayList<Row>
       return true;
    }
 
-   public void sortBy(final String... keys)
-   {
-      Collections.sort(this, new Comparator<Rows.Row>()
-         {
-            @Override
-            public int compare(Row o1, Row o2)
-            {
-               for (String key : keys)
-               {
-                  Object obj1 = o1.get(key);
-                  Object obj2 = o2.get(key);
-
-                  if (obj1 == null && obj2 == null)
-                     return 0;
-
-                  if (obj1 == null && obj2 != null)
-                     return -1;
-
-                  if (obj1 != null && obj2 == null)
-                     return 1;
-
-                  int strcmp = obj1.toString().compareTo(obj2.toString());
-                  if (strcmp != 0)
-                     return strcmp;
-               }
-               return 0;
-            }
-         });
-   }
+   //   public void sortBy(final String... keys)
+   //   {
+   //      Collections.sort(this, new Comparator<Rows.Row>()
+   //         {
+   //            @Override
+   //            public int compare(Row o1, Row o2)
+   //            {
+   //               for (String key : keys)
+   //               {
+   //                  Object obj1 = o1.get(key);
+   //                  Object obj2 = o2.get(key);
+   //
+   //                  if (obj1 == null && obj2 == null)
+   //                     return 0;
+   //
+   //                  if (obj1 == null && obj2 != null)
+   //                     return -1;
+   //
+   //                  if (obj1 != null && obj2 == null)
+   //                     return 1;
+   //
+   //                  int strcmp = obj1.toString().compareTo(obj2.toString());
+   //                  if (strcmp != 0)
+   //                     return strcmp;
+   //               }
+   //               return 0;
+   //            }
+   //         });
+   //   }
 
    /**
-    * Case insensitive map implementation
+    * Represents a single row in a database result set where values can be accessed by a zero based integer index or by a case insensitive key/column name.
+    * <p>
+    * It is not possible to implement both List and Map but that is the practical purpose of this class.
     */
    public static class Row implements Map<String, Object>
    {
+      /**
+       * The shared key/column 
+       */
       RowKeys      keys   = null;
       List<Object> values = null;
       boolean      cloned = false;
@@ -399,9 +538,9 @@ public class Rows extends ArrayList<Row>
             return values.get(((Integer) key).intValue());
 
          int idx = keys.indexOf((String) key);
-         if(idx < 0)
+         if (idx < 0)
             return null;
-         
+
          return values.get(idx);
       }
 
@@ -533,7 +672,10 @@ public class Rows extends ArrayList<Row>
 
    }
 
-   private static class RowKeys
+   /**
+    * An ordered list of case insensitive key/column names.
+    */
+   protected static class RowKeys
    {
       List<String>         keys   = new ArrayList();
       Map<String, Integer> lc     = new HashMap();
@@ -565,10 +707,14 @@ public class Rows extends ArrayList<Row>
 
          String lc = key.toLowerCase();
 
+         int existing = this.lc.get(lc);
+         if (existing > -1)
+            return existing;
+
          this.keys.add(key);
          this.lc.put(lc, this.keys.size() - 1);
 
-         return this.keys.size();
+         return this.keys.size() - 1;
       }
 
       int removeKey(String key)
