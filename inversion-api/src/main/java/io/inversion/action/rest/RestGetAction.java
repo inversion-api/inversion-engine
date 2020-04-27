@@ -154,7 +154,7 @@ public class RestGetAction extends Action<RestGetAction>
             throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
          }
 
-         String query = req.getUrl().getQuery();
+         String query = req.getUrl().getQueryString();
 
          if (query != null)
          {
