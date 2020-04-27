@@ -102,7 +102,14 @@ task allJavadocs {
     }
 }
 
-
+tasks.withType(Javadoc) { 
+	failOnError false
+	title = "Inversion Cloud API Engine - " + project.version
+ }
+	 
+//regenerate javadocs after a build	
+build.finalizedBy(allJavadocs)
+	
 allprojects {
 
 	apply plugin: 'com.jfrog.artifactory'
@@ -112,7 +119,11 @@ allprojects {
 	
 	//required for generating comprehensive javadocs with
 	//gradle-aggregate-javadocs-plugin and not failing on error
-	allprojects { tasks.withType(Javadoc) { failOnError false } }
+	
+	tasks.withType(Javadoc) { 
+		failOnError false
+		options.bottom = "Copyright &#169; ${java.time.Year.now()} <a href=\"http://rocketpartners.io\">Rocket Partners, LLC</a>. All rights reserved."
+	 }
 	    
 }
 

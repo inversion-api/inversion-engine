@@ -76,7 +76,7 @@ public class EngineServlet extends HttpServlet
 
    public void destroy()
    {
-      engine.destroy();
+      engine.shutdown();
    }
 
    public void init(ServletConfig config)

@@ -69,6 +69,38 @@ public class Configurator
 
    protected Engine           engine         = null;
 
+   /**
+    * An identifier, such as 'dev', 'stage', 'prod' used to locate and load additional "inversion[1-99][-${profile}].properties" config files.
+    * <p>
+    * A profile allows you to build a single jar/war that can be deployed in multiple environments. 
+    * Configuration common to all deployments can be added to "inversion[1-99].properties" files and then
+    * augmented with the differences between deployments isolated to the profile specific files.
+    * <p>
+    * To set the <code>profile</code>, you can directly wire <code>engine.withProfile</code> or set "inversion.profile"
+    * as an environment variable or Java system property. 
+    * 
+    * @see io.inversion.utils.Configurator
+    */
+   protected String           profile        = null;
+
+   /**
+    * The path to inversion*.properties files
+    */
+   protected String           configPath     = "";
+
+   /**
+    * The number of milliseconds between background reloads of the Api config
+    */
+   protected int              configTimeout  = 10000;
+
+   /**
+    * Indicates that the supplied config files contain all the setup info and the Api
+    * will not be reflectively configured as it otherwise would.
+    */
+   protected boolean          configFast     = false;
+   protected boolean          configDebug    = false;
+   protected String           configOut      = null;
+
    public synchronized void loadConfig(Engine engine)
    {
       if (this.engine != null)
@@ -100,7 +132,7 @@ public class Configurator
             w.putBean(ROOT_BEAN_NAME, engine);
             w.load(config.props);
 
-            loadConfig(config, true, engine.isConfigFast());
+            loadConfig(config, true, isConfigFast());
          }
       }
       catch (Exception e)
@@ -182,9 +214,10 @@ public class Configurator
 
             autoWireApi(wire);
 
-            if (!Utils.empty(engine.getConfigOut()))
+            String configOut = getConfigOut();
+            if (!Utils.empty(configOut))
             {
-               String fileName = "./" + engine.getConfigOut().trim();
+               String fileName = "./" + configOut.trim();
 
                File file = new File(fileName);
 
@@ -433,7 +466,7 @@ public class Configurator
    {
       Config config = new Config();
 
-      String configPath = engine.getConfigPath();
+      String configPath = getConfigPath();
 
       if (configPath.length() > 0 && !(configPath.endsWith("/") || configPath.endsWith("\\")))
          configPath += "/";
@@ -456,29 +489,29 @@ public class Configurator
          }
       }
 
-      if (engine.getProfile() != null)
+      if (getProfile() != null)
       {
          for (int i = -1; i <= 100; i++)
          {
             InputStream is = null;
             String fileName = null;
 
-            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + engine.getProfile() + ".properties";
+            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + getProfile() + ".properties";
             is = engine.getResource(fileName);
 
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + engine.getProfile() + ".properties";
+               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + getProfile() + ".properties";
                is = engine.getResource(fileName);
             }
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + engine.getProfile() + (i < 0 ? "" : i) + ".properties";
+               fileName = configPath + "inversion" + "-" + getProfile() + (i < 0 ? "" : i) + ".properties";
                is = engine.getResource(fileName);
             }
             if (is == null)
             {
-               fileName = configPath + "inversion" + "-" + engine.getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
+               fileName = configPath + "inversion" + "-" + getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
                is = engine.getResource(fileName);
             }
 
@@ -524,6 +557,72 @@ public class Configurator
          return true;
 
       return false;
+   }
+
+   public String getProfile()
+   {
+      return Utils.getSysEnvPropStr("inversion.profile", profile);
+   }
+
+   public Configurator withProfile(String profile)
+   {
+      this.profile = profile;
+      return this;
+   }
+
+   public String getConfigPath()
+   {
+      return configPath;
+   }
+
+   public Configurator withConfigPath(String configPath)
+   {
+      this.configPath = configPath;
+      return this;
+   }
+
+   public int getConfigTimeout()
+   {
+      return configTimeout;
+   }
+
+   public Configurator withConfigTimeout(int configTimeout)
+   {
+      this.configTimeout = configTimeout;
+      return this;
+   }
+
+   public boolean isConfigFast()
+   {
+      return configFast;
+   }
+
+   public Configurator withConfigFast(boolean configFast)
+   {
+      this.configFast = configFast;
+      return this;
+   }
+
+   public boolean isConfigDebug()
+   {
+      return configDebug;
+   }
+
+   public Configurator withConfigDebug(boolean configDebug)
+   {
+      this.configDebug = configDebug;
+      return this;
+   }
+
+   public String getConfigOut()
+   {
+      return configOut;
+   }
+
+   public Configurator withConfigOut(String configOut)
+   {
+      this.configOut = configOut;
+      return this;
    }
 
    static class Wirer
@@ -1141,6 +1240,9 @@ public class Configurator
                      continue;
 
                   if (Modifier.isStatic(field.getModifiers()))
+                     continue;
+
+                  if (Modifier.isFinal(field.getModifiers()))
                      continue;
 
                   Object clean = object.getClass().newInstance();

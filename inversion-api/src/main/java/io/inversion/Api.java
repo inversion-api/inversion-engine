@@ -47,6 +47,10 @@ public class Api extends Rule<Api>
    //protected Path pathMatch = new Path("${api.name}/${api.version}/${tenant}/blah/blah2/*");
    //protected Path pathMatch = new Path("$}/${api.version}/${tenant}/blah/blah2/*");
 
+   /**
+    * Listener that can be registered with an {@code Api} to receive lifecycle, 
+    * per request and per error callback notifications.
+    */
    public static interface ApiListener
    {
       default void onStartup(Api api)

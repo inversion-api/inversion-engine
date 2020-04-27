@@ -22,57 +22,90 @@ import io.inversion.Response;
 
 public class RestAction extends Action<RestAction>
 {
-   protected RestGetAction    get    = new RestGetAction();
-   protected RestDeleteAction delete = new RestDeleteAction();
-   protected RestPostAction   post   = new RestPostAction();
+   protected RestGetAction    getAction    = new RestGetAction();
+   protected RestPostAction   postAction   = new RestPostAction();
+   protected RestPutAction    putAction    = new RestPutAction();
+   protected RestPatchAction  patchAction  = new RestPatchAction();
+   protected RestDeleteAction deleteAction = new RestDeleteAction();
 
    @Override
    public void run(Request req, Response res) throws Exception
    {
       if (req.isMethod("GET"))
       {
-         get.run(req, res);
+         getAction.run(req, res);
       }
-      else if (req.isMethod("POST", "PUT", "PATCH"))
+      else if (req.isMethod("POST"))
       {
-         post.run(req, res);
+         postAction.run(req, res);
       }
+      else if (req.isMethod("PUT"))
+      {
+         putAction.run(req, res);
+      }
+      else if (req.isMethod("PATCH"))
+      {
+         patchAction.run(req, res);
+      }
+
       else if (req.isMethod("DELETE"))
       {
-         delete.run(req, res);
+         deleteAction.run(req, res);
       }
    }
 
-   public RestGetAction getGet()
+   public RestGetAction getGetAction()
    {
-      return get;
+      return getAction;
    }
 
-   public RestAction withGet(RestGetAction get)
+   public RestAction withGetAction(RestGetAction getAction)
    {
-      this.get = get;
+      this.getAction = getAction;
       return this;
    }
 
-   public RestDeleteAction getDelete()
+   public RestPostAction getPostAction()
    {
-      return delete;
+      return postAction;
    }
 
-   public RestAction withDelete(RestDeleteAction delete)
+   public RestAction withPostAction(RestPostAction postAction)
    {
-      this.delete = delete;
+      this.postAction = postAction;
       return this;
    }
 
-   public RestPostAction getPost()
+   public RestPutAction getPutAction()
    {
-      return post;
+      return putAction;
    }
 
-   public RestAction withPost(RestPostAction post)
+   public RestAction withPutAction(RestPutAction putAction)
    {
-      this.post = post;
+      this.putAction = putAction;
+      return this;
+   }
+
+   public RestPatchAction getPatchAction()
+   {
+      return patchAction;
+   }
+
+   public RestAction withPatchAction(RestPatchAction patchAction)
+   {
+      this.patchAction = patchAction;
+      return this;
+   }
+
+   public RestDeleteAction getDeleteAction()
+   {
+      return deleteAction;
+   }
+
+   public RestAction withDeleteAction(RestDeleteAction deleteAction)
+   {
+      this.deleteAction = deleteAction;
       return this;
    }
 

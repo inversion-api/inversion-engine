@@ -84,7 +84,7 @@ public abstract class AbstractRestActionIntegTest implements AbstractEngineTest
     */
    protected Response response() throws Exception
    {
-      return engine().response();
+      return engine().getLastResponse();
    }
 
    protected String url(String path)

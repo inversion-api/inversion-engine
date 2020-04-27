@@ -44,7 +44,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
-public class RestPostAction extends Action<RestPostAction>
+public class RestPostAction<t extends RestPostAction> extends Action<t>
 {
    protected boolean collapseAll    = false;
 

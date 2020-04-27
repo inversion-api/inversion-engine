@@ -179,7 +179,7 @@ public class Chain
             if (epP.isVar(i))
             {
                String value = null;
-               String name = epP.getVar(i);
+               String name = epP.getVarName(i);
                switch (name.toLowerCase())
                {
                   case "collection":

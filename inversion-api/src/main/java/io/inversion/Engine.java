@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,70 +43,97 @@ import io.inversion.utils.Path;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
+/**
+ * Matches inbound Request Url paths to an Api Endpoint and executes associated Actions.
+ */
 public class Engine extends Rule<Engine>
 {
-   protected transient volatile boolean     started        = false;
-   protected transient volatile boolean     starting       = false;
-   protected transient volatile boolean     destroyed      = false;
-
-   protected final Logger                   log            = LoggerFactory.getLogger(getClass());
-   protected final Logger                   requestLog     = LoggerFactory.getLogger(getClass() + ".requests");
-
-   protected List<Api>                      apis           = new Vector();
-
-   protected ResourceLoader                 resourceLoader = null;
-
-   protected Configurator                   configurator   = new Configurator();
+   /**
+    * The {@code Api}s being service by this Engine
+    */
+   protected List<Api>                      apis              = new Vector();
 
    /**
-    * The runtime profile that will be used to load inversion[1-99]-$profile.properties files.
-    * This is used so that you can ship common settings in inversion[1-99].properties files
-    * that are loaded for all profiles and put custom settings in dev/stage/prod (for example)
-    * profile specific settings files.
+    * Looks up InputStreams. 
+    * 
+    * @see #getResource(String)
     */
-   protected String                         profile        = null;
+   protected transient ResourceLoader       resourceLoader    = null;
 
    /**
-    * The path to inversion*.properties files
+    * Wires up an Engine instance based on "inversion[1-99][-${inversion.profile}].properties" files and
+    * simple bean property reflection. 
     */
-   protected String                         configPath     = "";
+   protected transient Configurator         configurator      = new Configurator();
 
    /**
-    * The number of milliseconds between background reloads of the Api config
+    * The last {@code Response} served by this Engine, primarily used for writing test cases.
     */
-   protected int                            configTimeout  = 10000;
+   protected transient volatile Response    lastResponse      = null;
 
    /**
-    * Indicates that the supplied config files contain all the setup info and the Api
-    * will not be reflectively configured as it otherwise would.
+    * Listeners that will receive Engine and Api lifecycle, request, and error callbacks. 
     */
-   protected boolean                        configFast     = false;
-   protected boolean                        configDebug    = false;
-   protected String                         configOut      = null;
+   protected transient List<EngineListener> listeners         = new ArrayList();
 
    /**
-    * The last response returned.  Not that useful in concurrent 
-    * production environments but useful for writing test cases.
+    * Base value for the CORS "Access-Control-Allow-Headers" response header.
+    * <p>
+    * Values from the request "Access-Control-Request-Header" header are concatenated
+    * to this resulting in the final value of "Access-Control-Allow-Headers" sent in the response.
+    * <p>
+    * Unless you are really doing something specific with browser security you probably won't need to customize this list. 
     */
-   protected transient volatile Response    lastResponse   = null;
+   protected String                         corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
-   protected transient List<EngineListener> listeners      = new ArrayList();
+   transient volatile boolean               started           = false;
+   transient volatile boolean               starting          = false;
 
    /**
-    * Engine reflects all request headers along with those supplied in <code>allowHeaders</code> as 
-    * "Access-Control-Allow-Headers" response headers.  This is primarily a CROS security thing and you
-    * probably won't need to customize this list. 
-    */
-   protected String                         allowedHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
-
+   * Receives {@code Engine} and {@code Api} lifecycle, 
+   * per request and per error callback notifications.
+   */
    public static interface EngineListener extends ApiListener
    {
-      default void onStartup(Engine engine) {}
+      /**
+       * Notified when the Engine is starting prior to accepting
+       * any requests which allows listeners to perform additional configuration.
+       * 
+       * @param engine
+       */
+      default void onStartup(Engine engine)
+      {
+      }
 
-      default void onShutdown(Engine engine) {}
-
+      /**
+       * Notified when the Engine is shutting down and has stopped receiving requests
+       * allowing listeners to perform any resource cleanup.
+       * 
+       * @param engine  
+       */
+      default void onShutdown(Engine engine)
+      {
+      }
    }
-   
+
+   /**
+    * Looks up InputStreams. 
+    * <p>
+    * Different runtimes, a Servlet container vs. an AWS Lambda for example, may have different resource lookup needs.
+    * A plugged in ResourceLoader abstracts these runtime specifics from the Engine.
+    * 
+    * @see #getResource(String)
+    */
+   public static interface ResourceLoader
+   {
+      /**
+       * Locates a resource per the implementors prerogative.
+       * @param name  a resource name, file path, url etc. used to located the desired InputStream 
+       * @return InputStream
+       */
+      InputStream getResource(String name);
+   }
+
    public Engine()
    {
 
@@ -119,23 +146,28 @@ public class Engine extends Rule<Engine>
             withApi(api);
    }
 
-   public void destroy()
-   {
-      destroyed = true;
-   }
-
-   /*
-    * Designed to be overridden of subclasses to lazy load/configure
-    * the service.
+   /**
+    * Convenient pre-startup hook for subclasses guaranteed to only be called once.
+    * <p>
+    * Called after <code>starting</code> has been set to true but before the {@code Configurator} is run or  any {@code Api}s have been started.
+    * 
     */
    protected void startup0()
    {
 
    }
 
+   /**
+    * Runs the {@code Configurator} and calls <code>startupApi</code> for each Api. 
+    * <p>
+    * An Engine can only be started once.  
+    * Any calls to <code>startup</code> after the initial call will not have any affect.
+    * 
+    * @return
+    */
    public synchronized Engine startup()
    {
-      if (started || starting) //initing is an accidental recursion guard
+      if (started || starting) //accidental recursion guard
          return this;
 
       starting = true;
@@ -143,8 +175,6 @@ public class Engine extends Rule<Engine>
       {
          startup0();
 
-         //this will cause withApi and we don't want that to actually startup
-         //-- the API until
          configurator.loadConfig(this);
 
          started = true;
@@ -154,8 +184,7 @@ public class Engine extends Rule<Engine>
             startupApi(api);
          }
 
-         //todo need to include api version info here.
-         //-- the following block is only debug output
+         //-- debug output
          for (Api api : apis)
          {
             System.out.println(api.getName() + "--------------");
@@ -189,11 +218,9 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public boolean isStarted()
-   {
-      return started;
-   }
-
+   /**
+    * Removes all Apis and notifies listeners.onShutdown 
+    */
    public void shutdown()
    {
       for (Api api : getApis())
@@ -216,23 +243,60 @@ public class Engine extends Rule<Engine>
       Chain.resetAll();
    }
 
-   public Engine withEngineListener(EngineListener listener)
-   {
-      if (!listeners.contains(listener))
-         listeners.add(listener);
-      return this;
-   }
-
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * GET requests for a specific resource should return 200 of 404.
+    * GET requests with query string search conditions should return 200 even if the search did not yield any results.
+    * 
+    * @param url  the url that will be serviced by this Engine
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestGetAction
+    */
    public Response get(String url)
    {
       return service("GET", url, (String) null);
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * GET requests for a specific resource should return 200 of 404.
+    * GET requests with query string search conditions should return 200 even if the search did not yield any results.
+   
+    * @param url  the url that will be serviced by this Engine
+    * @param params  additional key/value pairs to add to the url query string
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestGetAction
+    */
    public Response get(String url, Map<String, String> params)
    {
       return service("GET", url, null, params);
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * GET requests for a specific resource should return 200 of 404.
+    * GET requests with query string search conditions should return 200 even if the search did not yield any results.
+   
+    * @param url  the url that will be serviced by this Engine
+    * @param params  additional keys (no values) to add to the url query string
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestGetAction 
+    */
    public Response get(String url, List queryTerms)
    {
       if (queryTerms != null && queryTerms.size() > 0)
@@ -247,57 +311,142 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public Response patch(String url, JSNode body)
-   {
-      return service("PATCH", url, body.toString());
-   }
-
-   public Response put(String url, JSNode body)
-   {
-      return service("PUT", url, body.toString());
-   }
-
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST POST Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * Successful POSTs that create a new resource should return a 201.
+    * 
+    * @param url  the url that will be serviced by this Engine
+    * @param body  the JSON body to POST which will be stringified first
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestPostAction 
+    */
    public Response post(String url, JSNode body)
    {
       return service("POST", url, body.toString());
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST PUT Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * Successful PUTs that update an existing resource should return a 204.
+    * If the PUT references a resource that does not exist, a 404 will be returned.
+    *     
+    * @param url  the url that will be serviced by this Engine
+    * @param body  the JSON body to POST which will be stringified first
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestPutAction 
+    */
+   public Response put(String url, JSNode body)
+   {
+      return service("PUT", url, body.toString());
+   }
+
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST PATCH Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * <p>
+    * Successful PATCHs that update an existing resource should return a 204.
+    * If the PATCH references a resource that does not exist, a 404 will be returned.
+    * 
+    * @param url  the url for a specific resource that should be PATCHed that will be serviced by this Engine
+    * @param body  the JSON body to POST which will be stringified first
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestPatchAction 
+    */
+   public Response patch(String url, JSNode body)
+   {
+      return service("PATCH", url, body.toString());
+   }
+
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * 
+    * @param url  the url of the resource to be DELETED
+    * @return the Response generated by handling the Request with status 204 if the delete was successful or 404 if the resource was not found
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestDeleteAction 
+    */
    public Response delete(String url)
    {
       return service("DELETE", url, (String) null);
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}. 
+    * 
+    * @param url  the url of the resource to be DELETED
+    * @return the Response generated by handling the Request with status 204 if the delete was successful or 404 if the resource was not found
+    * @see #service(Request, Response);
+    * @see io.inversion.rest.RestDeleteAction 
+    */
    public Response delete(String url, JSArray hrefs)
    {
       return service("DELETE", url, hrefs.toString());
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)}
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+    *  
+    * @param method  the http method of the requested operation
+    * @param url  the url that will be serviced by this Engine
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    */
    public Response service(String method, String url)
    {
       return service(method, url, null);
    }
 
-   public Request request(String method, String url, String body)
-   {
-      Request req = new Request(method, url, body);
-      req.withEngine(this);
-
-      return req;
-   }
-
    /**
-    * @return the last response serviced by this Engine.
+    * Convenience overloading of {@code #service(Request, Response)}
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+    * 
+    * @param method  the http method of the requested operation
+    * @param url  the url that will be serviced by this Engine.
+    * @param body a stringified JSON body presumably to PUT/POST/PATCH
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
     */
-   public Response response()
-   {
-      return lastResponse;
-   }
-
    public Response service(String method, String url, String body)
    {
       return service(method, url, body, null);
    }
 
+   /**
+    * Convenience overloading of {@code #service(Request, Response)}
+    * <p>
+    * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.  
+    * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+    * @param method  the http method of the requested operation
+    * @param url  the url that will be serviced by this Engine.
+    * @param body a stringified JSON body presumably to PUT/POST/PATCH
+    * @param params  additional key/value pairs to add to the url query string
+    * @return the Response generated by handling the Request
+    * @see #service(Request, Response);
+    */
    public Response service(String method, String url, String body, Map<String, String> params)
    {
       Request req = new Request(method, url, body);
@@ -317,17 +466,27 @@ public class Engine extends Rule<Engine>
       return res;
    }
 
-   public Response forward(String method, String url)
-   {
-      Request req = new Request(method, url, null);
-      req.withEngine(this);
-
-      Response res = Chain.peek().getResponse();
-
-      service(req, res);
-      return res;
-   }
-
+   /**
+    * The main entry point for processing a Request and generating Response content.
+    * <p>
+    * This method is designed to be called by integrating runtimes such as {@code EngineServlet} or by {@code Action}s that 
+    * need to make recursive calls to the Engine when performing composite operations.
+    * <p>
+    * The host and port component of the Request url are ignored assuming that this Engine instance is supposed to be servicing the request.
+    * The url does not have to start with "http[s]://".  If it does not, urls that start with "/" or not are handled the same.
+    * <p>
+    * All of the following would be processed the same way:
+    * <ul>
+    *   <li>https://library.com/v1/library/books?ISBN=1234567890
+    *   <li>https://library.com:8080/v1/library/books?ISBN=1234567890
+    *   <li>https://localhost/v1/library/books?ISBN=1234567890
+    *   <li>/v1/library/books?ISBN=1234567890
+    *   <li>v1/library/books?ISBN=1234567890
+    * <ul>
+    * @param req
+    * @param res
+    * @return
+    */
    public Chain service(Request req, Response res)
    {
       if (!started)
@@ -345,7 +504,7 @@ public class Engine extends Rule<Engine>
          //--
          //-- CORS header setup
          //--
-         String allowedHeaders = new String(this.allowedHeaders);
+         String allowedHeaders = new String(this.corsAlloweHeaders);
          String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
          if (corsRequestHeader != null)
          {
@@ -358,7 +517,7 @@ public class Engine extends Rule<Engine>
          }
          res.withHeader("Access-Control-Allow-Origin", "*");
          res.withHeader("Access-Control-Allow-Credentials", "true");
-         res.withHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+         res.withHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
          res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
 
          //--
@@ -477,14 +636,6 @@ public class Engine extends Rule<Engine>
          {
             ApiException.throw400BadRequest("No API found matching URL: '{}'", url);
          }
-
-         //         if (req.getEndpoint() == null)
-         //         {
-         //            //check to see if a non plural version of the collection endpoint 
-         //            //was passed in, if it was redirect to the plural version
-         //            if (redirectPlural(req, res))
-         //               return chain;
-         //         }
 
          if (req.getEndpoint() == null)
          {
@@ -658,18 +809,6 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   LinkedHashSet<ApiListener> getApiListeners(Request req)
-   {
-      LinkedHashSet listeners = new LinkedHashSet();
-      if (req.getApi() != null)
-      {
-         listeners.addAll(req.getApi().getApiListeners());
-      }
-      listeners.addAll(this.listeners);
-
-      return listeners;
-   }
-
    /**
     * This is specifically pulled out so you can mock Engine invocations
     * in test cases.
@@ -678,12 +817,12 @@ public class Engine extends Rule<Engine>
     * @param actions
     * @throws Exception
     */
-   protected void run(Chain chain, List<ActionMatch> actions) throws Exception
+   void run(Chain chain, List<ActionMatch> actions) throws Exception
    {
       chain.withActions(actions).go();
    }
 
-   protected void writeResponse(Request req, Response res) throws Exception
+   void writeResponse(Request req, Response res) throws Exception
    {
       boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();
@@ -751,6 +890,36 @@ public class Engine extends Rule<Engine>
             res.withOutput(res.getDebug());
          }
       }
+   }
+
+   public boolean isStarted()
+   {
+      return started;
+   }
+
+   /**
+    * Registers <code>listener</code> to receive Engine, Api, request and error callbacks.
+    * 
+    * @param listener
+    * @return
+    */
+   public Engine withEngineListener(EngineListener listener)
+   {
+      if (!listeners.contains(listener))
+         listeners.add(listener);
+      return this;
+   }
+
+   LinkedHashSet<ApiListener> getApiListeners(Request req)
+   {
+      LinkedHashSet listeners = new LinkedHashSet();
+      if (req.getApi() != null)
+      {
+         listeners.addAll(req.getApi().getApiListeners());
+      }
+      listeners.addAll(this.listeners);
+
+      return listeners;
    }
 
    public List<Api> getApis()
@@ -877,28 +1046,6 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public String getProfile()
-   {
-      return Utils.getSysEnvPropStr("inversion.profile", profile);
-   }
-
-   public Engine withProfile(String profile)
-   {
-      this.profile = profile;
-      return this;
-   }
-
-   public String getConfigPath()
-   {
-      return configPath;
-   }
-
-   public Engine withConfigPath(String configPath)
-   {
-      this.configPath = configPath;
-      return this;
-   }
-
    public Configurator getConfigurator()
    {
       return configurator;
@@ -910,30 +1057,18 @@ public class Engine extends Rule<Engine>
       return this;
    }
 
-   //   public Path getServletMapping()
-   //   {
-   //      return containerPaths;
-   //   }
-   //
-   //   public Engine withServletMapping(String servletMapping)
-   //   {
-   //      if (servletMapping != null)
-   //         this.containerPaths = new Path(servletMapping);
-   //      else
-   //         this.containerPaths = null;
-   //
-   //      return this;
-   //   }
-
    public Engine withAllowHeaders(String allowedHeaders)
    {
-      this.allowedHeaders = allowedHeaders;
+      this.corsAlloweHeaders = allowedHeaders;
       return this;
    }
 
-   public interface ResourceLoader
+   /**
+    * @return the last response serviced by this Engine.
+    */
+   public Response getLastResponse()
    {
-      InputStream getResource(String name);
+      return lastResponse;
    }
 
    public ResourceLoader getResourceLoader()
@@ -973,50 +1108,6 @@ public class Engine extends Rule<Engine>
       {
          throw new RuntimeException(ex);
       }
-   }
-
-   public boolean isConfigFast()
-   {
-      return configFast;
-   }
-
-   public Engine withConfigFast(boolean configFast)
-   {
-      this.configFast = configFast;
-      return this;
-   }
-
-   public boolean isConfigDebug()
-   {
-      return configDebug;
-   }
-
-   public Engine withConfigDebug(boolean configDebug)
-   {
-      this.configDebug = configDebug;
-      return this;
-   }
-
-   public String getConfigOut()
-   {
-      return configOut;
-   }
-
-   public Engine withConfigOut(String configOut)
-   {
-      this.configOut = configOut;
-      return this;
-   }
-
-   public int getConfigTimeout()
-   {
-      return configTimeout;
-   }
-
-   public Engine withConfigTimeout(int configTimeout)
-   {
-      this.configTimeout = configTimeout;
-      return this;
    }
 
 }
