@@ -16,11 +16,18 @@
  */
 package io.inversion.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.inversion.utils.Rows.Row;
-
-import java.util.*;
 
 /**
  * An utility abstraction of a database result set where all child <code>Row</code> objects are themselves maps that share the same case insensitive key set.
@@ -260,22 +267,6 @@ public class Rows extends ArrayList<Row>
       return true;
    }
 
-   //   /**
-   //    * Inserts the key/values from <code>row</code> as the new <code>index</code>th Row.
-   //    * <p>
-   //    * The actual Row object is not added to the Rows list because its RowKeys object
-   //    * will not be the same.  Instead all key/values are copied into a new Row.
-   //    * 
-   //    * @param 
-   //    * @param row a map containing the key/values to add
-   //    * @see {@link #addRow(Map)}
-   //    */
-   //   public void add(int index, Row element)
-   //   {
-   //      // TODO Auto-generated method stub
-   //      super.add(index, element);
-   //   }
-
    /**
     * Calls {@code #addRow(Map)} for each Row in <code>rows</code>
     */
@@ -302,36 +293,6 @@ public class Rows extends ArrayList<Row>
       return true;
    }
 
-   //   public void sortBy(final String... keys)
-   //   {
-   //      Collections.sort(this, new Comparator<Rows.Row>()
-   //         {
-   //            @Override
-   //            public int compare(Row o1, Row o2)
-   //            {
-   //               for (String key : keys)
-   //               {
-   //                  Object obj1 = o1.get(key);
-   //                  Object obj2 = o2.get(key);
-   //
-   //                  if (obj1 == null && obj2 == null)
-   //                     return 0;
-   //
-   //                  if (obj1 == null && obj2 != null)
-   //                     return -1;
-   //
-   //                  if (obj1 != null && obj2 == null)
-   //                     return 1;
-   //
-   //                  int strcmp = obj1.toString().compareTo(obj2.toString());
-   //                  if (strcmp != 0)
-   //                     return strcmp;
-   //               }
-   //               return 0;
-   //            }
-   //         });
-   //   }
-
    /**
     * Represents a single row in a database result set where values can be accessed by a zero based integer index or by a case insensitive key/column name.
     * <p>
@@ -340,10 +301,17 @@ public class Rows extends ArrayList<Row>
    public static class Row implements Map<String, Object>
    {
       /**
-       * The shared key/column 
+       * The shared keys/column names
+       * <p>
+       * RowKeys maps the case insensitive column name to an index for the <code>values</code> List. 
        */
       RowKeys      keys   = null;
+
+      /**
+       * Vales in the row
+       */
       List<Object> values = null;
+
       boolean      cloned = false;
 
       public Row()
@@ -364,11 +332,19 @@ public class Rows extends ArrayList<Row>
          this.values = new ArrayList(Arrays.asList(values));
       }
 
+      /**
+       * @param index
+       * @return the key/column name for the given index
+       */
       public String getKey(int index)
       {
          return keys.getKey(index);
       }
 
+      /**
+       * @param index
+       * @return the value at <code>index</code> stringified if it exists
+       */
       public String getString(int index)
       {
          Object value = get(index);
@@ -377,6 +353,10 @@ public class Rows extends ArrayList<Row>
          return null;
       }
 
+      /**
+       * @param key
+       * @return the value for <code>key</code> stringified if it exists
+       */
       public String getString(String key)
       {
          Object value = get(key);
@@ -385,6 +365,10 @@ public class Rows extends ArrayList<Row>
          return null;
       }
 
+      /**
+       * @param index
+       * @return the value at <code>index</code> stringified and parsed as an int if it exists
+       */
       public int getInt(int index)
       {
          Object value = get(index);
@@ -393,6 +377,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param key
+       * @return the value for <code>key</code> stringified and parsed as an int if it exists
+       */
       public int getInt(String key)
       {
          Object value = get(key);
@@ -401,6 +389,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param index
+       * @return the value at <code>index</code> stringified and parsed as a long if it exists
+       */
       public long getLong(int index)
       {
          Object value = get(index);
@@ -409,6 +401,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param key
+       * @return the value for <code>key</code> stringified and parsed as a long if it exists
+       */
       public long getLong(String key)
       {
          Object value = get(key);
@@ -417,6 +413,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param index
+       * @return the value at <code>index</code> stringified and parsed as a float if it exists
+       */
       public float getFloat(int index)
       {
          Object value = get(index);
@@ -425,6 +425,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param key
+       * @return the value for <code>key</code> stringified and parsed as a float if it exists
+       */
       public float getFloat(String key)
       {
          Object value = get(key);
@@ -433,6 +437,10 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
+      /**
+       * @param index
+       * @return the value at <code>index</code> stringified and parsed as a boolean if it exists
+       */
       public boolean getBoolean(int index)
       {
          Object value = get(index);
@@ -441,6 +449,10 @@ public class Rows extends ArrayList<Row>
          return false;
       }
 
+      /**
+       * @param key
+       * @return the value for <code>key</code> stringified and parsed as a boolean if it exists
+       */
       public boolean getBoolean(String key)
       {
          Object value = get(key);
@@ -465,7 +477,6 @@ public class Rows extends ArrayList<Row>
       @Override
       public int size()
       {
-         //return keys.size();
          return values.size();
       }
 
@@ -500,6 +511,12 @@ public class Rows extends ArrayList<Row>
          return false;
       }
 
+      /**
+       * Gets the value for the key/column.
+       * 
+       * @param key
+       * @return the value at the index associate with <code>key</code> if it exists, otherwise null.       
+       */
       public Object get(String key)
       {
          try
@@ -510,50 +527,73 @@ public class Rows extends ArrayList<Row>
          }
          catch (Exception ex)
          {
-            //System.err.println("Trying to get invalid key '" + key + "' from row.  Valide keys are " + keys.keys);
-            // ex.printStackTrace();
-            //
-            //            int idx = indexOf(key);
-            //            System.out.println(idx);
-            //            System.out.println(values.size());
-            //
-            //            System.out.println(keys.keys.size());
-            //            System.out.println(keys.lc.size());
          }
          return null;
       }
 
-      public Object get(int index)
+      /**
+       * @param index
+       * @return the value at <code>index</code>
+       * @throws ArrayIndexOutOfBoundsException
+       */
+      public Object get(int index) throws ArrayIndexOutOfBoundsException
       {
          return values.get(index);
       }
 
+      /**
+       * If keyOrIndex must be a String key or an Integer index.
+       * <p>
+       * If keyOrIndex is null, null is returned.
+       * 
+       * @param keyOrIndex
+       * @return the value at keyOrIndex as an Integer index or the value for keyOrIndex as a String key 
+       */
       @Override
-      public Object get(Object key)
+      public Object get(Object keyOrIndex)
       {
-         if (key == null)
+         if (keyOrIndex == null)
             return null;
 
-         if (key instanceof Integer)
-            return values.get(((Integer) key).intValue());
+         int idx = -1;
+         if (keyOrIndex instanceof String)
+            idx = keys.indexOf((String) keyOrIndex);
+         else
+            idx = ((Integer) keyOrIndex).intValue();
 
-         int idx = keys.indexOf((String) key);
-         if (idx < 0)
+         if (idx < 0 || idx >= size())
             return null;
 
          return values.get(idx);
       }
 
+      /**
+       * Sets the <code>index</code>th column to <code>value</code>
+       * @param index
+       * @param value
+       */
       public void set(int index, Object value)
       {
          values.set(index, value);
       }
 
+      /**
+       * Adds <code>value</code> as the last column
+       * @param value
+       */
       public void add(Object value)
       {
          values.add(value);
       }
 
+      /**
+       * Translates <code>key</code> into a column index and inserts <code>value</code> at that index.
+       * <p>
+       * If <code>key</code> does not exists, it is add to the shared RowKeys as the last column.
+       * 
+       * @param key
+       * @param value
+       */
       @Override
       public Object put(String key, Object value)
       {
