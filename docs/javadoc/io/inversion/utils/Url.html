@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":9,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":9,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -47,7 +47,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../io/inversion/utils/Rows.RowKeys.html" title="class in io.inversion.utils"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../io/inversion/utils/Utils.html" title="class in io.inversion.utils"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
@@ -109,7 +109,12 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">Url</span>
 extends java.lang.Object</pre>
-<div class="block">Url utilities</div>
+<div class="block">Utility class for parsing and working with HTTP(S) URLs.
+ <p>
+ Not for use with non HTTP(S) urls.
+ <p>
+ A number of different utility methods are provided to make it simple to find or remove different query string keys.
+ <p></div>
 </li>
 </ul>
 </div>
@@ -130,27 +135,39 @@ extends java.lang.Object</pre>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#host">host</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#host">host</a></span></code>
+<div class="block">The url host.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#original">original</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#original">original</a></span></code>
+<div class="block">The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host</div>
+</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected <a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#params">params</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>protected java.util.Map</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#params">params</a></span></code>
+<div class="block">A case insensitive map of query string name/value pairs that preserves iteration order</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#path">path</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#path">path</a></span></code>
+<div class="block">The part of the url after the host/port before the query string.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#port">port</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#port">port</a></span></code>
+<div class="block">The url port number if a custom port was provided</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#protocol">protocol</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#protocol">protocol</a></span></code>
+<div class="block">The url protocol, either http or https</div>
+</td>
 </tr>
 </table>
 </li>
@@ -167,7 +184,9 @@ extends java.lang.Object</pre>
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#Url-java.lang.String-">Url</a></span>(java.lang.String&nbsp;url)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#Url-java.lang.String-">Url</a></span>(java.lang.String&nbsp;url)</code>
+<div class="block">Parses <code>url</code> into its protocol, host, port, path and query string param parts.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -187,114 +206,132 @@ extends java.lang.Object</pre>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#clearParams-java.lang.String...-">clearParams</a></span>(java.lang.String...&nbsp;tokens)</code>
-<div class="block">Removes any param that has one of <code>tokens<code> as a whole 
- word case insensitive match in the key.</div>
+<div class="block">Removes any param that has one of <code>tokens<code> as a whole word case insensitive substring in the key.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#copy--">copy</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#equals-java.lang.Object-">equals</a></span>(java.lang.Object&nbsp;url)</code>
+<div class="block">Checks url equality based on type and toString equality</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#equals-java.lang.Object-">equals</a></span>(java.lang.Object&nbsp;obj)</code>&nbsp;</td>
+<td class="colFirst"><code>java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#findKey-java.lang.String...-">findKey</a></span>(java.lang.String...&nbsp;tokens)</code>
+<div class="block">Finds a key that has any one of <code>tokens<code> as a whole word case insensitive substring</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#findKey-java.lang.String...-">findKey</a></span>(java.lang.String...&nbsp;tokens)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#findKeyValue-java.lang.String...-">findKeyValue</a></span>(java.lang.String...&nbsp;tokens)</code>
+<div class="block">Finds the value associated with <code>findKey(tokens)</code></div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#findKeyValue-java.lang.String...-">findKeyValue</a></span>(java.lang.String...&nbsp;tokens)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getDomain--">getDomain</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getDomain--">getDomain</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getFile--">getFile</a></span>()</code>
+<div class="block">Gets the last url path part if it exists</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getFile--">getFile</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getHost--">getHost</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getHost--">getHost</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getOriginal--">getOriginal</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getOriginal--">getOriginal</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getParam-java.lang.String-">getParam</a></span>(java.lang.String&nbsp;key)</code>
+<div class="block">Gets the param value with <code>key</code> based on a case insensitive match.</div>
+</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getParam-java.lang.String-">getParam</a></span>(java.lang.String&nbsp;param)</code>&nbsp;</td>
-</tr>
-<tr id="i10" class="altColor">
 <td class="colFirst"><code>java.util.Map&lt;java.lang.String,java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getParams--">getParams</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getPath--">getPath</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getPort--">getPort</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getProtocol--">getProtocol</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getQuery--">getQuery</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#getQueryString--">getQueryString</a></span>()</code>
+<div class="block">Generates a URL encode query string for <code>params</code></div>
+</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#replaceParam-java.lang.String-java.lang.String-">replaceParam</a></span>(java.lang.String&nbsp;key,
             java.lang.String&nbsp;value)</code>
-<div class="block">Replaces any param that has <code>key<code> as a whole 
- word case insensitive match in its key.</div>
+<div class="block">Replaces any existing param that has <code>key<code> as a whole word case insensitive substring in its key.</div>
+</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>static java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#toQueryString-java.util.Map-">toQueryString</a></span>(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;params)</code>
+<div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&'</div>
 </td>
 </tr>
 <tr id="i16" class="altColor">
-<td class="colFirst"><code>static java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#toQueryString-java.util.Map-">toQueryString</a></span>(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;params)</code>&nbsp;</td>
+<td class="colFirst"><code>java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#toString--">toString</a></span>()</code>
+<div class="block">Generates a string string representation of this url with any query string parameters URL encoded and port number included only if it differs from the standard protocol port.</div>
+</td>
 </tr>
 <tr id="i17" class="rowColor">
-<td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#toString--">toString</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withHost-java.lang.String-">withHost</a></span>(java.lang.String&nbsp;host)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withParam-java.lang.String-java.lang.String-">withParam</a></span>(java.lang.String&nbsp;name,
-         java.lang.String&nbsp;value)</code>&nbsp;</td>
+         java.lang.String&nbsp;value)</code>
+<div class="block">Adds name/value to <code>params</code> overwriting any preexisting key/value pair
+ on a key case insensitive basis.</div>
+</td>
+</tr>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withParams-java.util.Map-">withParams</a></span>(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;newParams)</code>
+<div class="block">Adds all key/value pairs from <code>newParams</code> to <code>params</code>
+ overwriting any exiting keys on a case insensitive basis</div>
+</td>
 </tr>
 <tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withParams-java.util.Map-">withParams</a></span>(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;params)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withParams-java.lang.String...-">withParams</a></span>(java.lang.String...&nbsp;nvpairs)</code>&nbsp;</td>
 </tr>
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withParams-java.lang.String...-">withParams</a></span>(java.lang.String...&nbsp;nvpairs)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withPath-io.inversion.utils.Path-">withPath</a></span>(<a href="../../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;path)</code>&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withPath-io.inversion.utils.Path-">withPath</a></span>(<a href="../../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;path)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withPort-int-">withPort</a></span>(int&nbsp;port)</code>&nbsp;</td>
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withPort-int-">withPort</a></span>(int&nbsp;port)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withProtocol-java.lang.String-">withProtocol</a></span>(java.lang.String&nbsp;protocol)</code>&nbsp;</td>
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withProtocol-java.lang.String-">withProtocol</a></span>(java.lang.String&nbsp;protocol)</code>&nbsp;</td>
-</tr>
-<tr id="i25" class="rowColor">
-<td class="colFirst"><code><a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withQuery-java.lang.String-">withQuery</a></span>(java.lang.String&nbsp;query)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Url.html#withQueryString-java.lang.String-">withQueryString</a></span>(java.lang.String&nbsp;queryString)</code>
+<div class="block">Parses <code>queryString</code> and replace <code>params</code></div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -325,6 +362,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>original</h4>
 <pre>protected&nbsp;java.lang.String original</pre>
+<div class="block">The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host</div>
 </li>
 </ul>
 <a name="protocol">
@@ -334,6 +372,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>protocol</h4>
 <pre>protected&nbsp;java.lang.String protocol</pre>
+<div class="block">The url protocol, either http or https</div>
 </li>
 </ul>
 <a name="host">
@@ -343,6 +382,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>host</h4>
 <pre>protected&nbsp;java.lang.String host</pre>
+<div class="block">The url host.</div>
 </li>
 </ul>
 <a name="port">
@@ -352,6 +392,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>port</h4>
 <pre>protected&nbsp;int port</pre>
+<div class="block">The url port number if a custom port was provided</div>
 </li>
 </ul>
 <a name="path">
@@ -361,6 +402,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>path</h4>
 <pre>protected&nbsp;<a href="../../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a> path</pre>
+<div class="block">The part of the url after the host/port before the query string.</div>
 </li>
 </ul>
 <a name="params">
@@ -369,7 +411,12 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>params</h4>
-<pre>protected&nbsp;<a href="../../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a> params</pre>
+<pre>protected&nbsp;java.util.Map params</pre>
+<div class="block">A case insensitive map of query string name/value pairs that preserves iteration order
+ <p>
+ Implementation Node: <code>params</code>is not actually JSON, JSNode is used as the map
+ implementation here simply because it is an affective case insensitive map that preserves 
+ the original key case key iteration order.</div>
 </li>
 </ul>
 </li>
@@ -387,6 +434,13 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>Url</h4>
 <pre>public&nbsp;Url(java.lang.String&nbsp;url)</pre>
+<div class="block">Parses <code>url</code> into its protocol, host, port, path and query string param parts.
+ <p>
+ If <code>url</code> does not start with "http://" or "https://" then "http://localhost/" will be prepended.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>url</code> - </dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -397,15 +451,6 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="copy--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>copy</h4>
-<pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;copy()</pre>
-</li>
-</ul>
 <a name="toString--">
 <!--   -->
 </a>
@@ -413,9 +458,12 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>toString</h4>
 <pre>public&nbsp;java.lang.String&nbsp;toString()</pre>
+<div class="block">Generates a string string representation of this url with any query string parameters URL encoded and port number included only if it differs from the standard protocol port.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the string representation of this url</dd>
 </dl>
 </li>
 </ul>
@@ -425,10 +473,13 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>equals</h4>
-<pre>public&nbsp;boolean&nbsp;equals(java.lang.Object&nbsp;obj)</pre>
+<pre>public&nbsp;boolean&nbsp;equals(java.lang.Object&nbsp;url)</pre>
+<div class="block">Checks url equality based on type and toString equality</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>equals</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if <code>url</code> is a Url with a matching toString</dd>
 </dl>
 </li>
 </ul>
@@ -441,13 +492,20 @@ extends java.lang.Object</pre>
 <pre>public&nbsp;java.lang.String&nbsp;getDomain()</pre>
 </li>
 </ul>
-<a name="getQuery--">
+<a name="getQueryString--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getQuery</h4>
-<pre>public&nbsp;java.lang.String&nbsp;getQuery()</pre>
+<h4>getQueryString</h4>
+<pre>public&nbsp;java.lang.String&nbsp;getQueryString()</pre>
+<div class="block">Generates a URL encode query string for <code>params</code></div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a URL encoded query string if <code>params.size() is > 0</code> else empty string</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../io/inversion/utils/Url.html#toQueryString-java.util.Map-"><code>toQueryString(Map)</code></a></dd>
+</dl>
 </li>
 </ul>
 <a name="getHost--">
@@ -529,15 +587,27 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getFile</h4>
 <pre>public&nbsp;java.lang.String&nbsp;getFile()</pre>
+<div class="block">Gets the last url path part if it exists</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>path.last() if it exists otherwise null</dd>
+</dl>
 </li>
 </ul>
-<a name="withQuery-java.lang.String-">
+<a name="withQueryString-java.lang.String-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>withQuery</h4>
-<pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withQuery(java.lang.String&nbsp;query)</pre>
+<h4>withQueryString</h4>
+<pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withQueryString(java.lang.String&nbsp;queryString)</pre>
+<div class="block">Parses <code>queryString</code> and replace <code>params</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>query</code> - </dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this Url</dd>
+</dl>
 </li>
 </ul>
 <a name="withParams-java.util.Map-">
@@ -546,7 +616,14 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>withParams</h4>
-<pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withParams(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;params)</pre>
+<pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withParams(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;newParams)</pre>
+<div class="block">Adds all key/value pairs from <code>newParams</code> to <code>params</code>
+ overwriting any exiting keys on a case insensitive basis</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>params</code> - </dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+</dl>
 </li>
 </ul>
 <a name="withParam-java.lang.String-java.lang.String-">
@@ -557,6 +634,14 @@ extends java.lang.Object</pre>
 <h4>withParam</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withParam(java.lang.String&nbsp;name,
                      java.lang.String&nbsp;value)</pre>
+<div class="block">Adds name/value to <code>params</code> overwriting any preexisting key/value pair
+ on a key case insensitive basis.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>name</code> - the key to add or overwrite, may not be null</dd>
+<dd><code>value</code> - the value, may be null</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+</dl>
 </li>
 </ul>
 <a name="withParams-java.lang.String...-">
@@ -576,11 +661,16 @@ extends java.lang.Object</pre>
 <h4>replaceParam</h4>
 <pre>public&nbsp;void&nbsp;replaceParam(java.lang.String&nbsp;key,
                          java.lang.String&nbsp;value)</pre>
-<div class="block">Replaces any param that has <code>key<code> as a whole 
- word case insensitive match in its key.</div>
+<div class="block">Replaces any existing param that has <code>key<code> as a whole word case insensitive substring in its key.
+ <p>
+ If the key/value pair <code>"eq(dog,Fido)" = null</code> is in the map <code>replaceParam("DOG", "Fifi")
+ would cause it to be removed and the pair "DOG" / "Fifi" would be added.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the key to add overwrite, may not be null, also used a a regex whole world case insensitive token to search for other keys to remove.</dd>
+<dd><code>value</code> - the value, may be null</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>io.inversion.Utils#containsToken(String, String)}</code></dd>
 </dl>
 </li>
 </ul>
@@ -591,12 +681,14 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>clearParams</h4>
 <pre>public&nbsp;java.lang.String&nbsp;clearParams(java.lang.String...&nbsp;tokens)</pre>
-<div class="block">Removes any param that has one of <code>tokens<code> as a whole 
- word case insensitive match in the key.</div>
+<div class="block">Removes any param that has one of <code>tokens<code> as a whole word case insensitive substring in the key.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>tokens</code> - string tokens when found in a param key will cause them to be removed</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the first value found that contained any one of <code>tokens</code></dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>io.inversion.Utils#containsToken(String, String)}</code></dd>
 </dl>
 </li>
 </ul>
@@ -607,6 +699,13 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>findKey</h4>
 <pre>public&nbsp;java.lang.String&nbsp;findKey(java.lang.String...&nbsp;tokens)</pre>
+<div class="block">Finds a key that has any one of <code>tokens<code> as a whole word case insensitive substring</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>tokens</code> - substrings to search params.keySet() for</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring</dd>
+</dl>
 </li>
 </ul>
 <a name="findKeyValue-java.lang.String...-">
@@ -616,6 +715,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>findKeyValue</h4>
 <pre>public&nbsp;java.lang.String&nbsp;findKeyValue(java.lang.String...&nbsp;tokens)</pre>
+<div class="block">Finds the value associated with <code>findKey(tokens)</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>tokens</code> - substrings to search params.keySet() for</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the value for the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#findKey(String...)}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="getParam-java.lang.String-">
@@ -624,7 +732,14 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getParam</h4>
-<pre>public&nbsp;java.lang.String&nbsp;getParam(java.lang.String&nbsp;param)</pre>
+<pre>public&nbsp;java.lang.String&nbsp;getParam(java.lang.String&nbsp;key)</pre>
+<div class="block">Gets the param value with <code>key</code> based on a case insensitive match.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>key</code> - the key to get</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the param value for <code>key</code> based on a case insensitive match.</dd>
+</dl>
 </li>
 </ul>
 <a name="getParams--">
@@ -634,6 +749,10 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getParams</h4>
 <pre>public&nbsp;java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;getParams()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a new case insensitive order preserving map copy of <code>params</code></dd>
+</dl>
 </li>
 </ul>
 <a name="getOriginal--">
@@ -643,6 +762,10 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getOriginal</h4>
 <pre>public&nbsp;java.lang.String&nbsp;getOriginal()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the url string used in constructing this Url.</dd>
+</dl>
 </li>
 </ul>
 <a name="toQueryString-java.util.Map-">
@@ -652,6 +775,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>toQueryString</h4>
 <pre>public static&nbsp;java.lang.String&nbsp;toQueryString(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;params)</pre>
+<div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&'</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>params</code> - the key/value pairs to encode</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a UTF-8 url encoded query string</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>java.net.URL.encode(String, String)}</code></dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -681,7 +813,7 @@ extends java.lang.Object</pre>
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../io/inversion/utils/Rows.RowKeys.html" title="class in io.inversion.utils"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../io/inversion/utils/Utils.html" title="class in io.inversion.utils"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">

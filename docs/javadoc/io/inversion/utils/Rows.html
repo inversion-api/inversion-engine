@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -128,7 +128,17 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">Rows</span>
 extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</pre>
-<div class="block">A list of ordered maps where all maps that all share the same keys.</div>
+<div class="block">An utility abstraction of a database result set where all child <code>Row</code> objects are themselves maps that share the same case insensitive key set.
+ <p>
+ The idea is to be a little more memory efficient, offer zero base integer index or case insensitive key/column name access, and have key/column order match on all rows.
+ <p>
+ This was initially developed so that a JDBC <code>ResultSet</code> could be loaded into a list of maps without having to replicate the keys for every row.
+ <p>
+ Implementation Notes: 
+ <p>
+ While Row implements Map, it actually uses a List to maintain its values.
+ <p>  
+ A instance of the <code>RowKeys</code>, which maintains a Map from case insensitive string keys their index position in each Row's list, is shared by all Row instances.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../serialized-form.html#io.inversion.utils.Rows">Serialized Form</a></dd>
@@ -154,7 +164,13 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></span></code>
-<div class="block">Case insensitive map implementation</div>
+<div class="block">Represents a single row in a database result set where values can be accessed by a zero based integer index or by a case insensitive key/column name.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.RowKeys.html" title="class in io.inversion.utils">Rows.RowKeys</a></span></code>
+<div class="block">An ordered list of case insensitive key/column names.</div>
 </td>
 </tr>
 </table>
@@ -187,16 +203,24 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows--">Rows</a></span>()</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows--">Rows</a></span>()</code>
+<div class="block">Creates an empty Rows with no keys/columns.</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.util.List-">Rows</a></span>(java.util.List&lt;java.lang.String&gt;&nbsp;keys)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.util.List-">Rows</a></span>(java.util.List&lt;java.lang.String&gt;&nbsp;keys)</code>
+<div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
+</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.util.Map-">Rows</a></span>(java.util.Map&nbsp;row)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.util.Map-">Rows</a></span>(java.util.Map&nbsp;row)</code>
+<div class="block">Creates a Rows with a single Row with keys/columns equal to <code>row.getKeySet()</code></div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.lang.String:A-">Rows</a></span>(java.lang.String[]&nbsp;keys)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#Rows-java.lang.String:A-">Rows</a></span>(java.lang.String[]&nbsp;keys)</code>
+<div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
+</td>
 </tr>
 </table>
 </li>
@@ -214,78 +238,95 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#add-int-io.inversion.utils.Rows.Row-">add</a></span>(int&nbsp;index,
-   <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;element)</code>&nbsp;</td>
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#add-io.inversion.utils.Rows.Row-">add</a></span>(<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;row)</code>
+<div class="block">Adds the key/values from <code>row</code> as a new Row.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#add-io.inversion.utils.Rows.Row-">add</a></span>(<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;e)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addAll-java.util.Collection-">addAll</a></span>(java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</code>
+<div class="block">Calls <code>#addRow(Map)</code> for each Row in <code>rows</code></div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addAll-java.util.Collection-">addAll</a></span>(java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addAll-int-java.util.Collection-">addAll</a></span>(int&nbsp;index,
+      java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</code>
+<div class="block">Calls <code>#addRow(int, Map)</code> for each Row in <code>rows</code></div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addAll-int-java.util.Collection-">addAll</a></span>(int&nbsp;index,
-      java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</code>&nbsp;</td>
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addKey-java.lang.String-">addKey</a></span>(java.lang.String&nbsp;key)</code>
+<div class="block">Adds a key/column for each Row at the end of the iteration order.</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addKey-java.lang.String-">addKey</a></span>(java.lang.String&nbsp;key)</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow--">addRow</a></span>()</code>
+<div class="block">Adds a new empty Row to the end of the list.</div>
+</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow--">addRow</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.util.List-">addRow</a></span>(int&nbsp;index,
+      java.util.List&nbsp;values)</code>
+<div class="block">Adds <code>values</code> as the new <code>index</code>th Row.</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.util.List-">addRow</a></span>(int&nbsp;index,
-      java.util.List&nbsp;values)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.util.Map-">addRow</a></span>(int&nbsp;index,
+      java.util.Map&nbsp;map)</code>
+<div class="block">Insert key/values from <code>map</code> as the new <code>index</code>th Row.</div>
+</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.util.Map-">addRow</a></span>(int&nbsp;index,
-      java.util.Map&nbsp;map)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.lang.Object:A-">addRow</a></span>(int&nbsp;index,
+      java.lang.Object[]&nbsp;values)</code>
+<div class="block">Adds <code>values</code> as the new <code>index</code>th Row.</div>
+</td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-int-java.lang.Object:A-">addRow</a></span>(int&nbsp;index,
-      java.lang.Object[]&nbsp;values)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.util.List-">addRow</a></span>(java.util.List&nbsp;values)</code>
+<div class="block">Adds <code>values</code>as a new Row to the end of the list.</div>
+</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.util.List-">addRow</a></span>(java.util.List&nbsp;values)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.util.Map-">addRow</a></span>(java.util.Map&nbsp;map)</code>
+<div class="block">Adds key/values from <code>map</code> to a new Row.</div>
+</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.util.Map-">addRow</a></span>(java.util.Map&nbsp;map)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.lang.Object:A-">addRow</a></span>(java.lang.Object[]&nbsp;values)</code>
+<div class="block">Adds <code>values</code>as a new Row to the end of the list.</div>
+</td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code><a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#addRow-java.lang.Object:A-">addRow</a></span>(java.lang.Object[]&nbsp;values)</code>&nbsp;</td>
-</tr>
-<tr id="i12" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#keyList--">keyList</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>java.util.Set&lt;java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#keySet--">keySet</a></span>()</code>&nbsp;</td>
 </tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#put-java.lang.Object-">put</a></span>(java.lang.Object&nbsp;value)</code>
+<div class="block">Adds <code>value</code> to the end of <code>lastRow</code>.</div>
+</td>
+</tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#put-java.lang.Object-">put</a></span>(java.lang.Object&nbsp;value)</code>&nbsp;</td>
-</tr>
-<tr id="i15" class="rowColor">
-<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#put-java.lang.String-java.lang.Object-">put</a></span>(java.lang.String&nbsp;key,
-   java.lang.Object&nbsp;value)</code>&nbsp;</td>
-</tr>
-<tr id="i16" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Rows.html#sortBy-java.lang.String...-">sortBy</a></span>(java.lang.String...&nbsp;keys)</code>&nbsp;</td>
+   java.lang.Object&nbsp;value)</code>
+<div class="block">Sets key/value on <code>lastRow</code>.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -293,7 +334,7 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.util.ArrayList</h3>
-<code>clear, clone, contains, ensureCapacity, forEach, get, indexOf, isEmpty, iterator, lastIndexOf, listIterator, listIterator, remove, remove, removeAll, removeIf, removeRange, replaceAll, retainAll, set, size, sort, spliterator, subList, toArray, toArray, trimToSize</code></li>
+<code>add, clear, clone, contains, ensureCapacity, forEach, get, indexOf, isEmpty, iterator, lastIndexOf, listIterator, listIterator, remove, remove, removeAll, removeIf, removeRange, replaceAll, retainAll, set, size, sort, spliterator, subList, toArray, toArray, trimToSize</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.util.AbstractList">
@@ -351,6 +392,7 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>Rows</h4>
 <pre>public&nbsp;Rows()</pre>
+<div class="block">Creates an empty Rows with no keys/columns.</div>
 </li>
 </ul>
 <a name="Rows-java.util.Map-">
@@ -360,6 +402,11 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>Rows</h4>
 <pre>public&nbsp;Rows(java.util.Map&nbsp;row)</pre>
+<div class="block">Creates a Rows with a single Row with keys/columns equal to <code>row.getKeySet()</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - </dd>
+</dl>
 </li>
 </ul>
 <a name="Rows-java.lang.String:A-">
@@ -369,6 +416,11 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>Rows</h4>
 <pre>public&nbsp;Rows(java.lang.String[]&nbsp;keys)</pre>
+<div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>keys</code> - </dd>
+</dl>
 </li>
 </ul>
 <a name="Rows-java.util.List-">
@@ -378,6 +430,11 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>Rows</h4>
 <pre>public&nbsp;Rows(java.util.List&lt;java.lang.String&gt;&nbsp;keys)</pre>
+<div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>keys</code> - </dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -395,6 +452,10 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>keyList</h4>
 <pre>public&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;keyList()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the ordered key/column names</dd>
+</dl>
 </li>
 </ul>
 <a name="keySet--">
@@ -404,6 +465,10 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>keySet</h4>
 <pre>public&nbsp;java.util.Set&lt;java.lang.String&gt;&nbsp;keySet()</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>key/column names as a set that preserves iteration order</dd>
+</dl>
 </li>
 </ul>
 <a name="addKey-java.lang.String-">
@@ -413,6 +478,13 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addKey</h4>
 <pre>public&nbsp;int&nbsp;addKey(java.lang.String&nbsp;key)</pre>
+<div class="block">Adds a key/column for each Row at the end of the iteration order.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>key</code> - the new key to add</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the integer index of key/column which will be <code>keys.size() -1</code> if the key is new or the existing index if a case insensitive match of <code>key</code> already exited</dd>
+</dl>
 </li>
 </ul>
 <a name="addRow--">
@@ -422,6 +494,10 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow()</pre>
+<div class="block">Adds a new empty Row to the end of the list.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+</dl>
 </li>
 </ul>
 <a name="addRow-java.util.Map-">
@@ -431,6 +507,15 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(java.util.Map&nbsp;map)</pre>
+<div class="block">Adds key/values from <code>map</code> to a new Row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>map</code> - the key/values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Map)}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="addRow-int-java.util.Map-">
@@ -441,6 +526,20 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(int&nbsp;index,
                        java.util.Map&nbsp;map)</pre>
+<div class="block">Insert key/values from <code>map</code> as the new <code>index</code>th Row.
+ <p>
+ If RowKeys has not been initialized, it will be initialized with <code>map.keySet()</code>. 
+ <p>
+ If RowKeys has been initialized, only keys/values with a case insensitive matching key in RowKeys will be copied into the new Row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
+<dd><code>map</code> - the key/values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Object[])</code></dd>
+</dl>
 </li>
 </ul>
 <a name="addRow-java.util.List-">
@@ -450,6 +549,15 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(java.util.List&nbsp;values)</pre>
+<div class="block">Adds <code>values</code>as a new Row to the end of the list.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>values</code> - the values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Object[])}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="addRow-int-java.util.List-">
@@ -460,6 +568,16 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(int&nbsp;index,
                        java.util.List&nbsp;values)</pre>
+<div class="block">Adds <code>values</code> as the new <code>index</code>th Row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
+<dd><code>values</code> - the values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Object[])}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="addRow-java.lang.Object:A-">
@@ -469,6 +587,15 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(java.lang.Object[]&nbsp;values)</pre>
+<div class="block">Adds <code>values</code>as a new Row to the end of the list.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>values</code> - the values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Object[])}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="addRow-int-java.lang.Object:A-">
@@ -479,6 +606,18 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <h4>addRow</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;addRow(int&nbsp;index,
                        java.lang.Object[]&nbsp;values)</pre>
+<div class="block">Adds <code>values</code> as the new <code>index</code>th Row.
+ <p>
+ The returned Row becomes <code>lastRow</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
+<dd><code>values</code> - the values to add to the new Row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new Row</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(int, Object[])}</code></dd>
+</dl>
 </li>
 </ul>
 <a name="put-java.lang.String-java.lang.Object-">
@@ -489,6 +628,15 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <h4>put</h4>
 <pre>public&nbsp;void&nbsp;put(java.lang.String&nbsp;key,
                 java.lang.Object&nbsp;value)</pre>
+<div class="block">Sets key/value on <code>lastRow</code>.
+ <p>
+ If RowKeys does not have a case insensitive match for <code>key</code> then <code>key</code>
+ automatically becomes the new last column for all rows.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>key</code> - </dd>
+<dd><code>value</code> - </dd>
+</dl>
 </li>
 </ul>
 <a name="put-java.lang.Object-">
@@ -498,6 +646,11 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>put</h4>
 <pre>public&nbsp;void&nbsp;put(java.lang.Object&nbsp;value)</pre>
+<div class="block">Adds <code>value</code> to the end of <code>lastRow</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>value</code> - </dd>
+</dl>
 </li>
 </ul>
 <a name="add-io.inversion.utils.Rows.Row-">
@@ -506,7 +659,11 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <ul class="blockList">
 <li class="blockList">
 <h4>add</h4>
-<pre>public&nbsp;boolean&nbsp;add(<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;e)</pre>
+<pre>public&nbsp;boolean&nbsp;add(<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;row)</pre>
+<div class="block">Adds the key/values from <code>row</code> as a new Row.
+ <p>
+ The actual Row object is not added to the Rows list because its RowKeys object
+ will not be the same.  Instead all key/values are copied into a new Row.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>add</code>&nbsp;in interface&nbsp;<code>java.util.Collection&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
@@ -514,22 +671,10 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <dd><code>add</code>&nbsp;in interface&nbsp;<code>java.util.List&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>add</code>&nbsp;in class&nbsp;<code>java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
-</dl>
-</li>
-</ul>
-<a name="add-int-io.inversion.utils.Rows.Row-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>add</h4>
-<pre>public&nbsp;void&nbsp;add(int&nbsp;index,
-                <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;element)</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>add</code>&nbsp;in interface&nbsp;<code>java.util.List&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code>add</code>&nbsp;in class&nbsp;<code>java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - a map containing the key/values to add</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#addRow(Map)}</code></dd>
 </dl>
 </li>
 </ul>
@@ -540,6 +685,7 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <li class="blockList">
 <h4>addAll</h4>
 <pre>public&nbsp;boolean&nbsp;addAll(java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</pre>
+<div class="block">Calls <code>#addRow(Map)</code> for each Row in <code>rows</code></div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>addAll</code>&nbsp;in interface&nbsp;<code>java.util.Collection&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
@@ -553,26 +699,18 @@ extends java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.htm
 <a name="addAll-int-java.util.Collection-">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>addAll</h4>
 <pre>public&nbsp;boolean&nbsp;addAll(int&nbsp;index,
                       java.util.Collection&lt;? extends <a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;&nbsp;rows)</pre>
+<div class="block">Calls <code>#addRow(int, Map)</code> for each Row in <code>rows</code></div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>addAll</code>&nbsp;in interface&nbsp;<code>java.util.List&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>addAll</code>&nbsp;in class&nbsp;<code>java.util.ArrayList&lt;<a href="../../../io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&gt;</code></dd>
 </dl>
-</li>
-</ul>
-<a name="sortBy-java.lang.String...-">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>sortBy</h4>
-<pre>public&nbsp;void&nbsp;sortBy(java.lang.String...&nbsp;keys)</pre>
 </li>
 </ul>
 </li>

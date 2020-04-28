@@ -710,13 +710,20 @@ implements java.util.Map&lt;java.lang.String,java.lang.Object&gt;</pre>
   <li>SUPPORTED $.store..price                             //the prices of all books
   <li>SUPPORTED $..book[2]                                 //the third book
   <li>SUPPORTED $..book[?(@.price<10)]                     //all books priced < 10
+  <li>SUPPORTED $..[?(@.price<10)]                         //find any node with a price property
+  <li>SUPPORTED $..[?(@.*.price<10)]                       //find the parent of any node with a price property
   <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]   //all books where 'Herman Melville' is the author
   <li>SUPPORTED $..*                                       //all members of JSON structure.
   <li>TODO      $..book[(@.length-1)]                      //the last book in order
   <li>TODO      $..book[-1:]                               //the last book in order
   <li>TODO      $..book[0,1]                               //the first two books
   <li>TODO      $..book[:2]                                //the first two books
-  <li>SUPPORTED $..book[?(@.isbn)]                         //filter all books with isbn number
+  <li>SUPPORTED $..book[?(@.isbn)]                         //find all books with an isbn property
+  <li>SUPPORTED $..[?(@.isbn)]                             //find any node with an isbn property
+  <li>SUPPORTED $..[?(@.*.isbn)]                           //find the parent of any node with an isbn property
+  <li>SUPPORTED $..[?(@.*.*.isbn)]                         //find the grandparent of any node with an isbn property
+  
+  
  </ul>
  
  The JSON Path following boolean comparison operators are supported: 
