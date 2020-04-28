@@ -21,10 +21,13 @@ import java.util.regex.Pattern;
 /**
  * Transforms English words from singular to plural form.
  * <p>
+ * Used by various DBs to attempt to make pluralized Collection names when reflecting on a 
+ * datasource that might use the singular noun form for a table name.
+ * 
+ * <p>
  * Examples:
  * <pre>
  *    English.plural("word") = "words";
- *
  *    English.plural("cat", 1) = "cat";
  *    English.plural("cat", 2) = "cats";
  * </pre>
@@ -83,12 +86,12 @@ public class Pluralizer
 
    private static Pluralizer     inflector         = new Pluralizer();
 
-   public Pluralizer()
+   Pluralizer()
    {
       this(MODE.ENGLISH_ANGLICIZED);
    }
 
-   public Pluralizer(MODE mode)
+   Pluralizer(MODE mode)
    {
 
       uncountable(new String[]{
@@ -214,7 +217,7 @@ public class Pluralizer
     * @param count word count
     * @return form of the word correct for given count
     */
-   public String getPlural(String word, int count)
+   String getPlural(String word, int count)
    {
       if (count == 1)
       {
@@ -260,12 +263,12 @@ public class Pluralizer
     * @param count word count
     * @return form of the word correct for given count
     */
-   public static String plural(String word, int count)
+   static String plural(String word, int count)
    {
       return inflector.getPlural(word, count);
    }
 
-   public static void setMode(MODE mode)
+   static void setMode(MODE mode)
    {
       Pluralizer newInflector = new Pluralizer(mode);
       inflector = newInflector;
@@ -275,7 +278,7 @@ public class Pluralizer
    //   {
    private interface Rule
    {
-      String getPlural(String singular);
+      public String getPlural(String singular);
    }
 
    private static class RegExpRule implements Rule
@@ -310,7 +313,7 @@ public class Pluralizer
       private final String   singular;
       private final String   plural;
 
-      public CategoryRule(String[] list, String singular, String plural)
+      CategoryRule(String[] list, String singular, String plural)
       {
          this.list = list;
          this.singular = singular;
@@ -338,7 +341,7 @@ public class Pluralizer
 
    private final List<Rule> rules = new ArrayList<Rule>();
 
-   protected String getPlural(String word)
+   String getPlural(String word)
    {
       for (Rule rule : rules)
       {
@@ -351,12 +354,12 @@ public class Pluralizer
       return null;
    }
 
-   protected void uncountable(String[] list)
+   void uncountable(String[] list)
    {
       rules.add(new CategoryRule(list, "", ""));
    }
 
-   protected void irregular(String singular, String plural)
+   void irregular(String singular, String plural)
    {
       if (singular.charAt(0) == plural.charAt(0))
       {
@@ -369,7 +372,7 @@ public class Pluralizer
       }
    }
 
-   protected void irregular(String[][] list)
+   void irregular(String[][] list)
    {
       for (String[] pair : list)
       {
@@ -377,12 +380,12 @@ public class Pluralizer
       }
    }
 
-   protected void rule(String singular, String plural)
+   void rule(String singular, String plural)
    {
       rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
    }
 
-   protected void rule(String[][] list)
+   void rule(String[][] list)
    {
       for (String[] pair : list)
       {
@@ -390,7 +393,7 @@ public class Pluralizer
       }
    }
 
-   protected void categoryRule(String[] list, String singular, String plural)
+   void categoryRule(String[] list, String singular, String plural)
    {
       rules.add(new CategoryRule(list, singular, plural));
    }
