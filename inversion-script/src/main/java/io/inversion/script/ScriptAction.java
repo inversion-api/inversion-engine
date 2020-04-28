@@ -470,7 +470,7 @@ public class ScriptAction extends Action<ScriptAction>
             JSArray dataArr = r.getJson().getArray("data");
             if (!dataArr.isEmpty())
             {
-               script = dataArr.getObject(0);
+               script = dataArr.getNode(0);
             }
          }
       }

@@ -39,239 +39,80 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 
+import io.inversion.ApiException;
+
 /**
+ * Yet another JavaScript/JSON map object representation with a few superpowers.
+ * <p>
+ * Inversion encourages working with JSON data structures abstractly instead of transcoding them into a concrete Java object model.
+ * So JSNode and JSArray were designed to make it as easy as possible to work with JSON in its "native form."
+ * <p>
+ * JSNode and JSArray are a one stop shop for:
+ * <ul>
+ *  <li>Parsing and printing JSON
+ *  <li>Finding elements of a document with JSONPath and JSONPointer
+ *  <li>Diff and patching with JSONPatch
+ * </ul>
+ * <p>
+ * Property name case is preserved but considered case insensitive when accessing a property by name.
+ * <p>
+ * Property iteration or is preserved based on insertion order.
+ * <p>
+ * It is possible to create a document with a child JSNode appearing multiple times in the document including circular reference loops.  
+ * When printing a document, if a JSNode has previously been printed AND it has an 'href' property, instead of erroring, the printer
+ * will write an '@link' property pointing to the previously printed href.  If the JSNode does not have an 'href' an error will be thrown.  
+ * <p>
+ * Under the covers this Jackson is used as the json parser.
  * 
- * TODO: 
- *  Replace diff/patch with open source versions 
- *   https://stackoverflow.com/questions/50967015/how-to-compare-json-documents-and-return-the-differences-with-jackson-or-gson
- *   https://github.com/flipkart-incubator/zjsonpatch
- *   https://github.com/java-json-tools/json-patch
- *   https://javaee.github.io/javaee-spec/javadocs/javax/json/JsonPatch.html
- *   
- * TODO: Investigate MergePatch  
- * 
+ * @see JSArray
+ * @see JSONPath - https://github.com/json-path/JsonPath
+ * @see JSONPointer - https://tools.ietf.org/html/rfc6901
+ * @see JSONPatch - https://github.com/flipkart-incubator/zjsonpatch
  *
  */
 public class JSNode implements Map<String, Object>
 {
-   LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
+   /**
+    * Maps the lower case JSProperty.name to the property for case
+    * insensitive lookup with the ability to preserve the origional
+    * case.
+    */
+   protected LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
 
+   /**
+    * Creates an empty JSNode.  
+    */
    public JSNode()
    {
 
    }
 
-   public JSNode(Object... nvPairs)
-   {
-      with(nvPairs);
-   }
-
-   public JSNode(Map map)
-   {
-      putAll(map);
-   }
-
-   public JSNode copy()
-   {
-      return JSNode.parseJsonNode(toString());
-   }
-
-   public void sortKeys()
-   {
-      List<String> keys = new ArrayList(properties.keySet());
-      Collections.sort(keys);
-
-      LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
-      for (String key : keys)
-      {
-         newProps.put(key, properties.get(key));
-      }
-      properties = newProps;
-   }
-
-   public JSArray diff(JSNode source)
-   {
-      ObjectMapper mapper = new ObjectMapper();
-
-      JsonNode patch;
-      try
-      {
-         patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
-         JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
-         return patchesArray;
-      }
-      catch (Exception e)
-      {
-         e.printStackTrace();
-         Utils.rethrow(e);
-      }
-
-      return null;
-   }
-
-   public JSArray patch(JSArray patches)
-   {
-      //-- migrate legacy "." based paths to JSONPointer
-      for (JSNode patch : patches.asNodeList())
-      {
-         String path = patch.getString("path");
-         if (path != null && !path.startsWith("/"))
-         {
-            path = "/" + path.replace(".", "/");
-         }
-         patch.put("path", path);
-
-         path = patch.getString("from");
-         if (path != null && !path.startsWith("/"))
-         {
-            path = "/" + path.replace(".", "/");
-         }
-         patch.put("from", path);
-      }
-
-      ObjectMapper mapper = new ObjectMapper();
-
-      try
-      {
-         JsonNode target = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
-         JSNode patched = JSNode.parseJsonNode(target.toString());
-
-         this.properties = patched.properties;
-         if (this.isArray())
-         {
-            ((JSArray) this).objects = ((JSArray) patched).objects;
-         }
-      }
-      catch (Exception e)
-      {
-         Utils.rethrow(e);
-      }
-
-      return null;
-   }
-
-   public boolean isArray()
-   {
-      return false;
-   }
-
-   public JSNode getNode(String name)
-   {
-      return (JSNode) get(name);
-   }
-
-   public JSArray getArray(String name)
-   {
-      return (JSArray) get(name);
-   }
-
-   public String getString(String name)
-   {
-      Object value = get(name);
-      if (value != null)
-         return value.toString();
-      return null;
-   }
-
-   public int getInt(String name)
-   {
-      return findInt(name);
-   }
-
-   public double getDouble(String name)
-   {
-      return findDouble(name);
-   }
-
-   public boolean getBoolean(String name)
-   {
-      return findBoolean(name);
-   }
-
-   public String findString(String path)
-   {
-      Object found = find(path);
-      if (found != null)
-         return found.toString();
-
-      return null;
-   }
-
-   public int findInt(String path)
-   {
-      Object found = find(path);
-      if (found != null)
-         return Utils.atoi(found);
-
-      return -1;
-   }
-
-   public double findDouble(String path)
-   {
-      Object found = find(path);
-      if (found != null)
-         return Utils.atod(found);
-
-      return -1;
-   }
-
-   public boolean findBoolean(String path)
-   {
-      Object found = find(path);
-      if (found != null)
-         return Utils.atob(found);
-
-      return false;
-   }
-
-   public JSNode findNode(String path)
-   {
-      return (JSNode) find(path);
-   }
-
-   public JSArray findArray(String path)
-   {
-      return (JSArray) find(path);
-   }
-
    /**
-    * Calls collect(jsonPath, 1) and returns
-    * the first element of the response JSArray
-    * or returns null it nothing was found. 
+    * Creates a JSNode with <code>nameValuePairs</code> as the initial properties.
+    * <p>
+    * The first and every other element in <code>nameValuePairs</code> should be a string.
     * 
-    * @see collect(jsonPath, qty);
-    * @param jsonPath
-    * @return
+    * @param nameValuePairs
+    * @see #with(Object...)
     */
-   public Object find(String jsonPath)
+   public JSNode(Object... nameValuePairs)
    {
-      JSArray found = findAll(jsonPath, 1);
-      if (found.size() > 0)
-         return found.get(0);
-
-      return null;
+      with(nameValuePairs);
    }
 
    /**
-    * @deprecated Use {@link #findAllNodes()} instead.
+    * Creates a JSNode with <code>nameValuePairs</code> as the initial properties.
+    * 
+    * @param map
+    * @see #putAll(Map)
     */
-   public List<JSNode> collectNodes(String jsonPath)
+   public JSNode(Map nameValuePairs)
    {
-      return (List<JSNode>) findAll(jsonPath).asList();
-   }
-
-   public JSArray findAll(String jsonPath)
-   {
-      return findAll(jsonPath, -1);
-   }
-
-   public List<JSNode> findAllNodes(String jsonPath)
-   {
-      return (List<JSNode>) findAll(jsonPath).asList();
+      putAll(nameValuePairs);
    }
 
    /**
-    * A heroically permissive node finder supporting JSON Pointer, JSON Path and
+    * A heroically permissive finder supporting JSON Pointer, JSONPath and
     * a simple 'dot and wildcard' type of system like so:
     * 'propName.childPropName.*.skippedGenerationPropsName.4.fifthArrayNodeChildPropsName.**.recursivelyFoundPropsName'.
     * 
@@ -353,41 +194,6 @@ public class JSNode implements Map<String, Object>
       pathExpression = fromJsonPointer(pathExpression);
       pathExpression = fromJsonPath(pathExpression);
       return new JSArray(findAll0(pathExpression, qty));
-   }
-
-   /**
-    * Simply replaces "/"s with "."
-    * 
-    * Slashes in property names (seriously a stupid idea anyway) which is supported
-    * by JSON Pointer is not supported.
-    * 
-    * @param jsonPointer
-    * @return
-    */
-   static String fromJsonPointer(String jsonPointer)
-   {
-      return jsonPointer.replace('/', '.');
-   }
-
-   /**
-    * Converts a proper json path statement into its "relaxed dotted wildcard" form
-    * so that it is easier to parse.
-    */
-   static String fromJsonPath(String jsonPath)
-   {
-      if (jsonPath.charAt(0) == '$')
-         jsonPath = jsonPath.substring(1, jsonPath.length());
-
-      jsonPath = jsonPath.replace("@.", "@_"); //from jsonpath spec..switching to "_" to make parsing easier
-      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[", "$1.["); //from json path spec array[index] converted to array.[index]. to support arra.index.value legacy format.
-      jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
-      jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
-      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
-      jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
-      jsonPath = jsonPath.replace("[*]", "*");
-
-      //System.out.println(pathStr);
-      return jsonPath;
    }
 
    List findAll0(String jsonPath, int qty)
@@ -665,17 +471,310 @@ public class JSNode implements Map<String, Object>
       }
    }
 
+   public JSArray diff(JSNode source)
+   {
+      ObjectMapper mapper = new ObjectMapper();
+
+      JsonNode patch;
+      try
+      {
+         patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
+         return patchesArray;
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         Utils.rethrow(e);
+      }
+
+      return null;
+   }
+
+   public JSArray patch(JSArray patches)
+   {
+      //-- migrate legacy "." based paths to JSONPointer
+      for (JSNode patch : patches.asNodeList())
+      {
+         String path = patch.getString("path");
+         if (path != null && !path.startsWith("/"))
+         {
+            path = "/" + path.replace(".", "/");
+         }
+         patch.put("path", path);
+
+         path = patch.getString("from");
+         if (path != null && !path.startsWith("/"))
+         {
+            path = "/" + path.replace(".", "/");
+         }
+         patch.put("from", path);
+      }
+
+      ObjectMapper mapper = new ObjectMapper();
+
+      try
+      {
+         JsonNode target = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
+         JSNode patched = JSNode.parseJsonNode(target.toString());
+
+         this.properties = patched.properties;
+         if (this.isArray())
+         {
+            ((JSArray) this).objects = ((JSArray) patched).objects;
+         }
+      }
+      catch (Exception e)
+      {
+         Utils.rethrow(e);
+      }
+
+      return null;
+   }
+
    @Override
    public Object get(Object name)
    {
       if (name == null)
          return null;
 
-      JSProperty p = getProperty(name.toString());
+      JSProperty p = properties.get(name.toString());
       if (p != null)
          return p.getValue();
 
       return null;
+   }
+
+   /** 
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the value of property <code>name</code> cast to a JSNode if exists else null
+    * @throws ClassCastException if the object found is not a JSNode
+    * @see #get(Object)
+    */
+   public JSNode getNode(String name) throws ClassCastException
+   {
+      return (JSNode) get(name);
+   }
+
+   /** 
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the value of property <code>name</code> cast to a JSArray if exists else null
+    * @throws ClassCastException if the object found is not a JSArray
+    * @see #get(Object)
+    */
+   public JSArray getArray(String name)
+   {
+      return (JSArray) get(name);
+   }
+
+   /**
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the stringified value of property <code>name</code> if it exists else null
+    * @see #get(Object)
+    */
+   public String getString(String name)
+   {
+      Object value = get(name);
+      if (value != null)
+         return value.toString();
+      return null;
+   }
+
+   /**
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the value of property <code>name</code> stringified and parsed as an int if it exists else -1
+    * @see #get(Object)
+    */
+   public int getInt(String name)
+   {
+      Object found = get(name);
+      if (found != null)
+         return Utils.atoi(found);
+
+      return -1;
+   }
+
+   /**
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the value of property <code>name</code> stringified and parsed as a double if it exists else -1
+    * @see #get(Object)
+    */
+   public double getDouble(String name)
+   {
+      Object found = get(name);
+      if (found != null)
+         return Utils.atod(found);
+
+      return -1;
+   }
+
+   /**
+    * Convenience overloading of {@link #get(Object)}
+    * 
+    * @param name
+    * @return the value of property <code>name</code> stringified and parsed as a boolean if it exists else false
+    * @see #get(Object)
+    */
+   public boolean getBoolean(String name)
+   {
+      Object found = get(name);
+      if (found != null)
+         return Utils.atob(found);
+
+      return false;
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    * 
+    * @param name
+    * @return the first value found at <code>pathExpression</code> cast as a JSNode if exists else null
+    * @see #find(String)
+    * @throws ClassCastException if the object found is not a JSNode
+    */
+   public JSNode findNode(String pathExpression)
+   {
+      return (JSNode) find(pathExpression);
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    *
+    * @param name
+    * @return the first value found at <code>pathExpression</code> cast as a JSArray if exists else null
+    * @see #find(String)
+    * @throws ClassCastException if the object found is not a JSArray
+    */
+   public JSArray findArray(String pathExpression)
+   {
+      return (JSArray) find(pathExpression);
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    * 
+    * @param pathExpression
+    * @return the first value found at <code>pathExpression</code> stringified if exists else null
+    * @see #find(String)
+    */
+   public String findString(String pathExpression)
+   {
+      Object found = find(pathExpression);
+      if (found != null)
+         return found.toString();
+
+      return null;
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    * 
+    * @param pathExpression
+    * @return the first value found at <code>pathExpression</code> stringified and parsed as an int if exists else -1
+    * @see #find(String)
+    */
+   public int findInt(String pathExpression)
+   {
+      Object found = find(pathExpression);
+      if (found != null)
+         return Utils.atoi(found);
+
+      return -1;
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    * 
+    * @param pathExpression
+    * @return the first value found at <code>pathExpression</code> stringified and parsed as a double if exists else -1
+    * @see #find(String)
+    */
+   public double findDouble(String pathExpression)
+   {
+      Object found = find(pathExpression);
+      if (found != null)
+         return Utils.atod(found);
+
+      return -1;
+   }
+
+   /**
+    * Convenience overloading of {@link #find(String)}
+    * 
+    * @param pathExpression
+    * @return the first value found at <code>pathExpression</code> stringified and parsed as a boolean if exists else false
+    * @see #find(String)
+    */
+   public boolean findBoolean(String pathExpression)
+   {
+      Object found = find(pathExpression);
+      if (found != null)
+         return Utils.atob(found);
+
+      return false;
+   }
+
+   /**
+    * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
+    * 
+    * @see #findAll(String, int)
+    * @return the first item found at <code>pathExpression</code>
+    */
+   public Object find(String pathExpression)
+   {
+      JSArray found = findAll(pathExpression, 1);
+      if (found.size() > 0)
+         return found.get(0);
+
+      return null;
+   }
+
+   /**
+    * Convenience overloading of {@link #findAll(String, int)}
+    * @param pathExpression
+    * @return all items found for <code>pathExpression</code>
+    * @see #findAll(String, int)
+    */
+   public JSArray findAll(String pathExpression)
+   {
+      return findAll(pathExpression, -1);
+   }
+
+   /**
+    * Convenience overloading of {@link #findAll(String, int)}
+    * @param pathExpression
+    * @return all items found for <code>pathExpression</code> cast as a List<JSNode>
+    * @see #findAll(String, int)
+    */
+   public List<JSNode> findAllNodes(String pathExpression)
+   {
+      return (List<JSNode>) findAll(pathExpression).asList();
+   }
+
+   @Override
+   public Object put(String name, Object value)
+   {
+      JSProperty prop = properties.put(name.toLowerCase(), new JSProperty(name, value));
+      return prop;
+   }
+
+   @Override
+   public void putAll(Map map)
+   {
+      for (Object key : map.keySet())
+      {
+         put(key.toString(), map.get(key));
+      }
    }
 
    /**
@@ -696,22 +795,6 @@ public class JSNode implements Map<String, Object>
       this.properties = temp;
 
       return prop;
-   }
-
-   @Override
-   public Object put(String name, Object value)
-   {
-      JSProperty prop = properties.put(name.toLowerCase(), new JSProperty(name, value));
-      return prop;
-   }
-
-   @Override
-   public void putAll(Map map)
-   {
-      for (Object key : map.keySet())
-      {
-         put(key.toString(), map.get(key));
-      }
    }
 
    public JSNode with(Object... nvPairs)
@@ -736,11 +819,6 @@ public class JSNode implements Map<String, Object>
       }
 
       return this;
-   }
-
-   JSProperty getProperty(String name)
-   {
-      return properties.get(name.toLowerCase());
    }
 
    @Override
@@ -867,34 +945,91 @@ public class JSNode implements Map<String, Object>
       return map;
    }
 
+   /**
+    * Makes a deep copy of this JSNode by stringifying/parsing
+    * @return a deep copy of this node.
+    */
+   public JSNode copy()
+   {
+      return JSNode.parseJsonNode(toString());
+   }
+
+   /**
+    * Changes the property name iteration order from insertion order to alphabetic order.
+    */
+   public void sortKeys()
+   {
+      List<String> keys = new ArrayList(properties.keySet());
+      Collections.sort(keys);
+
+      LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
+      for (String key : keys)
+      {
+         newProps.put(key, properties.get(key));
+      }
+      properties = newProps;
+   }
+
+   /**
+    * Easy alternative to 'instanceof' to differentiate JSNode from JSArray (which subclasses JSNode).
+    * @return true if this class is a subclass of JSArray.
+    * @see JSArray.isArray()
+    */
+   public boolean isArray()
+   {
+      return false;
+   }
+
+   /**
+    * Pretty prints the JSNode with properties written out in their original case.
+    */
    @Override
    public String toString()
    {
       return JSNode.toJson((JSNode) this, true, false);
    }
 
+   /**
+    * Prints the JSNode with properties written out in their original case.
+    * @param pretty  should spaces and carriage returns be added to the doc for readability
+    */
    public String toString(boolean pretty)
    {
       return JSNode.toJson((JSNode) this, pretty, false);
    }
 
-   public String toString(boolean pretty, boolean tolowercase)
+   /**
+    * Prints the JSNode
+    * @param pretty  should spaces and carriage returns be added to the doc for readability
+    * @lowercasePropertyNames when true all property names are printed in lower case instead of their original case
+    */
+   public String toString(boolean pretty, boolean lowercasePropertyNames)
    {
-      return JSNode.toJson((JSNode) this, pretty, tolowercase);
+      return JSNode.toJson((JSNode) this, pretty, lowercasePropertyNames);
    }
 
+   /**
+    * @return the number of properties on this node.
+    */
    @Override
    public int size()
    {
       return properties.size();
    }
 
+   /**
+    * @return true if <code>size() == 0</code>
+    */
    @Override
    public boolean isEmpty()
    {
       return properties.isEmpty();
    }
 
+   /**
+    * Checks all property values for equality to <code>value</code>
+    * @return true if any property values are equal to <code>value</code>
+    */
    @Override
    public boolean containsValue(Object value)
    {
@@ -908,44 +1043,104 @@ public class JSNode implements Map<String, Object>
       return false;
    }
 
+   /**
+    * Removes all properties
+    */
    @Override
    public void clear()
    {
       properties.clear();
    }
 
+   /**
+    * @return a collection of property values
+    */
    @Override
    public Collection values()
    {
       return asMap().values();
    }
 
+   /**
+    * @return all property name / value pairs
+    */
    @Override
-   public Set entrySet()
+   public Set<Map.Entry<String, Object>> entrySet()
    {
       return asMap().entrySet();
    }
 
+   /**
+    * Returns this object as the only element in a list.  
+    * <p>
+    * JSArray overrides this method to return all of its elements in a list.
+    * <p>
+    * This method is designed to make it super easy to iterate over all 
+    * property values or array elements without having to cast or consider
+    * differences between JSNode and JSArray. 
+    * <p>
+    * For example:
+    * <p>
+    * <pre>
+    * JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
+    * for(Object value : node.asList())
+    * {
+    *    //do something;
+    * }
+    * </pre>
+    * 
+    * @return A List with this node as the only value.
+    * @see JSArray.asList()
+    * @see #asNodeList()
+    */
    public List asList()
    {
-      if (this instanceof JSArray)
-         return new ArrayList(((JSArray) this).objects);
-
       ArrayList list = new ArrayList();
       list.add(this);
       return list;
    }
 
+   /**
+    * Returns this object as the only element in a List<JSNode>  
+    * <p>
+    * JSArray overrides this method to return all of its elements in a list.
+    * <p>
+    * This method is designed to make it super easy to iterate over all 
+    * property values or array elements without having to cast or consider
+    * differences between JSNode and JSArray. 
+    * <p>
+    * For example:
+    * <p>
+    * <pre>
+    * JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
+    * for(JSNode child : node.asList())
+    * {
+    *    System.out.println("found items with price: " + child.find("**.item.price"));
+    * }
+    * </pre>
+    * 
+    * @return A List with this node as the only value.
+    * @see #asList()
+    */
    public List<JSNode> asNodeList()
    {
       return asList();
    }
 
+   /**
+    * Similar to #asList() but instead of returning a List, it returns a this JSNode
+    * as the only item in a JSArray.
+    * <p>
+    * JSArray overrides this method to simply return 'this'.
+    * <p>
+    * 
+    * @return a JSArray with 'this' as the only element. 
+    * @see #asList()
+    * @see #asNodeList()
+    * @see JSArray.asArray()
+    */
    public JSArray asArray()
    {
-      if (this instanceof JSArray)
-         return (JSArray) this;
-
       return new JSArray(this);
    }
 
@@ -954,6 +1149,14 @@ public class JSNode implements Map<String, Object>
    //--------------------------------------------------------------------------------------
    //-- The following methods are static parse/print related
 
+   /**
+    * Turns a JSON string in to JSNode (maps), JSArray (lists), String numbers and booleans.
+    * <p>
+    * Jackson is the underlying parser
+    * 
+    * @param json  the json string to parse
+    * @return a String, number, boolean, JSNode or JSArray
+    */
    public static Object parseJson(String json)
    {
       try
@@ -977,17 +1180,31 @@ public class JSNode implements Map<String, Object>
       }
    }
 
-   public static JSNode parseJsonNode(String json)
+   /**
+    * Utility overloading of {@link #parseJson(String)} to cast the return as a JSNode
+    *  
+    * @param json
+    * @throws ClassCastException if the result of parsing is not a JSNode
+    * @return the result of parsing the json document cast to a JSNode
+    */
+   public static JSNode parseJsonNode(String json) throws ClassCastException
    {
       return ((JSNode) JSNode.parseJson(json));
    }
 
+   /**
+    * Utility overloading of {@link #parseJson(String)} to cast the return as a JSArray
+    *  
+    * @param json
+    * @throws ClassCastException if the result of parsing is not a JSArray
+    * @return the result of parsing the json document cast to a JSArray
+    */
    public static JSArray parseJsonArray(String json)
    {
       return ((JSArray) JSNode.parseJson(json));
    }
 
-   static String toJson(JSNode node, boolean pretty, boolean lowercaseNames)
+   static String toJson(JSNode node, boolean pretty, boolean lowercasePropertyNames)
    {
       try
       {
@@ -996,7 +1213,7 @@ public class JSNode implements Map<String, Object>
          if (pretty)
             json.useDefaultPrettyPrinter();
 
-         JSNode.writeNode(node, json, new HashSet(), lowercaseNames);
+         JSNode.writeNode(node, json, new HashSet(), lowercasePropertyNames);
          json.flush();
          baos.flush();
 
@@ -1055,7 +1272,7 @@ public class JSNode implements Map<String, Object>
          }
          else
          {
-            json.writeString(encodeJson(obj + ""));
+            json.writeString(encodeStringValue(obj + ""));
          }
       }
       json.writeEndArray();
@@ -1111,11 +1328,13 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
+    * Replaces JSON control characters with spaces.
+    *
     * @param str
-    * @return
+    * @return  str with control characters replaced with spaces
+    * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
     */
-   static String encodeJson(String str)
+   static String encodeStringValue(String str)
    {
       if (str == null)
          return null;
@@ -1126,17 +1345,24 @@ public class JSNode implements Map<String, Object>
 
    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
-      JSProperty href = node.getProperty("href");
+      JSProperty href = node.properties.get("href");
 
       if (visited.contains(node))
       {
-         json.writeStartObject();
          if (href != null)
          {
-            json.writeStringField("@link", href.getValue() + "");
-         }
+            json.writeStartObject();
+            if (href != null)
+            {
+               json.writeStringField("@link", href.getValue() + "");
+            }
 
-         json.writeEndObject();
+            json.writeEndObject();
+         }
+         else
+         {
+            ApiException.throw500InternalServerError("Your JSNode document contains the same object in multiple locations without a 'href' property.");
+         }
          return;
       }
       visited.add(node);
@@ -1154,7 +1380,7 @@ public class JSNode implements Map<String, Object>
 
       for (String key : node.keySet())
       {
-         JSProperty p = node.getProperty(key);
+         JSProperty p = node.properties.get(key);
          if (p == href)
             continue;
 
@@ -1219,7 +1445,7 @@ public class JSNode implements Map<String, Object>
             }
             else
             {
-               strVal = JSNode.encodeJson(strVal);
+               strVal = JSNode.encodeStringValue(strVal);
                json.writeStringField(name, strVal);
             }
          }
@@ -1228,57 +1454,38 @@ public class JSNode implements Map<String, Object>
    }
 
    /**
-    * Removes all empty objects from the tree
-    * @param parent - parent node
+    * Simply replaces "/"s with "."
+    * 
+    * Slashes in property names (seriously a stupid idea anyway) which is supported
+    * by JSON Pointer is not supported.
+    * 
+    * @param jsonPointer
+    * @return
     */
-   private boolean prune0(Object parent)
+   static String fromJsonPointer(String jsonPointer)
    {
-      if (parent instanceof JSArray)
-      {
-         JSArray arr = ((JSArray) parent);
-         for (int i = 0; i < arr.length(); i++)
-         {
-            if (prune0(arr.get(i)))
-            {
-               arr.remove(i);
-               i--;
-            }
-         }
-         return arr.length() == 0;
-      }
-      else if (parent instanceof JSNode)
-      {
-         boolean prune = true;
-         JSNode js = (JSNode) parent;
-         for (String key : js.keySet())
-         {
-            Object child = js.get(key);
-            prune &= prune0(child);
-         }
-
-         if (prune)
-         {
-            for (String key : js.keySet())
-            {
-               js.remove(key);
-            }
-         }
-
-         return prune;
-      }
-      else
-      {
-         return parent == null;
-      }
+      return jsonPointer.replace('/', '.');
    }
 
    /**
-    * Removes all empty objects from the tree
-    * of current JSNode
+    * Converts a proper json path statement into its "relaxed dotted wildcard" form
+    * so that it is easier to parse.
     */
-   public boolean prune()
+   static String fromJsonPath(String jsonPath)
    {
-      return prune0(this);
+      if (jsonPath.charAt(0) == '$')
+         jsonPath = jsonPath.substring(1, jsonPath.length());
+
+      jsonPath = jsonPath.replace("@.", "@_"); //from jsonpath spec..switching to "_" to make parsing easier
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[", "$1.["); //from json path spec array[index] converted to array.[index]. to support arra.index.value legacy format.
+      jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
+      jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
+      jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
+      jsonPath = jsonPath.replace("[*]", "*");
+
+      //System.out.println(pathStr);
+      return jsonPath;
    }
 
    static class JSONPathTokenizer

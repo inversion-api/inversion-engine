@@ -815,7 +815,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                      continue;
                   }
 
-                  JSNode child = children.getObject(i);
+                  JSNode child = children.getNode(i);
                   for (String key2 : (List<String>) new ArrayList(child.keySet()))
                   {
                      if (!key2.equalsIgnoreCase("href"))
@@ -857,7 +857,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
             {
                if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray))
                {
-                  collapse(children.getObject(i), collapseAll, collapses, nextPath(path, key));
+                  collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
                }
             }
          }
