@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -312,8 +311,6 @@ public class Rows extends ArrayList<Row>
        */
       List<Object> values = null;
 
-      boolean      cloned = false;
-
       public Row()
       {
          this.keys = new RowKeys();
@@ -542,11 +539,7 @@ public class Rows extends ArrayList<Row>
       }
 
       /**
-       * If keyOrIndex must be a String key or an Integer index.
-       * <p>
-       * If keyOrIndex is null, null is returned.
-       * 
-       * @param keyOrIndex
+       * @param keyOrIndex  the String key or an Integer index to retrieve
        * @return the value at keyOrIndex as an Integer index or the value for keyOrIndex as a String key 
        */
       @Override
@@ -613,22 +606,28 @@ public class Rows extends ArrayList<Row>
          }
       }
 
-      @Override
-      public Object remove(Object key)
+      /**
+       * Sets the value for <code>keyOrIndex</code> to null.
+       * <p>
+       * It does not actually remove the key from RowKeys or remove
+       * the Row list element because RowKeys is shared across all Row
+       * instances and the iteration order and number of keys/columns
+       * needs to be the same for all of them.
+       * 
+       * @param keyOrIndex  the String key or an Integer index to remove.
+       */
+      public Object remove(Object keyOrIndex)
       {
-         int idx = keys.indexOf((String) key);
+         int idx = -1;
+         if (keyOrIndex instanceof String)
+            idx = keys.indexOf((String) keyOrIndex);
+         else
+            idx = ((Integer) keyOrIndex).intValue();
+
          if (idx >= 0)
          {
-            if (!cloned)
-            {
-               //copy on write
-               cloned = true;
-               keys = keys.clone();
-            }
-            Object value = values.get(idx);
-            keys.removeKey((String) key);
-            values.remove(idx);
-            return value;
+            if (idx > 0 && idx < size())
+               values.set(idx, null);
          }
          return null;
       }
@@ -641,13 +640,22 @@ public class Rows extends ArrayList<Row>
 
       }
 
+      /**
+       * Sets all values to null, but does not modify RowKeys or change the length of <code>values</code>.
+       */
       @Override
       public void clear()
       {
-         keys = new RowKeys();
-         values.clear();
+         for (int i = 0; i < values.size(); i++)
+         {
+            values.set(i, null);
+         }
       }
 
+      /**
+       * @return the RowKeys keySet which is common to all Row instances in this Rows.
+       * @see io.inversion.utils.Rows.RowKeys.keySet()
+       */
       @Override
       public Set<String> keySet()
       {
@@ -665,6 +673,9 @@ public class Rows extends ArrayList<Row>
          return Collections.unmodifiableList(values);
       }
 
+      /**
+       * Constructs a new LinkedHashSet of key/value pairs preserving column iteration order.
+       */
       @Override
       public Set<Entry<String, Object>> entrySet()
       {
@@ -713,13 +724,28 @@ public class Rows extends ArrayList<Row>
    }
 
    /**
-    * An ordered list of case insensitive key/column names.
+    * An ordered list of case insensitive key/column names shared by all Row instances in a Rows.
+    * <p>
+    * This allows you to map keys/column names to List indexes on each Row.
     */
    protected static class RowKeys
    {
-      List<String>         keys   = new ArrayList();
-      Map<String, Integer> lc     = new HashMap();
-      Set<String>          keySet = null;
+      /** 
+       * The ordered list of keys aka "column names" for this Rows object.
+       * <p>
+       * The values in this list preserver the case of the first entered occurrence of each case insensitive string.
+       */
+      List<String>         keys         = new ArrayList();
+
+      /**
+       * A map of lowercase key strings to their position in <code>keys</code> 
+       */
+      Map<String, Integer> lc           = new HashMap();
+
+      /**
+       * A reusable return value for {@code Rows#keySet()}
+       */
+      Set<String>          cachedKeySet = null;
 
       RowKeys()
       {
@@ -730,17 +756,9 @@ public class Rows extends ArrayList<Row>
          setKeys(keys);
       }
 
-      public RowKeys clone()
-      {
-         RowKeys clone = new RowKeys();
-         clone.keys = new LinkedList(keys);
-         clone.lc = new HashMap(lc);
-         return clone;
-      }
-
       int addKey(String key)
       {
-         keySet = null;
+         cachedKeySet = null;
 
          if (key == null)
             return -1;
@@ -757,30 +775,9 @@ public class Rows extends ArrayList<Row>
          return this.keys.size() - 1;
       }
 
-      int removeKey(String key)
-      {
-         keySet = null;
-
-         key = key.toLowerCase();
-         Integer idx = lc.get(key);
-         if (idx != null)
-         {
-            for (int i = idx; i < keys.size(); i++)
-               lc.remove(keys.get(i).toLowerCase());
-
-            this.keys.remove(idx.intValue());
-
-            for (int i = idx; i < keys.size(); i++)
-               lc.put(keys.get(i).toLowerCase(), i);
-
-            return idx.intValue();
-         }
-         return -1;
-      }
-
       void setKeys(List<String> keys)
       {
-         keySet = null;
+         cachedKeySet = null;
 
          this.keys.clear();
          this.lc.clear();
@@ -791,6 +788,10 @@ public class Rows extends ArrayList<Row>
          }
       }
 
+      /**
+       * @param key
+       * @return the case insensitive index of <code>key</code> in <code>keys</code> if it exists or -1
+       */
       int indexOf(String key)
       {
          if (key == null)
@@ -808,17 +809,24 @@ public class Rows extends ArrayList<Row>
          return keys.size();
       }
 
+      /**
+       * @param index
+       * @return the origional case string key for column <code>index</code>
+       */
       String getKey(int index)
       {
          return keys.get(index);
       }
 
+      /**
+       * @return a cached/reusable iteration order preserving set of original case key/column names
+       */
       Set<String> keySet()
       {
-         if (keySet == null)
-            keySet = new LinkedHashSet(this.keys);
+         if (cachedKeySet == null)
+            cachedKeySet = new LinkedHashSet(this.keys);
 
-         return keySet;
+         return cachedKeySet;
       }
    }
 
