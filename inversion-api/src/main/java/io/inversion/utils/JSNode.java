@@ -77,7 +77,7 @@ public class JSNode implements Map<String, Object>
     * insensitive lookup with the ability to preserve the origional
     * case.
     */
-   protected LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
+   LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
 
    /**
     * Creates an empty JSNode.  
@@ -532,13 +532,21 @@ public class JSNode implements Map<String, Object>
       return null;
    }
 
+   JSProperty getProperty(String name)
+   {
+      if (name == null)
+         return null;
+
+      return this.properties.get(name.toLowerCase());
+   }
+
    @Override
    public Object get(Object name)
    {
       if (name == null)
          return null;
 
-      JSProperty p = properties.get(name.toString());
+      JSProperty p = getProperty(name.toString());
       if (p != null)
          return p.getValue();
 
@@ -847,7 +855,7 @@ public class JSNode implements Map<String, Object>
       LinkedHashSet keys = new LinkedHashSet();
       for (String key : properties.keySet())
       {
-         JSProperty p = properties.get(key);
+         JSProperty p = getProperty(key);
          keys.add(p.getName());
       }
       return keys;
@@ -855,7 +863,7 @@ public class JSNode implements Map<String, Object>
 
    public boolean hasProperty(String name)
    {
-      JSProperty property = properties.get(name.toLowerCase());
+      JSProperty property = getProperty(name);
       return property != null;
    }
 
@@ -866,7 +874,7 @@ public class JSNode implements Map<String, Object>
 
    JSProperty removeProperty(String name)
    {
-      JSProperty property = properties.get(name.toLowerCase());
+      JSProperty property = getProperty(name.toLowerCase());
       if (property != null)
          properties.remove(name.toLowerCase());
 
@@ -965,7 +973,7 @@ public class JSNode implements Map<String, Object>
       LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
       for (String key : keys)
       {
-         newProps.put(key, properties.get(key));
+         newProps.put(key, getProperty(key));
       }
       properties = newProps;
    }
@@ -1345,7 +1353,7 @@ public class JSNode implements Map<String, Object>
 
    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception
    {
-      JSProperty href = node.properties.get("href");
+      JSProperty href = node.getProperty("href");
 
       if (visited.contains(node))
       {
@@ -1380,7 +1388,7 @@ public class JSNode implements Map<String, Object>
 
       for (String key : node.keySet())
       {
-         JSProperty p = node.properties.get(key);
+         JSProperty p = node.getProperty(key);
          if (p == href)
             continue;
 

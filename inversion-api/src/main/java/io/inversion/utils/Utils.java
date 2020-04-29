@@ -1371,44 +1371,48 @@ public class Utils
    public static LinkedHashMap<String, String> parseQueryString(String query)
    {
       LinkedHashMap params = new LinkedHashMap();
-      try
+
+      if (query != null)
       {
-         while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
+         try
          {
-            query = query.substring(1);
-         }
-
-         if (query.length() > 0)
-         {
-            String[] pairs = query.split("&");
-            for (String pair : pairs)
+            while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
             {
-               pair = pair.trim();
+               query = query.substring(1);
+            }
 
-               if (pair.length() == 0)
-                  continue;
-
-               int idx = pair.indexOf("=");
-               if (idx > 0)
+            if (query.length() > 0)
+            {
+               String[] pairs = query.split("&");
+               for (String pair : pairs)
                {
-                  String key = pair.substring(0, idx).trim();
-                  key = URLDecoder.decode(key, "UTF-8");
+                  pair = pair.trim();
 
-                  String value = pair.substring(idx + 1).trim();
-                  value = URLDecoder.decode(value, "UTF-8");
+                  if (pair.length() == 0)
+                     continue;
 
-                  params.put(key, value);
-               }
-               else
-               {
-                  params.put(URLDecoder.decode(pair, "UTF-8"), null);
+                  int idx = pair.indexOf("=");
+                  if (idx > 0)
+                  {
+                     String key = pair.substring(0, idx).trim();
+                     key = URLDecoder.decode(key, "UTF-8");
+
+                     String value = pair.substring(idx + 1).trim();
+                     value = URLDecoder.decode(value, "UTF-8");
+
+                     params.put(key, value);
+                  }
+                  else
+                  {
+                     params.put(URLDecoder.decode(pair, "UTF-8"), null);
+                  }
                }
             }
          }
-      }
-      catch (Exception ex)
-      {
-         rethrow(ex);
+         catch (Exception ex)
+         {
+            rethrow(ex);
+         }
       }
       return params;
    }

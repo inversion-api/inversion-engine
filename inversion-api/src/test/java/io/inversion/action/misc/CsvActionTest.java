@@ -40,7 +40,7 @@ public class CsvActionTest
       singleObject.put("key2", "value2");
       JSArray array = new JSArray();
       array.put(0, singleObject);
-      array.put(1, singleObject);
+      array.put(1, singleObject.copy());
       res.withJson(array);
       action.run(buildSuccessfulRequest(), res);
       assertNull(res.getJson());
@@ -56,7 +56,7 @@ public class CsvActionTest
       singleObject.put("key2", "value2");
       JSArray array = new JSArray();
       array.put(0, singleObject);
-      array.put(1, singleObject);
+      array.put(1, singleObject.copy());
       res.withData(array);
       res.withMeta("blah", "blahvalue");
       action.run(buildSuccessfulRequest(), res);

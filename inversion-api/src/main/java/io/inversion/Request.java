@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import io.inversion.Request.Upload;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
@@ -57,11 +56,9 @@ public class Request
 
    protected Uploader                               uploader       = null;
 
-   protected int                                    retryAttempts  = -1;
-
+   protected int                                    retryMax       = 0;
    int                                              retryCount     = 0;
    File                                             retryFile;
-   int                                              totalRetries   = 0;                           // this number doesn't get reset and is the true measure of how many retries occured
 
    boolean                                          explain        = false;
 
@@ -114,7 +111,7 @@ public class Request
       this(method, url, body, null, headers, retryAttempts);
    }
 
-   public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
+   public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryMax)
    {
       withMethod(method);
       withUrl(url);
@@ -128,8 +125,8 @@ public class Request
       if (headers != null && headers.size() > 0)
          this.headers = new ArrayListValuedHashMap(headers);
 
-      if (retryAttempts > 0)
-         this.retryAttempts = retryAttempts;
+      if (retryMax > -1)
+         this.retryMax = retryMax;
    }
 
    public Engine getEngine()
@@ -490,16 +487,6 @@ public class Request
       return endpointPath;
    }
 
-   public int getRetryAttempts()
-   {
-      return retryAttempts;
-   }
-
-   public void setRetryAttempts(int retryAttempts)
-   {
-      this.retryAttempts = retryAttempts;
-   }
-
    public String getRemoteAddr()
    {
       String remoteAddr = getHeader("X-Forwarded-For");
@@ -560,6 +547,17 @@ public class Request
       return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
    }
 
+   public int getRetryMax()
+   {
+      return retryMax;
+   }
+
+   public Request withRetryMax(int retryMax)
+   {
+      this.retryMax = retryMax;
+      return this;
+   }
+
    public int getRetryCount()
    {
       return retryCount;
@@ -567,18 +565,7 @@ public class Request
 
    public void incrementRetryCount()
    {
-      this.totalRetries++;
       this.retryCount++;
-   }
-
-   public void resetRetryCount()
-   {
-      this.retryCount = 0;
-   }
-
-   public int getTotalRetries()
-   {
-      return totalRetries;
    }
 
    public File getRetryFile()

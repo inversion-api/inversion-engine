@@ -129,7 +129,7 @@ public class JSNodeTest
       found1 = doc.findAll("$..[?(@.price<10)]", -1);
       assertEquals(2, found1.size());
 
-      found1 = doc.findAll("$..[?(@.*.price<10)]", -1);
+      found1 = doc.findAll("$..[?(@.*.price<30)]", -1);
       assertEquals(1, found1.size());
 
       found1 = doc.findAll("$..[?(@.bicycle.price)]", -1);
@@ -148,7 +148,7 @@ public class JSNodeTest
 
       found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
       assertEquals(1, found1.size());
-      assertTrue(found1.getNode(0).properties.get("store") != null);
+      assertTrue(found1.getNode(0).get("store") != null);
 
       found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
       assertEquals(1, found1.size());

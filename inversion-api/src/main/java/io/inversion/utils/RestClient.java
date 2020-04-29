@@ -76,8 +76,9 @@ import io.inversion.Request;
 import io.inversion.Response;
 
 /**
- * An HttpClient wrapper designed specifically to run inside of an
- * Inversion Action that gives you easy or built in:
+ * An HttpClient wrapper designed specifically to run inside of an Inversion {@code io.inversion.Action} with some superpowers.
+ * <p>
+ * RestClient gives you easy or built in:
  * <ul>
  *  <li>retry support (built in)
  *  
@@ -85,29 +86,30 @@ import io.inversion.Response;
  *  
  *  <li>header forwarding w/ whitelists and blacklists
  *  
+ *  <li>url query string param forwarding w/ whitelist and blacklists
+ *  
  *  <li>lazy runtime host url construction through lookup of
  *      "${name}.url" in the environment
  *      
  *  <li>dynamic host url variables - any "${paramName}" tokens in
  *      the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(paramName).
  *      
- *  <li>short circuit or transform Requests/Responses with a single
- *      override of <code>getResponse(Request)</code>
- *  <li>
+ *  <li>short circuit remote calls or transform Requests/Responses with a single
+ *      override of <code>doRequest(Request)</code>
+ *  
  * </ul>    
  * 
- * 
+ * <p>
  * <b>Transforming requests / responses<b>
  * <p> 
- * You can easily override the <code>getResponse(Request)</code> 
- * method to potentially short circuit calls or perform 
- * request/response transforms.  For example:
- * 
+ * You can easily override the <code>doRequest(Request)</code> method to potentially short circuit calls or perform request/response transforms.  
+ * <p>
+ * For example:
  * <pre>
  * protected RestClient client = new RestClient("myservice"){
  * 
  *  @Override
- *  protected Response getResponse(Request request)
+ *  protected Response doRequest(Request request)
  *  {
  *      if(checkMyCondition(request))
  *      {
@@ -134,125 +136,257 @@ public class RestClient
 {
    static Log                                       log              = LogFactory.getLog(RestClient.class);
 
-   //-- config properties
    protected String                                 name             = null;
-   protected String                                 url              = null;
-   protected boolean                                remoteAsync      = true;
-   protected boolean                                localAsync       = false;
-   protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
 
-   //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+   /**
+    * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
+    */
+   protected String                                 url              = null;
+
+   /**
+    * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted headers. 
+    */
    protected boolean                                forwardHeaders   = false;
+
+   /**
+    * Always forward these headers.
+    * 
+    * @see #shouldForwardHeader(String)
+    */
    protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+
+   /**
+    * Never forward these headers.
+    * 
+    * @see #shouldForwardHeader(String)
+    */
    protected Set                                    blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
 
+   /**
+    * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>whitelistHeaders</code> and <code>blacklistHeaders</code> state.
+    * <p>
+    * These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.
+    */
+   protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
+
+   /**
+    * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params. 
+    */
    protected boolean                                forwardParams    = false;
+
+   /**
+    * Always forward these params.
+    * <p>
+    * @see #shouldForwardParam(String)
+    */
    protected Set<String>                            whitelistParams  = new HashSet();
+
+   /**
+    * Never forward these params.
+    * <p>
+    * @see #shouldForwardParam(String)
+    */
    protected Set<String>                            blacklistParams  = new HashSet();
 
-   //-- networking and pooling specific properties
-   protected Executor                               pool             = null;
-   protected int                                    poolMin          = 2;
-   protected int                                    poolMax          = 100;
-   protected int                                    queueMax         = 500;
-   protected int                                    retryMax         = 5;
-   protected int                                    totalRetryMax    = 50;
+   /**
+    * The thread pool executor used to make asynchronous requests
+    */
+   protected Executor                               executor         = null;
 
+   /**
+    * The default maximum number of times to retry a request 
+    * <p>
+    * The default value is zero meaning by default, failed requests will not be retried
+    */
+   protected int                                    retryMax         = 0;
+
+   /**
+    * The length of time before the first retry. 
+    * <p>
+    * Incremental retries receive progressively more of a timeout up to <code>retryTimeoutMax</code>.
+    * 
+    * @see #computeTimeout(Request)
+    */
    protected int                                    retryTimeoutMin  = 10;
+
+   /**
+    * The maximum amount of time to wait before a retry.
+    * 
+    * @see #computeTimeout(Request)
+    */
    protected int                                    retryTimeoutMax  = 1000;
 
+   /**
+    * Parameter for default HttpClient configuration
+    * @see org.apache.http.client.config.RequstConfig.setSocketTimeout
+    */
    protected int                                    socketTimeout    = 30000;
+
+   /**
+    * Parameter for default HttpClient configuration
+    * @see org.apache.http.client.config.RequstConfig.setConnectTimeout
+    */
    protected int                                    connectTimeout   = 30000;
+
+   /**
+    * Parameter for default HttpClient configuration
+    * @see org.apache.http.client.config.RequstConfig.setConnectionRequestTimeout
+    */
    protected int                                    requestTimeout   = 30000;
 
+   /**
+    * The underlying HttpClient use for all network comms. 
+    */
    protected HttpClient                             httpClient       = null;
 
-   protected Timer                                  timer            = null;
+   /**
+    * The timer used it trigger retries.
+    */
+   Timer                                            timer            = null;
 
    public RestClient()
    {
 
    }
 
+   /**
+    * @param name the prefix used to look up property values from the environment if they have not already been wired
+    */
    public RestClient(String name)
    {
       withName(name);
    }
 
-   public FutureResponse get(String path, Map<String, String> params)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
+    */
+   public FutureResponse get(String fullUrlOrRelativePath)
    {
-      return call("GET", path, params, null, -1, null);
+      return get(fullUrlOrRelativePath, (String) null);
    }
 
-   public FutureResponse get(String path, String... queryStringOrNameValuePairs)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
+    * @param queryString  additional query string params in name=value&name2=value2 style
+    */
+   public FutureResponse get(String fullUrlOrRelativePath, String queryString)
    {
-      if (queryStringOrNameValuePairs != null && queryStringOrNameValuePairs.length == 1)
-         return call("GET", path, Utils.parseQueryString(queryStringOrNameValuePairs[0]), (JSNode) null, -1, null);
-      else
-         return call("GET", path, Utils.addToMap(new HashMap(), queryStringOrNameValuePairs), null, -1, null);
+      return call("GET", fullUrlOrRelativePath, Utils.parseQueryString(queryString), (JSNode) null, this.retryMax, null);
    }
 
-   public FutureResponse put(String path, JSNode body)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
+    * @param params  query strings passed in as a map
+    */
+   public FutureResponse get(String fullUrlOrRelativePath, Map<String, String> params)
    {
-      return call("PUT", path, null, body, -1, null);
+      return call("GET", fullUrlOrRelativePath, params, null, this.retryMax, null);
    }
 
-   public FutureResponse post(String path, JSNode body)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
+    * @param queryStringNameValuePairs  additional query string name/value pairs
+    */
+   public FutureResponse get(String fullUrlOrRelativePath, String... queryStringNameValuePairs)
    {
-      return call("POST", path, null, body, -1, null);
+      return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap(), queryStringNameValuePairs), null, this.retryMax, null);
    }
 
-   public FutureResponse patch(String path, JSNode body)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a POST request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
+    * @param body  the optional JSON to post
+    */
+   public FutureResponse post(String fullUrlOrRelativePath, JSNode body)
    {
-      return call("PATCH", path, null, body, -1, null);
+      return call("POST", fullUrlOrRelativePath, null, body, this.retryMax, null);
    }
 
-   public FutureResponse delete(String path)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a PUT request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
+    * @param body  the optional JSON to put
+    */
+   public FutureResponse put(String fullUrlOrRelativePath, JSNode body)
    {
-      return call("DELETE", path, null, null, -1, null);
+      return call("PUT", fullUrlOrRelativePath, null, body, this.retryMax, null);
    }
 
-   public FutureResponse call(String method, String path, Map<String, String> params, JSNode body, int retries, ArrayListValuedHashMap<String, String> headers)
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a PATCH request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
+    * @param body  the optional JSON patch
+    */
+   public FutureResponse patch(String fullUrlOrRelativePath, JSNode body)
    {
-      String url = buildUrl();
-      if (url != null && path != null)
+      return call("PATCH", fullUrlOrRelativePath, null, body, this.retryMax, null);
+   }
+
+   /**
+    * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a DELETE request.
+    * 
+    * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
+    */
+   public FutureResponse delete(String fullUrlOrRelativePath)
+   {
+      return call("DELETE", fullUrlOrRelativePath, null, null, this.retryMax, null);
+   }
+
+   /**
+    * Makes an HTTP request.
+    * 
+    * @param method  the HTTP method to invoke
+    * @param fullUrlOrRelativePath   optional may be a full url or only additional relative path parts if the {@link #url} property if set, may contain a query string
+    * @param params  optional additional query string params that will overwrite any that may be on url as composed from {@link #buildUrl(String)}
+    * @param body  optional json body
+    * @param retryMax how many times the client should retry if the Request is not successful, if less than zero then this.retriesMax is used
+    * @param headers  headers that will always be sent regardless of {@link #whitelistHeaders}, {@link #blacklistHeaders} but may be overwritten by {@link #forcedHeaders}
+    * 
+    * @return a FutureResponse that will asynchronously resolve to a Result
+    */
+   public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers)
+   {
+      String url = buildUrl(fullUrlOrRelativePath);
+
+      String queryString = Utils.substringAfter(url, "?");
+      if (!Utils.empty(queryString))
       {
-         url += (url.endsWith("/") ? "" : "/") + Utils.implode("/", Utils.explode("/", path));
-      }
-      else if (url == null && path != null)
-      {
-         url = path;
+         url = Utils.substringBefore(url, "?");
+
+         Map newParams = Utils.parseQueryString(queryString);
+         if (params != null)
+         {
+            //-- this makes sure any specifically provided name/value query string pairs 
+            //-- overwrite the ones from the url which would have been statically configured.
+            newParams.putAll(params);
+         }
+         params = newParams;
       }
 
-      Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retries);
+      Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
       FutureResponse future = buildFuture(request);
-      boolean localCall = future.request.isLocalRequest();
 
-      if ((localCall && !localAsync) || (!localCall && !remoteAsync))
-      {
-         future.run();
-      }
-      else
-      {
-         submit(future);
-      }
+      submit(future);
 
       return future;
    }
 
-   protected Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryAttempts)
+   Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryMax)
    {
-      Request request = new Request(method, url, body, callParams, callHeaders, retryAttempts);
+      retryMax = retryMax > -1 ? retryMax : this.retryMax;
 
-      if (forcedHeaders.size() > 0)
-      {
-         for (String key : forcedHeaders.keySet())
-         {
-            request.removeHeader(key);
-            for (String value : forcedHeaders.get(key))
-               request.withHeader(key, value);
-         }
-      }
+      Request request = new Request(method, url, body, callParams, callHeaders, retryMax);
 
       if (forwardHeaders)
       {
@@ -265,7 +399,7 @@ public class RestClient
             {
                for (String key : inboundHeaders.keySet())
                {
-                  if (forwardHeader(key))
+                  if (shouldForwardHeader(key))
                   {
                      if (request.getHeader(key) == null)
                         for (String header : inboundHeaders.get(key))
@@ -273,6 +407,16 @@ public class RestClient
                   }
                }
             }
+         }
+      }
+
+      if (forcedHeaders.size() > 0)
+      {
+         for (String key : forcedHeaders.keySet())
+         {
+            request.removeHeader(key);
+            for (String value : forcedHeaders.get(key))
+               request.withHeader(key, value);
          }
       }
 
@@ -287,7 +431,7 @@ public class RestClient
             {
                for (String key : origionalParams.keySet())
                {
-                  if (forwardParam(key))
+                  if (shouldForwardParam(key))
                   {
                      if (request.getUrl().getParam(key) == null)
                         request.getUrl().withParam(key, origionalParams.get(key));
@@ -300,7 +444,7 @@ public class RestClient
       return request;
    }
 
-   protected FutureResponse buildFuture(Request request)
+   FutureResponse buildFuture(Request request)
    {
       final FutureResponse future = new FutureResponse(request)
          {
@@ -309,35 +453,20 @@ public class RestClient
                Response response = null;
                try
                {
-                  response = getResponse(request);
+                  response = doRequest(request);
                }
                finally
                {
-                  // We had a successful response, so let's reset the retry count to give the best chance of success
-                  if (response.getStatusCode() >= 200 && response.getStatusCode() <= 300)
-                  {
-                     debug("Resetting retry count");
-                     request.resetRetryCount();
-                  }
-
-                  if (!response.isSuccess() //
-                        && 404 != response.getStatusCode() //don't retry 404...it won't help
-                        && request.getRetryCount() < request.getRetryAttempts() //
-                        && request.getTotalRetries() < totalRetryMax) // since we resetRetryCount upon any successful response, this guards against a crazy large amount of retries with the TOTAL_MAX_RETRY_ATTEMPTS
+                  if (shouldRetry(request, response))
                   {
                      request.incrementRetryCount();
 
-                     long timeout = computeTimeout(request);
-                     debug("retrying " + request.getTotalRetries() + "th attempt in " + timeout + "ms: " + request.getRetryCount());
+                     long timeout = computeTimeout(request, response);
+
                      submitLater(this, timeout);
                   }
                   else
                   {
-                     if (!response.isSuccess() && response.getError() != null && !(isNetworkException(response.getError())))
-                     {
-                        log.warn("Error in RestClient: '" + request.getMethod() + " " + url + "' ", response.getError());
-                     }
-
                      setResponse(response);
                   }
                }
@@ -347,47 +476,70 @@ public class RestClient
       return future;
    }
 
-   protected Response getResponse(Request request)
+   /**
+    * The work of executing the remote call is done here.  
+    * <p>
+    * Override this method to intercept the remote call and change anything about the Request or Response that you want.
+    * <p>
+    * All of the Request url/header/param configuration has already been done on the Request.
+    * <p>
+    * You don't need to do anything related to threading here.  
+    * This method is already executing asynchronously within the Executor's thread pool. 
+    * Simply handle/transform the Request/Response as desired.  
+    * Simply returning a Response will cause the FutureResponse to transition to done and allow calls blocking on FutureResponse.get() to receive the Response.  
+    * <p>
+    * Overriding this method can be really helpful when you what your RestClient calling algorithm to say clean, 
+    * hiding some of the Request/Response customization details or otherwise need to make sure Requests/Responses are always handled in a specific way.
+    * 
+    * A typical override of this method might look like the following:
+    * <pre>
+    * protected RestClient client = new RestClient("myservice"){
+    * 
+    *  @Override
+    *  protected Response doRequest(Request request)
+    *  {
+    *      if(checkMyCondition(request))
+    *      {
+    *          //-- short circuit the remote call "faking" a
+    *          //-- remote 200 response (the default status code for a Response)
+    *          return new Response(request.getUrl());
+    *      }
+    *      else
+    *      {
+    *          doMyRequestTransformation(request);
+    *          
+    *          Response response = super.getResponse(request);
+    *          
+    *          doMyResponseTransformation(response);
+    *          
+    *          return response;
+    *      }
+    *  }
+    * }
+    * </pre>
+    * 
+    * 
+    * @param request
+    * @return
+    */
+   protected Response doRequest(Request request)
    {
       String url = request.getUrl().toString();
       Response response = new Response(url);
 
       try
       {
-         //this is a local call...send it back to the engine
-         if (request.isLocalRequest())
-            return getLocalResponse(request);
-         else
-            return getRemoteResponse(request);
+         return doRequest0(request);
       }
       catch (Exception ex)
       {
          response.withError(ex);
-         if (isNetworkException(ex))
-         {
-            log.debug("Network exception " + ex.getClass().getName() + " - " + ex.getMessage() + " - " + url);
-         }
-         else
-         {
-            log.warn("Exception in rest call. " + url, ex);
-         }
       }
 
       return response;
    }
 
-   protected Response getLocalResponse(Request request) throws Exception
-   {
-      String url = request.getUrl().toString();
-      Response response = new Response(url);
-
-      request.withEngine(request.getChain().getEngine());
-      request.getChain().getEngine().service(request, response);
-      return response;
-
-   }
-
-   protected Response getRemoteResponse(Request request) throws Exception
+   Response doRequest0(Request request) throws Exception
    {
       String m = request.getMethod();
       HttpRequestBase req = null;
@@ -422,7 +574,7 @@ public class RestClient
                request.getHeaders().remove("Range");
                request.getHeaders().put("Range", "bytes=" + range + "-");
 
-               debug("RANGE REQUEST HEADER ** " + range);
+               log.debug("RANGE REQUEST HEADER ** " + range);
             }
          }
          else if ("delete".equalsIgnoreCase(m))
@@ -472,8 +624,8 @@ public class RestClient
             response.withHeader(header.getName(), header.getValue());
          }
 
-         debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
-         debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
+         log.debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
+         log.debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
 
          Url u = new Url(url);
          String fileName = u.getFile();
@@ -492,7 +644,7 @@ public class RestClient
                && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
          {
             tempFile = request.getRetryFile();
-            debug("## Using existing file .. " + tempFile);
+            log.debug("## Using existing file .. " + tempFile);
          }
          else if (response.getStatusCode() == 206)
          {
@@ -509,7 +661,7 @@ public class RestClient
 
             tempFile = Utils.createTempFile(fileName);
             tempFile.deleteOnExit();
-            debug("## Creating temp file .. " + tempFile);
+            log.debug("## Creating temp file .. " + tempFile);
          }
 
          HttpEntity e = null;
@@ -546,20 +698,16 @@ public class RestClient
       return response;
    }
 
-   public boolean isNetworkException(Throwable ex)
-   {
-      return ex instanceof org.apache.http.conn.HttpHostConnectException //
-            || ex instanceof org.apache.http.conn.ConnectTimeoutException //
-            || ex instanceof org.apache.http.NoHttpResponseException //
-            || ex.getClass().getName().startsWith("java.net")
-      //|| ex instanceof java.net.ConnectException //
-      //|| ex instanceof java.net.NoRouteToHostException //
-      //|| ex instanceof java.net.SocketTimeoutException //
-      //|| ex instanceof java.net.UnknownHostException //
-      ;
-   }
-
-   protected long computeTimeout(Request request)
+   /**
+    * Computes an incremental retry backoff time between retryTimeoutMin and retryTimeoutMax.
+    * <p>
+    * You can override this to provide your own timeout policy.
+    * 
+    * @param request
+    * @param response
+    * @return the number of milliseconds to wait before retrying the Request
+    */
+   protected long computeTimeout(Request request, Response response)
    {
       long timeout = (retryTimeoutMin * request.getRetryCount() * request.getRetryCount()) + (int) (retryTimeoutMin * Math.random() * request.getRetryCount());
       if (retryTimeoutMax > 0 && timeout > retryTimeoutMax)
@@ -568,12 +716,52 @@ public class RestClient
       return timeout;
    }
 
+   /**
+    * Determines if the Request should be retried.
+    * <p>
+    * You can override this to provide your own retry policy.
+    * <p>
+    * The default algorithm will only retry if the Request is not successful due to a network error and the current request.retryCount is less than reqest.retryMax.
+    * <p>
+    * 
+    * @param request
+    * @param response
+    * @see #isNetworkException(Throwable)
+    * 
+    * @return true if this request should be retried
+    */
+   protected boolean shouldRetry(Request request, Response response)
+   {
+      if (!response.isSuccess() //
+            && request.getRetryCount() < request.getRetryMax() //
+            && isNetworkException(response.getError()))
+      {
+         return true;
+      }
+      return false;
+   }
+
+   boolean isNetworkException(Throwable ex)
+   {
+      if (ex == null)
+         return false;
+
+      return ex instanceof org.apache.http.conn.HttpHostConnectException //
+            || ex instanceof org.apache.http.conn.ConnectTimeoutException //
+            || ex instanceof org.apache.http.NoHttpResponseException //
+            || ex instanceof java.net.ConnectException //
+            || ex instanceof java.net.SocketTimeoutException //
+      //|| ex instanceof java.net.NoRouteToHostException //
+      //|| ex instanceof java.net.UnknownHostException //
+      ;
+   }
+
    synchronized void submit(FutureResponse future)
    {
-      if (pool == null)
-         pool = new Executor(poolMin, poolMax, queueMax);
+      if (executor == null)
+         executor = new Executor();
 
-      pool.submit(future);
+      executor.submit(future);
    }
 
    synchronized void submitLater(final FutureResponse future, long delay)
@@ -595,11 +783,19 @@ public class RestClient
    }
 
    /**
+    * Factory method for building an HttpClient if one was not configured via withHttpClient.
+    * <p>
+    * The default HttpClient constructed here basically SSL cert and hostname verification assuming that you will be calling clients you control.   
+    * <p> 
+    * If you need to adopt a tighter security posture just override this method or call {@link #withHttpClient(HttpClient)} to supply your own HttpClient and security configuration.
+    * <p>
+    * Use of this method is wrapped by getHttpClient() which controls concurrency so this method should not be called more than once per instance if 
+    * an error is not thrown.
+    * 
+    * @throws Exception 
     * @see http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
-    * @return
-    * @throws Exception
     */
-   public synchronized HttpClient getHttpClient() throws Exception
+   protected HttpClient buildHttpClient() throws Exception
    {
       if (httpClient == null)
       {
@@ -643,17 +839,8 @@ public class RestClient
       return httpClient;
    }
 
-   private void debug(Object obj)
-   {
-      if (log.isDebugEnabled())
-      {
-         log.debug(obj);
-      }
-   }
-
    static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase
    {
-
       static final String methodName = "DELETE";
 
       @Override
@@ -670,22 +857,44 @@ public class RestClient
    }
 
    /**
-    * Finds and composes the URL for the remote host.
+    * Constructs the url for the RestClient to call.
     * <p>
-    * If "${this.name}.url" is found in the environment it is 
-    * used, otherwise this.url is used.  
+    * The host / base of the url can come from:
+    * <ol>
+    *   <li><code>callerSuppliedFullUrlOrRelativePath</code> if it starts with 'http://' or 'https://'
+    *   <li>a <code>${this.name}.url</code> env var or system property
+    *   <li><code>this.url</code>
+    * </ol>
     * <p>
-    * After the base string is located, any "${paramName}" tokens
-    * found in the string are replaced with any URL variables
-    * form the current Inversion request via 
-    * <code>Chain.peek().getRequest().getParam(paramName)</code> 
+    * After the url is found/concatenated, any "${paramName}" tokens found in the string are replaced with any URL variables
+    * form the current Inversion request via <code>Chain.peek().getRequest().getParam(paramName)</code>.
+    * This allows outbound urls to be dynamically constructed based on the inbound url should that use case arise.
     * 
-    * @return
+    * 
+    * @param callerSuppliedFullUrlOrRelativePath
+    * @return the url to call
     */
-   public String buildUrl()
+   String buildUrl(String callerSuppliedFullUrlOrRelativePath)
    {
-      String propKey = getName() + ".url";
-      String url = Utils.getSysEnvPropStr(propKey, this.url);
+      String url = callerSuppliedFullUrlOrRelativePath;
+
+      if (url != null && (url.startsWith("http://") || url.startsWith("https://")))
+      {
+         //do nothing, the caller passed in a full url
+      }
+      else
+      {
+         url = url != null ? url : "";
+
+         String prefix = Utils.getSysEnvPropStr(getName() + ".url", this.url);
+         if (!Utils.empty(prefix))
+         {
+            if (url.length() > 0 && !url.startsWith("/") && !prefix.endsWith("/"))
+               url = prefix + "/" + url;
+            else
+               url = prefix + url;
+         }
+      }
 
       if (Chain.peek() != null && url.indexOf('$') > 0)
       {
@@ -760,39 +969,6 @@ public class RestClient
       return this;
    }
 
-   public int getPoolMin()
-   {
-      return poolMin;
-   }
-
-   public RestClient withPoolMin(int poolMin)
-   {
-      this.poolMin = poolMin;
-      return this;
-   }
-
-   public int getPoolMax()
-   {
-      return poolMax;
-   }
-
-   public RestClient withPoolMax(int poolMax)
-   {
-      this.poolMax = poolMax;
-      return this;
-   }
-
-   public int getQueueMax()
-   {
-      return queueMax;
-   }
-
-   public RestClient withQueueMax(int queueMax)
-   {
-      this.queueMax = queueMax;
-      return this;
-   }
-
    public int getRetryMax()
    {
       return retryMax;
@@ -801,17 +977,6 @@ public class RestClient
    public RestClient withRetryMax(int retryMax)
    {
       this.retryMax = retryMax;
-      return this;
-   }
-
-   public int getTotalRetryMax()
-   {
-      return totalRetryMax;
-   }
-
-   public RestClient withTotalRetryMax(int totalRetryMax)
-   {
-      this.totalRetryMax = totalRetryMax;
       return this;
    }
 
@@ -854,36 +1019,36 @@ public class RestClient
       return this;
    }
 
-   public Executor getPool()
+   protected HttpClient getHttpClient()
    {
-      return pool;
+      if (httpClient == null)
+      {
+         synchronized (this)
+         {
+            if (httpClient == null)
+            {
+               try
+               {
+                  httpClient = buildHttpClient();
+               }
+               catch (Exception ex)
+               {
+                  Utils.rethrow(ex);
+               }
+            }
+         }
+      }
+      return httpClient;
    }
 
-   public RestClient withPool(Executor pool)
+   public Executor getExecutor()
    {
-      this.pool = pool;
-      return this;
+      return executor;
    }
 
-   public boolean isRemoteAsync()
+   public RestClient withExecutor(Executor executor)
    {
-      return remoteAsync;
-   }
-
-   public RestClient withRemoteAsync(boolean remoteAsync)
-   {
-      this.remoteAsync = remoteAsync;
-      return this;
-   }
-
-   public boolean isLocalAsync()
-   {
-      return localAsync;
-   }
-
-   public RestClient withLocalAcync(boolean localAsync)
-   {
-      this.localAsync = localAsync;
+      this.executor = executor;
       return this;
    }
 
@@ -892,7 +1057,7 @@ public class RestClient
       return forwardHeaders;
    }
 
-   public boolean forwardHeader(String headerKey)
+   protected boolean shouldForwardHeader(String headerKey)
    {
       return forwardHeaders //
             && (whitelistHeaders.size() == 0 || whitelistHeaders.contains(headerKey.toLowerCase())) //
@@ -929,7 +1094,7 @@ public class RestClient
       return forwardParams;
    }
 
-   public boolean forwardParam(String param)
+   protected boolean shouldForwardParam(String param)
    {
       return forwardParams //
             && (whitelistParams.size() == 0 || whitelistParams.contains(param.toLowerCase())) //
@@ -983,7 +1148,7 @@ public class RestClient
       return this;
    }
 
-   public static abstract class FutureResponse implements RunnableFuture<Response>
+   public abstract class FutureResponse implements RunnableFuture<Response>
    {
       Log                   log        = LogFactory.getLog(getClass());
 
@@ -995,17 +1160,17 @@ public class RestClient
       List<ResponseHandler> onFailure  = new ArrayList();
       List<ResponseHandler> onResponse = new ArrayList();
 
-      public FutureResponse()
+      FutureResponse()
       {
 
       }
 
-      public FutureResponse(Request request)
+      FutureResponse(Request request)
       {
          this.request = request;
       }
 
-      public FutureResponse onSuccess(ResponseHandler handler)
+      FutureResponse onSuccess(ResponseHandler handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1032,7 +1197,7 @@ public class RestClient
          return this;
       }
 
-      public FutureResponse onFailure(ResponseHandler handler)
+      FutureResponse onFailure(ResponseHandler handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1059,7 +1224,7 @@ public class RestClient
          return this;
       }
 
-      public FutureResponse onResponse(ResponseHandler handler)
+      FutureResponse onResponse(ResponseHandler handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1086,7 +1251,7 @@ public class RestClient
          return this;
       }
 
-      public void setResponse(Response response)
+      void setResponse(Response response)
       {
          synchronized (this)
          {
@@ -1183,6 +1348,7 @@ public class RestClient
          return false;
       }
 
+      @Override
       public Response get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
       {
          if (SwingUtilities.isEventDispatchThread())
@@ -1247,28 +1413,28 @@ public class RestClient
    public static class Executor
    {
       int                        poolMin  = 1;
-      int                        poolMax  = 3;
+      int                        poolMax  = 100;
 
-      long                       queueMax = Integer.MAX_VALUE;
+      int                        queueMax = 500;
 
       LinkedList<RunnableFuture> queue    = new LinkedList();
       Vector<Thread>             threads  = new Vector();
 
       boolean                    daemon   = true;
 
-      String                     poolName = "Executor";
+      String                     poolName = "executor";
 
       boolean                    shutdown = false;
       long                       delay    = 1000;
 
       static Timer               timer    = null;
 
-      public Executor(int poolMin, int poolMax, long queueMax)
+      public Executor()
       {
-         this(poolMin, poolMax, queueMax, true, "Executor");
+
       }
 
-      public Executor(int poolMin, int poolMax, long queueMax, boolean daemon, String poolName)
+      public Executor(int poolMin, int poolMax, int queueMax, boolean daemon, String poolName)
       {
          this.poolMin = Math.max(this.poolMin, poolMin);
          this.poolMax = poolMax;
@@ -1484,14 +1650,6 @@ public class RestClient
                   task.run();
                }
                while (queue.size() > 0);
-
-               //            if (!shutdown)
-               //            {
-               //               Thread.sleep(delay);
-               //            }
-               //
-               //            if (queue.size() == 0)
-               //               break;
             }
          }
          catch (Exception ex)
@@ -1500,6 +1658,38 @@ public class RestClient
          }
       }
 
+      public int getPoolMin()
+      {
+         return poolMin;
+      }
+
+      public Executor withPoolMin(int poolMin)
+      {
+         this.poolMin = poolMin;
+         return this;
+      }
+
+      public int getPoolMax()
+      {
+         return poolMax;
+      }
+
+      public Executor withPoolMax(int poolMax)
+      {
+         this.poolMax = poolMax;
+         return this;
+      }
+
+      public int getQueueMax()
+      {
+         return queueMax;
+      }
+
+      public Executor withQueueMax(int queueMax)
+      {
+         this.queueMax = queueMax;
+         return this;
+      }
    }
 
 }
