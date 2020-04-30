@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -310,6 +311,8 @@ public class Rows extends ArrayList<Row>
        * Vales in the row
        */
       List<Object> values = null;
+
+      boolean      cloned = false;
 
       public Row()
       {
@@ -616,21 +619,41 @@ public class Rows extends ArrayList<Row>
        * 
        * @param keyOrIndex  the String key or an Integer index to remove.
        */
-      public Object remove(Object keyOrIndex)
+      @Override
+      public Object remove(Object key)
       {
-         int idx = -1;
-         if (keyOrIndex instanceof String)
-            idx = keys.indexOf((String) keyOrIndex);
-         else
-            idx = ((Integer) keyOrIndex).intValue();
-
+         int idx = keys.indexOf((String) key);
          if (idx >= 0)
          {
-            if (idx > 0 && idx < size())
-               values.set(idx, null);
+            if (!cloned)
+            {
+               //copy on write
+               cloned = true;
+               keys = keys.clone();
+            }
+            Object value = values.get(idx);
+            keys.removeKey((String) key);
+            values.remove(idx);
+            return value;
          }
          return null;
       }
+
+      //      public Object remove(Object keyOrIndex)
+      //      {
+      //         int idx = -1;
+      //         if (keyOrIndex instanceof String)
+      //            idx = keys.indexOf((String) keyOrIndex);
+      //         else
+      //            idx = ((Integer) keyOrIndex).intValue();
+      //
+      //         if (idx >= 0)
+      //         {
+      //            if (idx > 0 && idx < size())
+      //               values.set(idx, null);
+      //         }
+      //         return null;
+      //      }
 
       @Override
       public void putAll(Map<? extends String, ? extends Object> m)
@@ -756,6 +779,14 @@ public class Rows extends ArrayList<Row>
          setKeys(keys);
       }
 
+      public RowKeys clone()
+      {
+         RowKeys clone = new RowKeys();
+         clone.keys = new LinkedList(keys);
+         clone.lc = new HashMap(lc);
+         return clone;
+      }
+
       int addKey(String key)
       {
          cachedKeySet = null;
@@ -765,14 +796,35 @@ public class Rows extends ArrayList<Row>
 
          String lc = key.toLowerCase();
 
-         int existing = this.lc.get(lc);
-         if (existing > -1)
+         Integer existing = this.lc.get(lc);
+         if (existing != null)
             return existing;
 
          this.keys.add(key);
          this.lc.put(lc, this.keys.size() - 1);
 
          return this.keys.size() - 1;
+      }
+
+      int removeKey(String key)
+      {
+         cachedKeySet = null;
+
+         key = key.toLowerCase();
+         Integer idx = lc.get(key);
+         if (idx != null)
+         {
+            for (int i = idx; i < keys.size(); i++)
+               lc.remove(keys.get(i).toLowerCase());
+
+            this.keys.remove(idx.intValue());
+
+            for (int i = idx; i < keys.size(); i++)
+               lc.put(keys.get(i).toLowerCase(), i);
+
+            return idx.intValue();
+         }
+         return -1;
       }
 
       void setKeys(List<String> keys)
