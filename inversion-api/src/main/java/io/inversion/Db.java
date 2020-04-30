@@ -263,17 +263,17 @@ public abstract class Db<T extends Db>
                   if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
                      continue;
 
-                  Collection entity1 = idx1.getProperty(0).getPk().getCollection();
-                  Collection entity2 = idx2.getProperty(0).getPk().getCollection();
+                  Collection resource1 = idx1.getProperty(0).getPk().getCollection();
+                  Collection resource2 = idx2.getProperty(0).getPk().getCollection();
 
                   Relationship r = new Relationship();
                   r.withType(Relationship.REL_MANY_TO_MANY);
 
-                  r.withRelated(entity2);
+                  r.withRelated(resource2);
                   r.withFkIndex1(idx1);
                   r.withFkIndex2(idx2);
-                  r.withName(makeRelationshipName(entity1, r));
-                  r.withCollection(entity1);
+                  r.withName(makeRelationshipName(resource1, r));
+                  r.withCollection(resource1);
                   relationshipStrs.add(r.toString());
                }
             }
@@ -287,20 +287,20 @@ public abstract class Db<T extends Db>
                   if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
                      continue;
 
-                  Collection pkEntity = fkIdx.getProperty(0).getPk().getCollection();
-                  Collection fkEntity = fkIdx.getProperty(0).getCollection();
+                  Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
+                  Collection fkResource = fkIdx.getProperty(0).getCollection();
 
                   //ONE_TO_MANY
                   {
                      Relationship r = new Relationship();
                      //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an entity is related
-                     //to another entity twice
+                     //of relationships. For example where an resource is related
+                     //to another resource twice
                      r.withType(Relationship.REL_ONE_TO_MANY);
                      r.withFkIndex1(fkIdx);
-                     r.withRelated(fkEntity);
-                     r.withName(makeRelationshipName(pkEntity, r));
-                     r.withCollection(pkEntity);
+                     r.withRelated(fkResource);
+                     r.withName(makeRelationshipName(pkResource, r));
+                     r.withCollection(pkResource);
                      relationshipStrs.add(r.toString());
                   }
 
@@ -309,9 +309,9 @@ public abstract class Db<T extends Db>
                      Relationship r = new Relationship();
                      r.withType(Relationship.REL_MANY_TO_ONE);
                      r.withFkIndex1(fkIdx);
-                     r.withRelated(pkEntity);
-                     r.withName(makeRelationshipName(fkEntity, r));
-                     r.withCollection(fkEntity);
+                     r.withRelated(pkResource);
+                     r.withName(makeRelationshipName(fkResource, r));
+                     r.withCollection(fkResource);
                      relationshipStrs.add(r.toString());
                   }
                }
@@ -408,7 +408,7 @@ public abstract class Db<T extends Db>
       return buff.toString();
    }
 
-   protected String makeRelationshipUniqueName(Collection entity, Relationship rel)
+   protected String makeRelationshipUniqueName(Collection resource, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
@@ -452,9 +452,9 @@ public abstract class Db<T extends Db>
          if (idxColName.toUpperCase().equals(idxColName))
             idxColName = idxColName.toLowerCase();
 
-         String collectionName = entity.getName();
+         String collectionName = resource.getName();
          String relatedCollectionName = rel.getRelated().getName();
-         //String tableName = entity.getTable().getName();
+         //String tableName = resource.getTable().getName();
          if (!collectionName.equalsIgnoreCase(idxColName) //
                && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
          {
@@ -484,7 +484,7 @@ public abstract class Db<T extends Db>
       return name;
    }
 
-   protected String makeRelationshipName(Collection entity, Relationship rel)
+   protected String makeRelationshipName(Collection resource, Relationship rel)
    {
       String name = null;
       String type = rel.getType();

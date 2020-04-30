@@ -310,7 +310,7 @@ public class AclAction extends Action<AclAction>
                if (target.keySet().size() == 1 && target.containsKey("href"))
                {
                   //this is posting some type of reference not a json body, this 
-                  //should not result in the entity being written
+                  //should not result in the resource being written
                   continue;
                }
 

@@ -314,8 +314,8 @@ public class JdbcDb extends Db<JdbcDb>
 
       for (int i = 0; i < upserted.size(); i++)
       {
-         String entityKey = table.encodeKey((Row) upserted.get(i));
-         upserted.set(i, entityKey);
+         String resourceKey = table.encodeKey((Row) upserted.get(i));
+         upserted.set(i, resourceKey);
       }
 
       return upserted;
@@ -349,9 +349,9 @@ public class JdbcDb extends Db<JdbcDb>
          String keyCol = firstRow.keySet().iterator().next();
 
          List values = new ArrayList();
-         for (Map entityKey : columnMappedIndexValues)
+         for (Map resourceKey : columnMappedIndexValues)
          {
-            values.add(entityKey.values().iterator().next());
+            values.add(resourceKey.values().iterator().next());
          }
 
          String sql = "";
@@ -366,20 +366,20 @@ public class JdbcDb extends Db<JdbcDb>
          sql += " WHERE ";
 
          List values = new ArrayList();
-         for (Map<String, Object> entityKey : columnMappedIndexValues)
+         for (Map<String, Object> resourceKey : columnMappedIndexValues)
          {
             if (values.size() > 0)
                sql += " OR ";
             sql += "(";
 
             int i = 0;
-            for (String key : entityKey.keySet())
+            for (String key : resourceKey.keySet())
             {
                i++;
                if (i > 1)
                   sql += "AND ";
                sql += quoteCol(key) + " = ? ";
-               values.add(entityKey.get(key));
+               values.add(resourceKey.get(key));
             }
             sql += ")";
          }
@@ -509,9 +509,9 @@ public class JdbcDb extends Db<JdbcDb>
       }
       else if (isType("sqlserver"))
       {
-         //-- upserts won't work if you can't upsert an identity field
-         //-- https://stackoverflow.com/questions/10116759/set-identity-insert-off-for-all-tables
-         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
+         //-- upserts won't work if you can't upsert an idresource field
+         //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
+         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_idresource = 1) and o.type = ''U'''");
 
       }
 

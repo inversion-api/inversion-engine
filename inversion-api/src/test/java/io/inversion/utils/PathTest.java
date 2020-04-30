@@ -197,17 +197,17 @@ public class PathTest
       assertFalse(new Path("somsething/{collection:books|customers}").matches("something/blah"));
       assertTrue(new Path("something/{collection:books|customers}/*").matches("something/customers/1234"));
 
-      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/11111111"));
-      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaa"));
-      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaaaa"));
-      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/1111111111"));
-      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9a-fA-F]{1,8}}").matches("something/customers/zzzzzzzz"));
+      assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/11111111"));
+      assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaa"));
+      assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaaaa"));
+      assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/1111111111"));
+      assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/zzzzzzzz"));
 
-      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders"));
-      assertTrue(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders/"));
-      assertTrue(new Path("something/{collection:books|customers}/[{entity:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]").matches("something/customers/1234/"));
-      assertFalse(new Path("something/{collection:books|customers}/{entity:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/"));
+      assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders"));
+      assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders/"));
+      assertTrue(new Path("something/{collection:books|customers}/[{resource:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]").matches("something/customers/1234/"));
+      assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/"));
 
-      assertTrue(new Path("{collection:players|locations|ads}/[{entity:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
+      assertTrue(new Path("{collection:players|locations|ads}/[{resource:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
    }
 }

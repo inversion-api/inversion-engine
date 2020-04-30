@@ -41,11 +41,11 @@ public class RestDeleteAction extends Action<RestDeleteAction>
    @Override
    public void run(Request req, Response res) throws Exception
    {
-      String entityKey = req.getEntityKey();
+      String resourceKey = req.getResourceKey();
       String relationshipKey = req.getRelationshipKey();
       
-      if (Utils.empty(entityKey))
-         ApiException.throw400BadRequest("An entity key must be included in the url path for a DELETE request.");
+      if (Utils.empty(resourceKey))
+         ApiException.throw400BadRequest("An resource key must be included in the url path for a DELETE request.");
       
       if (!Utils.empty(relationshipKey))
          ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");

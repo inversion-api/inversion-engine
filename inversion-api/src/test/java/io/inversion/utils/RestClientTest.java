@@ -2,9 +2,9 @@
 package io.inversion.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.net.ConnectException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -39,31 +39,31 @@ public class RestClientTest
 
    }
 
-//   @Test
-//   public void test_retries_dont_retry_on_404()
-//   {
-//      final int[] statusCode = new int[]{404};
-//      RestClient client = new RestClient()
-//         {
-//            @Override
-//            protected Response doRequest(Request request)
-//            {
-//               Response resp = new Response();
-//               resp.withStatusCode(statusCode[0]);
-//
-//               return resp;
-//            }
-//         };
-//      FutureResponse resp = client.call("GET", "url", null, null, 5, null);
-//      resp.get();
-//      assertEquals(0, resp.request.getRetryCount());
-//
-//      statusCode[0] = 500;
-//      resp = client.call("GET", "url", null, null, 5, null);
-//      resp.get();
-//      assertEquals(5, resp.request.getRetryCount());
-//
-//   }
+   //   @Test
+   //   public void test_retries_dont_retry_on_404()
+   //   {
+   //      final int[] statusCode = new int[]{404};
+   //      RestClient client = new RestClient()
+   //         {
+   //            @Override
+   //            protected Response doRequest(Request request)
+   //            {
+   //               Response resp = new Response();
+   //               resp.withStatusCode(statusCode[0]);
+   //
+   //               return resp;
+   //            }
+   //         };
+   //      FutureResponse resp = client.call("GET", "url", null, null, 5, null);
+   //      resp.get();
+   //      assertEquals(0, resp.request.getRetryCount());
+   //
+   //      statusCode[0] = 500;
+   //      resp = client.call("GET", "url", null, null, 5, null);
+   //      resp.get();
+   //      assertEquals(5, resp.request.getRetryCount());
+   //
+   //   }
 
    @Test
    public void testBuildFuture_includeHeaders_applied()

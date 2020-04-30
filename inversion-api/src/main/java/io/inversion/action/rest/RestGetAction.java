@@ -76,7 +76,7 @@ public class RestGetAction extends Action<RestGetAction>
          //-- all URLs with a subcollection key will be rewritten and  
          //-- internally forwarded to the non-subcollection form.
 
-         String entityKey = req.getEntityKey();
+         String resourceKey = req.getResourceKey();
          Collection collection = req.getCollection();
          Relationship rel = collection.getRelationship(req.getRelationshipKey());
 
@@ -96,13 +96,13 @@ public class RestGetAction extends Action<RestGetAction>
             //TODO: need a compound key test case here
             Collection relatedCollection = rel.getRelated();
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
-            Row entityKeyRow = collection.decodeKey(req.getEntityKey());
+            Row resourceKeyRow = collection.decodeKey(req.getResourceKey());
 
             if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
-                  && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded entityKey
+                  && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
             {
                String propName = rel.getFk1Col1().getJsonName();
-               newHref += propName + "=" + entityKey;
+               newHref += propName + "=" + resourceKey;
             }
             else
             {
@@ -114,7 +114,7 @@ public class RestGetAction extends Action<RestGetAction>
                {
                   Property fk = fkIdx.getProperty(i);
                   String pkName = pkIdx.getPropertyName(i);
-                  Object pkVal = entityKeyRow.get(pkName);
+                  Object pkVal = resourceKeyRow.get(pkName);
 
                   if (pkVal == null)
                      ApiException.throw400BadRequest("Missing parameter for foreign key property '{}'", fk.getJsonName());
@@ -131,16 +131,16 @@ public class RestGetAction extends Action<RestGetAction>
             //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
             //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
-            List<KeyValue> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(entityKey));
+            List<KeyValue> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(resourceKey));
             if (rows.size() > 0)
             {
                List foreignKeys = new ArrayList();
                rows.forEach(k -> foreignKeys.add(k.getValue()));
 
                Collection relatedCollection = rel.getRelated();
-               String entityKeys = Utils.implode(",", foreignKeys.toArray());
+               String resourceKeys = Utils.implode(",", foreignKeys.toArray());
 
-               newHref = Chain.buildLink(relatedCollection, entityKeys, null);
+               newHref = Chain.buildLink(relatedCollection, resourceKeys, null);
             }
             else
             {
@@ -171,16 +171,16 @@ public class RestGetAction extends Action<RestGetAction>
          res.withJson(included.getJson());
          return;
       }
-      else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getEntityKey()))
+      else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getResourceKey()))
       {
-         List<String> entityKeys = Utils.explode(",", req.getEntityKey());
-         Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), entityKeys.toArray());
+         List<String> resourceKeys = Utils.explode(",", req.getResourceKey());
+         Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), resourceKeys.toArray());
          req.getUrl().withParams(term.toString(), null);
       }
 
       Results<JSNode> results = select(req, req.getCollection(), req.getUrl().getParams(), req.getApi());
 
-      if (results.size() == 0 && req.getEntityKey() != null && req.getCollectionKey() != null)
+      if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null)
       {
          res.withStatus(Status.SC_404_NOT_FOUND);
       }
@@ -211,7 +211,7 @@ public class RestGetAction extends Action<RestGetAction>
 
          if (results.size() > 0)
          {
-            if (req.getCollection() != null && req.getEntityKey() == null)
+            if (req.getCollection() != null && req.getResourceKey() == null)
             {
                List<Term> nextTerms = results.getNext();
                if (nextTerms != null && !nextTerms.isEmpty())
@@ -376,9 +376,9 @@ public class RestGetAction extends Action<RestGetAction>
                JSNode node = new JSNode();
                results.setRow(i, node);
 
-               String entityKey = req.getCollection().encodeKey(row);
+               String resourceKey = req.getCollection().encodeKey(row);
 
-               if (!Utils.empty(entityKey))
+               if (!Utils.empty(resourceKey))
                {
                   //------------------------------------------------
                   //next turn all relationships into links that will 
@@ -389,7 +389,7 @@ public class RestGetAction extends Action<RestGetAction>
                      if (rel.isManyToOne())
                      {
                         String fkval = null;
-                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded entityKey
+                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
                         {
                            Object obj = row.get(rel.getFk1Col1().getColumnName());
                            if (obj != null)
@@ -407,18 +407,18 @@ public class RestGetAction extends Action<RestGetAction>
                      }
                      else
                      {
-                        link = Chain.buildLink(req.getCollection(), entityKey, rel.getName());
+                        link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
                      }
                      node.put(rel.getName(), link);
                   }
 
                   //------------------------------------------------
-                  // finally make sure the entity key is encoded as
+                  // finally make sure the resource key is encoded as
                   // the href
                   String href = node.getString("href");
                   if (Utils.empty(href))
                   {
-                     href = Chain.buildLink(collection, entityKey, null);
+                     href = Chain.buildLink(collection, resourceKey, null);
                      node.putFirst("href", href);
                   }
                }
@@ -432,9 +432,9 @@ public class RestGetAction extends Action<RestGetAction>
                   String colName = attr.getColumnName();
 
                   boolean rowHas = row.containsKey(colName);
-                  if (entityKey != null || rowHas)
+                  if (resourceKey != null || rowHas)
                   {
-                     //-- if the entityKey was null don't create
+                     //-- if the resourceKey was null don't create
                      //-- empty props for fields that were not 
                      //-- returned from the db
                      Object val = row.remove(colName);
@@ -553,7 +553,7 @@ public class RestGetAction extends Action<RestGetAction>
    /**
     * This is more complicated than it seems like it would need to be because 
     * it attempts to retrieve all values of a relationship at a time for the whole 
-    * document.  It does not run a recursive query for each entity and each relationship
+    * document.  It does not run a recursive query for each resource and each relationship
     * which could mean hundreds and hundreds of queries per document.  This should
     * result in number of queries proportional to the number of expands terms that does
     * not increase with the number of results at any level of the expansion.
@@ -606,7 +606,7 @@ public class RestGetAction extends Action<RestGetAction>
 
                for (JSNode node : parentObjs)
                {
-                  pkCache.put(collection, getEntityKey(node), node);
+                  pkCache.put(collection, getResourceKey(node), node);
                }
             }
 
@@ -645,11 +645,11 @@ public class RestGetAction extends Action<RestGetAction>
                relatedEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
                {
-                  String parentEk = getEntityKey(parentObj);
+                  String parentEk = getResourceKey(parentObj);
                   String childEk = parentObj.getString(rel.getName());
                   if (childEk != null)
                   {
-                     childEk = getEntityKey(childEk);
+                     childEk = getResourceKey(childEk);
                      relatedEks.add(new DefaultKeyValue(parentEk, childEk));
                   }
                }
@@ -657,7 +657,7 @@ public class RestGetAction extends Action<RestGetAction>
             else if (rel.isOneToMany())
             {
                //               idxToMatch = rel.getFkIndex1();
-               //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Entity().getKey().getColumn();
+               //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Resource().getKey().getColumn();
 
                idxToMatch = rel.getFkIndex1();
                idxToRetrieve = rel.getRelated().getPrimaryIndex();
@@ -674,7 +674,7 @@ public class RestGetAction extends Action<RestGetAction>
                List toMatchEks = new ArrayList();
                for (JSNode parentObj : parentObjs)
                {
-                  String parentEk = getEntityKey(parentObj);
+                  String parentEk = getResourceKey(parentObj);
                   if (!toMatchEks.contains(parentEk))
                   {
                      if (parentObj.get(rel.getName()) instanceof JSArray)
@@ -701,7 +701,7 @@ public class RestGetAction extends Action<RestGetAction>
             for (KeyValue<String, String> row : relatedEks)
             {
                //the values in the many_to_many link table may have different names than the target columns so you have to 
-               //use the index not the name to build the child entity key.
+               //use the index not the name to build the child resource key.
 
                String parentEk = row.getKey();
                String relatedEk = row.getValue();
@@ -826,12 +826,12 @@ public class RestGetAction extends Action<RestGetAction>
       return related;
    }
 
-   protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection entityKeys, String expandsPath) throws Exception
+   protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws Exception
    {
-      if (entityKeys.size() == 0)
+      if (resourceKeys.size() == 0)
          return Collections.EMPTY_LIST;
 
-      String url = Chain.buildLink(collection, Utils.implode(",", entityKeys), null);
+      String url = Chain.buildLink(collection, Utils.implode(",", resourceKeys), null);
 
       //      //--
       //      //-- Nested param support
@@ -877,14 +877,14 @@ public class RestGetAction extends Action<RestGetAction>
 
          for (JSNode node : nodes)
          {
-            Object entityKey = getEntityKey((JSNode) node);
-            if (pkCache.containsKey(collection, entityKey))
+            Object resourceKey = getResourceKey((JSNode) node);
+            if (pkCache.containsKey(collection, resourceKey))
             {
                ApiException.throw500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
                return null;
             }
 
-            pkCache.put(collection, entityKey, node);
+            pkCache.put(collection, resourceKey, node);
          }
          return nodes;
       }
@@ -909,7 +909,7 @@ public class RestGetAction extends Action<RestGetAction>
    //-Static Utils -----------------------------------------------------------------------
    //-------------------------------------------------------------------------------------
 
-   protected static String getEntityKey(Object obj)
+   protected static String getResourceKey(Object obj)
    {
       if (obj == null)
          return null;

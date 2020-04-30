@@ -88,18 +88,18 @@ public class TestOverloadedDynamicTables
    //
    //                                       if (req.getUrl().findKey(partitionProp) == null)
    //                                       {
-   //                                          String entityKey = req.getEntityKey();
-   //                                          if (entityKey == null && req.getChain().getParent() != null)
+   //                                          String resourceKey = req.getResourceKey();
+   //                                          if (resourceKey == null && req.getChain().getParent() != null)
    //                                          {
    //                                             //-- handles /customers/${customerKey}?expands=addresses
-   //                                             entityKey = req.getChain().getParent().getRequest().getEntityKey();
+   //                                             resourceKey = req.getChain().getParent().getRequest().getResourceKey();
    //                                          }
    //
-   //                                          if (entityKey != null)
+   //                                          if (resourceKey != null)
    //                                          {
-   //                                             //-- handles /addresses/$entityKey1,$entityKey2,$entityKey3
-   //                                             List<String> entityKeys = Utils.explode(",",  entityKey);
-   //                                             Row row = req.getCollection().decodeKey(entityKeys.get(0));
+   //                                             //-- handles /addresses/$resourceKey1,$resourceKey2,$resourceKey3
+   //                                             List<String> resourceKeys = Utils.explode(",",  resourceKey);
+   //                                             Row row = req.getCollection().decodeKey(resourceKeys.get(0));
    //                                             partitionKey = row.get(partitionProp);
    //                                          }
    //
@@ -116,7 +116,7 @@ public class TestOverloadedDynamicTables
    //                                          {
    //                                             //-- not necessary for RDBMS stores but prevents
    //                                             //-- unintended props in document stores
-   //                                             node.removeAll("collection", "entity", "relationship");
+   //                                             node.removeAll("collection", "resource", "relationship");
    //
    //                                             //-- forces correct case
    //                                             node.put("tenant", tenant);
@@ -162,7 +162,7 @@ public class TestOverloadedDynamicTables
    //
    //                                       if (req.isGet() || req.isDelete())
    //                                       {
-   //                                          if (req.getUrl().findKey("type") == null || (req.getEntityKey() == null && req.getUrl().findKey("partition") == null))
+   //                                          if (req.getUrl().findKey("type") == null || (req.getResourceKey() == null && req.getUrl().findKey("partition") == null))
    //                                             ApiException.throw400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
    //                                       }
    //

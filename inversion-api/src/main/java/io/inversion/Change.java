@@ -20,14 +20,14 @@ public class Change
 {
    protected String method        = null;
    protected String collectionKey = null;
-   protected Object entityKey     = null;
+   protected Object resourceKey     = null;
 
-   public Change(String method, String collectionKey, Object entityKey)
+   public Change(String method, String collectionKey, Object resourceKey)
    {
       super();
       this.method = method;
       this.collectionKey = collectionKey;
-      this.entityKey = entityKey;
+      this.resourceKey = resourceKey;
    }
 
    public String getMethod()
@@ -52,14 +52,14 @@ public class Change
       return this;
    }
 
-   public Object getEntityKey()
+   public Object getResourceKey()
    {
-      return entityKey;
+      return resourceKey;
    }
 
-   public Change withEntityKey(Object entityKey)
+   public Change withResourceKey(Object resourceKey)
    {
-      this.entityKey = entityKey;
+      this.resourceKey = resourceKey;
       return this;
    }
 

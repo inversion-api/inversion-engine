@@ -24,7 +24,7 @@ CREATE TABLE `Person` (
 
 CREATE TABLE `Props` (
 	`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-	`personEntityKey` VARCHAR(500),
+	`personResourceKey` VARCHAR(500),
 	`name` VARCHAR(500),
 	`value` VARCHAR(500),
 	CONSTRAINT `PK_Customer` PRIMARY KEY (`id`)
@@ -33,4 +33,4 @@ CREATE TABLE `Props` (
 
 INSERT INTO `Person` (Type, Identifier, LastName) Values ('employee', '12345', 'boss1');
 INSERT INTO `Person` (Type, Identifier, LastName, ReportsTo) Values ('employee', '67890', 'employee1', 'employee~boss1');
-INSERT INTO `Props` (personEntityKey, name, value) Values ('employee~12345', 'prop1', 'val1');
+INSERT INTO `Props` (personResourceKey, name, value) Values ('employee~12345', 'prop1', 'val1');

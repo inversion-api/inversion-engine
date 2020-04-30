@@ -452,11 +452,11 @@ public class Request
    }
 
    /**
-    * @return the entityKey
+    * @return the resourceKey
     */
-   public String getEntityKey()
+   public String getResourceKey()
    {
-      return url.getParam("entity");
+      return url.getParam("resource");
    }
 
    public String getRelationshipKey()

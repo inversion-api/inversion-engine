@@ -49,7 +49,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
    protected boolean collapseAll    = false;
 
    /**
-    * When true, forces PUTs to have an entityKey in the URL
+    * When true, forces PUTs to have an resourceKey in the URL
     */
    protected boolean strictRest     = false;
    protected boolean expandResponse = true;
@@ -92,7 +92,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       JSNode body = req.getJson();
       if (body.isArray())
       {
-         if (!Utils.empty(req.getEntityKey()))
+         if (!Utils.empty(req.getResourceKey()))
          {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
@@ -100,19 +100,19 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       else
       {
          String href = body.getString("href");
-         if (req.getEntityKey() != null)
+         if (req.getResourceKey() != null)
          {
             if (href == null)
                body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
             else if (!req.getUrl().toString().startsWith(href))
-               ApiException.throw400BadRequest("You are PATCHING-ing an entity with a different href property than the entity URL you are PATCHING-ing to.");
+               ApiException.throw400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
          }
       }
 
       List<Row> rows = new ArrayList();
       Collection coll = req.getCollection();
 
-      List<String> entityKeys = new ArrayList();
+      List<String> resourceKeys = new ArrayList();
       for (JSNode node : body.asNodeList())
       {
          if (node.size() == 1)
@@ -127,9 +127,9 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
             if ("href".equalsIgnoreCase(jsonProp))
             {
-               String entityKey = Utils.substringAfter(value.toString(), "/");
-               entityKeys.add(entityKey);
-               row.putAll(coll.decodeKey(entityKey));
+               String resourceKey = Utils.substringAfter(value.toString(), "/");
+               resourceKeys.add(resourceKey);
+               row.putAll(coll.decodeKey(resourceKey));
             }
             else
             {
@@ -164,7 +164,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                      }
                      else
                      {
-                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related entity.");
+                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
                      }
                   }
                   else
@@ -177,9 +177,9 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       }
       coll.getDb().patch(coll, rows);
 
-      if (entityKeys.size() > 0)
+      if (resourceKeys.size() > 0)
       {
-         String location = Chain.buildLink(coll, Utils.implode(",", entityKeys), null);
+         String location = Chain.buildLink(coll, Utils.implode(",", resourceKeys), null);
          res.withHeader("Location", location);
       }
 
@@ -189,15 +189,15 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
    {
       if (strictRest)
       {
-         if (req.isPost() && req.getEntityKey() != null)
-            ApiException.throw404NotFound("You are trying to POST to a specific entity url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
-         if (req.isPut() && req.getEntityKey() == null)
+         if (req.isPost() && req.getResourceKey() != null)
+            ApiException.throw404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+         if (req.isPut() && req.getResourceKey() == null)
             ApiException.throw404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
       }
 
       Collection collection = req.getCollection();
       List<Change> changes = new ArrayList();
-      List entityKeys = new ArrayList();
+      List resourceKeys = new ArrayList();
       JSNode obj = req.getJson();
 
       if (obj == null)
@@ -214,21 +214,21 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
       if (obj instanceof JSArray)
       {
-         if (!Utils.empty(req.getEntityKey()))
+         if (!Utils.empty(req.getResourceKey()))
          {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
-         entityKeys = upsert(req, collection, (JSArray) obj);
+         resourceKeys = upsert(req, collection, (JSArray) obj);
       }
       else
       {
          String href = obj.getString("href");
-         if (req.isPut() && href != null && req.getEntityKey() != null && !req.getUrl().toString().startsWith(href))
+         if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href))
          {
-            ApiException.throw400BadRequest("You are PUT-ing an entity with a different href property than the entity URL you are PUT-ing to.");
+            ApiException.throw400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
          }
 
-         entityKeys = upsert(req, collection, new JSArray(obj));
+         resourceKeys = upsert(req, collection, new JSArray(obj));
       }
 
       res.withChanges(changes);
@@ -241,10 +241,10 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
       res.withStatus(Status.SC_201_CREATED);
       StringBuffer buff = new StringBuffer("");
-      for (int i = 0; i < entityKeys.size(); i++)
+      for (int i = 0; i < resourceKeys.size(); i++)
       {
-         String entityKey = entityKeys.get(i) + "";
-         String href = Chain.buildLink(collection, entityKey, null);
+         String resourceKey = resourceKeys.get(i) + "";
+         String href = Chain.buildLink(collection, resourceKey, null);
 
          boolean added = false;
 
@@ -488,7 +488,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
             for (JSNode node : nodes.asNodeList())
             {
                Map primaryKey = getKey(collection, node);
-               Map foreignEntityKey = getKey(rel.getRelated(), node.get(rel.getName()));
+               Map foreignResourceKey = getKey(rel.getRelated(), node.get(rel.getName()));
 
                Index foreignIdx = rel.getFkIndex1();
                Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
@@ -502,12 +502,12 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
                   {
-                     //-- the fk is an entityKey not a one-to-one column mapping to the primary composite key
-                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeKey(foreignEntityKey));
+                     //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
+                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeKey(foreignResourceKey));
                   }
                   else
                   {
-                     Map foreignKey = mapTo(foreignEntityKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                     Map foreignKey = mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
                      updatedRow.putAll(foreignKey);
                   }
                }
@@ -683,13 +683,13 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
             //TODO: put back in support for many to many rels recursing through engine
             else if (rel.isManyToMany())
             {
-               List entityKeys = new ArrayList();
+               List resourceKeys = new ArrayList();
                for (JSNode node : toUnlink.data().asNodeList())
                {
-                  entityKeys.add(Utils.substringAfter(node.getString("href"), "/"));
+                  resourceKeys.add(Utils.substringAfter(node.getString("href"), "/"));
                }
 
-               String url = Chain.buildLink(coll) + "/" + Utils.implode(",", entityKeys);
+               String url = Chain.buildLink(coll) + "/" + Utils.implode(",", resourceKeys);
                req.getEngine().delete(url);
             }
 
@@ -728,10 +728,10 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       if (srcCols.size() != destCols.size() && destCols.size() == 1)
       {
          //when the foreign key is only one column but the related primary key is multiple 
-         //columns, encode the FK as an entityKey.
-         String entityKey = Collection.encodeKey(srcRow, srcCols);
+         //columns, encode the FK as an resourceKey.
+         String resourceKey = Collection.encodeKey(srcRow, srcCols);
          srcRow.clear();
-         srcRow.put(destCols.getProperty(0).getColumnName(), entityKey);
+         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
       }
       else
       {

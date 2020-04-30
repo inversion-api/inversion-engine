@@ -172,7 +172,7 @@ public class EngineTest
       res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo");
       req = res.getChain().getRequest();
       assertEquals("employees", req.getUrl().getParam("collection"));
-      assertEquals("12345", req.getUrl().getParam("entity"));
+      assertEquals("12345", req.getUrl().getParam("resource"));
       assertEquals("reportsTo", req.getUrl().getParam("relationship"));
 
       api1.withCollection(new Collection("employees"));
@@ -191,7 +191,7 @@ public class EngineTest
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
                            .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
                            .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
+                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:resource]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api);
       assertEndpointMatch("GET", "http://localhost/test/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api);
@@ -200,7 +200,7 @@ public class EngineTest
                            .withAction(new MockAction("mock1").withIncludePaths("*"))//
                            .withEndpoint(new Endpoint("GET", "/[{collection:collection1|collection2}]/*").withName("ep1"))//
                            .withEndpoint(new Endpoint("GET", "subpath3/*").withName("ep2"))//
-                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
+                           .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:resource]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/collection1/entKey/relKey", 200, "ep1", "", "collection1", "entKey", "relKey", api);
       assertEndpointMatch("GET", "http://localhost/test/collection2/entKey/relKey", 200, "ep1", "", "collection2", "entKey", "relKey", api);
@@ -237,10 +237,10 @@ public class EngineTest
                                                             .withIncludePaths("gamestop/[{collection:nintendo}]/")//
                                                             .withIncludePaths("gamestop/[{collection:xbox}]/*"))//
                                 .withEndpoint(new Endpoint("GET", "carwash/{collection:regular|delux}/*").withName("ep8"))//
-                                .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
+                                .withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:resource]/[:relationship]/*")));
 
       Api api2 = new Api("other");
-      api2.withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:entity]/[:relationship]/*")));
+      api2.withCollection(new Collection("any").withIncludePaths(new Path("{collection}/[:resource]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
       assertEndpointMatch("GET", "/test/ep1", 200, api1);
@@ -486,7 +486,7 @@ public class EngineTest
       assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
    }
 
-   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String entityKey, String subCollectionKey, Api... apis)
+   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis)
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
@@ -505,8 +505,8 @@ public class EngineTest
                if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
                   fail(chain, "collectionKey don't match");
 
-               if (entityKey != null && !entityKey.equals(chain.getRequest().getEntityKey()))
-                  fail(chain, "entityKey don't match");
+               if (resourceKey != null && !resourceKey.equals(chain.getRequest().getResourceKey()))
+                  fail(chain, "resourceKey don't match");
 
                if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
                   fail(chain, "subCollectionKey don't match");
@@ -520,13 +520,13 @@ public class EngineTest
                for (int i = 0; vals != null && i < vals.length; i++)
                   System.err.print(vals[i] + " ");
                System.err.println("");
-               System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + entityKey + "," + subCollectionKey);
+               System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
                System.err.println("url              :" + chain.getRequest().getUrl());
                System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
                System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
                System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
                System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
-               System.err.println("entityKey        :" + chain.getRequest().getEntityKey());
+               System.err.println("resourceKey        :" + chain.getRequest().getResourceKey());
                System.err.println("subCollectionKey :" + chain.getRequest().getRelationshipKey());
                System.err.println("subPath          :" + chain.getRequest().getSubpath());
 

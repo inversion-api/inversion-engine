@@ -67,7 +67,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public Path getDefaultIncludes()
    {
-      return new Path("{collection:" + getName() + "}/[:entity]/[:relationship]/*");
+      return new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*");
    }
 
    /**
@@ -553,18 +553,18 @@ public class Collection extends Rule<Collection> implements Serializable
 
    public static String encodeKey(List pieces)
    {
-      StringBuffer entityKey = new StringBuffer("");
+      StringBuffer resourceKey = new StringBuffer("");
       for (int i = 0; i < pieces.size(); i++)
       {
          Object piece = pieces.get(i);
          if (piece == null)
-            ApiException.throw500InternalServerError("Trying to encode an entity key with a null component: '{}'.", pieces);
+            ApiException.throw500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
 
-         entityKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+         resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
          if (i < pieces.size() - 1)
-            entityKey.append("~");
+            resourceKey.append("~");
       }
-      return entityKey.toString();
+      return resourceKey.toString();
    }
 
    /**
@@ -662,7 +662,7 @@ public class Collection extends Rule<Collection> implements Serializable
       for (List row : parseKeys(inKeys))
       {
          if (row.size() != colNames.size())
-            ApiException.throw400BadRequest("Supplied entity key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
+            ApiException.throw400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
 
          for (int i = 0; i < colNames.size(); i++)
          {
@@ -683,15 +683,15 @@ public class Collection extends Rule<Collection> implements Serializable
    //parses val1~val2,val3~val4,val5~valc6
    public static List<List<String>> parseKeys(String inKeys)
    {
-      String entityKeys = inKeys;
+      String resourceKeys = inKeys;
       List<String> splits = new ArrayList();
 
       List<List<String>> rows = new ArrayList();
 
       boolean escaped = false;
-      for (int i = 0; i < entityKeys.length(); i++)
+      for (int i = 0; i < resourceKeys.length(); i++)
       {
-         char c = entityKeys.charAt(i);
+         char c = resourceKeys.charAt(i);
          switch (c)
          {
             case '\\':
@@ -702,15 +702,15 @@ public class Collection extends Rule<Collection> implements Serializable
                {
                   rows.add(splits);
                   splits = new ArrayList();
-                  entityKeys = entityKeys.substring(i + 1, entityKeys.length());
+                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
                   i = 0;
                   continue;
                }
             case '~':
                if (!escaped)
                {
-                  splits.add(entityKeys.substring(0, i));
-                  entityKeys = entityKeys.substring(i + 1, entityKeys.length());
+                  splits.add(resourceKeys.substring(0, i));
+                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
                   i = 0;
                   continue;
                }
@@ -718,9 +718,9 @@ public class Collection extends Rule<Collection> implements Serializable
                escaped = false;
          }
       }
-      if (entityKeys.length() > 0)
+      if (resourceKeys.length() > 0)
       {
-         splits.add(entityKeys);
+         splits.add(resourceKeys);
       }
 
       if (splits.size() > 0)

@@ -325,7 +325,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    }
 
    @Test
-   public void testTwoPartEntityKey11() throws Exception
+   public void testTwoPartResourceKey11() throws Exception
    {
       Engine engine = engine();
       Response res = null;

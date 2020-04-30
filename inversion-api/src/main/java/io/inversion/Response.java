@@ -436,7 +436,7 @@ public class Response
       return this;
    }
 
-   public String getEntityKey()
+   public String getResourceKey()
    {
       JSNode json = getJson();
       if (json != null)
@@ -486,11 +486,11 @@ public class Response
       return this;
    }
 
-   public Response withChange(String method, String collectionKey, Object entityKey)
+   public Response withChange(String method, String collectionKey, Object resourceKey)
    {
-      if (entityKey instanceof List)
+      if (resourceKey instanceof List)
       {
-         List<String> deletedIds = (List<String>) entityKey;
+         List<String> deletedIds = (List<String>) resourceKey;
          for (String id : deletedIds)
          {
             changes.add(new Change(method, collectionKey, id));
@@ -498,15 +498,15 @@ public class Response
       }
       else
       {
-         changes.add(new Change(method, collectionKey, entityKey));
+         changes.add(new Change(method, collectionKey, resourceKey));
       }
       return this;
    }
 
-   public Response withChange(String method, String collectionKey, String... entityKeys)
+   public Response withChange(String method, String collectionKey, String... resourceKeys)
    {
-      for (int i = 0; entityKeys != null && i < entityKeys.length; i++)
-         withChange(method, collectionKey, entityKeys[i]);
+      for (int i = 0; resourceKeys != null && i < resourceKeys.length; i++)
+         withChange(method, collectionKey, resourceKeys[i]);
       return this;
    }
 

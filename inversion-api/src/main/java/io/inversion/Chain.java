@@ -138,7 +138,7 @@ public class Chain
       return buildLink(collection, null, null);
    }
 
-   public static String buildLink(Collection collection, Object entityKey, String subCollectionKey)
+   public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey)
    {
       Request req = peek().getRequest();
 
@@ -185,8 +185,8 @@ public class Chain
                   case "collection":
                      value = collection.getName();
                      break;
-                  case "entity":
-                     value = entityKey + "";
+                  case "resource":
+                     value = resourceKey + "";
                      break;
                   case "relationship":
                      value = subCollectionKey;
@@ -195,7 +195,7 @@ public class Chain
                      value = req.getUrl().getParam(name);
                }
                if (value == null)
-                  ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', entity '{}', relationship '{}'", collection.getName(), entityKey + "", subCollectionKey + "");
+                  ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
 
                url += epP.get(i) + "/";
             }
@@ -216,8 +216,8 @@ public class Chain
          url += collectionKey;
       }
 
-      if (!Utils.empty(entityKey))
-         url += "/" + entityKey.toString();
+      if (!Utils.empty(resourceKey))
+         url += "/" + resourceKey.toString();
 
       if (!Utils.empty(subCollectionKey))
          url += "/" + subCollectionKey;
@@ -245,7 +245,7 @@ public class Chain
       return url;
    }
 
-   //   public static String buildLink(String collectionKey, String entityKey)
+   //   public static String buildLink(String collectionKey, String resourceKey)
    //   {
    //      Request req = Chain.peek().getRequest();
    //      String url = req.getUrl().toString();
@@ -257,7 +257,7 @@ public class Chain
    //         url = url.substring(0, url.lastIndexOf("/"));
    //      }
    //
-   //      if (req.getEntityKey() != null)
+   //      if (req.getResourceKey() != null)
    //      {
    //         url = url.substring(0, url.lastIndexOf("/"));
    //      }
@@ -270,8 +270,8 @@ public class Chain
    //      if (collectionKey != null)
    //         url += "/" + collectionKey;
    //
-   //      if (entityKey != null)
-   //         url += "/" + entityKey;
+   //      if (resourceKey != null)
+   //         url += "/" + resourceKey;
    //
    //      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
    //      {

@@ -350,8 +350,8 @@ public class ScriptAction extends Action<ScriptAction>
          guesses.add(parts.get(0));
 
       // last chance, look for the file name 
-      if (req.getEntityKey() != null)
-         guesses.add(req.getEntityKey());
+      if (req.getResourceKey() != null)
+         guesses.add(req.getResourceKey());
 
       for (String guess : guesses)
       {

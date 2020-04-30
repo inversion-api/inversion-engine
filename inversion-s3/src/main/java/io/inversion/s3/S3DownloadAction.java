@@ -95,7 +95,7 @@ public class S3DownloadAction extends Action
 //   {
 //
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
-//      Table table = collection.getEntity().getTable();
+//      Table table = collection.getResource().getTable();
 //      S3Db db = (S3Db) table.getDb();
 //
 //      Integer pageSize = req.getParam("pageSize") != null ? Integer.parseInt(req.removeParam("pageSize")) : maxRows;
@@ -198,7 +198,7 @@ public class S3DownloadAction extends Action
 //   {
 //
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
-//      Table table = collection.getEntity().getTable();
+//      Table table = collection.getResource().getTable();
 //      S3Db db = (S3Db) table.getDb();
 //
 //      S3Rql rql = (S3Rql) Rql.getRql(db.getType());
@@ -268,7 +268,7 @@ public class S3DownloadAction extends Action
 //   private void doPut(Engine service, Api api, Endpoint endpoint, Action action, Chain chain, Request req, Response res) throws Exception
 //   {
 //      Collection collection = findCollectionOrThrow404(api, chain, req);
-//      Table table = collection.getEntity().getTable();
+//      Table table = collection.getResource().getTable();
 //      S3Db db = (S3Db) table.getDb();
 //
 //      // Only be updating the meta of a file at this time.  Renaming or moving a file 
@@ -311,7 +311,7 @@ public class S3DownloadAction extends Action
 //         throw new ApiException(SC.SC_404_NOT_FOUND, "An s3 bucket is not configured for this collection key, please edit your query or your config and try again.");
 //      }
 //
-//      if (!(collection.getEntity().getTable().getDb() instanceof S3Db))
+//      if (!(collection.getResource().getTable().getDb() instanceof S3Db))
 //      {
 //         throw new ApiException(SC.SC_500_INTERNAL_SERVER_ERROR, "Bad server configuration. The endpoint is hitting the s3 handler, but this collection is not related to a s3db");
 //      }

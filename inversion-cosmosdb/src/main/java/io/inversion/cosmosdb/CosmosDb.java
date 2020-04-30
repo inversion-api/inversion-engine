@@ -62,10 +62,10 @@ public class CosmosDb extends Db<CosmosDb>
    }
 
    /**
-    * Finds the entity keys on the other side of the relationship
+    * Finds the resource keys on the other side of the relationship
     * @param relationship
-    * @param sourceEntityKeys
-    * @return Map<sourceEntityKey, relatedEntityKey>
+    * @param sourceResourceKeys
+    * @return Map<sourceResourceKey, relatedResourceKey>
     * @throws Exception
     */
    @Override

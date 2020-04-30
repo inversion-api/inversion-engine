@@ -329,7 +329,7 @@ public class Api extends Rule<Api>
     * 
     * For collections backed by relational data sources (like a SQL db) the length of <code>childFkProps</code> will generally match the 
     * length of <code>parentCollections</code> primary index.  If the two don't match, then <code>childFkProps</code> must be 1.  In this 
-    * case, the compound primary index of parentCollection will be encoded as an entityKey in the single child table property.
+    * case, the compound primary index of parentCollection will be encoded as an resourceKey in the single child table property.
     */
    public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {

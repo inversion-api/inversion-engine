@@ -117,7 +117,7 @@ git clone https://github.com/inversion-api/inversion-engine.git
 ./gradlew demo1
 ```
 
-The demo API is now running at 'http://localhost:8080/northwind with REST collection endpoints for each DB entity.
+The demo API is now running at 'http://localhost:8080/northwind with REST collection endpoints for each DB resource.
 
 You can get started by exploring some of these urls:
  - GET http://localhost:8080/northwind/products
@@ -295,7 +295,7 @@ Configuration and API bootstrapping takes place in the following stages:
 1. Initial loading - This stage loads/merges all of the user supplied config files according to the above algorithm
 1. Api and Db instantiation - All Api and Db instances from the user supplied config are instantiated and wired up.  This is a minimum initial wiring. 
 1. Db reflection - 'db.bootstrapApi(api)' is called for each Db configed by the user.  The Db instance reflectively inspects its data source and creates a Table,Column,Index
-model to match the datasource and then adds Collection,Entity,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
+model to match the datasource and then adds Collection,Resource,Attribute,Relationship objects to the Api that map back to the Tables,Columns and Indexes. 
 1. Serialization - The dynamically configured Api model is then serialized back out to name=value property format as if it were user supplied config.    
 1. The user supplied configs from step 1 are then merged down on onto the system generated config.  This means that you can overwrite any dynamically configured key/value pair.  
 1. JavaBeans are auto-wired together and all Api objects in the resulting output are then loading into Inversion.addApi() and are ready to run.
@@ -424,7 +424,7 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
  | RQL Function                                                   |      Database      | Elastic | Dynamo | Description                                                                                                                                     |
  | -------------------------------------------------------------- | :----------------: | :-----: | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
- | expands=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced entity will be included as a nested document in the returned JSON instead of an HREF reference value |
+ | expands=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced resource will be included as a nested document in the returned JSON instead of an HREF reference value |
   
 
 ### Reserved Query String Parameters
@@ -465,7 +465,7 @@ Implementing support for a new backend datasource is simply a matter of implemen
 
 ### Collections, Entities, Attributes and Relationships
 
-Collections logically map to Db Tables.  An Entity logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requests to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well in a URL or as a JSON property name.
+Collections logically map to Db Tables.  An Resource logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requests to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well in a URL or as a JSON property name.
 
 Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
@@ -479,7 +479,7 @@ An Action can be set directly on an Endpoint to be 'private' to that endpoint, o
 
 
 Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
- * RestGetAction - Returns a Collection listing matching RQL criteria or can return a single requested Entity from a Db Table.
+ * RestGetAction - Returns a Collection listing matching RQL criteria or can return a single requested Resource from a Db Table.
  * RestPostAction - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
  * RestDeleteDelete - Deletes Collection Entities from the underlying Db Table.
  * AuthAction - Logs a user in and puts a User object in the Request
@@ -513,13 +513,13 @@ Here are some examples:
  
 One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
  
- * endpoint3.includesPaths={collection:customers|books|albums}/[{entity:[0-9]}]/{relationship:[a-z]}
+ * endpoint3.includesPaths={collection:customers|books|albums}/[{resource:[0-9]}]/{relationship:[a-z]}
 
 If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may 
 have been supplied by the query string.
 
-The names "component", "entity", and "relationship" are special.  If you configure a path match to them, Inversion will use those values when configuring the Request object.
-If you don't supply them the parser will assume the pattern .../[endpoint.path]/[collection]/[entity]/[relationship].  
+The names "component", "resource", and "relationship" are special.  If you configure a path match to them, Inversion will use those values when configuring the Request object.
+If you don't supply them the parser will assume the pattern .../[endpoint.path]/[collection]/[resource]/[relationship].  
 
 
 ## Security Model
@@ -592,7 +592,7 @@ then a 403 Forbidden HTTP status code is returned.
 
 Apis can be flagged as 'multiTenant'.  If so, a tenantCode must immediately follow the apiCode in the URL.
 
-Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectionKey/[entityKey]```
+Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectionKey/[resourceKey]```
 
 If the AuthAction is being used, it will enforce that the Url tenantCode matches the logged in users tenantCode (if there is a logged in user).
 

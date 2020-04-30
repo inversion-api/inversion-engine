@@ -136,7 +136,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          }
          else if ("id".equalsIgnoreCase(partKeyCol))
          {
-            partKey = Chain.peek().getRequest().getEntityKey();
+            partKey = Chain.peek().getRequest().getResourceKey();
          }
       }
 

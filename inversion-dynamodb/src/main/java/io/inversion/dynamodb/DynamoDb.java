@@ -235,11 +235,11 @@ public class DynamoDb extends Db<DynamoDb>
    //      collection.withName(beautifyCollectionName(collectionName));
    //      collection.withTable(table);
    //
-   //      Entity entity = collection.getEntity();
+   //      Resource resource = collection.getResource();
    //
    //      for (Column col : table.getColumns())
    //      {
-   //         entity.getAttribute(col.getColumnName()).withName(beautifyAttributeName(col.getColumnName()));
+   //         resource.getAttribute(col.getColumnName()).withName(beautifyAttributeName(col.getColumnName()));
    //      }
    //
    //      if (getCollectionPath() != null)

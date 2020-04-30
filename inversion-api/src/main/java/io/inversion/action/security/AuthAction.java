@@ -122,11 +122,11 @@ public class AuthAction extends Action<AuthAction>
 
             if (sessionReq && req.isDelete())
             {
-               //the supplied authorization and the entityKey in the url
+               //the supplied authorization and the resourceKey in the url
                //must match on a delete.
-               String entityKey = req.getEntityKey();
-               if (!Utils.equal(token, entityKey))
-                  ApiException.throw401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url entityKey");
+               String resourceKey = req.getResourceKey();
+               if (!Utils.equal(token, resourceKey))
+                  ApiException.throw401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url resourceKey");
 
                sessionDao.delete(token);
                return;
