@@ -19,7 +19,33 @@ package io.inversion;
 import io.inversion.utils.Utils;
 
 /**
- *
+ * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
+ * <p>
+ * <h3>The Action Sandwich</h3>
+ * 
+ * Nearly the entire job of the Engine and Api Endpoint configuration is to match one or more Action subclass instances to a Request.
+ * All matched actions are sorted by their <code>order</code> property and executed in sequence as a Chain of Responsibility pattern.
+ * Colloquially, at Rocket Partners we somehow started to call this the 'action sandwich'.
+ * <p>
+ * If an Action should be run across multiple Endpoints, a logging or security Action for example, it can be added directly to an Api via Api.withAction.
+ * <p>
+ * In most cases however, you will group sets of related actions under an Endpoint and add the Endpoint to the Api.
+ * <p>
+ * Both Api registered Actions and Endpoint registered Actions can be selected into the 'action sandwich' for a particular Request.
+ * <p>
+ * One big difference however is that <code>includesPaths</code> and <code>excludePaths</code> are relative to the Api path for
+ * <p>
+ * Api registered Actions and relative to the Endpoint path for Endpoint registered actions.  They are all sorted togeter in one big group according to order.
+ * 
+ * 
+ * <h3>Handling Requests</h3>
+ * 
+ * Once the Engine has selected the Actions to run for a given request (creating the 'action sandwich'), they are all loaded into a Chain object
+ * which is responsible for invoking {@link #run(Request, Response)} on each one in sequence.
+ * <p>
+ * You can override <code>run</code> to process all Requests this Action is selected for, or you can override any of the HTTP method specific doGet/Post/Put/Patch/Delete() handlers
+ * if you want to segregate your business logic by HTTP method. 
+ *  
  */
 public abstract class Action<A extends Action> extends Rule<A>
 {
