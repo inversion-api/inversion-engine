@@ -299,7 +299,7 @@ public class Response
    {
       return getData();
    }
-   
+
    public JSArray getData()
    {
       JSNode json = getJson();
@@ -623,7 +623,8 @@ public class Response
       {
          if (!isSuccess())
          {
-            String string = getContent();//Utils.read(getInputStream());
+            String message = findString("message");
+            String string = getStatus() + (!Utils.empty(message) ? " - " + message : "");
             return string;
          }
       }
@@ -631,7 +632,8 @@ public class Response
       {
          Utils.rethrow(ex);
       }
-      return getContent();
+      
+      return getStatus();
    }
 
    public long getFileLength()
@@ -906,7 +908,7 @@ public class Response
       if (message != null)
          msg = msg + " " + message.trim();
 
-      ApiException.throwEx(statusCode + "",  null,  msg);
+      ApiException.throwEx(statusCode + "", null, msg);
    }
 
    public Response assertStatus(int... statusCodes)
