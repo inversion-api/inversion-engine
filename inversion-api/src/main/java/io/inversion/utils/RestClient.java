@@ -100,7 +100,7 @@ import io.inversion.Response;
  * </ul>    
  * 
  * <p>
- * <b>Transforming requests / responses<b>
+ * <b>Transforming requests / responses</b>
  * <p> 
  * You can easily override the <code>doRequest(Request)</code> method to potentially short circuit calls or perform request/response transforms.  
  * <p>
@@ -108,7 +108,6 @@ import io.inversion.Response;
  * <pre>
  * protected RestClient client = new RestClient("myservice"){
  * 
- *  @Override
  *  protected Response doRequest(Request request)
  *  {
  *      if(checkMyCondition(request))
@@ -758,10 +757,7 @@ public class RestClient
 
    synchronized void submit(FutureResponse future)
    {
-      if (executor == null)
-         executor = new Executor();
-
-      executor.submit(future);
+      getExecutor().submit(future);
    }
 
    synchronized void submitLater(final FutureResponse future, long delay)
@@ -1041,8 +1037,22 @@ public class RestClient
       return httpClient;
    }
 
+   /**
+    * Gets <code>executor</code> and calling buildExecutor to construct a new one if <code>executor</code> is null.
+    * @return
+    */
    public Executor getExecutor()
    {
+      if (executor == null)
+      {
+         synchronized (this)
+         {
+            if (executor == null)
+            {
+               executor = buildExecutor();
+            }
+         }
+      }
       return executor;
    }
 
@@ -1050,6 +1060,18 @@ public class RestClient
    {
       this.executor = executor;
       return this;
+   }
+
+   /**
+    * Build an executor if one was not wired in.
+    * <p>
+    * You can dependency inject your Executor or override this method to provide advanced customizations.
+    * 
+    * @return
+    */
+   protected Executor buildExecutor()
+   {
+      return new Executor();
    }
 
    public boolean isForwardHeaders()
@@ -1400,47 +1422,48 @@ public class RestClient
 
    }
 
+   //TODO make this a lambda instead?
    public static interface ResponseHandler
    {
       public void onResponse(Response response) throws Exception;
    }
 
    /**
-    * A thread pool executor that will expand the number of threads up to <code>poolMax</code>
-    * with a queue depth of <code>queueMax</code>.  If more than <code>queueMax</code> jobs
-    * are submitted, the submit() will block until the queue has room.
+    * An asynchronous thread pool task runner.
+    * 
+    * The number of threads in the pool will be expanded up to <code>threadsMax</code> and down to 
+    * <code>thredsMin</code> based on the size of of the queue.  Up to <code>queueMax</code> tasks
+    * can occupy the queue before caller will start to be blocked having to wait for queue space to 
+    * clear up.
+    * <p>
+    * You can completely disable asynchronous execution by setting <code>threadsMax</code> to zero.
+    * That will ensure that tasks will always execute synchronously in the calling thread and will
+    * be completed by the time <code>submit</code> returns.
     */
    public static class Executor
    {
-      int                        poolMin  = 1;
-      int                        poolMax  = 100;
+      /**
+       * The thread pool will be dynamically contracted to this minimum number of worker threads as the queue length shrinks.
+       */
+      protected int              threadsMin   = 1;
 
-      int                        queueMax = 500;
+      /**
+       * The thread pool will by dynamically expanded up to this max number of worker threads as the queue length grows.
+       * <p>
+       * If this number is less than 1, then tasks will be executed synchronously in the calling thread, not asynchronously.
+       */
+      protected int              threadsMax   = 50;
 
-      LinkedList<RunnableFuture> queue    = new LinkedList();
-      Vector<Thread>             threads  = new Vector();
+      protected int              queueMax     = 500;
 
-      boolean                    daemon   = true;
+      LinkedList<RunnableFuture> queue        = new LinkedList();
+      Vector<Thread>             threads      = new Vector();
 
-      String                     poolName = "executor";
-
-      boolean                    shutdown = false;
-      long                       delay    = 1000;
-
-      static Timer               timer    = null;
+      String                     threadPrefix = "executor";
 
       public Executor()
       {
 
-      }
-
-      public Executor(int poolMin, int poolMax, int queueMax, boolean daemon, String poolName)
-      {
-         this.poolMin = Math.max(this.poolMin, poolMin);
-         this.poolMax = poolMax;
-         this.queueMax = queueMax;
-         this.daemon = daemon;
-         this.poolName = poolName;
       }
 
       public synchronized Future submit(final Runnable task)
@@ -1520,47 +1543,30 @@ public class RestClient
             });
       }
 
+      /**
+       * Puts <code>task</code> into the queue to be run unless <code>threadsMax</code> is less than one in which case 
+       * the task is immediately run synchronously in stead of asynchronously.
+       * 
+       * @param task the task to run
+       * @return the task submitted
+       */
       public synchronized RunnableFuture submit(RunnableFuture task)
       {
-         put(task);
-         checkStartThread();
+         if (getThreadsMax() < 1)
+         {
+            task.run();
+         }
+         else
+         {
+            put(task);
+            checkStartThread();
+         }
          return task;
-      }
-
-      public synchronized RunnableFuture submit(final RunnableFuture task, long delay)
-      {
-         getTimer().schedule(new TimerTask()
-            {
-               @Override
-               public void run()
-               {
-                  Thread t = new Thread(new Runnable()
-                     {
-                        @Override
-                        public void run()
-                        {
-                           submit(task);
-                        }
-                     });
-                  t.setDaemon(daemon);
-                  t.start();
-               }
-            }, delay);
-
-         return task;
-      }
-
-      static synchronized Timer getTimer()
-      {
-         if (timer == null)
-            timer = new Timer("Executor timer");
-
-         return timer;
       }
 
       synchronized boolean checkStartThread()
       {
-         if (queue.size() > 0 && threads.size() < poolMax)
+         if (queue.size() > 0 && threads.size() < threadsMax)
          {
             Thread t = new Thread(new Runnable()
                {
@@ -1568,8 +1574,8 @@ public class RestClient
                   {
                      processQueue();
                   }
-               }, poolName + " worker");
-            t.setDaemon(daemon);
+               }, threadPrefix + " worker");
+            t.setDaemon(true);
             threads.add(t);
             t.start();
             return true;
@@ -1579,7 +1585,7 @@ public class RestClient
 
       synchronized boolean checkEndThread()
       {
-         if (queue.size() == 0 && threads.size() > poolMin)
+         if (queue.size() == 0 && threads.size() > threadsMin)
          {
             threads.remove(Thread.currentThread());
             return true;
@@ -1642,7 +1648,7 @@ public class RestClient
       {
          try
          {
-            while (true && !shutdown && !checkEndThread())
+            while (true && !checkEndThread())
             {
                do
                {
@@ -1658,25 +1664,25 @@ public class RestClient
          }
       }
 
-      public int getPoolMin()
+      public int getThreadsMin()
       {
-         return poolMin;
+         return threadsMin;
       }
 
-      public Executor withPoolMin(int poolMin)
+      public Executor withThreadsMin(int threadsMin)
       {
-         this.poolMin = poolMin;
+         this.threadsMin = threadsMin;
          return this;
       }
 
-      public int getPoolMax()
+      public int getThreadsMax()
       {
-         return poolMax;
+         return threadsMax;
       }
 
-      public Executor withPoolMax(int poolMax)
+      public Executor withThreadsMax(int threadsMax)
       {
-         this.poolMax = poolMax;
+         this.threadsMax = threadsMax;
          return this;
       }
 
