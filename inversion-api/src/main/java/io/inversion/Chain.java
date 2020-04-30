@@ -155,7 +155,7 @@ public class Chain
       if (!url.endsWith("/"))
          url += "/";
 
-      if (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb())//
+      if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
       {
          //going after the same collection...so must be going after the same endpoint
          //so get the endpoint path from the current request and ame sure it is on the url.
