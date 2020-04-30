@@ -1,5 +1,5 @@
-    
-  
+
+
 language: java
 install: true
 
@@ -15,7 +15,7 @@ stages:
     if: branch = master AND type IN (push)
   - name: release
     # only publish releases from "release" branch and not in pull requests
-    if: branch = release-0.7.x AND type IN (push)
+    if: branch = release-0.8.x AND type IN (push)
 
 
 jobs:
@@ -41,10 +41,9 @@ before_cache:
 cache:
   directories:
     - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/    
-    
+    - $HOME/.gradle/wrapper/
+
 env:
   global:
     secure: KKYeD6EZrAcfHe3VV7aBcVo6Vw0Fc3HiSN2ntup9XFV/1Ak9upUSJP+i4FL7v9Gm8FxqoynUwl6CeGrsuY9ydGuAR6lZOwj8/MnpfUewMxNUFZe3DMM8mwxbF4XuCnoCSfVIkVOgyKwDZFjzKQDWEZ6Br85AiJf87Q64jPaj2GuoS4wOaUIKGVU/aXtwp8JmXKroPiBtG56mBFfbTaatC7PpAixzt8+I6ModynbbL5OcJ9XPz1u9FUwrZ2mu9VURNvXv3j/HtAfahdw0Pt9qW5OMWU8Ou0zEo0ZFONIeJ83URz5PIJ1EY77lOUewFl5+BZkEoPV6nwyMjg3hnKRHFt1hEsWpzBoA6+ek101qw/ll9a8EbMuv+6ezClfmlfM7imx8UEwyXnnl4lfJJjEX4K116tzkvyVsoaPHNoRxiUyPqFCC5ddDzWbA10yq8v1ZNYbEH+2+byYlvpj6EFmuo84Sb3MRtuVbUcFuQ+/hrXd3EqqyO0yOBpgqE+NNRcsUdumYA7nxCO4+S//VkdAd7wXH8XI8rrtlWX4P5f9JZJBlr6d/fNd906gF1WlG3qu6SC/UmN4YLYUxMx6yiTAeIGdZiflC7rdTlI9KikLElELFd30KQkiHy1HbNyzlfrZ2xQGDa5qKkzW/Fe4NGo6dSOOo2K/vgHWeihZLRNrvR8Q=
 
-        
