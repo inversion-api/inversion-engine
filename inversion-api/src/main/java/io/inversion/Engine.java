@@ -31,8 +31,6 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
@@ -187,11 +185,12 @@ public class Engine extends Rule<Engine>
          //-- debug output
          for (Api api : apis)
          {
-            System.out.println(api.getName() + "--------------");
+            System.out.println("\r\n--------------------------------------------");
+            System.out.println("API             " + api);
 
             for (Endpoint e : api.getEndpoints())
             {
-               //System.out.println("  - ENDPOINT:   " + (!Utils.empty(e.getName()) ? ("name:" + e.getName() + " ") : "") + "path:" + e.getPath() + " includes:" + e.getIncludePaths() + " excludes:" + e.getExcludePaths());
+               System.out.println("  - ENDPOINT:   " + e);
             }
 
             List<String> strs = new ArrayList();
@@ -579,6 +578,8 @@ public class Engine extends Rule<Engine>
 
                for (Endpoint endpoint : api.getEndpoints())
                {
+                  //-- endpoints marked as internal can not be directly called by external
+                  //-- clients, they can only be called by a recursive call to Engine.service
                   if (Chain.getDepth() < 2 && endpoint.isInternal())
                      continue;
 
@@ -641,9 +642,12 @@ public class Engine extends Rule<Engine>
          {
             String buff = "";
             for (Endpoint e : req.getApi().getEndpoints())
-               buff += e.getMethods() + " path: " + e.getIncludePaths() + " : includePaths:" + e.getIncludePaths() + ": excludePaths" + e.getExcludePaths() + ",  ";
+            {
+               if (!e.isInternal())
+                  buff += e.toString() + " | ";
+            }
 
-            ApiException.throw404NotFound("No Endpoint found matching '{}' : '{}' Valid endpoints include {}", req.getMethod(), url, buff);
+            ApiException.throw404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url, buff);
          }
 
          //this will get all actions specifically configured on the endpoint

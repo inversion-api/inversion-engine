@@ -251,12 +251,6 @@ public class AclRule extends Rule<AclRule>
       return this;
    }
 
-   @Override
-   public String toString()
-   {
-      return name + " - methods:" + methods + " includesPaths:" + includePaths + " excludesPaths:" + excludePaths + " roles:" + roles + " permissions:" + permissions + " allow:" + allow + " info:" + info;
-   }
-
    public boolean isAllRolesMustMatch()
    {
       return allRolesMustMatch;

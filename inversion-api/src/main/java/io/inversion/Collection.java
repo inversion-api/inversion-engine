@@ -65,6 +65,7 @@ public class Collection extends Rule<Collection> implements Serializable
       withTableName(defaultName);
    }
 
+   @Override
    public Path getDefaultIncludes()
    {
       return new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*");
