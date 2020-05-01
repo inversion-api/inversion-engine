@@ -82,7 +82,7 @@ public class ApiException extends RuntimeException implements Status
          {
             //-- most logging frameworks are using "{}" to indicate
             //-- var placeholders these days
-            messageFormat = messageFormat.replace("{}", "{}");
+            messageFormat = messageFormat.replace("{}", "%s");
 
             StringWriter sw = new StringWriter();
             Formatter fmt = new Formatter(sw);
