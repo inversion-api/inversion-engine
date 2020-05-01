@@ -178,7 +178,7 @@ public class RestGetAction extends Action<RestGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results<JSNode> results = select(req, req.getCollection(), req.getUrl().getParams(), req.getApi());
+      Results results = select(req, req.getCollection(), req.getUrl().getParams(), req.getApi());
 
       if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null)
       {
@@ -252,7 +252,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    }
 
-   protected Results<JSNode> select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
+   protected Results select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
    {
       //------------------------------------------------
       // Normalize all of the params and convert attribute
@@ -459,7 +459,7 @@ public class RestGetAction extends Action<RestGetAction>
 
          }
          if (collection != null)
-            expand(req, collection, results.getRows(), null, null, null);
+            expand(req, collection, (List<JSNode>)results.getRows(), null, null, null);
          exclude(results.getRows());
 
       } // end if results.size() > 0

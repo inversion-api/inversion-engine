@@ -198,7 +198,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       return this;
    }
 
-   public Results<Row> doSelect() throws Exception
+   public Results doSelect() throws Exception
    {
       Results.LAST_QUERY = null;
       try
@@ -218,7 +218,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       return null;
    }
 
-   protected Results<Row> doSelect0() throws Exception
+   protected Results doSelect0() throws Exception
    {
       com.amazonaws.services.dynamodbv2.document.Index dynamoIndex = null;
       Results result = new Results(this);

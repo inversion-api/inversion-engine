@@ -53,7 +53,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;

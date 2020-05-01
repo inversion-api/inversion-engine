@@ -97,7 +97,7 @@ public class S3Db extends Db<S3Db>
 //   }
 
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
       return query.doSelect();

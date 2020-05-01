@@ -69,7 +69,7 @@ public class CosmosDb extends Db<CosmosDb>
     * @throws Exception
     */
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
@@ -100,7 +100,7 @@ public class CosmosDb extends Db<CosmosDb>
       }
 
       //-- the only way to achieve a PATCH is to query for the document first.
-      Results<Row> existing = select(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
+      Results existing = select(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
       if (existing.size() == 1)
       {
          Map<String, Object> row = existing.getRow(0);

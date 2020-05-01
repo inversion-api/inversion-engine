@@ -57,7 +57,7 @@ public class RedisDb extends Db<RedisDb>
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
    @Override
-   public Results<Row> select(Collection table, List<Term> queryTerms) throws Exception
+   public Results select(Collection table, List<Term> queryTerms) throws Exception
    {
       // TODO Auto-generated method stub
       return null;

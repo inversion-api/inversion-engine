@@ -96,7 +96,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       return super.addTerm(token, term);
    }
 
-   public Results<Row> doSelect() throws Exception
+   public Results doSelect() throws Exception
    {
       JdbcDb db = (JdbcDb) getDb();
       String sql = getPreparedStmt();

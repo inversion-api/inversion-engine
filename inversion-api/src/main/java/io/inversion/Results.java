@@ -16,20 +16,21 @@
  */
 package io.inversion;
 
-import io.inversion.rql.Query;
-import io.inversion.rql.Term;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import io.inversion.rql.Query;
+import io.inversion.rql.Term;
+import io.inversion.utils.Rows.Row;
 
 public class Results<M extends Map> implements Iterable<M>
 {
    public static String LAST_QUERY = null;
 
    protected Query      query      = null;
-   protected List       rows       = new ArrayList();
+   protected List<M>    rows       = new ArrayList();
    protected List<Term> next       = new ArrayList();
    protected int        foundRows  = -1;
    protected String     debugQuery = null;
@@ -40,7 +41,7 @@ public class Results<M extends Map> implements Iterable<M>
       this.query = query;
    }
 
-   public Results(Query query, int foundRows, List rows)
+   public Results(Query query, int foundRows, List<M> rows)
    {
       this.query = query;
       this.foundRows = foundRows;
@@ -69,12 +70,12 @@ public class Results<M extends Map> implements Iterable<M>
       return rows.size();
    }
 
-   public M getRow(int index)
+   public Row getRow(int index)
    {
-      return (M) rows.get(index);
+      return (Row) rows.get(index);
    }
 
-   public Results setRow(int index, Map row)
+   public Results setRow(int index, M row)
    {
       rows.set(index, row);
       return this;
@@ -91,7 +92,7 @@ public class Results<M extends Map> implements Iterable<M>
       return this;
    }
 
-   public Results withRow(Map row)
+   public Results withRow(M row)
    {
       rows.add(row);
       return this;

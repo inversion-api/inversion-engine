@@ -145,7 +145,7 @@ public abstract class Db<T extends Db>
     * @return
     * @throws Exception
     */
-   public abstract Results<Row> select(Collection collection, List<Term> queryTerms) throws Exception;
+   public abstract Results select(Collection collection, List<Term> queryTerms) throws Exception;
 
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,

@@ -273,7 +273,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results<Row> select(Collection coll, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection coll, List<Term> columnMappedTerms) throws Exception
    {
       JdbcDb db = null;
       if (coll == null)

@@ -42,7 +42,7 @@ public class MockDb extends Db<MockDb>
    //   }
    //
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       return new Results(null);
    }

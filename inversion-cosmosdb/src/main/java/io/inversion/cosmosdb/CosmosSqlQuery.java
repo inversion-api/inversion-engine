@@ -94,7 +94,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          };
    }
 
-   public Results<Row> doSelect() throws Exception
+   public Results doSelect() throws Exception
    {
       Results results = new Results(this);
       CosmosDb db = getDb();

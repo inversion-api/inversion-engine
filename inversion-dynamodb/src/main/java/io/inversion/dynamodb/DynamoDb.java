@@ -87,7 +87,7 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
       return query.doSelect();

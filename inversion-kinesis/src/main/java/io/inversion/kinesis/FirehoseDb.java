@@ -127,7 +127,7 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
       ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
       return null;
