@@ -428,7 +428,8 @@ public class RestGetAction extends Action<RestGetAction>
                   String colName = attr.getColumnName();
 
                   boolean rowHas = row.containsKey(colName);
-                  if (resourceKey != null || rowHas)
+                  if (rowHas)
+                  //if (resourceKey != null || rowHas)
                   {
                      //-- if the resourceKey was null don't create
                      //-- empty props for fields that were not 

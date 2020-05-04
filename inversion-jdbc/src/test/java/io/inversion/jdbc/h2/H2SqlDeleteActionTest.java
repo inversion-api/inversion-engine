@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc;
+package io.inversion.jdbc.h2;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-public class JdbcDbTest
+import io.inversion.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
+
+@TestInstance(Lifecycle.PER_CLASS)
+public class H2SqlDeleteActionTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
-   @Test
-   public void test_upsert_rrowsWitDifferentColumns_upsertIsSplitIntoBatchesWithMatchingKeys()
+   public H2SqlDeleteActionTest()
    {
-      //TODO: implement me
+      super("h2");
    }
-
 }

@@ -339,16 +339,40 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
             if (rel.isManyToOne() && node.hasProperty(rel.getName()))
             {
-               for (String colName : rel.getFkIndex1().getColumnNames())
+               if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1)
                {
-                  copied.add(colName.toLowerCase());
-               }
+                  String jsonName = rel.getFkIndex1().getJsonNames().get(0);
+                  String colName = rel.getFkIndex1().getColumnName(0);
 
-               Map key = getKey(rel.getRelated(), node.get(rel.getName()));
-               if (key != null)
+                  String value = node.getString(jsonName);
+
+                  if (value != null)
+                  {
+                     value = Utils.substringAfter(value, "/");
+                     mapped.put(colName,  value);
+                     copied.add(colName);
+                  }
+               }
+               else
                {
-                  Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                  mapped.putAll(foreignKey);
+                  for (String colName : rel.getFkIndex1().getColumnNames())
+                  {
+                     copied.add(colName.toLowerCase());
+                  }
+
+                  Map key = getKey(rel.getRelated(), node.get(rel.getName()));
+                  if (key != null)
+                  {
+                     Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                     for (Object keyPart : foreignKey.keySet())
+                     {
+                        Object keyValue = foreignKey.get(keyPart);
+                        if (keyValue != null)
+                        {
+                           mapped.put((String) keyPart, keyValue);
+                        }
+                     }
+                  }
                }
             }
          }
@@ -725,7 +749,10 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          //when the foreign key is only one column but the related primary key is multiple 
          //columns, encode the FK as an resourceKey.
          String resourceKey = Collection.encodeKey(srcRow, srcCols);
-         srcRow.clear();
+         
+         for(Object key : srcRow.keySet())
+            srcRow.remove(key);
+         
          srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
       }
       else

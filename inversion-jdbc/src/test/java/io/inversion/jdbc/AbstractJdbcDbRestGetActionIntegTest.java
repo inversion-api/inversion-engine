@@ -193,23 +193,6 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    }
 
    @Test
-   public void testExcludes() throws Exception
-   {
-      Response res = null;
-      Engine engine = engine();
-
-      //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
-      res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
-      res.dump();
-      assertNull(res.find("data.0.href"));
-      assertNull(res.find("data.0.shipname"));
-      assertNull(res.find("data.0.orderdetails"));
-      assertNull(res.find("data.0.customer"));
-      assertNull(res.find("data.0.employee"));
-      assertNull(res.find("data.0.shipvia"));
-   }
-
-   @Test
    public void testRelationships1() throws Exception
    {
       Response res = null;
@@ -300,11 +283,12 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       Response res = null;
 
       res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
-      assertNull(res.findString("data.0.customer"));
+      
+      assertTrue(!res.findNode("data.0").containsKey("customer"));
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
-      assertNull(res.findString("data.0.employee.firstname"));
+      assertTrue(!res.findNode("data.0.employee").containsKey("firstname"));
       assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
-      assertNull(res.findString("data.0.employee.reportsto.territories"));
+      assertTrue(!res.findNode("data.0.employee.reportsto").hasProperty("territories"));
    }
 
    @Test

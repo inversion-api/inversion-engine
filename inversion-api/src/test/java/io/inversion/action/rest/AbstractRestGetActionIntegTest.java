@@ -35,7 +35,59 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
    {
       super(type);
    }
+   
+   @Test
+   public void testIncludes0() throws Exception
+   {
+      Engine engine = engine();
+      Response res = null;
 
+      //--
+      //-- gets a sorted list of all hrefs
+      res = engine.get(url("orders?includes=customerid,orderid"));
+
+      assertEquals(3, res.findNode("data.0").size());
+      assertTrue(res.findNode("data.0").hasProperty("href"));
+      assertTrue(res.findNode("data.0").hasProperty("customerid"));
+      assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
+   }
+   
+//   @Test
+//   public void testExcludes02() throws Exception
+//   {
+//      Engine engine = engine();
+//      Response res = null;
+//
+//      //--
+//      //-- gets a sorted list of all hrefs
+//      res = engine.get(url("orders?excludes=customerid,orderid"));
+//
+//      assertEquals(3, res.findNode("data.0").size());
+//      assertTrue(res.findNode("data.0").hasProperty("href"));
+//      assertTrue(res.findNode("data.0").hasProperty("customerid"));
+//      assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
+//   }
+   
+   @Test
+   public void testExcludes0() throws Exception
+   {
+      Response res = null;
+      Engine engine = engine();
+
+      //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
+      res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
+      res.dump();
+      JSNode node = res.findNode("data.0");
+      
+      assertTrue(!node.hasProperty("href"));
+      assertTrue(!node.hasProperty("shipname"));
+      assertTrue(!node.hasProperty("orderdetails"));
+      assertTrue(!node.hasProperty("customer"));
+      assertTrue(!node.hasProperty("employee"));
+      assertTrue(!node.hasProperty("shipvia"));
+   }
+   
+   
    @Test
    public void testLimit01() throws Exception
    {
@@ -81,6 +133,9 @@ public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionI
       res = engine.get(url("orders?sort=orderId&includes=href&limit=1000"));
 
       res.dump();
+      
+      assertEquals(1, res.findNode("data.0").size());
+      
 
       List<String> hrefs = new ArrayList();
       res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));

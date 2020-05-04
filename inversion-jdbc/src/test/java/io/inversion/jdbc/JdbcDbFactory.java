@@ -43,34 +43,49 @@ public class JdbcDbFactory
 
    public static JdbcDb bootstrapH2(String database) throws Exception
    {
-      database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
+      return bootstrapH2(database, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+   }
 
-      JdbcDb db = new JdbcDb("h2", //
-                             "org.h2.Driver", //
-                             "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-                             "sa", //
-                             "", //
-                             JdbcDb.class.getResource("northwind-h2.ddl").toString())
-         {
-            protected void doShutdown()
+   public static JdbcDb bootstrapH2(String database, String ddlUrl)
+   {
+      try
+      {
+
+         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
+
+         JdbcDb db = new JdbcDb("h2", //
+                                "org.h2.Driver", //
+                                "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
+                                "sa", //
+                                "", //
+                                ddlUrl)
             {
-               try
+               protected void doShutdown()
                {
-                  JdbcUtils.execute(getConnection(), "SHUTDOWN");
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-               }
-               super.doShutdown();
-            }
-         };
-      return db;
+                  try
+                  {
+                     Connection conn = getConnection();
+                     JdbcUtils.execute(conn, "SHUTDOWN");
+                     JdbcConnectionLocal.closeAll();
+                  }
+                  catch (Exception ex)
+                  {
+                     //ex.printStackTrace();
+                  }
+                  finally
+                  {
+                     super.doShutdown();
+                  }
 
-      //      Class.forName("org.h2.Driver").newInstance();
-      //      Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";IGNORECASE=TRUE", "sa", "");
-      //
-      //      runTests(conn, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+               }
+            };
+         return db;
+      }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+      }
+      return null;
 
    }
 

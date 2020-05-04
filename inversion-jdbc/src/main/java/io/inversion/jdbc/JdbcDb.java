@@ -194,7 +194,7 @@ public class JdbcDb extends Db<JdbcDb>
             {
                try
                {
-                  ConnectionLocal.commit();
+                  JdbcConnectionLocal.commit();
                }
                catch (Exception ex)
                {
@@ -208,7 +208,7 @@ public class JdbcDb extends Db<JdbcDb>
 
                try
                {
-                  ConnectionLocal.rollback();
+                  JdbcConnectionLocal.rollback();
                }
                catch (Throwable t)
                {
@@ -222,7 +222,7 @@ public class JdbcDb extends Db<JdbcDb>
             {
                try
                {
-                  ConnectionLocal.close();
+                  JdbcConnectionLocal.close();
                }
                catch (Throwable t)
                {
@@ -415,7 +415,7 @@ public class JdbcDb extends Db<JdbcDb>
    {
       try
       {
-         Connection conn = !managed ? null : ConnectionLocal.getConnection(this);
+         Connection conn = !managed ? null : JdbcConnectionLocal.getConnection(this);
          if (conn == null && !isShutdown())
          {
             if (pool == null)
@@ -434,7 +434,7 @@ public class JdbcDb extends Db<JdbcDb>
             if (managed)
             {
                conn.setAutoCommit(isAutoCommit());
-               ConnectionLocal.putConnection(this, conn);
+               JdbcConnectionLocal.putConnection(this, conn);
             }
          }
 
@@ -520,7 +520,7 @@ public class JdbcDb extends Db<JdbcDb>
       return pool;
    }
 
-   static class ConnectionLocal
+   public static class JdbcConnectionLocal
    {
       static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
       static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();

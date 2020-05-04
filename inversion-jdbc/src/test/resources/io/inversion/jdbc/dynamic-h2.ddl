@@ -1,10 +1,10 @@
 
 
 CREATE TABLE `Object` (
+    `partition` VARCHAR(255) NOT NULL,
     `id`        VARCHAR(255) NOT NULL,
     `tenant`    VARCHAR(255) NOT NULL,
     `type`      VARCHAR(255) NOT NULL,
-    `partition` VARCHAR(255) NOT NULL,
     `value1`    VARCHAR(255),
     `value2`    VARCHAR(255),
     `value3`    VARCHAR(255),
@@ -14,5 +14,6 @@ CREATE TABLE `Object` (
     `value7`    VARCHAR(255),
     `value8`    VARCHAR(255),
     `value9`    VARCHAR(255),
-    `value10`   VARCHAR(255)
+    `value10`   VARCHAR(255),
+     CONSTRAINT `PK_Object` PRIMARY KEY (`partition`, `id`)
 );
