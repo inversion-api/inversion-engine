@@ -63,14 +63,14 @@ import io.inversion.ApiException;
  * When used in the context of a Api configuration you may see something like this:
  * <p>
  * <pre>
- *  Engine e = new Engine().withIncludePaths(new Path("/apis"));
- *                         .withApi(new Api().withIncludePaths(new Path("bookstore/{storeName:johnsBestBooks|carolsBooksOnMain}"))
- *                                           .withEndpoint(new Endpoint().withIncludePaths(new Path("categories/:category/"))
- *                                                                       .withAction(new BrowseCategoriesAction().withIncludePaths(new Path("[:subcategory]/*"))))); 
+ *  Engine e = new Engine().withIncludeOn(null, new Path("/apis"));
+ *                         .withApi(new Api().withIncludeOn(null, new Path("bookstore/{storeName:johnsBestBooks|carolsBooksOnMain}"))
+ *                                           .withEndpoint(new Endpoint().withIncludeOn(null, new Path("categories/:category/"))
+ *                                                                       .withAction(new BrowseCategoriesAction().withIncludeOn(null, new Path("[:subcategory]/*"))))); 
  * </pre>
  * 
- * @see io.inversion.Rule.withIncludePaths
- * @see io.inversion.Rule.withExcludePaths
+ * @see io.inversion.Rule.withIncludeOn
+ * @see io.inversion.Rule.withExcludeOn
  * 
  */
 
