@@ -63,10 +63,6 @@ public class RestGetAction extends Action<RestGetAction>
     */
    protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
-   public RestGetAction()
-   {
-      withMethods("GET");
-   }
 
    @Override
    public void run(Request req, Response res) throws Exception

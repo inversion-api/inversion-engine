@@ -84,8 +84,7 @@ public class AclRule extends Rule<AclRule>
    public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN)
    {
       withName(name);
-      withMethods(methods);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
 
       if (permission1 != null)
          withPermissions(permission1);

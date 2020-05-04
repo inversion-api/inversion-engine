@@ -30,10 +30,9 @@ public class MockActionA extends Action<MockActionA>
    }
    
    
-   public MockActionA(String methods, String includePaths)
+   public MockActionA(String methods, String... includePaths)
    {
-      withMethods(methods);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
    }
 
    @Override

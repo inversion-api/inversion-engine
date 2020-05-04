@@ -33,11 +33,6 @@ import io.inversion.utils.Rows.Row;
 
 public class RestDeleteAction extends Action<RestDeleteAction>
 {
-   public RestDeleteAction()
-   {
-      withMethods("DELETE");
-   }
-
    @Override
    public void run(Request req, Response res) throws Exception
    {

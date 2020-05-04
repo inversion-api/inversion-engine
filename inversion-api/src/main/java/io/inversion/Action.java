@@ -49,6 +49,16 @@ import io.inversion.utils.Utils;
  */
 public abstract class Action<A extends Action> extends Rule<A>
 {
+   public Action()
+   {
+      
+   }
+   
+   public Action(String methods, String... includePaths)
+   {
+      withIncludeOn(methods, includePaths);
+   }
+   
    public void run(Request req, Response res) throws Exception
    {
       if (req.isGet())

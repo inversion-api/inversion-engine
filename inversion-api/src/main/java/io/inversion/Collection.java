@@ -66,9 +66,9 @@ public class Collection extends Rule<Collection> implements Serializable
    }
 
    @Override
-   public Path getDefaultIncludes()
+   public RuleMatcher getDefaultIncludeMatch()
    {
-      return new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*");
+      return new RuleMatcher(null, new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*"));
    }
 
    /**

@@ -32,16 +32,17 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
-public abstract class Rule<R extends Rule> implements Comparable<Rule>
+/**
+ * 
+ *
+ * @param <R>
+ */
+public abstract class Rule<R extends Rule> implements Comparable<R>
 {
    protected final transient Logger log             = LoggerFactory.getLogger(getClass().getName());
 
    protected String                 name            = null;
    protected int                    order           = 1000;
-
-   //   protected Set<String>            methods         = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-   //   protected List<Path>             excludePaths    = new ArrayList();
-   //   protected List<Path>             includePaths    = new ArrayList();
 
    protected List<RuleMatcher>      includeMatchers = new ArrayList();
    protected List<RuleMatcher>      excludeMatchers = new ArrayList();
@@ -52,99 +53,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
    protected transient JSNode       configMap       = new JSNode();
    protected String                 configStr       = null;
 
-   static class RuleMatcher
-   {
-      protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-      protected List<Path>  paths   = new ArrayList();
-
-      RuleMatcher()
-      {
-
-      }
-
-      RuleMatcher(String methods, String... paths)
-      {
-         this(methods, asPathsList(paths));
-      }
-
-      RuleMatcher(String methods, List<Path> paths)
-      {
-         withMethods(methods);
-         withPaths(paths);
-      }
-
-      void withMethods(String... methods)
-      {
-         for (String method : Utils.explode(",", methods))
-         {
-            if ("*".equals(method))
-            {
-               this.methods.add("GET");
-               this.methods.add("POST");
-               this.methods.add("PUT");
-               this.methods.add("PATCH");
-               this.methods.add("DELETE");
-               continue;
-            }
-
-            if ("read".equalsIgnoreCase(method))
-            {
-               this.methods.add("GET");
-               continue;
-            }
-
-            if ("write".equalsIgnoreCase(method))
-            {
-               this.methods.add("POST");
-               this.methods.add("PUT");
-               this.methods.add("PATCH");
-               this.methods.add("DELETE");
-               continue;
-            }
-
-            this.methods.add(method.toUpperCase());
-         }
-      }
-
-      void withPaths(List<Path> paths)
-      {
-         this.paths.addAll(paths);
-      }
-
-      public String toString()
-      {
-         StringBuffer buff = new StringBuffer();
-         if (methods.size() == 0)
-            buff.append("*");
-         else
-            buff.append(methods);
-
-         buff.append(":");
-         buff.append(paths);
-         return buff.toString();
-      }
-   }
-
-   public boolean matches(String method, String path)
-   {
-      return matches(method, new Path(path));
-   }
-
-   public boolean matches(String method, Path path)
-   {
-      return match(method, path) != null;
-   }
-
-   //   public Path match(String method, Path path)
-   //   {
-   //      if (isMethod(method))
-   //      {
-   //         return match(path);
-   //      }
-   //      return null;
-   //   }
-
-   boolean lazyConfiged = false;
+   transient boolean                lazyConfiged    = false;
 
    void checkLazyConfig()
    {
@@ -161,11 +70,26 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
                if (getIncludePaths().size() == 0 && getExcludePaths().size() == 0)
                {
-                  withIncludePaths(getDefaultIncludes());
+                  withIncludeOn(getDefaultIncludeMatch());
                }
             }
          }
       }
+   }
+
+   protected RuleMatcher getDefaultIncludeMatch()
+   {
+      return new RuleMatcher(null, "*");
+   }
+
+   public boolean matches(String method, String path)
+   {
+      return matches(method, new Path(path));
+   }
+
+   public boolean matches(String method, Path path)
+   {
+      return match(method, path) != null;
    }
 
    protected Path match(String method, Path path)
@@ -191,7 +115,7 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       for (RuleMatcher includer : includeMatchers)
       {
          includePathCount += includer.paths.size();
-         
+
          if (includer.methods.size() > 0 && !includer.methods.contains(method))
             continue;
 
@@ -214,11 +138,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return null;
    }
 
-   public Path getDefaultIncludes()
-   {
-      return new Path("*");
-   }
-
    public List<Path> getIncludePaths()
    {
       Set paths = new LinkedHashSet();
@@ -239,7 +158,24 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return new ArrayList(paths);
    }
 
-   public R withMethods(String... methods)
+   public List<RuleMatcher> getIncludeMatchers()
+   {
+      return new ArrayList(includeMatchers);
+   }
+
+   public R withIncludeOn(RuleMatcher matcher)
+   {
+      includeMatchers.add(matcher);
+      return (R) this;
+   }
+
+   public R withIncludeOn(String methods, String... paths)
+   {
+      withIncludeOn(methods, asPathsArray(paths));
+      return (R) this;
+   }
+
+   public R withIncludeOn(String methods, Path... paths)
    {
       if (includeMatchers.size() == 0)
       {
@@ -248,37 +184,27 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
 
       RuleMatcher m = includeMatchers.get(0);
       m.withMethods(methods);
-
-      return (R) this;
-   }
-
-   public R withIncludePaths(String... paths)
-   {
-      if (includeMatchers.size() == 0)
+      if (paths != null && paths.length > 0)
       {
-         includeMatchers.add(new RuleMatcher());
+         m.withPaths(Arrays.asList(paths));
       }
 
-      RuleMatcher m = includeMatchers.get(0);
-      m.withPaths(asPathsList(paths));
-
       return (R) this;
    }
 
-   public R withIncludePaths(Path... paths)
+   public R withExcludeOn(String methods, String... paths)
    {
-      if (includeMatchers.size() == 0)
-      {
-         includeMatchers.add(new RuleMatcher());
-      }
-
-      RuleMatcher m = includeMatchers.get(0);
-      m.withPaths(Arrays.asList(paths));
-
+      withExcludeOn(methods, asPathsArray(paths));
       return (R) this;
    }
 
-   public R withExcludePaths(String... paths)
+   public R withExcludeOn(RuleMatcher matcher)
+   {
+      excludeMatchers.add(matcher);
+      return (R) this;
+   }
+
+   public R withExcludeOn(String methods, Path... paths)
    {
       if (excludeMatchers.size() == 0)
       {
@@ -286,22 +212,18 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       }
 
       RuleMatcher m = excludeMatchers.get(0);
-      m.withPaths(asPathsList(paths));
+      m.withMethods(methods);
+      if (paths != null && paths.length > 0)
+      {
+         m.withPaths(Arrays.asList(paths));
+      }
 
       return (R) this;
    }
 
-   public R withExcludePaths(Path... paths)
+   public List<RuleMatcher> getExcludeMatchers()
    {
-      if (excludeMatchers.size() == 0)
-      {
-         excludeMatchers.add(new RuleMatcher());
-      }
-
-      RuleMatcher m = excludeMatchers.get(0);
-      m.withPaths(Arrays.asList(paths));
-
-      return (R) this;
+      return new ArrayList(excludeMatchers);
    }
 
    public String getName()
@@ -371,6 +293,18 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return compare;
    }
 
+   R clearIncludeRuleMatchers()
+   {
+      includeMatchers.clear();
+      return (R) this;
+   }
+
+   R clearExcludeRuleMatchers()
+   {
+      excludeMatchers.clear();
+      return (R) this;
+   }
+
    public String toString()
    {
       checkLazyConfig();
@@ -388,16 +322,6 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       return buff.toString();
    }
 
-   R clearIncludePaths()
-   {
-      Set paths = new LinkedHashSet();
-      for (RuleMatcher includer : includeMatchers)
-      {
-         includer.paths.clear();
-      }
-      return (R) this;
-   }
-
    static List<Path> asPathsList(String... paths)
    {
       List<Path> pathsList = new ArrayList();
@@ -407,4 +331,96 @@ public abstract class Rule<R extends Rule> implements Comparable<Rule>
       }
       return pathsList;
    }
+
+   static Path[] asPathsArray(String... paths)
+   {
+      List<Path> list = asPathsList(paths);
+      return list.toArray(new Path[list.size()]);
+
+   }
+
+   public static class RuleMatcher
+   {
+      protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+      protected List<Path>  paths   = new ArrayList();
+
+      RuleMatcher()
+      {
+
+      }
+
+      RuleMatcher(String methods, String... paths)
+      {
+         this(methods, asPathsList(paths));
+      }
+
+      RuleMatcher(String methods, Path path)
+      {
+         withMethods(methods);
+         withPaths(path);
+      }
+
+      RuleMatcher(String methods, List<Path> paths)
+      {
+         withMethods(methods);
+         withPaths(paths);
+      }
+
+      void withMethods(String... methods)
+      {
+         for (String method : Utils.explode(",", methods))
+         {
+            if ("*".equals(method))
+            {
+               this.methods.add("GET");
+               this.methods.add("POST");
+               this.methods.add("PUT");
+               this.methods.add("PATCH");
+               this.methods.add("DELETE");
+               continue;
+            }
+
+            if ("read".equalsIgnoreCase(method))
+            {
+               this.methods.add("GET");
+               continue;
+            }
+
+            if ("write".equalsIgnoreCase(method))
+            {
+               this.methods.add("POST");
+               this.methods.add("PUT");
+               this.methods.add("PATCH");
+               this.methods.add("DELETE");
+               continue;
+            }
+
+            this.methods.add(method.toUpperCase());
+         }
+      }
+
+      void withPaths(Path... paths)
+      {
+         this.paths.addAll(Arrays.asList(paths));
+      }
+
+      void withPaths(List<Path> paths)
+      {
+         this.paths.addAll(paths);
+      }
+
+      public String toString()
+      {
+         StringBuffer buff = new StringBuffer();
+         if (methods.size() == 0)
+            buff.append("*");
+         else
+            buff.append(methods);
+
+         buff.append(":");
+         buff.append(paths);
+         return buff.toString();
+      }
+   }
+
 }

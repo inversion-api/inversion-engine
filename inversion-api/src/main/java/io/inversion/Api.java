@@ -17,12 +17,8 @@
 package io.inversion;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.inversion.utils.Path;
 
@@ -43,9 +39,6 @@ public class Api extends Rule<Api>
    protected List<Collection>            collections = new ArrayList();
 
    protected transient List<ApiListener> listeners   = new ArrayList();
-
-   //protected Path pathMatch = new Path("${api.name}/${api.version}/${tenant}/blah/blah2/*");
-   //protected Path pathMatch = new Path("$}/${api.version}/${tenant}/blah/blah2/*");
 
    /**
     * Listener that can be registered with an {@code Api} to receive lifecycle, 
@@ -84,7 +77,7 @@ public class Api extends Rule<Api>
    }
 
    @Override
-   public Path getDefaultIncludes()
+   public RuleMatcher getDefaultIncludeMatch()
    {
       List parts = new ArrayList();
       if (name != null)
@@ -92,7 +85,7 @@ public class Api extends Rule<Api>
          parts.add(name);
       }
       parts.add("*");
-      return new Path(parts);
+      return new RuleMatcher(null, new Path(parts));
    }
 
    public synchronized Api startup()
@@ -343,29 +336,10 @@ public class Api extends Rule<Api>
       return new ArrayList(actions);
    }
 
-   public Api withActions(String methods, String includePaths, Action... actions)
-   {
-      for (Action action : actions)
-         withAction(methods, includePaths, action);
-
-      return this;
-   }
-
    public Api withActions(Action... actions)
    {
       for (Action action : actions)
          withAction(action);
-
-      return this;
-   }
-
-   public Api withAction(String methods, String includePaths, Action action)
-   {
-      action.withMethods(methods);
-      action.withIncludePaths(includePaths);
-
-      if (!actions.contains(action))
-         actions.add(action);
 
       return this;
    }

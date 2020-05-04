@@ -66,8 +66,7 @@ public class MockAction extends Action<MockAction>
          json = new JSNode("name", name);
 
       withName(name);
-      withMethods(methods);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
       withJson(json);
    }
 

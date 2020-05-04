@@ -54,11 +54,6 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
    protected boolean strictRest     = false;
    protected boolean expandResponse = true;
 
-   public RestPostAction()
-   {
-      withMethods("PUT,POST,PATCH");
-   }
-
    @Override
    public void run(Request req, Response res) throws Exception
    {

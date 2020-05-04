@@ -34,10 +34,9 @@ public class Endpoint extends Rule<Endpoint>
 
    }
 
-   public Endpoint(String method, String includePaths, Action... actions)
+   public Endpoint(String methods, String includePaths, Action... actions)
    {
-      withMethods(method);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
 
       if (actions != null)
       {
