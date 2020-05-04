@@ -14,25 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.sqlserver;
+package io.inversion.jdbc.mysql;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestPostActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbRestGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerSqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
+public class MySqlRestGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
 {
-   public SqlServerSqlPostActionIntegTest()
+   public MySqlRestGetActionIntegTest()
    {
-      super("sqlserver");
+      super("mysql");
    }
-   
-   @Test
-   public void testNestedPost1() throws Exception
-   {
-      //TODO: fix me and add me back into tests.
-   }
+
 }

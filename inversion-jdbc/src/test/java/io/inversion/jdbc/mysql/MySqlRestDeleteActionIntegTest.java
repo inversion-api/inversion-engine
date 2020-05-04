@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.postgres;
+package io.inversion.jdbc.mysql;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -22,10 +22,10 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresSqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
+public class MySqlRestDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
 {
-   public PostgresSqlDeleteActionIntegTest()
+   public MySqlRestDeleteActionIntegTest()
    {
-      super("postgres");
+      super("mysql");
    }
 }

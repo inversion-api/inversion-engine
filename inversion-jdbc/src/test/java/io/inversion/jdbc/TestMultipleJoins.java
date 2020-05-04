@@ -26,10 +26,12 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Api;
+import io.inversion.Chain;
 import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.action.rest.RestAction;
+import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestMultipleJoins
@@ -41,6 +43,9 @@ public class TestMultipleJoins
    @BeforeAll
    public void beforeAll_initializeEngine()
    {
+      Chain.resetAll();
+      JdbcConnectionLocal.closeAll();
+      
       String crmDdlUrl = JdbcDb.class.getResource("crm-h2.ddl").toString();
       db = JdbcDbFactory.bootstrapH2(getClass().getName(), crmDdlUrl);
 
