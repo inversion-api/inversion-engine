@@ -77,7 +77,7 @@ public class Api extends Rule<Api>
    }
 
    @Override
-   public RuleMatcher getDefaultIncludeMatch()
+   protected RuleMatcher getDefaultIncludeMatch()
    {
       List parts = new ArrayList();
       if (name != null)

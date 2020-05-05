@@ -16,8 +16,6 @@
  */
 package io.inversion;
 
-import io.inversion.utils.Utils;
-
 /**
  * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
  * <p>
@@ -51,15 +49,23 @@ public abstract class Action<A extends Action> extends Rule<A>
 {
    public Action()
    {
-      
+
    }
-   
+
    public Action(String methods, String... includePaths)
    {
       withIncludeOn(methods, includePaths);
    }
-   
-   public void run(Request req, Response res) throws Exception
+
+   /**
+    * Override this method with your custom business logic or override one of the 
+    * http method "doMETHOD" specific handlers. 
+    * 
+    * @param req the Request being serviced
+    * @param res the Reponse being generated
+    * @throws ApiException 
+    */
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isGet())
          doGet(req, res);
@@ -73,40 +79,74 @@ public abstract class Action<A extends Action> extends Rule<A>
          doDelete(req, res);
    }
 
-   public void doGet(Request req, Response res) throws Exception
+   /**
+    * Handle an HTTP GET.
+    * <p>
+    * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called. 
+    * 
+    * @param req
+    * @param res
+    * @throws ApiException
+    */
+   public void doGet(Request req, Response res) throws ApiException
    {
       ApiException.throw501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
-   public void doPost(Request req, Response res) throws Exception
+   /**
+    * Handle an HTTP POST.
+    * <p>
+    * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called. 
+    * 
+    * @param req
+    * @param res
+    * @throws ApiException
+    */
+
+   public void doPost(Request req, Response res) throws ApiException
    {
       ApiException.throw501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
-   public void doPut(Request req, Response res) throws Exception
+   /**
+    * Handle an HTTP PUT.
+    * <p>
+    * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called. 
+    * 
+    * @param req
+    * @param res
+    * @throws ApiException
+    */
+   public void doPut(Request req, Response res) throws ApiException
    {
       ApiException.throw501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
-   public void doPatch(Request req, Response res) throws Exception
+   /**
+    * Handle an HTTP PATCH.
+    * <p>
+    * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called. 
+    * 
+    * @param req
+    * @param res
+    * @throws ApiException
+    */
+   public void doPatch(Request req, Response res) throws ApiException
    {
       ApiException.throw501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
-   public void doDelete(Request req, Response res) throws Exception
+   /**
+    * Handle an HTTP DELETE.
+    * <p>
+    * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called. 
+    * 
+    * @param req
+    * @param res
+    * @throws ApiException
+    */
+   public void doDelete(Request req, Response res) throws ApiException
    {
       ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
-   }
-
-   public String toString()
-   {
-      if (name != null)
-         return name;
-
-      String cn = getClass().getSimpleName();
-      if (Utils.empty(cn))
-         cn = getClass().getName();
-
-      return cn;
    }
 }

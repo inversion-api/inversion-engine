@@ -86,7 +86,7 @@ public class AclAction extends Action<AclAction>
    }
 
    @Override
-   public void run(Request req, Response resp) throws Exception
+   public void run(Request req, Response resp) throws ApiException
    {
       List<AclRule> matched = new ArrayList<>();
       boolean allowed = false;

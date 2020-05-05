@@ -33,7 +33,7 @@ public class RequireJsonPropertyAction<T extends RequireJsonPropertyAction> exte
    protected ArrayListValuedHashMap<String, String> properties = new ArrayListValuedHashMap();
    protected boolean                                recursive  = false;
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       JSNode json = req.getJson();
       if (json == null)

@@ -71,7 +71,7 @@ public class MockAction extends Action<MockAction>
    }
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (statusCode > 0)
          res.withStatus(status);

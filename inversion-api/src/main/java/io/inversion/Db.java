@@ -143,9 +143,9 @@ public abstract class Db<T extends Db>
     * @param table
     * @param queryTerms
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
-   public abstract Results select(Collection collection, List<Term> queryTerms) throws Exception;
+   public abstract Results select(Collection collection, List<Term> queryTerms) throws ApiException;
 
    /**
     * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
@@ -168,11 +168,11 @@ public abstract class Db<T extends Db>
     * @param table
     * @param rows
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
-   public abstract List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws Exception;
+   public abstract List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
 
-   public List<Integer> patch(Collection collection, List<Map<String, Object>> rows) throws Exception
+   public List<Integer> patch(Collection collection, List<Map<String, Object>> rows) throws ApiException
    {
       upsert(collection, rows);
       List counts = new ArrayList();
@@ -190,11 +190,11 @@ public abstract class Db<T extends Db>
     * 
     * @param table
     * @param indexValues
-    * @throws Exception
+    * @throws ApiException
     */
-   public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws Exception;
+   public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
 
-   public void configDb() throws Exception
+   public void configDb() throws ApiException
    {
       for (String key : includeTables.keySet())
       {

@@ -33,18 +33,34 @@ import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
 /**
- * 
+ * Matches against an HTTP method and URL path to determine if the object
+ * should be included when processing the associated Request.
+ * <p>
+ * Matching relies heavily on variablized Path matching via {@link io.inversion.Path.match} 
  *
- * @param <R>
  */
 public abstract class Rule<R extends Rule> implements Comparable<R>
 {
    protected final transient Logger log             = LoggerFactory.getLogger(getClass().getName());
 
+   /**
+    * The name used for configuration and debug purposes.
+    */
    protected String                 name            = null;
+
+   /**
+    * Rules are always processed in sequence sorted by ascending order.
+    */
    protected int                    order           = 1000;
 
+   /**
+    * Method/path combinations that would cause this Rule to be included in the relevant processing.
+    */
    protected List<RuleMatcher>      includeMatchers = new ArrayList();
+
+   /**
+    * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
+    */
    protected List<RuleMatcher>      excludeMatchers = new ArrayList();
 
    /**
@@ -77,21 +93,48 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
       }
    }
 
+   /**
+    * Designed to allow subclasses to provide a default match behavior
+    * of no configuration was provided by the developer.
+    * 
+    * @return
+    */
    protected RuleMatcher getDefaultIncludeMatch()
    {
       return new RuleMatcher(null, "*");
    }
 
+   /**
+    * Check if the http method and path match this Rule.
+    * 
+    * @param method the HTTP method to match
+    * @param path the concrete path to match
+    * @return true if the http method and path are included and not excluded
+    */
    public boolean matches(String method, String path)
    {
       return matches(method, new Path(path));
    }
 
+   /**
+    * Check if the http method and path match this Rule.
+    * 
+    * @param method the HTTP method to match
+    * @param path the concrete path to match
+    * @return true if the http method and path are included and not excluded
+    */
    public boolean matches(String method, Path path)
    {
       return match(method, path) != null;
    }
 
+   /**
+    * Find the first ordered Path that satisfies this method/path match.
+    * 
+    * @param method the HTTP method to match
+    * @param path the concrete path to match
+    * @return the first includeMatchers path to match when method also matches, null if no matches or excluded
+    */
    protected Path match(String method, Path path)
    {
       checkLazyConfig();
@@ -169,12 +212,26 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
       return (R) this;
    }
 
+   /**
+    * Select this Rule when any method and path match.
+    * 
+    * @param one or more comma separated http method names, can be null to match on any
+    * @param paths each path can be one or more comma separated variableized Paths
+    * @return this
+    */
    public R withIncludeOn(String methods, String... paths)
    {
       withIncludeOn(methods, asPathsArray(paths));
       return (R) this;
    }
 
+   /**
+    * Select this Rule when any method and path match.
+    * 
+    * @param one or more comma separated http method names, can be null to match on any
+    * @param paths each path can be one or more comma separated variableized Paths
+    * @return this
+    */
    public R withIncludeOn(String methods, Path... paths)
    {
       if (includeMatchers.size() == 0)
@@ -192,12 +249,26 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
       return (R) this;
    }
 
+   /**
+    * Don't select this Rule when any method and path match.
+    * 
+    * @param one or more comma separated http method names, can be null to match on any
+    * @param paths each path can be one or more comma separated variableized Paths
+    * @return this
+    */
    public R withExcludeOn(String methods, String... paths)
    {
       withExcludeOn(methods, asPathsArray(paths));
       return (R) this;
    }
 
+   /**
+    * Don't select this Rule when any method and path match.
+    * 
+    * @param one or more comma separated http method names, can be null to match on any
+    * @param paths each path can be one or more comma separated variableized Paths
+    * @return this
+    */
    public R withExcludeOn(RuleMatcher matcher)
    {
       excludeMatchers.add(matcher);

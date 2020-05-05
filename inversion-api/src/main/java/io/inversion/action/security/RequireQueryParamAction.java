@@ -39,7 +39,7 @@ public class RequireQueryParamAction extends Action<SetQueryParamAction>
 {
    protected Set<String> params = new HashSet();
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       for (String requiredParam : params)
       {

@@ -110,7 +110,7 @@ public class JdbcDbFactory
     * 'root' account can not make network connections to MySql out of the box and you have to 
     * add the remote connect privilege to MySql.
     * 
-    * @throws Exception
+    * @throws ApiException
     */
    public static JdbcDb bootstrapMySql(String database) throws Exception
    {
@@ -164,7 +164,7 @@ public class JdbcDbFactory
     * @see https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on
     * 
     *
-    * @throws Exception
+    * @throws ApiException
     */
    public static JdbcDb bootstrapPostgres(String database) throws Exception
    {

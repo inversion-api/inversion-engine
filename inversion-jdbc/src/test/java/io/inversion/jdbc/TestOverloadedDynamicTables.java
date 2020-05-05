@@ -52,7 +52,7 @@ public class TestOverloadedDynamicTables
          {
 
             @Override
-            public void configDb() throws Exception
+            public void configDb() throws ApiException
             {
                super.configDb();
                Collection object = getCollectionByTableName("Object");
@@ -98,7 +98,7 @@ public class TestOverloadedDynamicTables
       api = new Api("crm").withIncludeOn(null, "crm/:tenant/[:type]/*") //
                           .withEndpoint("*", "*", new Action()
                              {
-                                public void run(Request req, Response res) throws Exception
+                                public void run(Request req, Response res) throws ApiException
                                 {
                                    //-- requires "type" param and forces to lower case
                                    String tenant = req.getUrl().getParam("tenant").toLowerCase();

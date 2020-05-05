@@ -17,6 +17,7 @@
 package io.inversion.action.rest;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 
@@ -29,7 +30,7 @@ public class RestAction extends Action<RestAction>
    protected RestDeleteAction deleteAction = new RestDeleteAction();
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isMethod("GET"))
       {

@@ -1125,7 +1125,7 @@ public class Utils
     * Read teh contents of a file to a string
     * @param file
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
    public static String read(File file) throws Exception
    {
@@ -1139,7 +1139,7 @@ public class Utils
     * Write the string value to a file
     * @param file
     * @param text
-    * @throws Exception
+    * @throws ApiException
     */
    public static void write(File file, String text) throws Exception
    {
@@ -1156,7 +1156,7 @@ public class Utils
     * Write the string value to a file
     * @param file
     * @param text
-    * @throws Exception
+    * @throws ApiException
     */
    public static void write(String file, String text) throws Exception
    {
@@ -1169,7 +1169,7 @@ public class Utils
     * Copy all data from src to dst and close the streams
     * @param src
     * @param dest
-    * @throws Exception
+    * @throws ApiException
     */
    public static void pipe(InputStream src, OutputStream dest) throws Exception
    {

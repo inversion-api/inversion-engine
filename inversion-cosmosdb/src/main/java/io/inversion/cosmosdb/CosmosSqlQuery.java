@@ -40,7 +40,6 @@ import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
@@ -94,7 +93,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          };
    }
 
-   public Results doSelect() throws Exception
+   public Results doSelect() throws ApiException
    {
       Results results = new Results(this);
       CosmosDb db = getDb();

@@ -37,7 +37,6 @@ import io.inversion.Results;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 /**
  * Posts records to a mapped AWS Kinesis Firehose stream. 
@@ -127,20 +126,20 @@ public class FirehoseDb extends Db<FirehoseDb>
    }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       List<Record> batch = new ArrayList();
       for (int i = 0; i < rows.size(); i++)

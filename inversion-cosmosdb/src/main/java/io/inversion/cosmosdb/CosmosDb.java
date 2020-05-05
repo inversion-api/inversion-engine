@@ -38,17 +38,16 @@ import io.inversion.Results;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 public class CosmosDb extends Db<CosmosDb>
 {
-   protected String                   uri                      = null;
-   protected String                   db                       = "";
-   protected String                   key                      = null;
+   protected String                   uri                        = null;
+   protected String                   db                         = "";
+   protected String                   key                        = null;
 
    boolean                            allowCrossPartitionQueries = false;
 
-   transient protected DocumentClient documentClient           = null;
+   transient protected DocumentClient documentClient             = null;
 
    public CosmosDb()
    {
@@ -66,17 +65,17 @@ public class CosmosDb extends Db<CosmosDb>
     * @param relationship
     * @param sourceResourceKeys
     * @return Map<sourceResourceKey, relatedResourceKey>
-    * @throws Exception
+    * @throws ApiException
     */
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)
@@ -86,57 +85,65 @@ public class CosmosDb extends Db<CosmosDb>
       return keys;
    }
 
-   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws Exception
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException
    {
-      JSNode doc = new JSNode(columnMappedTermsRow);
-
-      String id = doc.getString("id");
-      if (id == null)
+      try
       {
-         id = table.encodeKey(columnMappedTermsRow);
+         JSNode doc = new JSNode(columnMappedTermsRow);
+
+         String id = doc.getString("id");
          if (id == null)
-            ApiException.throw400BadRequest("Your record does not contain the required key fields.");
-         doc.putFirst("id", id);
-      }
-
-      //-- the only way to achieve a PATCH is to query for the document first.
-      Results existing = select(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
-      if (existing.size() == 1)
-      {
-         Map<String, Object> row = existing.getRow(0);
-         for (String key : row.keySet())
          {
-            if (!doc.containsKey(key))
-               doc.put(key, row.get(key));
+            id = table.encodeKey(columnMappedTermsRow);
+            if (id == null)
+               ApiException.throw400BadRequest("Your record does not contain the required key fields.");
+            doc.putFirst("id", id);
          }
+
+         //-- the only way to achieve a PATCH is to query for the document first.
+         Results existing = select(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
+         if (existing.size() == 1)
+         {
+            Map<String, Object> row = existing.getRow(0);
+            for (String key : row.keySet())
+            {
+               if (!doc.containsKey(key))
+                  doc.put(key, row.get(key));
+            }
+         }
+
+         //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
+         String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getTableName();
+
+         String json = doc.toString();
+         Document document = new Document(json);
+
+         String debug = "CosmosDb: Insert " + json;
+         Chain.debug(debug);
+
+         ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
+
+         int statusCode = response.getStatusCode();
+         if (statusCode > 299)
+         {
+            ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
+         }
+
+         String returnedId = response.getResource().getId();
+         if (!Utils.equal(id, returnedId))
+            ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
+
+         return id;
       }
-
-      //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-      String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getTableName();
-
-      String json = doc.toString();
-      Document document = new Document(json);
-
-      String debug = "CosmosDb: Insert " + json;
-      Chain.debug(debug);
-
-      ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
-
-      int statusCode = response.getStatusCode();
-      if (statusCode > 299)
+      catch (Exception ex)
       {
-         ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
+         ApiException.throw500InternalServerError(ex);
       }
-
-      String returnedId = response.getResource().getId();
-      if (!Utils.equal(id, returnedId))
-         ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
-
-      return id;
+      return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       for (Map<String, Object> row : indexValues)
       {
@@ -154,9 +161,9 @@ public class CosmosDb extends Db<CosmosDb>
     * 
     * @param table
     * @param indexValues
-    * @throws Exception
+    * @throws ApiException
     */
-   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException
    {
       Object id = table.encodeKey(indexValues);
       Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());

@@ -37,7 +37,7 @@ public class DynamoDbPostActionsIntegTest
 //    * from h2 and inserts them back into dynamo verifying both the delete and insert
 //    * were successful
 //    * 
-//    * @throws Exception
+//    * @throws ApiException
 //    */
 //   @Test
 //   public void testBatchWriteToDynamoDB() throws Exception
@@ -116,7 +116,7 @@ public class DynamoDbPostActionsIntegTest
 //    * Test that a put/post does a full replace not a patch.
 //    * Even fields that are not sent should be replaced.
 //    * 
-//    * @throws Exception
+//    * @throws ApiException
 //    */
 //   @Test
 //   public void testFullOverwriteDynamoDB() throws Exception

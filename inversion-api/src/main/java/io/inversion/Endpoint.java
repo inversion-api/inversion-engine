@@ -19,13 +19,23 @@ package io.inversion;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A single Endpoint, bundling one or more Path match relative Actions, is selected to service a Request.
+ */
 public class Endpoint extends Rule<Endpoint>
 {
+   /**
+    * The Actions that are 'local' to this request.  
+    * <p>
+    * These Actions are not run each Request automatically.
+    * <p>
+    * Compared to Actions that are registered directly with the Api via Api.withAction, these Actions are 
+    * path matched relative to the Path that matched to select this Endpoint vs a different Endpoint.
+    */
    protected List<Action> actions  = new ArrayList();
 
    /**
-    * Internal endpoints can only be called by recursive 
-    * calls to the engine when Chain.depth() is > 1.  
+    * Internal Endpoints can only be called by recursive calls to the engine when Chain.depth() is > 1.  
     */
    protected boolean      internal = false;
 

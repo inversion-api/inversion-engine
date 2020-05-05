@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
@@ -32,7 +33,6 @@ import io.inversion.rql.Query;
 import io.inversion.rql.Select;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
-import io.inversion.utils.Rows.Row;
 
 /**
  * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
@@ -56,7 +56,7 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
       getWhere().withFunctions("eq", "sw");
    }
 
-   public Results doSelect() throws Exception
+   public Results doSelect() throws ApiException
    {
       // path == /s3/bucketName
       // path == /s3/bucketName/inner/folder

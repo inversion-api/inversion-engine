@@ -19,10 +19,8 @@ package io.inversion.elasticsearch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpUtils;
-
+import io.inversion.ApiException;
 import io.inversion.Collection;
 import io.inversion.Db;
 import io.inversion.Property;
@@ -31,7 +29,6 @@ import io.inversion.Results;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
@@ -53,20 +50,20 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       // TODO Auto-generated method stub
    }
 
    @Override
-   public List upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       return null;
    }

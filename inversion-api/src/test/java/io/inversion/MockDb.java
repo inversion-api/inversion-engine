@@ -16,15 +16,11 @@
  */
 package io.inversion;
 
-import io.inversion.Collection;
-import io.inversion.Db;
-import io.inversion.Results;
-import io.inversion.rql.Term;
-import io.inversion.utils.Rows.Row;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import io.inversion.rql.Term;
 
 public class MockDb extends Db<MockDb>
 {
@@ -42,19 +38,19 @@ public class MockDb extends Db<MockDb>
    //   }
    //
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       return new Results(null);
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       return Collections.EMPTY_LIST;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
 
    }

@@ -22,12 +22,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.ApiException;
 import io.inversion.Collection;
 import io.inversion.Db;
 import io.inversion.Results;
 import io.inversion.rql.Term;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -57,21 +57,21 @@ public class RedisDb extends Db<RedisDb>
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
    @Override
-   public Results select(Collection table, List<Term> queryTerms) throws Exception
+   public Results select(Collection table, List<Term> queryTerms) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       // TODO Auto-generated method stub
 

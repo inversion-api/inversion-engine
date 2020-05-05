@@ -41,8 +41,8 @@ import io.inversion.Status;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
 
 public class RestPostAction<t extends RestPostAction> extends Action<t>
 {
@@ -55,7 +55,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
    protected boolean expandResponse = true;
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isMethod("PUT", "POST"))
       {
@@ -80,9 +80,9 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
     * 
     * @param req
     * @param res
-    * @throws Exception
+    * @throws ApiException
     */
-   public void patch(Request req, Response res) throws Exception
+   public void patch(Request req, Response res) throws ApiException
    {
       JSNode body = req.getJson();
       if (body.isArray())
@@ -180,7 +180,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
 
    }
 
-   public void upsert(Request req, Response res) throws Exception
+   public void upsert(Request req, Response res) throws ApiException
    {
       if (strictRest)
       {
@@ -291,9 +291,9 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
     * @param collection
     * @param nodes
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
-   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws Exception
+   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws ApiException
    {
       //--
       //--

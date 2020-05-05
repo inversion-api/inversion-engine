@@ -87,14 +87,14 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       AmazonDynamoDB dynamoClient = getDynamoClient();
       List keys = new ArrayList();
@@ -140,7 +140,7 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       for (Map<String, Object> row : indexValues)
       {
@@ -149,7 +149,7 @@ public class DynamoDb extends Db<DynamoDb>
 
    }
 
-   public void deleteRow(Collection table, Map<String, Object> row) throws Exception
+   public void deleteRow(Collection table, Map<String, Object> row) throws ApiException
    {
       com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
 
@@ -169,7 +169,7 @@ public class DynamoDb extends Db<DynamoDb>
       }
    }
 
-   public void configDb() throws Exception
+   public void configDb() throws ApiException
    {
       for (String tableName : includeTables.keySet())
       {

@@ -155,7 +155,7 @@ public class ScriptAction extends Action<ScriptAction>
    }
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       scriptLocal.set(this);
       chainLocal.set(req.getChain());
@@ -172,7 +172,7 @@ public class ScriptAction extends Action<ScriptAction>
       }
    }
 
-   void runScripts(Request req, Response res, LinkedHashMap<String, JSNode> scripts) throws Exception
+   void runScripts(Request req, Response res, LinkedHashMap<String, JSNode> scripts) throws ApiException
    {
       Map<String, Object> contexts = new HashMap();
 
@@ -307,6 +307,10 @@ public class ScriptAction extends Action<ScriptAction>
             }
          }
       }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
       finally
       {
          for (Object context : contexts.values())
@@ -317,7 +321,7 @@ public class ScriptAction extends Action<ScriptAction>
       }
    }
 
-   public LinkedHashMap<String, JSNode> findScripts(Engine engine, Chain chain, Request req) throws Exception
+   public LinkedHashMap<String, JSNode> findScripts(Engine engine, Chain chain, Request req) throws ApiException
    {
       Map<JSNode, String> paths = new HashMap();
       List<JSNode> scripts = new ArrayList();
@@ -410,7 +414,7 @@ public class ScriptAction extends Action<ScriptAction>
       return ordered;
    }
 
-   public static JSNode findScript(final String path) throws Exception
+   public static JSNode findScript(final String path) throws ApiException
    {
       if (path == null)
          return null;

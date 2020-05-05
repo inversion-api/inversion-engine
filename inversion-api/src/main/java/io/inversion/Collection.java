@@ -38,20 +38,68 @@ import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
 /**
- * Represents a REST collection as an interface into an underlying
- * Db data store...such as an RDBMS table.
+ * Represents a REST Collection and maps JSON properties property names and logical cross Collection data relationships to underlying Db tables and column names.
+ * <p>
+ * Api users interact with Collections and their JSON representation while Inversion abstracts the details of of the storage implementations.
+ * <p>
+ * Collections can remap ugly legacy column names to pretty JSON friendly camelCase names, and Collection Relationships can be used to create logical traversable 
+ * foreign keys between Collections with the same underlying Db or even between Collections with different backend storage systems. 
+ * <p>
+ * Generally it is the job of a <code>Db</code> to reflect on its underlying data source and automatically configure Collections and the
+ * associated Relationships that will be accessed and manipulated by Api caller.
+ * <p>
+ * The Engine inspects the inbound Request path and attempts to match a Collection to the call.
+ * <p>
+ * The default mapping would be: /${endpointPath}/[${collection}]/[${resource}]/[${relationship}]
+ * <p> 
+ * Querying "/${endpointPath}/${collection}" would typically result an a paginated list of resources ie. rows from your underlying Db translated into JSON speak.
+ * <p>
+ * Querying "/${endpointPath}/${collection}/${resource}" will fetch a single resource or row.
+ * <p>
+ * Querying "/${endpointPath}/${collection}/${resource}/${relationship}" will fetch all members from the relationship target Collection that are related to <code>resource</code>. 
+ * <p>
+ * RestGet/Post/Put/Patch/DeleteAction are responsible for handling basic Rest semantics for interacting with Dbs via Collections.  
+ *   
  */
 public class Collection extends Rule<Collection> implements Serializable
 {
+   /**
+    * The backend storage adapter that probably generated this Collection and associated Indexes and Relationships.
+    */
    transient protected Db            db            = null;
 
+   /**
+    * The backend datasource name that this Collection operates on.
+    * <p>
+    * The tableName might be "ORDER_DETAIL" but the Collection might be named "orderDetails".
+    */
    protected String                  tableName     = null;
+   
+   /**
+    * Additional names that should cause this Collection to match to a Request. 
+    * <p>
+    * For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".  
+    */
    protected List<String>            aliases       = new ArrayList();
 
+   /**
+    * Properties map database column names to JSON property names.
+    */
    protected ArrayList<Property>     properties    = new ArrayList();
+   
+   /**
+    * Representation of underlying Db datasource indexes.
+    */
    protected ArrayList<Index>        indexes       = new ArrayList();
+
+   /**
+    * Relationships like resources in one collection to the resources in another collection.
+    */
    protected ArrayList<Relationship> relationships = new ArrayList();
 
+   /**
+    * Set this to true to prevent it from being automatically exposed through your Api.
+    */
    protected boolean                 exclude       = false;
 
    public Collection()
@@ -65,18 +113,22 @@ public class Collection extends Rule<Collection> implements Serializable
       withTableName(defaultName);
    }
 
+   /**
+    * @return the default collection match rule: "{collection:" + getName() + "}/[:resource]/[:relationship]/*"
+    */
    @Override
-   public RuleMatcher getDefaultIncludeMatch()
+   protected RuleMatcher getDefaultIncludeMatch()
    {
       return new RuleMatcher(null, new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*"));
    }
 
    /**
-    * Returns true if all columns are foreign keys.  In an RDBMS system, this
-    * would indicate that the table is used to link both sides of a many-to-many
-    * relationship and it should NOT be a public REST Collection
+    * Returns true if all columns are foreign keys.  
+    * <p>
+    * In an RDBMS system, this would indicate that the table is used to link both sides 
+    * of a many-to-many relationship and it should NOT be a public REST Collection.
     * 
-    * @return the linkTbl
+    * @return the true if all columns are foreign keys.  
     */
    public boolean isLinkTbl()
    {
@@ -97,11 +149,23 @@ public class Collection extends Rule<Collection> implements Serializable
       return isLinkTbl;
    }
 
+   /**
+    * Finds the property with case insensitive jsonOrColumnName
+    * 
+    * @param jsonOrColumnName
+    * @return the Property with a case insensitive json name or column name match. 
+    */
    public Property getProperty(String name)
    {
       return findProperty(name);
    }
 
+   /**
+    * Finds the property with case insensitive jsonOrColumnName
+    * 
+    * @param jsonOrColumnName
+    * @return the Property with a case insensitive json name or column name match. 
+    */
    public Property findProperty(String jsonOrColumnName)
    {
       Property prop = getPropertyByJsonName(jsonOrColumnName);

@@ -34,7 +34,7 @@ import io.inversion.utils.Rows.Row;
 public class RestDeleteAction extends Action<RestDeleteAction>
 {
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       String resourceKey = req.getResourceKey();
       String relationshipKey = req.getRelationshipKey();
@@ -56,7 +56,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          res.withStatus(Status.SC_204_NO_CONTENT);
    }
 
-   protected int delete(Engine engine, Collection collection, String url) throws Exception
+   protected int delete(Engine engine, Collection collection, String url) throws ApiException
    {
       int deleted = 0;
 

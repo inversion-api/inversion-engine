@@ -26,12 +26,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 
 import io.inversion.Api;
+import io.inversion.ApiException;
 import io.inversion.Collection;
 import io.inversion.Db;
 import io.inversion.Results;
 import io.inversion.rql.Term;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 /**
  * Bucket ~= Table
@@ -97,7 +97,7 @@ public class S3Db extends Db<S3Db>
 //   }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
       return query.doSelect();
@@ -105,14 +105,14 @@ public class S3Db extends Db<S3Db>
 
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       // TODO Auto-generated method stub
       

@@ -783,7 +783,7 @@ public class JdbcUtils
     * @param primaryKeyCols
     * @param rows
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
    public static List<Row> upsert(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception
    {
@@ -1029,7 +1029,7 @@ public class JdbcUtils
     * @param tableName
     * @param rows
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
    static List postgresUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception
    {
@@ -1118,7 +1118,7 @@ public class JdbcUtils
     * @param idxCols
     * @param row
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
    static void sqlserverUpsertBatch(Connection conn, String tableName, List<String> indexCols, Map<String, Object> row) throws Exception
    {
@@ -1182,7 +1182,7 @@ public class JdbcUtils
     * @see readSql(InputStream)
     * @param conn
     * @param ddlStream
-    * @throws Exception
+    * @throws ApiException
     */
    public static void runSql(Connection conn, InputStream ddlStream) throws Exception
    {

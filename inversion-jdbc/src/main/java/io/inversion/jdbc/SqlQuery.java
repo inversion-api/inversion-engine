@@ -96,7 +96,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       return super.addTerm(token, term);
    }
 
-   public Results doSelect() throws Exception
+   @Override
+   public Results doSelect() throws ApiException
    {
       JdbcDb db = (JdbcDb) getDb();
       String sql = getPreparedStmt();

@@ -36,7 +36,7 @@ public class MockActionA extends Action<MockActionA>
    }
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isMethod("get"))
       {

@@ -583,6 +583,9 @@ public class Request
       return uploader.getUploads();
    }
 
+   /**
+    * Implemented by different runtimes, for example a servlet vs a lambda, to enable different file upload mechanisms. 
+    */
    public interface Uploader
    {
       public List<Upload> getUploads();

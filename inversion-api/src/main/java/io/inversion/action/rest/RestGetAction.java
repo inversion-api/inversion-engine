@@ -65,7 +65,7 @@ public class RestGetAction extends Action<RestGetAction>
 
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.getRelationshipKey() != null)
       {
@@ -248,7 +248,7 @@ public class RestGetAction extends Action<RestGetAction>
 
    }
 
-   protected Results select(Request req, Collection collection, Map<String, String> params, Api api) throws Exception
+   protected Results select(Request req, Collection collection, Map<String, String> params, Api api) throws ApiException
    {
       //------------------------------------------------
       // Normalize all of the params and convert attribute
@@ -556,7 +556,7 @@ public class RestGetAction extends Action<RestGetAction>
     * not increase with the number of results at any level of the expansion.
     */
 
-   protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws Exception
+   protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) throws ApiException
    {
       if (parentObjs.size() == 0)
          return;
@@ -743,7 +743,7 @@ public class RestGetAction extends Action<RestGetAction>
       }
    }
 
-   protected List<KeyValue> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws Exception
+   protected List<KeyValue> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws ApiException
    {
       if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
          ApiException.throw400BadRequest("You can only retrieve related index keys from the same Collection.");
@@ -823,7 +823,7 @@ public class RestGetAction extends Action<RestGetAction>
       return related;
    }
 
-   protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws Exception
+   protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws ApiException
    {
       if (resourceKeys.size() == 0)
          return Collections.EMPTY_LIST;

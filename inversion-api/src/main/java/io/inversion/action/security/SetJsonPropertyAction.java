@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.utils.JSNode;
@@ -29,7 +30,7 @@ public class SetJsonPropertyAction extends Action<SetJsonPropertyAction>
    protected Map<String, Object> properties = new HashMap();
    protected boolean             recursive  = false;
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       JSNode json = req.getJson();
       if (json == null)

@@ -819,14 +819,14 @@ public class Engine extends Rule<Engine>
     * 
     * @param chain
     * @param actions
-    * @throws Exception
+    * @throws ApiException
     */
-   void run(Chain chain, List<ActionMatch> actions) throws Exception
+   void run(Chain chain, List<ActionMatch> actions) throws ApiException
    {
       chain.withActions(actions).go();
    }
 
-   void writeResponse(Request req, Response res) throws Exception
+   void writeResponse(Request req, Response res) throws ApiException
    {
       boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();

@@ -24,6 +24,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.utils.JSArray;
@@ -40,7 +41,7 @@ import io.inversion.utils.JSNode;
 public class CsvAction extends Action<CsvAction>
 {
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null)
       {
@@ -75,54 +76,62 @@ public class CsvAction extends Action<CsvAction>
       res.withText(new String(bytes));
    }
 
-   public String toCsv(JSArray arr) throws Exception
+   public String toCsv(JSArray arr) throws ApiException
    {
-      StringBuffer buff = new StringBuffer();
-
-      LinkedHashSet<String> keys = new LinkedHashSet();
-
-      for (int i = 0; i < arr.length(); i++)
+      try
       {
-         JSNode obj = (JSNode) arr.get(i);
-         if (obj != null)
+         StringBuffer buff = new StringBuffer();
+
+         LinkedHashSet<String> keys = new LinkedHashSet();
+
+         for (int i = 0; i < arr.length(); i++)
          {
-            for (String key : obj.keySet())
+            JSNode obj = (JSNode) arr.get(i);
+            if (obj != null)
             {
-               Object val = obj.get(key);
-               if (!(val instanceof JSArray) && !(val instanceof JSNode))
-                  keys.add(key);
+               for (String key : obj.keySet())
+               {
+                  Object val = obj.get(key);
+                  if (!(val instanceof JSArray) && !(val instanceof JSNode))
+                     keys.add(key);
+               }
             }
          }
-      }
 
-      CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
+         CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
 
-      List<String> keysList = new ArrayList(keys);
-      for (String key : keysList)
-      {
-         printer.print(key);
-      }
-      printer.println();
-
-      for (int i = 0; i < arr.length(); i++)
-      {
+         List<String> keysList = new ArrayList(keys);
          for (String key : keysList)
          {
-            Object val = ((JSNode) arr.get(i)).get(key);
-            if (val != null)
-            {
-               printer.print(val);
-            }
-            else
-            {
-               printer.print("");
-            }
+            printer.print(key);
          }
          printer.println();
-      }
-      printer.flush();
-      printer.close();
 
-      return buff.toString();
+         for (int i = 0; i < arr.length(); i++)
+         {
+            for (String key : keysList)
+            {
+               Object val = ((JSNode) arr.get(i)).get(key);
+               if (val != null)
+               {
+                  printer.print(val);
+               }
+               else
+               {
+                  printer.print("");
+               }
+            }
+            printer.println();
+         }
+         printer.flush();
+         printer.close();
+
+         return buff.toString();
+      }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
+      return null;
    }
 }

@@ -40,7 +40,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import ch.qos.logback.classic.Level;
 import io.inversion.Api;
 import io.inversion.Api.ApiListener;
-import io.inversion.jdbc.JdbcUtils.SqlListener;
 import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
@@ -50,9 +49,10 @@ import io.inversion.Relationship;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.Results;
+import io.inversion.jdbc.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
-import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
 
 public class JdbcDb extends Db<JdbcDb>
 {
@@ -273,7 +273,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results select(Collection coll, List<Term> columnMappedTerms) throws Exception
+   public Results select(Collection coll, List<Term> columnMappedTerms) throws ApiException
    {
       JdbcDb db = null;
       if (coll == null)
@@ -299,93 +299,115 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
-      for (Map<String, Object> row : rows)
+      try
       {
-         for (String key : (Set<String>) new HashSet(row.keySet()))
+         for (Map<String, Object> row : rows)
          {
-            if (table.getPropertyByColumnName(key) == null)
-               row.remove(key);
-         }
-      }
-
-      List upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-
-      for (int i = 0; i < upserted.size(); i++)
-      {
-         String resourceKey = table.encodeKey((Row) upserted.get(i));
-         upserted.set(i, resourceKey);
-      }
-
-      return upserted;
-   }
-
-   @Override
-   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws Exception
-   {
-      for (Map<String, Object> row : rows)
-      {
-         for (String key : (Set<String>) new HashSet(row.keySet()))
-         {
-            if (table.getPropertyByColumnName(key) == null)
-               row.remove(key);
-         }
-      }
-
-      return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-   }
-
-   @Override
-   public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws Exception
-   {
-      if (columnMappedIndexValues.size() == 0)
-         return;
-
-      Map<String, Object> firstRow = columnMappedIndexValues.get(0);
-
-      if (firstRow.size() == 1)
-      {
-         String keyCol = firstRow.keySet().iterator().next();
-
-         List values = new ArrayList();
-         for (Map resourceKey : columnMappedIndexValues)
-         {
-            values.add(resourceKey.values().iterator().next());
-         }
-
-         String sql = "";
-         sql += " DELETE FROM " + quoteCol(table.getTableName());
-         sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
-         JdbcUtils.execute(getConnection(), sql, values.toArray());
-      }
-      else
-      {
-         String sql = "";
-         sql += " DELETE FROM " + quoteCol(table.getTableName());
-         sql += " WHERE ";
-
-         List values = new ArrayList();
-         for (Map<String, Object> resourceKey : columnMappedIndexValues)
-         {
-            if (values.size() > 0)
-               sql += " OR ";
-            sql += "(";
-
-            int i = 0;
-            for (String key : resourceKey.keySet())
+            for (String key : (Set<String>) new HashSet(row.keySet()))
             {
-               i++;
-               if (i > 1)
-                  sql += "AND ";
-               sql += quoteCol(key) + " = ? ";
-               values.add(resourceKey.get(key));
+               if (table.getPropertyByColumnName(key) == null)
+                  row.remove(key);
             }
-            sql += ")";
          }
-         JdbcUtils.execute(getConnection(), sql, values.toArray());
-      }
 
+         List upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+
+         for (int i = 0; i < upserted.size(); i++)
+         {
+            String resourceKey = table.encodeKey((Row) upserted.get(i));
+            upserted.set(i, resourceKey);
+         }
+
+         return upserted;
+      }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
+      return null;
+   }
+
+   @Override
+   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws ApiException
+   {
+      try
+      {
+         for (Map<String, Object> row : rows)
+         {
+            for (String key : (Set<String>) new HashSet(row.keySet()))
+            {
+               if (table.getPropertyByColumnName(key) == null)
+                  row.remove(key);
+            }
+         }
+
+         return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+      }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
+      return null;
+   }
+
+   @Override
+   public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException
+   {
+      try
+      {
+         if (columnMappedIndexValues.size() == 0)
+            return;
+
+         Map<String, Object> firstRow = columnMappedIndexValues.get(0);
+
+         if (firstRow.size() == 1)
+         {
+            String keyCol = firstRow.keySet().iterator().next();
+
+            List values = new ArrayList();
+            for (Map resourceKey : columnMappedIndexValues)
+            {
+               values.add(resourceKey.values().iterator().next());
+            }
+
+            String sql = "";
+            sql += " DELETE FROM " + quoteCol(table.getTableName());
+            sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
+            JdbcUtils.execute(getConnection(), sql, values.toArray());
+         }
+         else
+         {
+            String sql = "";
+            sql += " DELETE FROM " + quoteCol(table.getTableName());
+            sql += " WHERE ";
+
+            List values = new ArrayList();
+            for (Map<String, Object> resourceKey : columnMappedIndexValues)
+            {
+               if (values.size() > 0)
+                  sql += " OR ";
+               sql += "(";
+
+               int i = 0;
+               for (String key : resourceKey.keySet())
+               {
+                  i++;
+                  if (i > 1)
+                     sql += "AND ";
+                  sql += quoteCol(key) + " = ? ";
+                  values.add(resourceKey.get(key));
+               }
+               sql += ")";
+            }
+            JdbcUtils.execute(getConnection(), sql, values.toArray());
+         }
+      }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
    }
 
    /**
@@ -691,168 +713,183 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public void configDb() throws Exception
+   public void configDb() throws ApiException
    {
-      if (!isBootstrap())
-      {
-         return;
-      }
-
-      Connection conn = getConnection();
-
-      DatabaseMetaData dbmd = conn.getMetaData();
-
-      //-- only here to map jdbc type integer codes to strings ex "4" to "BIGINT" or whatever it is
-      Map<String, String> types = new HashMap<String, String>();
-      for (Field field : Types.class.getFields())
-      {
-         types.put(field.get(null) + "", field.getName());
-      }
-      //--
-
-      //-- the first loop through is going to construct all of the
-      //-- Tbl and Col objects.  There will be a second loop through
-      //-- that caputres all of the foreign key relationships.  You
-      //-- have to do the fk loop second becuase the reference pk
-      //-- object needs to exist so that it can be set on the fk Col
       ResultSet rs = null;
-      if (isType("sqlserver"))
-         rs = dbmd.getTables(conn.getCatalog(), "dbo", "%", new String[]{"TABLE", "VIEW"});
-      else
-         rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
-      //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
-      boolean hasNext = rs.next();
-      if (!hasNext)
+
+      try
       {
-         rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
-         hasNext = rs.next();
-      }
-      if (hasNext)
-         do
+
+         if (!isBootstrap())
          {
-            String tableCat = rs.getString("TABLE_CAT");
-            String tableSchem = rs.getString("TABLE_SCHEM");
-            String tableName = rs.getString("TABLE_NAME");
-            //String tableType = rs.getString("TABLE_TYPE");
+            return;
+         }
 
-            if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
-               continue;
+         //this conn is managed by the JdbcConnectionLocal, this looks like a connection leak but is not
+         Connection conn = getConnection();
 
-            Collection table = new Collection(tableName);
-            withCollection(table);
+         DatabaseMetaData dbmd = conn.getMetaData();
 
-            ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
+         //-- only here to map jdbc type integer codes to strings ex "4" to "BIGINT" or whatever it is
+         Map<String, String> types = new HashMap<String, String>();
+         for (Field field : Types.class.getFields())
+         {
+            types.put(field.get(null) + "", field.getName());
+         }
+         //--
 
-            while (colsRs.next())
+         //-- the first loop through is going to construct all of the
+         //-- Tbl and Col objects.  There will be a second loop through
+         //-- that caputres all of the foreign key relationships.  You
+         //-- have to do the fk loop second becuase the reference pk
+         //-- object needs to exist so that it can be set on the fk Col
+
+         if (isType("sqlserver"))
+            rs = dbmd.getTables(conn.getCatalog(), "dbo", "%", new String[]{"TABLE", "VIEW"});
+         else
+            rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
+         //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
+         boolean hasNext = rs.next();
+         if (!hasNext)
+         {
+            rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
+            hasNext = rs.next();
+         }
+         if (hasNext)
+            do
             {
-               String colName = colsRs.getString("COLUMN_NAME");
-               Object type = colsRs.getString("DATA_TYPE");
-               String colType = types.get(type);
+               String tableCat = rs.getString("TABLE_CAT");
+               String tableSchem = rs.getString("TABLE_SCHEM");
+               String tableName = rs.getString("TABLE_NAME");
+               //String tableType = rs.getString("TABLE_TYPE");
 
-               boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
-
-               Property column = new Property(colName, colType, nullable);
-               table.withProperties(column);
-            }
-            colsRs.close();
-
-            ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
-            while (indexMd.next())
-            {
-               String idxName = indexMd.getString("INDEX_NAME");
-               String idxType = "Other";
-               String colName = indexMd.getString("COLUMN_NAME");
-
-               if (idxName == null || colName == null)
-               {
-                  //WDB 2020-02-14 this was put in because SqlServer was 
-                  //found to be returning indexes without names.
+               if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
                   continue;
-               }
 
-               switch (indexMd.getInt("TYPE"))
+               Collection table = new Collection(tableName);
+               withCollection(table);
+
+               ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
+
+               while (colsRs.next())
                {
-                  case DatabaseMetaData.tableIndexClustered:
-                     idxType = "Clustered";
-                  case DatabaseMetaData.tableIndexHashed:
-                     idxType = "Hashed";
-                  case DatabaseMetaData.tableIndexOther:
-                     idxType = "Other";
-                  case DatabaseMetaData.tableIndexStatistic:
-                     idxType = "Statistic";
+                  String colName = colsRs.getString("COLUMN_NAME");
+                  Object type = colsRs.getString("DATA_TYPE");
+                  String colType = types.get(type);
+
+                  boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+
+                  Property column = new Property(colName, colType, nullable);
+                  table.withProperties(column);
                }
+               colsRs.close();
 
-               Property column = table.getProperty(colName);
-               Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
-               boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
+               ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
+               while (indexMd.next())
+               {
+                  String idxName = indexMd.getString("INDEX_NAME");
+                  String idxType = "Other";
+                  String colName = indexMd.getString("COLUMN_NAME");
 
-               //this looks like it only supports single column indexes but if
-               //an index with this name already exists, that means this is another
-               //column in that index.
-               table.withIndex(idxName, idxType, unique, column.getColumnName());
+                  if (idxName == null || colName == null)
+                  {
+                     //WDB 2020-02-14 this was put in because SqlServer was 
+                     //found to be returning indexes without names.
+                     continue;
+                  }
+
+                  switch (indexMd.getInt("TYPE"))
+                  {
+                     case DatabaseMetaData.tableIndexClustered:
+                        idxType = "Clustered";
+                     case DatabaseMetaData.tableIndexHashed:
+                        idxType = "Hashed";
+                     case DatabaseMetaData.tableIndexOther:
+                        idxType = "Other";
+                     case DatabaseMetaData.tableIndexStatistic:
+                        idxType = "Statistic";
+                  }
+
+                  Property column = table.getProperty(colName);
+                  Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
+                  boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
+
+                  //this looks like it only supports single column indexes but if
+                  //an index with this name already exists, that means this is another
+                  //column in that index.
+                  table.withIndex(idxName, idxType, unique, column.getColumnName());
+
+               }
+               indexMd.close();
 
             }
-            indexMd.close();
+            while (rs.next());
+         rs.close();
 
-         }
-         while (rs.next());
-      rs.close();
-
-      //-- now link all of the fks to pks
-      //-- this is done after the first loop
-      //-- so that all of the tbls/cols are
-      //-- created first and are there to
-      //-- be connected
-      rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE"});
-      hasNext = rs.next();
-      if (!hasNext)
-      {
-         rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE"});
+         //-- now link all of the fks to pks
+         //-- this is done after the first loop
+         //-- so that all of the tbls/cols are
+         //-- created first and are there to
+         //-- be connected
+         rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE"});
          hasNext = rs.next();
-      }
-      if (hasNext)
-         do
+         if (!hasNext)
          {
-            String tableName = rs.getString("TABLE_NAME");
-
-            //            System.out.println(tableName);
-            //            
-            //            ResultSetMetaData rsmd = rs.getMetaData();
-            //            for(int i = 1; i<= rsmd.getColumnCount(); i++)
-            //            {
-            //               String name = rsmd.getColumnName(i);
-            //               System.out.println(name + " = " + rs.getObject(name)); 
-            //               
-            //            }
-
-            ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
-            while (keyMd.next())
-            {
-               //String pkName = keyMd.getString("PK_NAME");
-               String fkName = keyMd.getString("FK_NAME");
-
-               String fkTableName = keyMd.getString("FKTABLE_NAME");
-               String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-               String pkTableName = keyMd.getString("PKTABLE_NAME");
-               String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-               Property fk = getProperty(fkTableName, fkColumnName);
-               Property pk = getProperty(pkTableName, pkColumnName);
-               fk.withPk(pk);
-
-               Collection coll = getCollectionByTableName(fkTableName);
-               if (coll != null)
-               {
-                  //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-                  coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
-               }
-
-            }
-            keyMd.close();
+            rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE"});
+            hasNext = rs.next();
          }
-         while (rs.next());
+         if (hasNext)
+            do
+            {
+               String tableName = rs.getString("TABLE_NAME");
 
-      rs.close();
+               //            System.out.println(tableName);
+               //            
+               //            ResultSetMetaData rsmd = rs.getMetaData();
+               //            for(int i = 1; i<= rsmd.getColumnCount(); i++)
+               //            {
+               //               String name = rsmd.getColumnName(i);
+               //               System.out.println(name + " = " + rs.getObject(name)); 
+               //               
+               //            }
+
+               ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
+               while (keyMd.next())
+               {
+                  //String pkName = keyMd.getString("PK_NAME");
+                  String fkName = keyMd.getString("FK_NAME");
+
+                  String fkTableName = keyMd.getString("FKTABLE_NAME");
+                  String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
+                  String pkTableName = keyMd.getString("PKTABLE_NAME");
+                  String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
+
+                  Property fk = getProperty(fkTableName, fkColumnName);
+                  Property pk = getProperty(pkTableName, pkColumnName);
+                  fk.withPk(pk);
+
+                  Collection coll = getCollectionByTableName(fkTableName);
+                  if (coll != null)
+                  {
+                     //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+                     coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
+                  }
+
+               }
+               keyMd.close();
+            }
+            while (rs.next());
+
+         rs.close();
+      }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
+      finally
+      {
+         Utils.close(rs);
+      }
    }
 
    @Override

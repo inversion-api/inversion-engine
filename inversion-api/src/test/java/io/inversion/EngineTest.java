@@ -25,14 +25,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.inversion.Action;
-import io.inversion.Api;
-import io.inversion.Chain;
-import io.inversion.Collection;
-import io.inversion.Endpoint;
-import io.inversion.Engine;
-import io.inversion.Request;
-import io.inversion.Response;
 import io.inversion.Chain.ActionMatch;
 import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
@@ -47,7 +39,7 @@ public class EngineTest
 
       api.withAction(new Action("*", "a/b/:named1/:named2/*")
          {
-            public void run(Request req, Response res) throws Exception
+            public void run(Request req, Response res) throws ApiException
             {
                res.data().add("action1");
                assertEquals("a", req.getUrl().getParam("endpointNamed1"));
@@ -73,7 +65,7 @@ public class EngineTest
 
       api.withAction(new Action("*", "a/b/:named3/:named4/*")
          {
-            public void run(Request req, Response res) throws Exception
+            public void run(Request req, Response res) throws ApiException
             {
                res.data().add("action2");
                assertEquals("a", req.getUrl().getParam("endpointNamed1"));
@@ -385,7 +377,7 @@ public class EngineTest
       Endpoint ep = new Endpoint("GET", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
       Action actionA = new MockAction()
          {
-            public void run(io.inversion.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws ApiException
             {
                Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
@@ -397,7 +389,7 @@ public class EngineTest
 
       Action actionB = new MockAction()
          {
-            public void run(io.inversion.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws ApiException
             {
                Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
@@ -410,7 +402,7 @@ public class EngineTest
 
       Action actionC = new MockAction()
          {
-            public void run(io.inversion.Request req, Response res) throws Exception
+            public void run(io.inversion.Request req, Response res) throws ApiException
             {
                Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
                Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));
@@ -490,7 +482,7 @@ public class EngineTest
       Engine e = new Engine()
          {
             @Override
-            protected void run(Chain chain, List<ActionMatch> actions) throws Exception
+            protected void run(Chain chain, List<ActionMatch> actions) throws ApiException
             {
                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
                   fail(chain, "endpoints don't match");

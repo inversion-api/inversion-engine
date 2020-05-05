@@ -198,7 +198,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       return this;
    }
 
-   public Results doSelect() throws Exception
+   public Results doSelect() throws ApiException
    {
       Results.LAST_QUERY = null;
       try

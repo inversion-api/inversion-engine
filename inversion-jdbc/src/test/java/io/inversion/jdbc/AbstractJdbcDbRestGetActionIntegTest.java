@@ -171,7 +171,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    /**
     * Makes sure that MTM link tables are not recognized as entities
     *  
-    * @throws Exception
+    * @throws ApiException
     */
    @Test
    public void testCollections() throws Exception

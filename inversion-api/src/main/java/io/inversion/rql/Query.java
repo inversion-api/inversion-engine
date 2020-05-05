@@ -87,7 +87,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
       return super.withTerm(term);
    }
 
-   public Results doSelect() throws Exception
+   public Results doSelect() throws ApiException
    {
       return null;
    }
