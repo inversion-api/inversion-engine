@@ -1,6 +1,6 @@
 dependencies {
     compile project(':inversion-api')
     compile project(':inversion-jdbc')
-    compile 'com.amazonaws:aws-java-sdk-elasticsearch:1.11.+'
+    compile "com.amazonaws:aws-java-sdk-elasticsearch:${awsSdkVersion}"
     implementation 'org.elasticsearch.client:transport:6.4.+'
 }
