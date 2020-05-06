@@ -31,35 +31,48 @@ import org.slf4j.LoggerFactory;
 import io.inversion.rql.Term;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
+/**
+ * An adapter to an underlying data source.
+ * <p>
+ * The goal of the Db abstraction is to allow Actions like RestGet/Put/Post/Patch/DeleteAction to apply the same REST CRUD operations agnostically across multiple backend data storage engines.
+ * <p>
+ * The primary job of a Db subclass is to:
+ * <ol>
+ *  <li>reflectively generate Collections to represent their underlying tables (or buckets, folders, containers etc.) columns, indexes, and relationships, during {@code #doStartup(Api)}.
+ *  <li>implement REST CRUD support by implementing {@link #select(Collection, List)}, {@link #upsert(Collection, List)}, {@link #delete(Collection, List)}.
+ * </ol> 
+ * <p>
+ * Actions such as RestGetAction then:
+ * <ol>
+ *  <li>translate a REST collection/resource request into columnName based json and RQL, 
+ *  <li>execute the requested CRUD method on the Collection's underlying Db
+ *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.  
+ * </ol>
+ *
+ * @param <T>
+ */
 public abstract class Db<T extends Db>
 {
-   protected final Logger          log           = LoggerFactory.getLogger(getClass());
+   protected final Logger          log          = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean      started       = false;
-   transient volatile boolean      starting      = false;
-   transient volatile boolean      shutdown      = false;
+   transient volatile boolean      started      = false;
+   transient volatile boolean      starting     = false;
+   transient volatile boolean      shutdown     = false;
 
    /**
-    * A CSV of pipe delimited table name to collection pairs
-    * 
-    * Example: db.tables=promo-dev|promo,loyalty-punchcard-dev|punchcard
-    * 
-    * Or if the collection name is the name as the table name you can just send a the name
-    * 
-    * Example: db.includeTables=orders,users,events
+    * A map
     */
    protected Map<String, String>   includeTables = new HashMap();
 
-   protected boolean               bootstrap     = true;
+   protected boolean               bootstrap    = true;
 
-   protected String                name          = null;
-   protected String                type          = null;
+   protected String                name         = null;
+   protected String                type         = null;
 
-   protected Path                  endpointPath  = null;
+   protected Path                  endpointPath = null;
 
-   protected ArrayList<Collection> collections   = new ArrayList();
+   protected ArrayList<Collection> collections  = new ArrayList();
 
    public Db()
    {
@@ -196,9 +209,9 @@ public abstract class Db<T extends Db>
 
    public void configDb() throws ApiException
    {
-      for (String key : includeTables.keySet())
+      for (String collectionName : includeTables.values())
       {
-         withCollection(new Collection(key));
+         withCollection(new Collection(collectionName));
       }
    }
 
@@ -232,7 +245,7 @@ public abstract class Db<T extends Db>
             if (prop.getColumnName().equals(prop.getJsonName()))
             {
                //json name has not already been specifically customized
-               String prettyName = beautifyAttributeName(prop.getColumnName());
+               String prettyName = beautifyPropertyName(prop.getColumnName());
                prop.withJsonName(prettyName);
             }
 
@@ -347,17 +360,17 @@ public abstract class Db<T extends Db>
       }
    }
 
-   protected String beautifyCollectionName(String name)
+   protected String beautifyCollectionName(String tableName)
    {
-      if (includeTables.containsKey(name))
-         return includeTables.get(name);
+      if (includeTables.containsKey(tableName))
+         return includeTables.get(tableName);
 
-      name = beautifyAttributeName(name);
+      String collectionName = beautifyPropertyName(tableName);
 
-      if (!(name.endsWith("s") || name.endsWith("S")))
-         name = Pluralizer.plural(name);
+      if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
+         collectionName = Pluralizer.plural(collectionName);
 
-      return name;
+      return collectionName;
    }
 
    /**
@@ -367,7 +380,7 @@ public abstract class Db<T extends Db>
     * @param name
     * @return
     */
-   protected String beautifyAttributeName(String name)
+   protected String beautifyPropertyName(String name)
    {
       //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
       if (name.toUpperCase().equals(name))
@@ -474,7 +487,7 @@ public abstract class Db<T extends Db>
          pluralize = true;
       }
 
-      name = beautifyAttributeName(name);
+      name = beautifyPropertyName(name);
 
       if (pluralize)
       {
@@ -508,7 +521,7 @@ public abstract class Db<T extends Db>
          pluralize = true;
       }
 
-      name = beautifyAttributeName(name);
+      name = beautifyPropertyName(name);
 
       if (pluralize)
       {
@@ -620,14 +633,44 @@ public abstract class Db<T extends Db>
       return collections;
    }
 
+   /**
+   * Utility that parses a comma and pipe separated list of table name to collection name mappings.
+   * <p>
+   * Example: db.tables=customers,books-prod-catalog|books,INVENTORY_ADJUSTED_BY_PERIOD|inventory
+   * <p>
+   * This method is primarily useful when an Api designer wants to manually configure Collections instead of having the Db reflectively build the Collections.
+   * <p>
+   * This method can also be called prior to the db reflection phase of startup to whitelist tables that the reflection should include.
+   * <p>
+   * The string is first split on "," to get a list of table names.  
+   * <p>
+   * If the table name contains a "|" character, the part on the left is considered the tableName and the part on the right is considered the collectionName.  
+   * <p>
+   * If there is no "|" then the beautified tableName is used for the collectionName.  
+   * 
+   * @see #beautifyCollectionName(String)
+   */
    public T withIncludeTables(String includeTables)
    {
       for (String pair : Utils.explode(",", includeTables))
       {
          String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
          String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
-         this.includeTables.put(tableName, collectionName);
+         withIncludeTable(tableName, collectionName);
       }
+      return (T) this;
+   }
+
+   /**
+    * Whitelists tableName as an underlying table that should be reflectively bootstrapped and exposed as collectionName.
+    *
+    * @param tableName   the table to build a Collection for
+    * @param collectionName  the name of the target collection that can be different from tableName.
+    * @return this
+    */
+   public T withIncludeTable(String tableName, String collectionName)
+   {
+      this.includeTables.put(tableName, collectionName);
       return (T) this;
    }
 
@@ -664,6 +707,8 @@ public abstract class Db<T extends Db>
    }
 
    /**
+    * The name of the Db is used primarily for autowiring "name.property" bean props from
+    * 
     * @param name the name to set
     */
    public T withName(String name)
