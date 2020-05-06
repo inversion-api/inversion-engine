@@ -32,7 +32,7 @@ public class ElasticRqlUnitTest extends AbstractRqlTest
    {
 
       suite//
-           .withResult("eq", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderID\\\"] = @orderID1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderID1\",\"value\":\"10248\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
+           .withResult("eq", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"filter\" : [ { \"term\" : { \"orderID\" : { \"value\" : \"10248\", \"boost\" : 1.0 } } }, { \"term\" : { \"shipCountry\" : { \"value\" : \"France\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            //           .withResult("ne", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (NOT (orders[\\\"shipCountry\\\"] = @shipCountry1)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
            //           .withResult("n", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE IS_NULL (orders[\\\"shipRegion\\\"]) ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
            //           .withResult("nn", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipRegion\\\"] <> null ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
