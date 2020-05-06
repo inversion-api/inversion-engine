@@ -92,7 +92,7 @@ public class RestGetAction extends Action<RestGetAction>
             //TODO: need a compound key test case here
             Collection relatedCollection = rel.getRelated();
             newHref = Chain.buildLink(relatedCollection, null, null) + "?";
-            Row resourceKeyRow = collection.decodeKey(req.getResourceKey());
+            Row resourceKeyRow = collection.decodeResourceKey(req.getResourceKey());
 
             if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
                   && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
@@ -372,7 +372,7 @@ public class RestGetAction extends Action<RestGetAction>
                JSNode node = new JSNode();
                results.setRow(i, node);
 
-               String resourceKey = req.getCollection().encodeKey(row);
+               String resourceKey = req.getCollection().encodeResourceKey(row);
 
                if (!Utils.empty(resourceKey))
                {
@@ -393,7 +393,7 @@ public class RestGetAction extends Action<RestGetAction>
                         }
                         else
                         {
-                           fkval = Collection.encodeKey(row, rel.getFkIndex1());
+                           fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
                         }
 
                         if (fkval != null)
@@ -798,8 +798,8 @@ public class RestGetAction extends Action<RestGetAction>
             idxToRetrieveVals.add(propVal);
          }
 
-         String parentEk = Collection.encodeKey(idxToMatchVals);
-         String relatedEk = Collection.encodeKey(idxToRetrieveVals);
+         String parentEk = Collection.encodeResourceKey(idxToMatchVals);
+         String relatedEk = Collection.encodeResourceKey(idxToRetrieveVals);
 
          related.add(new DefaultKeyValue(parentEk, relatedEk));
       }

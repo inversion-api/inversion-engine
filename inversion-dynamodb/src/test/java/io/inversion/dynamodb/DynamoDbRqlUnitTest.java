@@ -90,7 +90,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
       super.customizeUnitTestTables(suite);
 
       Collection orders = suite.getTable("orders");
-      orders.withProperties("type", "S");
+      orders.withProperty("type", "S");
 
       Collection orderDetails = suite.getTable("orderDetails");
       Collection employees = suite.getTable("employees");

@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 import io.inversion.utils.Utils;
 
-public class Property implements Comparable<Property>, Serializable
+public class Property implements Serializable
 {
    protected String     jsonName   = null;
    protected String     columnName = null;
@@ -62,19 +62,19 @@ public class Property implements Comparable<Property>, Serializable
       withNullable(nullable);
    }
 
-   @Override
-   public int compareTo(Property o)
-   {
-      if (o == null)
-         return 1;
-
-      if (o.collection == collection)
-      {
-         return collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
-      }
-
-      return 0;
-   }
+//   @Override
+//   public int compareTo(Property o)
+//   {
+//      if (o == null)
+//         return 1;
+//
+//      if (o.collection == collection)
+//      {
+//         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
+//      }
+//
+//      return 0;
+//   }
 
    public boolean equals(Object object)
    {

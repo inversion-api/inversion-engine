@@ -73,7 +73,7 @@ public class TestOverloadedDynamicTables
                customers.getProperty("value1").withJsonName("firstName");
                customers.getProperty("value2").withJsonName("lastName");
                customers.withIndex("PK", "primary", true, "partition", "id");
-               customers.withRelationship("addresses", addresses, "customer", "customer");
+               customers.withOneToManyRelationship("addresses", addresses, "customer", "customer");
                customers.withIndex("PartitionKey", "PartitionKey", false, "partition");
 
                withCollection(addresses);
@@ -125,7 +125,7 @@ public class TestOverloadedDynamicTables
                                       {
                                          //-- handles /addresses/$resourceKey1,$resourceKey2,$resourceKey3
                                          List<String> resourceKeys = Utils.explode(",", resourceKey);
-                                         Row row = req.getCollection().decodeKey(resourceKeys.get(0));
+                                         Row row = req.getCollection().decodeResourceKey(resourceKeys.get(0));
                                          partitionKey = row.get(partitionProp);
                                       }
 
@@ -169,7 +169,7 @@ public class TestOverloadedDynamicTables
                                                   String customerKey = (String) customerNode;
                                                   customerKey = customerKey.substring(customerKey.lastIndexOf("/") + 1);
 
-                                                  Row row = req.getApi().getCollection("customers").decodeKey(customerKey);
+                                                  Row row = req.getApi().getCollection("customers").decodeResourceKey(customerKey);
                                                   customerId = row.get("id");
                                                }
 

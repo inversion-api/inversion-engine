@@ -94,7 +94,7 @@ public class CosmosDb extends Db<CosmosDb>
          String id = doc.getString("id");
          if (id == null)
          {
-            id = table.encodeKey(columnMappedTermsRow);
+            id = table.encodeResourceKey(columnMappedTermsRow);
             if (id == null)
                ApiException.throw400BadRequest("Your record does not contain the required key fields.");
             doc.putFirst("id", id);
@@ -165,7 +165,7 @@ public class CosmosDb extends Db<CosmosDb>
     */
    protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException
    {
-      Object id = table.encodeKey(indexValues);
+      Object id = table.encodeResourceKey(indexValues);
       Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());
       String documentUri = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
 

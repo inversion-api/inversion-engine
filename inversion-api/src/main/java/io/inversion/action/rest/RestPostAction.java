@@ -124,7 +124,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
             {
                String resourceKey = Utils.substringAfter(value.toString(), "/");
                resourceKeys.add(resourceKey);
-               row.putAll(coll.decodeKey(resourceKey));
+               row.putAll(coll.decodeResourceKey(resourceKey));
             }
             else
             {
@@ -145,7 +145,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                      {
                         if (value != null)
                         {
-                           Map fk = rel.getRelated().decodeKey(value.toString());
+                           Map fk = rel.getRelated().decodeResourceKey(value.toString());
                            mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
                            row.putAll(fk);
                         }
@@ -308,7 +308,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          String href = node.getString("href");
          if (href != null)
          {
-            Row decodedKey = collection.decodeKey(href);
+            Row decodedKey = collection.decodeResourceKey(href);
             mapped.putAll(decodedKey);
          }
 
@@ -522,7 +522,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
                   {
                      //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
-                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeKey(foreignResourceKey));
+                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
                   }
                   else
                   {
@@ -566,7 +566,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                ApiException.throw500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
             Collection parentTbl = collection;
-            Row parentPk = parentTbl.decodeKey(href);
+            Row parentPk = parentTbl.decodeResourceKey(href);
             Map parentKey = mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
 
             keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
@@ -581,7 +581,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                if (!Utils.empty(childHref))
                {
                   String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
-                  Row childPk = rel.getRelated().decodeKey(childEk);
+                  Row childPk = rel.getRelated().decodeResourceKey(childEk);
 
                   if (rel.isOneToMany())
                   {
@@ -737,7 +737,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          node = ((JSNode) node).getString("href");
 
       if (node instanceof String)
-         return table.decodeKey((String) node);
+         return table.decodeResourceKey((String) node);
 
       return null;
    }
@@ -748,7 +748,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       {
          //when the foreign key is only one column but the related primary key is multiple 
          //columns, encode the FK as an resourceKey.
-         String resourceKey = Collection.encodeKey(srcRow, srcCols);
+         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
          
          for(Object key : srcRow.keySet())
             srcRow.remove(key);

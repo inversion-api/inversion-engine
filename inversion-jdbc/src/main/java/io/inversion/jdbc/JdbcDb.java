@@ -316,7 +316,7 @@ public class JdbcDb extends Db<JdbcDb>
 
          for (int i = 0; i < upserted.size(); i++)
          {
-            String resourceKey = table.encodeKey((Row) upserted.get(i));
+            String resourceKey = table.encodeResourceKey((Row) upserted.get(i));
             upserted.set(i, resourceKey);
          }
 

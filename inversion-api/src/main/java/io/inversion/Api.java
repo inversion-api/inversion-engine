@@ -313,7 +313,7 @@ public class Api extends Rule<Api>
       Collection parentCollection = getCollection(parentCollectionName);
       Collection childCollection = getCollection(childCollectionName);
 
-      parentCollection.withRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
+      parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
       return this;
    }
 
@@ -327,7 +327,7 @@ public class Api extends Rule<Api>
     */
    public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {
-      parentCollection.withRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
+      parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
       return this;
    }
 

@@ -104,7 +104,7 @@ public class DynamoDb extends Db<DynamoDb>
       {
          Map<String, Object> row = rows.get(i);
 
-         String key = table.encodeKey(row);
+         String key = table.encodeResourceKey(row);
          keys.add(key);
 
          for (String attr : (List<String>) new ArrayList(row.keySet()))

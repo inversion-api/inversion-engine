@@ -82,7 +82,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             else
                alreadyDeleted.add(href);
 
-            Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
+            Row key = collection.decodeResourceKey((String) Utils.last(Utils.explode("/", href)));
             rows.add(key);
          }
          collection.getDb().delete(collection, rows);
