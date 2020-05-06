@@ -37,6 +37,7 @@ import io.inversion.cloud.rql.Query;
 import io.inversion.cloud.rql.Select;
 import io.inversion.cloud.rql.Term;
 import io.inversion.cloud.rql.Where;
+import io.inversion.cloud.service.Chain;
 
 /**
  * @author kfrankic
@@ -75,55 +76,23 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    public Results doSelect() throws Exception
    {
-      //      Results results = new Results(this);
-      //      ElasticsearchDb db = getDb();
-      //
-      //      //      String collectionUri = db.getCollectionUri(collection);
-      //
-      //      String sql = getPreparedStmt();
-      //      sql = sql.replaceAll("\r", "");
-      //      sql = sql.replaceAll("\n", " ");
-      //
-      //      SqlParameterCollection params = new SqlParameterCollection();
-      //      for (int i = 0; i < values.size(); i++)
-      //      {
-      //         KeyValue kv = values.get(i);
-      //         String varName = asVariableName(i);
-      //         params.add(new SqlParameter(varName, kv.getValue()));
-      //      }
-      //
-      //      SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
-      //      FeedOptions options = new FeedOptions();
-      //
-      //      boolean enableCrossPartitionQuery = true;
-      //
-      //      Index partKey = collection.getIndex("PartitionKey");
-      //      if (partKey != null)
-      //      {
-      //         String partKeyCol = partKey.getColumn(0).getColumnName();
-      //         //-- the only way to turn cross partition querying off is to 
-      //         //-- have a single partition key identified in your query.
-      //         //-- If we have a pk term but it is nested in an expression
-      //         //-- the we can't be sure the cosmos query planner can use it.
-      //         Term partKeyTerm = findTerm(partKeyCol, "eq");
-      //         enableCrossPartitionQuery = partKeyTerm == null || partKeyTerm.getParent() != null;
-      //      }
-      //
-      //      options.setEnableCrossPartitionQuery(enableCrossPartitionQuery);
-      //
-      //      //-- for test cases and query explain
-      //      String debug = "ElasticsearchDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + enableCrossPartitionQuery + "}";
-      //      debug = debug.replaceAll("\r", "");
-      //      debug = debug.replaceAll("\n", " ");
-      //      debug = debug.replaceAll(" +", " ");
-      //      Chain.debug(debug);
-      //      results.withTestQuery(debug);
-      //      //-- end test case debug stuff
-      //
-      //      System.out.println();
+      Results results = new Results(this);
+      ElasticsearchDb db = getDb();
 
-      // TODO implement
-      return null;
+      Chain.debug(collection);
+
+      //-- for test cases and query explain
+      String debug = "ElasticsearchDb: index: " + collection.getName() + ", QueryBuilder=" + this.getJson();
+      debug = debug.replaceAll("\r", "");
+      debug = debug.replaceAll("\n", " ");
+      debug = debug.replaceAll(" +", " ");
+      Chain.debug(debug);
+      results.withTestQuery(debug);
+      //-- end test case debug stuff
+
+      System.out.println();
+
+      return results;
    }
 
    protected void push(List<JSNode> stack, JSNode child)
