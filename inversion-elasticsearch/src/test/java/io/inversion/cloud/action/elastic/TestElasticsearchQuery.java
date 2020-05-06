@@ -15,15 +15,14 @@
  */
 package io.inversion.cloud.action.elastic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.junit.jupiter.api.Test;
-// import static org.junit.Assert.assertEquals;
-// import static org.junit.Assert.assertFalse;
-// import static org.junit.Assert.assertNotNull;
-// import static org.junit.Assert.assertNull;
-// import static org.junit.Assert.assertTrue;
-// import static org.junit.Assert.fail;
-//
-// import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +62,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(testRange, 25)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -90,57 +89,57 @@ public class TestElasticsearchQuery
 
    }
 
-   @Test
-   public void gt02() throws Exception
-   {
-      //      {
-      //         "query" : {
-      //           "range" : {
-      //             "testRange" : {
-      //               "from" : "25",
-      //               "to" : null,
-      //               "include_lower" : false,
-      //               "include_upper" : true,
-      //               "boost" : 1.0
-      //             }
-      //           }
-      //         },
-      //         "sort" : [ {
-      //           "id" : {
-      //             "order" : "asc"
-      //           }
-      //         } ]
-      //       }
-
-      ElasticsearchQuery query = new ElasticsearchQuery();
-      query.where().gt("testRange", 25);
-
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-
-      assertNotNull("json should not be empty.", jsNode);
-
-      assertEquals(2, jsNode.getProperties().size());
-
-      assertNotNull(jsNode.getProperty("sort"));
-
-      assertNotNull(jsNode.getProperty("query"));
-      JSNode queryNode = jsNode.getNode("query");
-
-      assertNotNull(queryNode.get("range"));
-
-      JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("testRange"));
-
-      JSNode testRangeNode = rangeNode.getNode("testRange");
-      assertEquals(5, testRangeNode.getProperties().size());
-      assertEquals("25", testRangeNode.get("from"));
-      assertNull(testRangeNode.get("to"));
-      assertFalse((Boolean) testRangeNode.get("include_lower"));
-      assertTrue((Boolean) testRangeNode.get("include_upper"));
-      assertEquals(new Double(1.0), (Double) testRangeNode.get("boost"));
-
-   }
+   //   @Test
+   //   public void gt02() throws Exception
+   //   {
+   //      //      {
+   //      //         "query" : {
+   //      //           "range" : {
+   //      //             "testRange" : {
+   //      //               "from" : "25",
+   //      //               "to" : null,
+   //      //               "include_lower" : false,
+   //      //               "include_upper" : true,
+   //      //               "boost" : 1.0
+   //      //             }
+   //      //           }
+   //      //         },
+   //      //         "sort" : [ {
+   //      //           "id" : {
+   //      //             "order" : "asc"
+   //      //           }
+   //      //         } ]
+   //      //       }
+   //
+   //      ElasticsearchQuery query = new ElasticsearchQuery();
+   //      query.getWhere().gt("testRange", 25);
+   //
+   //      JSNode jsNode = query.toJson();
+   //
+   //      assertNotNull(jsNode, "json should not be empty.");
+   //
+   //      assertEquals(2, jsNode.getProperties().size());
+   //
+   //      assertNotNull(jsNode.getProperty("sort"));
+   //
+   //      assertNotNull(jsNode.getProperty("query"));
+   //      JSNode queryNode = jsNode.getNode("query");
+   //
+   //      assertNotNull(queryNode.get("range"));
+   //
+   //      JSNode rangeNode = queryNode.getNode("range");
+   //      assertEquals(1, rangeNode.getProperties().size());
+   //      assertNotNull(rangeNode.getProperty("testRange"));
+   //
+   //      JSNode testRangeNode = rangeNode.getNode("testRange");
+   //      assertEquals(5, testRangeNode.getProperties().size());
+   //      assertEquals("25", testRangeNode.get("from"));
+   //      assertNull(testRangeNode.get("to"));
+   //      assertFalse((Boolean) testRangeNode.get("include_lower"));
+   //      assertTrue((Boolean) testRangeNode.get("include_upper"));
+   //      assertEquals(new Double(1.0), (Double) testRangeNode.get("boost"));
+   //
+   //   }
 
    @Test
    public void lt() throws Exception
@@ -167,9 +166,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("lt(testRange, 25)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -216,9 +215,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("sw(city,Chand,Atl)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -259,9 +258,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("w(city,andl)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -317,9 +316,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("w(name,'nestl','f\\'')");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -393,9 +392,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("wo(city,h)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -445,9 +444,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("ew(city,andler)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -490,9 +489,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("w(city,andl)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -552,8 +551,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("emp(state)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -592,7 +591,7 @@ public class TestElasticsearchQuery
       assertEquals(3, innerBoolNode.getProperties().size());
       assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
-      
+
       JSArray mustNotArr = innerBoolNode.getArray("must_not");
       assertEquals(1, mustNotArr.length());
       JSNode existsNode = mustNotArr.getNode(0).getNode("exists");
@@ -628,8 +627,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("search(keywords,Tim)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertNotNull(jsNode.getProperty("sort"));
 
@@ -696,8 +695,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("nemp(state)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -768,8 +767,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("nn(state)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -810,8 +809,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("n(state)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -852,8 +851,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("pageSize=1000");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -890,9 +889,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(testRange, 25)&page=2");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
-      
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
+
       assertEquals(4, jsNode.getProperties().size());
       assertEquals(100, jsNode.getInt("size"));
       assertEquals(2, jsNode.getInt("from"));
@@ -918,24 +917,24 @@ public class TestElasticsearchQuery
 
    }
 
-   @Test
-   public void complexPaging()
-   {
-
-      ElasticsearchQuery query = new ElasticsearchQuery();
-      query.withTerm("gt(testRange, 25)&pagesize=100&start=2000");
-
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
-
-      assertNotNull(jsNode.getProperty("sort"));
-
-      assertNotNull(jsNode.getProperty("query"));
-      JSNode queryNode = jsNode.getNode("query");
-
-      fail("doom doom doooooom.");
-
-   }
+//   @Test
+//   public void complexPaging()
+//   {
+//
+//      ElasticsearchQuery query = new ElasticsearchQuery();
+//      query.withTerm("gt(testRange, 25)&pagesize=100&start=2000");
+//
+//      JSNode jsNode = query.toJson();
+//      assertNotNull(jsNode, "json should not be empty.");
+//
+//      assertNotNull(jsNode.getProperty("sort"));
+//
+//      assertNotNull(jsNode.getProperty("query"));
+//      JSNode queryNode = jsNode.getNode("query");
+//
+//      fail("doom doom doooooom.");
+//
+//   }
 
    @Test
    public void simpleSortAsc1()
@@ -955,8 +954,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("order=test");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(1, jsNode.getProperties().size());
       assertNotNull(jsNode.getProperty("sort"));
@@ -1005,8 +1004,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("order=+test");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(1, jsNode.getProperties().size());
       assertNotNull(jsNode.getProperty("sort"));
@@ -1055,8 +1054,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("order=-test");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(1, jsNode.getProperties().size());
       assertNotNull(jsNode.getProperty("sort"));
@@ -1098,8 +1097,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("sort=test,-test2,+test3");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(1, jsNode.getProperties().size());
       assertNotNull(jsNode.getProperty("sort"));
@@ -1169,8 +1168,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("order=test&pageSize=1000");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
       assertEquals(1000, jsNode.getInt("size"));
@@ -1235,8 +1234,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(priority,25)&source=priority");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(3, jsNode.getProperties().size());
 
@@ -1296,11 +1295,11 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(priority,25)&includes=priority,test2,banana");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(3, jsNode.getProperties().size());
-      
+
       assertNotNull(jsNode.getProperty("sort"));
 
       assertNotNull(jsNode.getProperty("query"));
@@ -1359,8 +1358,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(priority,25)&excludes=priority");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(3, jsNode.getProperties().size());
 
@@ -1416,9 +1415,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(hispanicRank,25)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -1468,9 +1467,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("ge(hispanicRank,25)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertNotNull(jsNode.getProperty("sort"));
       JSNode queryNode = jsNode.getNode("query");
@@ -1525,8 +1524,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("lt(players.registerNum,3)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -1590,9 +1589,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("eq(city,CHANDLER)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -1630,9 +1629,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("eq(uninstalled,true)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
+      JSNode jsNode = query.getJson();
 
-      assertNotNull("json should not be empty.", jsNode);
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertNotNull(jsNode.getProperty("sort"));
       JSNode queryNode = jsNode.getNode("query");
@@ -1674,8 +1673,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("ne(hispanicRank,25)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -1746,8 +1745,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(ne(hispanicRank,95),gt(hispanicRank,93))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -1856,8 +1855,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("ne(hispanicRank,95)&gt(hispanicRank,93)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -1957,8 +1956,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("or(eq(name,fwqa),eq(name,cheetos))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertNotNull(jsNode.getProperty("sort"));
 
@@ -2021,8 +2020,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("in(city,Chicago,Tempe,Chandler)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertNotNull(jsNode.getProperty("sort"));
 
@@ -2082,8 +2081,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("out(city,Chicago,Tempe,Chandler)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2171,8 +2170,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("eq(locationCode,270*)&eq(city,Chandler)&eq(address1,*McQueen*)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2287,8 +2286,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(search(keywords,test),search(keywords,matt))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2385,8 +2384,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("search(keywords,test)&search(keywords,matt)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2475,8 +2474,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("or(eq(id,3),eq(name,*POST*))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2551,8 +2550,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("eq(address1,*GILBERT*)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -2608,8 +2607,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(eq(locationCode,9187),eq(city,CHANDLER))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2700,8 +2699,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(eq(address1,*GILBERT*),eq(city,CHANDLER))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2802,8 +2801,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(gt(hispanicRank,25),le(hispanicRank,40))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -2911,8 +2910,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3027,8 +3026,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("gt(players.registerNum,5)");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3105,9 +3104,9 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(eq(keywords.name,color),eq(keywords.value,33))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
-      
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
+
       assertEquals(2, jsNode.getProperties().size());
 
       assertNotNull(jsNode.getProperty("sort"));
@@ -3222,8 +3221,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(eq(keywords.name,age),gt(keywords.value,30))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3338,8 +3337,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(eq(keywords.name,items.name),w(keywords.value,Powerade))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3449,8 +3448,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(w(keywords.value,Powerade),eq(keywords.name,items.name))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3563,8 +3562,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(gt(players.registerNum,5),eq(city,Chandler))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
@@ -3688,8 +3687,8 @@ public class TestElasticsearchQuery
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))");
 
-      JSNode jsNode = JSNode.parseJsonNode(query.toJson());
-      assertNotNull("json should not be empty.", jsNode);
+      JSNode jsNode = query.getJson();
+      assertNotNull(jsNode, "json should not be empty.");
 
       assertEquals(2, jsNode.getProperties().size());
 
