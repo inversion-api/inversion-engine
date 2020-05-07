@@ -134,7 +134,7 @@ public class Api extends Rule<Api>
    {
       for (Db db : dbs)
       {
-         db.shutdown();
+         db.shutdown(this);
       }
    }
 

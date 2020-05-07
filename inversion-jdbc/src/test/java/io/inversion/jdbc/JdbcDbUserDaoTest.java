@@ -58,6 +58,7 @@ public class JdbcDbUserDaoTest
                       JdbcDbUserDaoTest.class.getResource("users-h2.ddl").toString(), //
                       JdbcDbUserDaoTest.class.getResource("test-users-h2.ddl").toString())
          {
+            @Override
             protected void doShutdown()
             {
                try

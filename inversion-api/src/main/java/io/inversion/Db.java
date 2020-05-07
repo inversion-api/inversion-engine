@@ -54,25 +54,48 @@ import io.inversion.utils.Utils;
  */
 public abstract class Db<T extends Db>
 {
-   protected final Logger          log          = LoggerFactory.getLogger(getClass());
+   protected final Logger          log           = LoggerFactory.getLogger(getClass());
 
-   transient volatile boolean      started      = false;
-   transient volatile boolean      starting     = false;
-   transient volatile boolean      shutdown     = false;
+   transient Set<Api>              runningApis   = new HashSet();
+
+   transient boolean               firstStartup  = true;
+
+   transient boolean               shutdown      = false;
 
    /**
-    * A map
+    * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
+    */
+   protected ArrayList<Collection> collections   = new ArrayList();
+
+   /**
+    * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
     */
    protected Map<String, String>   includeTables = new HashMap();
 
-   protected boolean               bootstrap    = true;
+   /**
+    * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
+    * <p>
+    * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of 
+    * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
+    */
+   protected boolean               bootstrap     = true;
 
-   protected String                name         = null;
-   protected String                type         = null;
+   /**
+    * The name of his Db used for "name.property" style autowiring. 
+    */
+   protected String                name          = null;
 
-   protected Path                  endpointPath = null;
+   /**
+    * A property that can be used to disambiguate different backends supported by a single subclass.  
+    * <p>
+    * For example type might be "mysql" for a JdbcDb.
+    */
+   protected String                type          = null;
 
-   protected ArrayList<Collection> collections  = new ArrayList();
+   /**
+    * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs. 
+    */
+   protected Path                  endpointPath  = null;
 
    public Db()
    {
@@ -83,36 +106,47 @@ public abstract class Db<T extends Db>
       this.name = name;
    }
 
-   public synchronized Db startup(Api api)
+   /**
+    * Called by an Api to as part of Api.startup().
+    * <p>
+    * This implementation really only manages starting/started state, with the heaving lifting of bootstrapping delegated to {@link #doStartup(Api)}. 
+    *  
+    * @param api
+    * @return
+    * @see #doStartup(Api)
+    */
+   public final synchronized Db startup(Api api)
    {
-      if (started || starting) //starting is an accidental recursion guard
+      if (runningApis.contains(api))
          return this;
 
-      starting = true;
-      try
-      {
-         doStartup(api);
+      runningApis.add(api);
+      doStartup(api);
 
-         started = true;
-         return this;
-      }
-      finally
-      {
-         starting = false;
-      }
+      return this;
    }
 
    /**
-    * Made to be overridden by subclasses 
-    * or anonymous inner classes to do specific init
+    * Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.  
+    * <p>
+    * This method will not be called a second time after for an Api unless the Api is shutdown and then restarted.
+    * <p>
+    * The default implementation, when {@link #isBootstrap()} is true, calls {@link #configDb()} once globally and {@link #configApi(Api)} once for each Api passed in.
+    * 
+    * @see #configDb()
+    * @see #configApi(Api)
     */
    protected void doStartup(Api api)
    {
       try
       {
-         if (isBootstrap())// && getTables().size() == 0)
+         if (isBootstrap())
          {
-            configDb();
+            if (firstStartup)
+            {
+               firstStartup = false;
+               configDb();
+            }
             configApi(api);
          }
       }
@@ -123,54 +157,77 @@ public abstract class Db<T extends Db>
       }
    }
 
-   public synchronized void shutdown()
+   /**
+    * Shutsdown all running Apis.
+    * <p>
+    * This is primarily a method used for testing.
+    * 
+    * @return this
+    */
+   public synchronized Db shutdown()
    {
-      if ((started || starting) && !shutdown)
+      if (!shutdown)
       {
-         try
-         {
-            doShutdown();
-         }
-         finally
-         {
-            shutdown = true;
-         }
+         shutdown = true;
+         runningApis.forEach(api -> shutdown(api));
+         doShutdown();
       }
+      return this;
    }
 
-   /**
-    * Made to be overridden by subclasses 
-    * or anonymous inner classes to do specific init
-    */
    protected void doShutdown()
    {
 
    }
 
+   public synchronized Db shutdown(Api api)
+   {
+      if (runningApis.contains(api))
+      {
+         doShutdown(api);
+         runningApis.remove(api);
+      }
+
+      if (runningApis.size() == 0)
+         shutdown();
+
+      return this;
+   }
+
    /**
-    * Finds all rows that match the supplied query terms.  
+    * Made to be overridden by subclasses or anonymous inner classes to do specific cleanup
+    */
+   protected void doShutdown(Api api)
+   {
+
+   }
+
+   public boolean isRunning(Api api)
+   {
+      return runningApis.contains(api);
+   }
+
+   /**
+    * Finds all records that match the supplied RQL query terms.   
     * 
-    * IMPORTANT The Result object contains a list of Row objects. Unlike the Rows class
-    * all Row objects in the Result do not have to share the same keys. 
-    * 
-    * @param table
-    * @param queryTerms
-    * @return
+    * @param collection
+    * @param queryTerms  RQL terms that have been translated to use Property columnNames not jsonNames 
+    * @return A list of maps with keys as Property columnNames not jsonNames
     * @throws ApiException
     */
    public abstract Results select(Collection collection, List<Term> queryTerms) throws ApiException;
 
    /**
-    * Upserts the key/values pairs for each row into the underlying data source as a PATCH,
-    * not as a full replacement.  Keys that are not supplied in the call but that exist in the row in 
-    * the target DB should not be modified.
-    * 
+    * Upserts the key/values pairs for each row into the underlying data source.  
+    * <p>
+    * Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
+    * <p>
     * Each row should minimally contain key value pairs that satisfy one of the 
     * tables unique index constraints allowing an update to take place instead  
     * of an insert if the row already exists in the underlying data source.
-    *
-    * IMPORTANT #1 - implementors should note that the keys on each row may be different.
-    * 
+    * <p>
+    * IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+    * <p>
     * IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
     * For example, a RDBMS backed implementation may choose to upsert only the supplied
     * client supplied keys effectively making this a POST/PATCH operation.  A 
@@ -178,27 +235,35 @@ public abstract class Db<T extends Db>
     * partial updates elegantly and replace existing documents entirely rendering
     * this a POST/PUT.    
     * 
-    * @param table
+    * @param collection
     * @param rows
-    * @return
+    * @return the encoded resource key for every supplied row
     * @throws ApiException
+    * 
     */
    public abstract List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
 
-   public List<Integer> patch(Collection collection, List<Map<String, Object>> rows) throws ApiException
+   /**
+    * Should be called by Actions instead of upsert() only when all records are strictly known to exist.
+    * <p>
+    * The default implementation simply calls upsert().  
+    * 
+    * @param collection
+    * @param rows the key/value pairs to update on existing records
+    * @throws ApiException
+    */
+   public void patch(Collection collection, List<Map<String, Object>> rows) throws ApiException
    {
       upsert(collection, rows);
-      List counts = new ArrayList();
-      rows.forEach(row -> counts.add(-1));
-      return counts;
    }
 
    /**
     * Deletes rows identified by the unique index values from the underlying data source.
-    * 
-    * IMPORTANT implementors should note that the keys on each row may be different.
+    * <p>
+    * IMPORTANT implementors should note that the keys on each <code>indexValues</code> row may be different.
+    * <p>
     * The keys should have come from a unique index, meaning that the key/value pairs
-    * for each row should uniquely identify the row...however there is no guarantee 
+    * for each row should uniquely identify the row, however there is no guarantee 
     * that each row will reference the same index.
     * 
     * @param table
@@ -207,32 +272,59 @@ public abstract class Db<T extends Db>
     */
    public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
 
-   public void configDb() throws ApiException
+   /**
+    * Adds all non excluded Collections to the Api via Api.withCollection
+    * 
+    * @param api  the Api to configure.
+    */
+   protected void configApi(Api api)
    {
-      for (String collectionName : includeTables.values())
-      {
-         withCollection(new Collection(collectionName));
-      }
-   }
-
-   public void configApi(Api api)
-   {
-      List<String> relationshipStrs = new ArrayList();
 
       for (Collection coll : getCollections())
       {
-         //if (!coll.isLinkTbl() && !coll.isExclude())
          if (!coll.isExclude())
          {
             api.withCollection(coll);
          }
       }
 
+   }
+
+   /**
+    * Subclasses should reflectively create Collections and Properties, Indexes, and Relationships here.
+    * <p>
+    * The default implementation simply delegates to {@link #buildCollections()} and {@link #buildRelationships()}.  
+    * <p>
+    * Generally, you will need to override buildCollections when implementing a new Db subclass but can probably leave buildRelationships alone 
+    * as all it does is reflectively build Relationships off of Indexes that are on the Collections. 
+    * 
+    * @throws ApiException
+    */
+   protected void configDb() throws ApiException
+   {
+      buildCollections();
+      buildRelationships();
+   }
+
+   /**
+    * Creates a collection for every table name in <code>includeTables</code> giving the Collections and Properties beautified JSON names.
+    * <p>
+    * Subclasses should override this method to reflectively create Collections, Properties and Indexes and then call super.buildCollections()
+    * if they want names them beautified.
+    */
+   protected void buildCollections()
+   {
+      for (String tableName : includeTables.keySet())
+      {
+         Collection collection = getCollectionByTableName(tableName);
+         if (collection == null)
+         {
+            withCollection(new Collection(tableName));
+         }
+      }
+
       for (Collection coll : getCollections())
       {
-         //         if (coll.isLinkTbl())
-         //            continue;
-
          if (coll.getName().equals(coll.getTableName()))
          {
             //collection has not already been specifically customized
@@ -245,20 +337,24 @@ public abstract class Db<T extends Db>
             if (prop.getColumnName().equals(prop.getJsonName()))
             {
                //json name has not already been specifically customized
-               String prettyName = beautifyPropertyName(prop.getColumnName());
+               String prettyName = beautifyName(prop.getColumnName());
                prop.withJsonName(prettyName);
             }
-
          }
       }
+   }
 
-      //-- Now go back through and create relationships for all foreign keys
-      //-- two relationships objects are created for every relationship type
-      //-- representing both sides of the relationship...MANY_TO_ONE also
-      //-- creates a ONE_TO_MANY and there are always two for a MANY_TO_MANY.
-      //-- API designers may want to represent one or both directions of the
-      //-- relationship in their API and/or the names of the JSON properties
-      //-- for the relationships will probably be different
+   /**
+    * Creates ONE_TO_MANY, MANY_TO_ONE, and MANY_TO_MANY Relationships with attractive RESTish names
+    * based on the primary Index and foreign key Index structures of the Collections.
+    * <p>
+    * For all foreign key indexes, two relationships objects are created representing both sides of the relationship. 
+    * A MANY_TO_ONE also creates a ONE_TO_MANY and vice versa and there are always two for a MANY_TO_MANY modeling the relationship from both sides.
+    */
+   protected void buildRelationships()
+   {
+      List<String> relationshipStrs = new ArrayList();
+
       for (Collection coll : getCollections())
       {
          if (coll.isLinkTbl())
@@ -335,37 +431,21 @@ public abstract class Db<T extends Db>
             }
          }
       }
-
-      //TODO...should this operate on all tables or just this DBs tables...?
-      //now we need to see if any relationship names conflict and need to be made unique
-      for (Collection coll : api.getCollections())
-      {
-         List<Relationship> relationships = coll.getRelationships();
-
-         for (int i = 0; i < relationships.size(); i++)
-         {
-            String nameA = relationships.get(i).getName();
-
-            for (int j = i + 1; j < relationships.size(); j++)
-            {
-               String nameB = relationships.get(j).getName();
-
-               if (nameA.equalsIgnoreCase(nameB))
-               {
-                  String uniqueName = makeRelationshipUniqueName(coll, relationships.get(j));
-                  relationships.get(j).withName(uniqueName);
-               }
-            }
-         }
-      }
    }
 
+   /**
+    * Attempts to camelCase and pluralize the table name to make it an attractive REST collection name.
+    * 
+    * @param tableName
+    * @return a camelCased and pluralied version of tableName
+    * @see #beautifyName(String)
+    */
    protected String beautifyCollectionName(String tableName)
    {
       if (includeTables.containsKey(tableName))
          return includeTables.get(tableName);
 
-      String collectionName = beautifyPropertyName(tableName);
+      String collectionName = beautifyName(tableName);
 
       if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
          collectionName = Pluralizer.plural(collectionName);
@@ -374,13 +454,16 @@ public abstract class Db<T extends Db>
    }
 
    /**
-    * Try to make a camel case valid java script variable name.
-    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
+    * Try to make an attractive camelCase valid javascript variable name.
+    * <p>
+    * Lots of sql db designers use things like SNAKE_CASE_COLUMN_NAMES that look terrible as json property names.
     * 
-    * @param name
-    * @return
+    * @param name the to beautify
+    * @return a camelCased version of <code>name</code>
+    * 
+    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
     */
-   protected String beautifyPropertyName(String name)
+   protected String beautifyName(String name)
    {
       //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
       if (name.toUpperCase().equals(name))
@@ -421,18 +504,88 @@ public abstract class Db<T extends Db>
       return buff.toString();
    }
 
-   protected String makeRelationshipUniqueName(Collection resource, Relationship rel)
+   //   /**
+   //    * Attempts to construct a sensible json property name for a Relationship.
+   //    * <p>
+   //    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection. 
+   //    * <p>
+   //    * The algorithm attempts to pluralize the "MANY" side of the relationship.
+   //    * <p>
+   //    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example, 
+   //    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
+   //    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
+   //    *  
+   //    * @param resource
+   //    * @param rel
+   //    * @return the json property name for this Relationship. 
+   //    */
+   //   protected String makeRelationshipName(Collection resource, Relationship rel)
+   //   {
+   //      String name = null;
+   //      String type = rel.getType();
+   //      boolean pluralize = false;
+   //      if (type.equals(Relationship.REL_MANY_TO_ONE))
+   //      {
+   //         name = rel.getFk1Col1().getJsonName();
+   //         if (name.toLowerCase().endsWith("id") && name.length() > 2)
+   //         {
+   //            name = name.substring(0, name.length() - 2);
+   //         }
+   //      }
+   //      else if (type.equals(Relationship.REL_ONE_TO_MANY))
+   //      {
+   //         name = rel.getRelated().getName();
+   //         pluralize = true;
+   //      }
+   //      else if (type.equals(Relationship.REL_MANY_TO_MANY))
+   //      {
+   //         name = rel.getFk2Col1().getPk().getCollection().getName();
+   //         pluralize = true;
+   //      }
+   //
+   //      name = beautifyName(name);
+   //
+   //      if (pluralize)
+   //      {
+   //         name = Pluralizer.plural(name);
+   //      }
+   //
+   //      return name;
+   //   }
+
+   /**
+    * Attempts to construct a sensible json property name for a Relationship.
+    * <p>
+    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection. 
+    * <p>
+    * The algorithm attempts to pluralize the "MANY" side of the relationship.
+    * <p>
+    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example, 
+    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
+    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
+    *  
+    * @param resource
+    * @param rel
+    * @return the json property name for this Relationship. 
+    */
+   protected String makeRelationshipName(Collection resource, Relationship rel)
    {
       String name = null;
       String type = rel.getType();
-      boolean pluralize = false;
+
+      String fkColName = rel.getFk1Col1().getColumnName();
+      if (fkColName.toLowerCase().endsWith("id") && fkColName.length() > 2)
+      {
+         fkColName = fkColName.substring(0, fkColName.length() - 2);
+         while (fkColName.endsWith("_"))
+            fkColName = fkColName.substring(0, fkColName.length() - 1);
+      }
+      fkColName = fkColName.trim();
+      fkColName = beautifyName(fkColName);
+
       if (type.equals(Relationship.REL_MANY_TO_ONE))
       {
-         name = rel.getFk1Col1().getColumnName();
-         if (name.toLowerCase().endsWith("id") && name.length() > 2)
-         {
-            name = name.substring(0, name.length() - 2);
-         }
+         name = fkColName;
       }
       else if (type.equals(Relationship.REL_ONE_TO_MANY))
       {
@@ -455,87 +608,53 @@ public abstract class Db<T extends Db>
          //so it results in a property called "subcategoryAlarms"
          //being added to the Category collection.
 
-         String idxColName = rel.getFk1Col1().getColumnName();
-         if (idxColName.toLowerCase().endsWith("id") && idxColName.length() > 2)
-         {
-            idxColName = idxColName.substring(0, idxColName.length() - 2);
-         }
-
-         idxColName = idxColName.replace("_", "");//allow fk cols like "person_id"
-         if (idxColName.toUpperCase().equals(idxColName))
-            idxColName = idxColName.toLowerCase();
-
-         String collectionName = resource.getName();
-         String relatedCollectionName = rel.getRelated().getName();
-         //String tableName = resource.getTable().getName();
-         if (!collectionName.equalsIgnoreCase(idxColName) //
-               && !Pluralizer.plural(idxColName).equalsIgnoreCase(collectionName))
-         {
-            name = idxColName + Character.toUpperCase(relatedCollectionName.charAt(0)) + relatedCollectionName.substring(1, relatedCollectionName.length());
-            //System.out.println("RELATIONSHIP: " + name + " " + rel);
-         }
-         else
-         {
-            name = relatedCollectionName;
-         }
-
-         pluralize = true;
-      }
-      else if (type.equals(Relationship.REL_MANY_TO_MANY))
-      {
-         name = rel.getFk2Col1().getPk().getCollection().getTableName();
-         pluralize = true;
-      }
-
-      name = beautifyPropertyName(name);
-
-      if (pluralize)
-      {
-         name = Pluralizer.plural(name);
-      }
-
-      return name;
-   }
-
-   protected String makeRelationshipName(Collection resource, Relationship rel)
-   {
-      String name = null;
-      String type = rel.getType();
-      boolean pluralize = false;
-      if (type.equals(Relationship.REL_MANY_TO_ONE))
-      {
-         name = rel.getFk1Col1().getJsonName();
-         if (name.toLowerCase().endsWith("id") && name.length() > 2)
-         {
-            name = name.substring(0, name.length() - 2);
-         }
-      }
-      else if (type.equals(Relationship.REL_ONE_TO_MANY))
-      {
          name = rel.getRelated().getName();
-         pluralize = true;
+
+         for (Relationship aRel : resource.getRelationships())
+         {
+            if (rel == aRel)
+               continue;
+
+            if (rel.getRelated() == aRel.getRelated())
+            {
+               if (!fkColName.equals(name))
+               {
+                  name = fkColName + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+               }
+               break;
+            }
+         }
       }
       else if (type.equals(Relationship.REL_MANY_TO_MANY))
       {
          name = rel.getFk2Col1().getPk().getCollection().getName();
-         pluralize = true;
-      }
 
-      name = beautifyPropertyName(name);
-
-      if (pluralize)
-      {
-         name = Pluralizer.plural(name);
       }
 
       return name;
    }
 
-   public Object cast(Property column, Object value)
+   /**
+    * Casts value as Property.type.
+    * 
+    * @param property
+    * @param value
+    * @return <code>value</code> cast to <code>Property.type</code>
+    * @see io.inversion.utils.Utils.cast(String, Object)
+    */
+   public Object cast(Property property, Object value)
    {
-      return Utils.cast(column != null ? column.getType() : null, value);
+      return Utils.cast(property != null ? property.getType() : null, value);
    }
 
+   /**
+    * Casts value to as type.
+    * 
+    * @param type
+    * @param value
+    * @return <code>value</code> cast to <code>type</code>
+    * @see io.inversion.utils.Utils.cast(String, Object)
+    */
    public Object cast(String type, Object value)
    {
       return Utils.cast(type, value);
@@ -579,33 +698,12 @@ public abstract class Db<T extends Db>
       return terms;
    }
 
-   public boolean isStarted()
+   protected Property getProperty(String tableName, String columnName)
    {
-      return started;
-   }
+      Collection collection = getCollectionByTableName(tableName);
+      if (collection != null)
+         return collection.getPropertyByColumnName(columnName);
 
-   public boolean isShutdown()
-   {
-      return shutdown;
-   }
-
-   public Property getProperty(String table, String col)
-   {
-      for (Collection t : collections)
-      {
-         if (t.getTableName().equalsIgnoreCase(table))
-         {
-            for (Property c : t.getProperties())
-            {
-               if (c.getColumnName().equalsIgnoreCase(col))
-               {
-                  return c;
-               }
-            }
-
-            return null;
-         }
-      }
       return null;
    }
 
@@ -626,11 +724,11 @@ public abstract class Db<T extends Db>
    }
 
    /**
-    * @return the collections
+    * @return a shallow copy of <code>collections</code>
     */
    public List<Collection> getCollections()
    {
-      return collections;
+      return new ArrayList(collections);
    }
 
    /**

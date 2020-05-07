@@ -330,7 +330,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<Integer> patch(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public void patch(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       try
       {
@@ -343,13 +343,12 @@ public class JdbcDb extends Db<JdbcDb>
             }
          }
 
-         return JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+         JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
       }
       catch (Exception ex)
       {
          ApiException.throw500InternalServerError(ex);
       }
-      return null;
    }
 
    @Override
@@ -438,7 +437,8 @@ public class JdbcDb extends Db<JdbcDb>
       try
       {
          Connection conn = !managed ? null : JdbcConnectionLocal.getConnection(this);
-         if (conn == null && !isShutdown())
+         //if (conn == null && isRunning(Chain.peek().getApi()))
+         if (conn == null)
          {
             if (pool == null)
             {
@@ -713,7 +713,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public void configDb() throws ApiException
+   public void buildCollections() throws ApiException
    {
       ResultSet rs = null;
 
@@ -890,6 +890,9 @@ public class JdbcDb extends Db<JdbcDb>
       {
          Utils.close(rs);
       }
+      
+      //-- causes collection and property names to be beautified
+      super.buildCollections();
    }
 
    @Override

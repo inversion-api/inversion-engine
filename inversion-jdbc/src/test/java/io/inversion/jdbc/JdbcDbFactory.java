@@ -60,6 +60,8 @@ public class JdbcDbFactory
                                 "", //
                                 ddlUrl)
             {
+
+               @Override
                protected void doShutdown()
                {
                   try
@@ -74,7 +76,7 @@ public class JdbcDbFactory
                   }
                   finally
                   {
-                     super.doShutdown();
+                     super.shutdown();
                   }
 
                }

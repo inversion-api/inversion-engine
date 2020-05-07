@@ -42,8 +42,7 @@ public class TestOverloadedDynamicTables
    {
       Chain.resetAll();
       JdbcConnectionLocal.closeAll();
-      
-      
+
       db = new JdbcDb("db", "org.h2.Driver", //
                       "jdbc:h2:mem:" + System.currentTimeMillis() + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
                       "sa", //
@@ -81,6 +80,7 @@ public class TestOverloadedDynamicTables
 
             }
 
+            @Override
             protected void doShutdown()
             {
                try

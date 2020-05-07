@@ -324,7 +324,7 @@ public class Collection extends Rule<Collection> implements Serializable
     */
    public Collection withProperty(String name, String type)
    {
-      return withProperty(name, type);
+      return withProperty(name, type, true);
    }
 
    /**
