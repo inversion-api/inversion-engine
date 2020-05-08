@@ -291,7 +291,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    }
 
-   public JSNode getJson()
+   public SearchSourceBuilder getSearchBuilder()
    {
       QueryBuilder root = null;
 
@@ -406,8 +406,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
       //      if (searchBuilder != null)
       //      {
-      searchBuilder.query(root);
-      return JSNode.parseJsonNode(searchBuilder.toString());
+      return searchBuilder.query(root);
+
       //      }
       //      else if (root != null)
       //      {
@@ -416,6 +416,11 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
       //      return null;
 
+   }
+
+   public JSNode getJson()
+   {
+      return JSNode.parseJsonNode(getSearchBuilder().toString());
    }
 
    /**
