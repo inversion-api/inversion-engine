@@ -16,36 +16,59 @@
  */
 package io.inversion.cloud.action.elastic;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.HttpHost;
+import org.apache.http.util.EntityUtils;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.inversion.cloud.model.ApiException;
 import io.inversion.cloud.model.Collection;
 import io.inversion.cloud.model.Db;
-import io.inversion.cloud.model.JSArray;
 import io.inversion.cloud.model.JSNode;
-import io.inversion.cloud.model.Response;
+import io.inversion.cloud.model.Property;
 import io.inversion.cloud.model.Results;
 import io.inversion.cloud.model.Rows.Row;
 import io.inversion.cloud.rql.Term;
-import io.inversion.cloud.utils.HttpUtils;
+import io.inversion.cloud.service.Chain;
 import io.inversion.cloud.utils.Utils;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
-   protected static String      url                      = null;
+   protected static String               url                      = null;
 
-   protected static int         maxRequestDuration       = 10;                  // duration in seconds.
+   protected static int                  maxRequestDuration       = 10000;               // duration in milliseconds.
 
-   protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
+   protected static final int[]          allowedFailResponseCodes = {400, 401, 403, 404};
 
    // This is the expected maximum base query search size.  Searching beyond this value requires
    // a 'search_after' to be performed.  By default, Elastic sets this value to 10k. Typically,
    // there's no need to change this value.
-   public static int            maxElasticQuerySize      = 10000;
+   public static int                     maxElasticQuerySize      = 10000;
 
    // When an elastic search is performed, this is the default '_source' value that will be used.
    // This value is optional and does not need to be set.
-   public String                defaultSource            = null;
+   public String                         defaultSource            = null;
+
+   transient private RestHighLevelClient client;
 
    public ElasticsearchDb()
    {
@@ -58,16 +81,33 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       withName(name);
    }
 
-   //   @Override
-   //   protected void startup0()
-   //   {
-   //      this.withType("elasticsearch");
-   //
-   //      reflectDb();
-   //      configApi();
-   //
-   //      System.out.println(this);
-   //   }
+   public RestHighLevelClient getElasticClient()
+   {
+      if (this.client == null)
+      {
+         synchronized (this)
+         {
+            if (this.client == null)
+            {
+               // TODO use this.url
+               this.client = buildElasticClient("http", "localhost");
+            }
+         }
+      }
+
+      return client;
+   }
+
+   public static RestHighLevelClient buildElasticClient(String scheme, String hostPrefix)
+   {
+      RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(//
+            new HttpHost(hostPrefix, 9200, scheme), //
+            new HttpHost(hostPrefix, 9201, scheme)).setMaxRetryTimeoutMillis(ElasticsearchDb.maxRequestDuration));
+
+      // TODO ApiException.throw500InternalServerError(error) if the client does not have the proper settings
+
+      return client;
+   }
 
    public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
    {
@@ -103,38 +143,37 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       // TODO add the json header to the request before sending to elastic 
       // List<String> headers = new ArrayList<String>(Arrays.asList("Content-Type", "application/json"));
 
-      String url = this.url + "/" + table;
       JSNode json = query.getJson();
-      Response res = null;
+      SearchResponse res = null;
       if (json == null)
       {
-         url += "/_search";
-         res = HttpUtils.get(url).get();
+         SearchRequest searchReq = new SearchRequest(table.getTableName());
+         searchReq.source(query.getSearchBuilder());
+         res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
       }
 
       Results result = new Results(query);
 
-      if (res.isSuccess())
+      int statusCode = res.status().getStatus();
+      if (isSuccess(statusCode))
       {
          //         result.withRow(null);
          //         result.withRows(null);
          //         result.withNext(next)
 
-         System.out.println(res.getContent());
+         SearchHits hits = res.getHits();
+         System.out.println(hits.toString()); // TODO verify toString() output is pretty
 
-         JSNode content = JSNode.parseJsonNode(res.getContent());
-         JSNode hitsObj = content.getNode("hits");
-         int totalHits = Integer.parseInt(hitsObj.getProperty("total").getValue().toString());
+         Long totalHits = hits.getTotalHits();
 
-         JSArray hitsArr = hitsObj.getArray("hits");
+         SearchHit[] hitArray = hits.getHits();
 
-         for (JSNode obj : hitsArr.asNodeList())
+         for (SearchHit hit : hitArray)
          {
-            JSNode src = obj.getNode("_source");
-            result.withRow(src.asMap());
+            result.withRow(hit.getSourceAsMap()); // TODO verify getSourceAsMap() 
          }
 
-         result.withFoundRows(totalHits);
+         result.withFoundRows(totalHits.intValue());
       }
       else
          System.out.println("request failed :*(");
@@ -145,94 +184,166 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    @Override
    public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
    {
-      // TODO Auto-generated method stub
+      for (Map<String, Object> row : indexValues)
+      {
+         deleteRow(table, row);
+      }
+   }
+
+   /**
+    * Deletes a single specific resource.
+    * 
+    * @param table
+    * @param indexValues
+    * @throws Exception
+    */
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
+   {
+      Object id = table.encodeKey(indexValues);
+
+      try
+      {
+         DeleteRequest request = new DeleteRequest(table.getTableName(), "doc", id.toString());
+
+         Chain.debug("ElasticDb: Delete request=" + request.toString());
+
+         DeleteResponse response = getElasticClient().delete(request, RequestOptions.DEFAULT);
+
+         int statusCode = response.status().getStatus();
+         if (statusCode >= 400)
+         {
+            ApiException.throw500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
+         }
+      }
+      catch (Exception ex)
+      {
+         ex.printStackTrace();
+         ApiException.throw500InternalServerError(ex);
+
+      }
    }
 
    @Override
    public List upsert(Collection table, List<Map<String, Object>> rows) throws Exception
    {
-      return null;
+      List keys = new ArrayList();
+      for (Map<String, Object> row : rows)
+      {
+         keys.add(upsertRow(table, row));
+      }
+      return keys;
+   }
+
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws Exception
+   {
+      JSNode doc = new JSNode(columnMappedTermsRow);
+
+      String id = doc.getString("id");
+      if (id == null)
+      {
+         id = table.encodeKey(columnMappedTermsRow);
+         if (id == null)
+            ApiException.throw400BadRequest("Your record does not contain the required key fields.");
+         doc.putFirst("id", id);
+      }
+
+      String json = doc.toString();
+
+      UpdateRequest updateRequest = new UpdateRequest(table.getTableName(), "doc", id.toString());
+      updateRequest.upsert(json, XContentType.JSON);
+
+      Chain.debug("ElasticDb: Upsert " + updateRequest.toString());
+
+      UpdateResponse response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
+
+      int statusCode = response.status().getStatus();
+      if (statusCode > 299)
+      {
+         ApiException.throw400BadRequest("Unexpected http status code returned from database: '%s'", statusCode);
+      }
+
+      String returnedId = response.getId();
+      if (!Utils.equal(id, returnedId))
+         ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '%s' vs. '%s'", id, returnedId);
+
+      return id;
    }
 
    private void handleAutoSuggestRequest()
    {
-
+      // TODO
    }
 
    private void handleSearchRequest()
    {
-
+      // TODO
    }
 
    private void handlePaging(WrappedQueryBuilder builder)
    {
-
+      // TODO
    }
-
-   //   private void reflectDb()
-   //   {
-   //      if (!isBootstrap())
-   //      {
-   //         return;
-   //      }
-   //
-   //      try
-   //      {
-   //         // 'GET _all' returns all indices/aliases/mappings
-   //         String url = getUrl();
-   //         Response allResp = HttpUtils.get(url + "/_all").get(maxRequestDuration, TimeUnit.SECONDS);
-   //
-   //         if (allResp.isSuccess())
-   //         {
-   //            // we now have the indices, aliases for each index, and mappings (and settings if we need them)
-   //
-   //            JSNode jsObj = JSNode.parseJsonNode(allResp.getContent());
-   //
-   //            Map<String, JSNode> jsContentMap = jsObj.asMap();
-   //
-   //            // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-   //            Map<String, Collection> tableMap = new HashMap<String, Collection>();
-   //
-   //            for (Map.Entry<String, JSNode> entry : jsContentMap.entrySet())
-   //            {
-   //               // we now have the index and with it, it's aliases and mappings
-   //               buildTables(entry.getKey(), entry.getValue(), tableMap);
-   //            }
-   //         }
-   //         else
-   //         {
-   //            if (allResp.getError() != null)
-   //            {
-   //               allResp.getError().printStackTrace();
-   //               Utils.getCause(allResp.getError()).printStackTrace();
-   //            }
-   //            throw new ApiException(SC.matches(allResp.getStatusCode(), allowedFailResponseCodes) ? SC.SC_MAP.get(allResp.getStatusCode()) : Status.SC_500_INTERNAL_SERVER_ERROR);
-   //            
-   //         }
-   //      }
-   //      catch (Exception ex)
-   //      {
-   //         Utils.rethrow(ex);
-   //      }
-   //   }
 
    public void configDb() throws Exception
-   {// TODO fill out
-      for (String tableName : includeTables.keySet())
+   {
+
+      try
       {
-         withCollection(buildCollection(tableName));
+         // 'GET _all' returns all indices/aliases/mappings
+
+         // There are better ways to get this data in new versions of elastic =/
+         //               ClusterHealthResponse response = getElasticClient().cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
+         Response allResponse = getElasticClient().getLowLevelClient().performRequest(new Request("GET", "_all"));
+
+         int statusCode = allResponse.getStatusLine().getStatusCode();
+         if (isSuccess(statusCode))
+         {
+            // we now have the indices, aliases for each index, and mappings (and settings if we need them)
+
+            JSNode jsObj = JSNode.parseJsonNode(EntityUtils.toString(allResponse.getEntity()));
+
+            Map<String, JSNode> jsContentMap = jsObj.asMap();
+
+            // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
+            Map<String, Collection> tableMap = new HashMap<String, Collection>();
+
+            for (Map.Entry<String, JSNode> entry : jsContentMap.entrySet())
+            {
+               // we now have the index and with it, it's aliases and mappings
+               buildTables(entry.getKey(), entry.getValue(), tableMap);
+            }
+         }
+         else
+         {
+            //                  if (allResp.getError() != null)
+            //                  {
+            //                     allResp.getError().printStackTrace();
+            //                     Utils.getCause(allResp.getError()).printStackTrace();
+            //                  }
+            throw new ApiException("Failed to retieve /_all with status code:" + statusCode);
+
+         }
       }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+      }
+
    }
 
-   //   private void configApi()
+   //   public void configApi(Api api)
    //   {
    //      for (Collection t : getCollections())
    //      {
-   //         List<Column> cols = t.getColumns();
+   //         //            List<Column> cols = t.getColumns();
+   //         List<Property> columnPropList = t.getProperties();
    //         Collection collection = new Collection();
    //
    //         collection.withName(super.beautifyCollectionName(t.getName()));
-   //         collection.withTable(t); // Entity entity = collection.withEntity(t);
+   //
+   //         // TODO unsure if the following still needs to occur...
+   //
+   //         //collection.withTable(t); // Entity entity = collection.withEntity(t);
    //
    //         //
    //         //         for (Column col : cols)
@@ -256,86 +367,86 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       return null;
    }
 
-   //   /**
-   //    * At the time of writing, there is no need to parse settings.
-   //    * This method creates tables based on alias names of 
-   //    * elastic indexes.  A table of the index will always be created
-   //    * at a minimum.
-   //    * 
-   //    * Most tables will only have one index. An example of a 
-   //    * table with multiple indexes would be the alias 'all'.
-   //    * @param indexName
-   //    * @param jsIndex
-   //    * @return
-   //    */
-   //   private void buildTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap)
-   //   {
-   //      Map<String, JSNode> jsMappingsDocProps = jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
-   //
-   //      Collection table = null;
-   //
-   //      if (tableMap.containsKey(elasticName))
-   //         table = tableMap.get(elasticName);
-   //      else
-   //      {
-   //         table = new Collection(elasticName).withDb(this);
-   //         tableMap.put(elasticName, table);
-   //      }
-   //
-   //      withCollection(table);
-   //
-   //      // use the mapping to add columns to the table.
-   //      addColumns(table, false, jsMappingsDocProps, "");
-   //
-   //      String aliasName = null;
-   //      Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
-   //      for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
-   //      {
-   //         aliasName = propEntry.getKey();
-   //
-   //         table = null;
-   //
-   //         // use the previously created table if it exists.
-   //         if (tableMap.containsKey(aliasName))
-   //            table = tableMap.get(aliasName);
-   //         else
-   //         {
-   //            table = new Collection(aliasName).withDb(this);
-   //            tableMap.put(aliasName, table);
-   //         }
-   //
-   //         withCollection(table);
-   //
-   //         // use the mapping to add columns to the table.
-   //         addColumns(table, false, jsMappingsDocProps, "");
-   //      }
-   //   }
+   /**
+    * At the time of writing, there is no need to parse settings.
+    * This method creates tables based on alias names of 
+    * elastic indexes.  A table of the index will always be created
+    * at a minimum.
+    * 
+    * Most tables will only have one index. An example of a 
+    * table with multiple indexes would be the alias 'all'.
+    * @param indexName
+    * @param jsIndex
+    * @return
+    */
+   private void buildTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap)
+   {
+      Map<String, JSNode> jsMappingsDocProps = jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
 
-   //   /**
-   //    * @param table - add the column to this table
-   //    * @param nullable - lets the column nullable
-   //    * @param jsPropsMap - contains the parent's nested properties
-   //    * @param parentPrefix - necessary for 'nested' column names.
-   //    */
-   //   private void addColumns(Collection table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
-   //   {
-   //      int columnNumber = 0;
-   //      for (Map.Entry<String, JSNode> propEntry : jsPropsMap.entrySet())
-   //      {
-   //         columnNumber += 1;
-   //
-   //         String colName = parentPrefix + propEntry.getKey();
-   //         JSNode propValue = propEntry.getValue();
-   //
-   //         // potential types include: keyword, long, nested, object, boolean
-   //         if (propValue.containsKey("type") && table.getColumn(colName) == null)
-   //         {
-   //            Column column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
-   //            table.withColumn(column);
-   //         }
-   //      }
-   //   }
+      Collection table = null;
 
+      if (tableMap.containsKey(elasticName))
+         table = tableMap.get(elasticName);
+      else
+      {
+         table = new Collection(elasticName).withDb(this);
+         tableMap.put(elasticName, table);
+      }
+
+      withCollection(table);
+
+      // use the mapping to add columns to the table.
+      addColumns(table, false, jsMappingsDocProps, "");
+
+      String aliasName = null;
+      Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
+      for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet())
+      {
+         aliasName = propEntry.getKey();
+
+         table = null;
+
+         // use the previously created table if it exists.
+         if (tableMap.containsKey(aliasName))
+            table = tableMap.get(aliasName);
+         else
+         {
+            table = new Collection(aliasName).withDb(this);
+            tableMap.put(aliasName, table);
+         }
+
+         withCollection(table);
+
+         // use the mapping to add columns to the table.
+         addColumns(table, false, jsMappingsDocProps, "");
+      }
+   }
+
+   /**
+    * @param table - add the column to this table
+    * @param nullable - lets the column nullable
+    * @param jsPropsMap - contains the parent's nested properties
+    * @param parentPrefix - necessary for 'nested' column names.
+    */
+   private void addColumns(Collection table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix)
+   {
+      //      int columnNumber = 0;
+      for (Map.Entry<String, JSNode> propEntry : jsPropsMap.entrySet())
+      {
+         //         columnNumber += 1;
+
+         String colName = parentPrefix + propEntry.getKey();
+         JSNode propValue = propEntry.getValue();
+
+         // potential types include: keyword, long, nested, object, boolean
+         if (propValue.containsKey("type") && table.getProperty(colName) == null)
+         {
+            //               Column column = new Column(table, columnNumber, colName, propValue.getString("type"), true);
+            Property columnProp = new Property(colName, propValue.getString("type"), true);
+            table.withProperties(columnProp);
+         }
+      }
+   }
 
    public String getUrl()
    {
@@ -346,5 +457,10 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    {
       this.url = url;
       return this;
+   }
+
+   private boolean isSuccess(int statusCode)
+   {
+      return (statusCode >= 200 && statusCode <= 300);
    }
 }
