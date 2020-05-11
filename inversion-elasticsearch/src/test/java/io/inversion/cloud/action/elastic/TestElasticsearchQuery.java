@@ -20,14 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.inversion.cloud.model.JSArray;
-import io.inversion.cloud.model.JSNode;
+import io.inversion.elasticsearch.ElasticsearchQuery;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
 
 /**
  * @author kfrankic
@@ -66,21 +66,21 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("range"));
+      assertNotNull(queryNode.get("range"));
 
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("testRange"));
+      assertEquals(1, rangeNode.size());
+      assertNotNull(rangeNode.get("testRange"));
 
       JSNode testRangeNode = rangeNode.getNode("testRange");
-      assertEquals(5, testRangeNode.getProperties().size());
+      assertEquals(5, testRangeNode.size());
       assertEquals("25", testRangeNode.get("from"));
       assertNull(testRangeNode.get("to"));
       assertFalse((Boolean) testRangeNode.get("include_lower"));
@@ -118,21 +118,21 @@ public class TestElasticsearchQuery
    //
    //      assertNotNull(jsNode, "json should not be empty.");
    //
-   //      assertEquals(2, jsNode.getProperties().size());
+   //      assertEquals(2, jsNode.size());
    //
-   //      assertNotNull(jsNode.getProperty("sort"));
+   //      assertNotNull(jsNode.get("sort"));
    //
-   //      assertNotNull(jsNode.getProperty("query"));
+   //      assertNotNull(jsNode.get("query"));
    //      JSNode queryNode = jsNode.getNode("query");
    //
    //      assertNotNull(queryNode.get("range"));
    //
    //      JSNode rangeNode = queryNode.getNode("range");
-   //      assertEquals(1, rangeNode.getProperties().size());
-   //      assertNotNull(rangeNode.getProperty("testRange"));
+   //      assertEquals(1, rangeNode.size());
+   //      assertNotNull(rangeNode.get("testRange"));
    //
    //      JSNode testRangeNode = rangeNode.getNode("testRange");
-   //      assertEquals(5, testRangeNode.getProperties().size());
+   //      assertEquals(5, testRangeNode.size());
    //      assertEquals("25", testRangeNode.get("from"));
    //      assertNull(testRangeNode.get("to"));
    //      assertFalse((Boolean) testRangeNode.get("include_lower"));
@@ -170,21 +170,21 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("range"));
+      assertNotNull(queryNode.get("range"));
 
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("testRange"));
+      assertEquals(1, rangeNode.size());
+      assertNotNull(rangeNode.get("testRange"));
 
       JSNode testRangeNode = rangeNode.getNode("testRange");
-      assertEquals(5, testRangeNode.getProperties().size());
+      assertEquals(5, testRangeNode.size());
       assertEquals("25", testRangeNode.get("to"));
       assertNull(testRangeNode.get("from"));
       assertTrue((Boolean) testRangeNode.get("include_lower"));
@@ -218,19 +218,19 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("wildcard"));
+      assertNotNull(queryNode.get("wildcard"));
 
       JSNode wildcardNode = queryNode.getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
-      assertNotNull(wildcardNode.getProperty("city"));
+      assertEquals(1, wildcardNode.size());
+      assertNotNull(wildcardNode.get("city"));
 
       JSNode cityNode = wildcardNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("Chand*", cityNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -261,21 +261,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("wildcard"));
+      assertNotNull(queryNode.get("wildcard"));
 
       JSNode wildcardNode = queryNode.getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
-      assertNotNull(wildcardNode.getProperty("city"));
+      assertEquals(1, wildcardNode.size());
+      assertNotNull(wildcardNode.get("city"));
 
       JSNode cityNode = wildcardNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("*andl*", cityNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -319,20 +319,20 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
-      assertNotNull(boolNode.getProperty("should"));
+      assertNotNull(boolNode.get("should"));
 
       JSArray shouldArr = boolNode.getArray("should");
       assertEquals(2, shouldArr.length());
@@ -344,10 +344,10 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildNode = node.getNode("wildcard");
             JSNode nameNode = wildNode.getNode("name");
-            assertEquals(2, nameNode.getProperties().size());
+            assertEquals(2, nameNode.size());
             assertEquals(new Double(1.0), (Double) nameNode.get("boost"));
             assertTrue(nameNode.hasProperty("wildcard"));
 
@@ -395,28 +395,28 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
-      assertNotNull(boolNode.getProperty("must_not"));
+      assertNotNull(boolNode.get("must_not"));
 
       JSArray mustNotArr = boolNode.getArray("must_not");
       assertEquals(1, mustNotArr.length());
       JSNode wildcardNode = mustNotArr.getNode(0).getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
+      assertEquals(1, wildcardNode.size());
 
       JSNode cityNode = wildcardNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("*h*", cityNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -447,21 +447,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("wildcard"));
+      assertNotNull(queryNode.get("wildcard"));
 
       JSNode wildcardNode = queryNode.getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
-      assertNotNull(wildcardNode.getProperty("city"));
+      assertEquals(1, wildcardNode.size());
+      assertNotNull(wildcardNode.get("city"));
 
       JSNode cityNode = wildcardNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("*andler", cityNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -492,21 +492,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
 
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("wildcard"));
+      assertNotNull(queryNode.get("wildcard"));
 
       JSNode wildcardNode = queryNode.getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
-      assertNotNull(wildcardNode.getProperty("city"));
+      assertEquals(1, wildcardNode.size());
+      assertNotNull(wildcardNode.get("city"));
 
       JSNode cityNode = wildcardNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("*andl*", cityNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -553,21 +553,21 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("should"));
+      assertNotNull(boolNode.get("should"));
       JSArray shouldArr = boolNode.getArray("should");
 
       assertEquals(2, shouldArr.length());
@@ -582,20 +582,20 @@ public class TestElasticsearchQuery
             innerBoolNode = node.getNode("bool");
       }
 
-      assertEquals(1, termNode.getProperties().size());
+      assertEquals(1, termNode.size());
       assertNotNull(termNode.getNode("state"));
-      assertEquals(2, termNode.getNode("state").getProperties().size());
+      assertEquals(2, termNode.getNode("state").size());
       assertEquals("", termNode.getNode("state").getString("value"));
       assertEquals(new Double(1.0), (Double) termNode.getNode("state").get("boost"));
 
-      assertEquals(3, innerBoolNode.getProperties().size());
+      assertEquals(3, innerBoolNode.size());
       assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 
       JSArray mustNotArr = innerBoolNode.getArray("must_not");
       assertEquals(1, mustNotArr.length());
       JSNode existsNode = mustNotArr.getNode(0).getNode("exists");
-      assertEquals(2, existsNode.getProperties().size());
+      assertEquals(2, existsNode.size());
       assertEquals("state", existsNode.getString("field"));
       assertEquals(new Double(1.0), (Double) existsNode.get("boost"));
 
@@ -630,16 +630,16 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode fuzzyNode = queryNode.getNode("fuzzy");
-      assertEquals(1, fuzzyNode.getProperties().size());
+      assertEquals(1, fuzzyNode.size());
 
       JSNode keywordsNode = fuzzyNode.getNode("keywords");
-      assertEquals(6, keywordsNode.getProperties().size());
+      assertEquals(6, keywordsNode.size());
 
       assertEquals("Tim", keywordsNode.getString("value"));
       assertEquals("AUTO", keywordsNode.getString("fuzziness"));
@@ -697,21 +697,21 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("must"));
+      assertNotNull(boolNode.get("must"));
       JSArray mustArr = boolNode.getArray("must");
 
       assertEquals(2, mustArr.length());
@@ -721,7 +721,7 @@ public class TestElasticsearchQuery
       for (JSNode node : mustArr.asNodeList())
       {
          JSNode bool = node.getNode("bool");
-         assertEquals(3, bool.getProperties().size());
+         assertEquals(3, bool.size());
          assertTrue((Boolean) bool.get("adjust_pure_negative"));
          assertEquals(new Double(1.0), (Double) bool.get("boost"));
 
@@ -733,15 +733,15 @@ public class TestElasticsearchQuery
 
       assertEquals(1, mustNotArr.length());
       JSNode termNode = mustNotArr.getNode(0).getNode("term");
-      assertEquals(1, termNode.getProperties().size());
+      assertEquals(1, termNode.size());
       JSNode stateNode = termNode.getNode("state");
-      assertEquals(2, stateNode.getProperties().size());
+      assertEquals(2, stateNode.size());
       assertEquals("", stateNode.getString("value"));
       assertEquals(new Double(1.0), (Double) stateNode.get("boost"));
 
       assertEquals(1, innerMustArr.length());
       JSNode existsNode = innerMustArr.getNode(0).getNode("exists");
-      assertEquals(2, existsNode.getProperties().size());
+      assertEquals(2, existsNode.size());
       assertEquals("state", existsNode.getString("field"));
       assertEquals(new Double(1.0), (Double) existsNode.get("boost"));
 
@@ -769,15 +769,15 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode existsNode = queryNode.getNode("exists");
-      assertEquals(2, existsNode.getProperties().size());
+      assertEquals(2, existsNode.size());
       assertEquals("state", existsNode.getString("field"));
       assertEquals(new Double(1.0), (Double) existsNode.get("boost"));
 
@@ -811,26 +811,26 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("must_not"));
+      assertNotNull(boolNode.get("must_not"));
       JSArray mustNotArr = boolNode.getArray("must_not");
 
       assertEquals(1, mustNotArr.length());
       JSNode existsNode = mustNotArr.getNode(0).getNode("exists");
-      assertEquals(2, existsNode.getProperties().size());
+      assertEquals(2, existsNode.size());
       assertEquals("state", existsNode.getString("field"));
       assertEquals(new Double(1.0), (Double) existsNode.get("boost"));
 
@@ -854,9 +854,9 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
       assertEquals(1000, jsNode.getInt("size"));
 
@@ -892,23 +892,23 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(4, jsNode.getProperties().size());
+      assertEquals(4, jsNode.size());
       assertEquals(100, jsNode.getInt("size"));
       assertEquals(2, jsNode.getInt("from"));
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("range"));
+      assertNotNull(queryNode.get("range"));
 
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("testRange"));
+      assertEquals(1, rangeNode.size());
+      assertNotNull(rangeNode.get("testRange"));
 
       JSNode testRangeNode = rangeNode.getNode("testRange");
-      assertEquals(5, testRangeNode.getProperties().size());
+      assertEquals(5, testRangeNode.size());
       assertNull(testRangeNode.get("to"));
       assertEquals("25", testRangeNode.get("from"));
       assertFalse((Boolean) testRangeNode.get("include_lower"));
@@ -927,9 +927,9 @@ public class TestElasticsearchQuery
 //      JSNode jsNode = query.toJson();
 //      assertNotNull(jsNode, "json should not be empty.");
 //
-//      assertNotNull(jsNode.getProperty("sort"));
+   //      assertNotNull(jsNode.get("sort"));
 //
-//      assertNotNull(jsNode.getProperty("query"));
+   //      assertNotNull(jsNode.get("query"));
 //      JSNode queryNode = jsNode.getNode("query");
 //
 //      fail("doom doom doooooom.");
@@ -957,8 +957,8 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(1, jsNode.getProperties().size());
-      assertNotNull(jsNode.getProperty("sort"));
+      assertEquals(1, jsNode.size());
+      assertNotNull(jsNode.get("sort"));
 
       JSArray sortArr = jsNode.getArray("sort");
       assertEquals(2, sortArr.size());
@@ -968,18 +968,18 @@ public class TestElasticsearchQuery
 
       for (JSNode node : sortArr.asNodeList())
       {
-         assertEquals(1, node.getProperties().size());
+         assertEquals(1, node.size());
 
          if (node.hasProperty("test"))
          {
-            assertEquals(1, node.getNode("test").getProperties().size());
+            assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
          else if (node.hasProperty("id"))
          {
-            assertEquals(1, node.getNode("id").getProperties().size());
+            assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
          }
@@ -1007,8 +1007,8 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(1, jsNode.getProperties().size());
-      assertNotNull(jsNode.getProperty("sort"));
+      assertEquals(1, jsNode.size());
+      assertNotNull(jsNode.get("sort"));
 
       JSArray sortArr = jsNode.getArray("sort");
       assertEquals(2, sortArr.size());
@@ -1018,18 +1018,18 @@ public class TestElasticsearchQuery
 
       for (JSNode node : sortArr.asNodeList())
       {
-         assertEquals(1, node.getProperties().size());
+         assertEquals(1, node.size());
 
          if (node.hasProperty("test"))
          {
-            assertEquals(1, node.getNode("test").getProperties().size());
+            assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
          else if (node.hasProperty("id"))
          {
-            assertEquals(1, node.getNode("id").getProperties().size());
+            assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
          }
@@ -1057,8 +1057,8 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(1, jsNode.getProperties().size());
-      assertNotNull(jsNode.getProperty("sort"));
+      assertEquals(1, jsNode.size());
+      assertNotNull(jsNode.get("sort"));
 
       JSArray sortArr = jsNode.getArray("sort");
       assertEquals(2, sortArr.size());
@@ -1068,18 +1068,18 @@ public class TestElasticsearchQuery
 
       for (JSNode node : sortArr.asNodeList())
       {
-         assertEquals(1, node.getProperties().size());
+         assertEquals(1, node.size());
 
          if (node.hasProperty("test"))
          {
-            assertEquals(1, node.getNode("test").getProperties().size());
+            assertEquals(1, node.getNode("test").size());
             assertEquals("desc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
          else if (node.hasProperty("id"))
          {
-            assertEquals(1, node.getNode("id").getProperties().size());
+            assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
          }
@@ -1100,8 +1100,8 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(1, jsNode.getProperties().size());
-      assertNotNull(jsNode.getProperty("sort"));
+      assertEquals(1, jsNode.size());
+      assertNotNull(jsNode.get("sort"));
 
       JSArray sortArr = jsNode.getArray("sort");
       assertEquals(4, sortArr.size());
@@ -1113,29 +1113,29 @@ public class TestElasticsearchQuery
 
       for (JSNode node : sortArr.asNodeList())
       {
-         assertEquals(1, node.getProperties().size());
+         assertEquals(1, node.size());
 
          if (node.hasProperty("test"))
          {
             testFound = true;
-            assertEquals(1, node.getNode("test").getProperties().size());
+            assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
          }
          else if (node.hasProperty("test2"))
          {
             test2Found = true;
-            assertEquals(1, node.getNode("test2").getProperties().size());
+            assertEquals(1, node.getNode("test2").size());
             assertEquals("desc", node.getNode("test2").getString("order"));
          }
          else if (node.hasProperty("test3"))
          {
             test3Found = true;
-            assertEquals(1, node.getNode("test3").getProperties().size());
+            assertEquals(1, node.getNode("test3").size());
             assertEquals("asc", node.getNode("test3").getString("order"));
          }
          else if (node.hasProperty("id"))
          {
-            assertEquals(1, node.getNode("id").getProperties().size());
+            assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             test4Found = true;
          }
@@ -1171,9 +1171,9 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
       assertEquals(1000, jsNode.getInt("size"));
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
       JSArray sortArr = jsNode.getArray("sort");
       assertEquals(2, sortArr.size());
@@ -1183,18 +1183,18 @@ public class TestElasticsearchQuery
 
       for (JSNode node : sortArr.asNodeList())
       {
-         assertEquals(1, node.getProperties().size());
+         assertEquals(1, node.size());
 
          if (node.hasProperty("test"))
          {
-            assertEquals(1, node.getNode("test").getProperties().size());
+            assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
          else if (node.hasProperty("id"))
          {
-            assertEquals(1, node.getNode("id").getProperties().size());
+            assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
          }
@@ -1237,26 +1237,26 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(3, jsNode.getProperties().size());
+      assertEquals(3, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
-      assertEquals(1, queryNode.getProperties().size());
+      assertEquals(1, queryNode.size());
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
+      assertEquals(1, rangeNode.size());
       JSNode priorityNode = rangeNode.getNode("priority");
-      assertEquals(5, priorityNode.getProperties().size());
+      assertEquals(5, priorityNode.size());
       assertEquals("25", priorityNode.get("from"));
       assertNull(priorityNode.get("to"));
       assertFalse((Boolean) priorityNode.get("include_lower"));
       assertTrue((Boolean) priorityNode.get("include_upper"));
       assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 
-      assertNotNull(jsNode.getProperty("_source"));
+      assertNotNull(jsNode.get("_source"));
       JSNode sourceNode = jsNode.getNode("_source");
-      assertEquals(2, sourceNode.getProperties().size());
+      assertEquals(2, sourceNode.size());
       JSArray includes = sourceNode.getArray("includes");
       assertEquals(1, includes.size());
       assertEquals("priority", includes.getString(0));
@@ -1298,26 +1298,26 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(3, jsNode.getProperties().size());
+      assertEquals(3, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
-      assertEquals(1, queryNode.getProperties().size());
+      assertEquals(1, queryNode.size());
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
+      assertEquals(1, rangeNode.size());
       JSNode priorityNode = rangeNode.getNode("priority");
-      assertEquals(5, priorityNode.getProperties().size());
+      assertEquals(5, priorityNode.size());
       assertEquals("25", priorityNode.get("from"));
       assertNull(priorityNode.get("to"));
       assertFalse((Boolean) priorityNode.get("include_lower"));
       assertTrue((Boolean) priorityNode.get("include_upper"));
       assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 
-      assertNotNull(jsNode.getProperty("_source"));
+      assertNotNull(jsNode.get("_source"));
       JSNode sourceNode = jsNode.getNode("_source");
-      assertEquals(2, sourceNode.getProperties().size());
+      assertEquals(2, sourceNode.size());
       JSArray includes = sourceNode.getArray("includes");
       assertEquals(3, includes.size());
       assertTrue(includes.contains("priority"));
@@ -1361,26 +1361,26 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(3, jsNode.getProperties().size());
+      assertEquals(3, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
-      assertEquals(1, queryNode.getProperties().size());
+      assertEquals(1, queryNode.size());
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
+      assertEquals(1, rangeNode.size());
       JSNode priorityNode = rangeNode.getNode("priority");
-      assertEquals(5, priorityNode.getProperties().size());
+      assertEquals(5, priorityNode.size());
       assertEquals("25", priorityNode.get("from"));
       assertNull(priorityNode.get("to"));
       assertFalse((Boolean) priorityNode.get("include_lower"));
       assertTrue((Boolean) priorityNode.get("include_upper"));
       assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 
-      assertNotNull(jsNode.getProperty("_source"));
+      assertNotNull(jsNode.get("_source"));
       JSNode sourceNode = jsNode.getNode("_source");
-      assertEquals(2, sourceNode.getProperties().size());
+      assertEquals(2, sourceNode.size());
       JSArray excludes = sourceNode.getArray("excludes");
       assertEquals(1, excludes.size());
       assertEquals("priority", excludes.getString(0));
@@ -1419,21 +1419,21 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("range"));
+      assertNotNull(queryNode.get("range"));
 
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("hispanicRank"));
+      assertEquals(1, rangeNode.size());
+      assertNotNull(rangeNode.get("hispanicRank"));
 
       JSNode testRangeNode = rangeNode.getNode("hispanicRank");
-      assertEquals(5, testRangeNode.getProperties().size());
+      assertEquals(5, testRangeNode.size());
       assertEquals("25", testRangeNode.get("from"));
       assertNull(testRangeNode.get("to"));
       assertFalse((Boolean) testRangeNode.get("include_lower"));
@@ -1471,18 +1471,18 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertEquals(1, queryNode.getProperties().size());
-      assertNotNull(queryNode.getProperty("range"));
+      assertEquals(1, queryNode.size());
+      assertNotNull(queryNode.get("range"));
 
       JSNode rangeNode = queryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
-      assertNotNull(rangeNode.getProperty("hispanicRank"));
+      assertEquals(1, rangeNode.size());
+      assertNotNull(rangeNode.get("hispanicRank"));
 
       JSNode testRangeNode = rangeNode.getNode("hispanicRank");
-      assertEquals(5, testRangeNode.getProperties().size());
+      assertEquals(5, testRangeNode.size());
       assertEquals("25", testRangeNode.get("from"));
       assertNull(testRangeNode.get("to"));
       assertTrue((Boolean) testRangeNode.get("include_lower"));
@@ -1527,29 +1527,29 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("players", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       JSNode rangeNode = innerQueryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
+      assertEquals(1, rangeNode.size());
 
       JSNode registerNode = rangeNode.getNode("players.registerNum");
-      assertEquals(5, registerNode.getProperties().size());
+      assertEquals(5, registerNode.size());
       assertEquals("3", registerNode.get("to"));
       assertNull(registerNode.get("from"));
       assertTrue((Boolean) registerNode.get("include_lower"));
@@ -1593,15 +1593,15 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode termNode = queryNode.getNode("term");
-      assertEquals(1, termNode.getProperties().size());
+      assertEquals(1, termNode.size());
       JSNode cityNode = termNode.getNode("city");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("CHANDLER", cityNode.getString("value"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -1633,13 +1633,13 @@ public class TestElasticsearchQuery
 
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode termNode = queryNode.getNode("term");
-      assertEquals(1, termNode.getProperties().size());
+      assertEquals(1, termNode.size());
       JSNode cityNode = termNode.getNode("uninstalled");
-      assertEquals(2, cityNode.getProperties().size());
+      assertEquals(2, cityNode.size());
       assertEquals("true", cityNode.getString("value"));
       assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
 
@@ -1675,27 +1675,27 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("must_not"));
+      assertNotNull(boolNode.get("must_not"));
       JSArray mustNotArr = boolNode.getArray("must_not");
 
       assertEquals(1, mustNotArr.length());
       JSNode termNode = mustNotArr.getNode(0).getNode("term");
-      assertEquals(1, termNode.getProperties().size());
-      assertEquals(2, termNode.getNode("hispanicRank").getProperties().size());
+      assertEquals(1, termNode.size());
+      assertEquals(2, termNode.getNode("hispanicRank").size());
       assertEquals("25", termNode.getNode("hispanicRank").getString("value"));
       assertEquals(new Double(1.0), (Double) termNode.getNode("hispanicRank").get("boost"));
 
@@ -1748,21 +1748,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode bool1Node = queryNode.getNode("bool");
-      assertEquals(3, bool1Node.getProperties().size());
+      assertEquals(3, bool1Node.size());
       assertTrue((Boolean) bool1Node.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) bool1Node.get("boost"));
 
-      assertNotNull(bool1Node.getProperty("filter"));
+      assertNotNull(bool1Node.get("filter"));
       JSArray filterArr = bool1Node.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -1774,10 +1774,10 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("range"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
-            assertEquals(1, rangeNode.getProperties().size());
-            assertEquals(5, rangeNode.getNode("hispanicRank").getProperties().size());
+            assertEquals(1, rangeNode.size());
+            assertEquals(5, rangeNode.getNode("hispanicRank").size());
             assertEquals("93", rangeNode.getNode("hispanicRank").getString("from"));
             assertNull(rangeNode.getNode("hispanicRank").get("to"));
             assertFalse((Boolean) rangeNode.getNode("hispanicRank").get("include_lower"));
@@ -1787,9 +1787,9 @@ public class TestElasticsearchQuery
          }
          else if (node.hasProperty("bool"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
-            assertEquals(3, bool2Node.getProperties().size());
+            assertEquals(3, bool2Node.size());
             assertTrue((Boolean) bool2Node.get("adjust_pure_negative"));
             assertEquals(new Double(1.0), (Double) bool2Node.get("boost"));
 
@@ -1797,8 +1797,8 @@ public class TestElasticsearchQuery
 
             assertEquals(1, mustNotArr.length());
             JSNode termNode = mustNotArr.getNode(0).getNode("term");
-            assertEquals(1, termNode.getProperties().size());
-            assertEquals(2, termNode.getNode("hispanicRank").getProperties().size());
+            assertEquals(1, termNode.size());
+            assertEquals(2, termNode.getNode("hispanicRank").size());
             assertEquals("95", termNode.getNode("hispanicRank").getString("value"));
             assertEquals(new Double(1.0), (Double) termNode.getNode("hispanicRank").get("boost"));
             boolFound = true;
@@ -1858,21 +1858,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
       JSNode queryNode = jsNode.getNode("query");
-      assertEquals(1, queryNode.getProperties().size());
+      assertEquals(1, queryNode.size());
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode bool1Node = queryNode.getNode("bool");
-      assertEquals(3, bool1Node.getProperties().size());
+      assertEquals(3, bool1Node.size());
       assertTrue((Boolean) bool1Node.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) bool1Node.get("boost"));
 
-      assertNotNull(bool1Node.getProperty("filter"));
+      assertNotNull(bool1Node.get("filter"));
       JSArray filterArr = bool1Node.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -1884,10 +1884,10 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("range"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
-            assertEquals(1, rangeNode.getProperties().size());
-            assertEquals(5, rangeNode.getNode("hispanicRank").getProperties().size());
+            assertEquals(1, rangeNode.size());
+            assertEquals(5, rangeNode.getNode("hispanicRank").size());
             assertEquals("93", rangeNode.getNode("hispanicRank").getString("from"));
             assertNull(rangeNode.getNode("hispanicRank").get("to"));
             assertFalse((Boolean) rangeNode.getNode("hispanicRank").get("include_lower"));
@@ -1897,9 +1897,9 @@ public class TestElasticsearchQuery
          }
          else if (node.hasProperty("bool"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
-            assertEquals(3, bool2Node.getProperties().size());
+            assertEquals(3, bool2Node.size());
             assertTrue((Boolean) bool2Node.get("adjust_pure_negative"));
             assertEquals(new Double(1.0), (Double) bool2Node.get("boost"));
 
@@ -1907,8 +1907,8 @@ public class TestElasticsearchQuery
 
             assertEquals(1, mustNotArr.length());
             JSNode termNode = mustNotArr.getNode(0).getNode("term");
-            assertEquals(1, termNode.getProperties().size());
-            assertEquals(2, termNode.getNode("hispanicRank").getProperties().size());
+            assertEquals(1, termNode.size());
+            assertEquals(2, termNode.getNode("hispanicRank").size());
             assertEquals("95", termNode.getNode("hispanicRank").getString("value"));
             assertEquals(new Double(1.0), (Double) termNode.getNode("hispanicRank").get("boost"));
             boolFound = true;
@@ -1959,16 +1959,16 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
-      assertNotNull(boolNode.getProperty("should"));
+      assertNotNull(boolNode.get("should"));
 
       JSArray shouldArr = boolNode.getArray("should");
       assertEquals(2, shouldArr.length());
@@ -1980,10 +1980,10 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
             JSNode nameNode = termNode.getNode("name");
-            assertEquals(2, nameNode.getProperties().size());
+            assertEquals(2, nameNode.size());
             assertEquals(new Double(1.0), (Double) nameNode.get("boost"));
             assertTrue(nameNode.hasProperty("value"));
 
@@ -2023,13 +2023,13 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
       JSNode termsNode = queryNode.getNode("terms");
-      assertEquals(2, termsNode.getProperties().size());
+      assertEquals(2, termsNode.size());
       assertEquals(new Double(1.0), (Double) termsNode.get("boost"));
 
       JSArray cityArr = termsNode.getArray("city");
@@ -2084,25 +2084,25 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
-      assertNotNull(boolNode.getProperty("must_not"));
+      assertNotNull(boolNode.get("must_not"));
 
       JSArray mustNotArr = boolNode.getArray("must_not");
       assertEquals(1, mustNotArr.length());
       JSNode termsNode = mustNotArr.getNode(0).getNode("terms");
-      assertEquals(2, termsNode.getProperties().size());
+      assertEquals(2, termsNode.size());
       assertEquals(new Double(1.0), (Double) termsNode.get("boost"));
 
       JSArray cityArr = termsNode.getArray("city");
@@ -2173,21 +2173,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(3, filterArr.length());
@@ -2200,23 +2200,23 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
 
-            assertEquals(1, wildcardNode.getProperties().size());
+            assertEquals(1, wildcardNode.size());
 
-            if (wildcardNode.getProperty("locationCode") != null)
+            if (wildcardNode.get("locationCode") != null)
             {
                JSNode locationNode = wildcardNode.getNode("locationCode");
-               assertEquals(2, locationNode.getProperties().size());
+               assertEquals(2, locationNode.size());
                assertEquals("270*", locationNode.get("wildcard"));
                assertEquals(new Double(1.0), (Double) locationNode.get("boost"));
                locationNodeFound = true;
             }
-            else if (wildcardNode.getProperty("address1") != null)
+            else if (wildcardNode.get("address1") != null)
             {
                JSNode addressNode = wildcardNode.getNode("address1");
-               assertEquals(2, addressNode.getProperties().size());
+               assertEquals(2, addressNode.size());
                assertEquals("*McQueen*", addressNode.get("wildcard"));
                assertEquals(new Double(1.0), (Double) addressNode.get("boost"));
                addressNodeFound = true;
@@ -2225,12 +2225,12 @@ public class TestElasticsearchQuery
 
          else if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
-            assertEquals(1, termNode.getProperties().size());
+            assertEquals(1, termNode.size());
             JSNode cityNode = termNode.getNode("city");
-            assertEquals(2, cityNode.getProperties().size());
+            assertEquals(2, cityNode.size());
             assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
             assertEquals("Chandler", cityNode.get("value"));
             termNodeFound = true;
@@ -2289,21 +2289,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2315,12 +2315,12 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("fuzzy"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode fuzzyNode = node.getNode("fuzzy");
-            assertEquals(1, fuzzyNode.getProperties().size());
+            assertEquals(1, fuzzyNode.size());
 
             JSNode keywordsNode = fuzzyNode.getNode("keywords");
-            assertEquals(6, keywordsNode.getProperties().size());
+            assertEquals(6, keywordsNode.size());
 
             assertEquals("AUTO", keywordsNode.getString("fuzziness"));
             assertEquals(0, keywordsNode.getInt("prefix_length"));
@@ -2387,21 +2387,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2413,12 +2413,12 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("fuzzy"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode fuzzyNode = node.getNode("fuzzy");
-            assertEquals(1, fuzzyNode.getProperties().size());
+            assertEquals(1, fuzzyNode.size());
 
             JSNode keywordsNode = fuzzyNode.getNode("keywords");
-            assertEquals(6, keywordsNode.getProperties().size());
+            assertEquals(6, keywordsNode.size());
 
             assertEquals("AUTO", keywordsNode.getString("fuzziness"));
             assertEquals(0, keywordsNode.getInt("prefix_length"));
@@ -2477,18 +2477,18 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
-      assertNotNull(boolNode.getProperty("should"));
+      assertNotNull(boolNode.get("should"));
 
       JSArray shouldArr = boolNode.getArray("should");
       assertEquals(2, shouldArr.length());
@@ -2500,11 +2500,11 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
-            assertEquals(1, termNode.getProperties().size());
+            assertEquals(1, termNode.size());
             JSNode idNode = termNode.getNode("id");
-            assertEquals(2, idNode.getProperties().size());
+            assertEquals(2, idNode.size());
             assertEquals(new Double(1.0), (Double) idNode.get("boost"));
             assertEquals("3", idNode.get("value"));
 
@@ -2512,10 +2512,10 @@ public class TestElasticsearchQuery
          }
          else if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildNode = node.getNode("wildcard");
             JSNode nameNode = wildNode.getNode("name");
-            assertEquals(2, nameNode.getProperties().size());
+            assertEquals(2, nameNode.size());
             assertEquals(new Double(1.0), (Double) nameNode.get("boost"));
             assertEquals("*POST*", nameNode.get("wildcard"));
 
@@ -2552,21 +2552,21 @@ public class TestElasticsearchQuery
 
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("wildcard"));
+      assertNotNull(queryNode.get("wildcard"));
 
       JSNode wildcardNode = queryNode.getNode("wildcard");
-      assertEquals(1, wildcardNode.getProperties().size());
-      assertNotNull(wildcardNode.getProperty("address1"));
+      assertEquals(1, wildcardNode.size());
+      assertNotNull(wildcardNode.get("address1"));
 
       JSNode addressNode = wildcardNode.getNode("address1");
-      assertEquals(2, addressNode.getProperties().size());
+      assertEquals(2, addressNode.size());
       assertEquals("*GILBERT*", addressNode.get("wildcard"));
       assertEquals(new Double(1.0), (Double) addressNode.get("boost"));
 
@@ -2610,21 +2610,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2636,13 +2636,13 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
             if (termNode.hasProperty("locationCode"))
             {
                JSNode locationNode = termNode.getNode("locationCode");
-               assertEquals(2, locationNode.getProperties().size());
+               assertEquals(2, locationNode.size());
                assertEquals(new Double(1.0), (Double) locationNode.get("boost"));
                assertEquals("9187", locationNode.get("value"));
                locationNodeFound = true;
@@ -2651,7 +2651,7 @@ public class TestElasticsearchQuery
             else if (termNode.hasProperty("city"))
             {
                JSNode cityNode = termNode.getNode("city");
-               assertEquals(2, cityNode.getProperties().size());
+               assertEquals(2, cityNode.size());
                assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
                assertEquals("CHANDLER", cityNode.get("value"));
                cityNodeFound = true;
@@ -2702,21 +2702,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2728,14 +2728,14 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
 
-            assertEquals(1, wildcardNode.getProperties().size());
-            assertNotNull(wildcardNode.getProperty("address1"));
+            assertEquals(1, wildcardNode.size());
+            assertNotNull(wildcardNode.get("address1"));
 
             JSNode addressNode = wildcardNode.getNode("address1");
-            assertEquals(2, addressNode.getProperties().size());
+            assertEquals(2, addressNode.size());
             assertEquals("*GILBERT*", addressNode.get("wildcard"));
             assertEquals(new Double(1.0), (Double) addressNode.get("boost"));
             wildcardNodeFound = true;
@@ -2743,12 +2743,12 @@ public class TestElasticsearchQuery
 
          else if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
-            assertEquals(1, termNode.getProperties().size());
+            assertEquals(1, termNode.size());
             JSNode cityNode = termNode.getNode("city");
-            assertEquals(2, cityNode.getProperties().size());
+            assertEquals(2, cityNode.size());
             assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
             assertEquals("CHANDLER", cityNode.get("value"));
             termNodeFound = true;
@@ -2804,20 +2804,20 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2829,12 +2829,12 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("range"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
 
-            assertEquals(1, rangeNode.getProperties().size());
+            assertEquals(1, rangeNode.size());
             JSNode hispanicNode = rangeNode.getNode("hispanicRank");
-            assertEquals(5, hispanicNode.getProperties().size());
+            assertEquals(5, hispanicNode.size());
 
             if (hispanicNode.getString("from") != null)
             {
@@ -2913,21 +2913,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -2940,10 +2940,10 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
-            assertEquals(1, wildcardNode.getProperties().size());
-            assertEquals(2, wildcardNode.getNode("address1").getProperties().size());
+            assertEquals(1, wildcardNode.size());
+            assertEquals(2, wildcardNode.getNode("address1").size());
             assertEquals("*McQueen*", wildcardNode.getNode("address1").getString("wildcard"));
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
@@ -2951,11 +2951,11 @@ public class TestElasticsearchQuery
          else if (node.hasProperty("bool"))
          {
             JSNode innerBoolNode = node.getNode("bool");
-            assertEquals(3, innerBoolNode.getProperties().size());
+            assertEquals(3, innerBoolNode.size());
             assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
             assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 
-            assertNotNull(innerBoolNode.getProperty("filter"));
+            assertNotNull(innerBoolNode.get("filter"));
             JSArray innerFilterArr = innerBoolNode.getArray("filter");
 
             assertEquals(2, innerFilterArr.length());
@@ -2965,10 +2965,10 @@ public class TestElasticsearchQuery
 
                if (innerNode.hasProperty("term"))
                {
-                  assertEquals(1, innerNode.getProperties().size());
+                  assertEquals(1, innerNode.size());
                   JSNode termNode = innerNode.getNode("term");
-                  assertEquals(1, termNode.getProperties().size());
-                  assertEquals(2, termNode.getNode("city").getProperties().size());
+                  assertEquals(1, termNode.size());
+                  assertEquals(2, termNode.getNode("city").size());
                   assertEquals("Chandler", termNode.getNode("city").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
@@ -2976,8 +2976,8 @@ public class TestElasticsearchQuery
                else if (innerNode.hasProperty("wildcard"))
                {
                   JSNode innerWildcardNode = innerNode.getNode("wildcard");
-                  assertEquals(1, innerWildcardNode.getProperties().size());
-                  assertEquals(2, innerWildcardNode.getNode("locationCode").getProperties().size());
+                  assertEquals(1, innerWildcardNode.size());
+                  assertEquals(2, innerWildcardNode.getNode("locationCode").size());
                   assertEquals("270*", innerWildcardNode.getNode("locationCode").getString("wildcard"));
                   assertEquals(new Double(1.0), (Double) innerWildcardNode.getNode("locationCode").get("boost"));
                   innerWildcardFound = true;
@@ -3029,30 +3029,30 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("players", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       JSNode rangeNode = innerQueryNode.getNode("range");
-      assertEquals(1, rangeNode.getProperties().size());
+      assertEquals(1, rangeNode.size());
 
       JSNode registerNode = rangeNode.getNode("players.registerNum");
-      assertEquals(5, registerNode.getProperties().size());
+      assertEquals(5, registerNode.size());
       assertEquals("5", registerNode.get("from"));
       assertNull(registerNode.get("to"));
       assertFalse((Boolean) registerNode.get("include_lower"));
@@ -3107,38 +3107,38 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("keywords", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       boolean nestedNameFound = false;
       boolean nestedValueFound = false;
 
       if (innerQueryNode.hasProperty("bool"))
       {
-         assertEquals(1, innerQueryNode.getProperties().size());
+         assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
-         assertEquals(3, boolNode.getProperties().size());
+         assertEquals(3, boolNode.size());
          assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
          assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-         assertNotNull(boolNode.getProperty("filter"));
+         assertNotNull(boolNode.get("filter"));
          JSArray filterArr = boolNode.getArray("filter");
 
          assertEquals(2, filterArr.length());
@@ -3148,13 +3148,13 @@ public class TestElasticsearchQuery
 
             if (innerNode.hasProperty("term"))
             {
-               assertEquals(1, innerNode.getProperties().size());
+               assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
-               assertEquals(1, termNode.getProperties().size());
+               assertEquals(1, termNode.size());
 
                if (termNode.hasProperty("keywords.name"))
                {
-                  assertEquals(2, termNode.getNode("keywords.name").getProperties().size());
+                  assertEquals(2, termNode.getNode("keywords.name").size());
                   assertEquals("color", termNode.getNode("keywords.name").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                   nestedNameFound = true;
@@ -3162,7 +3162,7 @@ public class TestElasticsearchQuery
                }
                else if (termNode.hasProperty("keywords.value"))
                {
-                  assertEquals(2, termNode.getNode("keywords.value").getProperties().size());
+                  assertEquals(2, termNode.getNode("keywords.value").size());
                   assertEquals("33", termNode.getNode("keywords.value").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.value").get("boost"));
                   nestedValueFound = true;
@@ -3224,38 +3224,38 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("keywords", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       boolean termFound = false;
       boolean rangeFound = false;
 
       if (innerQueryNode.hasProperty("bool"))
       {
-         assertEquals(1, innerQueryNode.getProperties().size());
+         assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
-         assertEquals(3, boolNode.getProperties().size());
+         assertEquals(3, boolNode.size());
          assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
          assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-         assertNotNull(boolNode.getProperty("filter"));
+         assertNotNull(boolNode.get("filter"));
          JSArray filterArr = boolNode.getArray("filter");
 
          assertEquals(2, filterArr.length());
@@ -3265,10 +3265,10 @@ public class TestElasticsearchQuery
 
             if (innerNode.hasProperty("term"))
             {
-               assertEquals(1, innerNode.getProperties().size());
+               assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
-               assertEquals(1, termNode.getProperties().size());
-               assertEquals(2, termNode.getNode("keywords.name").getProperties().size());
+               assertEquals(1, termNode.size());
+               assertEquals(2, termNode.getNode("keywords.name").size());
                assertEquals("age", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
@@ -3276,10 +3276,10 @@ public class TestElasticsearchQuery
             else if (innerNode.hasProperty("range"))
             {
                JSNode rangeNode = innerNode.getNode("range");
-               assertEquals(1, rangeNode.getProperties().size());
+               assertEquals(1, rangeNode.size());
 
                JSNode registerNode = rangeNode.getNode("keywords.value");
-               assertEquals(5, registerNode.getProperties().size());
+               assertEquals(5, registerNode.size());
                assertEquals("30", registerNode.get("from"));
                assertNull(registerNode.get("to"));
                assertFalse((Boolean) registerNode.get("include_lower"));
@@ -3340,38 +3340,38 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("keywords", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       boolean termFound = false;
       boolean innerWildcardFound = false;
 
       if (innerQueryNode.hasProperty("bool"))
       {
-         assertEquals(1, innerQueryNode.getProperties().size());
+         assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
-         assertEquals(3, boolNode.getProperties().size());
+         assertEquals(3, boolNode.size());
          assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
          assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-         assertNotNull(boolNode.getProperty("filter"));
+         assertNotNull(boolNode.get("filter"));
          JSArray filterArr = boolNode.getArray("filter");
 
          assertEquals(2, filterArr.length());
@@ -3381,10 +3381,10 @@ public class TestElasticsearchQuery
 
             if (innerNode.hasProperty("term"))
             {
-               assertEquals(1, innerNode.getProperties().size());
+               assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
-               assertEquals(1, termNode.getProperties().size());
-               assertEquals(2, termNode.getNode("keywords.name").getProperties().size());
+               assertEquals(1, termNode.size());
+               assertEquals(2, termNode.getNode("keywords.name").size());
                assertEquals("items.name", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
@@ -3392,8 +3392,8 @@ public class TestElasticsearchQuery
             else if (innerNode.hasProperty("wildcard"))
             {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
-               assertEquals(1, innerWildcardNode.getProperties().size());
-               assertEquals(2, innerWildcardNode.getNode("keywords.value").getProperties().size());
+               assertEquals(1, innerWildcardNode.size());
+               assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
                assertEquals("*Powerade*", innerWildcardNode.getNode("keywords.value").getString("wildcard"));
                assertEquals(new Double(1.0), (Double) innerWildcardNode.getNode("keywords.value").get("boost"));
                innerWildcardFound = true;
@@ -3451,38 +3451,38 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("nested"));
+      assertNotNull(queryNode.get("nested"));
 
       JSNode nestedNode = queryNode.getNode("nested");
-      assertEquals(5, nestedNode.getProperties().size());
+      assertEquals(5, nestedNode.size());
       assertEquals("keywords", nestedNode.get("path"));
       assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
       assertEquals("avg", nestedNode.get("score_mode"));
       assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
       JSNode innerQueryNode = nestedNode.getNode("query");
-      assertEquals(1, innerQueryNode.getProperties().size());
+      assertEquals(1, innerQueryNode.size());
 
       boolean termFound = false;
       boolean innerWildcardFound = false;
 
       if (innerQueryNode.hasProperty("bool"))
       {
-         assertEquals(1, innerQueryNode.getProperties().size());
+         assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
-         assertEquals(3, boolNode.getProperties().size());
+         assertEquals(3, boolNode.size());
          assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
          assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-         assertNotNull(boolNode.getProperty("filter"));
+         assertNotNull(boolNode.get("filter"));
          JSArray filterArr = boolNode.getArray("filter");
 
          assertEquals(2, filterArr.length());
@@ -3492,10 +3492,10 @@ public class TestElasticsearchQuery
 
             if (innerNode.hasProperty("term"))
             {
-               assertEquals(1, innerNode.getProperties().size());
+               assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
-               assertEquals(1, termNode.getProperties().size());
-               assertEquals(2, termNode.getNode("keywords.name").getProperties().size());
+               assertEquals(1, termNode.size());
+               assertEquals(2, termNode.getNode("keywords.name").size());
                assertEquals("items.name", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
@@ -3503,8 +3503,8 @@ public class TestElasticsearchQuery
             else if (innerNode.hasProperty("wildcard"))
             {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
-               assertEquals(1, innerWildcardNode.getProperties().size());
-               assertEquals(2, innerWildcardNode.getNode("keywords.value").getProperties().size());
+               assertEquals(1, innerWildcardNode.size());
+               assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
                assertEquals("*Powerade*", innerWildcardNode.getNode("keywords.value").getString("wildcard"));
                assertEquals(new Double(1.0), (Double) innerWildcardNode.getNode("keywords.value").get("boost"));
                innerWildcardFound = true;
@@ -3565,21 +3565,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -3591,32 +3591,32 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("term"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
-            assertEquals(1, termNode.getProperties().size());
-            assertEquals(2, termNode.getNode("city").getProperties().size());
+            assertEquals(1, termNode.size());
+            assertEquals(2, termNode.getNode("city").size());
             assertEquals("Chandler", termNode.getNode("city").getString("value"));
             assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
             termFound = true;
          }
          else if (node.hasProperty("nested"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode nestedNode = node.getNode("nested");
-            assertEquals(5, nestedNode.getProperties().size());
+            assertEquals(5, nestedNode.size());
             assertEquals("players", nestedNode.get("path"));
             assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
             assertEquals("avg", nestedNode.get("score_mode"));
             assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
             JSNode innerQueryNode = nestedNode.getNode("query");
-            assertEquals(1, innerQueryNode.getProperties().size());
+            assertEquals(1, innerQueryNode.size());
 
             JSNode rangeNode = innerQueryNode.getNode("range");
-            assertEquals(1, rangeNode.getProperties().size());
+            assertEquals(1, rangeNode.size());
 
             JSNode registerNode = rangeNode.getNode("players.registerNum");
-            assertEquals(5, registerNode.getProperties().size());
+            assertEquals(5, registerNode.size());
             assertEquals("5", registerNode.get("from"));
             assertNull(registerNode.get("to"));
             assertFalse((Boolean) registerNode.get("include_lower"));
@@ -3690,21 +3690,21 @@ public class TestElasticsearchQuery
       JSNode jsNode = query.getJson();
       assertNotNull(jsNode, "json should not be empty.");
 
-      assertEquals(2, jsNode.getProperties().size());
+      assertEquals(2, jsNode.size());
 
-      assertNotNull(jsNode.getProperty("sort"));
+      assertNotNull(jsNode.get("sort"));
 
-      assertNotNull(jsNode.getProperty("query"));
+      assertNotNull(jsNode.get("query"));
       JSNode queryNode = jsNode.getNode("query");
 
-      assertNotNull(queryNode.getProperty("bool"));
+      assertNotNull(queryNode.get("bool"));
 
       JSNode boolNode = queryNode.getNode("bool");
-      assertEquals(3, boolNode.getProperties().size());
+      assertEquals(3, boolNode.size());
       assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
       assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 
-      assertNotNull(boolNode.getProperty("filter"));
+      assertNotNull(boolNode.get("filter"));
       JSArray filterArr = boolNode.getArray("filter");
 
       assertEquals(2, filterArr.length());
@@ -3717,24 +3717,24 @@ public class TestElasticsearchQuery
       {
          if (node.hasProperty("wildcard"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
-            assertEquals(1, wildcardNode.getProperties().size());
-            assertEquals(2, wildcardNode.getNode("address1").getProperties().size());
+            assertEquals(1, wildcardNode.size());
+            assertEquals(2, wildcardNode.getNode("address1").size());
             assertEquals("*VALLEY*", wildcardNode.getNode("address1").getString("wildcard"));
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
          }
          else if (node.hasProperty("bool"))
          {
-            assertEquals(1, node.getProperties().size());
+            assertEquals(1, node.size());
 
             JSNode innerBoolNode = node.getNode("bool");
-            assertEquals(3, innerBoolNode.getProperties().size());
+            assertEquals(3, innerBoolNode.size());
             assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
             assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 
-            assertNotNull(innerBoolNode.getProperty("filter"));
+            assertNotNull(innerBoolNode.get("filter"));
             JSArray innerFilterArr = innerBoolNode.getArray("filter");
 
             assertEquals(2, innerFilterArr.length());
@@ -3744,10 +3744,10 @@ public class TestElasticsearchQuery
 
                if (innerNode.hasProperty("term"))
                {
-                  assertEquals(1, innerNode.getProperties().size());
+                  assertEquals(1, innerNode.size());
                   JSNode termNode = innerNode.getNode("term");
-                  assertEquals(1, termNode.getProperties().size());
-                  assertEquals(2, termNode.getNode("city").getProperties().size());
+                  assertEquals(1, termNode.size());
+                  assertEquals(2, termNode.getNode("city").size());
                   assertEquals("PHOENIX", termNode.getNode("city").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
@@ -3755,20 +3755,20 @@ public class TestElasticsearchQuery
                else if (innerNode.hasProperty("nested"))
                {
                   JSNode nestedNode = innerNode.getNode("nested");
-                  assertEquals(5, nestedNode.getProperties().size());
+                  assertEquals(5, nestedNode.size());
                   assertEquals("players", nestedNode.get("path"));
                   assertFalse((Boolean) nestedNode.get("ignore_unmapped"));
                   assertEquals("avg", nestedNode.get("score_mode"));
                   assertEquals(new Double(1.0), (Double) nestedNode.get("boost"));
 
                   JSNode innerQueryNode = nestedNode.getNode("query");
-                  assertEquals(1, innerQueryNode.getProperties().size());
+                  assertEquals(1, innerQueryNode.size());
 
                   JSNode nestedTermNode = innerQueryNode.getNode("term");
-                  assertEquals(1, nestedTermNode.getProperties().size());
+                  assertEquals(1, nestedTermNode.size());
 
                   JSNode deletedNode = nestedTermNode.getNode("players.deleted");
-                  assertEquals(2, deletedNode.getProperties().size());
+                  assertEquals(2, deletedNode.size());
                   assertEquals("true", deletedNode.get("value"));
                   assertEquals(new Double(1.0), (Double) deletedNode.get("boost"));
                   nestedFound = true;

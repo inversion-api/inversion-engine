@@ -3,9 +3,11 @@ package io.inversion.cloud.action.elastic;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.cloud.model.Db;
-import io.inversion.cloud.rql.AbstractRqlTest;
-import io.inversion.cloud.rql.RqlValidationSuite;
+import io.inversion.Db;
+import io.inversion.elasticsearch.ElasticsearchDb;
+import io.inversion.elasticsearch.ElasticsearchQuery;
+import io.inversion.rql.AbstractRqlTest;
+import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class ElasticRqlUnitTest extends AbstractRqlTest
