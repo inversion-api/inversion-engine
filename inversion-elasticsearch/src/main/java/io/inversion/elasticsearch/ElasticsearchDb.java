@@ -53,6 +53,7 @@ import io.inversion.utils.Utils;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb>
 {
+   // The url to connect to elasticsearch
    protected static String               url                      = null;
 
    protected static int                  maxRequestDuration       = 10000;               // duration in milliseconds.
@@ -75,9 +76,15 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       withType("elasticsearch");
    }
 
-   public ElasticsearchDb(String name)
+   public ElasticsearchDb(String elasticUrl)
    {
       this();
+      ElasticsearchDb.url = elasticUrl;
+   }
+
+   public ElasticsearchDb(String name, String url)
+   {
+      this(url);
       withName(name);
    }
 
@@ -89,8 +96,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          {
             if (this.client == null)
             {
-               // TODO use this.url
-               this.client = buildElasticClient("http", "localhost");
+               this.client = buildElasticClient(ElasticsearchDb.url);
             }
          }
       }
@@ -98,11 +104,10 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       return client;
    }
 
-   public static RestHighLevelClient buildElasticClient(String scheme, String hostPrefix)
+   private static RestHighLevelClient buildElasticClient(String url)
    {
       RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(//
-            new HttpHost(hostPrefix, 9200, scheme), //
-            new HttpHost(hostPrefix, 9201, scheme)).setMaxRetryTimeoutMillis(ElasticsearchDb.maxRequestDuration));
+            HttpHost.create(url)).setMaxRetryTimeoutMillis(ElasticsearchDb.maxRequestDuration));;
 
       // TODO ApiException.throw500InternalServerError(error) if the client does not have the proper settings
 
@@ -115,7 +120,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       // see line ~78 ElasticDbGetAction
 
       // Apply default source when possible...adding "id", "asc" when necessary 
-      ElasticsearchQuery query = new ElasticsearchQuery(table, columnMappedTerms).withCollection(table);
+      ElasticsearchQuery query = new ElasticsearchQuery(table, columnMappedTerms);
       if (defaultSource != null && query.getSelect().find("source") == null)
       {
          query.getSelect().withTerm("source=id");
@@ -145,11 +150,13 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
       JSNode json = query.getJson();
       SearchResponse res = null;
-      if (json == null)
+      if (json != null)
       {
          SearchRequest searchReq = new SearchRequest(table.getTableName());
          searchReq.source(query.getSearchBuilder());
          res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
+
+         System.out.println(query.getJson());
       }
 
       Results result = new Results(query);
@@ -162,7 +169,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          //         result.withNext(next)
 
          SearchHits hits = res.getHits();
-         System.out.println(hits.toString()); // TODO verify toString() output is pretty
+         System.out.println("total hits: " + hits.totalHits); // TODO verify toString() output is pretty
 
          Long totalHits = hits.getTotalHits();
 
@@ -292,8 +299,9 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
          // 'GET _all' returns all indices/aliases/mappings
 
          // There are better ways to get this data in new versions of elastic =/
-         //               ClusterHealthResponse response = getElasticClient().cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
-         Response allResponse = getElasticClient().getLowLevelClient().performRequest(new Request("GET", "_all"));
+         //         ClusterHealthResponse response = getElasticClient().cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
+         //         Chain.debug(response);
+         Response allResponse = getElasticClient().getLowLevelClient().performRequest(new Request("GET", "/_all"));
 
          int statusCode = allResponse.getStatusLine().getStatusCode();
          if (isSuccess(statusCode))
