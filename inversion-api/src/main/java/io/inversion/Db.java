@@ -101,7 +101,6 @@ public abstract class Db<T extends Db>
     */
    protected Path                  endpointPath   = null;
 
-   
    protected Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
    protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
@@ -115,8 +114,6 @@ public abstract class Db<T extends Db>
       this.name = name;
    }
 
-
-   
    /**
     * Called by an Api to as part of Api.startup().
     * <p>
@@ -129,14 +126,14 @@ public abstract class Db<T extends Db>
    public final synchronized T startup(Api api)
    {
       if (runningApis.contains(api))
-         return (T)this;
+         return (T) this;
 
       runningApis.add(api);
       doStartup(api);
 
-      return (T)this;
+      return (T) this;
    }
-   
+
    /**
     * Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.  
     * <p>
@@ -183,7 +180,7 @@ public abstract class Db<T extends Db>
          runningApis.forEach(api -> shutdown(api));
          doShutdown();
       }
-      return (T)this;
+      return (T) this;
    }
 
    protected void doShutdown()
@@ -202,7 +199,7 @@ public abstract class Db<T extends Db>
       if (runningApis.size() == 0)
          shutdown();
 
-      return (T)this;
+      return (T) this;
    }
 
    /**
@@ -454,6 +451,15 @@ public abstract class Db<T extends Db>
                   mapped.put(key, node.get(key));
             }
          }
+
+         for (String key : (List<String>) new ArrayList(mapped.keySet()))
+         {
+            //TODO can optimize?
+            if (!shouldInclude(collection, key))
+            {
+               mapped.remove(key);
+            }
+         }
       }
 
       return doUpsert(collection, upsertMaps);
@@ -615,6 +621,13 @@ public abstract class Db<T extends Db>
                   }
                }
             }
+         }
+
+         for (String columnName : (List<String>) row.keySet())
+         {
+            //TODO can optimize?
+            if (!shouldInclude(collection, columnName))
+               row.remove(columnName);
          }
       }
 
@@ -1220,37 +1233,36 @@ public abstract class Db<T extends Db>
       }
       return (T) this;
    }
-   
-   
+
    public boolean shouldInclude(Collection collection, String columnName)
    {
-      if(includeColumns.size() > 0 || excludeColumns.size() > 0)
+      if (includeColumns.size() > 0 || excludeColumns.size() > 0)
       {
          String fullName = collection + "." + columnName;
-         if(excludeColumns.contains(columnName) || excludeColumns.contains(fullName))
+         if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName))
          {
             return false;
          }
-         if(includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName)))
+         if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName)))
          {
             return false;
          }
          return true;
       }
-      
+
       return collection.getPropertyByColumnName(columnName) != null;
    }
-   
+
    public T withIncludeColumns(String... columnNames)
    {
-      includeColumns.addAll(Utils.explode(",",  columnNames));
-      return (T)this;
+      includeColumns.addAll(Utils.explode(",", columnNames));
+      return (T) this;
    }
-   
+
    public T withExcludeColumns(String... columnNames)
    {
-      excludeColumns.addAll(Utils.explode(",",  columnNames));
-      return (T)this;
+      excludeColumns.addAll(Utils.explode(",", columnNames));
+      return (T) this;
    }
 
    /**
