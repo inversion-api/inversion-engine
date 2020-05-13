@@ -17,6 +17,7 @@
 package io.inversion;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,8 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.rql.Term;
+import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
+import io.inversion.utils.Rows.Row;
 
 /**
  * An adapter to an underlying data source.
@@ -209,13 +212,300 @@ public abstract class Db<T extends Db>
 
    /**
     * Finds all records that match the supplied RQL query terms.   
+    * <p>
+    * The implementation of this method primarily translates jsonNames to columnNames for RQL inputs and JSON outputs 
+    * delegating the work to {@link #doSelect(Collection, List)} where all ins and outs are based on columnName. 
+    *  
+    * @param collection
+    * @param queryTerms  RQL terms that have been translated to use Property jsonNames 
+    * @return A list of maps with keys as Property jsonNames
+    * @throws ApiException
+    */
+   public final Results select(Collection collection, List<Term> queryTerms) throws ApiException
+   {
+      List<Term> mappedTerms = new ArrayList();
+      queryTerms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
+
+      Results results = doSelect(collection, mappedTerms);
+
+      if (results.size() > 0)
+      {
+
+         for (int i = 0; i < results.size(); i++)
+         {
+            //convert the map into a JSNode
+            Map<String, Object> row = results.getRow(i);
+
+            if (collection == null)
+            {
+               JSNode node = new JSNode(row);
+               results.setRow(i, node);
+            }
+            else
+            {
+               JSNode node = new JSNode();
+               results.setRow(i, node);
+
+               //String resourceKey = req.getCollection().encodeResourceKey(row);
+               String resourceKey = collection.encodeResourceKey(row);
+
+               if (!Utils.empty(resourceKey))
+               {
+                  //------------------------------------------------
+                  //next turn all relationships into links that will 
+                  //retrieve the related entities
+                  for (Relationship rel : collection.getRelationships())
+                  {
+                     String link = null;
+                     if (rel.isManyToOne())
+                     {
+                        String fkval = null;
+                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
+                        {
+                           Object obj = row.get(rel.getFk1Col1().getColumnName());
+                           if (obj != null)
+                              fkval = obj.toString();
+                        }
+                        else
+                        {
+                           fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
+                        }
+
+                        if (fkval != null)
+                        {
+                           link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
+                        }
+                     }
+                     else
+                     {
+                        //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+                        link = Chain.buildLink(collection, resourceKey, rel.getName());
+                     }
+                     node.put(rel.getName(), link);
+                  }
+
+                  //------------------------------------------------
+                  // finally make sure the resource key is encoded as
+                  // the href
+                  String href = node.getString("href");
+                  if (Utils.empty(href))
+                  {
+                     href = Chain.buildLink(collection, resourceKey, null);
+                     node.putFirst("href", href);
+                  }
+               }
+
+               //------------------------------------------------
+               //copy over defined attributes first, if the select returned 
+               //extra columns they will be copied over last
+               for (Property attr : collection.getProperties())
+               {
+                  String attrName = attr.getJsonName();
+                  String colName = attr.getColumnName();
+
+                  boolean rowHas = row.containsKey(colName);
+                  if (rowHas)
+                  //if (resourceKey != null || rowHas)
+                  {
+                     //-- if the resourceKey was null don't create
+                     //-- empty props for fields that were not 
+                     //-- returned from the db
+                     Object val = row.remove(colName);
+                     if (!node.containsKey(attrName))
+                        node.put(attrName, val);
+                  }
+               }
+
+               //------------------------------------------------
+               // next, if the db returned extra columns that 
+               // are not mapped to attributes, just straight copy them
+               for (String key : row.keySet())
+               {
+                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
+                  {
+                     Object value = row.get(key);
+                     node.put(key, value);
+                  }
+               }
+
+            }
+         }
+
+      } // end if results.size() > 0
+
+      //------------------------------------------------
+      //the "next" params come from the db encoded with db col names
+      //have to convert them to their attribute equivalents
+      for (Term term : ((List<Term>) results.getNext()))
+      {
+         mapToJsonNames(collection, term);
+      }
+
+      return results;
+   }
+
+   /**
+    * Finds all records that match the supplied RQL query terms.   
     * 
     * @param collection
     * @param queryTerms  RQL terms that have been translated to use Property columnNames not jsonNames 
     * @return A list of maps with keys as Property columnNames not jsonNames
     * @throws ApiException
     */
-   public abstract Results select(Collection collection, List<Term> queryTerms) throws ApiException;
+   public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
+
+   public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException
+   {
+      List<Map<String, Object>> upsertMaps = new ArrayList();
+      for (Map<String, Object> node : rows)
+      {
+         Map<String, Object> mapped = new HashMap();
+         upsertMaps.add(mapped);
+
+         String href = node.get("href") != null ? node.get("href").toString() : null;
+         if (href != null)
+         {
+            Row decodedKey = collection.decodeResourceKey(href);
+            mapped.putAll(decodedKey);
+         }
+
+         HashSet copied = new HashSet();
+         for (Property attr : collection.getProperties())
+         {
+            String attrName = attr.getJsonName();
+
+            //skip relationships first, all relationships will be upserted first
+            //to make sure child foreign keys are created
+            if (collection.getRelationship(attrName) != null)
+               continue;
+
+            String colName = attr.getColumnName();
+            if (node.containsKey(attrName))
+            {
+               copied.add(attrName.toLowerCase());
+               copied.add(colName.toLowerCase());
+
+               Object attrValue = node.get(attrName);
+               Object colValue = collection.getDb().cast(attr, attrValue);
+               mapped.put(colName, colValue);
+            }
+         }
+         for (Relationship rel : collection.getRelationships())
+         {
+            copied.add(rel.getName().toLowerCase());
+
+            if (rel.isManyToOne() && node.get(rel.getName()) != null)
+            {
+               if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1)
+               {
+                  String jsonName = rel.getFkIndex1().getJsonNames().get(0);
+                  String colName = rel.getFkIndex1().getColumnName(0);
+
+                  Object value = node.get(jsonName);
+
+                  if (value != null)
+                  {
+                     value = Utils.substringAfter(value.toString(), "/");
+                     mapped.put(colName, value);
+                     copied.add(colName);
+                  }
+               }
+               else
+               {
+                  for (String colName : rel.getFkIndex1().getColumnNames())
+                  {
+                     copied.add(colName.toLowerCase());
+                  }
+
+                  Map key = getKey(rel.getRelated(), node.get(rel.getName()));
+                  if (key != null)
+                  {
+                     Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                     for (Object keyPart : foreignKey.keySet())
+                     {
+                        Object keyValue = foreignKey.get(keyPart);
+                        if (keyValue != null)
+                        {
+                           mapped.put((String) keyPart, keyValue);
+                        }
+                     }
+                  }
+               }
+            }
+         }
+
+         //-- this pulls in any properties that were supplied in the submitted document 
+         //-- but are unknown to the collection/table.  This is necessary to support
+         //-- document stores like dynamo/elastic where all columns are not necessarily
+         //-- known.
+         for (String key : node.keySet())
+         {
+            if (!copied.contains(key.toLowerCase()))
+            {
+               if (!key.equals("href"))
+                  mapped.put(key, node.get(key));
+            }
+         }
+      }
+
+      return doUpsert(collection, upsertMaps);
+   }
+
+   public String getHref(Object hrefOrNode)
+   {
+      if (hrefOrNode instanceof JSNode)
+         hrefOrNode = ((JSNode) hrefOrNode).get("href");
+
+      if (hrefOrNode instanceof String)
+         return (String) hrefOrNode;
+
+      return null;
+   }
+
+   public Map getKey(Collection collection, Object node)
+   {
+      if (node instanceof JSNode)
+         node = ((JSNode) node).getString("href");
+
+      if (node instanceof String)
+         return collection.decodeResourceKey((String) node);
+
+      return null;
+   }
+
+   public Map mapTo(Map srcRow, Index srcCols, Index destCols)
+   {
+      if (srcCols.size() != destCols.size() && destCols.size() == 1)
+      {
+         //when the foreign key is only one column but the related primary key is multiple 
+         //columns, encode the FK as an resourceKey.
+         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
+
+         for (Object key : srcRow.keySet())
+            srcRow.remove(key);
+
+         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
+      }
+      else
+      {
+         if (srcCols.size() != destCols.size())
+            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+
+         if (srcRow == null)
+            return Collections.EMPTY_MAP;
+
+         if (srcCols != destCols)
+         {
+            for (int i = 0; i < srcCols.size(); i++)
+            {
+               String key = srcCols.getProperty(i).getColumnName();
+               Object value = srcRow.remove(key);
+               srcRow.put(destCols.getProperty(i).getColumnName(), value);
+            }
+         }
+      }
+      return srcRow;
+   }
 
    /**
     * Upserts the key/values pairs for each row into the underlying data source.  
@@ -241,7 +531,7 @@ public abstract class Db<T extends Db>
     * @throws ApiException
     * 
     */
-   public abstract List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
+   public abstract List<String> doUpsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
 
    /**
     * Should be called by Actions instead of upsert() only when all records are strictly known to exist.
@@ -252,9 +542,82 @@ public abstract class Db<T extends Db>
     * @param rows the key/value pairs to update on existing records
     * @throws ApiException
     */
-   public void patch(Collection collection, List<Map<String, Object>> rows) throws ApiException
+   //TODO: all rows need to be have a resourceKey 
+   public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException
    {
-      upsert(collection, rows);
+      List<Map<String, Object>> rows = new ArrayList();
+
+      List<String> resourceKeys = new ArrayList();
+      for (Map<String, Object> node : nodes)
+      {
+         if (node.size() == 1)
+            continue;//patching an "href" only so no changes.
+
+         Row row = new Row();
+         rows.add(row);
+
+         for (String jsonProp : node.keySet())
+         {
+            Object value = node.get(jsonProp);
+
+            if ("href".equalsIgnoreCase(jsonProp))
+            {
+               String resourceKey = Utils.substringAfter(value.toString(), "/");
+               resourceKeys.add(resourceKey);
+               row.putAll(collection.decodeResourceKey(resourceKey));
+            }
+            else
+            {
+               Property collProp = collection.getProperty(jsonProp);
+               if (collProp != null)
+               {
+                  value = cast(collProp, value);
+                  row.put(collProp.getColumnName(), value);
+               }
+               else
+               {
+                  //TODO: need test case here
+                  Relationship rel = collection.getRelationship(jsonProp);
+                  if (rel != null)
+                  {
+                     if (rel.isManyToOne())
+                     {
+                        if (value != null)
+                        {
+                           Map fk = rel.getRelated().decodeResourceKey(value.toString());
+                           mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
+                           row.putAll(fk);
+                        }
+                        else
+                        {
+                           for (Property fkProp : rel.getFkIndex1().getProperties())
+                           {
+                              row.put(fkProp.getColumnName(), null);
+                           }
+                        }
+                     }
+                     else
+                     {
+                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
+                     }
+                  }
+                  else
+                  {
+                     row.put(jsonProp, value);
+                  }
+               }
+            }
+         }
+      }
+
+      doPatch(collection, rows);
+      
+      return resourceKeys;
+   }
+
+   public void doPatch(Collection collection, List<Map<String, Object>> rows) throws ApiException
+   {
+      doUpsert(collection, rows);
    }
 
    /**
@@ -660,9 +1023,31 @@ public abstract class Db<T extends Db>
       return Utils.cast(type, value);
    }
 
-   public Set<Term> mapToColumns(Collection collection, Term term)
+   protected void mapToJsonNames(Collection collection, Term term)
    {
-      Set<Term> terms = new HashSet();
+      if (collection == null)
+         return;
+
+      if (term.isLeaf() && !term.isQuoted())
+      {
+         String token = term.getToken();
+
+         Property attr = collection.findProperty(token);
+         if (attr != null)
+            term.withToken(attr.getJsonName());
+      }
+      else
+      {
+         for (Term child : term.getTerms())
+         {
+            mapToJsonNames(collection, child);
+         }
+      }
+   }
+
+   protected Set<Term> mapToColumnNames(Collection collection, Term term)
+   {
+      Set terms = new HashSet();
 
       if (term.getParent() == null)
          terms.add(term);
@@ -677,21 +1062,53 @@ public abstract class Db<T extends Db>
          while (token.startsWith("-") || token.startsWith("+"))
             token = token.substring(1, token.length());
 
-         Property attr = collection.findProperty(token);
-         if (attr != null)
-         {
-            String columnName = attr.getColumnName();
+         String name = "";
+         String[] parts = token.split("\\.");
 
+         //         if (parts.length > 2)//this could be a literal
+         //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
+
+         for (int i = 0; i < parts.length; i++)
+         {
+            String part = parts[i];
+
+            if (i == parts.length - 1)
+            {
+               Property attr = collection.findProperty(parts[i]);
+
+               if (attr != null)
+                  name += attr.getColumnName();
+               else
+                  name += parts[i];
+            }
+            else
+            {
+               Relationship rel = collection.getRelationship(part);
+
+               if (rel != null)
+               {
+                  name += rel.getName() + ".";
+                  collection = rel.getRelated();
+               }
+               else
+               {
+                  name += parts[i] + ".";
+               }
+            }
+         }
+
+         if (!Utils.empty(name))
+         {
             if (term.getToken().startsWith("-"))
-               columnName = "-" + columnName;
-            term.withToken(columnName);
+               name = "-" + name;
+            term.withToken(name);
          }
       }
       else
       {
          for (Term child : term.getTerms())
          {
-            terms.addAll(mapToColumns(collection, child));
+            terms.addAll(mapToColumnNames(collection, child));
          }
       }
 

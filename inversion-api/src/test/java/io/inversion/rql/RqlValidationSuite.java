@@ -55,7 +55,7 @@ public class RqlValidationSuite
    Map<String, String>     tests      = new LinkedHashMap();
    Map<String, String>     results    = new HashMap();
 
-   Map<String, Collection> tables     = new HashMap();
+   Map<String, Collection> collections     = new HashMap();
    Db                      db         = null;
    String                  queryClass = null;
 
@@ -146,12 +146,9 @@ public class RqlValidationSuite
 
       for (String testKey : tests.keySet())
       {
-         if("eqNonexistantColumn".equals(testKey))
-         {
-            System.out.println("asdfasd");
-         }
-         
          String queryString = tests.get(testKey);
+         
+
 
          if (Utils.empty(testKey) || Utils.empty(queryString))
             continue;
@@ -165,6 +162,11 @@ public class RqlValidationSuite
          Results.LAST_QUERY = null;
          Response res = engine.get(urlPrefix + queryString);
 
+         if("orders?count(*)".equals(queryString))
+         {
+            res.dump();
+         }
+         
          if (Utils.empty(expected))
          {
             failures.put(testKey, "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + Results.LAST_QUERY);
@@ -274,7 +276,7 @@ public class RqlValidationSuite
             //-- end sorting
 
             
-            Collection coll = tables.get(tableName);
+            Collection coll = collections.get(tableName);
             if (coll == null)
                throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
             coll.withDb(db);
@@ -350,18 +352,18 @@ public class RqlValidationSuite
       return Utils.testCompare(expected, actual);
    }
 
-   public Collection getTable(String table)
+   public Collection getCollection(String name)
    {
-      return tables.get(table);
+      return collections.get(name);
    }
 
-   public RqlValidationSuite withTables(Collection... tables)
+   public RqlValidationSuite withCollections(Collection... collections)
    {
-      for (int i = 0; tables != null && i < tables.length; i++)
+      for (int i = 0; collections != null && i < collections.length; i++)
       {
-         Collection t = tables[i];
+         Collection t = collections[i];
          if (t != null)
-            this.tables.put(t.getName(), t);
+            this.collections.put(t.getName(), t);
       }
 
       return this;

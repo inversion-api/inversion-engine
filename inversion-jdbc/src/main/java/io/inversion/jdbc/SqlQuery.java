@@ -81,7 +81,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
       if (joins == null)
          joins = new LinkedHashMap();
-
+      
       if (term.hasToken("join"))
       {
          //a map is used to avoid adding duplicate joins
@@ -1008,6 +1008,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       if (val == null || val.trim().equalsIgnoreCase("null"))
          return "NULL";
 
+//      if("*".equals(val))
+//         return val;
+      
       if (parent.hasToken("if") && index > 0)
       {
          if (isBool(leaf))

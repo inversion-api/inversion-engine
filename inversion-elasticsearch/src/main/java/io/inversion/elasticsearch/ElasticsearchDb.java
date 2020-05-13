@@ -50,7 +50,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;
@@ -63,7 +63,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public List upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       return null;
    }

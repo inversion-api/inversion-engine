@@ -123,7 +123,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
 
       employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
 
-      suite.withTables(orders, orderDetails, employees, employeeOrderDetails);
+      suite.withCollections(orders, orderDetails, employees, employeeOrderDetails);
    }
 
    /**

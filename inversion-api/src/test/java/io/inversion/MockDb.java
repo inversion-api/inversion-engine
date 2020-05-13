@@ -38,13 +38,13 @@ public class MockDb extends Db<MockDb>
    //   }
    //
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       return new Results(null);
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       return Collections.EMPTY_LIST;
    }

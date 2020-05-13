@@ -498,6 +498,11 @@ public class Url
          if (query.length() > 0)
             query = query.substring(0, query.length() - 1);
       }
+      
+      query = query.replace("%28",  "(");
+      query = query.replace("%29",  ")");
+      query = query.replace("%2C",  ",");
+      
       return query;
    }
 

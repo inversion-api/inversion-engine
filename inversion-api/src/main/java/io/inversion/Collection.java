@@ -433,9 +433,14 @@ public class Collection extends Rule<Collection> implements Serializable
       Property[] properties = new Property[propertyNames.length];
       for (int i = 0; propertyNames != null && i < propertyNames.length; i++)
       {
-         Property prop = getProperty(propertyNames[i]);
+         String propName = propertyNames[i];
+         Property prop = getProperty(propName);
          if (prop == null)
+         {
+            System.out.println(this.properties);
+            prop = getProperty(propName);
             ApiException.throw500InternalServerError("Property {} does not exist so it can't be added to the index {}", propertyNames[i], name);
+         }
 
          properties[i] = prop;
       }
@@ -572,7 +577,7 @@ public class Collection extends Rule<Collection> implements Serializable
       if (childFkProps == null || childFkProps.length == 0)
          ApiException.throw500InternalServerError("A relationship must include at least one childFkProp");
 
-      Index fkIdx = new Index(this + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+      Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
       withIndexes(fkIdx);
 
       withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
@@ -628,7 +633,7 @@ public class Collection extends Rule<Collection> implements Serializable
     */
    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
    {
-      Index fkIdx = new Index(childCollection + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+      Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
       childCollection.withIndexes(fkIdx);
 
       withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));

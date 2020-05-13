@@ -97,7 +97,7 @@ public class S3Db extends Db<S3Db>
 //   }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
       return query.doSelect();
@@ -105,7 +105,7 @@ public class S3Db extends Db<S3Db>
 
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       // TODO Auto-generated method stub
       return null;

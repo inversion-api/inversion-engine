@@ -89,12 +89,12 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
    {
       super.customizeUnitTestTables(suite);
 
-      Collection orders = suite.getTable("orders");
+      Collection orders = suite.getCollection("orders");
       orders.withProperty("type", "S");
 
-      Collection orderDetails = suite.getTable("orderDetails");
-      Collection employees = suite.getTable("employees");
-      Collection employeeOrderDetails = suite.getTable("employeeOrderDetails");
+      Collection orderDetails = suite.getCollection("orderDetails");
+      Collection employees = suite.getCollection("employees");
+      Collection employeeOrderDetails = suite.getCollection("employeeOrderDetails");
 
       for (Index index : orders.getIndexes())
          orders.removeIndex(index);
@@ -131,6 +131,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
       orderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "productId");
       orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
 
+      employees.withProperty("type",  "S");
       employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
       employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
       employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
@@ -147,7 +148,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
 
       employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
 
-      suite.withTables(orders, orderDetails, employees, employeeOrderDetails);
+      suite.withCollections(orders, orderDetails, employees, employeeOrderDetails);
 
    }
 

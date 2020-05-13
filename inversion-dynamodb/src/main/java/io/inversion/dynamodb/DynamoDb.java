@@ -87,14 +87,14 @@ public class DynamoDb extends Db<DynamoDb>
    }
 
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       AmazonDynamoDB dynamoClient = getDynamoClient();
       List keys = new ArrayList();

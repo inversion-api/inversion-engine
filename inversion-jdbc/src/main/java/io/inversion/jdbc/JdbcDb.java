@@ -273,7 +273,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results select(Collection coll, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException
    {
       JdbcDb db = null;
       if (coll == null)
@@ -299,7 +299,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       try
       {
@@ -330,7 +330,7 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public void patch(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       try
       {
@@ -557,7 +557,7 @@ public class JdbcDb extends Db<JdbcDb>
             }
             catch (Exception ex)
             {
-               ex.printStackTrace();
+               //ex.printStackTrace();
             }
          }
 
@@ -890,80 +890,9 @@ public class JdbcDb extends Db<JdbcDb>
       {
          Utils.close(rs);
       }
-      
+
       //-- causes collection and property names to be beautified
       super.buildCollections();
-   }
-
-   @Override
-   public Set<Term> mapToColumns(Collection collection, Term term)
-   {
-      Set terms = new HashSet();
-
-      if (term.getParent() == null)
-         terms.add(term);
-
-      if (collection == null)
-         return terms;
-
-      if (term.isLeaf() && !term.isQuoted())
-      {
-         String token = term.getToken();
-
-         while (token.startsWith("-") || token.startsWith("+"))
-            token = token.substring(1, token.length());
-
-         String name = "";
-         String[] parts = token.split("\\.");
-
-         //         if (parts.length > 2)//this could be a literal
-         //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
-
-         for (int i = 0; i < parts.length; i++)
-         {
-            String part = parts[i];
-
-            if (i == parts.length - 1)
-            {
-               Property attr = collection.findProperty(parts[i]);
-
-               if (attr != null)
-                  name += attr.getColumnName();
-               else
-                  name += parts[i];
-            }
-            else
-            {
-               Relationship rel = collection.getRelationship(part);
-
-               if (rel != null)
-               {
-                  name += rel.getName() + ".";
-                  collection = rel.getRelated();
-               }
-               else
-               {
-                  name += parts[i] + ".";
-               }
-            }
-         }
-
-         if (!Utils.empty(name))
-         {
-            if (term.getToken().startsWith("-"))
-               name = "-" + name;
-            term.withToken(name);
-         }
-      }
-      else
-      {
-         for (Term child : term.getTerms())
-         {
-            terms.addAll(mapToColumns(collection, child));
-         }
-      }
-
-      return terms;
    }
 
    public JdbcDb withType(String type)

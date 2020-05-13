@@ -68,14 +68,14 @@ public class CosmosDb extends Db<CosmosDb>
     * @throws ApiException
     */
    @Override
-   public Results select(Collection table, List<Term> columnMappedTerms) throws ApiException
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> upsert(Collection table, List<Map<String, Object>> rows) throws ApiException
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)

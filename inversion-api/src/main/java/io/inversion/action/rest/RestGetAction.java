@@ -63,7 +63,6 @@ public class RestGetAction extends Action<RestGetAction>
     */
    protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
-
    @Override
    public void run(Request req, Response res) throws ApiException
    {
@@ -323,11 +322,11 @@ public class RestGetAction extends Action<RestGetAction>
                }
             }
 
-            if (collection != null)
-            {
-               terms.addAll(collection.getDb().mapToColumns(collection, term));
-            }
-            else
+            //            if (collection != null)
+            //            {
+            //               terms.addAll(collection.getDb().mapToColumns(collection, term));
+            //            }
+            //            else
             {
                terms.add(term);
             }
@@ -356,117 +355,10 @@ public class RestGetAction extends Action<RestGetAction>
 
       if (results.size() > 0)
       {
-
-         for (int i = 0; i < results.size(); i++)
-         {
-            //convert the map into a JSNode
-            Map<String, Object> row = results.getRow(i);
-
-            if (collection == null)
-            {
-               JSNode node = new JSNode(row);
-               results.setRow(i, node);
-            }
-            else
-            {
-               JSNode node = new JSNode();
-               results.setRow(i, node);
-
-               String resourceKey = req.getCollection().encodeResourceKey(row);
-
-               if (!Utils.empty(resourceKey))
-               {
-                  //------------------------------------------------
-                  //next turn all relationships into links that will 
-                  //retrieve the related entities
-                  for (Relationship rel : collection.getRelationships())
-                  {
-                     String link = null;
-                     if (rel.isManyToOne())
-                     {
-                        String fkval = null;
-                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
-                        {
-                           Object obj = row.get(rel.getFk1Col1().getColumnName());
-                           if (obj != null)
-                              fkval = obj.toString();
-                        }
-                        else
-                        {
-                           fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
-                        }
-
-                        if (fkval != null)
-                        {
-                           link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
-                        }
-                     }
-                     else
-                     {
-                        link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
-                     }
-                     node.put(rel.getName(), link);
-                  }
-
-                  //------------------------------------------------
-                  // finally make sure the resource key is encoded as
-                  // the href
-                  String href = node.getString("href");
-                  if (Utils.empty(href))
-                  {
-                     href = Chain.buildLink(collection, resourceKey, null);
-                     node.putFirst("href", href);
-                  }
-               }
-
-               //------------------------------------------------
-               //copy over defined attributes first, if the select returned 
-               //extra columns they will be copied over last
-               for (Property attr : collection.getProperties())
-               {
-                  String attrName = attr.getJsonName();
-                  String colName = attr.getColumnName();
-
-                  boolean rowHas = row.containsKey(colName);
-                  if (rowHas)
-                  //if (resourceKey != null || rowHas)
-                  {
-                     //-- if the resourceKey was null don't create
-                     //-- empty props for fields that were not 
-                     //-- returned from the db
-                     Object val = row.remove(colName);
-                     if (!node.containsKey(attrName))
-                        node.put(attrName, val);
-                  }
-               }
-
-               //------------------------------------------------
-               // next, if the db returned extra columns that 
-               // are not mapped to attributes, just straight copy them
-               for (String key : row.keySet())
-               {
-                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
-                  {
-                     Object value = row.get(key);
-                     node.put(key, value);
-                  }
-               }
-
-            }
-
-         }
          if (collection != null)
-            expand(req, collection, (List<JSNode>)results.getRows(), null, null, null);
+            expand(req, collection, (List<JSNode>) results.getRows(), null, null, null);
+
          exclude(results.getRows());
-
-      } // end if results.size() > 0
-
-      //------------------------------------------------
-      //the "next" params come from the db encoded with db col names
-      //have to convert them to their attribute equivalents
-      for (Term term : ((List<Term>) results.getNext()))
-      {
-         mapToAttributes(collection, term);
       }
 
       return results;
@@ -586,19 +478,19 @@ public class RestGetAction extends Action<RestGetAction>
                // already retrieved.
                pkCache = new MultiKeyMap()
                   {
-                     //               public Object put(Object key1, Object key2, Object value)
-                     //               {
-                     //                  System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
-                     //                  return super.put(key1, key2, value);
-                     //               }
-                     //
-                     //               public Object get(Object key1, Object key2)
-                     //               {
-                     //                  Object value =  super.get(key1, key2);
-                     //                  String str = (value + "").replace("\r", "").replace("\n", "");
-                     //                  System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
-                     //                  return value;
-                     //               }
+//                     public Object put(Object key1, Object key2, Object value)
+//                     {
+//                        System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
+//                        return super.put(key1, key2, value);
+//                     }
+//
+//                     public Object get(Object key1, Object key2)
+//                     {
+//                        Object value = super.get(key1, key2);
+//                        String str = (value + "").replace("\r", "").replace("\n", "");
+//                        System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
+//                        return value;
+//                     }
                   };
 
                for (JSNode node : parentObjs)
@@ -920,28 +812,6 @@ public class RestGetAction extends Action<RestGetAction>
          str = str.substring(idx + 1, str.length());
       return str;
 
-   }
-
-   static void mapToAttributes(Collection collection, Term term)
-   {
-      if (collection == null)
-         return;
-
-      if (term.isLeaf() && !term.isQuoted())
-      {
-         String token = term.getToken();
-
-         Property attr = collection.findProperty(token);
-         if (attr != null)
-            term.withToken(attr.getJsonName());
-      }
-      else
-      {
-         for (Term child : term.getTerms())
-         {
-            mapToAttributes(collection, child);
-         }
-      }
    }
 
    public static String stripTerms(String url, String... tokens)
