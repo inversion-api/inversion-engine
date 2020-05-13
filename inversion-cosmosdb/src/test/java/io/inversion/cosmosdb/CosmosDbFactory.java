@@ -28,7 +28,7 @@ import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.action.rest.DbAction;
+import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;

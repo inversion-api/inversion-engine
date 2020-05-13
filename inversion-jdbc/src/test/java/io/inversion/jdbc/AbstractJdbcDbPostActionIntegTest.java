@@ -19,7 +19,7 @@ package io.inversion.jdbc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.action.rest.AbstractDbPostActionIntegTest;
+import io.inversion.action.db.AbstractDbPostActionIntegTest;
 
 public abstract class AbstractJdbcDbPostActionIntegTest extends AbstractDbPostActionIntegTest implements AbstractJdbcDbEngineTest
 {

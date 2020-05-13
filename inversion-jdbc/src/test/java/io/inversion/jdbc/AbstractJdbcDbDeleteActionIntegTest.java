@@ -19,7 +19,7 @@ package io.inversion.jdbc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.action.rest.AbstractDbDeleteActionIntegTest;
+import io.inversion.action.db.AbstractDbDeleteActionIntegTest;
 
 public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest
 {

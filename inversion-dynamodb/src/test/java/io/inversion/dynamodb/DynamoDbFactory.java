@@ -40,7 +40,7 @@ import io.inversion.Api;
 import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.DbAction;
+import io.inversion.action.db.DbAction;
 import io.inversion.dynamodb.DynamoDb;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSArray;

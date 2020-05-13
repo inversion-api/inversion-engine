@@ -32,7 +32,7 @@ import io.inversion.Api;
 import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.AbstractDbGetActionIntegTest;
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import io.inversion.utils.JSNode;
 
 public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractJdbcDbEngineTest

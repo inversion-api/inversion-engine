@@ -21,7 +21,7 @@ import io.inversion.Engine;
 import io.inversion.Index;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.action.rest.DbAction;
+import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.jdbc.JdbcUtils;
 import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;

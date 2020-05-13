@@ -2,7 +2,7 @@ package io.inversion;
 
 import io.inversion.Api;
 import io.inversion.Db;
-import io.inversion.action.rest.DbAction;
+import io.inversion.action.db.DbAction;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

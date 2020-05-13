@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 /**
  * Delegates all operations to DbPostAction which currently implements all POST/PUT/PATCH methods.

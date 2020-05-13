@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import org.junit.jupiter.api.Test;
+
+import io.inversion.action.db.DbGetAction;
 
 import static org.junit.jupiter.api.Assertions.fail;
 

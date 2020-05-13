@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import io.inversion.Api;
-import io.inversion.action.rest.DbAction;
+import io.inversion.action.db.DbAction;
 import io.inversion.spring.InversionApp;
 import io.inversion.utils.Utils;
 

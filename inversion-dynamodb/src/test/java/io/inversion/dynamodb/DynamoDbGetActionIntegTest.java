@@ -21,7 +21,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Db;
-import io.inversion.action.rest.AbstractDbGetActionIntegTest;
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import io.inversion.utils.Utils;
 
 /**
