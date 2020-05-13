@@ -75,15 +75,18 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (name.indexOf(".") < 0 && collection != null && collection.getProperty(name) == null)
-            return true;
+         if (name.indexOf(".") < 0 && collection != null)
+         {
+            if(!db.shouldInclude(collection, name))
+               return true;
+         }
       }
 
-      if (joins == null)
-         joins = new LinkedHashMap();
-      
       if (term.hasToken("join"))
       {
+         if (joins == null)
+            joins = new LinkedHashMap();
+         
          //a map is used to avoid adding duplicate joins
          String key = term.toString();
          if (!joins.containsKey(key))

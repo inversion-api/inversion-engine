@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,8 +33,8 @@ import org.slf4j.LoggerFactory;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
 
 /**
  * An adapter to an underlying data source.
@@ -57,23 +58,23 @@ import io.inversion.utils.Rows.Row;
  */
 public abstract class Db<T extends Db>
 {
-   protected final Logger          log           = LoggerFactory.getLogger(getClass());
+   protected final Logger          log            = LoggerFactory.getLogger(getClass());
 
-   transient Set<Api>              runningApis   = new HashSet();
+   transient Set<Api>              runningApis    = new HashSet();
 
-   transient boolean               firstStartup  = true;
+   transient boolean               firstStartup   = true;
 
-   transient boolean               shutdown      = false;
+   transient boolean               shutdown       = false;
 
    /**
     * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
     */
-   protected ArrayList<Collection> collections   = new ArrayList();
+   protected ArrayList<Collection> collections    = new ArrayList();
 
    /**
     * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
     */
-   protected Map<String, String>   includeTables = new HashMap();
+   protected Map<String, String>   includeTables  = new HashMap();
 
    /**
     * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
@@ -81,24 +82,29 @@ public abstract class Db<T extends Db>
     * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of 
     * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
     */
-   protected boolean               bootstrap     = true;
+   protected boolean               bootstrap      = true;
 
    /**
     * The name of his Db used for "name.property" style autowiring. 
     */
-   protected String                name          = null;
+   protected String                name           = null;
 
    /**
     * A property that can be used to disambiguate different backends supported by a single subclass.  
     * <p>
     * For example type might be "mysql" for a JdbcDb.
     */
-   protected String                type          = null;
+   protected String                type           = null;
 
    /**
     * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs. 
     */
-   protected Path                  endpointPath  = null;
+   protected Path                  endpointPath   = null;
+
+   
+   protected Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+   protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
    public Db()
    {
@@ -109,6 +115,8 @@ public abstract class Db<T extends Db>
       this.name = name;
    }
 
+
+   
    /**
     * Called by an Api to as part of Api.startup().
     * <p>
@@ -118,17 +126,17 @@ public abstract class Db<T extends Db>
     * @return
     * @see #doStartup(Api)
     */
-   public final synchronized Db startup(Api api)
+   public final synchronized T startup(Api api)
    {
       if (runningApis.contains(api))
-         return this;
+         return (T)this;
 
       runningApis.add(api);
       doStartup(api);
 
-      return this;
+      return (T)this;
    }
-
+   
    /**
     * Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.  
     * <p>
@@ -167,7 +175,7 @@ public abstract class Db<T extends Db>
     * 
     * @return this
     */
-   public synchronized Db shutdown()
+   public synchronized T shutdown()
    {
       if (!shutdown)
       {
@@ -175,7 +183,7 @@ public abstract class Db<T extends Db>
          runningApis.forEach(api -> shutdown(api));
          doShutdown();
       }
-      return this;
+      return (T)this;
    }
 
    protected void doShutdown()
@@ -183,7 +191,7 @@ public abstract class Db<T extends Db>
 
    }
 
-   public synchronized Db shutdown(Api api)
+   public synchronized T shutdown(Api api)
    {
       if (runningApis.contains(api))
       {
@@ -194,7 +202,7 @@ public abstract class Db<T extends Db>
       if (runningApis.size() == 0)
          shutdown();
 
-      return this;
+      return (T)this;
    }
 
    /**
@@ -611,7 +619,7 @@ public abstract class Db<T extends Db>
       }
 
       doPatch(collection, rows);
-      
+
       return resourceKeys;
    }
 
@@ -1211,6 +1219,38 @@ public abstract class Db<T extends Db>
             collections.add(tbl);
       }
       return (T) this;
+   }
+   
+   
+   public boolean shouldInclude(Collection collection, String columnName)
+   {
+      if(includeColumns.size() > 0 || excludeColumns.size() > 0)
+      {
+         String fullName = collection + "." + columnName;
+         if(excludeColumns.contains(columnName) || excludeColumns.contains(fullName))
+         {
+            return false;
+         }
+         if(includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName)))
+         {
+            return false;
+         }
+         return true;
+      }
+      
+      return collection.getPropertyByColumnName(columnName) != null;
+   }
+   
+   public T withIncludeColumns(String... columnNames)
+   {
+      includeColumns.addAll(Utils.explode(",",  columnNames));
+      return (T)this;
+   }
+   
+   public T withExcludeColumns(String... columnNames)
+   {
+      excludeColumns.addAll(Utils.explode(",",  columnNames));
+      return (T)this;
    }
 
    /**
