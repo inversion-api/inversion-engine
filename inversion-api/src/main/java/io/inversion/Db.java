@@ -47,7 +47,7 @@ import io.inversion.utils.Utils;
  *  <li>implement REST CRUD support by implementing {@link #select(Collection, List)}, {@link #upsert(Collection, List)}, {@link #delete(Collection, List)}.
  * </ol> 
  * <p>
- * Actions such as RestGetAction then:
+ * Actions such as DbGetAction then:
  * <ol>
  *  <li>translate a REST collection/resource request into columnName based json and RQL, 
  *  <li>execute the requested CRUD method on the Collection's underlying Db
@@ -631,7 +631,7 @@ public abstract class Db<T extends Db>
             }
          }
 
-         for (String columnName : (List<String>) row.keySet())
+         for (String columnName : (Set<String>) row.keySet())
          {
             //TODO can optimize?
             if (!shouldInclude(collection, columnName))
