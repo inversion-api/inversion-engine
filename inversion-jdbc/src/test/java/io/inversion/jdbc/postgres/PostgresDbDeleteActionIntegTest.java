@@ -19,12 +19,12 @@ package io.inversion.jdbc.postgres;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestPostActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresRestPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
+public class PostgresDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest
 {
-   public PostgresRestPostActionIntegTest()
+   public PostgresDbDeleteActionIntegTest()
    {
       super("postgres");
    }

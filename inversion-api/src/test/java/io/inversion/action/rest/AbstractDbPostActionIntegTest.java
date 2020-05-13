@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractRestPostActionIntegTest extends AbstractRestActionIntegTest
+public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionIntegTest
 {
 
-   public AbstractRestPostActionIntegTest(String dbType)
+   public AbstractDbPostActionIntegTest(String dbType)
    {
       super(dbType);
    }
@@ -81,7 +81,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
       Response res = null;
       Engine engine = engine();
 
-      JSNode john = JSNode.parseJsonNode(Utils.read(AbstractRestPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
+      JSNode john = JSNode.parseJsonNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
 
       res = engine.get(url("employees?employeeId=5&expands=employees"));
       JSNode steve = res.findNode("data.0");
@@ -172,7 +172,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
    //                                                             "sa", //-- jdbc user
    //                                                             "", //jdbc password
    //                                                             JdbcDb.class.getResource("crm-h2.ddl").toString()))//
-   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction()));
    //      engine.startup();
    //      Response res = null;
    //
@@ -250,7 +250,7 @@ public abstract class AbstractRestPostActionIntegTest extends AbstractRestAction
    //                                                             "sa", //-- jdbc user
    //                                                             "", //jdbc password
    //                                                             JdbcDb.class.getResource("crm-h2.ddl").toString()))//
-   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+   //                                          .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction()));
    //      engine.startup();
    //      Response res = null;
    //

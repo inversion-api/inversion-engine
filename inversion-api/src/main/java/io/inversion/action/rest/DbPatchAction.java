@@ -14,18 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.postgres;
+package io.inversion.action.rest;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-
-import io.inversion.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
-
-@TestInstance(Lifecycle.PER_CLASS)
-public class PostgresRestDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
+/**
+ * Delegates all operations to DbPostAction which currently implements all POST/PUT/PATCH methods.
+ * <p>
+ * Currently this class exists as a potential future compatibility shim and so that people looking at the
+ * source code tree before really digging in will not be confused by the superficial lack of a PATCH action class. 
+ */
+public class DbPatchAction extends DbPostAction<DbPatchAction>
 {
-   public PostgresRestDeleteActionIntegTest()
-   {
-      super("postgres");
-   }
+
 }

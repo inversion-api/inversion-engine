@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActionIntegTest
+public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIntegTest
 {
 
-   public AbstractRestDeleteActionIntegTest(String dbType)
+   public AbstractDbDeleteActionIntegTest(String dbType)
    {
       super(dbType);
    }

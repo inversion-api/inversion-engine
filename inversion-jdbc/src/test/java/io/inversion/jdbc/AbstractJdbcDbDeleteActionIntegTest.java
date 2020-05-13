@@ -14,18 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.postgres;
+package io.inversion.jdbc;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.jdbc.AbstractJdbcDbRestGetActionIntegTest;
+import io.inversion.action.rest.AbstractDbDeleteActionIntegTest;
 
-@TestInstance(Lifecycle.PER_CLASS)
-public class PostgresRestGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
+public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   public PostgresRestGetActionIntegTest()
+   public AbstractJdbcDbDeleteActionIntegTest(String dbType)
    {
-      super("postgres");
+      super(dbType);
    }
+
+   @BeforeEach
+   public void beforeEach()
+   {
+      beforeAll_initializeDb();
+      beforeAll_initializeEngine();
+   }
+
+   @AfterEach
+   public void afterEach()
+   {
+      afterAll_finalizeDb();
+      afterAll_finalizeEngine();
+   }
+
 }

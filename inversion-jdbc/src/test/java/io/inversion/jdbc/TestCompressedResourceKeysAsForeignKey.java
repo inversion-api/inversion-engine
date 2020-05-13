@@ -13,7 +13,7 @@ import io.inversion.Chain;
 import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.rest.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 import io.inversion.utils.JSArray;
@@ -45,7 +45,7 @@ public class TestCompressedResourceKeysAsForeignKey
       
       db = JdbcDbFactory.bootstrapH2(getClass().getName() + System.currentTimeMillis(), JdbcDb.class.getResource("person-h2.ddl").toString());
       api = new Api("person") //
-                             .withEndpoint("*", "*/", new RestAction())//
+                             .withEndpoint("*", "*/", new DbAction())//
                              .withDb(db);
 
       engine = new Engine(api);

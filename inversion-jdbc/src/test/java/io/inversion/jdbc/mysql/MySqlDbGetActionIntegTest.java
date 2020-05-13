@@ -14,32 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc;
+package io.inversion.jdbc.mysql;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.action.rest.AbstractRestDeleteActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
 
-public abstract class AbstractJdbcDbRestDeleteActionIntegTest extends AbstractRestDeleteActionIntegTest implements AbstractJdbcDbEngineTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class MySqlDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest
 {
-   public AbstractJdbcDbRestDeleteActionIntegTest(String dbType)
+   public MySqlDbGetActionIntegTest()
    {
-      super(dbType);
-   }
-
-   @BeforeEach
-   public void beforeEach()
-   {
-      beforeAll_initializeDb();
-      beforeAll_initializeEngine();
-   }
-
-   @AfterEach
-   public void afterEach()
-   {
-      afterAll_finalizeDb();
-      afterAll_finalizeEngine();
+      super("mysql");
    }
 
 }

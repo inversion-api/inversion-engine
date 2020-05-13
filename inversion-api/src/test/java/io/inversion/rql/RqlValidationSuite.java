@@ -258,7 +258,7 @@ public class RqlValidationSuite
          
          try
          {
-            //-- RestGetAction sorts the terms so we do it here
+            //-- DbGetAction sorts the terms so we do it here
             //-- to try and mimic the order of terms in the sql
             //-- when a live call is made
             List<Term> terms = new ArrayList();

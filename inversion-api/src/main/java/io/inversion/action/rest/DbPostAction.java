@@ -44,7 +44,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 
-public class RestPostAction<t extends RestPostAction> extends Action<t>
+public class DbPostAction<t extends DbPostAction> extends Action<t>
 {
    protected boolean collapseAll    = false;
 
@@ -541,7 +541,6 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                      node.put(prop, null);
                   }
                }
-
                req.getEngine().patch(Chain.buildLink(coll), toUnlink.data());
 
             }
@@ -747,7 +746,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return collapseAll;
    }
 
-   public RestPostAction withCollapseAll(boolean collapseAll)
+   public DbPostAction withCollapseAll(boolean collapseAll)
    {
       this.collapseAll = collapseAll;
       return this;
@@ -758,7 +757,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return strictRest;
    }
 
-   public RestPostAction withStrictRest(boolean strictRest)
+   public DbPostAction withStrictRest(boolean strictRest)
    {
       this.strictRest = strictRest;
       return this;
@@ -769,7 +768,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return expandResponse;
    }
 
-   public RestPostAction withExpandResponse(boolean expandResponse)
+   public DbPostAction withExpandResponse(boolean expandResponse)
    {
       this.expandResponse = expandResponse;
       return this;

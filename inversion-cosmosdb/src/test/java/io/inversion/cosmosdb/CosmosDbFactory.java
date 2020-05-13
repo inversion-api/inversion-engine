@@ -28,7 +28,7 @@ import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.rest.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
@@ -192,12 +192,12 @@ public class CosmosDbFactory
                }
             }
          }//
-            , new RestAction());
+            , new DbAction());
 
       Engine dstEngine = new Engine(api);
 
       Engine srcEngine = new Engine().withApi(new Api("northwind") //
-                                                                  .withEndpoint("*", "source" + "/*", new RestAction())//
+                                                                  .withEndpoint("*", "source" + "/*", new DbAction())//
                                                                   .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
 
       //if (rebuildCosmos)

@@ -21,13 +21,13 @@ import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
 
-public abstract class AbstractRestActionIntegTest implements AbstractEngineTest
+public abstract class AbstractDbActionIntegTest implements AbstractEngineTest
 {
    protected Engine engine = null;
    protected Db     db     = null;
    protected String type   = null;
 
-   public AbstractRestActionIntegTest(String type)
+   public AbstractDbActionIntegTest(String type)
    {
       this.type = type;
    }

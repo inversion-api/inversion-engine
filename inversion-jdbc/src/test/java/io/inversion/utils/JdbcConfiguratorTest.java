@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.rest.DbAction;
 import io.inversion.jdbc.JdbcDb;
 
 public class JdbcConfiguratorTest
@@ -40,7 +40,7 @@ public class JdbcConfiguratorTest
    //            "");
    //
    //      api.withDb(db);
-   //      api.withEndpoint("*", "/*", new RestAction());
+   //      api.withEndpoint("*", "/*", new DbAction());
    //      api.startup();
    //      
    //

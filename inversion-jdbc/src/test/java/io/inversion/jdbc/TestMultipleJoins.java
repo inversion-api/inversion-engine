@@ -30,7 +30,7 @@ import io.inversion.Chain;
 import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.rest.DbAction;
 import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -52,7 +52,7 @@ public class TestMultipleJoins
       api = new Api()//
                      .withName("crm")//
                      .withDb(db)//
-                     .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction());
+                     .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction());
 
       engine = new Engine(api);
       engine.startup();

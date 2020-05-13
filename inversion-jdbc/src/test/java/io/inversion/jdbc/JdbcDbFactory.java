@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import io.inversion.Api;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.rest.DbAction;
 import io.inversion.spring.InversionApp;
 import io.inversion.utils.Utils;
 
@@ -12,7 +12,7 @@ public class JdbcDbFactory
 {
    public static void main(String[] args)
    {
-      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new RestAction()).withDb(buildDb("mysql", "northwind-running")));
+      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
    }
 
    public static JdbcDb buildDb(String type, String schemaName)

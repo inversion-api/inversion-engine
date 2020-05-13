@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.sqlserver;
+package io.inversion.jdbc.postgres;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestGetActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerRestGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
+public class PostgresDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest
 {
-   public SqlServerRestGetActionIntegTest()
+   public PostgresDbGetActionIntegTest()
    {
-      super("sqlserver");
+      super("postgres");
    }
 }

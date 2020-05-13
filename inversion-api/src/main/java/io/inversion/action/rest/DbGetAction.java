@@ -53,7 +53,7 @@ import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
-public class RestGetAction extends Action<RestGetAction>
+public class DbGetAction extends Action<DbGetAction>
 {
 
    protected int maxRows        = 100;
@@ -787,7 +787,7 @@ public class RestGetAction extends Action<RestGetAction>
       return maxRows;
    }
 
-   public RestGetAction withMaxRows(int maxRows)
+   public DbGetAction withMaxRows(int maxRows)
    {
       this.maxRows = maxRows;
       return this;

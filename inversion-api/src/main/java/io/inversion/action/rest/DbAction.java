@@ -21,13 +21,13 @@ import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 
-public class RestAction extends Action<RestAction>
+public class DbAction extends Action<DbAction>
 {
-   protected RestGetAction    getAction    = new RestGetAction();
-   protected RestPostAction   postAction   = new RestPostAction();
-   protected RestPutAction    putAction    = new RestPutAction();
-   protected RestPatchAction  patchAction  = new RestPatchAction();
-   protected RestDeleteAction deleteAction = new RestDeleteAction();
+   protected DbGetAction    getAction    = new DbGetAction();
+   protected DbPostAction   postAction   = new DbPostAction();
+   protected DbPutAction    putAction    = new DbPutAction();
+   protected DbPatchAction  patchAction  = new DbPatchAction();
+   protected DbDeleteAction deleteAction = new DbDeleteAction();
 
    @Override
    public void run(Request req, Response res) throws ApiException
@@ -55,56 +55,56 @@ public class RestAction extends Action<RestAction>
       }
    }
 
-   public RestGetAction getGetAction()
+   public DbGetAction getGetAction()
    {
       return getAction;
    }
 
-   public RestAction withGetAction(RestGetAction getAction)
+   public DbAction withGetAction(DbGetAction getAction)
    {
       this.getAction = getAction;
       return this;
    }
 
-   public RestPostAction getPostAction()
+   public DbPostAction getPostAction()
    {
       return postAction;
    }
 
-   public RestAction withPostAction(RestPostAction postAction)
+   public DbAction withPostAction(DbPostAction postAction)
    {
       this.postAction = postAction;
       return this;
    }
 
-   public RestPutAction getPutAction()
+   public DbPutAction getPutAction()
    {
       return putAction;
    }
 
-   public RestAction withPutAction(RestPutAction putAction)
+   public DbAction withPutAction(DbPutAction putAction)
    {
       this.putAction = putAction;
       return this;
    }
 
-   public RestPatchAction getPatchAction()
+   public DbPatchAction getPatchAction()
    {
       return patchAction;
    }
 
-   public RestAction withPatchAction(RestPatchAction patchAction)
+   public DbAction withPatchAction(DbPatchAction patchAction)
    {
       this.patchAction = patchAction;
       return this;
    }
 
-   public RestDeleteAction getDeleteAction()
+   public DbDeleteAction getDeleteAction()
    {
       return deleteAction;
    }
 
-   public RestAction withDeleteAction(RestDeleteAction deleteAction)
+   public DbAction withDeleteAction(DbDeleteAction deleteAction)
    {
       this.deleteAction = deleteAction;
       return this;

@@ -31,7 +31,7 @@ import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
-public class RestDeleteAction extends Action<RestDeleteAction>
+public class DbDeleteAction extends Action<DbDeleteAction>
 {
    @Override
    public void run(Request req, Response res) throws ApiException

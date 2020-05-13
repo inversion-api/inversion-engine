@@ -28,10 +28,10 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class AbstractRestGetActionIntegTest extends AbstractRestActionIntegTest
+public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionIntegTest
 {
 
-   public AbstractRestGetActionIntegTest(String type)
+   public AbstractDbGetActionIntegTest(String type)
    {
       super(type);
    }

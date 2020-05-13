@@ -14,25 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.sqlserver;
+package io.inversion.jdbc.h2;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestPostActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerRestPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
+public class H2DbGetActionTest extends AbstractJdbcDbGetActionIntegTest
 {
-   public SqlServerRestPostActionIntegTest()
+   public H2DbGetActionTest()
    {
-      super("sqlserver");
-   }
-   
-   @Test
-   public void testNestedPost1() throws Exception
-   {
-      //TODO: fix me and add me back into tests.
+      super("h2");
    }
 }
