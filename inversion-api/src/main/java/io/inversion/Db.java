@@ -101,8 +101,16 @@ public abstract class Db<T extends Db>
     */
    protected Path                  endpointPath   = null;
 
+   /**
+    * OPTIONAL column names that should be included in RQL queries, upserts and patches. 
+    * @see #shouldInclude(Collection, String)
+    */
    protected Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
+   /**
+    * OPTIONAL column names that should be excluded from RQL queries, upserts and patches. 
+    * @see #shouldInclude(Collection, String)
+    */
    protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
    public Db()
@@ -1234,6 +1242,18 @@ public abstract class Db<T extends Db>
       return (T) this;
    }
 
+   /**
+    * Checks if "collectionName.columnName" or just "columnName" is specifically included or excluded via <code>includeColumns</code>
+    * <code>excludeColumns</code> or is a valid Property columnName.
+    * <p>
+    * This can be used to filter out things like URL path mapped parameters that don't actually match to "columns" in a document store.
+    * <p>
+    * This does not prevent the underlying Property from being part of a Collection object model and the names here don't actually have to be Properties.
+    * 
+    * @param collection
+    * @param columnName
+    * @return
+    */
    public boolean shouldInclude(Collection collection, String columnName)
    {
       if (includeColumns.size() > 0 || excludeColumns.size() > 0)
