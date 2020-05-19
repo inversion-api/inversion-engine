@@ -16,6 +16,7 @@
  */
 package io.inversion.elasticsearch;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +115,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       return client;
    }
 
-   public Results<Row> select(Collection table, List<Term> columnMappedTerms) throws Exception
+   public Results<Row> doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
       // TODO is this an autoSuggest request or normal request?
       // see line ~78 ElasticDbGetAction
@@ -154,9 +155,16 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       {
          SearchRequest searchReq = new SearchRequest(table.getTableName());
          searchReq.source(query.getSearchBuilder());
-         res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
+         try
+         {
+            System.out.println(query.getJson());
+            res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
+         }
+         catch (IOException e)
+         {
+            ApiException.throw500InternalServerError("The elastic client failed to search/select. " + e.getMessage());
+         }
 
-         System.out.println(query.getJson());
       }
 
       Results result = new Results(query);
@@ -189,7 +197,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws Exception
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
    {
       for (Map<String, Object> row : indexValues)
       {
@@ -204,9 +212,9 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
     * @param indexValues
     * @throws Exception
     */
-   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws Exception
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException
    {
-      Object id = table.encodeKey(indexValues);
+      Object id = table.encodeResourceKey(indexValues);
 
       try
       {
@@ -231,7 +239,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
    }
 
    @Override
-   public List upsert(Collection table, List<Map<String, Object>> rows) throws Exception
+   public List doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
    {
       List keys = new ArrayList();
       for (Map<String, Object> row : rows)
@@ -241,14 +249,14 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       return keys;
    }
 
-   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws Exception
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException
    {
       JSNode doc = new JSNode(columnMappedTermsRow);
 
       String id = doc.getString("id");
       if (id == null)
       {
-         id = table.encodeKey(columnMappedTermsRow);
+         id = table.encodeResourceKey(columnMappedTermsRow);
          if (id == null)
             ApiException.throw400BadRequest("Your record does not contain the required key fields.");
          doc.putFirst("id", id);
@@ -261,7 +269,15 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
 
       Chain.debug("ElasticDb: Upsert " + updateRequest.toString());
 
-      UpdateResponse response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
+      UpdateResponse response = null;
+      try
+      {
+         response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
+      }
+      catch (IOException e)
+      {
+         ApiException.throw500InternalServerError("The elastic client failed to upsert. " + e.getMessage());
+      }
 
       int statusCode = response.status().getStatus();
       if (statusCode > 299)
@@ -291,7 +307,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       // TODO
    }
 
-   public void configDb() throws Exception
+   public void configDb() throws ApiException
    {
 
       try

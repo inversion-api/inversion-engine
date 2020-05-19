@@ -30,14 +30,13 @@ public class MockActionA extends Action<MockActionA>
    }
    
    
-   public MockActionA(String methods, String includePaths)
+   public MockActionA(String methods, String... includePaths)
    {
-      withMethods(methods);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
    }
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isMethod("get"))
       {

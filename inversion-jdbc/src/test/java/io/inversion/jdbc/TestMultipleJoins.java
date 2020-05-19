@@ -19,38 +19,57 @@ package io.inversion.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Api;
+import io.inversion.Chain;
+import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.db.DbAction;
+import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestMultipleJoins
 {
+   Engine engine = null;
+   Api    api    = null;
+   Db     db     = null;
+
+   @BeforeAll
+   public void beforeAll_initializeEngine()
+   {
+      Chain.resetAll();
+      JdbcConnectionLocal.closeAll();
+      
+      String crmDdlUrl = JdbcDb.class.getResource("crm-h2.ddl").toString();
+      db = JdbcDbFactory.bootstrapH2(getClass().getName(), crmDdlUrl);
+
+      api = new Api()//
+                     .withName("crm")//
+                     .withDb(db)//
+                     .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction());
+
+      engine = new Engine(api);
+      engine.startup();
+   }
+
+   @AfterAll
+   public void afterAll_finalizeEngine()
+   {
+      if (db != null)
+      {
+         db.shutdown();
+      }
+   }
+
    @Test
    public void testRelatedCollectionJoinSelect2() throws Exception
    {
-      String crmDdlUrl = JdbcDb.class.getResource("crm-h2.ddl").toString();
-
-      //SqlDb db = new H2SqlDb("db", "crm.db", crmDdlUrl);
-
-      Engine e = new Engine(new Api()//
-                                     .withName("crm")//
-                                     //.withDb(db)//
-
-                                     .withDb(new JdbcDb("db", //the database name used as the properties key prefix when 
-                                                        "org.h2.Driver", //-- jdbc driver
-                                                        "jdbc:h2:mem:" + System.currentTimeMillis() + ";DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                                        "sa", //-- jdbc user
-                                                        "", //jdbc password
-                                                        //OPTIONAL: the demo db is an in-memory db that gets
-                                                        //reinitialized each time with the data in "northwind-h2.ddl"
-                                                        crmDdlUrl))
-
-                                     .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
-
-      e.startup();
 
       //      String sql = "";
       //      sql += "SELECT DISTINCT \"CUSTOMER\".*";
@@ -61,7 +80,7 @@ public class TestMultipleJoins
       //      System.out.println(SqlUtils.selectRows(db.getConnection(), sql));
       //
 
-      Response res = e.get("crm/customers?identifiers.providerCode=loyalty_1");
+      Response res = engine.get("crm/customers?identifiers.providerCode=loyalty_1");
       //      res.dump();
       //      assertTrue(res.data().size() == 1);
       //      assertEquals("http://localhost/crm/customers/1", res.find("data.0.href"));
@@ -70,7 +89,7 @@ public class TestMultipleJoins
       //      res.dump();
       //      assertTrue(res.data().size() == 2);
 
-      res = e.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
+      res = engine.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
       res.dump();
       assertTrue(res.getData().size() == 1);
       assertEquals("http://localhost/crm/customers/1", res.find("data.0.href"));

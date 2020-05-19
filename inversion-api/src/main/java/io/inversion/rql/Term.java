@@ -23,16 +23,32 @@ import java.util.List;
 public class Term implements Comparable<Term>
 {
    public Term       parent = null;
-
+   public char       quote  = 0;
    public String     token  = null;
    public List<Term> terms  = new ArrayList();
+   
 
-   public char       quote  = 0;
+   protected Term()
+   {
+
+   }
 
    protected Term(Term parent, String token)
    {
       withParent(parent);
       withToken(token);
+   }
+
+   public Term copy()
+   {
+      Term copy = new Term();
+
+      copy.quote = quote;
+      copy.token = token;
+      
+      terms.forEach(child -> copy.withTerm(child.copy()));
+      
+      return copy;
    }
 
    @Override

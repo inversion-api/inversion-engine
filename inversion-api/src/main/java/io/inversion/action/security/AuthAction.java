@@ -64,7 +64,7 @@ public class AuthAction extends Action<AuthAction>
    }
 
    @Override
-   public void run(Request req, Response resp) throws Exception
+   public void run(Request req, Response resp) throws ApiException
    {
       User user = Chain.getUser();
 
@@ -383,9 +383,9 @@ public class AuthAction extends Action<AuthAction>
 
    public static interface UserDao
    {
-      User getUser(AuthAction action, String jwt, String apiName, String tenant) throws Exception;
+      User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException;
 
-      User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws Exception;
+      User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException;
 
       default User getGuest(String apiName, String tenant)
       {
@@ -421,13 +421,13 @@ public class AuthAction extends Action<AuthAction>
          boolean isRevoked(String token);
       }
 
-      public User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws Exception
+      public User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException
       {
          ApiException.throw403Forbidden();
          return null;
       }
 
-      public User getUser(AuthAction action, String token, String apiName, String tenant) throws Exception
+      public User getUser(AuthAction action, String token, String apiName, String tenant) throws ApiException
       {
          if (revokedTokenCache != null && revokedTokenCache.isRevoked(token))
             ApiException.throw401Unauthroized();

@@ -26,6 +26,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
@@ -74,7 +75,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       return new ElasticsearchPage(this);
    }
 
-   public Results doSelect() throws Exception
+   public Results doSelect() throws ApiException
    {
       Results results = new Results(this);
       ElasticsearchDb db = getDb();

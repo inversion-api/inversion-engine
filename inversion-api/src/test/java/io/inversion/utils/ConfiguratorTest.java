@@ -78,7 +78,7 @@ public class ConfiguratorTest
 //    * second properties file.  The two properties files should
 //    * match if the encoder/decoder worked propertly
 //    *  
-//    * @throws Exception
+//    * @throws ApiException
 //    */
 //   @Test
 //   public void encodingDecodingEncoding_shouldNotChangeModel() throws Exception

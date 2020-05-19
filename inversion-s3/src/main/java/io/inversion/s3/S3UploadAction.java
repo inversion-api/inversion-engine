@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Request;
 import io.inversion.Request.Upload;
@@ -81,7 +82,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       String requestPath = null;
       String fileName = null;
@@ -129,11 +130,15 @@ public class S3UploadAction extends Action<S3UploadAction>
          responseContent.put("fileSizeBytes", fileSize);
          res.withJson(new JSNode(responseContent));
       }
+      catch (Exception ex)
+      {
+         ApiException.throw500InternalServerError(ex);
+      }
       finally
       {
          if (uploadStream != null)
          {
-            uploadStream.close();
+            Utils.close(uploadStream);
          }
       }
    }
@@ -205,7 +210,7 @@ public class S3UploadAction extends Action<S3UploadAction>
    private AmazonS3 buildS3Client(Chain chain)
    {
       //TODO make this work like dynamo client config as art of db
-      
+
       String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
       String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
       String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);

@@ -14,20 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.h2;
+package io.inversion.jdbc;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
-import io.inversion.jdbc.AbstractJdbcDbRestPostActionIntegTest;
+import io.inversion.action.db.AbstractDbPostActionIntegTest;
 
-@TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlPostActionIntegTest extends AbstractJdbcDbRestPostActionIntegTest
+public abstract class AbstractJdbcDbPostActionIntegTest extends AbstractDbPostActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   public H2SqlPostActionIntegTest()
+   public AbstractJdbcDbPostActionIntegTest(String dbType)
    {
-      super("h2");
+      super(dbType);
    }
 
+   @BeforeEach
+   public void beforeEach()
+   {
+      beforeAll_initializeDb();
+      beforeAll_initializeEngine();
+   }
 
+   @AfterEach
+   public void afterEach()
+   {
+      afterAll_finalizeDb();
+      afterAll_finalizeEngine();
+   }
 }

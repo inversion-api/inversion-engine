@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import io.inversion.Engine;
 import io.inversion.Response;
@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractRestDeleteActionIntegTest extends AbstractRestActionIntegTest
+public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIntegTest
 {
 
-   public AbstractRestDeleteActionIntegTest(String dbType)
+   public AbstractDbDeleteActionIntegTest(String dbType)
    {
       super(dbType);
    }

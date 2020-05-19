@@ -21,17 +21,17 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Db;
-import io.inversion.action.rest.AbstractRestGetActionIntegTest;
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import io.inversion.utils.Utils;
 
 /**
  * @see README.md
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbRestGetActionIntegTest extends AbstractRestGetActionIntegTest
+public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest
 {
 
-   public DynamoDbRestGetActionIntegTest()
+   public DynamoDbGetActionIntegTest()
    {
       super("dynamo");
    }

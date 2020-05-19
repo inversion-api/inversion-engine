@@ -88,7 +88,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
                                                   .withProperty("shipCountry", "VARCHAR")//
                                                   .withIndex("PK_Orders", "primary", true, "orderId");
 
-      Collection orderDetails = new Collection("orderDetails").withProperties("employeeId", "INTEGER")//
+      Collection orderDetails = new Collection("orderDetails").withProperty("employeeId", "INTEGER")//
                                                               .withProperty("orderId", "INTEGER")//
                                                               .withProperty("productId", "INTEGER")//
                                                               .withProperty("quantity", "INTEGER")//
@@ -123,7 +123,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
 
       employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
 
-      suite.withTables(orders, orderDetails, employees, employeeOrderDetails);
+      suite.withCollections(orders, orderDetails, employees, employeeOrderDetails);
    }
 
    /**

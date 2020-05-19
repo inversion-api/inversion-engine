@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 
@@ -27,7 +28,7 @@ public class SetQueryParamAction extends Action<SetQueryParamAction>
 {
    protected Map<String, String> params = new HashMap();
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       for (String name : params.keySet())
       {

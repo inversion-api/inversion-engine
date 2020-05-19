@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import org.junit.jupiter.api.Test;
 
+import io.inversion.action.db.DbGetAction;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class RestGetActionTest
+public class DbGetActionTest
 {
    @Test
    public void testStripTerms1()
@@ -54,7 +56,7 @@ public class RestGetActionTest
          String[] toStrip = new String[test.length - 2];
          System.arraycopy(test, 2, toStrip, 0, toStrip.length);
 
-         String stripped = RestGetAction.stripTerms(test[1], toStrip);
+         String stripped = DbGetAction.stripTerms(test[1], toStrip);
          //System.out.println(stripped);
 
          if (!test[0].equals(stripped))
@@ -72,7 +74,7 @@ public class RestGetActionTest
    //      String[][] tests = {{"http://asdf?offset=5&AAA=BBB&offset = 5&notOffset=123&eq(offset,22)&CCC=DDD&OFFSET=345", "offset", "http://asdf?AAA=BBB&offset = 5&notOffset=123&CCC=DDD"}};
    //      for (String[] test : tests)
    //      {
-   //         String stripped = RestGetAction.stripTerms(test[0], test[1]);
+   //         String stripped = DbGetAction.stripTerms(test[0], test[1]);
    //         System.out.println(stripped);
    //         assertEquals(test[2], stripped);
    //      }

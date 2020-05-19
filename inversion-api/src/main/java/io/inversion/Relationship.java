@@ -93,6 +93,9 @@ public class Relationship implements Serializable
       {
          for (Relationship other : related.getRelationships())
          {
+            if(other == this)
+               continue;
+            
             if (!other.isManyToMany())
                continue;
 
@@ -106,6 +109,9 @@ public class Relationship implements Serializable
       {
          for (Relationship other : related.getRelationships())
          {
+            if(other == this)
+               continue;
+               
             if (isManyToOne() && !other.isOneToMany())
                continue;
 
@@ -185,12 +191,13 @@ public class Relationship implements Serializable
    {
       try
       {
-         String str = "Relationship: " + collection + "." + getName() + ":" + getType() + " ";
+         String str = collection.getName() + "." + getName() + " : " + getType() + " ";
+         
          if (isManyToOne())
          {
-            str += collection.getPrimaryIndex() + " -> " + getFkIndex1();
+            str += getFkIndex1() + " -> " + collection.getPrimaryIndex();
          }
-         if (isOneToMany())
+         else if (isOneToMany())
          {
             str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
          }

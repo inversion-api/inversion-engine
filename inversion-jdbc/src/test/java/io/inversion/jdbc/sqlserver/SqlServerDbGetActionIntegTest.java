@@ -14,15 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.jdbc.sqlserver;
 
-/**
- * Delegates all operations to RestPostAction which currently implements all POST/PUT/PATCH methods.
- * <p>
- * Currently this class exists as a potential future compatibility shim and so that people looking at the
- * source code tree before really digging in will not be confused by the superficial lack of a PUT action class. 
- */
-public class RestPutAction extends RestPostAction<RestPutAction>
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
+
+@TestInstance(Lifecycle.PER_CLASS)
+public class SqlServerDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest
 {
-
+   public SqlServerDbGetActionIntegTest()
+   {
+      super("sqlserver");
+   }
 }

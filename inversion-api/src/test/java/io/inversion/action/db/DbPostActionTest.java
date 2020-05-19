@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import org.junit.jupiter.api.Test;
 
+import io.inversion.action.db.DbPostAction;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
@@ -26,7 +27,7 @@ import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RestPostActionTest
+public class DbPostActionTest
 {
    @Test
    public void testCollapses1()
@@ -47,7 +48,7 @@ public class RestPostActionTest
 
       JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-      RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
+      DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
 
       JSNode benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark = JSNode.parseJsonNode(parent.toString());
@@ -79,7 +80,7 @@ public class RestPostActionTest
 
       JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-      RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
+      DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
 
       JSNode benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark = JSNode.parseJsonNode(parent.toString());
@@ -118,7 +119,7 @@ public class RestPostActionTest
 
       JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-      RestPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
+      DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
 
       JSNode benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark = JSNode.parseJsonNode(parent.toString());

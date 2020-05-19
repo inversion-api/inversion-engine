@@ -32,12 +32,12 @@ import io.inversion.Api;
 import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.AbstractRestGetActionIntegTest;
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import io.inversion.utils.JSNode;
 
-public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestGetActionIntegTest implements AbstractJdbcDbEngineTest
+public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractJdbcDbEngineTest
 {
-   public AbstractJdbcDbRestGetActionIntegTest(String type)
+   public AbstractJdbcDbGetActionIntegTest(String type)
    {
       super(type);
    }
@@ -171,7 +171,7 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
    /**
     * Makes sure that MTM link tables are not recognized as entities
     *  
-    * @throws Exception
+    * @throws ApiException
     */
    @Test
    public void testCollections() throws Exception
@@ -190,23 +190,6 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
 
       assertEquals(0, disjunction.size());
 
-   }
-
-   @Test
-   public void testExcludes() throws Exception
-   {
-      Response res = null;
-      Engine engine = engine();
-
-      //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
-      res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
-      res.dump();
-      assertNull(res.find("data.0.href"));
-      assertNull(res.find("data.0.shipname"));
-      assertNull(res.find("data.0.orderdetails"));
-      assertNull(res.find("data.0.customer"));
-      assertNull(res.find("data.0.employee"));
-      assertNull(res.find("data.0.shipvia"));
    }
 
    @Test
@@ -300,11 +283,12 @@ public abstract class AbstractJdbcDbRestGetActionIntegTest extends AbstractRestG
       Response res = null;
 
       res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
-      assertNull(res.findString("data.0.customer"));
+      
+      assertTrue(!res.findNode("data.0").containsKey("customer"));
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
-      assertNull(res.findString("data.0.employee.firstname"));
+      assertTrue(!res.findNode("data.0.employee").containsKey("firstname"));
       assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
-      assertNull(res.findString("data.0.employee.reportsto.territories"));
+      assertTrue(!res.findNode("data.0.employee.reportsto").hasProperty("territories"));
    }
 
    @Test

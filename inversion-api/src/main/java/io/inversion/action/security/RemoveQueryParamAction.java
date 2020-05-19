@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 
@@ -27,7 +28,7 @@ public class RemoveQueryParamAction extends Action<SetQueryParamAction>
 {
    protected Set<String> params = new HashSet();
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       for (String removedParam : params)
       {

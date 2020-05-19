@@ -40,7 +40,7 @@ public interface AbstractDbTest
 
    public default boolean isIntegTest()
    {
-      return getClass().getSimpleName().indexOf("IntegTest") > -1;
+      return getClass().getSimpleName().indexOf("IntegTest") > -1 || (getClass().getSimpleName().indexOf("UnitTest") < 0 && getClass().getSimpleName().indexOf("H2") > -1);
    }
 
 }

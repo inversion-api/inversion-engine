@@ -848,6 +848,24 @@ public class JSNode implements Map<String, Object>
       return old != null ? old.getValue() : old;
    }
 
+   /**
+    * Removes all properties with <code>names</code>.
+    * 
+    * @param names the keys to remove
+    * @return the first non null value for <code>names</code>
+    */
+   public Object remove(String... names)
+   {
+      Object first = null;
+
+      for (String name : names)
+      {
+         Object removed = remove(name);
+         first = first != null ? first : removed;
+      }
+      return first;
+   }
+
    @Override
    public Set<String> keySet()
    {

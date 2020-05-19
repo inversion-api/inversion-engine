@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import io.inversion.Api;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.db.DbAction;
 import io.inversion.spring.InversionApp;
 import io.inversion.utils.Utils;
 
@@ -12,7 +12,7 @@ public class JdbcDbFactory
 {
    public static void main(String[] args)
    {
-      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new RestAction()).withDb(buildDb("mysql", "northwind-running")));
+      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
    }
 
    public static JdbcDb buildDb(String type, String schemaName)
@@ -43,34 +43,51 @@ public class JdbcDbFactory
 
    public static JdbcDb bootstrapH2(String database) throws Exception
    {
-      database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
+      return bootstrapH2(database, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+   }
 
-      JdbcDb db = new JdbcDb("h2", //
-                             "org.h2.Driver", //
-                             "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-                             "sa", //
-                             "", //
-                             JdbcDb.class.getResource("northwind-h2.ddl").toString())
-         {
-            protected void doShutdown()
+   public static JdbcDb bootstrapH2(String database, String ddlUrl)
+   {
+      try
+      {
+
+         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
+
+         JdbcDb db = new JdbcDb("h2", //
+                                "org.h2.Driver", //
+                                "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
+                                "sa", //
+                                "", //
+                                ddlUrl)
             {
-               try
-               {
-                  JdbcUtils.execute(getConnection(), "SHUTDOWN");
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-               }
-               super.doShutdown();
-            }
-         };
-      return db;
 
-      //      Class.forName("org.h2.Driver").newInstance();
-      //      Connection conn = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID().toString() + ";IGNORECASE=TRUE", "sa", "");
-      //
-      //      runTests(conn, JdbcDb.class.getResource("northwind-h2.ddl").toString());
+               @Override
+               protected void doShutdown()
+               {
+                  try
+                  {
+                     Connection conn = getConnection();
+                     JdbcUtils.execute(conn, "SHUTDOWN");
+                     JdbcConnectionLocal.closeAll();
+                  }
+                  catch (Exception ex)
+                  {
+                     //ex.printStackTrace();
+                  }
+                  finally
+                  {
+                     super.shutdown();
+                  }
+
+               }
+            };
+         return db;
+      }
+      catch (Exception ex)
+      {
+         Utils.rethrow(ex);
+      }
+      return null;
 
    }
 
@@ -95,7 +112,7 @@ public class JdbcDbFactory
     * 'root' account can not make network connections to MySql out of the box and you have to 
     * add the remote connect privilege to MySql.
     * 
-    * @throws Exception
+    * @throws ApiException
     */
    public static JdbcDb bootstrapMySql(String database) throws Exception
    {
@@ -149,7 +166,7 @@ public class JdbcDbFactory
     * @see https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on
     * 
     *
-    * @throws Exception
+    * @throws ApiException
     */
    public static JdbcDb bootstrapPostgres(String database) throws Exception
    {

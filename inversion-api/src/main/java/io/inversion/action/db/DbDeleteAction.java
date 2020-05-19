@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -31,15 +31,10 @@ import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
-public class RestDeleteAction extends Action<RestDeleteAction>
+public class DbDeleteAction extends Action<DbDeleteAction>
 {
-   public RestDeleteAction()
-   {
-      withMethods("DELETE");
-   }
-
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       String resourceKey = req.getResourceKey();
       String relationshipKey = req.getRelationshipKey();
@@ -61,7 +56,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
          res.withStatus(Status.SC_204_NO_CONTENT);
    }
 
-   protected int delete(Engine engine, Collection collection, String url) throws Exception
+   protected int delete(Engine engine, Collection collection, String url) throws ApiException
    {
       int deleted = 0;
 
@@ -87,7 +82,7 @@ public class RestDeleteAction extends Action<RestDeleteAction>
             else
                alreadyDeleted.add(href);
 
-            Row key = collection.decodeKey((String) Utils.last(Utils.explode("/", href)));
+            Row key = collection.decodeResourceKey((String) Utils.last(Utils.explode("/", href)));
             rows.add(key);
          }
          collection.getDb().delete(collection, rows);

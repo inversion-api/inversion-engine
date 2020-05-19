@@ -190,14 +190,19 @@ subprojects {
 	            from components.java
 	            artifact sourcesJar
 	            artifact javadocJar
-	            versionMapping {
-	                usage('java-api') {
-	                    fromResolutionOf('runtimeClasspath')
-	                }
-	                usage('java-runtime') {
-	                    fromResolutionResult()
-	                }
-	            }
+	            
+	            //-- uncommenting the following will generate poms with concrete  
+	            //-- version dependencies instead of dynamic depedencies
+	            //-- https://docs.gradle.org/current/userguide/publishing_maven.html
+	            //versionMapping {
+	            //    usage('java-api') {
+	            //        fromResolutionOf('runtimeClasspath')
+	            //    }
+	            //    usage('java-runtime') {
+	            //        fromResolutionResult()
+	            //    }
+	            //}
+	            
 	            pom {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'

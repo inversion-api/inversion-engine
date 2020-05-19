@@ -39,12 +39,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.swing.SwingUtilities;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.logging.Log;
@@ -80,9 +80,9 @@ import io.inversion.Response;
  * <p>
  * RestClient gives you easy or built in:
  * <ul>
- *  <li>retry support (built in)
+ *  <li>fluent asynchronous response handler api
  *  
- *  <li>asynchronous call support (built in)
+ *  <li>automatic retry support
  *  
  *  <li>header forwarding w/ whitelists and blacklists
  *  
@@ -106,28 +106,49 @@ import io.inversion.Response;
  * <p>
  * For example:
  * <pre>
- * protected RestClient client = new RestClient("myservice"){
  * 
- *  protected Response doRequest(Request request)
- *  {
- *      if(checkMyCondition(request))
+ *      protected RestClient client = new RestClient("myservice")
  *      {
- *          //-- short circuit the remote call "faking" a
- *          //-- remote 200 response (the default status code for a Response)
- *          return new Response(request.getUrl());
+ *          protected Response doRequest(Request request)
+ *          {
+ *              if(checkMyCondition(request))
+ *              {
+ *                  //-- short circuit the remote call "faking" a
+ *                  //-- remote 200 response (the default status code for a Response)
+ *                  return new Response(request.getUrl());
+ *              }
+ *              else
+ *              {
+ *                  doMyRequestTransformation(request);
+ *          
+ *                  Response response = super.getResponse(request);
+ *          
+ *                  doMyResponseTransformation(response);
+ *          
+ *                  return response;
+ *              }
+ *          }
  *      }
- *      else
- *      {
- *          doMyRequestTransformation(request);
- *          
- *          Response response = super.getResponse(request);
- *          
- *          doMyResponseTransformation(response);
- *          
- *          return response;
- *      }
- *  }
- * }
+ *      
+ *      client.get("/some/relative/path")
+ *          .onSuccess(response -> System.out.println("Success:" + res.toString()))
+ *          .onFailure(response -> System.out.println("Failure:" + res.toString()))
+ *          .onResponse(response -> System.out.println(res.getStatus()));
+ *      
+ *      
+ *      //-- instead of using the success/failure callbacks as above
+ *      //-- you can wait for the async process to complete by calling 'get()' 
+ *      
+ *      FutureResponse future = client.post("/some/relative/path", new JSNode("hello", "world"));
+ *      //-- request is asynchronously executing here
+ *      
+ *      //-- the call to get() blocks indefinitely until the async execution completes
+ *      //-- the fact that this method is called 'get()' is not related to HTTP get.
+ *      Response response = future.get();  
+ *      
+ *      
+ *      //-- now do whatever you want with the Response
+ *      
  * </pre>
  * 
  */
@@ -209,7 +230,7 @@ public class RestClient
    protected int                                    retryTimeoutMin  = 10;
 
    /**
-    * The maximum amount of time to wait before a retry.
+    * The maximum amount of time to wait before a single retry.
     * 
     * @see #computeTimeout(Request)
     */
@@ -1170,29 +1191,67 @@ public class RestClient
       return this;
    }
 
+   /**
+    * A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.
+    * <p>
+    * Here are some example uses:
+    * <pre>
+    * 
+    *     client.get("/some/relative/path")
+    *          .onSuccess(response -> System.out.println("Success:" + res.toString()))
+    *          .onFailure(response -> System.out.println("Failure:" + res.toString()))
+    *          .onResponse(response -> System.out.println("I get called on success or failure: " + res.getStatus()));
+    *      
+    *      
+    *      //-- instead of using the success/failure callbacks as above
+    *      //-- you can wait for the async process to complete by calling 'get()' 
+    *      
+    *      FutureResponse future = client.post("/some/relative/path", new JSNode("hello", "world"));
+    *      
+    *      //-- request is asynchronously executing now
+    *      
+    *      //-- the call to get() blocks indefinitely until the async execution completes
+    *      //-- the fact that this method is called 'get()' is not related to HTTP get.
+    *      
+    *      Response response = future.get();  
+    *      
+    *      
+    *      //-- if you want to guarantee that your thread will not be indefinitely blocked
+    *      //-- you can use get(long timeout, TimeUnit units) to wait no more than the specified time 
+    *      
+    *      future = client.get("/some/other/path");
+    *      response = future.get(100, TimeUnit.MILLISECONDS);
+    *      
+    *      if(response == null)
+    *      {
+    *           System.out.println("the http request still has not completed");
+    *      }
+    *      
+    *      
+    * </pre>
+    * 
+    */
    public abstract class FutureResponse implements RunnableFuture<Response>
    {
-      Log                   log        = LogFactory.getLog(getClass());
-
-      long                  createdAt  = System.currentTimeMillis();
-
-      Request               request    = null;
-      Response              response   = null;
-      List<ResponseHandler> onSuccess  = new ArrayList();
-      List<ResponseHandler> onFailure  = new ArrayList();
-      List<ResponseHandler> onResponse = new ArrayList();
-
-      FutureResponse()
-      {
-
-      }
+      Request                  request           = null;
+      Response                 response          = null;
+      List<Consumer<Response>> successListeners  = new ArrayList();
+      List<Consumer<Response>> failureListeners  = new ArrayList();
+      List<Consumer<Response>> responseListeners = new ArrayList();
 
       FutureResponse(Request request)
       {
          this.request = request;
       }
 
-      FutureResponse onSuccess(ResponseHandler handler)
+      /** 
+       * Registers a success callback.
+       * <p>
+       * If the isDone() is already true the handler will be called synchronously right away.
+       * 
+       * @param handler the listener to notify on success
+       */
+      public FutureResponse onSuccess(Consumer<Response> handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1200,7 +1259,7 @@ public class RestClient
             done = isDone();
             if (!done)
             {
-               onSuccess.add(handler);
+               successListeners.add(handler);
             }
          }
 
@@ -1208,7 +1267,7 @@ public class RestClient
          {
             try
             {
-               handler.onResponse(response);
+               handler.accept(response);
             }
             catch (Throwable ex)
             {
@@ -1219,7 +1278,14 @@ public class RestClient
          return this;
       }
 
-      FutureResponse onFailure(ResponseHandler handler)
+      /** 
+       * Registers a failure callback.
+       * <p>
+       * If the isDone() is already true the handler will be called synchronously right away.
+       * 
+       * @param handler the listener to notify on failure
+       */
+      public FutureResponse onFailure(Consumer<Response> handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1227,7 +1293,7 @@ public class RestClient
             done = isDone();
             if (!done)
             {
-               onFailure.add(handler);
+               failureListeners.add(handler);
             }
          }
 
@@ -1235,7 +1301,7 @@ public class RestClient
          {
             try
             {
-               handler.onResponse(response);
+               handler.accept(response);
             }
             catch (Throwable ex)
             {
@@ -1246,7 +1312,14 @@ public class RestClient
          return this;
       }
 
-      FutureResponse onResponse(ResponseHandler handler)
+      /** 
+       * Registers a listener to be notified regardless of success or failure status. 
+       * <p>
+       * If the isDone() is already true the handler will be called synchronously right away.
+       * 
+       * @param handler the listener to notify when the Reponse has arrived
+       */
+      public FutureResponse onResponse(Consumer<Response> handler)
       {
          boolean done = false;
          synchronized (this)
@@ -1254,7 +1327,7 @@ public class RestClient
             done = isDone();
             if (!done)
             {
-               onResponse.add(handler);
+               responseListeners.add(handler);
             }
          }
 
@@ -1262,7 +1335,7 @@ public class RestClient
          {
             try
             {
-               handler.onResponse(response);
+               handler.accept(response);
             }
             catch (Throwable ex)
             {
@@ -1281,11 +1354,11 @@ public class RestClient
 
             if (isSuccess())
             {
-               for (ResponseHandler h : onSuccess)
+               for (Consumer<Response> h : successListeners)
                {
                   try
                   {
-                     h.onResponse(response);
+                     h.accept(response);
                   }
                   catch (Throwable ex)
                   {
@@ -1295,11 +1368,11 @@ public class RestClient
             }
             else
             {
-               for (ResponseHandler h : onFailure)
+               for (Consumer<Response> h : failureListeners)
                {
                   try
                   {
-                     h.onResponse(response);
+                     h.accept(response);
                   }
                   catch (Throwable ex)
                   {
@@ -1308,11 +1381,11 @@ public class RestClient
                }
             }
 
-            for (ResponseHandler h : onResponse)
+            for (Consumer<Response> h : responseListeners)
             {
                try
                {
-                  h.onResponse(response);
+                  h.accept(response);
                }
                catch (Throwable ex)
                {
@@ -1324,23 +1397,13 @@ public class RestClient
          }
       }
 
-      @Override
-      public boolean cancel(boolean arg0)
-      {
-         return false;
-      }
-
+      /**
+       * Blocks indefinitely until <code>response</code> is not null.
+       * @return the Response
+       */
       @Override
       public Response get()
       {
-         if (SwingUtilities.isEventDispatchThread())
-         {
-            String msg = "Blocking on the Swing thread. Your code is blocking the UI by calling FutureResponse.get() on the Swing event dispatch thread.  You should consider moving your call into a background thread.";
-            Exception ex = new Exception();
-            ex.fillInStackTrace();
-            log.warn(msg, ex);
-         }
-
          while (response == null)
          {
             synchronized (this)
@@ -1351,9 +1414,9 @@ public class RestClient
                   {
                      wait();
                   }
-                  catch (Exception ex)
+                  catch (InterruptedException ex)
                   {
-
+                     //ignore
                   }
                }
             }
@@ -1362,35 +1425,36 @@ public class RestClient
          return response;
       }
 
-      public boolean isSuccess()
-      {
-         if (response != null && response.getError() == null && response.getStatusCode() >= 200 && response.getStatusCode() < 300)
-            return true;
-
-         return false;
-      }
-
+      /**
+       * Blocks until the arrival of the response just like get() but will return null after
+       * the specified timeout if the response has not arrived.
+       * 
+       * @return the response or null 
+       */
       @Override
-      public Response get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+      public Response get(long timeout, TimeUnit unit) throws TimeoutException
       {
-         if (SwingUtilities.isEventDispatchThread())
-         {
-            String msg = "Blocking on the Swing thread. Your code is blocking the UI by calling FutureResponse.get() on the Swing event dispatch thread.  You should consider moving your call into a background thread.";
-            Exception ex = new Exception();
-            ex.fillInStackTrace();
-            log.warn(msg, ex);
-         }
-
-         timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
+         long start = System.currentTimeMillis();
          while (response == null)
          {
             synchronized (this)
             {
                if (response == null)
                {
-                  wait(timeout);
-                  if (response == null)
-                     throw new TimeoutException(timeout + " millisecond timeout reached");
+                  try
+                  {
+                     timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
+                     timeout -= System.currentTimeMillis() - start;
+
+                     if (timeout < 1)
+                        break;
+
+                     wait(timeout);
+                  }
+                  catch (InterruptedException e)
+                  {
+                     //ignore
+                  }
                }
             }
          }
@@ -1398,34 +1462,53 @@ public class RestClient
          return response;
       }
 
+      /**
+       * @return true if the response is not null and response.isSuccess()
+       */
+      public boolean isSuccess()
+      {
+         if (response != null && response.isSuccess())
+            return true;
+
+         return false;
+      }
+
+      /**
+       * @return the Request being run.
+       */
       public Request getRequest()
       {
          return request;
       }
 
+      /**
+       * @return false
+       */
       @Override
       public boolean isCancelled()
       {
          return false;
       }
 
+      /**
+       * This does nothing.
+       * @return false
+       */
+      @Override
+      public boolean cancel(boolean arg0)
+      {
+         return false;
+      }
+
+      /**
+       * @return true when response is not null.
+       */
       @Override
       public boolean isDone()
       {
          return response != null;
       }
 
-      public long getCreatedAt()
-      {
-         return createdAt;
-      }
-
-   }
-
-   //TODO make this a lambda instead?
-   public static interface ResponseHandler
-   {
-      public void onResponse(Response response) throws Exception;
    }
 
    /**

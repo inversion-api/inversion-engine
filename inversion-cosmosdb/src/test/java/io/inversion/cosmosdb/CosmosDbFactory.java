@@ -23,12 +23,12 @@ import java.util.Set;
 
 import io.inversion.Action;
 import io.inversion.Api;
+import io.inversion.ApiException;
 import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
-import io.inversion.cosmosdb.CosmosDb;
+import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
@@ -49,7 +49,7 @@ public class CosmosDbFactory
       }
 
       @Override
-      public void configDb() throws Exception
+      public void configDb() throws ApiException
       {
          withDb("inversion-testing-cosmos1");
          withEndpointPath(new Path("cosmos/"));
@@ -176,7 +176,7 @@ public class CosmosDbFactory
       api.withDb(cosmosdb);
       api.withEndpoint("GET,PUT,POST,DELETE", "cosmos/*", new Action()
          {
-            public void run(Request req, Response res) throws Exception
+            public void run(Request req, Response res) throws ApiException
             {
                String collectionKey = req.getCollectionKey().toLowerCase();
 
@@ -192,12 +192,12 @@ public class CosmosDbFactory
                }
             }
          }//
-            , new RestAction());
+            , new DbAction());
 
       Engine dstEngine = new Engine(api);
 
       Engine srcEngine = new Engine().withApi(new Api("northwind") //
-                                                                  .withEndpoint("*", "source" + "/*", new RestAction())//
+                                                                  .withEndpoint("*", "source" + "/*", new DbAction())//
                                                                   .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
 
       //if (rebuildCosmos)

@@ -2,14 +2,20 @@ package io.inversion.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Api;
-import io.inversion.Collection;
+import io.inversion.Chain;
 import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.action.rest.RestAction;
+import io.inversion.action.db.DbAction;
+import io.inversion.jdbc.JdbcDb;
+import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
@@ -24,26 +30,41 @@ import io.inversion.utils.JSNode;
  * TODO: it would be nice to create northwind tables for all schemas with this
  * encoded resource key structure
  */
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestCompressedResourceKeysAsForeignKey
 {
+   Engine engine = null;
+   Api    api    = null;
+   Db     db     = null;
+
+   @BeforeAll
+   public void beforeAll_initializeEngine()
+   {
+      Chain.resetAll();
+      JdbcConnectionLocal.closeAll();
+      
+      db = JdbcDbFactory.bootstrapH2(getClass().getName() + System.currentTimeMillis(), JdbcDb.class.getResource("person-h2.ddl").toString());
+      api = new Api("person") //
+                             .withEndpoint("*", "*/", new DbAction())//
+                             .withDb(db);
+
+      engine = new Engine(api);
+      engine.startup();
+      api.withRelationship("persons", "props", "props", "person", "personResourceKey");
+   }
+
+   @AfterAll
+   public void afterAll_finalizeEngine()
+   {
+      if (db != null)
+      {
+         db.shutdown();
+      }
+   }
+
    @Test
    public void get_encodedCompoundResourceKeyAsForeignKey()
    {
-      Db db = new JdbcDb("db", "org.h2.Driver", //
-                         "jdbc:h2:mem:" + "get_compressedCompoundForeignKey" + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-                         "sa", //
-                         "", //
-                         JdbcDb.class.getResource("person-h2.ddl").toString());
-
-      Api api = new Api("person") //
-                                 .withEndpoint("*", "*/", new RestAction())//
-                                 .withDb(db);
-
-      Engine engine = new Engine().withApi(api);
-      engine.startup();
-
-      api.withRelationship("persons", "props", "props", "person", "personResourceKey");
-
       Response res = null;
 
       res = engine.get("person/persons?expands=props").dump();
@@ -77,4 +98,5 @@ public class TestCompressedResourceKeysAsForeignKey
       assertEquals("http://localhost/person/persons/employee~4444", res.find("data.0.props.0.person"));
 
    }
+
 }

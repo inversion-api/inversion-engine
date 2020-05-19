@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc.h2;
+package io.inversion.jdbc.sqlserver;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestDeleteActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2SqlDeleteActionIntegTest extends AbstractJdbcDbRestDeleteActionIntegTest
+public class SqlServerDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest
 {
-   public H2SqlDeleteActionIntegTest()
+   public SqlServerDbDeleteActionIntegTest()
    {
-      super("h2");
+      super("sqlserver");
    }
 }

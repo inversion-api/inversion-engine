@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.utils.JSNode;
@@ -29,7 +30,7 @@ public class RemoveJsonPropertyAction extends Action<RemoveJsonPropertyAction>
    protected Set<String> properties = new HashSet();
    protected boolean     recursive  = false;
 
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       JSNode json = req.getJson();
       if (json == null)

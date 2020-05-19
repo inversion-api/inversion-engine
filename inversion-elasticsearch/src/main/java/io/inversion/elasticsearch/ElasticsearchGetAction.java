@@ -51,7 +51,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @see io.inversion.cloud.service.Handler#run(io.inversion.cloud.model.Request, io.inversion.cloud.model.Response)
     */
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
 
       //      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
@@ -81,7 +81,7 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     * @param req
     * @param res
     * @param paths
-    * @throws Exception
+    * @throws ApiException
     */
    private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticsearchDb db, Collection table) throws Exception
    {

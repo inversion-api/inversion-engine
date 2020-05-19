@@ -645,7 +645,7 @@ public class Response
       return -1;
    }
 
-   public Response withFile(File file) throws Exception
+   public Response withFile(File file)
    {
       this.json = null;
       this.file = file;

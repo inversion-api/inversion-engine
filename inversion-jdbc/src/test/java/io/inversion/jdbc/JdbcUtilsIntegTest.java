@@ -27,6 +27,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import io.inversion.jdbc.JdbcDb;
+import io.inversion.jdbc.JdbcUtils;
+
 public class JdbcUtilsIntegTest
 {
    //  TODO: this was taken out because of h2 case frustrations with columns not found

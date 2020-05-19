@@ -28,22 +28,22 @@ public class DbTest
         {
         };
 
-        assertEquals("somecolumn", db.beautifyAttributeName("SOMECOLUMN"));
-        assertEquals("someColumn", db.beautifyAttributeName("SomeColumn"));
-        assertEquals("sOMEcolumn", db.beautifyAttributeName("SOMEcolumn"));
-      assertEquals("someColumn",  db.beautifyAttributeName("SOME_COLUMN"));
-      assertEquals("someColumn",  db.beautifyAttributeName("_SOME_COLUMN_"));
-      assertEquals("someColumn",  db.beautifyAttributeName("_SOME_  ____COLUMN _ "));
-      assertEquals("someColumn",  db.beautifyAttributeName("_some_column_"));
+        assertEquals("somecolumn", db.beautifyName("SOMECOLUMN"));
+        assertEquals("someColumn", db.beautifyName("SomeColumn"));
+        assertEquals("sOMEcolumn", db.beautifyName("SOMEcolumn"));
+      assertEquals("someColumn",  db.beautifyName("SOME_COLUMN"));
+      assertEquals("someColumn",  db.beautifyName("_SOME_COLUMN_"));
+      assertEquals("someColumn",  db.beautifyName("_SOME_  ____COLUMN _ "));
+      assertEquals("someColumn",  db.beautifyName("_some_column_"));
       
-      assertEquals("someColumn",  db.beautifyAttributeName(" SOME COLUMN "));
-      assertEquals("someColumn",  db.beautifyAttributeName("    SOME    COLUMN   "));
-      assertEquals("someColumn",  db.beautifyAttributeName(" some column "));
-      assertEquals("someColumn",  db.beautifyAttributeName("        some   column   "));
+      assertEquals("someColumn",  db.beautifyName(" SOME COLUMN "));
+      assertEquals("someColumn",  db.beautifyName("    SOME    COLUMN   "));
+      assertEquals("someColumn",  db.beautifyName(" some column "));
+      assertEquals("someColumn",  db.beautifyName("        some   column   "));
       
-      assertEquals("x23SomeColumn",  db.beautifyAttributeName("123        some   column   "));
-      assertEquals("$someColumn",  db.beautifyAttributeName("$some_column"));
-      assertEquals("orderDetails",  db.beautifyAttributeName("Order Details"));
+      assertEquals("x23SomeColumn",  db.beautifyName("123        some   column   "));
+      assertEquals("$someColumn",  db.beautifyName("$some_column"));
+      assertEquals("orderDetails",  db.beautifyName("Order Details"));
       
       
    }

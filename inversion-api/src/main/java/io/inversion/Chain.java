@@ -497,7 +497,7 @@ public class Chain
       return defaultValue;
    }
 
-   public void go() throws Exception
+   public void go() throws ApiException
    {
       while (next())
       {
@@ -505,7 +505,7 @@ public class Chain
       }
    }
 
-   public boolean next() throws Exception
+   public boolean next() throws ApiException
    {
       if (!isCanceled() && next < actions.size())
       {

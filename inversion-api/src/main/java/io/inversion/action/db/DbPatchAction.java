@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * Copyright (c) 2015-2019 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc;
+package io.inversion.action.db;
 
-import org.junit.jupiter.api.Test;
-
-public class JdbcDbTest
+/**
+ * Delegates all operations to DbPostAction which currently implements all POST/PUT/PATCH methods.
+ * <p>
+ * Currently this class exists as a potential future compatibility shim and so that people looking at the
+ * source code tree before really digging in will not be confused by the superficial lack of a PATCH action class. 
+ */
+public class DbPatchAction extends DbPostAction<DbPatchAction>
 {
-   @Test
-   public void test_upsert_rrowsWitDifferentColumns_upsertIsSplitIntoBatchesWithMatchingKeys()
-   {
-      //TODO: implement me
-   }
 
 }

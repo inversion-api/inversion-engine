@@ -19,12 +19,12 @@ package io.inversion.jdbc.mysql;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.jdbc.AbstractJdbcDbRestGetActionIntegTest;
+import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlSqlGetActionIntegTest extends AbstractJdbcDbRestGetActionIntegTest
+public class MySqlDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest
 {
-   public MySqlSqlGetActionIntegTest()
+   public MySqlDbGetActionIntegTest()
    {
       super("mysql");
    }

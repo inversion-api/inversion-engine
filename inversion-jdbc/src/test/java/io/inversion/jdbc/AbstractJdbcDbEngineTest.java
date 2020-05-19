@@ -4,7 +4,7 @@ import io.inversion.AbstractDbTest;
 import io.inversion.AbstractEngineTest;
 import io.inversion.Chain;
 import io.inversion.Db;
-import io.inversion.jdbc.JdbcDb.ConnectionLocal;
+import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 
 public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest
 {
@@ -14,7 +14,7 @@ public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngine
       Db db = getDb();
       if (db == null)
       {
-         ConnectionLocal.closeAll();
+         JdbcConnectionLocal.closeAll();
          Chain.resetAll();
 
          if (isIntegTest())

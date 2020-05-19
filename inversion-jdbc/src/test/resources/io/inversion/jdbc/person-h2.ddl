@@ -1,3 +1,4 @@
+
 CREATE TABLE `Person` (
     
     `Type` VARCHAR(20),

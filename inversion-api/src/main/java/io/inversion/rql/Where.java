@@ -147,7 +147,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P>
                if (!child.isLeaf())
                   ApiException.throw400BadRequest("Resource key value is not a leaf node: {}", child);
 
-               Row keyParts = getParent().getCollection().decodeKey(index, child.getToken());
+               Row keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
                Term and = Term.term(or, "and");
                for (String key : keyParts.keySet())
                {

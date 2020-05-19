@@ -14,15 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.jdbc;
 
-/**
- * Delegates all operations to RestPostAction which currently implements all POST/PUT/PATCH methods.
- * <p>
- * Currently this class exists as a potential future compatibility shim and so that people looking at the
- * source code tree before really digging in will not be confused by the superficial lack of a PATCH action class. 
- */
-public class RestPatchAction extends RestPostAction<RestPatchAction>
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+
+import io.inversion.action.db.AbstractDbDeleteActionIntegTest;
+
+public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest
 {
+   public AbstractJdbcDbDeleteActionIntegTest(String dbType)
+   {
+      super(dbType);
+   }
+
+   @BeforeEach
+   public void beforeEach()
+   {
+      beforeAll_initializeDb();
+      beforeAll_initializeEngine();
+   }
+
+   @AfterEach
+   public void afterEach()
+   {
+      afterAll_finalizeDb();
+      afterAll_finalizeEngine();
+   }
 
 }

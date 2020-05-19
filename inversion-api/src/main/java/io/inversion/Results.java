@@ -25,13 +25,46 @@ import io.inversion.rql.Query;
 import io.inversion.rql.Term;
 import io.inversion.utils.Rows.Row;
 
+/**
+ * Results are returned by a Db and transformed by Actions into Response content.
+ * <p>
+ * Dbs are not responsible for mapping from column names to json names so a Results rows 
+ * and terms will use column names until they are potentially transformed by an Action.
+ */
 public class Results<M extends Map> implements Iterable<M>
 {
    public static String LAST_QUERY = null;
 
+   /**
+    * the query that produced these results.
+    */
    protected Query      query      = null;
+   
+   /**
+    * The data the query produced.
+    * <p>
+    * Dbs are not responsible for mapping from column names to json names so these maps will
+    * have column names keys when initially returned from the Db.  
+    * <p>
+    * Actions should map them to the corresponding json property names before returning to the caller.
+    */
    protected List<M>    rows       = new ArrayList();
+   
+   /**
+    * The RQL terms that will get the next page of results the DB things there are more results.
+    * <p>
+    * Dbs are not responsible for mapping from column names to json names so these terms will
+    * have column names when initially returned from the Db.  
+    * <p>
+    * Actions should map the keys to the corresponding json name property names before returning to the caller. 
+    */
    protected List<Term> next       = new ArrayList();
+   
+   /**
+    * The total number of rows (if known) in the Db that match the query, not the number of rows returned in this Results. 
+    * <p>
+    * For paginated listings, foundRows generally be greater than rows.size()
+    */
    protected int        foundRows  = -1;
    protected String     debugQuery = null;
    protected String     testQuery  = null;

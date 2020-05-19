@@ -66,13 +66,12 @@ public class MockAction extends Action<MockAction>
          json = new JSNode("name", name);
 
       withName(name);
-      withMethods(methods);
-      withIncludePaths(includePaths);
+      withIncludeOn(methods, includePaths);
       withJson(json);
    }
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (statusCode > 0)
          res.withStatus(status);

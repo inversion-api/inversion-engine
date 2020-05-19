@@ -105,9 +105,8 @@ public class JdbcDbUserDao extends JwtUserDao
       return actual.equals(strongHash) || actual.equals(weakHash);
    }
 
-   public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws Exception
+   public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException
    {
-      Connection conn = null;
       User user = null;
       try
       {
@@ -124,7 +123,8 @@ public class JdbcDbUserDao extends JwtUserDao
             sql += " LIMIT 1 ";
          }
 
-         conn = db.getConnection();
+         //this connection is managed by JdbcConnectionLocal
+         Connection conn = db.getConnection();
 
          Row userRow = JdbcUtils.selectRow(conn, sql, username);
          if (userRow != null)
@@ -155,9 +155,9 @@ public class JdbcDbUserDao extends JwtUserDao
             }
          }
       }
-      finally
+      catch (Exception ex)
       {
-         conn.close();
+         ApiException.throw500InternalServerError(ex);
       }
 
       return user;

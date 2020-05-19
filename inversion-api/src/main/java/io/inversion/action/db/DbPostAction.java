@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.action.rest;
+package io.inversion.action.db;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,10 +41,10 @@ import io.inversion.Status;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
 
-public class RestPostAction<t extends RestPostAction> extends Action<t>
+public class DbPostAction<t extends DbPostAction> extends Action<t>
 {
    protected boolean collapseAll    = false;
 
@@ -54,13 +54,8 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
    protected boolean strictRest     = false;
    protected boolean expandResponse = true;
 
-   public RestPostAction()
-   {
-      withMethods("PUT,POST,PATCH");
-   }
-
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
       if (req.isMethod("PUT", "POST"))
       {
@@ -85,9 +80,9 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
     * 
     * @param req
     * @param res
-    * @throws Exception
+    * @throws ApiException
     */
-   public void patch(Request req, Response res) throws Exception
+   public void patch(Request req, Response res) throws ApiException
    {
       JSNode body = req.getJson();
       if (body.isArray())
@@ -109,83 +104,17 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          }
       }
 
-      List<Row> rows = new ArrayList();
-      Collection coll = req.getCollection();
-
-      List<String> resourceKeys = new ArrayList();
-      for (JSNode node : body.asNodeList())
-      {
-         if (node.size() == 1)
-            continue;//patching an "href" only so no changes.
-
-         Row row = new Row();
-         rows.add(row);
-
-         for (String jsonProp : node.keySet())
-         {
-            Object value = node.get(jsonProp);
-
-            if ("href".equalsIgnoreCase(jsonProp))
-            {
-               String resourceKey = Utils.substringAfter(value.toString(), "/");
-               resourceKeys.add(resourceKey);
-               row.putAll(coll.decodeKey(resourceKey));
-            }
-            else
-            {
-
-               Property collProp = coll.getProperty(jsonProp);
-               if (collProp != null)
-               {
-                  value = coll.getDb().cast(collProp, value);
-                  row.put(collProp.getColumnName(), value);
-               }
-               else
-               {
-                  //TODO: need test case here
-                  Relationship rel = coll.getRelationship(jsonProp);
-                  if (rel != null)
-                  {
-                     if (rel.isManyToOne())
-                     {
-                        if (value != null)
-                        {
-                           Map fk = rel.getRelated().decodeKey(value.toString());
-                           mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
-                           row.putAll(fk);
-                        }
-                        else
-                        {
-                           for (Property fkProp : rel.getFkIndex1().getProperties())
-                           {
-                              row.put(fkProp.getColumnName(), null);
-                           }
-                        }
-                     }
-                     else
-                     {
-                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
-                     }
-                  }
-                  else
-                  {
-                     row.put(jsonProp, value);
-                  }
-               }
-            }
-         }
-      }
-      coll.getDb().patch(coll, rows);
+      List<String> resourceKeys = req.getCollection().getDb().patch(req.getCollection(), req.getJson().asNodeList());
 
       if (resourceKeys.size() > 0)
       {
-         String location = Chain.buildLink(coll, Utils.implode(",", resourceKeys), null);
+         String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys), null);
          res.withHeader("Location", location);
       }
 
    }
 
-   public void upsert(Request req, Response res) throws Exception
+   public void upsert(Request req, Response res) throws ApiException
    {
       if (strictRest)
       {
@@ -296,82 +225,18 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
     * @param collection
     * @param nodes
     * @return
-    * @throws Exception
+    * @throws ApiException
     */
-   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws Exception
+   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws ApiException
    {
       //--
       //--
-      //-- Step 1. Upsert this generation including one to many relationships where the fk is known
+      //-- Step 1. Upsert this generation including many-to-one relationships where the fk is known
       //--
-      List<Map> upsertMaps = new ArrayList();
-      for (JSNode node : nodes.asNodeList())
-      {
-         Map<String, Object> mapped = new HashMap();
-         upsertMaps.add(mapped);
 
-         String href = node.getString("href");
-         if (href != null)
-         {
-            Row decodedKey = collection.decodeKey(href);
-            mapped.putAll(decodedKey);
-         }
-
-         HashSet copied = new HashSet();
-         for (Property attr : collection.getProperties())
-         {
-            String attrName = attr.getJsonName();
-
-            //skip relationships first, all relationships will be upserted first
-            //to make sure child foreign keys are created
-            if (collection.getRelationship(attrName) != null)
-               continue;
-
-            String colName = attr.getColumnName();
-            if (node.containsKey(attrName))
-            {
-               copied.add(attrName.toLowerCase());
-               copied.add(colName.toLowerCase());
-
-               Object attrValue = node.get(attrName);
-               Object colValue = collection.getDb().cast(attr, attrValue);
-               mapped.put(colName, colValue);
-            }
-         }
-         for (Relationship rel : collection.getRelationships())
-         {
-            copied.add(rel.getName().toLowerCase());
-
-            if (rel.isManyToOne() && node.hasProperty(rel.getName()))
-            {
-               for (String colName : rel.getFkIndex1().getColumnNames())
-               {
-                  copied.add(colName.toLowerCase());
-               }
-
-               Map key = getKey(rel.getRelated(), node.get(rel.getName()));
-               if (key != null)
-               {
-                  Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                  mapped.putAll(foreignKey);
-               }
-            }
-         }
-
-         //-- this pulls in any properties that were supplied in the submitted document 
-         //-- but are unknown to the collection/table.  This is necessary to support
-         //-- document stores like dynamo/elastic where all columns are not necessarily
-         //-- known.
-         for (String key : node.keySet())
-         {
-            if (!copied.contains(key.toLowerCase()))
-            {
-               if (!key.equals("href"))
-                  mapped.put(key, node.get(key));
-            }
-         }
-      }
-      List<String> returnList = collection.getDb().upsert(collection, upsertMaps);
+      System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
+      
+      List<String> returnList = collection.getDb().upsert(collection, nodes.asList());
       for (int i = 0; i < nodes.length(); i++)
       {
          //-- new records need their newly assigned id/href assigned back on them
@@ -395,7 +260,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          Relationship inverse = rel.getInverse();
          List childNodes = new ArrayList();
 
-         for (JSNode node : (List<JSNode>) ((JSArray) nodes).asList())
+         for (JSNode node : nodes.asNodeList())
          {
             Object value = node.get(rel.getName());
             if (value instanceof JSArray) //this is a one-to-many or many-to-many
@@ -442,7 +307,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
             }
             else if (value instanceof JSNode)
             {
-               //-- this must be a one-to-many...the FK is in this generation, not the child
+               //-- this must be a many-to-one...the FK is in this generation, not the child
                JSNode childNode = ((JSNode) value);
                childNodes.add(childNode);
             }
@@ -487,8 +352,8 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          {
             for (JSNode node : nodes.asNodeList())
             {
-               Map primaryKey = getKey(collection, node);
-               Map foreignResourceKey = getKey(rel.getRelated(), node.get(rel.getName()));
+               Map primaryKey = collection.getDb().getKey(collection, node);
+               Map foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
 
                Index foreignIdx = rel.getFkIndex1();
                Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
@@ -503,11 +368,11 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
                   {
                      //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
-                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeKey(foreignResourceKey));
+                     updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
                   }
                   else
                   {
-                     Map foreignKey = mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                     Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
                      updatedRow.putAll(foreignKey);
                   }
                }
@@ -518,7 +383,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                //-- don't need to "go back through the front door and PATCH to the engine
                //-- here because we are updating our own collection.
                //-- TODO...make sure of above statement.
-               collection.getDb().patch(collection, updatedRows);
+               collection.getDb().doPatch(collection, updatedRows);
             }
          }
       }
@@ -547,8 +412,8 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                ApiException.throw500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
             Collection parentTbl = collection;
-            Row parentPk = parentTbl.decodeKey(href);
-            Map parentKey = mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
+            Row parentPk = parentTbl.decodeResourceKey(href);
+            Map parentKey = collection.getDb().mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
 
             keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
 
@@ -562,7 +427,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                if (!Utils.empty(childHref))
                {
                   String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
-                  Row childPk = rel.getRelated().decodeKey(childEk);
+                  Row childPk = rel.getRelated().decodeResourceKey(childEk);
 
                   if (rel.isOneToMany())
                   {
@@ -570,7 +435,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                   }
                   else if (rel.isManyToMany())
                   {
-                     Map childFk = mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
+                     Map childFk = collection.getDb().mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childFk);
                   }
                }
@@ -631,13 +496,13 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
          {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-            coll.getDb().patch(coll, upserts);
+            coll.getDb().doPatch(coll, upserts);
          }
          else if (rel.isManyToMany())
          {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-            coll.getDb().upsert(coll, upserts);
+            coll.getDb().doUpsert(coll, upserts);
          }
 
          //-- now find all relationships that are NOT in the group that we just upserted
@@ -676,7 +541,6 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
                      node.put(prop, null);
                   }
                }
-
                req.getEngine().patch(Chain.buildLink(coll), toUnlink.data());
 
             }
@@ -701,58 +565,61 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return returnList;
    }
 
-   String getHref(Object hrefOrNode)
-   {
-      if (hrefOrNode instanceof JSNode)
-         hrefOrNode = ((JSNode) hrefOrNode).get("href");
+   //   String getHref(Object hrefOrNode)
+   //   {
+   //      if (hrefOrNode instanceof JSNode)
+   //         hrefOrNode = ((JSNode) hrefOrNode).get("href");
+   //
+   //      if (hrefOrNode instanceof String)
+   //         return (String) hrefOrNode;
+   //
+   //      return null;
+   //   }
 
-      if (hrefOrNode instanceof String)
-         return (String) hrefOrNode;
+   //   Map getKey(Collection table, Object node)
+   //   {
+   //      if (node instanceof JSNode)
+   //         node = ((JSNode) node).getString("href");
+   //
+   //      if (node instanceof String)
+   //         return table.decodeResourceKey((String) node);
+   //
+   //      return null;
+   //   }
 
-      return null;
-   }
-
-   Map getKey(Collection table, Object node)
-   {
-      if (node instanceof JSNode)
-         node = ((JSNode) node).getString("href");
-
-      if (node instanceof String)
-         return table.decodeKey((String) node);
-
-      return null;
-   }
-
-   Map mapTo(Map srcRow, Index srcCols, Index destCols)
-   {
-      if (srcCols.size() != destCols.size() && destCols.size() == 1)
-      {
-         //when the foreign key is only one column but the related primary key is multiple 
-         //columns, encode the FK as an resourceKey.
-         String resourceKey = Collection.encodeKey(srcRow, srcCols);
-         srcRow.clear();
-         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
-      }
-      else
-      {
-         if (srcCols.size() != destCols.size())
-            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
-
-         if (srcRow == null)
-            return Collections.EMPTY_MAP;
-
-         if (srcCols != destCols)
-         {
-            for (int i = 0; i < srcCols.size(); i++)
-            {
-               String key = srcCols.getProperty(i).getColumnName();
-               Object value = srcRow.remove(key);
-               srcRow.put(destCols.getProperty(i).getColumnName(), value);
-            }
-         }
-      }
-      return srcRow;
-   }
+   //   Map mapTo(Map srcRow, Index srcCols, Index destCols)
+   //   {
+   //      if (srcCols.size() != destCols.size() && destCols.size() == 1)
+   //      {
+   //         //when the foreign key is only one column but the related primary key is multiple 
+   //         //columns, encode the FK as an resourceKey.
+   //         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
+   //         
+   //         for(Object key : srcRow.keySet())
+   //            srcRow.remove(key);
+   //         
+   //         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
+   //      }
+   //      else
+   //      {
+   //         if (srcCols.size() != destCols.size())
+   //            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+   //
+   //         if (srcRow == null)
+   //            return Collections.EMPTY_MAP;
+   //
+   //         if (srcCols != destCols)
+   //         {
+   //            for (int i = 0; i < srcCols.size(); i++)
+   //            {
+   //               String key = srcCols.getProperty(i).getColumnName();
+   //               Object value = srcRow.remove(key);
+   //               srcRow.put(destCols.getProperty(i).getColumnName(), value);
+   //            }
+   //         }
+   //      }
+   //      return srcRow;
+   //   }
 
    Term asTerm(Map row)
    {
@@ -879,7 +746,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return collapseAll;
    }
 
-   public RestPostAction withCollapseAll(boolean collapseAll)
+   public DbPostAction withCollapseAll(boolean collapseAll)
    {
       this.collapseAll = collapseAll;
       return this;
@@ -890,7 +757,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return strictRest;
    }
 
-   public RestPostAction withStrictRest(boolean strictRest)
+   public DbPostAction withStrictRest(boolean strictRest)
    {
       this.strictRest = strictRest;
       return this;
@@ -901,7 +768,7 @@ public class RestPostAction<t extends RestPostAction> extends Action<t>
       return expandResponse;
    }
 
-   public RestPostAction withExpandResponse(boolean expandResponse)
+   public DbPostAction withExpandResponse(boolean expandResponse)
    {
       this.expandResponse = expandResponse;
       return this;

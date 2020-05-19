@@ -23,12 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.Action;
+import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.Status;
-import io.inversion.utils.JSNode;
-import redis.clients.jedis.Jedis;
 
 /**
  * The service builds a key from the request url & parameters.  If the key does not exist within Redis,
@@ -57,7 +55,7 @@ public class RedisAction extends Action<RedisAction>
    protected final Logger log = LoggerFactory.getLogger(getClass());
 
    @Override
-   public void run(Request req, Response res) throws Exception
+   public void run(Request req, Response res) throws ApiException
    {
 //      //caching only makes sense for GET requests
 //      if (!"GET".equalsIgnoreCase(req.getMethod()))
