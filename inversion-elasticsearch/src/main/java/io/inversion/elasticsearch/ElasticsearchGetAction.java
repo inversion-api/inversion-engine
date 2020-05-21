@@ -18,7 +18,6 @@ package io.inversion.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +29,13 @@ import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.Status;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
 /**
  * Accepts RQL parameters and streams back the elastic query result to the http client
  * 
- * 
+ * @author kfrankic
  *
  */
 public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
@@ -50,30 +48,30 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    boolean isOneSrcArray = true;
 
    /**
-    * @see io.inversion.service.Handler#run(io.inversion.Request, io.inversion.Response)
+    * @see io.inversion.cloud.service.Handler#run(io.inversion.cloud.model.Request, io.inversion.cloud.model.Response)
     */
    @Override
    public void run(Request req, Response res) throws ApiException
    {
 
-//      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
-//      ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
-//
-//      // examples...
-//      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
-//      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
-//
-//      // The path should include the Elastic index/type otherwise were gonna have a bad time.
-//      String path = req.getPath().toString();
-//      String[] paths = path != null ? path.split("/") : new String[]{};
-//      if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
-//      {
-//         handleAutoSuggestRequest(req, res, paths, req.getUrl().clearParam("type"), db, collection);
-//      }
-//      else
-//      {
-//         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, collection);
-//      }
+      //      Collection collection = findCollectionOrThrow404(req.getApi(), req.getChain(), req);
+      //      ElasticsearchDb db = (ElasticsearchDb) collection.getDb();
+      //
+      //      // examples...
+      //      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad?w(name,wells)
+      //      // http://gen2-dev-api.liftck.com:8103/api/lift/us/elastic/ad/suggest?suggestField=value
+      //
+      //      // The path should include the Elastic index/type otherwise were gonna have a bad time.
+      //      String path = req.getPath().toString();
+      //      String[] paths = path != null ? path.split("/") : new String[]{};
+      //      if (paths.length > 0 && paths[paths.length - 1].equals("suggest"))
+      //      {
+      //         handleAutoSuggestRequest(req, res, paths, req.removeParam("type"), db, collection);
+      //      }
+      //      else
+      //      {
+      //         handleRqlRequest(req, res, paths, req.getApiUrl() + req.getPath(), db, collection);
+      //      }
 
    }
 
@@ -87,127 +85,128 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
     */
    private void handleRqlRequest(Request req, Response res, String[] paths, String apiUrl, ElasticsearchDb db, Collection table) throws Exception
    {
-      if (req.getUrl().getParam("source") == null && defaultSource != null)
-      {
-         req.getUrl().withParam("source", defaultSource);
-      }
-
-      Collection collection = req.getCollectionKey() != null ? req.getCollection() : null;//getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
-
-      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getUrl().getParams());
-
-      //      Integer wantedPage = null;
-      //      if (req.getParam("wantedpage") != null)
+      //      if (req.getParam("source") == null && defaultSource != null)
       //      {
-      //         wantedPage = elasticRQL.toInt("wantedpage", req.removeParam("wantedpage"));
-      //         if (wantedPage < elasticRQL.toInt("pagenum", req.getParam("pagenum")))
-      //         {
-      //            // remove the start param as it wont be used.
-      //            req.removeParam("start");
-      //            req.removeParam("prevstart");
-      //         }
+      //         req.withParam("source", defaultSource);
       //      }
       //
-      //      ElasticQuery dsl = elasticRQL.toQueryDsl(req.getParams());
-      //      dsl.getStmt().setMaxRows(maxRows);
+      //      Collection collection = req.getCollectionKey() != null ? req.getCollection() : null;//getApi().getCollection(req.getCollectionKey(), ElasticsearchDb.class) : null;
       //
-      //      if (wantedPage != null)
+      //      //      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, req.getParams());
+      //      ElasticsearchQuery elasticQ = new ElasticsearchQuery(collection, null); // TODO see line above
+      //
+      //      //      Integer wantedPage = null;
+      //      //      if (req.getParam("wantedpage") != null)
+      //      //      {
+      //      //         wantedPage = elasticRQL.toInt("wantedpage", req.removeParam("wantedpage"));
+      //      //         if (wantedPage < elasticRQL.toInt("pagenum", req.getParam("pagenum")))
+      //      //         {
+      //      //            // remove the start param as it wont be used.
+      //      //            req.removeParam("start");
+      //      //            req.removeParam("prevstart");
+      //      //         }
+      //      //      }
+      //      //
+      //      //      ElasticQuery dsl = elasticRQL.toQueryDsl(req.getParams());
+      //      //      dsl.getStmt().setMaxRows(maxRows);
+      //      //
+      //      //      if (wantedPage != null)
+      //      //      {
+      //      //         // wantedPage < MAX query size, get that page.
+      //      //         if (wantedPage * dsl.getStmt().pagesize <= ElasticRql.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+      //      //         {
+      //      //            // to directly load the page, set pagenum = wantedPage
+      //      //            dsl.getStmt().pagenum = wantedPage;
+      //      //         }
+      //      //         else
+      //      //         {
+      //      //            // wantedPage > 10k, start traversal at the last page BEFORE the MAX query index
+      //      //            if (wantedPage < dsl.getStmt().pagenum)
+      //      //            {
+      //      //               int newPageNum = 1;
+      //      //               while (newPageNum * dsl.getStmt().pagesize <= ElasticRql.MAX_NORMAL_ELASTIC_QUERY_SIZE)
+      //      //               {
+      //      //                  newPageNum++;
+      //      //               }
+      //      //
+      //      //               dsl.getStmt().pagenum = newPageNum - 1;
+      //      //            }
+      //      //         }
+      //      //      }
+      //
+      //      String json = elasticQ.getJson().toString();
+      //
+      //      // uses a http client to deliver the dsl/json as the payload...
+      //      // ... the elastic response is then piped into the Response 'res'
+      //      // and returned to the client 
+      //      // HttpClient httpClient = Web.getHttpClient();
+      //
+      //      List<String> headers = new ArrayList<String>();
+      //      String url = buildSearchUrlAndHeaders(table, paths, headers);
+      //
+      //      res.debug(url, json, headers);
+      //
+      //      Response r = null;//HttpUtils.rest("post", url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      //
+      //      if (r.isSuccess())
       //      {
-      //         // wantedPage < MAX query size, get that page.
-      //         if (wantedPage * dsl.getStmt().pagesize <= ElasticRql.MAX_NORMAL_ELASTIC_QUERY_SIZE)
-      //         {
-      //            // to directly load the page, set pagenum = wantedPage
-      //            dsl.getStmt().pagenum = wantedPage;
-      //         }
-      //         else
-      //         {
-      //            // wantedPage > 10k, start traversal at the last page BEFORE the MAX query index
-      //            if (wantedPage < dsl.getStmt().pagenum)
-      //            {
-      //               int newPageNum = 1;
-      //               while (newPageNum * dsl.getStmt().pagesize <= ElasticRql.MAX_NORMAL_ELASTIC_QUERY_SIZE)
-      //               {
-      //                  newPageNum++;
-      //               }
       //
-      //               dsl.getStmt().pagenum = newPageNum - 1;
-      //            }
-      //         }
+      //         // TODO how do we want to handle a failed elastic result?
+      //
+      //         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
+      //
+      //         int totalHits = Integer.parseInt(jsObj.getNode("hits").getProperty("total").getValue().toString());
+      //         JSArray hits = jsObj.getNode("hits").getArray("hits");
+      //
+      //         //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
+      //         //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
+      //         //
+      //         //         ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
+      //         JSArray data = new JSArray();
+      //         //
+      //         //         // if the query contains a wantedPage and it differs from the pagenum 
+      //         //         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
+      //         //         // 'from' for each request.  While this method maybe more verbose, it 
+      //         //         // will do half the work than re-invoking the this handler as it will 
+      //         //         // not have to query the 'prev' value multiple times.
+      //         //         int pageNum = dsl.getStmt().pagenum;
+      //         //         List<String> sortList = dsl.getOrder() != null ? dsl.getOrder().getOrderAsStringList() : new ArrayList<String>();
+      //         //         while (wantedPage != null && wantedPage != pageNum)
+      //         //         {
+      //         //            // get the last object
+      //         //            ObjectNode lastHit = data.getObject(data.length() - 1);
+      //         //
+      //         //            // get that object's 'sort' values
+      //         //            String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
+      //         //
+      //         //            // update 'search after' starting position on the dsl
+      //         //            dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
+      //         //            json = mapper.writeValueAsString(dsl.toDslMap());
+      //         //
+      //         //            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
+      //         //            jsObj = Utils.toObjectNode(r.getContent());
+      //         //            hits = jsObj.getObject("hits").getArray("hits");
+      //         //
+      //         //            data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
+      //         //
+      //         //            pageNum++;
+      //         //         }
+      //         //
+      //         //         ObjectNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
+      //
+      //         //ObjectNode wrapper = new ObjectNode("meta", meta, "data", data);
+      //         JSNode wrapper = new JSNode("meta", new JSNode(), "data", data);
+      //         res.withJson(wrapper);
+      //
       //      }
-
-      String json = elasticQ.getJson().toString();
-
-      // uses a http client to deliver the dsl/json as the payload...
-      // ... the elastic response is then piped into the Response 'res'
-      // and returned to the client 
-      // HttpClient httpClient = Web.getHttpClient();
-
-      List<String> headers = new ArrayList<String>();
-      String url = buildSearchUrlAndHeaders(table, paths, headers);
-
-      res.debug(url, json, headers);
-
-      Response r = null;//HttpUtils.rest("post", url, json, headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
-
-      if (r.isSuccess())
-      {
-
-         // TODO how do we want to handle a failed elastic result?
-
-         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
-
-         int totalHits = Integer.parseInt(jsObj.getNode("hits").getString("total").toString());
-         JSArray hits = jsObj.getNode("hits").getArray("hits");
-
-         //         boolean isAll = paths[paths.length - 1].toLowerCase().equals("no-type");
-         //         boolean isOneSrcArr = (isOneSrcArray && dsl.getSources() != null && dsl.getSources().size() == 1) ? true : false;
-         //
-         //         ArrayNode data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-         JSArray data = new JSArray();
-         //
-         //         // if the query contains a wantedPage and it differs from the pagenum 
-         //         // loop until pagenum==wantedPage.  Use the query, and only adjust the 
-         //         // 'from' for each request.  While this method maybe more verbose, it 
-         //         // will do half the work than re-invoking the this handler as it will 
-         //         // not have to query the 'prev' value multiple times.
-         //         int pageNum = dsl.getStmt().pagenum;
-         //         List<String> sortList = dsl.getOrder() != null ? dsl.getOrder().getOrderAsStringList() : new ArrayList<String>();
-         //         while (wantedPage != null && wantedPage != pageNum)
-         //         {
-         //            // get the last object
-         //            ObjectNode lastHit = data.getObject(data.length() - 1);
-         //
-         //            // get that object's 'sort' values
-         //            String startStr = srcObjectFieldsToStringBySortList(lastHit, sortList);
-         //
-         //            // update 'search after' starting position on the dsl
-         //            dsl.setSearchAfter(new ArrayList<String>(Arrays.asList(startStr.split(","))));
-         //            json = mapper.writeValueAsString(dsl.toDslMap());
-         //
-         //            r = Web.post(url, json, headers, 0).get(ElasticDb.maxRequestDuration, TimeUnit.SECONDS);
-         //            jsObj = Utils.toObjectNode(r.getContent());
-         //            hits = jsObj.getObject("hits").getArray("hits");
-         //
-         //            data = createDataJsArray(isAll, isOneSrcArr, hits, dsl);
-         //
-         //            pageNum++;
-         //         }
-         //
-         //         ObjectNode meta = buildMeta(dsl.getStmt().pagesize, pageNum, totalHits, apiUrl, dsl, (data.length() > 0 ? data.get(data.length() - 1) : null), url, headers);
-
-         //ObjectNode wrapper = new ObjectNode("meta", meta, "data", data);
-         JSNode wrapper = new JSNode("meta", new JSNode(), "data", data);
-         res.withJson(wrapper);
-
-      }
-      else
-      {
-         res.debug("", "Elastic Error Response", r.getErrorContent());
-
-         ///throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
-         r.rethrow();
-      }
-
+      //      else
+      //      {
+      //         res.debug("", "Elastic Error Response", r.getErrorContent());
+      //
+      //         ///throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+      //         r.rethrow();
+      //      }
+      //
    }
 
    /**
@@ -224,96 +223,96 @@ public class ElasticsearchGetAction extends Action<ElasticsearchGetAction>
    private void handleAutoSuggestRequest(Request req, Response res, String[] paths, String type, ElasticsearchDb db, Collection table) throws Exception
    {
 
-//      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
-//
-//      // remove tenantId before looping over the params to ensure tenantId is not used as the field
-//      String tenantId = null;
-//      JSNode context = null;
-////      if (req.getApi().isMultiTenant())
-////      {
-////         tenantId = req.removeParam("tenantId");
-////         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
-////      }
-//
-//      String field = null;
-//      String value = null;
-//
-//      for (Map.Entry<String, String> entry : req.getParams().entrySet())
-//      {
-//         field = entry.getKey();
-//         value = entry.getValue();
-//      }
-//
-//      JSNode completion = null;
-//      JSNode autoSuggest = null;
-//      JSNode payload = null;
-//
-//      if (type == null || (type != null && !type.equals("wildcard")))
-//      {
-//         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
-//         autoSuggest = new JSNode("prefix", value, "completion", completion);
-//         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
-//
-//      }
-//      else
-//      {
-//         // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
-//         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
-//         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
-//         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
-//      }
-//
-//      if (context != null)
-//      {
-//         completion.put("context", context);
-//      }
-//
-//      List<String> headers = new ArrayList<String>();
-//      String url = buildSearchUrlAndHeaders(table, paths, headers);
-//
-//      res.debug(url + "?pretty", payload.toString(), headers);
-//
-//      Response r = null;//HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
-//
-//      if (r.isSuccess())
-//      {
-//         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
-//         JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
-//         JSArray resultArray = new JSArray();
-//         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
-//         {
-//            if (context != null)
-//            {
-//               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
-//            }
-//            else
-//            {
-//               resultArray.add(obj.getNode("_source").get(field));
-//            }
-//         }
-//
-//         // do a wildcard search of no type was defined.
-//         if (resultArray.length() == 0 && type == null)
-//         {
-////            if (req.getApi().isMultiTenant())
-////            {
-////               req.withParam("tenantId", tenantId);
-////            }
-//            handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
-//         }
-//         else
-//         {
-//            JSNode data = new JSNode("field", field, "results", resultArray);
-//            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
-//            res.withJson(new JSNode("meta", meta, "data", data));
-//         }
-//      }
-//      else
-//      {
-//         //throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
-//         r.rethrow();
-//      }
-
+      //      int size = req.getParam("pagesize") != null ? Integer.parseInt(req.removeParam("pagesize")) : maxRows;
+      //
+      //      // remove tenantId before looping over the params to ensure tenantId is not used as the field
+      //      String tenantId = null;
+      //      JSNode context = null;
+      //      if (req.getApi().isMultiTenant())
+      //      {
+      //         tenantId = req.removeParam("tenantId");
+      //         context = new JSNode("tenantid", tenantId); // elastic expects "tenantid" to be all lowercase 
+      //      }
+      //
+      //      String field = null;
+      //      String value = null;
+      //
+      //      for (Map.Entry<String, String> entry : req.getParams().entrySet())
+      //      {
+      //         field = entry.getKey();
+      //         value = entry.getValue();
+      //      }
+      //
+      //      JSNode completion = null;
+      //      JSNode autoSuggest = null;
+      //      JSNode payload = null;
+      //
+      //      if (type == null || (type != null && !type.equals("wildcard")))
+      //      {
+      //         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+      //         autoSuggest = new JSNode("prefix", value, "completion", completion);
+      //         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
+      //
+      //      }
+      //      else
+      //      {
+      //         // use regex completion (slightly slower...~20ms vs 2ms).  Regex searches must be done in lowercase.
+      //         completion = new JSNode("field", field, "skip_duplicates", true, "size", size);
+      //         autoSuggest = new JSNode("regex", ".*" + value.toLowerCase() + ".*", "completion", completion);
+      //         payload = new JSNode("_source", new JSArray(field), "suggest", new JSNode("auto-suggest", autoSuggest));
+      //      }
+      //
+      //      if (context != null)
+      //      {
+      //         completion.put("context", context);
+      //      }
+      //
+      //      List<String> headers = new ArrayList<String>();
+      //      String url = buildSearchUrlAndHeaders(table, paths, headers);
+      //
+      //      res.debug(url + "?pretty", payload.toString(), headers);
+      //
+      //      Response r = null;//HttpUtils.post(url + "?pretty", payload.toString(), headers, 0).get(ElasticsearchDb.maxRequestDuration, TimeUnit.SECONDS);
+      //
+      //      if (r.isSuccess())
+      //      {
+      //         JSNode jsObj = JSNode.parseJsonNode(r.getContent());
+      //         JSNode auto = (JSNode) jsObj.getNode("suggest").getArray("auto-suggest").get(0);
+      //         JSArray resultArray = new JSArray();
+      //         for (JSNode obj : (List<JSNode>) auto.getArray("options").asList())
+      //         {
+      //            if (context != null)
+      //            {
+      //               resultArray.add(obj.getNode("_source").getNode(field).get("input"));
+      //            }
+      //            else
+      //            {
+      //               resultArray.add(obj.getNode("_source").get(field));
+      //            }
+      //         }
+      //
+      //         // do a wildcard search of no type was defined.
+      //         if (resultArray.length() == 0 && type == null)
+      //         {
+      //            if (req.getApi().isMultiTenant())
+      //            {
+      //               req.withParam("tenantId", tenantId);
+      //            }
+      //            handleAutoSuggestRequest(req, res, paths, "wildcard", db, table);
+      //         }
+      //         else
+      //         {
+      //            JSNode data = new JSNode("field", field, "results", resultArray);
+      //            JSNode meta = buildMeta(resultArray.length(), 1, resultArray.length(), null, null, null, null, null);
+      //            res.withJson(new JSNode("meta", meta, "data", data));
+      //         }
+      //      }
+      //      else
+      //      {
+      //         //throw new ApiException(r.hasStatus(db.allowedFailResponseCodes) ? r.getStatus() : Status.SC_500_INTERNAL_SERVER_ERROR);
+      //         r.rethrow();
+      //      }
+      //
    }
 
    private String buildSearchUrlAndHeaders(Collection table, String[] paths, List<String> headers)
