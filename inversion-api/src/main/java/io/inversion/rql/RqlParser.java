@@ -21,7 +21,7 @@ import java.util.List;
 
 public class RqlParser
 {
-   public Term parse(String clause)
+   public static Term parse(String clause)
    {
       TermBuilder tb = new TermBuilder();
       RqlTokenizer t = new RqlTokenizer(clause);
@@ -73,7 +73,7 @@ public class RqlParser
       return root;
    }
 
-   class TermBuilder
+   static class TermBuilder
    {
       Term       root  = null;
       List<Term> terms = new ArrayList();

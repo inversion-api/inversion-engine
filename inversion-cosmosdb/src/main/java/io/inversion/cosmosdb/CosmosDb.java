@@ -101,7 +101,7 @@ public class CosmosDb extends Db<CosmosDb>
          }
 
          //-- the only way to achieve a PATCH is to query for the document first.
-         Results existing = select(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
+         Results existing = doSelect(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
          if (existing.size() == 1)
          {
             Map<String, Object> row = existing.getRow(0);

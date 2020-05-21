@@ -56,12 +56,7 @@ import io.inversion.utils.Rows.Row;
 public class DbGetAction extends Action<DbGetAction>
 {
 
-   protected int maxRows        = 100;
-
-   /**
-    * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves 
-    */
-   protected Set reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+   protected int maxRows = 100;
 
    @Override
    public void run(Request req, Response res) throws ApiException
@@ -173,7 +168,7 @@ public class DbGetAction extends Action<DbGetAction>
          req.getUrl().withParams(term.toString(), null);
       }
 
-      Results results = select(req, req.getCollection(), req.getUrl().getParams(), req.getApi());
+      Results results = select(req, req.getCollection(), req.getApi());
 
       if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null)
       {
@@ -247,96 +242,8 @@ public class DbGetAction extends Action<DbGetAction>
 
    }
 
-   protected Results select(Request req, Collection collection, Map<String, String> params, Api api) throws ApiException
+   protected Results select(Request req, Collection collection, Api api) throws ApiException
    {
-      //------------------------------------------------
-      // Normalize all of the params and convert attribute
-      // names to column names.
-      List<Term> terms = new ArrayList();
-
-      if (params.size() > 0)
-      {
-         RqlParser parser = new RqlParser();
-         for (String paramName : params.keySet())
-         {
-            String termStr = null;
-            String paramValue = params.get(paramName);
-
-            if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
-            {
-               termStr = paramName;
-            }
-            else
-            {
-               termStr = "eq(" + paramName + "," + paramValue + ")";
-            }
-            Term term = parser.parse(termStr);
-
-            if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
-               continue;
-
-            if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
-            {
-               //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
-               //dotted path expressions.  If you don't use dotted path expressions the includes values
-               //can be used to limit the sql select clause...however if any of the columns are actually
-               //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
-               boolean dottedInclude = false;
-               for (int i = 1; i < term.size(); i++)
-               {
-                  String str = term.getToken(i);
-                  if (str.indexOf(".") > -1)
-                  {
-                     dottedInclude = true;
-                     break;
-                  }
-               }
-               if (dottedInclude)
-                  continue;
-
-               //TODO: need test cases 
-               for (Term child : term.getTerms())
-               {
-                  if (child.hasToken("href") && collection != null)
-                  {
-                     term.removeTerm(child);
-
-                     Index pk = collection.getPrimaryIndex();
-                     for (int i = 0; i < pk.size(); i++)
-                     {
-                        Property c = pk.getProperty(i);
-                        boolean includesPkCol = false;
-                        for (Term col : term.getTerms())
-                        {
-                           if (col.hasToken(c.getColumnName()))
-                           {
-                              includesPkCol = true;
-                              break;
-                           }
-                        }
-                        if (!includesPkCol)
-                           term.withTerm(Term.term(term, c.getColumnName()));
-                     }
-                     break;
-                  }
-               }
-            }
-
-            //            if (collection != null)
-            //            {
-            //               terms.addAll(collection.getDb().mapToColumns(collection, term));
-            //            }
-            //            else
-            {
-               terms.add(term);
-            }
-         }
-      }
-
-      //-- this sort is not strictly necessary but it makes the order of terms in generated
-      //-- query text dependable so you can write better tests.
-      Collections.sort(terms);
-
       Results results = null;
 
       if (collection == null)
@@ -346,11 +253,11 @@ public class DbGetAction extends Action<DbGetAction>
          if (db == null)
             ApiException.throw400BadRequest("Unable to find collection for url '{}'", req.getUrl());
 
-         results = db.select(null, terms);
+         results = db.select(null, req.getUrl().getParams());
       }
       else
       {
-         results = collection.getDb().select(collection, terms);
+         results = collection.getDb().select(collection, req.getUrl().getParams());
       }
 
       if (results.size() > 0)
@@ -478,19 +385,19 @@ public class DbGetAction extends Action<DbGetAction>
                // already retrieved.
                pkCache = new MultiKeyMap()
                   {
-//                     public Object put(Object key1, Object key2, Object value)
-//                     {
-//                        System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
-//                        return super.put(key1, key2, value);
-//                     }
-//
-//                     public Object get(Object key1, Object key2)
-//                     {
-//                        Object value = super.get(key1, key2);
-//                        String str = (value + "").replace("\r", "").replace("\n", "");
-//                        System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
-//                        return value;
-//                     }
+                     //                     public Object put(Object key1, Object key2, Object value)
+                     //                     {
+                     //                        System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
+                     //                        return super.put(key1, key2, value);
+                     //                     }
+                     //
+                     //                     public Object get(Object key1, Object key2)
+                     //                     {
+                     //                        Object value = super.get(key1, key2);
+                     //                        String str = (value + "").replace("\r", "").replace("\n", "");
+                     //                        System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
+                     //                        return value;
+                     //                     }
                   };
 
                for (JSNode node : parentObjs)
@@ -817,16 +724,7 @@ public class DbGetAction extends Action<DbGetAction>
    public static String stripTerms(String url, String... tokens)
    {
       Url u = new Url(url);
-
-      for (int i = 0; tokens != null && i < tokens.length; i++)
-      {
-         String token = tokens[i];
-         if (token != null)
-         {
-            u.clearParams(token);
-         }
-      }
-
+      u.clearParams(tokens);
       return u.toString();
    }
 

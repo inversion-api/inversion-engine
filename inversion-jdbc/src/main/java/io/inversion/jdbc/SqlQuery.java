@@ -897,7 +897,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
       }
-      else if (Term.in(token.toLowerCase(), "_exists", "_notexists"))
+      else if (Utils.in(token.toLowerCase(), "_exists", "_notexists"))
       {
          if ("_notexists".equalsIgnoreCase(token))
             sql.append("NOT ");

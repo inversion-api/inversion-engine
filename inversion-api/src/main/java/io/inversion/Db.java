@@ -17,6 +17,7 @@
 package io.inversion;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
@@ -112,6 +114,11 @@ public abstract class Db<T extends Db>
     * @see #shouldInclude(Collection, String)
     */
    protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+   /**
+    * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves 
+    */
+   protected Set                   reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
    public Db()
    {
@@ -222,6 +229,24 @@ public abstract class Db<T extends Db>
    {
       return runningApis.contains(api);
    }
+   
+   protected Term asTerm(String paramName, String paramValue)
+   {
+      String termStr = null;
+      if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
+      {
+         termStr = paramName;
+      }
+      else
+      {
+         if (Utils.empty(paramValue))
+            paramValue = "true";
+
+         termStr = "eq(" + paramName + "," + paramValue + ")";
+      }
+      Term term = RqlParser.parse(termStr);
+      return term;
+   }
 
    /**
     * Finds all records that match the supplied RQL query terms.   
@@ -234,10 +259,88 @@ public abstract class Db<T extends Db>
     * @return A list of maps with keys as Property jsonNames
     * @throws ApiException
     */
-   public final Results select(Collection collection, List<Term> queryTerms) throws ApiException
+   public final Results select(Collection collection, Map<String, String> params) throws ApiException
    {
+      List<Term> inTerms = new ArrayList();
+      for(String key : params.keySet())
+      {
+         if(!reservedParams.contains(key))
+            inTerms.add(asTerm(key, params.get(key)));
+      }
+
+      //------------------------------------------------
+      // Normalize all of the params and convert attribute
+      // names to column names.
+      List<Term> terms = new ArrayList();
+
+      for (Term term : inTerms)
+      {
+         if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
+            continue;
+
+         if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
+         {
+            //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
+            //dotted path expressions.  If you don't use dotted path expressions the includes values
+            //can be used to limit the sql select clause...however if any of the columns are actually
+            //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
+            boolean dottedInclude = false;
+            for (int i = 1; i < term.size(); i++)
+            {
+               String str = term.getToken(i);
+               if (str.indexOf(".") > -1)
+               {
+                  dottedInclude = true;
+                  break;
+               }
+            }
+            if (dottedInclude)
+               continue;
+
+            //TODO: need test cases 
+            for (Term child : term.getTerms())
+            {
+               if (child.hasToken("href") && collection != null)
+               {
+                  term.removeTerm(child);
+
+                  Index pk = collection.getPrimaryIndex();
+                  for (int i = 0; i < pk.size(); i++)
+                  {
+                     Property c = pk.getProperty(i);
+                     boolean includesPkCol = false;
+                     for (Term col : term.getTerms())
+                     {
+                        if (col.hasToken(c.getColumnName()))
+                        {
+                           includesPkCol = true;
+                           break;
+                        }
+                     }
+                     if (!includesPkCol)
+                        term.withTerm(Term.term(term, c.getColumnName()));
+                  }
+                  break;
+               }
+            }
+         }
+
+         //            if (collection != null)
+         //            {
+         //               terms.addAll(collection.getDb().mapToColumns(collection, term));
+         //            }
+         //            else
+         {
+            terms.add(term);
+         }
+      }
+
+      //-- this sort is not strictly necessary but it makes the order of terms in generated
+      //-- query text dependable so you can write better tests.
+      Collections.sort(terms);
+
       List<Term> mappedTerms = new ArrayList();
-      queryTerms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
+      terms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
 
       Results results = doSelect(collection, mappedTerms);
 

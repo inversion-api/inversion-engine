@@ -26,14 +26,11 @@ import io.inversion.utils.Utils;
 
 public class AclRule extends Rule<AclRule>
 {
-   protected boolean allow = true;
-   protected boolean info  = false;
+   protected boolean      allow                   = true;
+   protected boolean      info                    = false;
 
-   protected List<String> permissions = new ArrayList();
-   protected List<String> roles       = new ArrayList();
-
-   protected List<String> restricts               = new ArrayList();
-   protected List<String> requires                = new ArrayList();
+   protected List<String> permissions             = new ArrayList();
+   protected List<String> roles                   = new ArrayList();
 
    protected boolean      allRolesMustMatch       = false;
    protected boolean      allPermissionsMustMatch = false;
@@ -190,42 +187,6 @@ public class AclRule extends Rule<AclRule>
          }
       }
       return this;
-   }
-
-   public AclRule withRestricts(String... restricts)
-   {
-      if (restricts != null)
-      {
-         for (String restrict : Utils.explode(",", restricts))
-         {
-            if (!this.restricts.contains(restrict))
-               this.restricts.add(restrict);
-         }
-      }
-      return this;
-   }
-
-   public List<String> getRestricts()
-   {
-      return new ArrayList(restricts);
-   }
-
-   public AclRule withRequires(String... requires)
-   {
-      if (requires != null)
-      {
-         for (String require : Utils.explode(",", requires))
-         {
-            if (!this.requires.contains(require))
-               this.requires.add(require);
-         }
-      }
-      return this;
-   }
-
-   public List<String> getRequires()
-   {
-      return new ArrayList(requires);
    }
 
    public boolean isAllow()
