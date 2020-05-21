@@ -1,4 +1,4 @@
-package io.inversion.cloud.action.elastic;
+package io.inversion.elasticsearch;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
