@@ -284,6 +284,14 @@ public abstract class Db<T extends Db>
                {
                   if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
                      continue;
+                  boolean indexCreated = false;
+                  for (Relationship rel : coll.getRelationships()) {
+                     if(rel.getFkIndex1().equals(fkIdx)){
+                        indexCreated = true;
+                        break;
+                     }
+                  }
+                  if(indexCreated) continue;
 
                   Collection pkEntity = fkIdx.getProperty(0).getPk().getCollection();
                   Collection fkEntity = fkIdx.getProperty(0).getCollection();
