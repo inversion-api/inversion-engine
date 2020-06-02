@@ -1582,7 +1582,10 @@ public class Utils
                return new java.sql.Timestamp(date(value.toString()).getTime());
 
             case "array":
-
+               //if not an array treat as a single value from the array's field
+               if(value instanceof String && !value.toString().contains("[") && !value.toString().contains("]")){
+                  return value;
+               }
                if (value instanceof JSArray)
                   return value;
                else

@@ -249,6 +249,10 @@ public class Collection extends Rule<Collection> implements Serializable
       return this;
    }
 
+   public Collection withProperty(Property property){
+      return withProperties(property);
+   }
+
    public Collection withProperty(String name, String type)
    {
       return withProperty(name, type, true);
