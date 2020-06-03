@@ -16,12 +16,7 @@
  */
 package io.inversion.utils;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -35,6 +30,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +41,13 @@ import java.util.TreeSet;
 import java.util.Vector;
 
 import org.apache.commons.collections4.map.MultiKeyMap;
+import org.apache.commons.configuration2.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.inversion.Action;
 import io.inversion.Api;
+import io.inversion.ApiException;
 import io.inversion.Collection;
 import io.inversion.Db;
 import io.inversion.Endpoint;
@@ -58,99 +56,134 @@ import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Relationship;
 import io.inversion.Rule;
-import io.inversion.utils.Configurator.Wirer.Includer;
-import io.inversion.utils.Configurator.Wirer.Namer;
+import io.inversion.Rule.RuleMatcher;
+import io.inversion.utils.Configurator.Encoder.Includer;
+import io.inversion.utils.Configurator.Encoder.Namer;
 
 public class Configurator
 {
-   public static final String ROOT_BEAN_NAME = "inversion";
+   protected static final Logger log            = LoggerFactory.getLogger(Configurator.class);
 
-   protected final Logger     log            = LoggerFactory.getLogger(Engine.class.getName() + ".configuration");
+   public static final String    ROOT_BEAN_NAME = "inversion";
 
-   protected Engine           engine         = null;
+   //   /**
+   //    * An identifier, such as 'dev', 'stage', 'prod' used to locate and load additional "inversion[1-99][-${profile}].properties" config files.
+   //    * <p>
+   //    * A profile allows you to build a single jar/war that can be deployed in multiple environments. 
+   //    * Configuration common to all deployments can be added to "inversion[1-99].properties" files and then
+   //    * augmented with the differences between deployments isolated to the profile specific files.
+   //    * <p>
+   //    * To set the <code>profile</code>, you can directly wire <code>engine.withProfile</code> or set "inversion.profile"
+   //    * as an environment variable or Java system property. 
+   //    * 
+   //    * @see io.inversion.utils.Configurator
+   //    */
+   //   protected String           profile        = null;
+   //
+   //   /**
+   //    * The path to inversion*.properties files
+   //    */
+   //   protected String           configPath     = "";
+   //
+   //   /**
+   //    * The number of milliseconds between background reloads of the Api config
+   //    */
+   //   protected int              configTimeout  = 10000;
+   //
+   //   /**
+   //    * Indicates that the supplied config files contain all the setup info and the Api
+   //    * will not be reflectively configured as it otherwise would.
+   //    */
+   //   protected boolean          configFast     = false;
+   //   protected boolean          configDebug    = false;
+   //   protected String           configOut      = null;
 
-   /**
-    * An identifier, such as 'dev', 'stage', 'prod' used to locate and load additional "inversion[1-99][-${profile}].properties" config files.
-    * <p>
-    * A profile allows you to build a single jar/war that can be deployed in multiple environments. 
-    * Configuration common to all deployments can be added to "inversion[1-99].properties" files and then
-    * augmented with the differences between deployments isolated to the profile specific files.
-    * <p>
-    * To set the <code>profile</code>, you can directly wire <code>engine.withProfile</code> or set "inversion.profile"
-    * as an environment variable or Java system property. 
-    * 
-    * @see io.inversion.utils.Configurator
-    */
-   protected String           profile        = null;
-
-   /**
-    * The path to inversion*.properties files
-    */
-   protected String           configPath     = "";
-
-   /**
-    * The number of milliseconds between background reloads of the Api config
-    */
-   protected int              configTimeout  = 10000;
-
-   /**
-    * Indicates that the supplied config files contain all the setup info and the Api
-    * will not be reflectively configured as it otherwise would.
-    */
-   protected boolean          configFast     = false;
-   protected boolean          configDebug    = false;
-   protected String           configOut      = null;
-
-   public synchronized void loadConfig(Engine engine)
+   public synchronized void configure(Engine engine)
    {
-      if (this.engine != null)
-         return;
-
-      this.engine = engine;
+      Configuration config = Config.getConfiguration();
 
       try
       {
-         Config config = findConfig();
+         Properties props = new Properties();
+         Iterator<String> keys = config.getKeys();
+         while (keys.hasNext())
+         {
+            String key = keys.next();
+            props.put(key, config.getString(key));
+         }
 
-         if (config.files.size() == 0)
-            return;
-
+         //-- if there is already an API, don't load everything from scratch.
+         //-- just override/set any keys from the config on the target objects 
          if (engine.getApis().size() > 0)
          {
-            System.out.println("NOTICE: Api have been wired up already in code.  Settings from your inversion*.properties files will be loaded into System.properties instead of being used to reflectively wire the Api model");
-            //-- if there are already APIs loaded, we will not try to rebootstrap the core model from
-            //-- the properties files.  Instead, we will just put all properties in the env so that 
-            //-- lazy loading methods from individual classes can pull them.
-            config.props.entrySet().forEach(entry -> {
-               System.setProperty(entry.getKey() + "", entry.getValue() + "");
-            });
+            Encoder encoder = new Encoder();
+            encoder.encode(new DefaultNamer(), new AllIncluder(), engine.getApis().toArray());
+
+            //dump(encoder.props);
+
+            Map<String, Object> beans = new HashMap();
+            for (Object bean : encoder.names.keySet())
+            {
+               String key = encoder.names.get(bean);
+               beans.put(key, bean);
+            }
+
+            for (String beanName : beans.keySet())
+            {
+               for (Object propKey : props.keySet())
+               {
+                  if (propKey.toString().startsWith(beanName + "."))
+                  {
+                     Object propVal = props.getProperty(propKey.toString());
+
+                     Object bean = beans.get(beanName);
+                     String fieldName = propKey.toString().substring(beanName.length() + 1);
+                     try
+                     {
+                        Field field = Utils.getField(fieldName, bean.getClass());
+                        if (field != null)
+                        {
+                           field.setAccessible(true);
+                           propVal = cast((String) propKey, (String) propVal, field.getType(), field, beans);
+                           field.set(bean, propVal);
+                        }
+                        else
+                        {
+                           log.warn("Unable to find field '" + fieldName + "' on bean '" + beanName + "'");
+                        }
+                     }
+                     catch (Exception ex)
+                     {
+                        log.warn("Error setting property '" + propKey + "'", ex);
+                     }
+                  }
+               }
+            }
          }
          else
          {
             //all this does is set inversion.* properties on the engine class
-            Wirer w = new Wirer();
+            Decoder w = new Decoder();
             w.putBean(ROOT_BEAN_NAME, engine);
-            w.load(config.props);
-
-            loadConfig(config, true, isConfigFast());
+            w.load(props);
+            loadConfig(engine, props);
          }
       }
       catch (Exception e)
       {
-         e.printStackTrace();
-         throw new RuntimeException("Unable to load config files: " + e.getMessage(), e);
+         ApiException.throw500InternalServerError(e, "Error loading configuration.");
       }
    }
 
-   public static Properties encode(Object... beans) throws Exception
-   {
-      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
-      return autoProps;
-   }
+   //   public static Properties encode(Object... beans) throws Exception
+   //   {
+   //      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
+   //      return autoProps;
+   //   }
 
-   void loadConfig(Config config, boolean forceReload, boolean fastLoad) throws Exception
+   void loadConfig(Engine engine, Properties properties) throws Exception
    {
-      Wirer wire = new Wirer()
+      Decoder wire = new Decoder()
          {
             //IMPORTANT IMPORTANT IMPORTANT
             // add special case exceptions here for cases where users may add unclean data
@@ -177,135 +210,37 @@ public class Configurator
                   field.set(module, name);
             }
          };
-      wire.load(config.props);
+      wire.load(properties);
 
       //-- this just loads the bare bones config supplied  
       //-- in inversion*.properties files by the users.  
       autoWireApi(wire);
 
-      boolean doLoad = false;
-
-      if (!fastLoad)
+      for (Api api : wire.getBeans(Api.class))
       {
-         for (Api api : wire.getBeans(Api.class))
+         for (Db db : ((Api) api).getDbs())
          {
-            Api existingApi = engine.getApi(api.getName());
-
-            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
-            {
-               doLoad = true;
-
-               for (Db db : ((Api) api).getDbs())
-               {
-                  db.startup(api);
-               }
-            }
-         }
-
-         if (doLoad)
-         {
-            //-- this serializes out the object model that was bootsrapped off of the
-            //-- configuration files.  At this point the db.startup() has been called
-            //-- on all of the DBs and they configured collections on the Api.  
-            Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), wire.getBeans(Api.class).toArray());
-            autoProps.putAll(config.props);
-            wire.clear();
-            wire.load(autoProps);
-
-            autoWireApi(wire);
-
-            String configOut = getConfigOut();
-            if (!Utils.empty(configOut))
-            {
-               String fileName = "./" + configOut.trim();
-
-               File file = new File(fileName);
-
-               log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
-
-               file.getParentFile().mkdirs();
-               BufferedWriter out = new BufferedWriter(new FileWriter(file));
-
-               //properties are sorted based on the number of "." segments they contain so that "shallow"
-               //depth properties can be set before deeper depth properties.
-               Properties sorted = new Properties()
-                  {
-                     public Enumeration keys()
-                     {
-                        Vector v = new Vector(Wirer.sort(keySet()));
-                        return v.elements();
-                     }
-                  };
-
-               sorted.putAll(autoProps);
-               autoProps = sorted;
-
-               autoProps.store(out, "");
-
-               //               for (String key : AutoWire.sort(autoProps.keySet()))
-               //               {
-               //                  String value = autoProps.getProperty(key);
-               //                  if (shouldMask(key))
-               //                     value = "###############";
-               //               }
-               out.flush();
-               out.close();
-
-               List<String> keys = Wirer.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
-               Collections.sort(keys);
-               log.info("-- merged user supplied configuration -------------------------");
-               for (String key : keys)
-               {
-                  String value = autoProps.getProperty(key);
-
-                  if (shouldMask(key))
-                     value = "###############";
-
-                  log.info(" > " + key + "=" + value);
-               }
-               log.info("-- end merged user supplied configuration ---------------------");
-
-            }
+            db.startup(api);
          }
       }
 
-      if (doLoad || fastLoad)
+      //-- this serializes out the object model that was bootsrapped off of the
+      //-- configuration files.  At this point the db.startup() has been called
+      //-- on all of the DBs and they configured collections on the Api.  
+      Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), wire.getBeans(Api.class).toArray());
+      autoProps.putAll(properties);
+      wire.clear();
+      wire.load(autoProps);
+
+      autoWireApi(wire);
+
+      for (Api api : wire.getBeans(Api.class))
       {
-         for (Api api : wire.getBeans(Api.class))
-         {
-            Api existingApi = engine.getApi(api.getName());
-            if (forceReload || existingApi == null || !existingApi.getHash().equals(config.hash))
-            {
-               api.withHash(config.hash);
-               api.removeExcludes();
-               engine.withApi(api);
-            }
-         }
-
-         // if (log.isInfoEnabled() && service.isConfigDebug())
-         {
-            List<String> keys = new ArrayList(config.props.keySet());
-            Collections.sort(keys);
-            log.info("-- merged user supplied configuration -------------------------");
-            for (String key : keys)
-            {
-               String value = config.props.getProperty(key);
-
-               if (shouldMask(key))
-                  value = "###############";
-
-               log.info(" > " + key + "=" + value);
-            }
-            for (String file : config.files)
-            {
-               log.info("# config file: " + file);
-            }
-            log.info("-- end merged user supplied configuration ---------------------");
-         }
+         engine.withApi(api);
       }
    }
 
-   void autoWireApi(Wirer wire)
+   void autoWireApi(Decoder wire)
    {
       List<Api> apis = wire.getBeans(Api.class);
 
@@ -341,7 +276,15 @@ public class Configurator
       }
    }
 
-   static class WirerSerializerIncluder implements Includer
+   static class AllIncluder extends DefaultIncluder
+   {
+      public AllIncluder()
+      {
+         excludeTypes = new ArrayList(Arrays.asList(Logger.class));
+      }
+   }
+
+   static class DefaultIncluder implements Includer
    {
       List<Field> excludes     = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
@@ -381,6 +324,10 @@ public class Configurator
          {
             return true;
          }
+         else if (JSNode.class.isAssignableFrom(c))
+         {
+            return true;
+         }
          else if (Map.class.isAssignableFrom(c))
          {
             Type t = field.getGenericType();
@@ -409,7 +356,7 @@ public class Configurator
 
    }
 
-   static class WirerSerializerNamer implements Namer
+   static class DefaultNamer implements Namer
    {
       @Override
       public String getName(Object o) throws Exception
@@ -427,22 +374,26 @@ public class Configurator
          else if (o instanceof Collection)
          {
             Collection t = (Collection) o;
-            name = t.getDb().getName() + ".collections." + t.getTableName();
+            if (t.getDb() != null)
+               name = t.getDb().getName() + ".collections." + t.getTableName();
          }
          else if (o instanceof Property)
          {
             Property col = (Property) o;
-            name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
+            if (col.getCollection() != null && col.getCollection().getDb() != null)
+               name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
          }
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
+            if(index.getCollection() != null && index.getCollection().getDb() != null)
+               name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
          }
          else if (o instanceof Relationship)
          {
-            Relationship a = (Relationship) o;
-            name = getName(a.getCollection()) + ".relationships." + a.getName();
+            Relationship rel = (Relationship) o;
+            if(rel.getCollection() != null)
+               name = getName(rel.getCollection()) + ".relationships." + rel.getName();
          }
 
          if (name == null)
@@ -451,181 +402,14 @@ public class Configurator
          if (name != null)
             return name.toString();
 
-         throw new RuntimeException("Unable to name: " + o + " " + o.getClass());
+         System.out.println("Unable to name: " + o.getClass().getSimpleName() + " - " + o);
+
+         return null;
+         //throw new RuntimeException("Unable to name: " + o + " " + o.getClass());
       }
    }
 
-   class Config
-   {
-      String       hash  = null;
-      List<String> files = new ArrayList();
-      Properties   props = new Properties();
-   }
-
-   Config findConfig() throws IOException
-   {
-      Config config = new Config();
-
-      String configPath = getConfigPath();
-
-      if (configPath.length() > 0 && !(configPath.endsWith("/") || configPath.endsWith("\\")))
-         configPath += "/";
-
-      for (int i = -1; i <= 100; i++)
-      {
-         String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
-         InputStream is = engine.getResource(fileName);
-
-         if (is == null)
-         {
-            fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + ".properties";
-            is = engine.getResource(fileName);
-         }
-
-         if (is != null)
-         {
-            config.files.add(fileName);
-            config.props.load(is);
-         }
-      }
-
-      if (getProfile() != null)
-      {
-         for (int i = -1; i <= 100; i++)
-         {
-            InputStream is = null;
-            String fileName = null;
-
-            fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + getProfile() + ".properties";
-            is = engine.getResource(fileName);
-
-            if (is == null)
-            {
-               fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + getProfile() + ".properties";
-               is = engine.getResource(fileName);
-            }
-            if (is == null)
-            {
-               fileName = configPath + "inversion" + "-" + getProfile() + (i < 0 ? "" : i) + ".properties";
-               is = engine.getResource(fileName);
-            }
-            if (is == null)
-            {
-               fileName = configPath + "inversion" + "-" + getProfile() + "-" + (i < 0 ? "" : i) + ".properties";
-               is = engine.getResource(fileName);
-            }
-
-            if (is != null)
-            {
-               config.files.add(fileName);
-               config.props.load(is);
-            }
-         }
-      }
-
-      if (engine.getApis().size() == 0 && config.files.isEmpty())
-      {
-         log.warn("\n\n#########################################################################\n# WARNING!!! No '.properties' files have been loaded.                   #\n# Are you still using snooze.properties? Change to inversion.properties #\n#########################################################################\n");
-      }
-      //      else
-      //      {
-      for (String fileName : config.files)
-      {
-         log.warn("LOADING CONFIG FILE: " + fileName);
-      }
-      //      }
-
-      List keys = new ArrayList(config.props.keySet());
-      Collections.sort(keys);
-      StringBuffer buff = new StringBuffer();
-      for (Object key : config.props.keySet())
-      {
-         buff.append(key).append(config.props.get(key));
-      }
-
-      config.hash = Utils.md5(buff.toString().getBytes());
-
-      return config;
-   }
-
-   boolean shouldMask(String str)
-   {
-      if (str.indexOf(".") > 0)
-         str = str.substring(str.lastIndexOf(".") + 1, str.length());
-
-      if (str.indexOf("pass") > -1 || str.indexOf("secret") > -1)
-         return true;
-
-      return false;
-   }
-
-   public String getProfile()
-   {
-      return Utils.getSysEnvPropStr("inversion.profile", profile);
-   }
-
-   public Configurator withProfile(String profile)
-   {
-      this.profile = profile;
-      return this;
-   }
-
-   public String getConfigPath()
-   {
-      return configPath;
-   }
-
-   public Configurator withConfigPath(String configPath)
-   {
-      this.configPath = configPath;
-      return this;
-   }
-
-   public int getConfigTimeout()
-   {
-      return configTimeout;
-   }
-
-   public Configurator withConfigTimeout(int configTimeout)
-   {
-      this.configTimeout = configTimeout;
-      return this;
-   }
-
-   public boolean isConfigFast()
-   {
-      return configFast;
-   }
-
-   public Configurator withConfigFast(boolean configFast)
-   {
-      this.configFast = configFast;
-      return this;
-   }
-
-   public boolean isConfigDebug()
-   {
-      return configDebug;
-   }
-
-   public Configurator withConfigDebug(boolean configDebug)
-   {
-      this.configDebug = configDebug;
-      return this;
-   }
-
-   public String getConfigOut()
-   {
-      return configOut;
-   }
-
-   public Configurator withConfigOut(String configOut)
-   {
-      this.configOut = configOut;
-      return this;
-   }
-
-   static class Wirer
+   static class Decoder
    {
       Properties          props    = new Properties();
       TreeSet<String>     propKeys = new TreeSet<String>();
@@ -813,7 +597,7 @@ public class Configurator
             }
             if (key.lastIndexOf(".") < 0)
             {
-               beans.put(key, cast(props.getProperty(key)));
+               beans.put(key, cast0(props.getProperty(key)));
             }
          }
 
@@ -881,17 +665,17 @@ public class Configurator
                            }
                            else if (java.util.Collection.class.isAssignableFrom(type))
                            {
-                              java.util.Collection list = (java.util.Collection) cast(key, value, type, field);
+                              java.util.Collection list = (java.util.Collection) cast(key, value, type, field, beans);
                               ((java.util.Collection) field.get(obj)).addAll(list);
                            }
                            else if (Map.class.isAssignableFrom(type))
                            {
-                              Map map = (Map) cast(key, value, type, null);
+                              Map map = (Map) cast(key, value, type, null, beans);
                               ((Map) field.get(obj)).putAll(map);
                            }
                            else
                            {
-                              field.set(obj, cast(key, value, type, null));
+                              field.set(obj, cast(key, value, type, null, beans));
                            }
                         }
                         else
@@ -1017,7 +801,7 @@ public class Configurator
          return matches;
       }
 
-      protected Field getField(String fieldName, Class clazz)
+      public static Field getField(String fieldName, Class clazz)
       {
          if (fieldName == null || clazz == null)
          {
@@ -1043,7 +827,7 @@ public class Configurator
          return null;
       }
 
-      protected Object cast(String str)
+      protected Object cast0(String str)
       {
          if ("true".equalsIgnoreCase(str))
             return true;
@@ -1057,141 +841,13 @@ public class Configurator
          return str;
       }
 
-      protected <T> T cast(String key, String stringVal, Class<T> type, Field field) throws Exception
-      {
-         if (String.class.isAssignableFrom(type))
-         {
-            return (T) stringVal;
-         }
-         else if (Path.class.isAssignableFrom(type))
-         {
-            return (T) new Path(stringVal);
-         }
-         else if (boolean.class.isAssignableFrom(type))
-         {
-            stringVal = stringVal.toLowerCase();
-            return (T) (Boolean) (stringVal.equals("true") || stringVal.equals("t") || stringVal.equals("1"));
-         }
-         else if (byte.class.isAssignableFrom(type))
-         {
-            return (T) (Byte) Byte.parseByte(stringVal);
-         }
-         else if (char.class.isAssignableFrom(type))
-         {
-            return (T) (Character) stringVal.charAt(0);
-         }
-         else if (int.class.isAssignableFrom(type))
-         {
-            return (T) (Integer) Integer.parseInt(stringVal);
-         }
-         else if (long.class.isAssignableFrom(type))
-         {
-            return (T) (Long) Long.parseLong(stringVal);
-         }
-         else if (float.class.isAssignableFrom(type))
-         {
-            return (T) (Float) Float.parseFloat(stringVal);
-         }
-         else if (double.class.isAssignableFrom(type))
-         {
-            return (T) (Double) Double.parseDouble(stringVal);
-         }
-         else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type))
-         {
-            Class subtype = null;
-            if (type.isArray())
-            {
-               subtype = getArrayElementClass(type);
-            }
+   }
 
-            if (subtype == null && field != null)
-               subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
-
-            //if (subtype == null)
-            //   subtype = String.class;
-
-            java.util.Collection list = new ArrayList();
-            String[] parts = stringVal.split(",");
-            for (String part : parts)
-            {
-               part = part.trim();
-
-               Object val = beans.containsKey(part) ? beans.get(part) : part;
-
-               if (val != null && subtype != null && !subtype.isAssignableFrom(val.getClass()))
-                  val = cast(key, val + "", subtype, null);
-
-               list.add(val);
-            }
-
-            if (type.isArray())
-               return (T) list.toArray((Object[]) Array.newInstance(subtype, list.size()));
-
-            return (T) list;
-         }
-         else if (Map.class.isAssignableFrom(type))
-         {
-            Map map = new HashMap();
-            String[] parts = stringVal.split(",");
-            for (String part : parts)
-            {
-               Object val = beans.get(part);
-               map.put(part, val);
-            }
-            return (T) map;
-         }
-         else
-         {
-            Object o = getBean(stringVal);
-            if (o != null && type.isAssignableFrom(o.getClass()))
-               return (T) o;
-         }
-
-         if (stringVal != null)
-            throw new RuntimeException("Error setting '" + key + "=" + stringVal + "'.  You must add support for type " + type + " into the Configurator");
-
-         return null;
-      }
-
-      public static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException
-      {
-         Class subtype = null;
-         String typeStr = arrayClass.toString();
-
-         if (typeStr.startsWith("class [Z"))
-         {
-            subtype = boolean.class;
-         }
-         else if (typeStr.startsWith("class [B"))
-         {
-            subtype = byte.class;
-         }
-         else if (typeStr.startsWith("class [C"))
-         {
-            subtype = char.class;
-         }
-         else if (typeStr.startsWith("class [I"))
-         {
-            subtype = int.class;
-         }
-         else if (typeStr.startsWith("class [J"))
-         {
-            subtype = long.class;
-         }
-         else if (typeStr.startsWith("class [F"))
-         {
-            subtype = float.class;
-         }
-         else if (typeStr.startsWith("class [D"))
-         {
-            subtype = double.class;
-         }
-         else //if (typeStr.startsWith("class ["))
-         {
-            subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
-         }
-         return subtype;
-      }
+   static class Encoder
+   {
+      Properties                  props    = null;
+      Map<Object, String>         names    = null;
+      MultiKeyMap<String, String> defaults = null;
 
       static interface Namer
       {
@@ -1203,11 +859,11 @@ public class Configurator
          public boolean include(Field field);
       }
 
-      public static Properties encode(Namer namer, Includer includer, Object... objects) throws Exception
+      public Properties encode(Namer namer, Includer includer, Object... objects) throws Exception
       {
-         Properties props = new Properties();
-         Map names = new HashMap();
-         MultiKeyMap<String, String> defaults = new MultiKeyMap();
+         props = new Properties();
+         names = new HashMap();
+         defaults = new MultiKeyMap();
 
          for (Object object : objects)
          {
@@ -1228,7 +884,8 @@ public class Configurator
             if (props.containsKey(name + ".class"))
                return name;
 
-            props.put(name + ".class", object.getClass().getName());
+            if (name != null)
+               props.put(name + ".class", object.getClass().getName());
 
             List<Field> fields = Utils.getFields(object.getClass());
 
@@ -1245,11 +902,18 @@ public class Configurator
                   if (Modifier.isFinal(field.getModifiers()))
                      continue;
 
-                  Object clean = object.getClass().newInstance();
+                  try
+                  {
+                     Object clean = object.getClass().newInstance();
+                     Object defaultValue = field.get(clean);
 
-                  Object defaultValue = field.get(clean);
-                  if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
-                     defaults.put(object.getClass(), field.getName(), defaultValue);
+                     if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
+                        defaults.put(object.getClass(), field.getName(), defaultValue);
+                  }
+                  catch (Exception ex)
+                  {
+                     // ex.printStackTrace();
+                  }
                }
             }
 
@@ -1283,7 +947,8 @@ public class Configurator
                         String childKey = encode(child, props, namer, includer, names, defaults);
                         values.add(childKey);
                      }
-                     props.put(fieldKey, Utils.implode(",", values));
+                     if (name != null)
+                        props.put(fieldKey, Utils.implode(",", values));
                   }
                   else if (value instanceof Map)
                   {
@@ -1295,7 +960,8 @@ public class Configurator
                      {
                         String encodedKey = encode(mapKey, props, namer, includer, names, defaults);
                         String encodedValue = encode(map.get(mapKey), props, namer, includer, names, defaults);
-                        props.put(fieldKey + "." + encodedKey, encodedValue);
+                        if (name != null)
+                           props.put(fieldKey + "." + encodedKey, encodedValue);
                      }
                   }
                   else
@@ -1309,7 +975,8 @@ public class Configurator
                      else if (!includer.include(field))
                         continue;
 
-                     props.put(fieldKey, encode(value, props, namer, includer, names, defaults));
+                     if (name != null)
+                        props.put(fieldKey, encode(value, props, namer, includer, names, defaults));
                   }
                }
 
@@ -1367,8 +1034,199 @@ public class Configurator
          ret.add(Double.class);
          ret.add(Void.class);
          ret.add(String.class);
+         ret.add(Path.class);
          return ret;
       }
+   }
+
+   static <T> T cast(String key, String stringVal, Class<T> type, Field field, Map<String, Object> beans) throws Exception
+   {
+      if (String.class.isAssignableFrom(type))
+      {
+         return (T) stringVal;
+      }
+      else if (Path.class.isAssignableFrom(type))
+      {
+         return (T) new Path(stringVal);
+      }
+      else if (boolean.class.isAssignableFrom(type))
+      {
+         stringVal = stringVal.toLowerCase();
+         return (T) (Boolean) (stringVal.equals("true") || stringVal.equals("t") || stringVal.equals("1"));
+      }
+      else if (byte.class.isAssignableFrom(type))
+      {
+         return (T) (Byte) Byte.parseByte(stringVal);
+      }
+      else if (char.class.isAssignableFrom(type))
+      {
+         return (T) (Character) stringVal.charAt(0);
+      }
+      else if (int.class.isAssignableFrom(type))
+      {
+         return (T) (Integer) Integer.parseInt(stringVal);
+      }
+      else if (long.class.isAssignableFrom(type))
+      {
+         return (T) (Long) Long.parseLong(stringVal);
+      }
+      else if (float.class.isAssignableFrom(type))
+      {
+         return (T) (Float) Float.parseFloat(stringVal);
+      }
+      else if (double.class.isAssignableFrom(type))
+      {
+         return (T) (Double) Double.parseDouble(stringVal);
+      }
+      else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type))
+      {
+         Class subtype = null;
+         if (type.isArray())
+         {
+            subtype = getArrayElementClass(type);
+         }
+
+         if (subtype == null && field != null)
+         {
+            subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
+         }
+
+         java.util.Collection list = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList();
+         String[] parts = stringVal.split(",");
+         for (String part : parts)
+         {
+            part = part.trim();
+
+            Object val = beans.containsKey(part) ? beans.get(part) : part;
+
+            if (val != null && subtype != null && !subtype.isAssignableFrom(val.getClass()))
+               val = cast(key, val + "", subtype, null, beans);
+
+            list.add(val);
+         }
+
+         if (type.isArray())
+            return (T) list.toArray((Object[]) Array.newInstance(subtype, list.size()));
+
+         return (T) list;
+      }
+      else if (Map.class.isAssignableFrom(type))
+      {
+         Map map = new HashMap();
+         String[] parts = stringVal.split(",");
+         for (String part : parts)
+         {
+            Object val = beans.get(part);
+            map.put(part, val);
+         }
+         return (T) map;
+      }
+      else
+      {
+         Object o = beans.get(stringVal);
+         if (o != null && type.isAssignableFrom(o.getClass()))
+            return (T) o;
+      }
+
+      if (stringVal != null)
+         throw new RuntimeException("Error setting '" + key + "=" + stringVal + "'.  You must add support for type " + type + " into the Configurator");
+
+      return null;
+   }
+
+   static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException
+   {
+      Class subtype = null;
+      String typeStr = arrayClass.toString();
+
+      if (typeStr.startsWith("class [Z"))
+      {
+         subtype = boolean.class;
+      }
+      else if (typeStr.startsWith("class [B"))
+      {
+         subtype = byte.class;
+      }
+      else if (typeStr.startsWith("class [C"))
+      {
+         subtype = char.class;
+      }
+      else if (typeStr.startsWith("class [I"))
+      {
+         subtype = int.class;
+      }
+      else if (typeStr.startsWith("class [J"))
+      {
+         subtype = long.class;
+      }
+      else if (typeStr.startsWith("class [F"))
+      {
+         subtype = float.class;
+      }
+      else if (typeStr.startsWith("class [D"))
+      {
+         subtype = double.class;
+      }
+      else //if (typeStr.startsWith("class ["))
+      {
+         subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
+      }
+      return subtype;
+   }
+
+   public void dump(Properties autoProps)
+   {
+      //      if (!Utils.empty(configOut))
+      //      {
+      //         String fileName = "./" + configOut.trim();
+      //
+      //         File file = new File(fileName);
+      //
+      //         log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
+      //
+      //         file.getParentFile().mkdirs();
+      //         BufferedWriter out = new BufferedWriter(new FileWriter(file));
+
+      //properties are sorted based on the number of "." segments they contain so that "shallow"
+      //depth properties can be set before deeper depth properties.
+      Properties sorted = new Properties()
+         {
+            public Enumeration keys()
+            {
+               Vector v = new Vector(Decoder.sort(keySet()));
+               return v.elements();
+            }
+         };
+
+      sorted.putAll(autoProps);
+      autoProps = sorted;
+
+      //         //autoProps.store(out, "");
+      //
+      //         //               for (String key : AutoWire.sort(autoProps.keySet()))
+      //         //               {
+      //         //                  String value = autoProps.getProperty(key);
+      //         //                  if (shouldMask(key))
+      //         //                     value = "###############";
+      //         //               }
+      //         out.flush();
+      //         out.close();
+
+      List<String> keys = Decoder.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
+      Collections.sort(keys);
+      log.info("-- merged user supplied configuration -------------------------");
+      for (String key : keys)
+      {
+         String value = autoProps.getProperty(key);
+
+         //         if (shouldMask(key))
+         //            value = "###############";
+
+         log.info(" > " + key + "=" + value);
+      }
+      log.info("-- end merged user supplied configuration ---------------------");
+
+      //      }
    }
 
 }

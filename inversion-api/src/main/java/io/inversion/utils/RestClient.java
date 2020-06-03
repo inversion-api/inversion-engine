@@ -903,7 +903,7 @@ public class RestClient
       {
          url = url != null ? url : "";
 
-         String prefix = Utils.getSysEnvPropStr(getName() + ".url", this.url);
+         String prefix = Config.getString(getName() + ".url", this.url);
          if (!Utils.empty(prefix))
          {
             if (url.length() > 0 && !url.startsWith("/") && !prefix.endsWith("/"))

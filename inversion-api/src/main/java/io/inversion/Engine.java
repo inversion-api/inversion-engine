@@ -16,10 +16,8 @@
  */
 package io.inversion;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,9 +29,11 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.configuration2.Configuration;
 
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
+import io.inversion.utils.Config;
 import io.inversion.utils.Configurator;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
@@ -46,23 +46,15 @@ import io.inversion.utils.Utils;
  */
 public class Engine extends Rule<Engine>
 {
-   /**
-    * The {@code Api}s being service by this Engine
-    */
-   protected List<Api>                      apis              = new Vector();
 
-   /**
-    * Looks up InputStreams. 
-    * 
-    * @see #getResource(String)
-    */
-   protected transient ResourceLoader       resourceLoader    = null;
+   protected transient Configuration        config            = null;
 
-   /**
-    * Wires up an Engine instance based on "inversion[1-99][-${inversion.profile}].properties" files and
-    * simple bean property reflection. 
-    */
-   protected transient Configurator         configurator      = new Configurator();
+   //   /**
+   //    * Looks up InputStreams. 
+   //    * 
+   //    * @see #getResource(String)
+   //    */
+   //   protected transient ResourceLoader       resourceLoader    = null;
 
    /**
     * The last {@code Response} served by this Engine, primarily used for writing test cases.
@@ -75,6 +67,11 @@ public class Engine extends Rule<Engine>
    protected transient List<EngineListener> listeners         = new ArrayList();
 
    /**
+    * The {@code Api}s being service by this Engine
+    */
+   protected List<Api>                      apis              = new Vector();
+
+   /**
     * Base value for the CORS "Access-Control-Allow-Headers" response header.
     * <p>
     * Values from the request "Access-Control-Request-Header" header are concatenated
@@ -83,6 +80,9 @@ public class Engine extends Rule<Engine>
     * Unless you are really doing something specific with browser security you probably won't need to customize this list. 
     */
    protected String                         corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+
+   protected String                         configPath        = "";
+   protected String                         configProfile     = null;
 
    transient volatile boolean               started           = false;
    transient volatile boolean               starting          = false;
@@ -114,23 +114,23 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   /**
-    * Looks up InputStreams. 
-    * <p>
-    * Different runtimes, a Servlet container vs. an AWS Lambda for example, may have different resource lookup needs.
-    * A plugged in ResourceLoader abstracts these runtime specifics from the Engine.
-    * 
-    * @see #getResource(String)
-    */
-   public static interface ResourceLoader
-   {
-      /**
-       * Locates a resource per the implementors prerogative.
-       * @param name  a resource name, file path, url etc. used to located the desired InputStream 
-       * @return InputStream
-       */
-      InputStream getResource(String name);
-   }
+   //   /**
+   //    * Looks up InputStreams. 
+   //    * <p>
+   //    * Different runtimes, a Servlet container vs. an AWS Lambda for example, may have different resource lookup needs.
+   //    * A plugged in ResourceLoader abstracts these runtime specifics from the Engine.
+   //    * 
+   //    * @see #getResource(String)
+   //    */
+   //   public static interface ResourceLoader
+   //   {
+   //      /**
+   //       * Locates a resource per the implementors prerogative.
+   //       * @param name  a resource name, file path, url etc. used to located the desired InputStream 
+   //       * @return InputStream
+   //       */
+   //      InputStream getResource(String name);
+   //   }
 
    public Engine()
    {
@@ -173,7 +173,11 @@ public class Engine extends Rule<Engine>
       {
          startup0();
 
-         configurator.loadConfig(this);
+         if (Config.getConfiguration() == null)
+         {
+            Config.loadConfiguration(getConfigPath(), getConfigProfile());
+         }
+         new Configurator().configure(this);
 
          started = true;
 
@@ -1050,17 +1054,6 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public Configurator getConfigurator()
-   {
-      return configurator;
-   }
-
-   public Engine withConfigurator(Configurator configurator)
-   {
-      this.configurator = configurator;
-      return this;
-   }
-
    public Engine withAllowHeaders(String allowedHeaders)
    {
       this.corsAlloweHeaders = allowedHeaders;
@@ -1075,43 +1068,65 @@ public class Engine extends Rule<Engine>
       return lastResponse;
    }
 
-   public ResourceLoader getResourceLoader()
-   {
-      return resourceLoader;
-   }
-
-   public Engine withResourceLoader(ResourceLoader resourceLoader)
-   {
-      this.resourceLoader = resourceLoader;
-      return this;
-   }
-
-   public InputStream getResource(String name)
+   public URL getResource(String name)
    {
       try
       {
-         InputStream stream = null;
-         if (resourceLoader != null)
-            stream = resourceLoader.getResource(name);
+         URL url = null;
 
-         if (stream == null)
+         url = getClass().getClassLoader().getResource(name);
+         if (url == null)
          {
             File file = new File(System.getProperty("user.dir"), name);
             if (file.exists())
-               stream = new BufferedInputStream(new FileInputStream(file));
+               url = file.toURI().toURL();
          }
 
-         if (stream == null)
-         {
-            stream = getClass().getClassLoader().getResourceAsStream(name);
-         }
-
-         return stream;
+         return url;
       }
       catch (Exception ex)
       {
          throw new RuntimeException(ex);
       }
+   }
+
+   public String getConfigPath()
+   {
+      if (configPath == null)
+      {
+         String[] guesses = new String[]{getName() + ".configPath", "inversion.configPath", "configPath"};
+         for (int i = 0; configPath == null && i < guesses.length; i++)
+         {
+            configPath = Utils.getProperty(guesses[i]);
+         }
+      }
+      return configPath;
+   }
+
+   public Engine withConfigPath(String configPath)
+   {
+      this.configPath = configPath;
+      return this;
+   }
+
+   public String getConfigProfile()
+   {
+      if (configProfile == null)
+      {
+         String[] guesses = new String[]{getName() + ".configProfile", "inversion.configProfile", "configProfile", "profile"};
+         for (int i = 0; configProfile == null && i < guesses.length; i++)
+         {
+            configProfile = Utils.getProperty(guesses[i]);
+         }
+      }
+      return configProfile;
+
+   }
+
+   public Engine withConfigProfile(String configProfile)
+   {
+      this.configProfile = configProfile;
+      return this;
    }
 
 }

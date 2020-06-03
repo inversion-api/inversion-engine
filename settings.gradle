@@ -11,4 +11,5 @@ include 'inversion-redis'
 include 'inversion-s3'
 include 'inversion-script'
 include 'inversion-spring-boot'
+include 'inversion-keyvault'
 

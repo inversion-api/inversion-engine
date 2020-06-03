@@ -179,10 +179,6 @@ public class FirehoseDb extends Db<FirehoseDb>
          {
             if (this.firehoseClient == null)
             {
-               awsRegion = Utils.getSysEnvPropStr(getName() + ".awsRegion", awsRegion);
-               awsAccessKey = Utils.getSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
-               awsSecretKey = Utils.getSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
-
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
 
                if (!Utils.empty(awsRegion))

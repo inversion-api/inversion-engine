@@ -18,6 +18,7 @@ package io.inversion.script;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.JarURLConnection;
@@ -414,7 +415,7 @@ public class ScriptAction extends Action<ScriptAction>
       return ordered;
    }
 
-   public static JSNode findScript(final String path) throws ApiException
+   public static JSNode findScript(final String path)
    {
       if (path == null)
          return null;
@@ -457,10 +458,17 @@ public class ScriptAction extends Action<ScriptAction>
       {
 
          ext = handler.ext(p);
-         InputStream is = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
-         if (is != null)
+         URL url = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
+         if (url != null)
          {
-            script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(is));
+            try
+            {
+               script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
+            }
+            catch (IOException e)
+            {
+               //ignore
+            }
             break;
          }
       }

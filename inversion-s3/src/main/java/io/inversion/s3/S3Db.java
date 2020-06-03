@@ -184,10 +184,6 @@ public class S3Db extends Db<S3Db>
          {
             if (this.client == null)
             {
-               awsRegion = Utils.getSysEnvPropStr(getName() + ".awsRegion", awsRegion);
-               awsAccessKey = Utils.getSysEnvPropStr(getName() + ".awsAccessKey", awsAccessKey);
-               awsSecretKey = Utils.getSysEnvPropStr(getName() + ".awsSecretKey", awsSecretKey);
-
                AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
 
                if (!Utils.empty(awsRegion))

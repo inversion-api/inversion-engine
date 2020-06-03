@@ -39,8 +39,7 @@ public class ElasticRqlUnitTest extends AbstractRqlTest
            .withResult("n", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must_not\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("nn", "index: orders, QueryBuilder={ \"query\" : { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("emp", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"should\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } }, { \"bool\" : { \"must_not\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
-           .withResult("nemp",
-                 "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must\" : [ { \"bool\" : { \"must_not\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, { \"bool\" : { \"must\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
+           .withResult("nemp", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must\" : [ { \"bool\" : { \"must_not\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, { \"bool\" : { \"must\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("sw", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"Franc*\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("ew", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"*nce\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("w", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"*ance*\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
@@ -82,6 +81,7 @@ public class ElasticRqlUnitTest extends AbstractRqlTest
            .withResult("manyToOneExistsEq", "UNSUPPORTED")//
            .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
            .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
+           .withResult("eqNonexistantColumn", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"filter\" : [ { \"term\" : { \"nonexistantColumn\" : { \"value\" : \"12\", \"boost\" : 1.0 } } }, { \"range\" : { \"orderId\" : { \"from\" : \"1000\", \"to\" : null, \"include_lower\" : true, \"include_upper\" : true, \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }");
 
       ;
    }

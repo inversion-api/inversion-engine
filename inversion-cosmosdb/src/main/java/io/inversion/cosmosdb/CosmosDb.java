@@ -263,7 +263,7 @@ public class CosmosDb extends Db<CosmosDb>
          {
             if (this.documentClient == null)
             {
-               this.documentClient = buildDocumentClient(name, uri, key);
+               this.documentClient = buildDocumentClient(uri, key);
             }
          }
       }
@@ -271,15 +271,12 @@ public class CosmosDb extends Db<CosmosDb>
       return documentClient;
    }
 
-   public static DocumentClient buildDocumentClient(String prefix, String uri, String key)
+   public static DocumentClient buildDocumentClient(String uri, String key)
    {
-      uri = Utils.getSysEnvPropStr(prefix + ".uri", uri);
-      key = Utils.getSysEnvPropStr(prefix + ".key", key);
-
       if (Utils.empty(uri) || Utils.empty(key))
       {
          String error = "";
-         error += "Unable to connect to Cosmos DB because conf values for '" + prefix + ".uri' or '" + prefix + ".key' can not be found. ";
+         error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
          error += "If this is a development environment, you should probably add these key/value pairs to a '.env' properties file in your working directory. ";
          error += "If this is a production deployment, you should probably set these as environment variables on your container.";
          error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";

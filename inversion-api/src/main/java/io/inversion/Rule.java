@@ -1,5 +1,5 @@
 /*
- * // * Copyright (c) 2015-2018 Rocket Partners, LLC
+ * c * // * Copyright (c) 2015-2018 Rocket Partners, LLC
  * https://github.com/inversion-api
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -415,29 +415,29 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
       protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
       protected List<Path>  paths   = new ArrayList();
 
-      RuleMatcher()
+      public RuleMatcher()
       {
 
       }
 
-      RuleMatcher(String methods, String... paths)
+      public RuleMatcher(String methods, String... paths)
       {
          this(methods, asPathsList(paths));
       }
 
-      RuleMatcher(String methods, Path path)
+      public RuleMatcher(String methods, Path path)
       {
          withMethods(methods);
          withPaths(path);
       }
 
-      RuleMatcher(String methods, List<Path> paths)
+      public RuleMatcher(String methods, List<Path> paths)
       {
          withMethods(methods);
          withPaths(paths);
       }
 
-      void withMethods(String... methods)
+      public void withMethods(String... methods)
       {
          for (String method : Utils.explode(",", methods))
          {
@@ -470,12 +470,12 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
          }
       }
 
-      void withPaths(Path... paths)
+      public void withPaths(Path... paths)
       {
          this.paths.addAll(Arrays.asList(paths));
       }
 
-      void withPaths(List<Path> paths)
+      public void withPaths(List<Path> paths)
       {
          this.paths.addAll(paths);
       }

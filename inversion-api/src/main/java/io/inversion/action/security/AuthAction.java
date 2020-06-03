@@ -42,6 +42,7 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.User;
 import io.inversion.action.security.AuthAction.JwtUserDao.RevokedTokenCache;
+import io.inversion.utils.Config;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
@@ -539,7 +540,7 @@ public class AuthAction extends Action<AuthAction>
 
                key += ".secret";
 
-               String secret = Utils.getSysEnvPropStr(key, null);
+               String secret = Config.getString(key);
                if (secret != null)
                {
                   secrets.add(secret);

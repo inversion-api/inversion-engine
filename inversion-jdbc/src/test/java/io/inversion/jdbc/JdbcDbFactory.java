@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import io.inversion.Api;
+import io.inversion.ApiException;
 import io.inversion.action.db.DbAction;
 import io.inversion.spring.InversionApp;
+import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
 
 public class JdbcDbFactory
@@ -118,10 +120,10 @@ public class JdbcDbFactory
    {
       database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-      String driver = Utils.getSysEnvPropStr("mysql.driver", "com.mysql.cj.jdbc.Driver");
-      String url = Utils.getSysEnvPropStr("mysql.url", "jdbc:mysql://localhost:3307/");
-      String user = Utils.getSysEnvPropStr("mysql.user", "root");
-      String pass = Utils.getSysEnvPropStr("mysql.pass", "password");
+      String driver = Config.getString("mysql.driver", "com.mysql.cj.jdbc.Driver");
+      String url = Config.getString("mysql.url", "jdbc:mysql://localhost:3307/");
+      String user = Config.getString("mysql.user", "root");
+      String pass = Config.getString("mysql.pass", "password");
 
       Class.forName(driver).newInstance();
 
@@ -172,10 +174,10 @@ public class JdbcDbFactory
    {
       database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-      String driver = Utils.getSysEnvPropStr("postgres.driver", "org.postgresql.Driver");
-      String url = Utils.getSysEnvPropStr("postgres.url", "jdbc:postgresql://localhost:5433/");
-      String user = Utils.getSysEnvPropStr("postgres.user", "postgres");
-      String pass = Utils.getSysEnvPropStr("postgres.pass", "password");
+      String driver = Config.getString("postgres.driver", "org.postgresql.Driver");
+      String url = Config.getString("postgres.url", "jdbc:postgresql://localhost:5433/");
+      String user = Config.getString("postgres.user", "postgres");
+      String pass = Config.getString("postgres.pass", "password");
 
       Class.forName(driver).newInstance();
 
@@ -212,10 +214,10 @@ public class JdbcDbFactory
    {
       database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-      String driver = Utils.getSysEnvPropStr("sqlserver.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-      String url = Utils.getSysEnvPropStr("sqlserver.url", "jdbc:sqlserver://localhost:1434");
-      String user = Utils.getSysEnvPropStr("sqlserver.user", "sa");
-      String pass = Utils.getSysEnvPropStr("sqlserver.pass", "Jmk38zZVn");
+      String driver = Config.getString("sqlserver.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+      String url = Config.getString("sqlserver.url", "jdbc:sqlserver://localhost:1434");
+      String user = Config.getString("sqlserver.user", "sa");
+      String pass = Config.getString("sqlserver.pass", "Jmk38zZVn");
 
       Class.forName(driver).newInstance();
 

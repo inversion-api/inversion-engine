@@ -31,8 +31,8 @@ import io.inversion.ApiException;
 import io.inversion.User;
 import io.inversion.action.security.AuthAction;
 import io.inversion.action.security.AuthAction.JwtUserDao;
+import io.inversion.utils.Config;
 import io.inversion.utils.Rows;
-import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
 /**
@@ -350,7 +350,7 @@ public class JdbcDbUserDao extends JwtUserDao
 
    public String getSalt()
    {
-      return Utils.getSysEnvPropStr(getName() + ".salt", salt);
+      return Config.getString(getName() + ".salt", salt);
    }
 
    public String getName()

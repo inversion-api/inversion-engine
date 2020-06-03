@@ -46,8 +46,8 @@ import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Results;
 import io.inversion.rql.Term;
+import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 public class DynamoDb extends Db<DynamoDb>
 {
@@ -365,7 +365,7 @@ public class DynamoDb extends Db<DynamoDb>
          {
             if (this.dynamoClient == null)
             {
-               this.dynamoClient = buildDynamoClient(name, awsRegion, awsAccessKey, awsSecretKey, awsEndpoint);
+               this.dynamoClient = buildDynamoClient(awsRegion, awsAccessKey, awsSecretKey, awsEndpoint);
             }
          }
       }
@@ -375,16 +375,15 @@ public class DynamoDb extends Db<DynamoDb>
 
    public static AmazonDynamoDB buildDynamoClient(String prefix)
    {
-      return buildDynamoClient(prefix, null, null, null, null);
+      return buildDynamoClient(//
+            Config.getString(prefix + ".awsRegion"), //
+            Config.getString(prefix + ".awsAccessKey"), //
+            Config.getString(prefix + ".awsSecretKey"), //
+            Config.getString(prefix + ".awsEndpoint"));
    }
 
-   public static AmazonDynamoDB buildDynamoClient(String prefix, String awsRegion, String awsAccessKey, String awsSecretKey, String awsEndpoint)
+   public static AmazonDynamoDB buildDynamoClient(String awsRegion, String awsAccessKey, String awsSecretKey, String awsEndpoint)
    {
-      awsRegion = Utils.getSysEnvPropStr(prefix + ".awsRegion", awsRegion);
-      awsAccessKey = Utils.getSysEnvPropStr(prefix + ".awsAccessKey", awsAccessKey);
-      awsSecretKey = Utils.getSysEnvPropStr(prefix + ".awsSecretKey", awsSecretKey);
-      awsEndpoint = Utils.getSysEnvPropStr(prefix + ".awsEndpoint", awsEndpoint);
-
       AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
       if (!Utils.empty(awsRegion))
       {

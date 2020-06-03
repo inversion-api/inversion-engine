@@ -1417,48 +1417,48 @@ public class Utils
       return params;
    }
 
-   /**
-    * @param name - name to look for in sysprops and envprops
-    * @param defaultValue - will be returned if prop not found
-    * @return first not null of sysprop(name) || envprop(name) || defaultValue
-    */
-   public static String getSysEnvPropStr(String name, Object defaultValue)
-   {
-      Object obj = getSysEnvProp(name, defaultValue);
-      if (obj != null)
-         return obj.toString();
-      return null;
-   }
-
-   public static int getSysEnvPropInt(String name, Object defaultValue)
-   {
-      Object obj = getSysEnvProp(name, defaultValue);
-      if (obj != null)
-         return Integer.parseInt(obj.toString());
-      return -1;
-   }
-
-   public static boolean getSysEnvPropBool(String name, Object defaultValue)
-   {
-      Object obj = getSysEnvProp(name, defaultValue);
-      if (obj != null)
-         return "true".equalsIgnoreCase(obj.toString());
-      return false;
-   }
-
-   /**
-    * @param name - name to look for in sysprops and envprops if 'value' is null;
-    * @param defaultValue - will be returned if not found on sys or env
-    * @return first not null of sysprop(name) || envprop(name) || 'defaultValue'
-    */
-   public static Object getSysEnvProp(String name, Object defaultValue)
-   {
-      Object value = getProperty(name);
-
-      return null == value ? defaultValue : value;
-   }
-
-   private static Object getProperty(String name)
+//   /**
+//    * @param name - name to look for in sysprops and envprops
+//    * @param defaultValue - will be returned if prop not found
+//    * @return first not null of sysprop(name) || envprop(name) || defaultValue
+//    */
+//   public static String getSysEnvPropStr(String name, Object defaultValue)
+//   {
+//      Object obj = getSysEnvProp(name, defaultValue);
+//      if (obj != null)
+//         return obj.toString();
+//      return null;
+//   }
+//
+//   public static int getSysEnvPropInt(String name, Object defaultValue)
+//   {
+//      Object obj = getSysEnvProp(name, defaultValue);
+//      if (obj != null)
+//         return Integer.parseInt(obj.toString());
+//      return -1;
+//   }
+//
+//   public static boolean getSysEnvPropBool(String name, Object defaultValue)
+//   {
+//      Object obj = getSysEnvProp(name, defaultValue);
+//      if (obj != null)
+//         return "true".equalsIgnoreCase(obj.toString());
+//      return false;
+//   }
+//
+//   /**
+//    * @param name - name to look for in sysprops and envprops if 'value' is null;
+//    * @param defaultValue - will be returned if not found on sys or env
+//    * @return first not null of sysprop(name) || envprop(name) || 'defaultValue'
+//    */
+//   public static Object getSysEnvProp(String name, Object defaultValue)
+//   {
+//      Object value = getProperty(name);
+//
+//      return null == value ? defaultValue : value;
+//   }
+//
+   public static String getProperty(String name)
    {
       String value = System.getProperty(name);
 
