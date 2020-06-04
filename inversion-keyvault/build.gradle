@@ -1,8 +1,0 @@
-
-dependencies {
-
-    compile project(':inversion-api')
-	implementation group: 'com.azure', name: 'azure-data-appconfiguration', version: '1.1.1'
-    implementation group: 'com.azure', name: 'azure-security-keyvault-secrets', version: '4.1.0'
-    implementation group: 'com.azure', name: 'azure-identity', version: '1.0.4'
-}
