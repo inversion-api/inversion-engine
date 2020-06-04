@@ -1,6 +1,6 @@
 io.inversion
+io.inversion.action.db
 io.inversion.action.misc
-io.inversion.action.rest
 io.inversion.action.security
 io.inversion.cosmosdb
 io.inversion.dynamodb

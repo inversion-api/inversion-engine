@@ -40,6 +40,15 @@ public class InversionApp
    {
       run(new Engine());
    }
+   
+   /**
+    * Convenience method for launching a Engine that will be configured via config files.
+    * @param api
+    */
+   public static void run()
+   {
+      run(new Engine());
+   }
 
    /**
     * Convenience method for launching a Engine with a single API.
