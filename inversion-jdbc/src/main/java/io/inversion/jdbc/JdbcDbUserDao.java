@@ -36,7 +36,7 @@ import io.inversion.utils.Rows;
 import io.inversion.utils.Rows.Row;
 
 /**
- * Looks up a user from the configured <code>db</code> JdbcDb.
+ * Looks up a <code>User</code> from the configured <code>JdbcDb</code> supporting user/group/role/permissioning.
  * <p>  
  * Usage requires a password encryption "salt" value be 
  * configured either explicitly or via a $name.salt
@@ -56,8 +56,6 @@ import io.inversion.utils.Rows.Row;
  * </ol>
  *   
  * @see users-h2.ddl for full underlying schema  
- * 
- *
  *
  */
 public class JdbcDbUserDao extends JwtUserDao
@@ -78,17 +76,6 @@ public class JdbcDbUserDao extends JwtUserDao
    public JdbcDbUserDao(JdbcDb db)
    {
       withDb(db);
-   }
-
-   public JdbcDbUserDao withDb(JdbcDb db)
-   {
-      this.db = db;
-      return this;
-   }
-
-   public JdbcDb getDb()
-   {
-      return db;
    }
 
    protected boolean checkPassword(String actual, String supplied)
@@ -340,6 +327,17 @@ public class JdbcDbUserDao extends JwtUserDao
 
       System.out.println(sql + " -> " + vals);
       return JdbcUtils.selectRows(conn, sql, vals);
+   }
+
+   public JdbcDbUserDao withDb(JdbcDb db)
+   {
+      this.db = db;
+      return this;
+   }
+
+   public JdbcDb getDb()
+   {
+      return db;
    }
 
    public JdbcDbUserDao withSalt(String salt)

@@ -559,7 +559,9 @@
 <div class="block">Sets all values to null, but does not modify RowKeys or change the length of <code>values</code>.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#clearConfiguration--">clearConfiguration()</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Nulls out the system wide CompositeConfiguration, same as <code>setConfiguration(null)</code></div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#clearFunctions--">clearFunctions()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Url.html#clearParams-java.lang.String...-">clearParams(String...)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></dt>
@@ -641,7 +643,9 @@
 <dt><span class="memberNameLink"><a href="io/inversion/Engine.html#config">config</a></span> - Variable in class io.inversion.<a href="io/inversion/Engine.html" title="class in io.inversion">Engine</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="io/inversion/utils/Config.html" title="class in io.inversion.utils"><span class="typeNameLink">Config</span></a> - Class in <a href="io/inversion/utils/package-summary.html">io.inversion.utils</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Global configuration properties access through a singleton wrapper around a Commons Configuration CompositeConfiguration object.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Db.html#configApi-io.inversion.Api-">configApi(Api)</a></span> - Method in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
 <dd>
 <div class="block">Adds all non excluded Collections to the Api via Api.withCollection</div>
@@ -665,7 +669,9 @@
 <dt><span class="memberNameLink"><a href="io/inversion/Rule.html#configStr">configStr</a></span> - Variable in class io.inversion.<a href="io/inversion/Rule.html" title="class in io.inversion">Rule</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="io/inversion/utils/Configurator.html" title="class in io.inversion.utils"><span class="typeNameLink">Configurator</span></a> - Class in <a href="io/inversion/utils/package-summary.html">io.inversion.utils</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Wires up an Api at runtime by reflectively setting bean properties based on key/value pairs from Config.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Configurator.html#Configurator--">Configurator()</a></span> - Constructor for class io.inversion.utils.<a href="io/inversion/utils/Configurator.html" title="class in io.inversion.utils">Configurator</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Configurator.html#configure-io.inversion.Engine-">configure(Engine)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Configurator.html" title="class in io.inversion.utils">Configurator</a></dt>
@@ -1667,7 +1673,10 @@
 <dt><span class="memberNameLink"><a href="io/inversion/Engine.html#getConfigProfile--">getConfigProfile()</a></span> - Method in class io.inversion.<a href="io/inversion/Engine.html" title="class in io.inversion">Engine</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#getConfiguration--">getConfiguration()</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">If <code>configuration</code> is null, <code>loadConfiguration</code> is called
+ to lazy load the default config.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#getConnection--">getConnection()</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>
 <div class="block">Shortcut for getConnection(true);</div>
@@ -2220,6 +2229,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Engine.html#getResource-java.lang.String-">getResource(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Engine.html" title="class in io.inversion">Engine</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#getResource-java.lang.String-">getResource(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
+<dd>
+<div class="block">Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbGetAction.html#getResourceKey-java.lang.Object-">getResourceKey(Object)</a></span> - Static method in class io.inversion.action.db.<a href="io/inversion/action/db/DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Change.html#getResourceKey--">getResourceKey()</a></span> - Method in class io.inversion.<a href="io/inversion/Change.html" title="class in io.inversion">Change</a></dt>
@@ -2945,7 +2958,10 @@
 <div class="block">Listeners that will receive Engine and Api lifecycle, request, and error callbacks.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#loadConfiguration-java.lang.String-java.lang.String-">loadConfiguration(String, String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Creates a new CompositeConfiguration with individual Configuration objects loaded with key/value pairs
+ from sources as described in the class comment above.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/dynamodb/DynamoDb.html#LOCAL_SECONDARY_INDEX_TYPE">LOCAL_SECONDARY_INDEX_TYPE</a></span> - Static variable in class io.inversion.dynamodb.<a href="io/inversion/dynamodb/DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Db.html#log">log</a></span> - Variable in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
@@ -4057,7 +4073,9 @@
 <dt><span class="memberNameLink"><a href="io/inversion/script/ScriptAction.html#setCacheExpireSeconds-long-">setCacheExpireSeconds(long)</a></span> - Method in class io.inversion.script.<a href="io/inversion/script/ScriptAction.html" title="class in io.inversion.script">ScriptAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#setConfiguration-org.apache.commons.configuration2.CompositeConfiguration-">setConfiguration(CompositeConfiguration)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Sets the system wide CompositeConfiguration.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDbUserDao.html#setDb-io.inversion.jdbc.JdbcDb-">setDb(JdbcDb)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDbUserDao.html" title="class in io.inversion.jdbc">JdbcDbUserDao</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Api.html#setDebug-boolean-">setDebug(boolean)</a></span> - Method in class io.inversion.<a href="io/inversion/Api.html" title="class in io.inversion">Api</a></dt>

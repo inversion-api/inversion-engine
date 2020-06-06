@@ -17,8 +17,6 @@
 package io.inversion.jdbc;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,8 +40,10 @@ import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
+/**
+ * Composes and executes a SQL SELECT based on supplied RQL <code>Terms</code>.
+ */
 public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';

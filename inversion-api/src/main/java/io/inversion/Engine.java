@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.configuration2.Configuration;
 
+import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
 import io.inversion.utils.Config;
@@ -87,6 +88,12 @@ public class Engine extends Rule<Engine>
    transient volatile boolean               started           = false;
    transient volatile boolean               starting          = false;
 
+   static
+   {
+      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
+      logger.setLevel(Level.WARN);
+   }
+   
    /**
    * Receives {@code Engine} and {@code Api} lifecycle, 
    * per request and per error callback notifications.
@@ -177,7 +184,7 @@ public class Engine extends Rule<Engine>
          {
             Config.loadConfiguration(getConfigPath(), getConfigProfile());
          }
-         new Configurator().configure(this);
+         new Configurator().configure(this, Config.getConfiguration());
 
          started = true;
 

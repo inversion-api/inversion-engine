@@ -56,66 +56,107 @@ import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Relationship;
 import io.inversion.Rule;
-import io.inversion.Rule.RuleMatcher;
 import io.inversion.utils.Configurator.Encoder.Includer;
 import io.inversion.utils.Configurator.Encoder.Namer;
 
+/**
+ * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
+ * <p>
+ * Configurator works in two different modes:
+ * <ol>
+ *  <li><p>Dependency Injection Mode</p> - If the Engine already has an Api set on it, then it is assumed that a developer has at least partially wired up their own Api via code.  
+ *      In this case, the Configurator looks for named beans in the Api object graph(s) and sets any corresponding "beanName.propertyName" values from <code>configuration</code> on the bean. 
+ *      This is a great way to inject runtime dependencies such as database credentials.  If developers are hard core SpringBoot-ers, or are otherwise coding up their Inversion 
+ *      Api using some existing DI framework, they may find this capability to be redundant and prefer to use their own party DI which is totally fine.
+ *        
+ *  <li><p>Full Wiring Mode</p> - when an Engine starts up and no Api's have been added to the Engine via code, then the Configurator does all of the work to fully instantiate/configure/bootstrap 
+ *      the Api object model based on data found in the <code>configuration</code>.  Here is an outline how Full Wiring Mode works.
+ *      <ul>
+ *          <li>All beans with key/value properties "${beanName}.class=className" are instantiated and all "${beanName}.${propertyName}" values are set.  
+ *          
+ *          <li><code>startup()</code> is called on all Db objects effectively bootstrapping the full Api model.
+ *          
+ *          <li>The now populated object graph is re-serialized to name/value property pairs in memory.
+ *          
+ *          <li>All instantiated objects to this point are thrown away.
+ *          
+ *          <li>All of the values from <code>configuration</code> are merged down on top of the in memory pairs.  This allows the configuration author to overwrite any of the bean properties set during the Db.startup()
+ *              default bootstrapping.
+ *          
+ *          <li>The merged properties model is decoded and the full Api(s) object model/graph that is set on the Engine.
+ *          
+ *          <li>When the Engine calls startup() on the Apis (right after configure(Engine) returns), the Apis will call startup() on their Dbs.  
+ *              In the first pass, above, the Dbs had empty configurations so calling Db.startup() caused the Dbs to reflectively inspect their underlying data source and create Collections to represent underlying tables etc.
+ *              These Collections were serialized out and then instantiated and set on the new copies of the Db in the final wiring above.  Now when Db.startup() is called, the Db has Collection(s) already
+ *              set on them and the Db will skip the reflective bootstrapping phase.
+ *              
+ *          <li>NOTE: If you don't supply at least one "${myApiName}.class=io.inversion.Api" property in your <code>configuration</code>, a default api named "api" will be instantiated for you and the Configurator 
+ *              will assume all Db, Endpoints and Actions declared in the <code>configuration</code> belong to that single implicit Api.
+ *              
+ *          <li>NOTE: If you have a single Api and you don't supply at least one "${myEndpointName}.class=io.inversion.Endpoint" property in our <code>configuration</code>, a default Endpoint named "endpoint" 
+ *              that matches on all HTTP methods and URL paths will be inferred by the Configurator.  If you declear multiple Apis, you must declare Endpoints if you want your Api to do anything.      
+ *          
+ *          <li>NOTE: If you only have a single Api, all Dbs, Endpoints, and global Actions will be set on the Api.  
+ *              If you have more than one Api in your <code>configuration</code>, you must assign Dbs, Endpoints, and global Actions to the appropriate Api.  
+ *              A "global" Action is one that is not explicitly assigned to an Endpoint but is instead assigned directly to the Api and can then be selected to run across requests to multiple different Endpoints.
+ *      </ul>
+ * </ol>     
+ * 
+ * <p>
+ * Here is an example minimal configuration for Full Wiring Mode that will produce a fully running REST API for the underlying data source.  
+ * These name/value pairs can come from any combination of property sources loaded into <code>configuration</code>.
+ * <p>
+ * <pre> 
+ *      myAction.class=io.inversion.db.DbAction
+ *      myDb.class=io.inversion.jdbc.JdbcDb
+ *      myDb.driver=${YOUR JDBC DRIVER CLASS NAME}
+ *      myDb.url=${YOUR JDBC URL}
+ *      myDb.user=${YOUR JDBC USERNAME}
+ *      myDb.pass=${YOUR JDBC PASSWORD}
+ * </pre>
+ *       
+ * <p>
+ * By default, the <code>configuration</code> is going to the global default CombinedConfiguration from Config.
+ * 
+ * @see io.inversion.Engine.startup()
+ * @see Config
+ * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
+ */
 public class Configurator
 {
-   protected static final Logger log            = LoggerFactory.getLogger(Configurator.class);
+   static final Logger log            = LoggerFactory.getLogger(Configurator.class);
 
-   public static final String    ROOT_BEAN_NAME = "inversion";
+   static final String    ROOT_BEAN_NAME = "inversion";
 
-   //   /**
-   //    * An identifier, such as 'dev', 'stage', 'prod' used to locate and load additional "inversion[1-99][-${profile}].properties" config files.
-   //    * <p>
-   //    * A profile allows you to build a single jar/war that can be deployed in multiple environments. 
-   //    * Configuration common to all deployments can be added to "inversion[1-99].properties" files and then
-   //    * augmented with the differences between deployments isolated to the profile specific files.
-   //    * <p>
-   //    * To set the <code>profile</code>, you can directly wire <code>engine.withProfile</code> or set "inversion.profile"
-   //    * as an environment variable or Java system property. 
-   //    * 
-   //    * @see io.inversion.utils.Configurator
-   //    */
-   //   protected String           profile        = null;
-   //
-   //   /**
-   //    * The path to inversion*.properties files
-   //    */
-   //   protected String           configPath     = "";
-   //
-   //   /**
-   //    * The number of milliseconds between background reloads of the Api config
-   //    */
-   //   protected int              configTimeout  = 10000;
-   //
-   //   /**
-   //    * Indicates that the supplied config files contain all the setup info and the Api
-   //    * will not be reflectively configured as it otherwise would.
-   //    */
-   //   protected boolean          configFast     = false;
-   //   protected boolean          configDebug    = false;
-   //   protected String           configOut      = null;
 
-   public synchronized void configure(Engine engine)
+   /**
+    * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
+    * 
+    * @param engine  the engine to be configured
+    * @param configuration the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.
+    * 
+    * @see io.inversion.Engine.startup()
+    * @see Config
+    */
+   public synchronized void configure(Engine engine, Configuration configuration)
    {
-      Configuration config = Config.getConfiguration();
-
       try
       {
          Properties props = new Properties();
-         Iterator<String> keys = config.getKeys();
+         Iterator<String> keys = configuration.getKeys();
          while (keys.hasNext())
          {
             String key = keys.next();
-            props.put(key, config.getString(key));
+            props.put(key, configuration.getString(key));
          }
 
-         //-- if there is already an API, don't load everything from scratch.
-         //-- just override/set any keys from the config on the target objects 
          if (engine.getApis().size() > 0)
          {
+            //-- DEPENDENCY INJECTION MODE
+            //--
+            //-- if there is already an API, don't load everything from scratch.
+            //-- just override/set any keys from the config on the target objects 
+            
             Encoder encoder = new Encoder();
             encoder.encode(new DefaultNamer(), new AllIncluder(), engine.getApis().toArray());
 
@@ -162,7 +203,8 @@ public class Configurator
          }
          else
          {
-            //all this does is set inversion.* properties on the engine class
+            //-- FULL WIRING MODE
+
             Decoder w = new Decoder();
             w.putBean(ROOT_BEAN_NAME, engine);
             w.load(props);
@@ -402,10 +444,7 @@ public class Configurator
          if (name != null)
             return name.toString();
 
-         System.out.println("Unable to name: " + o.getClass().getSimpleName() + " - " + o);
-
          return null;
-         //throw new RuntimeException("Unable to name: " + o + " " + o.getClass());
       }
    }
 
@@ -1174,7 +1213,7 @@ public class Configurator
       return subtype;
    }
 
-   public void dump(Properties autoProps)
+   void dump(Properties autoProps)
    {
       //      if (!Utils.empty(configOut))
       //      {

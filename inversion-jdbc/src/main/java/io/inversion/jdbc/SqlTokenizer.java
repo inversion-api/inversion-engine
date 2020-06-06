@@ -21,7 +21,7 @@ import java.util.Set;
 
 import io.inversion.utils.Utils;
 
-public class SqlTokenizer
+class SqlTokenizer
 {
    static Set   keywords    = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 

@@ -52,8 +52,7 @@ import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
 /**
- * TODO: http://www.symantec.com/connect/articles/detection-sql-injection-and-cross-site-scripting-attacks
- *
+ * A collection of super helpful JDBC utility methods with SQL injection attack defense built in.
  */
 public class JdbcUtils
 {

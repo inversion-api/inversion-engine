@@ -30,6 +30,41 @@ import org.apache.commons.configuration2.builder.fluent.Configurations;
 
 import io.inversion.ApiException;
 
+/**
+ * Global configuration properties access through a singleton wrapper around a Commons Configuration CompositeConfiguration object.
+ * <p>
+ * The name/value pairs found in configuration are used by the Configurator to reflectively set bean properties on Apis, Endpoints, Actions, Dbs and other Api model objects during Engine startup.  
+ * <p>
+ * Automatic/reflective parameter setting via the Configurator is the preferred way to do runtime dependency injection.  
+ * You can however directly use this classes Config.getXYX() methods to look up key/value pairs at runtime.  
+ * <p>
+ * You can access and modify the underlying CompositeConfiguration object to change where properties are pulled form.
+ * <p>
+ * By default, listed in order of priority, properties are merged from:
+ * <ol>
+ *  <li>a "${user.dir}/.env" properties file if one exists.
+ *  <li>system properties
+ *  <li>environment variables
+ *  <li>${configPath}/inversion[-][0-100]-${configProfile}.properties files if they exist
+ *  <li>${configPath}/inversion-${configProfile}[-][0-100].properties files if they exist
+ *  <li>${configPath}/inversion[-][0-100].properties files if they exist
+ * </ol>
+ * 
+ * <p>For example:
+ * <ul>
+ *   <li>if key "foo" is found in "${user.dir}/.env" the corresponding value will always be returned no matter what other source have key "foo"
+ *   <li>if key "bar" exists in inversion-${configProfile}.properties and inversion.properties, the value from inversion-${configProfile}.properties will be returned
+ *   <li>if key "abc" is environment and inversion-${configProfile}.properties, the value from the environment will be returned
+ *   <li>if key "xyz" is in inversion.properties and inversion-10.properties, the value from inversion-10.properties will be returned
+ * </ul>
+ * <p>
+ * If you have a custom configuration data source, such as a database or secrets key vault, you can add those to the FRONT of the 
+ * CompositeConfiguration via <code>Config.getConfiguration().addConfigurationFirst(MY_CONFIG_OBJECT)</code> to make sure those values
+ * are given the highest priority.  Use <code>CompositeConfiguration.addConfiguration</code> to give your custom props lowest priority.
+ * 
+ * @see io.inversion.utils.Configurator
+ * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
+ */
 public class Config
 {
    static CompositeConfiguration configuration = null;
@@ -39,31 +74,60 @@ public class Config
 
    }
 
+   /**
+    * If <code>configuration</code> is null, <code>loadConfiguration</code> is called
+    * to lazy load the default config. 
+    * 
+    * @return the system wide CompositeConfiguration
+    */
    public static synchronized CompositeConfiguration getConfiguration()
    {
+      if (configuration == null)
+      {
+         loadConfiguration(null, null);
+      }
       return configuration;
    }
 
+   /**
+    * Sets the system wide CompositeConfiguration.
+    * <p>
+    * Generally, you don't need to explicitly call this, as accessing any of this 
+    * classes getters will cause the default configuration to be loaded via <code>loadConfiguration()</code>
+    * if <code>configuration</code> is null.
+    */
    public static synchronized void setConfiguration(CompositeConfiguration configuration)
    {
       Config.configuration = configuration;
    }
 
+   /**
+    * Nulls out the system wide CompositeConfiguration, same as <code>setConfiguration(null)</code>
+    */
    public static synchronized void clearConfiguration()
    {
       configuration = null;
    }
-   
-   static synchronized void lazyLoadConfiguration()
-   {
-      if (configuration == null)
-      {
-         configuration = loadConfiguration(null, null);
-      }
-   }
 
-   public static synchronized CompositeConfiguration loadConfiguration(String configPath, String configProfile)
+   /**
+    * Creates a new CompositeConfiguration with individual Configuration objects loaded with key/value pairs
+    * from sources as described in the class comment above.
+    * <p> 
+    * If <code>configPath</code> is null, it will be looked up via Utils.findProperty("configPath").
+    * <p>
+    * If <code>configProfile</code> is null, it will be looked up via Utils.findProperty("configProfile", "profile").
+    * 
+    * @param configPath  the path use to locate 'inversion.properties' files via <code>getResource</code>
+    * @param configProfile  the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.
+    * 
+    * @see #getResource(String)
+    * @see Utils.findProperty
+    */
+   public static synchronized void loadConfiguration(String configPath, String configProfile)
    {
+      configPath = configPath != null ? configPath : Utils.findProperty("configPath");
+      configProfile = configProfile != null ? configProfile : Utils.findProperty("configProfile", "profile");
+
       Configurations configs = new Configurations();
       CompositeConfiguration configuration = new CompositeConfiguration();
 
@@ -74,7 +138,7 @@ public class Config
          {
             configuration.addConfiguration(configs.properties(url));
          }
-         
+
          configuration.addConfiguration(new SystemConfiguration());
          configuration.addConfiguration(new EnvironmentConfiguration());
 
@@ -138,11 +202,15 @@ public class Config
       }
 
       Config.configuration = configuration;
-
-      return configuration;
    }
 
-   static URL getResource(String name)
+   /**
+    * Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.
+    * 
+    * @param name
+    * @return
+    */
+   protected static URL getResource(String name)
    {
       try
       {
@@ -166,175 +234,175 @@ public class Config
 
    public static Iterator<String> getKeys()
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getKeys();
    }
 
    public static Object getProperty(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getProperty(key);
    }
 
    public static boolean getBoolean(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key);
    }
 
    public static boolean getBoolean(String key, boolean defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key, defaultValue);
    }
 
    public static Boolean getBoolean(String key, Boolean defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key, defaultValue);
    }
 
    public static byte getByte(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key);
    }
 
    public static byte getByte(String key, byte defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key, defaultValue);
    }
 
    public static Byte getByte(String key, Byte defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key, defaultValue);
    }
 
    public static double getDouble(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key);
    }
 
    public static double getDouble(String key, double defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key, defaultValue);
    }
 
    public static Double getDouble(String key, Double defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key, defaultValue);
    }
 
    public static float getFloat(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key);
    }
 
    public static float getFloat(String key, float defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key, defaultValue);
    }
 
    public static Float getFloat(String key, Float defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key, defaultValue);
    }
 
    public static int getInt(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getInt(key);
    }
 
    public static int getInt(String key, int defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getInt(key, defaultValue);
    }
 
    public static Integer getInteger(String key, Integer defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getInteger(key, defaultValue);
    }
 
    public static long getLong(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key);
    }
 
    public static long getLong(String key, long defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key, defaultValue);
    }
 
    public static Long getLong(String key, Long defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key, defaultValue);
    }
 
    public static short getShort(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key);
    }
 
    public static short getShort(String key, short defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key, defaultValue);
    }
 
    public static Short getShort(String key, Short defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key, defaultValue);
    }
 
    public static BigDecimal getBigDecimal(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBigDecimal(key);
    }
 
    public static BigDecimal getBigDecimal(String key, BigDecimal defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBigDecimal(key, defaultValue);
    }
 
    public static BigInteger getBigInteger(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBigInteger(key);
    }
 
    public static BigInteger getBigInteger(String key, BigInteger defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getBigInteger(key, defaultValue);
    }
 
    public static String getString(String key)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getString(key);
    }
 
    public static String getString(String key, String defaultValue)
    {
-      lazyLoadConfiguration();
+      getConfiguration();//lazy loads default config if necessary
       return configuration.getString(key, defaultValue);
    }
 
