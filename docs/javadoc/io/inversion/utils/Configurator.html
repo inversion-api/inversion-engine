@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10};
+var methods = {"i0":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -73,13 +73,13 @@ var activeTableTab = "activeTableTab";
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
@@ -109,64 +109,68 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">Configurator</span>
 extends java.lang.Object</pre>
-<div class="block">Wires up an Api at runtime by reflectively setting bean properties based on key/value pairs from Config.
+<div class="block">Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
  <p>
  Configurator works in two different modes:
  <ol>
-  <li>Dependency Injection Mode - If the Engine already has an Api set on it, then it is assumed that a developer has at least partially wired up their own Api via code.  
-      In this case, the Configurator looks for named beans in the Api object graph(s) and sets any corresponding "beanName.propertyName" values from Config on the bean. 
-      This is a great way to inject runtime dependencies such as database credentials.  If developers are hard core SpringBoot-ers, they may find this capability to be
-      redundant and prefer to use Spring Boot DI which is totally fine.
+  <li><p>Dependency Injection Mode</p> - If the Engine already has an Api set on it, then it is assumed that a developer has at least partially wired up their own Api via code.  
+      In this case, the Configurator looks for named beans in the Api object graph(s) and sets any corresponding "beanName.propertyName" values from <code>configuration</code> on the bean. 
+      This is a great way to inject runtime dependencies such as database credentials.  If developers are hard core SpringBoot-ers, or are otherwise coding up their Inversion 
+      Api using some existing DI framework, they may find this capability to be redundant and prefer to use their own party DI which is totally fine.
         
-  <li>Full Wiring Mode - when an Engine starts up and no Api's have been added to the Engine via code, then the Configurator does all of the work to fully instantiate/configure/bootstrap 
-      the Api object model based on data found in the Config.  Here is an outline how Full Wiring Mode works.
-      <ol>
+  <li><p>Full Wiring Mode</p> - when an Engine starts up and no Api's have been added to the Engine via code, then the Configurator does all of the work to fully instantiate/configure/bootstrap 
+      the Api object model based on data found in the <code>configuration</code>.  Here is an outline how Full Wiring Mode works.
+      <ul>
           <li>All beans with key/value properties "${beanName}.class=className" are instantiated and all "${beanName}.${propertyName}" values are set.  
           
           <li><code>startup()</code> is called on all Db objects effectively bootstrapping the full Api model.
           
-          <li>The full object graph is re-serialized to name/value property pairs in memory.
+          <li>The now populated object graph is re-serialized to name/value property pairs in memory.
           
           <li>All instantiated objects to this point are thrown away.
           
-          <li>All of the values from Config are merged down on top of the in memory pairs.  This allows the configuration author to overwrite any of the bean properties set during the Db.startup()
+          <li>All of the values from <code>configuration</code> are merged down on top of the in memory pairs.  This allows the configuration author to overwrite any of the bean properties set during the Db.startup()
               default bootstrapping.
           
-          <li>The merged properties model is decoded it the full Api object model/graph that is set on the Engine.
+          <li>The merged properties model is decoded and the full Api(s) object model/graph that is set on the Engine.
           
           <li>When the Engine calls startup() on the Apis (right after configure(Engine) returns), the Apis will call startup() on their Dbs.  
               In the first pass, above, the Dbs had empty configurations so calling Db.startup() caused the Dbs to reflectively inspect their underlying data source and create Collections to represent underlying tables etc.
               These Collections were serialized out and then instantiated and set on the new copies of the Db in the final wiring above.  Now when Db.startup() is called, the Db has Collection(s) already
               set on them and the Db will skip the reflective bootstrapping phase.
               
-          <li>NOTE: If you don't supply at least one "${myApiName}.class=io.inversion.Api" property in your config, a default api named "api" will be instantiated for you and the Configurator 
-              will assume all Db, Endpoints and Actions declared in the Config belong to that single implicit Api.
+          <li>NOTE: If you don't supply at least one "${myApiName}.class=io.inversion.Api" property in your <code>configuration</code>, a default api named "api" will be instantiated for you and the Configurator 
+              will assume all Db, Endpoints and Actions declared in the <code>configuration</code> belong to that single implicit Api.
               
-          <li>NOTE: If you have a single Api and you don't supply at least one "${myEndpointName}.class=io.inversion.Endpoint" property in our config, a default Endpoint named "endpoint" 
+          <li>NOTE: If you have a single Api and you don't supply at least one "${myEndpointName}.class=io.inversion.Endpoint" property in our <code>configuration</code>, a default Endpoint named "endpoint" 
               that matches on all HTTP methods and URL paths will be inferred by the Configurator.  If you declear multiple Apis, you must declare Endpoints if you want your Api to do anything.      
           
           <li>NOTE: If you only have a single Api, all Dbs, Endpoints, and global Actions will be set on the Api.  
-              If you have more than one Api in your config, you must assign Dbs, Endpoints, and global Actions to the appropriate Api.  
+              If you have more than one Api in your <code>configuration</code>, you must assign Dbs, Endpoints, and global Actions to the appropriate Api.  
               A "global" Action is one that is not explicitly assigned to an Endpoint but is instead assigned directly to the Api and can then be selected to run across requests to multiple different Endpoints.
-      </ol>
+      </ul>
  </ol>     
  
- Here is an example minimal configuration for Full Wiring Mode that will produce a fully running REST API for the underlying data source.  
- These name/value pairs can come from any combination of property sources loaded by Config.
  <p>
- 
+ Here is an example minimal configuration for Full Wiring Mode that will produce a fully running REST API for the underlying data source.  
+ These name/value pairs can come from any combination of property sources loaded into <code>configuration</code>.
+ <p>
  <pre> 
- myAction.class=io.inversion.db.DbAction
- myDb.class=io.inversion.jdbc.JdbcDb
- myDb.driver=${YOUR JDBC DRIVER CLASS NAME}
- myDb.url=${YOUR JDBC URL}
- myDb.user=${YOUR JDBC USERNAME}
- myDb.pass=${YOUR JDBC PASSWORD}
- </pre></div>
+      myAction.class=io.inversion.db.DbAction
+      myDb.class=io.inversion.jdbc.JdbcDb
+      myDb.driver=${YOUR JDBC DRIVER CLASS NAME}
+      myDb.url=${YOUR JDBC URL}
+      myDb.user=${YOUR JDBC USERNAME}
+      myDb.pass=${YOUR JDBC PASSWORD}
+ </pre>
+       
+ <p>
+ By default, the <code>configuration</code> is going to the global default CombinedConfiguration from Config.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><code>io.inversion.Engine.startup</code>, 
-<a href="../../../io/inversion/utils/Config.html" title="class in io.inversion.utils"><code>Config</code></a></dd>
+<dd><code>io.inversion.Engine.startup()</code>, 
+<a href="../../../io/inversion/utils/Config.html" title="class in io.inversion.utils"><code>Config</code></a>, 
+<a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a></dd>
 </dl>
 </li>
 </ul>
@@ -174,29 +178,6 @@ extends java.lang.Object</pre>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- =========== FIELD SUMMARY =========== -->
-<ul class="blockList">
-<li class="blockList"><a name="field.summary">
-<!--   -->
-</a>
-<h3>Field Summary</h3>
-<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Field Summary table, listing fields, and an explanation">
-<caption><span>Fields</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Field and Description</th>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>protected static org.slf4j.Logger</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Configurator.html#log">log</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Configurator.html#ROOT_BEAN_NAME">ROOT_BEAN_NAME</a></span></code>&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <ul class="blockList">
 <li class="blockList"><a name="constructor.summary">
@@ -228,11 +209,10 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Configurator.html#configure-io.inversion.Engine-">configure</a></span>(<a href="../../../io/inversion/Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</code>&nbsp;</td>
-</tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Configurator.html#dump-java.util.Properties-">dump</a></span>(java.util.Properties&nbsp;autoProps)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Configurator.html#configure-io.inversion.Engine-org.apache.commons.configuration2.Configuration-">configure</a></span>(<a href="../../../io/inversion/Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine,
+         org.apache.commons.configuration2.Configuration&nbsp;configuration)</code>
+<div class="block">Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -250,36 +230,6 @@ extends java.lang.Object</pre>
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
-<!-- ============ FIELD DETAIL =========== -->
-<ul class="blockList">
-<li class="blockList"><a name="field.detail">
-<!--   -->
-</a>
-<h3>Field Detail</h3>
-<a name="log">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>log</h4>
-<pre>protected static final&nbsp;org.slf4j.Logger log</pre>
-</li>
-</ul>
-<a name="ROOT_BEAN_NAME">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>ROOT_BEAN_NAME</h4>
-<pre>public static final&nbsp;java.lang.String ROOT_BEAN_NAME</pre>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../constant-values.html#io.inversion.utils.Configurator.ROOT_BEAN_NAME">Constant Field Values</a></dd>
-</dl>
-</li>
-</ul>
-</li>
-</ul>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
 <ul class="blockList">
 <li class="blockList"><a name="constructor.detail">
@@ -303,22 +253,23 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="configure-io.inversion.Engine-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>configure</h4>
-<pre>public&nbsp;void&nbsp;configure(<a href="../../../io/inversion/Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
-</li>
-</ul>
-<a name="dump-java.util.Properties-">
+<a name="configure-io.inversion.Engine-org.apache.commons.configuration2.Configuration-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>dump</h4>
-<pre>public&nbsp;void&nbsp;dump(java.util.Properties&nbsp;autoProps)</pre>
+<h4>configure</h4>
+<pre>public&nbsp;void&nbsp;configure(<a href="../../../io/inversion/Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine,
+                      org.apache.commons.configuration2.Configuration&nbsp;configuration)</pre>
+<div class="block">Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>engine</code> - the engine to be configured</dd>
+<dd><code>configuration</code> - the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>io.inversion.Engine.startup()</code>, 
+<a href="../../../io/inversion/utils/Config.html" title="class in io.inversion.utils"><code>Config</code></a></dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -374,13 +325,13 @@ extends java.lang.Object</pre>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>

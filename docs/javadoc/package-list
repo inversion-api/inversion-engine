@@ -3,6 +3,10 @@ io.inversion.action.db
 io.inversion.action.misc
 io.inversion.action.security
 io.inversion.cosmosdb
+io.inversion.demo.aclrules
+io.inversion.demo.jdbc
+io.inversion.demo.keyvault
+io.inversion.demo.script
 io.inversion.dynamodb
 io.inversion.elasticsearch
 io.inversion.jdbc
