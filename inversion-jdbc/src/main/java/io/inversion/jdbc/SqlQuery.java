@@ -1104,23 +1104,19 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
    public String printTable()
    {
-      if (collection != null)
-         return quoteCol(collection.getTableName());
+      String collectionName = collection != null ? collection.getName() : (Chain.peek() != null ? Chain.peek().getRequest().getCollectionKey() : null);
 
-      if (Chain.peek() != null)
+      String tableKey = (collectionName != null ? (collectionName + ".") : "") + "tableName";
+      String tableName = (String) Chain.peek().get(tableKey);
+
+      if (tableName == null && collection != null)
       {
-         Chain chain = Chain.peek();
-         String collectionName = chain.getRequest().getUrl().getParam("collection");
+         tableName = collection.getTableName();
+      }
 
-         if (collectionName != null)
-         {
-            String tableName = (String) chain.get(collectionName + ".tableName");
-
-            if (tableName == null)
-            {
-               tableName = collectionName;
-            }
-         }
+      if (tableName != null)
+      {
+         return quoteCol(tableName);
       }
 
       return "";
@@ -1128,8 +1124,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
    public String printCol(String columnName)
    {
-      if (collection != null && columnName.indexOf(".") < 0)
-         columnName = collection.getTableName() + "." + columnName;
+      if (columnName.indexOf(".") < 0)
+      {
+         return printTable() + "." + quoteCol(columnName);
+      }
 
       return quoteCol(columnName);
    }

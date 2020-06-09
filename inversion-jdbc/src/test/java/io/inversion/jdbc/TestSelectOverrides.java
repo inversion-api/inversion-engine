@@ -39,8 +39,8 @@ public class TestSelectOverrides
                                                                         }
                                                                         else if ("orders".equalsIgnoreCase(collectionKey))
                                                                         {
-                                                                           Collection customers = req.getApi().getCollection("customers");
-                                                                           req.withCollection(customers);
+                                                                           req.getChain().put(collectionKey + ".tableName", "ORDERDETAILS");
+                                                                           
                                                                         }
                                                                      }
 
@@ -58,8 +58,8 @@ public class TestSelectOverrides
       assertEquals("http://localhost/northwind/h2/customers/GREAL", res.find("data.0.href"));
       res.dump();
 
-      res = engine.get("northwind/h2/orders?contactname=Howard Snyder");
-      assertEquals("http://localhost/northwind/h2/orders/GREAL", res.find("data.0.href"));
+      res = engine.get("northwind/h2/orders");
+      
       res.dump();
    }
 }
