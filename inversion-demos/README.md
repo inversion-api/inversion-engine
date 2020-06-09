@@ -1,4 +1,10 @@
-# inversion-demo
+# inversion-demos
+
+## Running a simple JDBC backed API
+
+```
+gradle JdbcApiMain -Ddb.driver=com.mysql.cj.jdbc.Driver -Ddb.url=jdbc:mysql://localhost:3306/inventory?serverTimezone=UTC -Ddb.user=root -Ddb.pass=password
+```
 
 ## Pulling Configuration from an Azure KeyVault
 

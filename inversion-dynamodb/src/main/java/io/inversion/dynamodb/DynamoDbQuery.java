@@ -45,7 +45,6 @@ import io.inversion.rql.Select;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 /**
  * 
@@ -104,9 +103,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
    {
    }
 
-   public DynamoDbQuery(Collection table, List<Term> terms)
+   public DynamoDbQuery(DynamoDb db, Collection table, List<Term> terms)
    {
-      super(table, terms);
+      super(db, table, terms);
    }
 
    @Override

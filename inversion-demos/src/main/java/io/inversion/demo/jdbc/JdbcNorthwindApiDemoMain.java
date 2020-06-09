@@ -31,7 +31,7 @@ import io.inversion.utils.Utils;
  * @author wellsb1
  *
  */
-public class JdbcNorthwindDemoMain
+public class JdbcNorthwindApiDemoMain
 {
    /**
     * This simple factory method is static so that other  
@@ -45,10 +45,10 @@ public class JdbcNorthwindDemoMain
                       //-- DATABASE CONFIGURATION OPTION #1.
                       //-- you can set your database connection information explicitly in the code here... 
                       .withDb(new JdbcDb("northwind", //the database name used as the properties key prefix when 
-                                         "org.h2.Driver",                           //-- jdbc driver
+                                         "org.h2.Driver", //-- jdbc driver
                                          "jdbc:h2:mem:northwind;DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                         "sa",                                      //-- jdbc user
-                                         "",                                        //-- jdbc password
+                                         "sa", //-- jdbc user
+                                         "", //-- jdbc password
                                          //-- OPTIONAL: the demo db is an in-memory db that gets
                                          //-- reinitialized each time with the data in "northwind-h2.ddl"
                                          JdbcDb.class.getResource("northwind-h2.ddl").toString()))
@@ -78,7 +78,7 @@ public class JdbcNorthwindDemoMain
       InversionMain.run(buildApi());
 
       //this simply prints out the README to the console  
-      System.out.println(Utils.read(JdbcNorthwindDemoMain.class.getResourceAsStream("README.md")));
+      System.out.println(Utils.read("README-JdbcNorthwindApiDemoMain.md"));
    }
 
 }

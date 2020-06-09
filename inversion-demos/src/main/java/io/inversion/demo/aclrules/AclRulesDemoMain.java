@@ -29,7 +29,7 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.User;
 import io.inversion.action.security.AclAction;
-import io.inversion.demo.jdbc.JdbcNorthwindDemoMain;
+import io.inversion.demo.jdbc.JdbcNorthwindApiDemoMain;
 import io.inversion.spring.InversionMain;
 
 public class AclRulesDemoMain

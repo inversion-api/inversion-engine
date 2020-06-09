@@ -54,7 +54,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
 
    public CosmosSqlQuery(CosmosDb db, Collection table, List<Term> terms)
    {
-      super(table, terms);
+      super(db, table, terms);
       super.withDb(db);
    }
 

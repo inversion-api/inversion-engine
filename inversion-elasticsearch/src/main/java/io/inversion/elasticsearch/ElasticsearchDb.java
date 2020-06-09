@@ -121,7 +121,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb>
       // see line ~78 ElasticDbGetAction
 
       // Apply default source when possible...adding "id", "asc" when necessary 
-      ElasticsearchQuery query = new ElasticsearchQuery(table, columnMappedTerms);
+      ElasticsearchQuery query = new ElasticsearchQuery(this, table, columnMappedTerms);
       if (defaultSource != null && query.getSelect().find("source") == null)
       {
          query.getSelect().withTerm("source=id");

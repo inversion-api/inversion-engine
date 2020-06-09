@@ -321,21 +321,12 @@ public class JdbcDb extends Db<JdbcDb>
    @Override
    public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException
    {
-      JdbcDb db = null;
-      if (coll == null)
-      {
-         db = this;
-      }
-      else
-      {
-         db = (JdbcDb) coll.getDb();
-      }
-
-      String selectKey = (coll != null ? coll.getTableName() + "." : "") + "select";
+      String tableName = coll != null ? coll.getTableName() : (Chain.peek() != null ? Chain.peek().getRequest().getCollectionKey() : null); 
+      
+      String selectKey = (tableName != null ? (tableName + ".") : "") + "select";
       String selectSql = (String) Chain.peek().remove(selectKey);
 
-      SqlQuery query = new SqlQuery(coll, columnMappedTerms);
-      query.withDb(db);
+      SqlQuery query = new SqlQuery(this, coll, columnMappedTerms);
       if (selectSql != null)
       {
          query.withSelectSql(selectSql);

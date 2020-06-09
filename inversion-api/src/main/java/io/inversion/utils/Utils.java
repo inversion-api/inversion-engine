@@ -1100,6 +1100,17 @@ public class Utils
       }
       return null;
    }
+   
+   
+   /**
+    * Finds an input stream for <code>resource</code> and reads it into a string
+    * @param resource
+    * @return the content of <code>code</code> as a String
+    */
+   public static String read(String resource)
+   {
+      return read(findInputStream(resource));
+   }
 
    /**
     * Read all of the stream to a string and close the stream.  Throws RuntimeException instead of IOException

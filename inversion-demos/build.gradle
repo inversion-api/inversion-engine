@@ -27,8 +27,15 @@ dependencies {
 }
 
 
-task JdbcApiMain(type: JavaExec) {
+task JdbcSimpleApiDemoMain(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = "io.inversion.demo.jdbc.JdbcApiMain"
+    main = "io.inversion.demo.jdbc.JdbcSimpleApiDemoMain"
+    systemProperties System.getProperties()
+}
+
+
+task JdbcNorthwindApiDemoMain(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = "io.inversion.demo.jdbc.JdbcNorthwindApiDemoMain"
     systemProperties System.getProperties()
 }

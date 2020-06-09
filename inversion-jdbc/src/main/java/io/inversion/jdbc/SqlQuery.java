@@ -60,9 +60,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
    }
 
-   public SqlQuery(Collection table, List<Term> terms)
+   public SqlQuery(D db, Collection table, List<Term> terms)
    {
-      super(table, terms);
+      super(db, table, terms);
    }
 
    protected boolean addTerm(String token, Term term)
@@ -75,9 +75,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             return true;
 
          //ignore extraneous name=value pairs if 'name' is not a column
-         if (name.indexOf(".") < 0 && collection != null)
+         if (name.indexOf(".") < 0)// && collection != null)
          {
-            if(!db.shouldInclude(collection, name))
+            if (!db.shouldInclude(collection, name))
                return true;
          }
       }
@@ -86,7 +86,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       {
          if (joins == null)
             joins = new LinkedHashMap();
-         
+
          //a map is used to avoid adding duplicate joins
          String key = term.toString();
          if (!joins.containsKey(key))
@@ -1011,14 +1011,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       if (val == null || val.trim().equalsIgnoreCase("null"))
          return "NULL";
 
-//      if("*".equals(val))
-//         return val;
-      
+      //      if("*".equals(val))
+      //         return val;
+
       if (parent.hasToken("if") && index > 0)
       {
          if (isBool(leaf))
             return asBool(val);
-         
+
          if (isNum(leaf))
             return val;
       }
@@ -1053,9 +1053,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       if (term.getQuote() == '\'')
          return false; //this a string as specified by the user in the parsed rql
 
-      if(isBool(term))
+      if (isBool(term))
          return false;
-      
+
       if (isNum(term))
          return false;
 
@@ -1106,6 +1106,23 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
    {
       if (collection != null)
          return quoteCol(collection.getTableName());
+
+      if (Chain.peek() != null)
+      {
+         Chain chain = Chain.peek();
+         String collectionName = chain.getRequest().getUrl().getParam("collection");
+
+         if (collectionName != null)
+         {
+            String tableName = (String) chain.get(collectionName + ".tableName");
+
+            if (tableName == null)
+            {
+               tableName = collectionName;
+            }
+         }
+      }
+
       return "";
    }
 

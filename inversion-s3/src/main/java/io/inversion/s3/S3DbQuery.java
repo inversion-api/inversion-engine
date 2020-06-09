@@ -49,9 +49,9 @@ import io.inversion.rql.Where;
  */
 public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3DbQuery>, S3DbQuery>, Where<Where<Where, S3DbQuery>, S3DbQuery>, Group<Group<Group, S3DbQuery>, S3DbQuery>, Order<Order<Order, S3DbQuery>, S3DbQuery>, Page<Page<Page, S3DbQuery>, S3DbQuery>>
 {
-   public S3DbQuery(Collection table, List<Term> terms)
+   public S3DbQuery(S3Db db, Collection table, List<Term> terms)
    {
-      super(table, terms);
+      super(db, table, terms);
       getWhere().clearFunctions();
       getWhere().withFunctions("eq", "sw");
    }

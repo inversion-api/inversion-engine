@@ -97,17 +97,18 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
 
    public Query()
    {
-      this(null);
+      this(null, null);
    }
 
-   public Query(Collection coll)
+   public Query(D db, Collection coll)
    {
-      this(coll, null);
+      this(db, coll, null);
    }
 
-   public Query(Collection coll, Object terms)
+   public Query(D db, Collection coll, Object terms)
    {
       super(null);
+      withDb(db);
       withCollection(coll);
 
       if (terms != null)

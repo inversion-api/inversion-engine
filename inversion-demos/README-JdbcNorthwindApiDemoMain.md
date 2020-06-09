@@ -1,11 +1,11 @@
 
-##README - JdbcNorthwindDemoMain.java
+##README - JdbcNorthwindApiDemoMain.java
 
 This demo launches an API that exposes SQL database tables as REST collection endpoints.  
 The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language
 (RQL) for GET requests
 
-After running Demo001SqlDemoNorthwind.java, your API will be running at 
+After running JdbcNorthwindApiDemoMain.java, your API will be running at 
 'http://localhost:8080/northwind' with REST collection endpoints for db entity
 
 You can get started by exploring some of these urls:
@@ -30,6 +30,6 @@ its table designs seem strange or antiquated  compared to modern conventions but
 demo and test specifically because it shows how Inversion can accommodate a broad range of 
 database design patterns.  
 
-@see Demo1SqlDbNorthwind.ddl for more details on the db
+@see JdbcNorthwindApiDemoMain.ddl for more details on the db
 @see https://github.com/inversion-api/inversion-engine for more information on building awesome APIs with Inversion
 

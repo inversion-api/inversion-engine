@@ -22,7 +22,7 @@ import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.InversionMain;
 import io.inversion.utils.Utils;
 
-public class JdbcDemoMain
+public class JdbcSimpleApiDemoMain
 {
    public static void main(String[] args) throws Exception
    {

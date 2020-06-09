@@ -53,9 +53,9 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    }
 
-   public ElasticsearchQuery(Collection index, List<Term> terms)
+   public ElasticsearchQuery(ElasticsearchDb db, Collection index, List<Term> terms)
    {
-      super(index, terms);
+      super(db, index, terms);
    }
 
    @Override
