@@ -30,6 +30,7 @@ import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Relationship;
 import io.inversion.Results;
+import io.inversion.rql.From;
 import io.inversion.rql.Group;
 import io.inversion.rql.Order;
 import io.inversion.rql.Order.Sort;
@@ -44,12 +45,10 @@ import io.inversion.utils.Utils;
 /**
  * Composes and executes a SQL SELECT based on supplied RQL <code>Terms</code>.
  */
-public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
+public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, From<From<From, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>>
 {
    protected char              stringQuote = '\'';
    protected char              columnQuote = '"';
-
-   String                      selectSql   = null;
 
    String                      type        = null;
 
@@ -62,7 +61,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
    public SqlQuery(D db, Collection table, List<Term> terms)
    {
-      super(db, table, terms);
+      super(db, table, terms, "_query");
    }
 
    protected boolean addTerm(String token, Term term)
@@ -181,7 +180,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       clearValues();
       Parts parts = new Parts();
 
-      printInitialSelect(parts, this.selectSql);
+      printInitialSelect(parts);
       printTermsSelect(parts, preparedStmt);
       //printJoins(parts, joins);
       printWhereClause(parts, getWhere().getFilters(), preparedStmt);
@@ -219,39 +218,29 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       return sql;
    }
 
-   protected String printInitialSelect(Parts parts, String initialSelect)
+   protected String printInitialSelect(Parts parts)
    {
+      String initialSelect = (String) find("_query", 0);
+
       if (initialSelect == null)
       {
-         String quotedTable = printTable();
+         String expression = getFrom().getSubquery();
+         String alias = quoteCol(getFrom().getAlias());
+         boolean distinct = getSelect().isDistinct();
 
-         //         if (joins != null && joins.size() > 0)
-         //         {
-         //            Map joined = new HashMap();
-         //
-         //            initialSelect = "SELECT DISTINCT " + quotedTable + ".* FROM " + quotedTable;
-         //
-         //            for (Entry<String, Term> joinEntry : joins.entrySet())
-         //            {
-         //               Term join = joinEntry.getValue();
-         //               String tableName = join.getToken(0);
-         //               String tableAlias = join.getToken(1);
-         //
-         //               if (!joined.containsKey(tableAlias))
-         //               {
-         //                  joined.put(tableAlias, tableName);
-         //                  initialSelect += ", " + quoteCol(tableName) + " " + quoteCol(tableAlias);
-         //               }
-         //            }
-         //
-         //            //initialSelect = " SELECT " + quotedTable + ".* FROM " + quotedTable;
-         //         }
-         //         else
+         if (expression != null)
          {
-            boolean distinct = find("distinct") != null;
+            initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
+         }
+         else
+         {
+            expression = quoteCol(getFrom().getTable());
+            initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + expression;
+         }
 
-            initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + quotedTable + ".* FROM " + quotedTable;
-            //initialSelect = " SELECT FROM " + quotedTable;
+         if (!expression.equals(alias))
+         {
+            initialSelect += " AS " + alias;
          }
       }
 
@@ -878,7 +867,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          //String s = "COUNT (1)";
          //sql.append(s);
 
-         String pt = printTable() + ".*";
+         String pt = printTableAlias() + ".*";
          String acol = preparedStmtChildText.get(0);
          if (pt.equals(acol))//reset count(table.*) to count(*)
             acol = "*";
@@ -943,7 +932,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
-               sql.append(printTable()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
+               sql.append(printTableAlias()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
 
                if (i < fk1.size() - 1)
                   sql.append(" AND ");
@@ -956,7 +945,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
-               sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
+               sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
                if (i < fk1.size() - 1)
                   sql.append(" AND ");
             }
@@ -968,7 +957,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
                String fkName = prop.getColumnName();
-               sql.append(printTable()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
+               sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
                sql.append(" AND ");
             }
 
@@ -1102,17 +1091,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       return buff.toString();//columnQuote + str + columnQuote;
    }
 
-   public String printTable()
+   public String printTableAlias()
    {
-      String collectionName = collection != null ? collection.getName() : (Chain.peek() != null ? Chain.peek().getRequest().getCollectionKey() : null);
-
-      String tableKey = (collectionName != null ? (collectionName + ".") : "") + "tableName";
-      String tableName = (String) Chain.peek().get(tableKey);
-
-      if (tableName == null && collection != null)
-      {
-         tableName = collection.getTableName();
-      }
+      String tableName = getFrom().getAlias();
 
       if (tableName != null)
       {
@@ -1126,7 +1107,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
    {
       if (columnName.indexOf(".") < 0)
       {
-         return printTable() + "." + quoteCol(columnName);
+         return printTableAlias() + "." + quoteCol(columnName);
       }
 
       return quoteCol(columnName);
@@ -1291,12 +1272,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             }
          }
       }
-   }
-
-   public SqlQuery withSelectSql(String selectSql)
-   {
-      this.selectSql = selectSql;
-      return this;
    }
 
    @Override

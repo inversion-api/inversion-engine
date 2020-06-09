@@ -74,6 +74,11 @@ public class Config
 
    }
 
+   public static synchronized boolean hasConfiguration()
+   {
+      return configuration != null;
+   }
+
    /**
     * If <code>configuration</code> is null, <code>loadConfiguration</code> is called
     * to lazy load the default config. 

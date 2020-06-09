@@ -180,7 +180,7 @@ public class Engine extends Rule<Engine>
       {
          startup0();
 
-         if (Config.getConfiguration() == null)
+         if (!Config.hasConfiguration())
          {
             Config.loadConfiguration(getConfigPath(), getConfigProfile());
          }

@@ -19,6 +19,7 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Term implements Comparable<Term>
 {
@@ -26,7 +27,6 @@ public class Term implements Comparable<Term>
    public char       quote  = 0;
    public String     token  = null;
    public List<Term> terms  = new ArrayList();
-   
 
    protected Term()
    {
@@ -45,9 +45,9 @@ public class Term implements Comparable<Term>
 
       copy.quote = quote;
       copy.token = token;
-      
+
       terms.forEach(child -> copy.withTerm(child.copy()));
-      
+
       return copy;
    }
 
@@ -355,4 +355,10 @@ public class Term implements Comparable<Term>
       return false;
    }
 
+   public void stream(Consumer action)
+   {
+      action.accept(token);
+      for (Term child : terms)
+         child.stream(action);
+   }
 }

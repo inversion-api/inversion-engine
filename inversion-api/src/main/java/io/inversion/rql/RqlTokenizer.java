@@ -18,8 +18,9 @@ package io.inversion.rql;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
-class RqlTokenizer
+public class RqlTokenizer
 {
    char[]       chars    = null;
    int          head     = 0;
@@ -33,6 +34,11 @@ class RqlTokenizer
    public RqlTokenizer(String chars)
    {
       this.chars = chars.toCharArray();
+   }
+
+   public Stream<String> stream()
+   {
+      return asList().stream();
    }
 
    public List<String> asList()
