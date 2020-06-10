@@ -29,6 +29,7 @@ import io.inversion.Chain.ActionMatch;
 import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 
 public class EngineTest
 {
@@ -174,7 +175,7 @@ public class EngineTest
    }
 
    @Test
-   public void test_endpoints_without_paths()
+   public void test_endpoints_without_paths() throws Throwable
    {
       Api api = null;
 
@@ -200,7 +201,7 @@ public class EngineTest
    }
 
    @Test
-   public void test_endpoint_matches()
+   public void test_endpoint_matches() throws Throwable
    {
       //      Api api0 = new Api()//
       //                          .withEndpoint(new Endpoint("GET", "endpoint_path/*", new MockAction("all")).withName("ep0"));
@@ -471,12 +472,12 @@ public class EngineTest
    //
    //   }
 
-   public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
+   public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) throws Throwable
    {
       assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
    }
 
-   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis)
+   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) throws Throwable
    {
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
@@ -530,14 +531,24 @@ public class EngineTest
             e.withApi(api);//without this additional API, any apiName will match
       }
 
-      Response resp = e.service(method, url);
-      resp.dump();
+      try
+      {
+         Response resp = e.service(method, url);
+         resp.dump();
 
-      if (statusCode != resp.getStatusCode())
-         fail("status code mismatch");
+         if (statusCode != resp.getStatusCode())
+            fail("status code mismatch");
 
-      if (statusCode < 400 && !success[0])
-         fail("status code mismatch");
+         if (statusCode < 400 && !success[0])
+            fail("status code mismatch");
+      }
+      catch (Throwable t)
+      {
+         t = Utils.getCause(t);
+         t.printStackTrace();
+
+         throw t;
+      }
    }
 
 }
