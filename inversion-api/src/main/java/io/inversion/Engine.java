@@ -29,7 +29,6 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.configuration2.Configuration;
 
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
@@ -47,16 +46,6 @@ import io.inversion.utils.Utils;
  */
 public class Engine extends Rule<Engine>
 {
-
-   protected transient Configuration        config            = null;
-
-   //   /**
-   //    * Looks up InputStreams. 
-   //    * 
-   //    * @see #getResource(String)
-   //    */
-   //   protected transient ResourceLoader       resourceLoader    = null;
-
    /**
     * The last {@code Response} served by this Engine, primarily used for writing test cases.
     */
@@ -82,7 +71,18 @@ public class Engine extends Rule<Engine>
     */
    protected String                         corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
+   /**
+    * Optional override for the configPath sys/env prop used by Config to locate configuration property files
+    * 
+    * @see Config.loadConfiguration
+    */
    protected String                         configPath        = "";
+   
+   /**
+    * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
+    * 
+    * @see Config.loadConfiguration
+    */
    protected String                         configProfile     = null;
 
    transient volatile boolean               started           = false;
@@ -93,7 +93,7 @@ public class Engine extends Rule<Engine>
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
       logger.setLevel(Level.WARN);
    }
-   
+
    /**
    * Receives {@code Engine} and {@code Api} lifecycle, 
    * per request and per error callback notifications.
@@ -1099,14 +1099,6 @@ public class Engine extends Rule<Engine>
 
    public String getConfigPath()
    {
-      if (configPath == null)
-      {
-         String[] guesses = new String[]{getName() + ".configPath", "inversion.configPath", "configPath"};
-         for (int i = 0; configPath == null && i < guesses.length; i++)
-         {
-            configPath = Utils.getProperty(guesses[i]);
-         }
-      }
       return configPath;
    }
 
@@ -1118,16 +1110,7 @@ public class Engine extends Rule<Engine>
 
    public String getConfigProfile()
    {
-      if (configProfile == null)
-      {
-         String[] guesses = new String[]{getName() + ".configProfile", "inversion.configProfile", "spring.profiles.active", "configProfile", "profile"};
-         for (int i = 0; configProfile == null && i < guesses.length; i++)
-         {
-            configProfile = Utils.getProperty(guesses[i]);
-         }
-      }
       return configProfile;
-
    }
 
    public Engine withConfigProfile(String configProfile)

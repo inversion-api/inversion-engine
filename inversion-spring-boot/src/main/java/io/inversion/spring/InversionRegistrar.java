@@ -30,7 +30,7 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
       bean.setAutowireMode(AUTOWIRE_CONSTRUCTOR);
       //bean.setLazyInit(false);
       //bean.setInitMethodName("startup");
-      bean.setDestroyMethodName("destroy");
+      bean.setDestroyMethodName("shutdown");
       registry.registerBeanDefinition("engine", bean);
    }
 
