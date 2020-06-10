@@ -1177,6 +1177,11 @@ public class JdbcUtils
    +------------------------------------------------------------------------------+
     */
 
+   public static void runSql(Connection conn, String sqlString) throws Exception
+   {
+      runSql(conn, readSql(sqlString));
+   }
+
    /**
     * @see readSql(InputStream)
     * @param conn
