@@ -35,12 +35,10 @@ import java.util.Set;
 import javax.sql.DataSource;
 
 import org.apache.commons.configuration2.Configuration;
-import org.slf4j.LoggerFactory;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import ch.qos.logback.classic.Logger;
 import io.inversion.Api;
 import io.inversion.Api.ApiListener;
 import io.inversion.ApiException;
@@ -62,15 +60,15 @@ import io.inversion.utils.Utils;
  */
 public class JdbcDb extends Db<JdbcDb>
 {
-   protected char         stringQuote              = '\'';
-   protected char         columnQuote              = '"';
+   protected char             stringQuote              = '\'';
+   protected char             columnQuote              = '"';
 
-   transient DataSource   pool                     = null;
+   static Map<Db, DataSource> pools                    = new Hashtable();
 
    /**
     * The JDBC driver class name.
     */
-   protected String       driver                   = null;
+   protected String           driver                   = null;
 
    /**
     * The JDBC url.  
@@ -81,7 +79,7 @@ public class JdbcDb extends Db<JdbcDb>
     * @see Config
     * @see Configuration
     */
-   protected String       url                      = null;
+   protected String           url                      = null;
 
    /**
     * The JDBC username.  
@@ -92,7 +90,7 @@ public class JdbcDb extends Db<JdbcDb>
     * @see Config
     * @see Configuration
     */
-   protected String       user                     = null;
+   protected String           user                     = null;
 
    /**
     * The JDBC password.  
@@ -103,14 +101,14 @@ public class JdbcDb extends Db<JdbcDb>
     * @see Config
     * @see Configuration
     */
-   protected String       pass                     = null;
+   protected String           pass                     = null;
 
    /**
     * The maximum number of connections in the JDBC Connection pool, defaults to 50.
     */
-   protected int          poolMax                  = 50;
+   protected int              poolMax                  = 50;
 
-   protected int          idleConnectionTestPeriod = 3600;           // in seconds
+   protected int              idleConnectionTestPeriod = 3600;           // in seconds
 
    /**
     * Should the JDBC connection be set to autoCommit.
@@ -119,17 +117,17 @@ public class JdbcDb extends Db<JdbcDb>
     * inside of one transaction that commits just before the root Response is returned to the caller.
     * 
     */
-   protected boolean      autoCommit               = false;
+   protected boolean          autoCommit               = false;
 
    /**
     * For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
     */
-   protected boolean      calcRowsFound            = true;
+   protected boolean          calcRowsFound            = true;
 
    /**
     * Urls to DDL files that should be executed on startup of this Db.
     */
-   protected List<String> ddlUrls                  = new ArrayList();
+   protected List<String>     ddlUrls                  = new ArrayList();
 
    static
    {
@@ -214,6 +212,24 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
+   public String toString()
+   {
+      return getDriver() + "-" + getUrl() + "-" + getUser();
+   }
+
+   @Override
+   public boolean equals(Object object)
+   {
+      return object instanceof Db && toString().equals(object.toString());
+   }
+
+   @Override
+   public int hashCode()
+   {
+      return toString().hashCode();
+   }
+
+   @Override
    protected void doStartup(Api api)
    {
 
@@ -282,6 +298,7 @@ public class JdbcDb extends Db<JdbcDb>
 
    protected void doShutdown()
    {
+      DataSource pool = pools.get(this);
       if (pool != null)
       {
          ((HikariDataSource) pool).close();
@@ -463,18 +480,24 @@ public class JdbcDb extends Db<JdbcDb>
    {
       try
       {
+         System.out.println("GETTING CONNECTION: " + this.toString());
+
          Connection conn = !managed ? null : JdbcConnectionLocal.getConnection(this);
          //if (conn == null && isRunning(Chain.peek().getApi()))
          if (conn == null)
          {
+            DataSource pool = pools.get(this);
+
             if (pool == null)
             {
                synchronized (this)
                {
+                  pool = pools.get(this);
                   if (pool == null)
                   {
                      pool = createConnectionPool();
                   }
+                  pools.put(this, pool);
                }
             }
 
@@ -523,6 +546,12 @@ public class JdbcDb extends Db<JdbcDb>
             conn.setAutoCommit(false);
             for (String ddlUrl : ddlUrls)
             {
+               if (Utils.empty(ddlUrl))
+                  continue;
+
+               if (ddlUrl.indexOf(":/") < 0)
+                  ddlUrl = getClass().getClassLoader().getResource(ddlUrl).toString();
+
                JdbcUtils.runSql(conn, new URL(ddlUrl).openStream());
             }
             conn.commit();

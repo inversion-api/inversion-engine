@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.Iterator;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.EnvironmentConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
@@ -143,17 +142,22 @@ public class Config
     */
    public static synchronized void loadConfiguration(String configPath, String configProfile)
    {
-      configPath = configPath != null ? configPath : Utils.findProperty("inversion.configPath", "configPath");
-      configProfile = configProfile != null ? configProfile : Utils.findProperty("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
+      configPath = !Utils.empty(configPath) ? configPath : Utils.findProperty("inversion.configPath", "configPath");
+      configProfile = !Utils.empty(configProfile) ? configProfile : Utils.findProperty("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
 
       Configurations configs = new Configurations();
       CompositeConfiguration configuration = new CompositeConfiguration();
+
+      System.out.println("LOADING CONFIGURATION...");
+      System.out.println("  - configPath    : " + configPath);
+      System.out.println("  - configProfile : " + configProfile);
 
       try
       {
          URL url = getResource(".env");
          if (url != null)
          {
+            System.out.println("  - loading file  : " + url);
             configuration.addConfiguration(configs.properties(url));
          }
 
@@ -192,6 +196,7 @@ public class Config
 
                if (url != null)
                {
+                  System.out.println("  - loading file  : " + url);
                   configuration.addConfiguration(configs.properties(url));
                }
             }
@@ -210,6 +215,7 @@ public class Config
 
             if (url != null)
             {
+               System.out.println("  - loading file  : " + url);
                configuration.addConfiguration(configs.properties(url));
             }
          }

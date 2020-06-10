@@ -76,8 +76,8 @@ public class Engine extends Rule<Engine>
     * 
     * @see Config.loadConfiguration
     */
-   protected String                         configPath        = "";
-   
+   protected String                         configPath        = null;
+
    /**
     * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
     * 
@@ -121,24 +121,6 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   //   /**
-   //    * Looks up InputStreams. 
-   //    * <p>
-   //    * Different runtimes, a Servlet container vs. an AWS Lambda for example, may have different resource lookup needs.
-   //    * A plugged in ResourceLoader abstracts these runtime specifics from the Engine.
-   //    * 
-   //    * @see #getResource(String)
-   //    */
-   //   public static interface ResourceLoader
-   //   {
-   //      /**
-   //       * Locates a resource per the implementors prerogative.
-   //       * @param name  a resource name, file path, url etc. used to located the desired InputStream 
-   //       * @return InputStream
-   //       */
-   //      InputStream getResource(String name);
-   //   }
-
    public Engine()
    {
 
@@ -174,6 +156,8 @@ public class Engine extends Rule<Engine>
    {
       if (started || starting) //accidental recursion guard
          return this;
+
+      System.out.println("STARTING ENGINE...");
 
       starting = true;
       try
