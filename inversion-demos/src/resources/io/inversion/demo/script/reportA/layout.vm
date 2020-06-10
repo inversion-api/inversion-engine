@@ -1,0 +1,10 @@
+
+--- START reportA/layout.vm
+
+<table border="1">
+<tr><td>
+	$content
+</td></tr></table>
+
+
+--- END reportA/layout.vm

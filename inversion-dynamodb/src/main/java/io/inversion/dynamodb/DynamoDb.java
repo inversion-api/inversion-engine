@@ -89,7 +89,7 @@ public class DynamoDb extends Db<DynamoDb>
    @Override
    public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
-      DynamoDbQuery query = new DynamoDbQuery(table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
+      DynamoDbQuery query = new DynamoDbQuery(this, table, columnMappedTerms).withDynamoTable(getDynamoTable(table));
       return query.doSelect();
    }
 

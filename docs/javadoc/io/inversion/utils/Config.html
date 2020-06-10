@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -109,6 +109,41 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">Config</span>
 extends java.lang.Object</pre>
+<div class="block">Global configuration properties access through a singleton wrapper around a Commons Configuration CompositeConfiguration object.
+ <p>
+ The name/value pairs found in configuration are used by the Configurator to reflectively set bean properties on Apis, Endpoints, Actions, Dbs and other Api model objects during Engine startup.  
+ <p>
+ Automatic/reflective parameter setting via the Configurator is the preferred way to do runtime dependency injection.  
+ You can however directly use this classes Config.getXYX() methods to look up key/value pairs at runtime.  
+ <p>
+ You can access and modify the underlying CompositeConfiguration object to change where properties are pulled form.
+ <p>
+ By default, listed in order of priority, properties are merged from:
+ <ol>
+  <li>a "${user.dir}/.env" properties file if one exists.
+  <li>system properties
+  <li>environment variables
+  <li>${configPath}/inversion[-][0-100]-${configProfile}.properties files if they exist
+  <li>${configPath}/inversion-${configProfile}[-][0-100].properties files if they exist
+  <li>${configPath}/inversion[-][0-100].properties files if they exist
+ </ol>
+ 
+ <p>For example:
+ <ul>
+   <li>if key "foo" is found in "${user.dir}/.env" the corresponding value will always be returned no matter what other source have key "foo"
+   <li>if key "bar" exists in inversion-${configProfile}.properties and inversion.properties, the value from inversion-${configProfile}.properties will be returned
+   <li>if key "abc" is environment and inversion-${configProfile}.properties, the value from the environment will be returned
+   <li>if key "xyz" is in inversion.properties and inversion-10.properties, the value from inversion-10.properties will be returned
+ </ul>
+ <p>
+ If you have a custom configuration data source, such as a database or secrets key vault, you can add those to the FRONT of the 
+ CompositeConfiguration via <code>Config.getConfiguration().addConfigurationFirst(MY_CONFIG_OBJECT)</code> to make sure those values
+ are given the highest priority.  Use <code>CompositeConfiguration.addConfiguration</code> to give your custom props lowest priority.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../io/inversion/utils/Configurator.html" title="class in io.inversion.utils"><code>Configurator</code></a>, 
+<a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a></dd>
+</dl>
 </li>
 </ul>
 </div>
@@ -129,7 +164,9 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#clearConfiguration--">clearConfiguration</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#clearConfiguration--">clearConfiguration</a></span>()</code>
+<div class="block">Nulls out the system wide CompositeConfiguration, same as <code>setConfiguration(null)</code></div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static java.math.BigDecimal</code></td>
@@ -179,7 +216,10 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>static org.apache.commons.configuration2.CompositeConfiguration</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getConfiguration--">getConfiguration</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getConfiguration--">getConfiguration</a></span>()</code>
+<div class="block">If <code>configuration</code> is null, <code>loadConfiguration</code> is called
+ to lazy load the default config.</div>
+</td>
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>static double</code></td>
@@ -246,36 +286,51 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getProperty-java.lang.String-">getProperty</a></span>(java.lang.String&nbsp;key)</code>&nbsp;</td>
 </tr>
 <tr id="i26" class="altColor">
+<td class="colFirst"><code>protected static java.net.URL</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getResource-java.lang.String-">getResource</a></span>(java.lang.String&nbsp;name)</code>
+<div class="block">Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.</div>
+</td>
+</tr>
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>static short</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getShort-java.lang.String-">getShort</a></span>(java.lang.String&nbsp;key)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>static short</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getShort-java.lang.String-short-">getShort</a></span>(java.lang.String&nbsp;key,
         short&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static java.lang.Short</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getShort-java.lang.String-java.lang.Short-">getShort</a></span>(java.lang.String&nbsp;key,
         java.lang.Short&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getString-java.lang.String-">getString</a></span>(java.lang.String&nbsp;key)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#getString-java.lang.String-java.lang.String-">getString</a></span>(java.lang.String&nbsp;key,
          java.lang.String&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
-<td class="colFirst"><code>static org.apache.commons.configuration2.CompositeConfiguration</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#loadConfiguration-java.lang.String-java.lang.String-">loadConfiguration</a></span>(java.lang.String&nbsp;configPath,
-                 java.lang.String&nbsp;configProfile)</code>&nbsp;</td>
-</tr>
 <tr id="i32" class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#hasConfiguration--">hasConfiguration</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#setConfiguration-org.apache.commons.configuration2.CompositeConfiguration-">setConfiguration</a></span>(org.apache.commons.configuration2.CompositeConfiguration&nbsp;configuration)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#loadConfiguration-java.lang.String-java.lang.String-">loadConfiguration</a></span>(java.lang.String&nbsp;configPath,
+                 java.lang.String&nbsp;configProfile)</code>
+<div class="block">Creates a new CompositeConfiguration with individual Configuration objects loaded with key/value pairs
+ from sources as described in the class comment above.</div>
+</td>
+</tr>
+<tr id="i34" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/utils/Config.html#setConfiguration-org.apache.commons.configuration2.CompositeConfiguration-">setConfiguration</a></span>(org.apache.commons.configuration2.CompositeConfiguration&nbsp;configuration)</code>
+<div class="block">Sets the system wide CompositeConfiguration.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -299,6 +354,15 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="hasConfiguration--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasConfiguration</h4>
+<pre>public static&nbsp;boolean&nbsp;hasConfiguration()</pre>
+</li>
+</ul>
 <a name="getConfiguration--">
 <!--   -->
 </a>
@@ -306,6 +370,12 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getConfiguration</h4>
 <pre>public static&nbsp;org.apache.commons.configuration2.CompositeConfiguration&nbsp;getConfiguration()</pre>
+<div class="block">If <code>configuration</code> is null, <code>loadConfiguration</code> is called
+ to lazy load the default config.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the system wide CompositeConfiguration</dd>
+</dl>
 </li>
 </ul>
 <a name="setConfiguration-org.apache.commons.configuration2.CompositeConfiguration-">
@@ -315,6 +385,11 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>setConfiguration</h4>
 <pre>public static&nbsp;void&nbsp;setConfiguration(org.apache.commons.configuration2.CompositeConfiguration&nbsp;configuration)</pre>
+<div class="block">Sets the system wide CompositeConfiguration.
+ <p>
+ Generally, you don't need to explicitly call this, as accessing any of this 
+ classes getters will cause the default configuration to be loaded via <code>loadConfiguration()</code>
+ if <code>configuration</code> is null.</div>
 </li>
 </ul>
 <a name="clearConfiguration--">
@@ -324,6 +399,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>clearConfiguration</h4>
 <pre>public static&nbsp;void&nbsp;clearConfiguration()</pre>
+<div class="block">Nulls out the system wide CompositeConfiguration, same as <code>setConfiguration(null)</code></div>
 </li>
 </ul>
 <a name="loadConfiguration-java.lang.String-java.lang.String-">
@@ -332,8 +408,37 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>loadConfiguration</h4>
-<pre>public static&nbsp;org.apache.commons.configuration2.CompositeConfiguration&nbsp;loadConfiguration(java.lang.String&nbsp;configPath,
-                                                                                         java.lang.String&nbsp;configProfile)</pre>
+<pre>public static&nbsp;void&nbsp;loadConfiguration(java.lang.String&nbsp;configPath,
+                                     java.lang.String&nbsp;configProfile)</pre>
+<div class="block">Creates a new CompositeConfiguration with individual Configuration objects loaded with key/value pairs
+ from sources as described in the class comment above.
+ <p> 
+ If <code>configPath</code> is null, it will be looked up via Utils.findProperty("configPath").
+ <p>
+ If <code>configProfile</code> is null, it will be looked up via Utils.findProperty("configProfile", "profile").</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>configPath</code> - the path use to locate 'inversion.properties' files via <code>getResource</code></dd>
+<dd><code>configProfile</code> - the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../io/inversion/utils/Config.html#getResource-java.lang.String-"><code>getResource(String)</code></a>, 
+<code>Utils.findProperty</code></dd>
+</dl>
+</li>
+</ul>
+<a name="getResource-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getResource</h4>
+<pre>protected static&nbsp;java.net.URL&nbsp;getResource(java.lang.String&nbsp;name)</pre>
+<div class="block">Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>name</code> - </dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+</dl>
 </li>
 </ul>
 <a name="getKeys--">

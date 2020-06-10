@@ -33,12 +33,13 @@ import io.inversion.Results;
  * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
  *
  */
-public class Query<T extends Query, D extends Db, S extends Select, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
+public class Query<T extends Query, D extends Db, S extends Select, F extends From, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
 {
    protected D              db         = null;
    protected Collection     collection = null;
 
    protected S              select     = null;
+   protected F              from       = null;
    protected W              where      = null;
    protected R              group      = null;
    protected O              order      = null;
@@ -60,6 +61,11 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
    protected S createSelect()
    {
       return (S) new Select(this);
+   }
+
+   protected F createFrom()
+   {
+      return (F) new From(this);
    }
 
    protected W createWhere()
@@ -97,19 +103,21 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
 
    public Query()
    {
-      this(null);
+      
    }
 
-   public Query(Collection coll)
+   public Query(D db, Collection coll)
    {
-      this(coll, null);
+      this(db, coll, null);
    }
 
-   public Query(Collection coll, Object terms)
+   public Query(D db, Collection coll, Object terms, String... functions)
    {
       super(null);
+      withDb(db);
       withCollection(coll);
-
+      withFunctions(functions);
+      
       if (terms != null)
          withTerms(terms);
    }
@@ -121,6 +129,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          builders = new ArrayList();
 
          //order matters when multiple clauses can accept the same term 
+         getFrom();
          getWhere();
          getPage();
          getOrder();
@@ -147,6 +156,16 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          withBuilder(select);
       }
       return select;
+   }
+
+   public F getFrom()
+   {
+      if (from == null)
+      {
+         from = createFrom();
+         withBuilder(from);
+      }
+      return from;
    }
 
    public W getWhere()
@@ -238,13 +257,13 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          if (columnName.indexOf(".") > -1)
          {
             String collectionName = columnName.substring(0, columnName.indexOf("."));
-            if(columnName.startsWith("~~relTbl_"))
+            if (columnName.startsWith("~~relTbl_"))
             {
                columnName = columnName.substring(columnName.indexOf("_") + 1);
                collectionName = collectionName.substring(collectionName.indexOf("_") + 1);
-               
-               Relationship rel =  getCollection().getRelationship(collectionName);
-               if(rel != null)
+
+               Relationship rel = getCollection().getRelationship(collectionName);
+               if (rel != null)
                {
                   collectionName = rel.getRelated().getName();
                }
@@ -255,7 +274,7 @@ public class Query<T extends Query, D extends Db, S extends Select, W extends Wh
          if (coll != null)
          {
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
-            
+
             Property col = coll.getProperty(shortName);
             if (col == null)
                ApiException.throw500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());

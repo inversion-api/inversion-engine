@@ -6,7 +6,7 @@ import java.sql.DriverManager;
 import io.inversion.Api;
 import io.inversion.ApiException;
 import io.inversion.action.db.DbAction;
-import io.inversion.spring.InversionApp;
+import io.inversion.spring.InversionMain;
 import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
 
@@ -14,7 +14,7 @@ public class JdbcDbFactory
 {
    public static void main(String[] args)
    {
-      InversionApp.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
+      InversionMain.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
    }
 
    public static JdbcDb buildDb(String type, String schemaName)

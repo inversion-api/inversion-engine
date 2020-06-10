@@ -30,6 +30,7 @@ import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
+import io.inversion.rql.From;
 import io.inversion.rql.Group;
 import io.inversion.rql.Order;
 import io.inversion.rql.Order.Sort;
@@ -45,7 +46,7 @@ import io.inversion.utils.JSNode;
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // 
-public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
+public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, From<From<From, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
 {
 
    public ElasticsearchQuery()
@@ -53,9 +54,9 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    }
 
-   public ElasticsearchQuery(Collection index, List<Term> terms)
+   public ElasticsearchQuery(ElasticsearchDb db, Collection index, List<Term> terms)
    {
-      super(index, terms);
+      super(db, index, terms);
    }
 
    @Override

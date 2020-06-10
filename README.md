@@ -3,19 +3,20 @@
 
 Inversion is the fastest way to deliver full featured and secure REST APIs.
 
-With Inversion, you can connect your web application front end directly to your backend data source without any server side programming required.
+With Inversion, you can create an API that connects your app front end directly to your back end data source without any server side programming required.
 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
-multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, Azure CosmosDb and many more.
 
 #### Build Status
 
 | Project                                                                                                                    | Latest Build                                                                                                                                                                              | Test Status                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Inversion Demos](https://github.com/inversion-api/inversion-demos)                                                        |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-demos)                       |
 | [Inversion Quickstart Spring Boot](https://github.com/inversion-api/inversion-quickstart-spring-boot)                      |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot) |
 | [Inversion Quickstart Lambda](https://github.com/inversion-api/inversion-quickstart-lambda)                                |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-lambda)           |
+| [Inversion Demos](https://github.com/inversion-api/inversion-demos)                                                        | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-demos/images/download.svg) ](https://bintray.com/inversion/repo/inversion-demos/_latestVersion)                   | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion Api Core Libs](https://github.com/inversion-api/inversion-api)                                                  | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-api/images/download.svg) ](https://bintray.com/inversion/repo/inversion-api/_latestVersion)                       | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
+| [Inversion CosmosDB Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-cosmosdb)           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-cosmosdb/images/download.svg) ](https://bintray.com/inversion/repo/inversion-cosmosdb/_latestVersion)             | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion DynamoDB Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-dynamodb)           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-dynamodb/images/download.svg) ](https://bintray.com/inversion/repo/inversion-dynamodb/_latestVersion)             | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion Elasticsearch Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-elasticsearch) | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-elasticsearch/images/download.svg) ](https://bintray.com/inversion/repo/inversion-elasticsearch/_latestVersion)   | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion Kinesis Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-kinesis)             | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-kinesis/images/download.svg) ](https://bintray.com/inversion/repo/inversion-kinesis/_latestVersion)               | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
@@ -79,8 +80,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  
    
 ## Features and Benefits
- * Deploy a secure JSON REST API against your backend database in five minutes without any coding.
- * Support for MySql, PostgreSQL, SqlServer, DynamoDb, ElasticSearch, S3, Redis and many more.
+ * Deploy a secure JSON REST API against your back end database in five minutes without any coding.
+ * Support for MySql, PostgreSQL, Microsoft SqlServer, AWS DynamoDb, ElasticSearch, Azure CommosDb, S3, Redis and many more.
  * Makes structured relational database backed APIs as frictionless as working with an unstructured document store dbs.
  * Database tables are automatically exposed as REST collections endpoints.
  * Database foreign key relationships result in nested documents that can be retrieved in a single request to eliminate over fetching.
@@ -88,12 +89,12 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Smart pagination and ordering with a consistent document envelope.
  * Powerful Resource Query Language (RQL) lets you select the exact resources you are looking for.
  * For complex nested document PUT/POSTS, all resources are "upserted" with new or updated foreign key dependencies updated first and relationships resolved automatically.  You can compose a rich client side JSON model mixing existing and new resources and PUT/POST the entire object in one request.
- * Sql Injection proof through the use of prepared statements instead of dynamic sql.
+ * SQL Injection proof through the use of prepared statements instead of dynamic sql.
  * Permission and role based declarative security model.
  * Always CORS cross site enabled.
- * Expose multiple backends in a single API.
- * Designed to support single and multi tenant API usage patterns.
- * "Explain" mode shows you exactly what the backend is doing including all SQL statements run.
+ * Expose multiple back ends databases in a single API.
+ * Designed to support single and multi-tenant API usage patterns.
+ * "Explain" mode shows you exactly what the back end is doing including all SQL statements run.
  * Configured via drop dead simple properties files or directly in Java code.
 
 
@@ -106,7 +107,7 @@ supports full GET,PUT,POST,DELETE operations with an extensive Resource Query La
  
 The demo connects to an in memory H2 SQL database that gets initialized from
 scratch each time the demo is run.  That means you can fully explore
-modifying operations (PUT,POST,DELETE) and 'break' whatever you want. When
+modifying operations (POST,PUT,PATCH,DELETE) and 'break' whatever you want. When
 you restart that data will be back in its original demo state.
 
 To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
@@ -158,7 +159,7 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 		//from the oss.jfrog.org repo, not jcenter
 		//compile "io.inversion:inversion-api:0.6.18-SNAPSHOT"
 		
-		//if you are including inversion multiple libs, it is a good 
+		//if you are including multiple inversion libs, it is a good 
 		//idea to set a variable such as "inversionVersion=0.6.18" in your 
 		//gradle.properties file and use that to import your dependencies 
 		//compile "io.inversion:inversion-api:${inversionVersion}"
@@ -192,7 +193,7 @@ from Jitpack, it is not recommended.  Please consider only use Jitpack for pulli
 
 ### Coding Your Own API
 
-You can build an API that connects to your own DB backend with just a few lines of Java code.
+You can build an API that connects to your own DB back end with just a few lines of Java code.
 
 ```java
 InversionApp.run(new Api()
@@ -330,8 +331,8 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
  * function(column, value OR expression) - eq(col,value), lt(column,value), and(eq(col,value), lt(column,value)), in(col, val1, val2, val3, val4)
  * name=eq=value, column=lt=value, col=in=val1,val2,val3
 * Quotes & Escaping Quotes - ' or " can be used to quote values.  Use a \ to escape any inner occurances of the outter quote.  If you quote with single quotes you don't have to escape inner double quotes and vice versa  
-* Wildcards - the '*' character is treated as a univeral wildcard for all supported backends.  
-  For example, for SQL backends '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
+* Wildcards - the '*' character is treated as a univeral wildcard for all supported back ends.  
+  For example, for SQL back ends '*' would be substituded with "%" and instead of using '=' operator the system would substitude 'LIKE'.  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
 
 
 [See TestSqlQuery.java for many examples of complex RQL queries and how they translate into SQL](https://github.com/RocketPartners/rocket-inversion/blob/master/src/test/java/io/rocketpartners/action/sql/TestSqlQuery.java)
@@ -461,7 +462,7 @@ An Api exposes a set of Endpoints offering access to Collections backed by Db Ta
 
 The Db, Table, Column and Index objects are modeled off of RDBMS systems but are not specifically bound to RDBMS or SQL based systems.  For example, there are DynamoDb and ElasticsearchDB subclasses of Db.  As would be expected, Tables are composed of Columns and a Db can have one or more Tables. Tables are optimized, related to each other, and constrained through Indexes. 
 
-Implementing support for a new backend datasource is simply a matter of implementing a new Db subclass.  The data source specific Db/Table/Column/Index implementation should abstract all backend details away so that datasource agnostic Actions can work transparently with Collections that may be backed by completely different backend types.
+Implementing support for a new back end datasource is simply a matter of implementing a new Db subclass.  The data source specific Db/Table/Column/Index implementation should abstract all back end details away so that datasource agnostic Actions can work transparently with Collections that may be backed by completely different back end types.
 
 ### Collections, Entities, Attributes and Relationships
 

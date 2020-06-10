@@ -32,7 +32,7 @@ import io.inversion.utils.Utils;
  * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
  * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
  */
-public class InversionApp
+public class InversionMain
 {
    static Engine engine = null;
 
@@ -63,8 +63,8 @@ public class InversionApp
    {
       try
       {
-         InversionApp.engine = engine;
-         SpringApplication.run(InversionApp.class);
+         InversionMain.engine = engine;
+         SpringApplication.run(InversionMain.class);
       }
       catch (Throwable e)
       {
@@ -102,7 +102,7 @@ public class InversionApp
    @Bean
    public ServletRegistrationBean inversionServlet()
    {
-      return InversionServletConfig.createDefaultInversionServlet(InversionApp.engine);
+      return InversionServletConfig.createDefaultInversionServlet(InversionMain.engine);
    }
 
    @Bean

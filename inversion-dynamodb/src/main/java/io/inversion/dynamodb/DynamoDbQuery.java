@@ -37,6 +37,7 @@ import io.inversion.Collection;
 import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Results;
+import io.inversion.rql.From;
 import io.inversion.rql.Group;
 import io.inversion.rql.Order;
 import io.inversion.rql.Page;
@@ -45,7 +46,6 @@ import io.inversion.rql.Select;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 /**
  * 
@@ -67,7 +67,7 @@ import io.inversion.utils.Rows.Row;
  *  TODO: are all of these covered? EQ | NE | LE | LT | GE | GT | NOT_NULL | NULL | CONTAINS | NOT_CONTAINS | BEGINS_WITH | IN | BETWEEN
  * 
  */
-public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
+public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, From<From<From, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>>
 {
 
    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
@@ -104,9 +104,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
    {
    }
 
-   public DynamoDbQuery(Collection table, List<Term> terms)
+   public DynamoDbQuery(DynamoDb db, Collection table, List<Term> terms)
    {
-      super(table, terms);
+      super(db, table, terms);
    }
 
    @Override

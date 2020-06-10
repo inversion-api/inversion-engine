@@ -1,3 +1,4 @@
+
 dependencies {
     compile project(':inversion-api')
     compile group: 'com.h2database', name: 'h2', version: '1.4.200'
