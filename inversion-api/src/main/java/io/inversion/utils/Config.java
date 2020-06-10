@@ -118,9 +118,22 @@ public class Config
     * Creates a new CompositeConfiguration with individual Configuration objects loaded with key/value pairs
     * from sources as described in the class comment above.
     * <p> 
-    * If <code>configPath</code> is null, it will be looked up via Utils.findProperty("configPath").
+    * If <code>configPath</code> is null, it will be looked up via Utils.findProperty with the following keys:
+    * <ol>
+    *   <li>"inversion.configPath"
+    *   </li>"configPath"
+    * </ol> 
+    * 
     * <p>
-    * If <code>configProfile</code> is null, it will be looked up via Utils.findProperty("configProfile", "profile").
+    * If <code>configProfile</code> is null, it will be looked up via Utils.findProperty with the following keys:
+    * <ol>
+    *   <li>"inversion.configProfile"
+    *   <li>"inversion.profile"
+    *   <li>"spring.profiles.active"
+    *   <li>"configProfile"
+    *   <li>"profile"
+    * </ol>
+    * 
     * 
     * @param configPath  the path use to locate 'inversion.properties' files via <code>getResource</code>
     * @param configProfile  the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.
@@ -130,8 +143,8 @@ public class Config
     */
    public static synchronized void loadConfiguration(String configPath, String configProfile)
    {
-      configPath = configPath != null ? configPath : Utils.findProperty("configPath");
-      configProfile = configProfile != null ? configProfile : Utils.findProperty("inversion.profile", "spring.profiles.active", "configProfile", "profile");
+      configPath = configPath != null ? configPath : Utils.findProperty("inversion.configPath", "configPath");
+      configProfile = configProfile != null ? configProfile : Utils.findProperty("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
 
       Configurations configs = new Configurations();
       CompositeConfiguration configuration = new CompositeConfiguration();
