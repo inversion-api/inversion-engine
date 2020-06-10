@@ -131,7 +131,7 @@ public class Config
    public static synchronized void loadConfiguration(String configPath, String configProfile)
    {
       configPath = configPath != null ? configPath : Utils.findProperty("configPath");
-      configProfile = configProfile != null ? configProfile : Utils.findProperty("configProfile", "profile");
+      configProfile = configProfile != null ? configProfile : Utils.findProperty("inversion.profile", "spring.profiles.active", "configProfile", "profile");
 
       Configurations configs = new Configurations();
       CompositeConfiguration configuration = new CompositeConfiguration();

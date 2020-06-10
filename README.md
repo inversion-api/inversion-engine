@@ -6,15 +6,15 @@ Inversion is the fastest way to deliver full featured and secure REST APIs.
 With Inversion, you can create an API that connects your app front end directly to your back end data source without any server side programming required.
 
 Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
-multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, and many more.
+multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, Azure CosmosDb and many more.
 
 #### Build Status
 
 | Project                                                                                                                    | Latest Build                                                                                                                                                                              | Test Status                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Inversion Demos](https://github.com/inversion-api/inversion-demos)                                                        |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-demos)                       |
 | [Inversion Quickstart Spring Boot](https://github.com/inversion-api/inversion-quickstart-spring-boot)                      |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-spring-boot) |
 | [Inversion Quickstart Lambda](https://github.com/inversion-api/inversion-quickstart-lambda)                                |                                                                                                                                                                                           | [![](https://travis-ci.org/inversion-api/inversion-quickstart-lambda.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-quickstart-lambda)           |
+| [Inversion Demos](https://github.com/inversion-api/inversion-demos)                                                        | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-demos/images/download.svg) ](https://bintray.com/inversion/repo/inversion-demos/_latestVersion)                   | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion Api Core Libs](https://github.com/inversion-api/inversion-api)                                                  | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-api/images/download.svg) ](https://bintray.com/inversion/repo/inversion-api/_latestVersion)                       | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion CosmosDB Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-cosmosdb)           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-cosmosdb/images/download.svg) ](https://bintray.com/inversion/repo/inversion-cosmosdb/_latestVersion)             | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
 | [Inversion DynamoDB Connector](https://github.com/inversion-api/inversion-engine/tree/master/inversion-dynamodb)           | [ ![Download](https://api.bintray.com/packages/inversion/repo/inversion-dynamodb/images/download.svg) ](https://bintray.com/inversion/repo/inversion-dynamodb/_latestVersion)             | [![](https://travis-ci.org/inversion-api/inversion-engine.svg?branch=master)](https://travis-ci.org/inversion-api/inversion-engine)                                 |
@@ -107,7 +107,7 @@ supports full GET,PUT,POST,DELETE operations with an extensive Resource Query La
  
 The demo connects to an in memory H2 SQL database that gets initialized from
 scratch each time the demo is run.  That means you can fully explore
-modifying operations (PUT,POST,DELETE) and 'break' whatever you want. When
+modifying operations (POST,PUT,PATCH,DELETE) and 'break' whatever you want. When
 you restart that data will be back in its original demo state.
 
 To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
@@ -159,7 +159,7 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 		//from the oss.jfrog.org repo, not jcenter
 		//compile "io.inversion:inversion-api:0.6.18-SNAPSHOT"
 		
-		//if you are including inversion multiple libs, it is a good 
+		//if you are including multiple inversion libs, it is a good 
 		//idea to set a variable such as "inversionVersion=0.6.18" in your 
 		//gradle.properties file and use that to import your dependencies 
 		//compile "io.inversion:inversion-api:${inversionVersion}"

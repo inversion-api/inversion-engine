@@ -1120,7 +1120,7 @@ public class Engine extends Rule<Engine>
    {
       if (configProfile == null)
       {
-         String[] guesses = new String[]{getName() + ".configProfile", "inversion.configProfile", "configProfile", "profile"};
+         String[] guesses = new String[]{getName() + ".configProfile", "inversion.configProfile", "spring.profiles.active", "configProfile", "profile"};
          for (int i = 0; configProfile == null && i < guesses.length; i++)
          {
             configProfile = Utils.getProperty(guesses[i]);
