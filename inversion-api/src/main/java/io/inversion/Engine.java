@@ -29,7 +29,6 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.configuration2.Configuration;
 
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
