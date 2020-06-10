@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -36,6 +37,7 @@ import javax.servlet.http.Part;
 
 import io.inversion.Request.Upload;
 import io.inversion.Request.Uploader;
+import io.inversion.rql.RqlTokenizer;
 import io.inversion.utils.Utils;
 
 public class EngineServlet extends HttpServlet
@@ -130,8 +132,23 @@ public class EngineServlet extends HttpServlet
          while (paramsEnumer.hasMoreElements())
          {
             String key = paramsEnumer.nextElement();
-            String val = httpReq.getParameter(key);
-            params.put(key, val);
+            boolean skip = false;
+
+            if (key.indexOf("_") > 0)
+            {
+               //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
+               List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
+               if (illegals.size() > 0)
+               {
+                  skip = true;
+               }
+            }
+
+            if (!skip)
+            {
+               String val = httpReq.getParameter(key);
+               params.put(key, val);
+            }
          }
 
          String body = readBody(httpReq);

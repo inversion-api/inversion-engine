@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.KeyValue;
@@ -45,13 +44,13 @@ import io.inversion.Response;
 import io.inversion.Results;
 import io.inversion.Status;
 import io.inversion.rql.Page;
-import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
 
 public class DbGetAction extends Action<DbGetAction>
 {
@@ -249,6 +248,26 @@ public class DbGetAction extends Action<DbGetAction>
       if (collection == null)
       {
          Db db = api.getDb((String) Chain.peek().get("db"));
+
+         if (db == null)
+         {
+            List<Db> dbs = api.getDbs();
+            if (dbs.size() == 1)
+            {
+               db = dbs.get(0);
+            }
+            else
+            {
+               for (Db candidate : dbs)
+               {
+                  if (candidate.getEndpointPath() != null && candidate.getEndpointPath().matches(req.getEndpointPath()))
+                  {
+                     db = candidate;
+                     break;
+                  }
+               }
+            }
+         }
 
          if (db == null)
             ApiException.throw400BadRequest("Unable to find collection for url '{}'", req.getUrl());

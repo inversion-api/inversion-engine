@@ -203,6 +203,12 @@ public class Request
       return false;
    }
 
+   public Request withCollection(Collection collection)
+   {
+      this.collection = collection;
+      return this;
+   }
+   
    public Request withCollection(Collection collection, Path collectionPath)
    {
       this.collection = collection;

@@ -34,10 +34,13 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.configuration2.Configuration;
+import org.slf4j.LoggerFactory;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import io.inversion.Api;
 import io.inversion.Api.ApiListener;
 import io.inversion.ApiException;
@@ -45,62 +48,105 @@ import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Db;
 import io.inversion.Property;
-import io.inversion.Relationship;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.Results;
 import io.inversion.jdbc.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
+import io.inversion.utils.Config;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 
+/**
+ * Exposes the tables of a JDBC data source as REST <code>Collections</code>.
+ */
 public class JdbcDb extends Db<JdbcDb>
 {
-   protected char                 stringQuote              = '\'';
-   protected char                 columnQuote              = '"';
+   protected char         stringQuote              = '\'';
+   protected char         columnQuote              = '"';
 
-   protected transient DataSource pool                     = null;
+   transient DataSource   pool                     = null;
 
-   public static final int        MIN_POOL_SIZE            = 3;
-   public static final int        MAX_POOL_SIZE            = 10;
+   /**
+    * The JDBC driver class name.
+    */
+   protected String       driver                   = null;
 
-   protected String               driver                   = null;
-   protected String               url                      = null;
-   protected String               user                     = null;
-   protected String               pass                     = null;
-   protected int                  poolMin                  = 3;
-   protected int                  poolMax                  = 10;
-   protected int                  idleConnectionTestPeriod = 3600;           // in seconds
-   protected boolean              autoCommit               = false;
+   /**
+    * The JDBC url.  
+    * <p>
+    * Generally you will want to have this value dependency inject this at runtime by setting "${name}.url=${MY_DB_URL}" somewhere
+    * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+    * 
+    * @see Config
+    * @see Configuration
+    */
+   protected String       url                      = null;
 
-   // set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-   // Only impacts 'mysql' types
-   protected boolean              calcRowsFound            = true;
+   /**
+    * The JDBC username.  
+    * <p>
+    * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
+    * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+    * 
+    * @see Config
+    * @see Configuration
+    */
+   protected String       user                     = null;
 
-   protected int                  relatedMax               = 500;
+   /**
+    * The JDBC password.  
+    * <p>
+    * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
+    * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+    * 
+    * @see Config
+    * @see Configuration
+    */
+   protected String       pass                     = null;
 
-   protected List<String>         ddlUrls                  = new ArrayList();
+   /**
+    * The maximum number of connections in the JDBC Connection pool, defaults to 50.
+    */
+   protected int          poolMax                  = 50;
+
+   protected int          idleConnectionTestPeriod = 3600;           // in seconds
+
+   /**
+    * Should the JDBC connection be set to autoCommit.
+    * <p>
+    * By default, autoCommit is false because the system is setup to execute all sql statements for a single Request
+    * inside of one transaction that commits just before the root Response is returned to the caller.
+    * 
+    */
+   protected boolean      autoCommit               = false;
+
+   /**
+    * For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
+    */
+   protected boolean      calcRowsFound            = true;
+
+   /**
+    * Urls to DDL files that should be executed on startup of this Db.
+    */
+   protected List<String> ddlUrls                  = new ArrayList();
 
    static
    {
-      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
-      logger.setLevel(Level.WARN);
-
-      //      ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari.pool.PoolBase");
-      //      logger.setLevel(Level.INFO);
-
       JdbcUtils.addSqlListener(new SqlListener()
          {
+            ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+
             @Override
             public void onError(String method, String sql, Object args, Exception ex)
             {
                if (method != null && method.equals("selectRows"))
                {
-                  logger.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
+                  log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                }
                else
                {
-                  ex.printStackTrace();
+                  log.warn(ex.getMessage(), ex);
                }
             }
 
@@ -275,26 +321,7 @@ public class JdbcDb extends Db<JdbcDb>
    @Override
    public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException
    {
-      JdbcDb db = null;
-      if (coll == null)
-      {
-         db = this;
-      }
-      else
-      {
-         db = (JdbcDb) coll.getDb();
-      }
-
-      String selectKey = (coll != null ? coll.getTableName() + "." : "") + "select";
-      String selectSql = (String) Chain.peek().remove(selectKey);
-
-      SqlQuery query = new SqlQuery(coll, columnMappedTerms);
-      query.withDb(db);
-      if (selectSql != null)
-      {
-         query.withSelectSql(selectSql);
-      }
-
+      SqlQuery query = new SqlQuery(this, coll, columnMappedTerms);
       return query.doSelect();
    }
 
@@ -519,7 +546,7 @@ public class JdbcDb extends Db<JdbcDb>
       config.setJdbcUrl(getUrl());
       config.setUsername(getUser());
       config.setPassword(getPass());
-      config.setMaximumPoolSize(Math.min(getPoolMax(), MAX_POOL_SIZE));
+      config.setMaximumPoolSize(getPoolMax());
 
       if (isType("mysql"))
       {
@@ -542,7 +569,7 @@ public class JdbcDb extends Db<JdbcDb>
       return pool;
    }
 
-   public static class JdbcConnectionLocal
+   static class JdbcConnectionLocal
    {
       static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
       static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
@@ -956,16 +983,6 @@ public class JdbcDb extends Db<JdbcDb>
       return this;
    }
 
-   public int getPoolMin()
-   {
-      return poolMin;
-   }
-
-   public void setPoolMin(int poolMin)
-   {
-      this.poolMin = poolMin;
-   }
-
    public int getPoolMax()
    {
       return poolMax;
@@ -1006,17 +1023,6 @@ public class JdbcDb extends Db<JdbcDb>
    public String quoteStr(String string)
    {
       return stringQuote + string + stringQuote;
-   }
-
-   public int getRelatedMax()
-   {
-      return relatedMax;
-   }
-
-   public JdbcDb withRelatedMax(int relatedMax)
-   {
-      this.relatedMax = relatedMax;
-      return this;
    }
 
    public JdbcDb withDdlUrl(String... ddlUrl)

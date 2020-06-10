@@ -99,7 +99,7 @@ public class S3Db extends Db<S3Db>
    @Override
    public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
    {
-      S3DbQuery query = new S3DbQuery(table, columnMappedTerms);
+      S3DbQuery query = new S3DbQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 

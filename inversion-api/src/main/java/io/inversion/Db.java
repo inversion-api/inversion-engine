@@ -1370,10 +1370,9 @@ public abstract class Db<T extends Db>
          {
             return false;
          }
-         return true;
       }
 
-      return collection.getPropertyByColumnName(columnName) != null;
+      return collection != null ? collection.getPropertyByColumnName(columnName) != null : true;
    }
 
    public T withIncludeColumns(String... columnNames)

@@ -22,7 +22,7 @@ import io.inversion.Engine;
 import io.inversion.Engine.EngineListener;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.spring.InversionApp;
+import io.inversion.spring.InversionMain;
 
 public class MainCosmosApi
 {
@@ -73,6 +73,6 @@ public class MainCosmosApi
 
          });
 
-      InversionApp.run(e);
+      InversionMain.run(e);
    }
 }

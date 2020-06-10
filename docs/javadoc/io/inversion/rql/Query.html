@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -91,7 +91,7 @@ var activeTableTab = "activeTableTab";
 <!-- ======== START OF CLASS DATA ======== -->
 <div class="header">
 <div class="subTitle">io.inversion.rql</div>
-<h2 title="Class Query" class="title">Class Query&lt;T extends Query,D extends <a href="../../../io/inversion/Db.html" title="class in io.inversion">Db</a>,S extends <a href="../../../io/inversion/rql/Select.html" title="class in io.inversion.rql">Select</a>,W extends <a href="../../../io/inversion/rql/Where.html" title="class in io.inversion.rql">Where</a>,R extends <a href="../../../io/inversion/rql/Group.html" title="class in io.inversion.rql">Group</a>,O extends <a href="../../../io/inversion/rql/Order.html" title="class in io.inversion.rql">Order</a>,G extends <a href="../../../io/inversion/rql/Page.html" title="class in io.inversion.rql">Page</a>&gt;</h2>
+<h2 title="Class Query" class="title">Class Query&lt;T extends Query,D extends <a href="../../../io/inversion/Db.html" title="class in io.inversion">Db</a>,S extends <a href="../../../io/inversion/rql/Select.html" title="class in io.inversion.rql">Select</a>,F extends <a href="../../../io/inversion/rql/From.html" title="class in io.inversion.rql">From</a>,W extends <a href="../../../io/inversion/rql/Where.html" title="class in io.inversion.rql">Where</a>,R extends <a href="../../../io/inversion/rql/Group.html" title="class in io.inversion.rql">Group</a>,O extends <a href="../../../io/inversion/rql/Order.html" title="class in io.inversion.rql">Order</a>,G extends <a href="../../../io/inversion/rql/Page.html" title="class in io.inversion.rql">Page</a>&gt;</h2>
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
@@ -101,7 +101,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../io/inversion/rql/Builder.html" title="class in io.inversion.rql">io.inversion.rql.Builder</a>&lt;T,T&gt;</li>
 <li>
 <ul class="inheritance">
-<li>io.inversion.rql.Query&lt;T,D,S,W,R,O,G&gt;</li>
+<li>io.inversion.rql.Query&lt;T,D,S,F,W,R,O,G&gt;</li>
 </ul>
 </li>
 </ul>
@@ -116,7 +116,7 @@ var activeTableTab = "activeTableTab";
 </dl>
 <hr>
 <br>
-<pre>public class <span class="typeNameLabel">Query&lt;T extends Query,D extends <a href="../../../io/inversion/Db.html" title="class in io.inversion">Db</a>,S extends <a href="../../../io/inversion/rql/Select.html" title="class in io.inversion.rql">Select</a>,W extends <a href="../../../io/inversion/rql/Where.html" title="class in io.inversion.rql">Where</a>,R extends <a href="../../../io/inversion/rql/Group.html" title="class in io.inversion.rql">Group</a>,O extends <a href="../../../io/inversion/rql/Order.html" title="class in io.inversion.rql">Order</a>,G extends <a href="../../../io/inversion/rql/Page.html" title="class in io.inversion.rql">Page</a>&gt;</span>
+<pre>public class <span class="typeNameLabel">Query&lt;T extends Query,D extends <a href="../../../io/inversion/Db.html" title="class in io.inversion">Db</a>,S extends <a href="../../../io/inversion/rql/Select.html" title="class in io.inversion.rql">Select</a>,F extends <a href="../../../io/inversion/rql/From.html" title="class in io.inversion.rql">From</a>,W extends <a href="../../../io/inversion/rql/Where.html" title="class in io.inversion.rql">Where</a>,R extends <a href="../../../io/inversion/rql/Group.html" title="class in io.inversion.rql">Group</a>,O extends <a href="../../../io/inversion/rql/Order.html" title="class in io.inversion.rql">Order</a>,G extends <a href="../../../io/inversion/rql/Page.html" title="class in io.inversion.rql">Page</a>&gt;</span>
 extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a>&lt;T,T&gt;</pre>
 <div class="block">Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.</div>
 </li>
@@ -150,26 +150,30 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#dryRun">dryRun</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#from">from</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">R</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#group">group</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">O</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#order">order</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">G</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#page">page</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#select">select</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;org.apache.commons.collections4.KeyValue&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#values">values</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">W</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#where">where</a></span></code>&nbsp;</td>
 </tr>
@@ -198,11 +202,14 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#Query--">Query</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#Query-io.inversion.Collection-">Query</a></span>(<a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#Query-D-io.inversion.Collection-">Query</a></span>(<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a>&nbsp;db,
+     <a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#Query-io.inversion.Collection-java.lang.Object-">Query</a></span>(<a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
-     java.lang.Object&nbsp;terms)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#Query-D-io.inversion.Collection-java.lang.Object-java.lang.String...-">Query</a></span>(<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a>&nbsp;db,
+     <a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
+     java.lang.Object&nbsp;terms,
+     java.lang.String...&nbsp;functions)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -224,111 +231,119 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#clearValues--">clearValues</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createFrom--">createFrom</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">R</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createGroup--">createGroup</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">O</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createOrder--">createOrder</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">G</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createPage--">createPage</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/RqlParser.html" title="class in io.inversion.rql">RqlParser</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createParser--">createParser</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createSelect--">createSelect</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">W</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#createWhere--">createWhere</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/Results.html" title="class in io.inversion">Results</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#doSelect--">doSelect</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="../../../io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getBuilders--">getBuilders</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getCollection--">getCollection</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>org.apache.commons.collections4.KeyValue&lt;java.lang.String,java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getColValue-int-">getColValue</a></span>(int&nbsp;index)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getColValueKeys--">getColValueKeys</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.Object&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getColValues--">getColValues</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getDb--">getDb</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getFrom--">getFrom</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">R</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getGroup--">getGroup</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getNumValues--">getNumValues</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">O</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getOrder--">getOrder</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">G</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getPage--">getPage</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/RqlParser.html" title="class in io.inversion.rql">RqlParser</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getParser--">getParser</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getSelect--">getSelect</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;org.apache.commons.collections4.KeyValue&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getValues--">getValues</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">W</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#getWhere--">getWhere</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#isDryRun--">isDryRun</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#withCollection-io.inversion.Collection-">withCollection</a></span>(<a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#withColValue-java.lang.String-java.lang.Object-">withColValue</a></span>(java.lang.String&nbsp;columnName,
             java.lang.Object&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#withDb-D-">withDb</a></span>(<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a>&nbsp;db)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#withDryRun-boolean-">withDryRun</a></span>(boolean&nbsp;dryRun)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">T</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../io/inversion/rql/Query.html#withTerm-io.inversion.rql.Term-">withTerm</a></span>(<a href="../../../io/inversion/rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term)</code>
 <div class="block">OVERRIDE ME TO ADD CUSTOM FUNCTIONALITY TO YOUR FLUENT API</div>
@@ -388,6 +403,15 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <li class="blockList">
 <h4>select</h4>
 <pre>protected&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a> extends <a href="../../../io/inversion/rql/Select.html" title="class in io.inversion.rql">Select</a> select</pre>
+</li>
+</ul>
+<a name="from">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>from</h4>
+<pre>protected&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a> extends <a href="../../../io/inversion/rql/From.html" title="class in io.inversion.rql">From</a> from</pre>
 </li>
 </ul>
 <a name="where">
@@ -461,23 +485,30 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <pre>public&nbsp;Query()</pre>
 </li>
 </ul>
-<a name="Query-io.inversion.Collection-">
+<a name="Query-io.inversion.Db-io.inversion.Collection-">
+<!--   -->
+</a><a name="Query-D-io.inversion.Collection-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>Query</h4>
-<pre>public&nbsp;Query(<a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</pre>
+<pre>public&nbsp;Query(<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a>&nbsp;db,
+             <a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</pre>
 </li>
 </ul>
-<a name="Query-io.inversion.Collection-java.lang.Object-">
+<a name="Query-io.inversion.Db-io.inversion.Collection-java.lang.Object-java.lang.String:A-">
+<!--   -->
+</a><a name="Query-D-io.inversion.Collection-java.lang.Object-java.lang.String...-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>Query</h4>
-<pre>public&nbsp;Query(<a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
-             java.lang.Object&nbsp;terms)</pre>
+<pre>public&nbsp;Query(<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">D</a>&nbsp;db,
+             <a href="../../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
+             java.lang.Object&nbsp;terms,
+             java.lang.String...&nbsp;functions)</pre>
 </li>
 </ul>
 </li>
@@ -504,6 +535,15 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <li class="blockList">
 <h4>createSelect</h4>
 <pre>protected&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a>&nbsp;createSelect()</pre>
+</li>
+</ul>
+<a name="createFrom--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createFrom</h4>
+<pre>protected&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a>&nbsp;createFrom()</pre>
 </li>
 </ul>
 <a name="createWhere--">
@@ -605,6 +645,15 @@ extends <a href="../../../io/inversion/rql/Builder.html" title="class in io.inve
 <li class="blockList">
 <h4>getSelect</h4>
 <pre>public&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">S</a>&nbsp;getSelect()</pre>
+</li>
+</ul>
+<a name="getFrom--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFrom</h4>
+<pre>public&nbsp;<a href="../../../io/inversion/rql/Query.html" title="type parameter in Query">F</a>&nbsp;getFrom()</pre>
 </li>
 </ul>
 <a name="getWhere--">
