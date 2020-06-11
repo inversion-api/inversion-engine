@@ -40,7 +40,7 @@ import io.inversion.utils.Utils;
 /**
  * Adapter to run an Inversion API as an AWS Lambda behind an ApiGateway
  */
-public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
+public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHandler
 {
    Engine  engine = null;
    boolean debug  = false;
@@ -181,15 +181,15 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
    {
       Engine engine = new Engine();
 
-//      Api api = buildApi();
-//      if (api != null)
-//         engine.withApi(api);
-//
-//      if (!Utils.empty(profile))
-//         engine.withProfile(profile);
-//
-//      if (!Utils.empty(servletPath))
-//         engine.withServletMapping(servletPath);
+      //      Api api = buildApi();
+      //      if (api != null)
+      //         engine.withApi(api);
+      //
+      //      if (!Utils.empty(profile))
+      //         engine.withProfile(profile);
+      //
+      //      if (!Utils.empty(servletPath))
+      //         engine.withServletMapping(servletPath);
 
       return engine;
    }
