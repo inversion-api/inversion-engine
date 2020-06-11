@@ -38,7 +38,7 @@ import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
 /**
- *
+ * Adapter to run an Inversion API as an AWS Lambda behind an ApiGateway
  */
 public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
 {
