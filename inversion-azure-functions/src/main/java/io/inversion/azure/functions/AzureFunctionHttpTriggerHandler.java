@@ -154,6 +154,11 @@ public class AzureFunctionHttpTriggerHandler
     * Override this method to build your Engine and wire up your Api. 
     * <p>
     * The engine you create will be cached and reused across all calls to this Azure Function instance.
+    * <p>
+    * The request and context are passed in to support custom parameterization of an Engine/Api if necessary.
+    * <p>
+    * This default implementation simply returns a new Engine expecting that it will be wired up via 
+    * properties files and the Config/Configurator.
     * 
     * @param request
     * @param context
