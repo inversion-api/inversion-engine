@@ -191,9 +191,9 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
            .withResult("nn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("emp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("nemp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-           .withResult("likeMiddle", "400 Bad Request DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//contains operator
+           .withResult("likeMiddle", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//contains operator
            .withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
-           .withResult("likeEndsWith", "400 Bad Request DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//
+           .withResult("likeEndsWith", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//
            .withResult("sw", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("ew", "UNSUPPORTED")//
            .withResult("w", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='contains(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//contains

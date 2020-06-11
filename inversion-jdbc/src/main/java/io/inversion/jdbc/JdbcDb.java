@@ -60,10 +60,10 @@ import io.inversion.utils.Utils;
  */
 public class JdbcDb extends Db<JdbcDb>
 {
+   static Map<Db, DataSource> pools                    = new Hashtable();
+
    protected char             stringQuote              = '\'';
    protected char             columnQuote              = '"';
-
-   static Map<Db, DataSource> pools                    = new Hashtable();
 
    /**
     * The JDBC driver class name.
@@ -212,27 +212,8 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public String toString()
-   {
-      return getDriver() + "-" + getUrl() + "-" + getUser();
-   }
-
-   @Override
-   public boolean equals(Object object)
-   {
-      return object instanceof Db && toString().equals(object.toString());
-   }
-
-   @Override
-   public int hashCode()
-   {
-      return toString().hashCode();
-   }
-
-   @Override
    protected void doStartup(Api api)
    {
-
       if (isType("mysql"))
          withColumnQuote('`');
 
@@ -480,10 +461,7 @@ public class JdbcDb extends Db<JdbcDb>
    {
       try
       {
-         System.out.println("GETTING CONNECTION: " + this.toString());
-
          Connection conn = !managed ? null : JdbcConnectionLocal.getConnection(this);
-         //if (conn == null && isRunning(Chain.peek().getApi()))
          if (conn == null)
          {
             DataSource pool = pools.get(this);
@@ -569,6 +547,8 @@ public class JdbcDb extends Db<JdbcDb>
          }
       }
 
+      System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
+
       HikariConfig config = new HikariConfig();
       String driver = getDriver();
       config.setDriverClassName(driver);
@@ -596,176 +576,6 @@ public class JdbcDb extends Db<JdbcDb>
       DataSource pool = new HikariDataSource(config);
 
       return pool;
-   }
-
-   static class JdbcConnectionLocal
-   {
-      static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
-      static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
-
-      public static void closeAll()
-      {
-         for (Thread thread : threadToDbMap.keySet())
-         {
-            try
-            {
-               close(thread);
-            }
-            catch (Exception ex)
-            {
-               //ex.printStackTrace();
-            }
-         }
-
-         //System.out.println(dbToThreadMap);
-         //System.out.println(threadToDbMap);
-      }
-
-      public static Connection getConnection(Db db)
-      {
-         return getConnection(db, Thread.currentThread());
-      }
-
-      static Connection getConnection(Db db, Thread thread)
-      {
-         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
-         if (threadToConnMap == null)
-            return null;
-
-         return threadToConnMap.get(thread);
-      }
-
-      public static void putConnection(Db db, Connection connection)
-      {
-         putConnection(db, Thread.currentThread(), connection);
-      }
-
-      static void putConnection(Db db, Thread thread, Connection connection)
-      {
-         Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
-         if (threadToConnMap == null)
-         {
-            threadToConnMap = new Hashtable();
-            dbToThreadMap.put(db, threadToConnMap);
-         }
-         threadToConnMap.put(thread, connection);
-
-         Map<Db, Connection> dbToConnMap = threadToDbMap.get(thread);
-         if (dbToConnMap == null)
-         {
-            dbToConnMap = new Hashtable();
-            threadToDbMap.put(thread, dbToConnMap);
-         }
-         dbToConnMap.put(db, connection);
-
-      }
-
-      public static void commit() throws Exception
-      {
-         Exception toThrow = null;
-
-         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
-         if (dbToConnMap != null)
-         {
-            java.util.Collection<Connection> connections = dbToConnMap.values();
-            for (Connection conn : connections)
-            {
-               try
-               {
-                  if (!(conn.isClosed() || conn.getAutoCommit()))
-                  {
-                     conn.commit();
-                  }
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow == null)
-                     toThrow = ex;
-               }
-            }
-         }
-
-         if (toThrow != null)
-            throw toThrow;
-      }
-
-      public static void rollback() throws Exception
-      {
-         Exception toThrow = null;
-
-         Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
-         if (dbToConnMap != null)
-         {
-            for (Connection conn : dbToConnMap.values())
-            {
-               try
-               {
-                  if (!(conn.isClosed() || conn.getAutoCommit()))
-                  {
-                     conn.rollback();
-                  }
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow == null)
-                     toThrow = ex;
-               }
-            }
-         }
-
-         if (toThrow != null)
-            throw toThrow;
-      }
-
-      public static void close() throws Exception
-      {
-         close(Thread.currentThread());
-      }
-
-      static void close(Thread thread) throws Exception
-      {
-         Exception toThrow = null;
-
-         Map<Db, Connection> dbToConnMap = threadToDbMap.remove(thread);
-
-         if (dbToConnMap != null)
-         {
-            List<Db> dbs = new ArrayList(dbToConnMap.keySet());
-
-            for (Db db : dbs)//Connection conn : dbToConnMap.values())
-            {
-               //--
-               //-- cleanup the reverse mapping first
-               Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
-               threadToConnMap.remove(thread);
-
-               if (threadToConnMap.size() == 0)
-                  dbToThreadMap.remove(db);
-               //--
-               //--
-
-               try
-               {
-                  Connection conn = dbToConnMap.get(db);
-                  if (!conn.isClosed())
-                  {
-                     conn.close();
-                  }
-               }
-               catch (Exception ex)
-               {
-                  if (toThrow == null)
-                     toThrow = ex;
-               }
-            }
-
-            if (dbToConnMap.size() == 0)
-               threadToDbMap.remove(thread);
-         }
-
-         if (toThrow != null)
-            throw toThrow;
-      }
    }
 
    @Override
@@ -801,7 +611,21 @@ public class JdbcDb extends Db<JdbcDb>
          //-- object needs to exist so that it can be set on the fk Col
 
          if (isType("sqlserver"))
-            rs = dbmd.getTables(conn.getCatalog(), "dbo", "%", new String[]{"TABLE", "VIEW"});
+         {
+            String schema = getUrl();
+            int idx = schema.toLowerCase().indexOf("databasename=");
+            if (idx > 0)
+            {
+               schema = schema.substring(idx);
+               schema = Utils.substringBefore(schema, ";");
+               schema = Utils.substringBefore(schema, "&");
+            }
+            else
+            {
+               schema = "dbo";
+            }
+            rs = dbmd.getTables(conn.getCatalog(), schema, "%", new String[]{"TABLE", "VIEW"});
+         }
          else
             rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
          //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});

@@ -4,7 +4,6 @@ import io.inversion.AbstractDbTest;
 import io.inversion.AbstractEngineTest;
 import io.inversion.Chain;
 import io.inversion.Db;
-import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 
 public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest
 {

@@ -172,10 +172,18 @@ public class Engine extends Rule<Engine>
 
          started = true;
 
+         boolean hasApi = false;
          for (Api api : apis)
          {
+            hasApi = true;
+
+            if (api.getEndpoints().size() == 0)
+               ApiException.throw500InternalServerError("CONFIGURATION ERROR: You have configured an Api without any Endpoints.");
+
             startupApi(api);
          }
+         if (!hasApi)
+            ApiException.throw500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
 
          //-- debug output
          for (Api api : apis)
@@ -483,13 +491,13 @@ public class Engine extends Rule<Engine>
     */
    public Chain service(Request req, Response res)
    {
-      if (!started)
-         startup();
-
       Chain chain = null;
 
       try
       {
+         if (!started)
+            startup();
+
          chain = Chain.push(this, req, res);
          req.withEngine(this);
          req.withChain(chain);
@@ -775,7 +783,9 @@ public class Engine extends Rule<Engine>
             log.error("Error writing response.", ex);
          }
 
-         Chain.pop();
+         if (chain != null)
+            Chain.pop();
+         
          lastResponse = res;
       }
 

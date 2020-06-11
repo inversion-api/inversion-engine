@@ -270,6 +270,16 @@ public class Configurator
       //-- on all of the DBs and they configured collections on the Api.  
       Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), decoder.getBeans(Api.class).toArray());
       autoProps.putAll(properties);
+      
+      for (Api api : decoder.getBeans(Api.class))
+      {
+         for (Db db : ((Api) api).getDbs())
+         {
+            db.shutdown(api);
+         }
+      }
+      
+      
       decoder.clear();
       decoder.load(autoProps);
 
@@ -304,15 +314,18 @@ public class Configurator
    {
       List<Api> apis = decoder.getBeans(Api.class);
 
-      if (apis.size() == 0)
+      if (decoder.getBeans(Action.class).size() > 0)
       {
-         decoder.putBean("api", new Api());
-         apis = decoder.getBeans(Api.class);
-      }
+         if (apis.size() == 0)
+         {
+            decoder.putBean("api", new Api());
+            apis = decoder.getBeans(Api.class);
+         }
 
-      if (decoder.getBeans(Endpoint.class).size() == 0)
-      {
-         decoder.putBean("endpoint", new Endpoint());
+         if (decoder.getBeans(Endpoint.class).size() == 0)
+         {
+            decoder.putBean("endpoint", new Endpoint());
+         }
       }
 
       for (Db db : decoder.getBeans(Db.class))
