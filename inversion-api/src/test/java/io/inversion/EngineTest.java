@@ -113,7 +113,7 @@ public class EngineTest
    public void testPathVariables()
    {
       Api api1 = new Api("api1").withEndpoint("*", "ep1/*", new MockAction());
-      Api api2 = new Api("api2");
+      Api api2 = new Api("api2").withEndpoint("*", "ep2/*", new MockAction());;
 
       Engine e = new Engine(api1, api2);
 
@@ -230,7 +230,7 @@ public class EngineTest
                                 .withEndpoint(new Endpoint("GET", "carwash/{collection:regular|delux}/*").withName("ep8"))//
                                 .withCollection(new Collection("any").withIncludeOn(null, new Path("{collection}/[:resource]/[:relationship]/*")));
 
-      Api api2 = new Api("other");
+      Api api2 = new Api("other").withEndpoint("*", "otherEp");
       api2.withCollection(new Collection("any").withIncludeOn(null, new Path("{collection}/[:resource]/[:relationship]/*")));
 
       assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
@@ -259,7 +259,7 @@ public class EngineTest
 
       assertEndpointMatch("GET", "/test/cardealer/ford/explorer", 200, "ep5", "cardealer", "ford", "explorer", null, api1);
       assertEndpointMatch("GET", "/test/cardealer/gm", 200, "ep5", "cardealer", "gm", null, null, api1);
-      assertEndpointMatch("GET", "/test/cardealer/ford/toyota", 400);
+      assertEndpointMatch("GET", "/test/cardealer/ford/toyota", 500);
 
       assertEndpointMatch("GET", "/test/petstore/dogs/1234/breed", 200, "ep6", "petstore", "dogs", "1234", "breed", api1);
       assertEndpointMatch("GET", "/test/petstore/rat/", 404, api1);
@@ -479,9 +479,6 @@ public class EngineTest
 
    public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) throws Throwable
    {
-      if(true)
-         return;
-      
       final boolean[] success = new boolean[]{false};
       Engine e = new Engine()
          {

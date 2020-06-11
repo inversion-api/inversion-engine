@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-spring-boot</artifactId>
-  <version>0.9.4</version>
+  <version>0.9.5</version>
   <name>inversion-spring-boot</name>
   <description>Inversion Cloud API Engine</description>
   <url>http://inversion.io</url>
@@ -35,7 +35,7 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.4</version>
+      <version>0.9.5</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

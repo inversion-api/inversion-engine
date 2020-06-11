@@ -22,9 +22,6 @@ import io.inversion.Index;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.action.db.DbAction;
-import io.inversion.jdbc.JdbcDb;
-import io.inversion.jdbc.JdbcUtils;
-import io.inversion.jdbc.JdbcDb.JdbcConnectionLocal;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Rows.Row;
@@ -43,7 +40,7 @@ public class TestOverloadedDynamicTables
       Chain.resetAll();
       JdbcConnectionLocal.closeAll();
 
-      db = new JdbcDb("db", "org.h2.Driver", //
+      db = new H2JdbcDb("db", "org.h2.Driver", //
                       "jdbc:h2:mem:" + System.currentTimeMillis() + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
                       "sa", //
                       "", //
@@ -80,19 +77,6 @@ public class TestOverloadedDynamicTables
 
             }
 
-            @Override
-            protected void doShutdown()
-            {
-               try
-               {
-                  JdbcUtils.execute(getConnection(), "SHUTDOWN");
-               }
-               catch (Exception ex)
-               {
-
-               }
-               super.doShutdown();
-            }
          };
 
       api = new Api("crm").withIncludeOn(null, "crm/:tenant/[:type]/*") //

@@ -126,8 +126,7 @@ public class Configurator
 {
    static final Logger log            = LoggerFactory.getLogger(Configurator.class);
 
-   static final String    ROOT_BEAN_NAME = "inversion";
-
+   static final String ROOT_BEAN_NAME = "inversion";
 
    /**
     * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
@@ -156,7 +155,7 @@ public class Configurator
             //--
             //-- if there is already an API, don't load everything from scratch.
             //-- just override/set any keys from the config on the target objects 
-            
+
             Encoder encoder = new Encoder();
             encoder.encode(new DefaultNamer(), new AllIncluder(), engine.getApis().toArray());
 
@@ -225,7 +224,7 @@ public class Configurator
 
    void loadConfig(Engine engine, Properties properties) throws Exception
    {
-      Decoder wire = new Decoder()
+      Decoder decoder = new Decoder()
          {
             //IMPORTANT IMPORTANT IMPORTANT
             // add special case exceptions here for cases where users may add unclean data
@@ -252,13 +251,13 @@ public class Configurator
                   field.set(module, name);
             }
          };
-      wire.load(properties);
+      decoder.load(properties);
 
       //-- this just loads the bare bones config supplied  
       //-- in inversion*.properties files by the users.  
-      autoWireApi(wire);
+      autoWireApi(decoder);
 
-      for (Api api : wire.getBeans(Api.class))
+      for (Api api : decoder.getBeans(Api.class))
       {
          for (Db db : ((Api) api).getDbs())
          {
@@ -269,26 +268,77 @@ public class Configurator
       //-- this serializes out the object model that was bootsrapped off of the
       //-- configuration files.  At this point the db.startup() has been called
       //-- on all of the DBs and they configured collections on the Api.  
-      Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), wire.getBeans(Api.class).toArray());
+      Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), decoder.getBeans(Api.class).toArray());
       autoProps.putAll(properties);
-      wire.clear();
-      wire.load(autoProps);
+      
+      for (Api api : decoder.getBeans(Api.class))
+      {
+         for (Db db : ((Api) api).getDbs())
+         {
+            db.shutdown(api);
+         }
+      }
+      
+      
+      decoder.clear();
+      decoder.load(autoProps);
 
-      autoWireApi(wire);
+      //dump(autoProps);
 
-      for (Api api : wire.getBeans(Api.class))
+      autoWireApi(decoder);
+
+      for (Api api : decoder.getBeans(Api.class))
       {
          engine.withApi(api);
       }
+
+      for (String name : decoder.beans.keySet())
+      {
+         if (name.startsWith("_anonymous_"))
+         {
+            Object bean = decoder.beans.get(name);
+            Field nameField = Utils.getField("name", bean.getClass());
+            if (nameField != null)
+               nameField.set(bean, null);
+         }
+      }
+
+      for (Rule rule : decoder.getBeans(Rule.class))
+      {
+         rule.checkLazyConfig();
+      }
+
    }
 
-   void autoWireApi(Decoder wire)
+   void autoWireApi(Decoder decoder)
    {
-      List<Api> apis = wire.getBeans(Api.class);
+      List<Api> apis = decoder.getBeans(Api.class);
+
+      if (decoder.getBeans(Action.class).size() > 0)
+      {
+         if (apis.size() == 0)
+         {
+            decoder.putBean("api", new Api());
+            apis = decoder.getBeans(Api.class);
+         }
+
+         if (decoder.getBeans(Endpoint.class).size() == 0)
+         {
+            decoder.putBean("endpoint", new Endpoint());
+         }
+      }
+
+      for (Db db : decoder.getBeans(Db.class))
+      {
+         for (Collection collection : (List<Collection>) db.getCollections())
+         {
+            collection.withDb(db);
+         }
+      }
 
       if (apis.size() == 1)
       {
-         List found = wire.getBeans(Db.class);
+         List found = decoder.getBeans(Db.class);
 
          Api api = apis.get(0);
 
@@ -296,7 +346,7 @@ public class Configurator
             api.withDbs((Db[]) found.toArray(new Db[found.size()]));
 
          Set<Action> privateActions = new HashSet();
-         found = wire.getBeans(Endpoint.class);
+         found = decoder.getBeans(Endpoint.class);
          if (api.getEndpoints().size() == 0)
          {
             for (Endpoint ep : (List<Endpoint>) found)
@@ -306,7 +356,7 @@ public class Configurator
             }
          }
 
-         found = wire.getBeans(Action.class);
+         found = decoder.getBeans(Action.class);
          if (api.getActions().size() == 0)
          {
             for (Action action : (List<Action>) found)
@@ -428,13 +478,13 @@ public class Configurator
          else if (o instanceof Index)
          {
             Index index = (Index) o;
-            if(index.getCollection() != null && index.getCollection().getDb() != null)
+            if (index.getCollection() != null && index.getCollection().getDb() != null)
                name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
          }
          else if (o instanceof Relationship)
          {
             Relationship rel = (Relationship) o;
-            if(rel.getCollection() != null)
+            if (rel.getCollection() != null)
                name = getName(rel.getCollection()) + ".relationships." + rel.getName();
          }
 
@@ -1053,7 +1103,7 @@ public class Configurator
             name = nameField.get(object) + "";
          }
 
-         name = "_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
+         name = "_anonymous_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
          names.put(object, name);
          return name;
       }

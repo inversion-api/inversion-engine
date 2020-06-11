@@ -50,28 +50,13 @@ public class JdbcDbUserDaoTest
    @BeforeAll
    public void beforeAll()
    {
-      db = new JdbcDb("JdbcDbUserDaoTest", //
-                      "org.h2.Driver", //
-                      "jdbc:h2:mem:JdbcDbUserDaoTest;IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-                      "sa", //
-                      "", //
-                      JdbcDbUserDaoTest.class.getResource("users-h2.ddl").toString(), //
-                      JdbcDbUserDaoTest.class.getResource("test-users-h2.ddl").toString())
-         {
-            @Override
-            protected void doShutdown()
-            {
-               try
-               {
-                  JdbcUtils.execute(getConnection(), "SHUTDOWN");
-               }
-               catch (Exception ex)
-               {
-                  ex.printStackTrace();
-               }
-               super.doShutdown();
-            }
-         };
+      db = new H2JdbcDb("JdbcDbUserDaoTest", //
+                        "org.h2.Driver", //
+                        "jdbc:h2:mem:JdbcDbUserDaoTest;IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
+                        "sa", //
+                        "", //
+                        JdbcDbUserDaoTest.class.getResource("users-h2.ddl").toString(), //
+                        JdbcDbUserDaoTest.class.getResource("test-users-h2.ddl").toString());
 
       userDao = new JdbcDbUserDao()
          {
