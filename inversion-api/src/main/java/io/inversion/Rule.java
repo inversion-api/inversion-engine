@@ -71,7 +71,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
 
    transient boolean                lazyConfiged    = false;
 
-   void checkLazyConfig()
+   public void checkLazyConfig()
    {
       //-- reluctant lazy config defaultIncludes if no other 
       //-- includes/excludes have been configured by the user.
@@ -378,8 +378,6 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
 
    public String toString()
    {
-      checkLazyConfig();
-
       StringBuffer buff = new StringBuffer();
       if (name != null)
          buff.append(name).append(" -");

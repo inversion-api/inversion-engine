@@ -90,7 +90,7 @@ public class ApiException extends RuntimeException implements Status
             fmt.close();
             messageFormat = sw.toString();
          }
-         msg += msg.length() > 0 ? " " + messageFormat : messageFormat;
+         msg += msg.length() > 0 ? " - " + messageFormat : messageFormat;
       }
 
       if (cause != null)

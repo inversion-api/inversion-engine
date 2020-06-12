@@ -29,7 +29,6 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.configuration2.Configuration;
 
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
@@ -77,8 +76,8 @@ public class Engine extends Rule<Engine>
     * 
     * @see Config.loadConfiguration
     */
-   protected String                         configPath        = "";
-   
+   protected String                         configPath        = null;
+
    /**
     * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
     * 
@@ -122,24 +121,6 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   //   /**
-   //    * Looks up InputStreams. 
-   //    * <p>
-   //    * Different runtimes, a Servlet container vs. an AWS Lambda for example, may have different resource lookup needs.
-   //    * A plugged in ResourceLoader abstracts these runtime specifics from the Engine.
-   //    * 
-   //    * @see #getResource(String)
-   //    */
-   //   public static interface ResourceLoader
-   //   {
-   //      /**
-   //       * Locates a resource per the implementors prerogative.
-   //       * @param name  a resource name, file path, url etc. used to located the desired InputStream 
-   //       * @return InputStream
-   //       */
-   //      InputStream getResource(String name);
-   //   }
-
    public Engine()
    {
 
@@ -181,6 +162,8 @@ public class Engine extends Rule<Engine>
       if (started || starting) //accidental recursion guard
          return this;
 
+      System.out.println("STARTING ENGINE...");
+
       starting = true;
       try
       {
@@ -194,10 +177,18 @@ public class Engine extends Rule<Engine>
 
          started = true;
 
+         boolean hasApi = false;
          for (Api api : apis)
          {
+            hasApi = true;
+
+            if (api.getEndpoints().size() == 0)
+               ApiException.throw500InternalServerError("CONFIGURATION ERROR: You have configured an Api without any Endpoints.");
+
             startupApi(api);
          }
+         if (!hasApi)
+            ApiException.throw500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
 
          //-- debug output
          for (Api api : apis)
@@ -505,13 +496,13 @@ public class Engine extends Rule<Engine>
     */
    public Chain service(Request req, Response res)
    {
-      if (!started)
-         startup();
-
       Chain chain = null;
 
       try
       {
+         if (!started)
+            startup();
+
          chain = Chain.push(this, req, res);
          req.withEngine(this);
          req.withChain(chain);
@@ -797,7 +788,9 @@ public class Engine extends Rule<Engine>
             log.error("Error writing response.", ex);
          }
 
-         Chain.pop();
+         if (chain != null)
+            Chain.pop();
+         
          lastResponse = res;
       }
 

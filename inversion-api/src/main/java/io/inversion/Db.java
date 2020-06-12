@@ -118,7 +118,7 @@ public abstract class Db<T extends Db>
    /**
     * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves 
     */
-   protected Set<String>                   reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+   protected Set<String>           reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
    public Db()
    {
@@ -229,7 +229,7 @@ public abstract class Db<T extends Db>
    {
       return runningApis.contains(api);
    }
-   
+
    protected Term asTerm(String paramName, String paramValue)
    {
       String termStr = null;
@@ -262,9 +262,9 @@ public abstract class Db<T extends Db>
    public final Results select(Collection collection, Map<String, String> params) throws ApiException
    {
       List<Term> inTerms = new ArrayList();
-      for(String key : params.keySet())
+      for (String key : params.keySet())
       {
-         if(!reservedParams.contains(key))
+         if (!reservedParams.contains(key))
             inTerms.add(asTerm(key, params.get(key)));
       }
 
@@ -797,8 +797,11 @@ public abstract class Db<T extends Db>
     */
    protected void configDb() throws ApiException
    {
-      buildCollections();
-      buildRelationships();
+      if (collections.size() == 0)
+      {
+         buildCollections();
+         buildRelationships();
+      }
    }
 
    /**
