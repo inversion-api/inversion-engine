@@ -569,7 +569,7 @@ public class JdbcDb extends Db<JdbcDb>
       {
          //-- upserts won't work if you can't upsert an idresource field
          //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
-         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_idresource = 1) and o.type = ''U'''");
+         config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
 
       }
 
@@ -614,9 +614,14 @@ public class JdbcDb extends Db<JdbcDb>
          {
             String schema = getUrl();
             int idx = schema.toLowerCase().indexOf("databasename=");
+            if(idx == -1){
+               idx = schema.toLowerCase().indexOf("database=");
+            }
             if (idx > 0)
             {
+
                schema = schema.substring(idx);
+               schema = Utils.substringAfter(schema, "=");
                schema = Utils.substringBefore(schema, ";");
                schema = Utils.substringBefore(schema, "&");
             }
