@@ -614,14 +614,19 @@ public class JdbcDb extends Db<JdbcDb>
          {
             String schema = getUrl();
             int idx = schema.toLowerCase().indexOf("databasename=");
+            if(idx > -1){
+               idx = idx + "databasename=".length();
+            }
             if(idx == -1){
                idx = schema.toLowerCase().indexOf("database=");
+               if(idx > -1){
+                  idx = idx + "database=".length();
+               }
             }
             if (idx > 0)
             {
 
                schema = schema.substring(idx);
-               schema = Utils.substringAfter(schema, "=");
                schema = Utils.substringBefore(schema, ";");
                schema = Utils.substringBefore(schema, "&");
             }
