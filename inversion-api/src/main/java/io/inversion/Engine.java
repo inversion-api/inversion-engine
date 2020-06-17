@@ -133,11 +133,6 @@ public class Engine extends Rule<Engine>
             withApi(api);
    }
 
-   public void destroy()
-   {
-      shutdown();
-   }
-
    /**
     * Convenient pre-startup hook for subclasses guaranteed to only be called once.
     * <p>
