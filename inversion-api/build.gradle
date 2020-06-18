@@ -31,5 +31,7 @@ dependencies {
 
     //JWT support
     compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
+    
+ 	testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
        
 }
