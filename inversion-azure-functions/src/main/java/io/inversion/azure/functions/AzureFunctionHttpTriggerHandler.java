@@ -32,6 +32,7 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
@@ -47,7 +48,8 @@ import io.inversion.rql.RqlTokenizer;
  */
 public class AzureFunctionHttpTriggerHandler
 {
-   Engine engine = null;
+   protected Engine engine = null;
+   protected Api    api    = null;
 
    @FunctionName("HttpTrigger-Java")
    public HttpResponseMessage run(@HttpTrigger(name = "req", methods = {HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.OPTIONS, HttpMethod.DELETE}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request, final ExecutionContext context)
@@ -151,21 +153,66 @@ public class AzureFunctionHttpTriggerHandler
    }
 
    /**
-    * Override this method to build your Engine and wire up your Api. 
+    * Optional subclass override hook to allow for advanced Engine configuration.
     * <p>
-    * The engine you create will be cached and reused across all calls to this Azure Function instance.
+    * Simple embeddings can leave this alone.  Complex embeddings can either set the engine via setEngine() or override this method to construct/configure as needed.
     * <p>
-    * The request and context are passed in to support custom parameterization of an Engine/Api if necessary.
+    * This default implementation constructs an Engine with the supplied configProfile and adds <code>api</code> to it if <code>api</code> is not null.  
     * <p>
-    * This default implementation simply returns a new Engine expecting that it will be wired up via 
-    * properties files and the Config/Configurator.
+    * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.  
+    *  
     * 
-    * @param request
-    * @param context
-    * @return the Inversion Engine to service requests
+    * @see #buildApi()
+    * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator. 
     */
    protected Engine buildEngine(HttpRequestMessage<Optional<String>> request, final ExecutionContext context)
    {
-      return new Engine();
+      Engine engine = new Engine();
+
+      if (api == null)
+         api = buildApi(request, context);
+
+      if (api != null)
+      {
+         engine.withApi(api);
+      }
+
+      return engine;
    }
+
+   /**
+    * Optional subclass override hook to supply your own custom wired up Api.
+    * <p>
+    * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api 
+    * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator. 
+    * 
+    * @see #buildEngine
+    * @return null unless you override this method to construct an Api.  
+    */
+   protected Api buildApi(HttpRequestMessage<Optional<String>> request, final ExecutionContext context)
+   {
+      return null;
+   }
+
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   public void setEngine(Engine engine)
+   {
+      this.engine = engine;
+   }
+
+   public Api getApi()
+   {
+      return api;
+   }
+
+   public void setApi(Api api)
+   {
+      this.api = api;
+   }
+   
+   
 }

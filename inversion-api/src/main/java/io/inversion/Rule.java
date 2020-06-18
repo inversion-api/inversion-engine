@@ -83,13 +83,17 @@ public abstract class Rule<R extends Rule> implements Comparable<R>
             if (!lazyConfiged)
             {
                lazyConfiged = true;
-
-               if (getIncludePaths().size() == 0 && getExcludePaths().size() == 0)
-               {
-                  withIncludeOn(getDefaultIncludeMatch());
-               }
+               doLazyConfig();
             }
          }
+      }
+   }
+
+   protected void doLazyConfig()
+   {
+      if (getIncludePaths().size() == 0 && getExcludePaths().size() == 0)
+      {
+         withIncludeOn(getDefaultIncludeMatch());
       }
    }
 

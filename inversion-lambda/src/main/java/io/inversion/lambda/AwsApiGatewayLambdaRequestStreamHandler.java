@@ -42,16 +42,10 @@ import io.inversion.utils.Utils;
  */
 public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHandler
 {
-   Engine  engine = null;
-   boolean debug  = false;
+   protected Engine engine = null;
+   protected Api    api    = null;
 
-   /**
-    * Override me to supply your custom Api 
-    */
-   protected Api buildApi()
-   {
-      return null;
-   }
+   boolean          debug  = false;
 
    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
    {
@@ -174,24 +168,46 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
    }
 
    /**
-    * This method is here as a hook for sub classes to override.
-    * @return
+    * Optional subclass override hook to allow for advanced Engine configuration.
+    * <p>
+    * Simple embeddings can leave this alone.  Complex embeddings can either set the engine via setEngine() or override this method to construct/configure as needed.
+    * <p>
+    * This default implementation constructs an Engine with the supplied configProfile and adds <code>api</code> to it if <code>api</code> is not null.  
+    * <p>
+    * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.  
+    *  
+    * 
+    * @see #buildApi()
+    * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator. 
     */
-   protected Engine buildEngine(String profile, String servletPath)
+   protected Engine buildEngine(String configProfile, String servletPath)
    {
       Engine engine = new Engine();
+      engine.withConfigProfile(configProfile);
 
-      //      Api api = buildApi();
-      //      if (api != null)
-      //         engine.withApi(api);
-      //
-      //      if (!Utils.empty(profile))
-      //         engine.withProfile(profile);
-      //
-      //      if (!Utils.empty(servletPath))
-      //         engine.withServletMapping(servletPath);
+      if (api == null)
+         api = buildApi(configProfile, servletPath);
+
+      if (api != null)
+      {
+         engine.withApi(api);
+      }
 
       return engine;
+   }
+
+   /**
+    * Optional subclass override hook to supply your own custom wired up Api.
+    * <p>
+    * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api 
+    * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator. 
+    * 
+    * @see #buildEngine
+    * @return null unless you override this method to construct an Api.  
+    */
+   protected Api buildApi(String configProfile, String servletPath)
+   {
+      return null;
    }
 
    protected void writeResponse(Response res, OutputStream outputStream) throws IOException
@@ -240,6 +256,26 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
    public void setDebug(boolean debug)
    {
       this.debug = debug;
+   }
+
+   public Engine getEngine()
+   {
+      return engine;
+   }
+
+   public void setEngine(Engine engine)
+   {
+      this.engine = engine;
+   }
+
+   public Api getApi()
+   {
+      return api;
+   }
+
+   public void setApi(Api api)
+   {
+      this.api = api;
    }
 
 }

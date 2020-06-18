@@ -56,6 +56,7 @@ import io.inversion.Index;
 import io.inversion.Property;
 import io.inversion.Relationship;
 import io.inversion.Rule;
+import io.inversion.action.db.DbAction;
 import io.inversion.utils.Configurator.Encoder.Includer;
 import io.inversion.utils.Configurator.Encoder.Namer;
 
@@ -270,7 +271,7 @@ public class Configurator
       //-- on all of the DBs and they configured collections on the Api.  
       Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), decoder.getBeans(Api.class).toArray());
       autoProps.putAll(properties);
-      
+
       for (Api api : decoder.getBeans(Api.class))
       {
          for (Db db : ((Api) api).getDbs())
@@ -278,8 +279,7 @@ public class Configurator
             db.shutdown(api);
          }
       }
-      
-      
+
       decoder.clear();
       decoder.load(autoProps);
 
@@ -312,14 +312,17 @@ public class Configurator
 
    void autoWireApi(Decoder decoder)
    {
-      List<Api> apis = decoder.getBeans(Api.class);
+      if (decoder.getBeans(Action.class).size() == 0 //
+            && decoder.getBeans(Db.class).size() > 0)
+      {
+         decoder.putBean("action", new DbAction());
+      }
 
       if (decoder.getBeans(Action.class).size() > 0)
       {
-         if (apis.size() == 0)
+         if (decoder.getBeans(Api.class).size() == 0)
          {
             decoder.putBean("api", new Api());
-            apis = decoder.getBeans(Api.class);
          }
 
          if (decoder.getBeans(Endpoint.class).size() == 0)
@@ -336,11 +339,11 @@ public class Configurator
          }
       }
 
-      if (apis.size() == 1)
+      if (decoder.getBeans(Api.class).size() == 1)
       {
          List found = decoder.getBeans(Db.class);
 
-         Api api = apis.get(0);
+         Api api = decoder.getBeans(Api.class).get(0);
 
          if (api.getDbs().size() == 0)
             api.withDbs((Db[]) found.toArray(new Db[found.size()]));
