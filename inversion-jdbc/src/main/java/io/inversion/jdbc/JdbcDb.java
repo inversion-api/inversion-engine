@@ -308,6 +308,7 @@ public class JdbcDb extends Db<JdbcDb>
       DataSource pool = pools.get(this);
       if (pool != null)
       {
+         System.out.println("CLOSING CONNECTION POOL : " + getUrl());
          ((HikariDataSource) pool).close();
       }
    }
