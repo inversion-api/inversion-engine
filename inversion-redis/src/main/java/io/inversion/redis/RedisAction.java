@@ -50,106 +50,105 @@ import io.inversion.Response;
  * 
  *
  */
-public class RedisAction extends Action<RedisAction>
-{
+public class RedisAction extends Action<RedisAction> {
+
    protected final Logger log = LoggerFactory.getLogger(getClass());
 
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
-//      //caching only makes sense for GET requests
-//      if (!"GET".equalsIgnoreCase(req.getMethod()))
-//         return;
-//
-//      //only cache top level request, on internal recursive requests
-//      if (req.getChain().getParent() != null)
-//         return;
-//
-//      RedisDb db = (RedisDb) req.getCollection().getDb();
-//
-//      String nocacheParam = req.getChain().getConfig("redisNocacheParam", db.getNocacheParam());
-//
-//      // remove this param before creating the key, so this param is not included in the key
-//      boolean skipCache = (req.removeParam(nocacheParam) != null);
-//
-//      if (skipCache)
-//         return;
-//
-//      Jedis jedis = null;
-//
-//      try
-//      {
-//         if (!skipCache)
-//         {
-//            // the key is derived from the URL
-//            String key = getCacheKey(req.getChain());
-//
-//            // request should include a json object
-//            JSNode resJson = null;
-//
-//            String value = null;
-//            try
-//            {
-//               jedis = db.getRedisClient();
-//               value = jedis.get(key);
-//            }
-//            catch (Exception ex)
-//            {
-//               log.warn("Failed to retrieve from Redis the key: " + key, ex);
-//            }
-//
-//            if (value != null)
-//            {
-//               log.debug("CACHE HIT : " + key);
-//
-//               resJson = JSNode.parseJsonNode(value);
-//               res.withJson(resJson);
-//               res.withStatus(Status.SC_200_OK);
-//               req.getChain().cancel();
-//            }
-//            else
-//            {
-//               log.debug("CACHE MISS: " + key);
-//
-//               req.getChain().go();
-//
-//               // TODO should the naming convention include the TTL in the name?
-//
-//               // see class header for explanation on setex()  
-//               // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
-//
-//               JSNode json = res.getJson();
-//
-//               if (res.getStatusCode() == 200 && json != null && json.getProperties().size() > 0)
-//               {
-//                  // will NOT store empty JSON responses
-//                  try
-//                  {
-//                     int ttl = req.getChain().getConfig("redisTtl", db.getTtl());
-//                     jedis.setex(key, ttl, json.toString());
-//                  }
-//                  catch (Exception ex)
-//                  {
-//                     log.warn("Failed to save Redis key: " + key, ex);
-//                  }
-//               }
-//            }
-//         }
-//      }
-//      finally
-//      {
-//         if (jedis != null)
-//         {
-//            try
-//            {
-//               jedis.close();
-//            }
-//            catch (Exception ex)
-//            {
-//               log.warn("Error closing redis connection", ex);
-//            }
-//         }
-//      }
+   public void run(Request req, Response res) throws ApiException {
+      //      //caching only makes sense for GET requests
+      //      if (!"GET".equalsIgnoreCase(req.getMethod()))
+      //         return;
+      //
+      //      //only cache top level request, on internal recursive requests
+      //      if (req.getChain().getParent() != null)
+      //         return;
+      //
+      //      RedisDb db = (RedisDb) req.getCollection().getDb();
+      //
+      //      String nocacheParam = req.getChain().getConfig("redisNocacheParam", db.getNocacheParam());
+      //
+      //      // remove this param before creating the key, so this param is not included in the key
+      //      boolean skipCache = (req.removeParam(nocacheParam) != null);
+      //
+      //      if (skipCache)
+      //         return;
+      //
+      //      Jedis jedis = null;
+      //
+      //      try
+      //      {
+      //         if (!skipCache)
+      //         {
+      //            // the key is derived from the URL
+      //            String key = getCacheKey(req.getChain());
+      //
+      //            // request should include a json object
+      //            JSNode resJson = null;
+      //
+      //            String value = null;
+      //            try
+      //            {
+      //               jedis = db.getRedisClient();
+      //               value = jedis.get(key);
+      //            }
+      //            catch (Exception ex)
+      //            {
+      //               log.warn("Failed to retrieve from Redis the key: " + key, ex);
+      //            }
+      //
+      //            if (value != null)
+      //            {
+      //               log.debug("CACHE HIT : " + key);
+      //
+      //               resJson = JSNode.parseJsonNode(value);
+      //               res.withJson(resJson);
+      //               res.withStatus(Status.SC_200_OK);
+      //               req.getChain().cancel();
+      //            }
+      //            else
+      //            {
+      //               log.debug("CACHE MISS: " + key);
+      //
+      //               req.getChain().go();
+      //
+      //               // TODO should the naming convention include the TTL in the name?
+      //
+      //               // see class header for explanation on setex()  
+      //               // jedis.set(key, chain.getResponse().getJson().toString(), setParams().ex(ttl));
+      //
+      //               JSNode json = res.getJson();
+      //
+      //               if (res.getStatusCode() == 200 && json != null && json.getProperties().size() > 0)
+      //               {
+      //                  // will NOT store empty JSON responses
+      //                  try
+      //                  {
+      //                     int ttl = req.getChain().getConfig("redisTtl", db.getTtl());
+      //                     jedis.setex(key, ttl, json.toString());
+      //                  }
+      //                  catch (Exception ex)
+      //                  {
+      //                     log.warn("Failed to save Redis key: " + key, ex);
+      //                  }
+      //               }
+      //            }
+      //         }
+      //      }
+      //      finally
+      //      {
+      //         if (jedis != null)
+      //         {
+      //            try
+      //            {
+      //               jedis.close();
+      //            }
+      //            catch (Exception ex)
+      //            {
+      //               log.warn("Error closing redis connection", ex);
+      //            }
+      //         }
+      //      }
    }
 
    /**
@@ -157,18 +156,15 @@ public class RedisAction extends Action<RedisAction>
     * @param requestParamMap map representing the request parameters
     * @return a concatenated string of each param beginning with '?' and joined by '&'
     */
-   String getCacheKey(Chain chain)
-   {
+   String getCacheKey(Chain chain) {
       TreeMap<String, String> sortedKeyMap = new TreeMap<>(chain.getRequest().getUrl().getParams());
 
       String sortedParams = "";
 
       boolean isFirstParam = true;
 
-      for (Map.Entry<String, String> entry : sortedKeyMap.entrySet())
-      {
-         if (isFirstParam)
-         {
+      for (Map.Entry<String, String> entry : sortedKeyMap.entrySet()) {
+         if (isFirstParam) {
             sortedParams += "?";
             isFirstParam = false;
          }
@@ -177,8 +173,7 @@ public class RedisAction extends Action<RedisAction>
 
          sortedParams += entry.getKey();
 
-         if (!entry.getValue().isEmpty())
-         {
+         if (!entry.getValue().isEmpty()) {
             sortedParams += "=" + entry.getValue();
          }
 

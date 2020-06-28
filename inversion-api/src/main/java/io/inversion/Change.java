@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,49 +16,42 @@
  */
 package io.inversion;
 
-public class Change
-{
+public class Change {
+
    protected String method        = null;
    protected String collectionKey = null;
-   protected Object resourceKey     = null;
+   protected Object resourceKey   = null;
 
-   public Change(String method, String collectionKey, Object resourceKey)
-   {
+   public Change(String method, String collectionKey, Object resourceKey) {
       super();
       this.method = method;
       this.collectionKey = collectionKey;
       this.resourceKey = resourceKey;
    }
 
-   public String getMethod()
-   {
+   public String getMethod() {
       return method;
    }
 
-   public Change withMethod(String method)
-   {
+   public Change withMethod(String method) {
       this.method = method;
       return this;
    }
 
-   public String getCollectionKey()
-   {
+   public String getCollectionKey() {
       return collectionKey;
    }
 
-   public Change withCollectionKey(String collectionKey)
-   {
+   public Change withCollectionKey(String collectionKey) {
       this.collectionKey = collectionKey;
       return this;
    }
 
-   public Object getResourceKey()
-   {
+   public Object getResourceKey() {
       return resourceKey;
    }
 
-   public Change withResourceKey(Object resourceKey)
-   {
+   public Change withResourceKey(Object resourceKey) {
       this.resourceKey = resourceKey;
       return this;
    }

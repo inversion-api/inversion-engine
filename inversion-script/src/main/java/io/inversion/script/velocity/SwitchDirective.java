@@ -31,28 +31,24 @@ import org.apache.velocity.runtime.parser.node.Node;
  * 
  *
  */
-public class SwitchDirective extends InputBase
-{
+public class SwitchDirective extends InputBase {
+
    @Override
-   public String getName()
-   {
+   public String getName() {
       return "switch";
    }
 
    @Override
-   public int getType()
-   {
+   public int getType() {
       return BLOCK;
    }
 
    @Override
-   public boolean render(InternalContextAdapter context, Writer writer, Node node) throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException
-   {
+   public boolean render(InternalContextAdapter context, Writer writer, Node node) throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
       /*
        *  did we get an argument?
        */
-      if (node.jjtGetChild(0) == null)
-      {
+      if (node.jjtGetChild(0) == null) {
          //rsvc.error("#switch() error :  null argument");
          return false;
       }
@@ -62,8 +58,7 @@ public class SwitchDirective extends InputBase
        */
       Object value = node.jjtGetChild(0).value(context);
 
-      if (value == null)
-      {
+      if (value == null) {
          value = "[DEFAULT]";
       }
 
@@ -76,30 +71,23 @@ public class SwitchDirective extends InputBase
       Node child = null;
       Node renderNode = null;
       int numChildren = n.jjtGetNumChildren();
-      for (int i = 0; i < numChildren; i++)
-      {
+      for (int i = 0; i < numChildren; i++) {
          child = n.jjtGetChild(i);
-         if (child instanceof ASTDirective)
-         {
+         if (child instanceof ASTDirective) {
             ASTDirective directive = ((ASTDirective) child);
             String dirName = ((ASTDirective) child).getDirectiveName();
 
-            if (dirName.equalsIgnoreCase("case"))
-            {
+            if (dirName.equalsIgnoreCase("case")) {
                String casetoken = ((ASTStringLiteral) directive.jjtGetChild(0)).literal();
 
-               if (casetoken.equalsIgnoreCase(arg))
-               {
+               if (casetoken.equalsIgnoreCase(arg)) {
                   // render all the children until we hit either
                   // a case directive, default directive, or the end of this switch
-                  for (int j = i + 1; j < numChildren; j++)
-                  {
+                  for (int j = i + 1; j < numChildren; j++) {
                      renderNode = n.jjtGetChild(j);
-                     if (renderNode instanceof ASTDirective)
-                     {
+                     if (renderNode instanceof ASTDirective) {
                         String directiveName = ((ASTDirective) renderNode).getDirectiveName();
-                        if (directiveName.equalsIgnoreCase("case") || directiveName.equalsIgnoreCase("default"))
-                        {
+                        if (directiveName.equalsIgnoreCase("case") || directiveName.equalsIgnoreCase("default")) {
                            break;
                         }
                      }
@@ -110,10 +98,8 @@ public class SwitchDirective extends InputBase
                   break;
                }
             }
-            else if (dirName.equalsIgnoreCase("default"))
-            {
-               for (int j = i + 1; j < numChildren; j++)
-               {
+            else if (dirName.equalsIgnoreCase("default")) {
+               for (int j = i + 1; j < numChildren; j++) {
                   renderNode = n.jjtGetChild(j);
                   renderNode.render(context, writer);
                }

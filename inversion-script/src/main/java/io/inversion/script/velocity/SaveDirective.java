@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,35 +32,30 @@ import io.inversion.utils.Utils;
  * 
  *
  */
-public class SaveDirective extends InputBase
-{
+public class SaveDirective extends InputBase {
+
    @Override
-   public String getName()
-   {
+   public String getName() {
       return "save";
    }
 
    @Override
-   public int getType()
-   {
+   public int getType() {
       return BLOCK;
    }
 
    @Override
-   public boolean render(InternalContextAdapter context, Writer writer, Node node) throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException
-   {
+   public boolean render(InternalContextAdapter context, Writer writer, Node node) throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
       String var = "content";
 
       int length = node.jjtGetNumChildren();
       Node n = node.jjtGetChild(0);
 
-      if (length > 1)
-      {
+      if (length > 1) {
          n = node.jjtGetChild(1);
          Node argNode = node.jjtGetChild(0);
          Object argVar = argNode.value(context);
-         if (!Utils.empty(argVar))
-         {
+         if (!Utils.empty(argVar)) {
             var = argVar.toString();
          }
       }
@@ -70,8 +65,7 @@ public class SaveDirective extends InputBase
 
       Writer savedWriter = new StringWriter();
 
-      for (int i = 0; i < numChildren; i++)
-      {
+      for (int i = 0; i < numChildren; i++) {
          renderNode = n.jjtGetChild(i);
          renderNode.render(context, savedWriter);
       }

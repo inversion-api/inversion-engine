@@ -45,56 +45,47 @@ import io.inversion.utils.JSNode;
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
  *
  */
-public class CosmosSqlQuery extends SqlQuery<CosmosDb>
-{
-   public CosmosSqlQuery()
-   {
+public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
+
+   public CosmosSqlQuery() {
 
    }
 
-   public CosmosSqlQuery(CosmosDb db, Collection table, List<Term> terms)
-   {
+   public CosmosSqlQuery(CosmosDb db, Collection table, List<Term> terms) {
       super(db, table, terms);
       super.withDb(db);
    }
 
-   protected Where createWhere()
-   {
-      return new Where(this)
-         {
-            protected Term transform(Term parent)
-            {
-               if (parent.hasToken("like"))
-               {
-                  String text = parent.getToken(1);
-                  int idx = text.indexOf("*");
+   protected Where createWhere() {
+      return new Where(this) {
 
-                  if (!(idx == 0 || idx == text.length() - 1) || idx != text.lastIndexOf("*"))
-                     ApiException.throw400BadRequest("The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
+         protected Term transform(Term parent) {
+            if (parent.hasToken("like")) {
+               String text = parent.getToken(1);
+               int idx = text.indexOf("*");
 
-                  if (idx == 0)
-                  {
-                     parent.withToken("ew");
-                     parent.getTerm(1).withToken(text.substring(1, text.length()));
-                  }
-                  else
-                  {
-                     parent.withToken("sw");
-                     parent.getTerm(1).withToken(text.substring(0, text.length() - 1));
-                  }
+               if (!(idx == 0 || idx == text.length() - 1) || idx != text.lastIndexOf("*"))
+                  ApiException.throw400BadRequest("The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
+
+               if (idx == 0) {
+                  parent.withToken("ew");
+                  parent.getTerm(1).withToken(text.substring(1, text.length()));
                }
-               else if (parent.hasToken("w", "wo"))
-               {
-                  ApiException.throw400BadRequest("CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
+               else {
+                  parent.withToken("sw");
+                  parent.getTerm(1).withToken(text.substring(0, text.length() - 1));
                }
-
-               return super.transform(parent);
             }
-         };
+            else if (parent.hasToken("w", "wo")) {
+               ApiException.throw400BadRequest("CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
+            }
+
+            return super.transform(parent);
+         }
+      };
    }
 
-   public Results doSelect() throws ApiException
-   {
+   public Results doSelect() throws ApiException {
       Results results = new Results(this);
       CosmosDb db = getDb();
 
@@ -105,8 +96,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       sql = sql.replaceAll("\n", " ");
 
       SqlParameterCollection params = new SqlParameterCollection();
-      for (int i = 0; i < values.size(); i++)
-      {
+      for (int i = 0; i < values.size(); i++) {
          KeyValue kv = values.get(i);
          String varName = asVariableName(i);
          params.add(new SqlParameter(varName, kv.getValue()));
@@ -118,8 +108,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
       Object partKey = null;
       String partKeyCol = null;
       Index partKeyIdx = collection.getIndex("PartitionKey");
-      if (partKeyIdx != null)
-      {
+      if (partKeyIdx != null) {
          //-- the only way to turn cross partition querying off is to 
          //-- have a single partition key identified in your query.
          //-- If we have a pk term but it is nested in an expression
@@ -129,24 +118,20 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          partKeyCol = partKeyIdx.getProperty(0).getColumnName();
          Term partKeyTerm = findTerm(partKeyCol, "eq");
 
-         if (partKeyTerm != null && partKeyTerm.getParent() == null)
-         {
+         if (partKeyTerm != null && partKeyTerm.getParent() == null) {
             partKey = partKeyTerm.getToken(1);
          }
-         else if ("id".equalsIgnoreCase(partKeyCol))
-         {
+         else if ("id".equalsIgnoreCase(partKeyCol)) {
             partKey = Chain.peek().getRequest().getResourceKey();
          }
       }
 
-      if (partKey != null)
-      {
+      if (partKey != null) {
          partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
          options.setEnableCrossPartitionQuery(false);
          options.setPartitionKey(new PartitionKey(partKey));
       }
-      else
-      {
+      else {
          if (!isDryRun() && getDb() != null && !getDb().isAllowCrossPartitionQueries())
             ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
 
@@ -163,24 +148,20 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
 
       //-- end test case debug stuff
 
-      if (!isDryRun())
-      {
+      if (!isDryRun()) {
          DocumentClient cosmos = db.getDocumentClient();
          FeedResponse<Document> queryResults = null;
-         try
-         {
+         try {
             queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             System.err.println(ex.getMessage());
             System.err.println(debug);
 
             throw ex;
          }
 
-         for (Document doc : queryResults.getQueryIterable())
-         {
+         for (Document doc : queryResults.getQueryIterable()) {
             String json = doc.toJson();
             JSNode node = JSNode.parseJsonNode(json);
 
@@ -189,8 +170,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
             //-- specifically blacklist known cosmos keys as this algorithm
             //-- will delete any _ prefixed property even if it was supplied
             //-- by the user
-            for (String key : node.keySet())
-            {
+            for (String key : node.keySet()) {
                if (key.startsWith("_"))
                   node.remove(key);
             }
@@ -215,8 +195,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
     * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-select
     * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-select#quoted-property-accessor
     */
-   protected String toSql(boolean preparedStmt)
-   {
+   protected String toSql(boolean preparedStmt) {
       String sql = super.toSql(preparedStmt);
 
       sql = sql.replace(columnQuote + collection.getTableName() + columnQuote + ".*", "*");
@@ -237,8 +216,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
     * search index, that would fail...simply solution...if you did not supply
     * a sort on the query string, just search by the "id" field. 
     */
-   protected List<Sort> getDefaultSorts(Parts parts)
-   {
+   protected List<Sort> getDefaultSorts(Parts parts) {
       return Arrays.asList(new Sort("id", true));
    }
 
@@ -247,8 +225,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
     * 
     * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-offset-limit
     */
-   protected String printLimitClause(Parts parts, int offset, int limit)
-   {
+   protected String printLimitClause(Parts parts, int offset, int limit) {
       if (offset < 0)
          offset = 0;
 
@@ -262,42 +239,34 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
     * Cosmos does not use "?" ansii sql style prepared statement vars, it uses
     * named variables prefixed with '@'. 
     */
-   protected String asVariableName(int valuesPairIdx)
-   {
+   protected String asVariableName(int valuesPairIdx) {
       KeyValue kv = values.get(valuesPairIdx);
       return "@" + kv.getKey() + (valuesPairIdx + 1);
    }
 
-   protected String asString(Term term)
-   {
+   protected String asString(Term term) {
       String token = term.token;
       return token;
    }
 
-   protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText)
-   {
+   protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText) {
       String token = term.getToken();
       StringBuffer sql = new StringBuffer("");
-      if ("n".equalsIgnoreCase(token))
-      {
+      if ("n".equalsIgnoreCase(token)) {
          sql.append(" IS_NULL (");
-         for (int i = 0; i < preparedStmtChildText.size(); i++)
-         {
+         for (int i = 0; i < preparedStmtChildText.size(); i++) {
             sql.append(preparedStmtChildText.get(i).trim());
             if (i < preparedStmtChildText.size() - 1)
                sql.append(" ");
          }
          sql.append(")");
       }
-      else if ("nn".equals(token))
-      {
+      else if ("nn".equals(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" <> null");
       }
-      else if ("sw".equalsIgnoreCase(token))
-      {
+      else if ("sw".equalsIgnoreCase(token)) {
          sql.append(" STARTSWITH (");
-         for (int i = 0; i < preparedStmtChildText.size(); i++)
-         {
+         for (int i = 0; i < preparedStmtChildText.size(); i++) {
             String val = preparedStmtChildText.get(i);
             sql.append(val);
             if (i < preparedStmtChildText.size() - 1)
@@ -305,11 +274,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          }
          sql.append(")");
       }
-      else if ("ew".equalsIgnoreCase(token))
-      {
+      else if ("ew".equalsIgnoreCase(token)) {
          sql.append(" ENDSWITH (");
-         for (int i = 0; i < preparedStmtChildText.size(); i++)
-         {
+         for (int i = 0; i < preparedStmtChildText.size(); i++) {
             String val = preparedStmtChildText.get(i);
             sql.append(val);
             if (i < preparedStmtChildText.size() - 1)
@@ -318,8 +285,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb>
          sql.append(")");
       }
       //add other special cases here...@see SqlQuery.printExpression for examples
-      else
-      {
+      else {
          return super.printExpression(term, dynamicSqlChildText, preparedStmtChildText);
       }
 

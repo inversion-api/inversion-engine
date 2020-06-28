@@ -70,8 +70,7 @@ import io.inversion.utils.Utils;
  * to config the credentials at all.
  *
  */
-public class S3UploadAction extends Action<S3UploadAction>
-{
+public class S3UploadAction extends Action<S3UploadAction> {
 
    protected String s3AccessKey = null;
    protected String s3SecretKey = null;
@@ -82,18 +81,15 @@ public class S3UploadAction extends Action<S3UploadAction>
    protected String s3DatePath  = "yyyy/MM/dd";
 
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
+   public void run(Request req, Response res) throws ApiException {
       String requestPath = null;
       String fileName = null;
       Long fileSize = null;
       DigestInputStream uploadStream = null;
 
-      try
-      {
+      try {
          List<Upload> uploads = req.getUploads();
-         if (uploads.size() > 0)
-         {
+         if (uploads.size() > 0) {
             Upload upload = uploads.get(0);
 
             uploadStream = new DigestInputStream(upload.getInputStream(), MessageDigest.getInstance("MD5"));
@@ -106,8 +102,7 @@ public class S3UploadAction extends Action<S3UploadAction>
                requestPath = requestPath.substring(1);
          }
 
-         if (uploadStream == null)
-         {
+         if (uploadStream == null) {
             error(res, null, "No file was uploaded in the multipart request");
             return;
          }
@@ -115,12 +110,10 @@ public class S3UploadAction extends Action<S3UploadAction>
          //String pathAndFileName = buildFullPath(fileName, requestPath);
          Map<String, Object> responseContent = new HashMap<>();
 
-         try
-         {
+         try {
             responseContent = saveFile(req.getChain(), uploadStream, fileName, requestPath);
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
 
             return;
@@ -130,21 +123,17 @@ public class S3UploadAction extends Action<S3UploadAction>
          responseContent.put("fileSizeBytes", fileSize);
          res.withJson(new JSNode(responseContent));
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
-      finally
-      {
-         if (uploadStream != null)
-         {
+      finally {
+         if (uploadStream != null) {
             Utils.close(uploadStream);
          }
       }
    }
 
-   void error(Response res, Exception exception, String message)
-   {
+   void error(Response res, Exception exception, String message) {
       if (exception != null)
          message += "\r\n\r\n" + Utils.getShortCause(exception);
 
@@ -156,8 +145,7 @@ public class S3UploadAction extends Action<S3UploadAction>
 
    }
 
-   private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception
-   {
+   private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception {
       AmazonS3 s3 = buildS3Client(chain);
       String bucket = chain.getConfig("s3Bucket", this.s3Bucket);
       String pathAndFileName = buildFullPath(chain, requestPath, fileName);
@@ -172,30 +160,25 @@ public class S3UploadAction extends Action<S3UploadAction>
       return resp;
    }
 
-   private String buildFullPath(Chain chain, String requestPath, String name)
-   {
+   private String buildFullPath(Chain chain, String requestPath, String name) {
       StringBuilder sb = new StringBuilder();
 
       String basePath = chain.getConfig("s3BasePath", this.s3BasePath);
       String datePath = chain.getConfig("s3DatePath", this.s3DatePath);
 
-      if (basePath != null)
-      {
+      if (basePath != null) {
          sb.append(basePath);
-         if (!basePath.endsWith("/"))
-         {
+         if (!basePath.endsWith("/")) {
             sb.append("/");
          }
       }
 
-      if (datePath != null)
-      {
+      if (datePath != null) {
          datePath = new SimpleDateFormat(datePath).format(new Date());
          sb.append(datePath + "/");
       }
 
-      if (requestPath != null)
-      {
+      if (requestPath != null) {
          if (requestPath.startsWith("/"))
             sb.append(requestPath.substring(1));
          else
@@ -207,8 +190,7 @@ public class S3UploadAction extends Action<S3UploadAction>
       return sb.toString();
    }
 
-   private AmazonS3 buildS3Client(Chain chain)
-   {
+   private AmazonS3 buildS3Client(Chain chain) {
       //TODO make this work like dynamo client config as art of db
 
       String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
@@ -216,31 +198,26 @@ public class S3UploadAction extends Action<S3UploadAction>
       String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);
 
       AmazonS3ClientBuilder builder = null;
-      if (accessKey != null)
-      {
+      if (accessKey != null) {
          BasicAWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
          builder = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(creds));
       }
-      else
-      {
+      else {
          builder = AmazonS3ClientBuilder.standard();
       }
 
-      if (awsRegion != null)
-      {
+      if (awsRegion != null) {
          builder.withRegion(awsRegion);
       }
       return builder.build();
    }
 
-   private static String getHash(MessageDigest digest) throws IOException
-   {
+   private static String getHash(MessageDigest digest) throws IOException {
       byte[] md5sum = digest.digest();
       BigInteger bigInt = new BigInteger(1, md5sum);
       String output = bigInt.toString(16);
 
-      while (output.length() < 32)
-      {
+      while (output.length() < 32) {
          output = "0" + output;
       }
 

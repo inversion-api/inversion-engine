@@ -31,8 +31,8 @@ import java.util.Map;
  * <p>
  * 
  */
-public class Url
-{
+public class Url {
+
    /**
     * The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host 
     */
@@ -74,8 +74,7 @@ public class Url
     * 
     * @param url
     */
-   public Url(String url)
-   {
+   public Url(String url) {
       String path = null;
 
       if (url.indexOf(":/") > 0 && url.indexOf("://") < 0)
@@ -87,11 +86,9 @@ public class Url
 
       original = url;
 
-      try
-      {
+      try {
          int queryIndex = url.indexOf('?');
-         if (queryIndex >= 0)
-         {
+         if (queryIndex >= 0) {
             String query = url.substring(queryIndex + 1, url.length());
             url = url.substring(0, queryIndex);
 
@@ -102,12 +99,10 @@ public class Url
          url = url.replace('\\', '/');
 
          int potocolEnd = url.indexOf("://");
-         if (potocolEnd < 0)
-         {
+         if (potocolEnd < 0) {
             path = url;
          }
-         else
-         {
+         else {
             //-- parse a full url
             protocol = url.substring(0, url.indexOf(':'));
 
@@ -118,12 +113,10 @@ public class Url
             //--so don't cound this colon
             //if(hostEnd - hostStart <= 1)
             //   hostEnd = url.indexOf(':', hostEnd + 1);
-            if (hostEnd < 0 || hostEnd > url.indexOf('/', hostStart))
-            {
+            if (hostEnd < 0 || hostEnd > url.indexOf('/', hostStart)) {
                hostEnd = url.indexOf('/', hostStart);
             }
-            if (hostEnd < 0)
-            {
+            if (hostEnd < 0) {
                url += "/";
                hostEnd = url.indexOf('/', hostStart);
             }
@@ -132,13 +125,11 @@ public class Url
 
             String rest = url.substring(hostEnd, url.length());
 
-            if (rest.indexOf(':') > -1)
-            {
+            if (rest.indexOf(':') > -1) {
                int nextColon = rest.indexOf(':');
                int nextSlash = rest.indexOf('/');
 
-               if (nextColon < nextSlash)
-               {
+               if (nextColon < nextSlash) {
                   String portString = rest.substring(nextColon + 1, nextSlash);
                   port = Integer.parseInt(portString);
                   rest = rest.substring(nextSlash, rest.length());
@@ -148,12 +139,10 @@ public class Url
             path = rest;
          }
 
-         if (path == null || path.length() == 0)
-         {
+         if (path == null || path.length() == 0) {
             path = "/";
          }
-         else if (path.charAt(0) != '/')
-         {
+         else if (path.charAt(0) != '/') {
             path = '/' + url;
          }
 
@@ -161,8 +150,7 @@ public class Url
             this.path = new Path(path);
 
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          System.err.println("Error parsing url \"" + url + "\"");
          ex.printStackTrace();
       }
@@ -173,23 +161,19 @@ public class Url
     * 
     * @return the string representation of this url  
     */
-   public String toString()
-   {
+   public String toString() {
       String url = protocol + "://" + host;
 
-      if (port > 0)
-      {
+      if (port > 0) {
          if (!((port == 80 && "http".equalsIgnoreCase(protocol)) || (port == 443 && "https".equalsIgnoreCase(protocol))))
             url += ":" + port;
       }
 
-      if (path != null && path.size() > 0)
-      {
+      if (path != null && path.size() > 0) {
          url += "/" + path;
       }
 
-      if (params.size() > 0)
-      {
+      if (params.size() > 0) {
          while (url.endsWith("/"))
             url = url.substring(0, url.length() - 1);
 
@@ -205,21 +189,17 @@ public class Url
     * @return true if <code>url</code> is a Url with a matching toString
     *  
     */
-   public boolean equals(Object url)
-   {
-      if (url instanceof Url)
-      {
+   public boolean equals(Object url) {
+      if (url instanceof Url) {
          return toString().equals(((Url) url).toString());
       }
       return false;
    }
 
-   public String getDomain()
-   {
+   public String getDomain() {
       String domain = host;
 
-      if (domain.lastIndexOf('.') > domain.indexOf('.'))
-      {
+      if (domain.lastIndexOf('.') > domain.indexOf('.')) {
          domain = domain.substring(domain.indexOf('.') + 1, domain.length());
       }
       return domain;
@@ -231,54 +211,45 @@ public class Url
     * @return a URL encoded query string if <code>params.size() is > 0</code> else empty string 
     * @see #toQueryString(Map)
     */
-   public String getQueryString()
-   {
+   public String getQueryString() {
       if (params.size() == 0)
          return "";
 
       return toQueryString(((JSNode) params).asMap());
    }
 
-   public String getHost()
-   {
+   public String getHost() {
       return host;
    }
 
-   public Url withHost(String host)
-   {
+   public Url withHost(String host) {
       this.host = host;
       return this;
    }
 
-   public int getPort()
-   {
+   public int getPort() {
       return port;
    }
 
-   public Url withPort(int port)
-   {
+   public Url withPort(int port) {
       this.port = port;
       return this;
    }
 
-   public String getProtocol()
-   {
+   public String getProtocol() {
       return protocol;
    }
 
-   public Url withProtocol(String protocol)
-   {
+   public Url withProtocol(String protocol) {
       this.protocol = protocol;
       return this;
    }
 
-   public Path getPath()
-   {
+   public Path getPath() {
       return path;
    }
 
-   public Url withPath(Path path)
-   {
+   public Url withPath(Path path) {
       this.path = path;
       return this;
    }
@@ -288,8 +259,7 @@ public class Url
     * 
     * @return path.last() if it exists otherwise null
     */
-   public String getFile()
-   {
+   public String getFile() {
       if (path != null)
          return path.last();
 
@@ -301,8 +271,7 @@ public class Url
     * @param query
     * @return this Url
     */
-   public Url withQueryString(String queryString)
-   {
+   public Url withQueryString(String queryString) {
       params = new JSNode(Utils.parseQueryString(queryString));
       return this;
    }
@@ -314,8 +283,7 @@ public class Url
     * @param params
     * @return
     */
-   public Url withParams(Map<String, String> newParams)
-   {
+   public Url withParams(Map<String, String> newParams) {
       if (newParams != null)
          this.params.putAll(newParams);
       return this;
@@ -329,16 +297,13 @@ public class Url
     * @param value  the value, may be null
     * @return
     */
-   public Url withParam(String name, String value)
-   {
+   public Url withParam(String name, String value) {
       params.put(name, value);
       return this;
    }
 
-   public Url withParams(String... nvpairs)
-   {
-      if (nvpairs != null)
-      {
+   public Url withParams(String... nvpairs) {
+      if (nvpairs != null) {
          for (int i = 0; i < nvpairs.length - 1; i = i + 2)
             withParam(nvpairs[i], nvpairs[i + 1]);
 
@@ -359,12 +324,9 @@ public class Url
     * 
     * @see {@link io.inversion.Utils#containsToken(String, String)}
     */
-   public void replaceParam(String key, String value)
-   {
-      for (String existing : (List<String>) new ArrayList(params.keySet()))
-      {
-         if (Utils.containsToken(key, existing))
-         {
+   public void replaceParam(String key, String value) {
+      for (String existing : (List<String>) new ArrayList(params.keySet())) {
+         if (Utils.containsToken(key, existing)) {
             params.remove(existing);
          }
       }
@@ -379,16 +341,12 @@ public class Url
     * @return the first value found that contained any one of <code>tokens</code>
     * @see {@link io.inversion.Utils#containsToken(String, String)}
     */
-   public String clearParams(String... tokens)
-   {
+   public String clearParams(String... tokens) {
       String oldValue = null;
-      for (String token : tokens)
-      {
+      for (String token : tokens) {
          List<String> keys = (List<String>) new ArrayList(params.keySet());
-         for (String existing : keys)
-         {
-            if (Utils.containsToken(token, existing))
-            {
+         for (String existing : keys) {
+            if (Utils.containsToken(token, existing)) {
                String removed = (String) params.remove(existing);
                if (oldValue == null)
                   oldValue = removed;
@@ -405,14 +363,10 @@ public class Url
     * @param tokens  substrings to search params.keySet() for
     * @return the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring
     */
-   public String findKey(String... tokens)
-   {
-      for (String token : tokens)
-      {
-         for (String key : (List<String>) new ArrayList(params.keySet()))
-         {
-            if (Utils.containsToken(token, key))
-            {
+   public String findKey(String... tokens) {
+      for (String token : tokens) {
+         for (String key : (List<String>) new ArrayList(params.keySet())) {
+            if (Utils.containsToken(token, key)) {
                return key;
             }
          }
@@ -427,8 +381,7 @@ public class Url
     * @return the value for the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring
     * @see {@code #findKey(String...)}
     */
-   public String findKeyValue(String... tokens)
-   {
+   public String findKeyValue(String... tokens) {
       String key = findKey(tokens);
       if (key != null)
          return ((JSNode) params).getString(key);
@@ -442,24 +395,21 @@ public class Url
     * @param key  the key to get
     * @return the param value for <code>key</code> based on a case insensitive match.
     */
-   public String getParam(String key)
-   {
+   public String getParam(String key) {
       return (String) params.get(key);
    }
 
    /**
     * @return a new case insensitive order preserving map copy of <code>params</code>
     */
-   public Map<String, String> getParams()
-   {
+   public Map<String, String> getParams() {
       return ((JSNode) params).asMap();
    }
 
    /**
     * @return  the url string used in constructing this Url.
     */
-   public String getOriginal()
-   {
+   public String getOriginal() {
       return original;
    }
 
@@ -471,38 +421,31 @@ public class Url
     * 
     * @see {@code java.net.URL.encode(String, String)}
     */
-   public static String toQueryString(Map<String, String> params)
-   {
+   public static String toQueryString(Map<String, String> params) {
       String query = "";
-      if (params != null)
-      {
-         for (String key : params.keySet())
-         {
-            try
-            {
-               if (params.get(key) != null)
-               {
+      if (params != null) {
+         for (String key : params.keySet()) {
+            try {
+               if (params.get(key) != null) {
                   query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
                }
-               else
-               {
+               else {
                   query += URLEncoder.encode(key, "UTF-8") + "&";
                }
 
             }
-            catch (UnsupportedEncodingException e)
-            {
+            catch (UnsupportedEncodingException e) {
                Utils.rethrow(e);
             }
          }
          if (query.length() > 0)
             query = query.substring(0, query.length() - 1);
       }
-      
-      query = query.replace("%28",  "(");
-      query = query.replace("%29",  ")");
-      query = query.replace("%2C",  ",");
-      
+
+      query = query.replace("%28", "(");
+      query = query.replace("%29", ")");
+      query = query.replace("%2C", ",");
+
       return query;
    }
 

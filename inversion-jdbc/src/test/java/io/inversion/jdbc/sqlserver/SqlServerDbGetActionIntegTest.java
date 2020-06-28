@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbGetActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest
-{
-   public SqlServerDbGetActionIntegTest()
-   {
+public class SqlServerDbGetActionIntegTest extends AbstractJdbcDbGetActionIntegTest {
+
+   public SqlServerDbGetActionIntegTest() {
       super("sqlserver");
    }
 }

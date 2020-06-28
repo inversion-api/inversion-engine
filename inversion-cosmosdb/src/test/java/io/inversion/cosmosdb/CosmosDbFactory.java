@@ -34,23 +34,20 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
-public class CosmosDbFactory
-{
-   protected static CosmosDb buildDb()
-   {
+public class CosmosDbFactory {
+
+   protected static CosmosDb buildDb() {
       return new NorthwindCosmosDb();
    }
 
-   static class NorthwindCosmosDb extends CosmosDb
-   {
-      NorthwindCosmosDb()
-      {
+   static class NorthwindCosmosDb extends CosmosDb {
+
+      NorthwindCosmosDb() {
          super("cosmos");
       }
 
       @Override
-      public void configDb() throws ApiException
-      {
+      public void configDb() throws ApiException {
          withDb("inversion-testing-cosmos1");
          withEndpointPath(new Path("cosmos/"));
 
@@ -137,8 +134,7 @@ public class CosmosDbFactory
       }
 
       @Override
-      public void configApi(Api api)
-      {
+      public void configApi(Api api) {
          super.configApi(api);
 
          //               Collection employeesTbl = api.getCollection("employees");
@@ -164,34 +160,29 @@ public class CosmosDbFactory
       //      employeesTbl.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employeesTbl, employeesTbl, getCollection("employees").getIndex("fkIdx_Employees_reportsTo"), null));
    }
 
-   public static Engine buildEngine() throws Exception
-   {
+   public static Engine buildEngine() throws Exception {
       return buildEngine(new NorthwindCosmosDb());
    }
 
-   public static Engine buildEngine(CosmosDb cosmosdb) throws Exception
-   {
+   public static Engine buildEngine(CosmosDb cosmosdb) throws Exception {
       final Api api = new Api("northwind");
 
       api.withDb(cosmosdb);
-      api.withEndpoint("GET,PUT,POST,DELETE", "cosmos/*", new Action()
-         {
-            public void run(Request req, Response res) throws ApiException
-            {
-               String collectionKey = req.getCollectionKey().toLowerCase();
+      api.withEndpoint("GET,PUT,POST,DELETE", "cosmos/*", new Action() {
 
-               if (req.isGet())
-               {
-                  req.getUrl().withParam("Type", collectionKey.toLowerCase());
-               }
+         public void run(Request req, Response res) throws ApiException {
+            String collectionKey = req.getCollectionKey().toLowerCase();
 
-               JSNode json = req.getJson();
-               if (json != null)
-               {
-                  json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
-               }
+            if (req.isGet()) {
+               req.getUrl().withParam("Type", collectionKey.toLowerCase());
             }
-         }//
+
+            JSNode json = req.getJson();
+            if (json != null) {
+               json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
+            }
+         }
+      }//
             , new DbAction());
 
       Engine dstEngine = new Engine(api);
@@ -217,8 +208,7 @@ public class CosmosDbFactory
          Set orderIds = new HashSet();
          Set customerIds = new HashSet();
 
-         for (JSNode order : res.getData().asNodeList())
-         {
+         for (JSNode order : res.getData().asNodeList()) {
             cleanSourceNode("orders", order);
 
             orderIds.add(order.get("orderid"));
@@ -226,8 +216,7 @@ public class CosmosDbFactory
 
             res = srcEngine.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
 
-            for (JSNode details : res.getData().asNodeList())
-            {
+            for (JSNode details : res.getData().asNodeList()) {
                cleanSourceNode("orderDetails", details);
                details.remove("employees");
                details.remove("order");
@@ -247,15 +236,13 @@ public class CosmosDbFactory
 
          String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
          res = srcEngine.get(getCustomers).assertOk();
-         for (JSNode customer : res.getData().asNodeList())
-         {
+         for (JSNode customer : res.getData().asNodeList()) {
             cleanSourceNode("customers", customer);
             dstEngine.post("/northwind/cosmos/customers", customer).assertOk();
          }
 
          res = srcEngine.get("/northwind/source/employees").assertOk();
-         for (JSNode employee : res.getData().asNodeList())
-         {
+         for (JSNode employee : res.getData().asNodeList()) {
             employee.remove("employees");
             cleanSourceNode("employees", employee);
             dstEngine.post("/northwind/cosmos/employees", employee).dump().assertOk();
@@ -269,16 +256,13 @@ public class CosmosDbFactory
     * Removes 'href' and turns relationship hrefs back into their key value
     * @param node
     */
-   public static void cleanSourceNode(String collection, JSNode node)
-   {
+   public static void cleanSourceNode(String collection, JSNode node) {
       node.remove("href");
       node.remove("employee");
 
-      if ("employees".equalsIgnoreCase(collection))
-      {
+      if ("employees".equalsIgnoreCase(collection)) {
          String reportsTo = node.getString("reportsTo");
-         if (!Utils.empty(reportsTo))
-         {
+         if (!Utils.empty(reportsTo)) {
             List parts = Arrays.asList("employees", "employee-" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1));
             reportsTo = reportsTo.substring(0, reportsTo.lastIndexOf("/") + 1) + "employees~" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1);
 
@@ -286,11 +270,9 @@ public class CosmosDbFactory
          }
       }
 
-      for (String key : node.keySet())
-      {
+      for (String key : node.keySet()) {
          Object value = node.get(key);
-         if (value instanceof String)
-         {
+         if (value instanceof String) {
             String str = (String) value;
             if (str.startsWith("http://"))
                node.put(key, Utils.last(Utils.explode("/", str)));
@@ -298,20 +280,17 @@ public class CosmosDbFactory
       }
    }
 
-   protected static void deleteAll(Engine e, String url)
-   {
+   protected static void deleteAll(Engine e, String url) {
       int safetyCounter = 0;
       Response res = null;
-      do
-      {
+      do {
          safetyCounter += 1;
 
          if (safetyCounter > 2000)
             throw new RuntimeException("Something is not right, your delete seems to be stuck in an infinate loop.");
 
          res = e.get(url).assertOk();
-         for (JSNode order : res.getData().asNodeList())
-         {
+         for (JSNode order : res.getData().asNodeList()) {
             res = e.delete(order.getString("href"));
             res.assertOk();
          }

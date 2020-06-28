@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,38 +46,31 @@ import io.inversion.utils.JSNode;
  * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
 // 
-public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, From<From<From, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>>
-{
+public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, From<From<From, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>> {
 
-   public ElasticsearchQuery()
-   {
+   public ElasticsearchQuery() {
 
    }
 
-   public ElasticsearchQuery(ElasticsearchDb db, Collection index, List<Term> terms)
-   {
+   public ElasticsearchQuery(ElasticsearchDb db, Collection index, List<Term> terms) {
       super(db, index, terms);
    }
 
    @Override
-   protected Select createSelect()
-   {
+   protected Select createSelect() {
       return new ElasticsearchSelect(this);
    }
 
    @Override
-   protected ElasticsearchWhere createWhere()
-   {
+   protected ElasticsearchWhere createWhere() {
       return new ElasticsearchWhere(this);
    }
 
-   protected ElasticsearchPage createPage()
-   {
+   protected ElasticsearchPage createPage() {
       return new ElasticsearchPage(this);
    }
 
-   public Results doSelect() throws ApiException
-   {
+   public Results doSelect() throws ApiException {
       Results results = new Results(this);
       ElasticsearchDb db = getDb();
 
@@ -97,13 +90,11 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       return results;
    }
 
-   protected void push(List<JSNode> stack, JSNode child)
-   {
+   protected void push(List<JSNode> stack, JSNode child) {
 
    }
 
-   public WrappedQueryBuilder buildQuery(Term parent, Term child)
-   {
+   public WrappedQueryBuilder buildQuery(Term parent, Term child) {
       QueryBuilder qb = null;
 
       String token = child.getToken().toLowerCase();
@@ -117,10 +108,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       // ex: 'test.yellow' & 'test.blue' would have the same base of 'test' 
       String nestedPath = getNestedBaseIfExists(field);
 
-      for (Term term : child.getTerms())
-      {
-         if (!term.isLeaf())
-         {
+      for (Term term : child.getTerms()) {
+         if (!term.isLeaf()) {
             WrappedQueryBuilder childBuilder = buildQuery(child, term);
             childBuilderList.add(childBuilder);
          }
@@ -132,8 +121,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
       BoolQueryBuilder boolBuilder = null;
       List<Object> valueList = null;
-      switch (token)
-      {
+      switch (token) {
          case "gt":
             qb = QueryBuilders.rangeQuery(field).gt(value);
             break;
@@ -147,8 +135,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             qb = QueryBuilders.rangeQuery(field).lte(value);
             break;
          case "eq": // equal
-            if (value instanceof String && ((String) value).contains("*"))
-            {
+            if (value instanceof String && ((String) value).contains("*")) {
                //               {
                //                  "query": {
                //                      "wildcard" : { "user" : "ki*y" }
@@ -156,8 +143,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                //              }               
                qb = QueryBuilders.wildcardQuery(field, value.toString());
             }
-            else
-            {
+            else {
                //               {
                //                  "query": {
                //                    "term" : { "user" : "Kimchy" } 
@@ -187,17 +173,14 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
          case "or":
             // TODO break out into a method similar to mergeChildBuilders()
             boolBuilder = QueryBuilders.boolQuery();
-            for (WrappedQueryBuilder childBuilder : childBuilderList)
-            {
-               if (childBuilder.hasNestedPath())
-               {
+            for (WrappedQueryBuilder childBuilder : childBuilderList) {
+               if (childBuilder.hasNestedPath()) {
                   nestedPath = childBuilder.getNestedPath();
                }
 
                boolBuilder.should(childBuilder.getBuilder());
             }
-            if (nestedPath != null)
-            {
+            if (nestedPath != null) {
                qb = QueryBuilders.nestedQuery(nestedPath, boolBuilder, ScoreMode.Avg);
                nestedPath = getNestedBaseIfExists(nestedPath);
             }
@@ -213,27 +196,22 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
          case "w":
             // TODO break out into a method similar to mergeChildBuilders()
             List<QueryBuilder> withList = new ArrayList<QueryBuilder>();
-            for (int i = 1; i < child.getNumTerms(); i++)
-            {
-               if (child.getTerm(i).isLeaf())
-               {
+            for (int i = 1; i < child.getNumTerms(); i++) {
+               if (child.getTerm(i).isLeaf()) {
                   value = child.getTerm(i).getToken();
 
                   withList.add(QueryBuilders.wildcardQuery(field, "*" + value + "*"));
                }
             }
 
-            if (withList.size() > 1)
-            {
+            if (withList.size() > 1) {
                BoolQueryBuilder bqb = QueryBuilders.boolQuery();
-               for (QueryBuilder withBuilder : withList)
-               {
+               for (QueryBuilder withBuilder : withList) {
                   bqb.should(withBuilder);
                }
                qb = bqb;
             }
-            else
-            {
+            else {
                qb = withList.get(0);
             }
             break;
@@ -258,10 +236,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             break;
          case "in":
             valueList = new ArrayList<Object>();
-            for (int i = 1; i < child.getNumTerms(); i++)
-            {
-               if (child.getTerm(i).isLeaf())
-               {
+            for (int i = 1; i < child.getNumTerms(); i++) {
+               if (child.getTerm(i).isLeaf()) {
                   valueList.add(child.getTerm(i).getToken());
                }
             }
@@ -269,10 +245,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             break;
          case "out":
             valueList = new ArrayList<Object>();
-            for (int i = 1; i < child.getNumTerms(); i++)
-            {
-               if (child.getTerm(i).isLeaf())
-               {
+            for (int i = 1; i < child.getNumTerms(); i++) {
+               if (child.getTerm(i).isLeaf()) {
                   valueList.add(child.getTerm(i).getToken());
                }
             }
@@ -293,14 +267,12 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    }
 
-   public SearchSourceBuilder getSearchBuilder()
-   {
+   public SearchSourceBuilder getSearchBuilder() {
       QueryBuilder root = null;
 
       List<WrappedQueryBuilder> childList = new ArrayList<WrappedQueryBuilder>();
 
-      for (Term term : where.getTerms())
-      {
+      for (Term term : where.getTerms()) {
          WrappedQueryBuilder wrappedChild = buildQuery(null, term);
          childList.add(wrappedChild);
       }
@@ -310,34 +282,28 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
       SearchSourceBuilder searchBuilder = null;
 
-      if (select.getTerms().size() > 0)
-      {
+      if (select.getTerms().size() > 0) {
          if (searchBuilder == null)
             searchBuilder = new SearchSourceBuilder();
 
          List<String> includesList = null;
          List<String> excludesList = null;
 
-         for (Term term : select.getTerms())
-         {
+         for (Term term : select.getTerms()) {
             String token = term.getToken();
-            if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("includes"))
-            {
+            if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("includes")) {
                if (includesList == null)
                   includesList = new ArrayList<>();
 
-               for (Term selectTerm : term.getTerms())
-               {
+               for (Term selectTerm : term.getTerms()) {
                   includesList.add(selectTerm.getToken());
                }
             }
-            else if (token.equalsIgnoreCase("excludes"))
-            {
+            else if (token.equalsIgnoreCase("excludes")) {
                if (excludesList == null)
                   excludesList = new ArrayList<>();
 
-               for (Term selectTerm : term.getTerms())
-               {
+               for (Term selectTerm : term.getTerms()) {
                   excludesList.add(selectTerm.getToken());
                }
             }
@@ -346,13 +312,11 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
          String[] includesArray = null;
          String[] excludesArray = null;
 
-         if (includesList != null && includesList.size() > 0)
-         {
+         if (includesList != null && includesList.size() > 0) {
             includesArray = new String[includesList.size()];
             includesArray = includesList.toArray(includesArray);
          }
-         if (excludesList != null && excludesList.size() > 0)
-         {
+         if (excludesList != null && excludesList.size() > 0) {
             excludesArray = new String[excludesList.size()];
             excludesArray = excludesList.toArray(excludesArray);
          }
@@ -373,8 +337,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
          searchBuilder = new SearchSourceBuilder();
 
       boolean isSortingById = false;
-      for (Sort sort : order.getSorts())
-      {
+      for (Sort sort : order.getSorts()) {
          SortOrder so = sort.isAsc() ? SortOrder.ASC : SortOrder.DESC;
          String sortProp = sort.getProperty();
          searchBuilder.sort(sortProp, so);
@@ -383,8 +346,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             isSortingById = true;
       }
 
-      if (!isSortingById)
-      {
+      if (!isSortingById) {
          searchBuilder.sort("id", SortOrder.ASC);
       }
 
@@ -392,15 +354,13 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       // which by default is 10,000, this will need to occur in the GetAction as several
       // .searchAfter()'s may be necessary to obtain the desired 'page'
 
-      if (page.getTerms().size() > 0)
-      {
+      if (page.getTerms().size() > 0) {
          searchBuilder.size(page.getPageSize());
 
          // Dont set a 'from' value if it is not necessary.
          // Inversion defaults the first page to a value of 1.
          // Elastic defaults the first page to a value of 0.
-         if (page.getPageNum() - 1 > 0)
-         {
+         if (page.getPageNum() - 1 > 0) {
             // TODO remove 'from' from the query if this is a 'search after' query
             searchBuilder.from(page.getPageNum());
          }
@@ -420,8 +380,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
    }
 
-   public JSNode getJson()
-   {
+   public JSNode getJson() {
       return JSNode.parseJsonNode(getSearchBuilder().toString());
    }
 
@@ -430,8 +389,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     * @param childBuilderList
     * @return
     */
-   private WrappedQueryBuilder mergeChildBuilders(List<WrappedQueryBuilder> childBuilderList, Term term)
-   {
+   private WrappedQueryBuilder mergeChildBuilders(List<WrappedQueryBuilder> childBuilderList, Term term) {
 
       QueryBuilder qb = null;
       BoolQueryBuilder boolBuilder = null;
@@ -440,67 +398,53 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       boolean nestedPathsMatch = true;
       String nestedPath = null;
 
-      for (WrappedQueryBuilder childBuilder : childBuilderList)
-      {
-         if (childBuilder.hasNestedPath())
-         {
+      for (WrappedQueryBuilder childBuilder : childBuilderList) {
+         if (childBuilder.hasNestedPath()) {
             nestedList.add(childBuilder);
-            if (nestedPath != null && !nestedPath.equalsIgnoreCase(childBuilder.getNestedPath()))
-            {
+            if (nestedPath != null && !nestedPath.equalsIgnoreCase(childBuilder.getNestedPath())) {
                nestedPathsMatch = false;
             }
-            else
-            {
+            else {
                nestedPath = childBuilder.getNestedPath();
             }
          }
-         else if (childBuilderList.size() == 1)
-         {
+         else if (childBuilderList.size() == 1) {
             // dont automatically add to the bool builder as it may be an only child
             qb = childBuilder.getBuilder();
          }
-         else
-         {
+         else {
             if (boolBuilder == null)
                boolBuilder = QueryBuilders.boolQuery();
             boolBuilder.filter(childBuilder.getBuilder());
          }
       }
 
-      if (nestedList.size() > 0)
-      {
+      if (nestedList.size() > 0) {
          BoolQueryBuilder nestedBoolBuilder = QueryBuilders.boolQuery();
 
-         if (nestedList.size() > 1)
-         {
-            for (WrappedQueryBuilder nestedBuilder : nestedList)
-            {
-               if (nestedPathsMatch)
-               {
+         if (nestedList.size() > 1) {
+            for (WrappedQueryBuilder nestedBuilder : nestedList) {
+               if (nestedPathsMatch) {
                   // if the paths are the same, wrap the queries in a bool filter and then nest
                   nestedBoolBuilder.filter(nestedBuilder.getBuilder());
                }
-               else
-               {
+               else {
                   // otherwise, create a nest for each builder, then add to a bool filter
                   qb = QueryBuilders.nestedQuery(nestedBuilder.getNestedPath(), nestedBuilder.getBuilder(), ScoreMode.Avg);
                   nestedBoolBuilder.filter(qb);
                }
             }
 
-            if (nestedPathsMatch)
-            {
+            if (nestedPathsMatch) {
                qb = QueryBuilders.nestedQuery(nestedPath, nestedBoolBuilder, ScoreMode.Avg);
                nestedPath = getNestedBaseIfExists(nestedPath);
             }
-            else
-            {
+            else {
                qb = nestedBoolBuilder;
                nestedPath = null;
             }
          }
-         else
-         {
+         else {
             // found an only child
             WrappedQueryBuilder wrappedBuilder = nestedList.get(0);
             qb = QueryBuilders.nestedQuery(nestedPath, wrappedBuilder.getBuilder(), ScoreMode.Avg);
@@ -509,8 +453,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
       }
 
-      if (boolBuilder != null)
-      {
+      if (boolBuilder != null) {
          if (qb == null)
             qb = boolBuilder;
          else
@@ -520,12 +463,10 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
       return new WrappedQueryBuilder(qb, term, nestedPath);
    }
 
-   private String getNestedBaseIfExists(String possibleNestedField)
-   {
+   private String getNestedBaseIfExists(String possibleNestedField) {
       String base = null;
       int lastPeriodIndex = possibleNestedField.lastIndexOf(".");
-      if (lastPeriodIndex > 0 && lastPeriodIndex < possibleNestedField.length())
-      {
+      if (lastPeriodIndex > 0 && lastPeriodIndex < possibleNestedField.length()) {
          base = possibleNestedField.substring(0, lastPeriodIndex);
       }
       return base;

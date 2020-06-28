@@ -33,8 +33,8 @@ import io.inversion.Results;
  * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
  *
  */
-public class Query<T extends Query, D extends Db, S extends Select, F extends From, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T>
-{
+public class Query<T extends Query, D extends Db, S extends Select, F extends From, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T> {
+
    protected D              db         = null;
    protected Collection     collection = null;
 
@@ -53,79 +53,65 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
    //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
    //------------------------------------------------------------------
    //------------------------------------------------------------------
-   protected RqlParser createParser()
-   {
+   protected RqlParser createParser() {
       return new RqlParser();
    }
 
-   protected S createSelect()
-   {
+   protected S createSelect() {
       return (S) new Select(this);
    }
 
-   protected F createFrom()
-   {
+   protected F createFrom() {
       return (F) new From(this);
    }
 
-   protected W createWhere()
-   {
+   protected W createWhere() {
       return (W) new Where(this);
    }
 
-   protected R createGroup()
-   {
+   protected R createGroup() {
       return (R) new Group(this);
    }
 
-   protected O createOrder()
-   {
+   protected O createOrder() {
       return (O) new Order(this);
    }
 
-   protected G createPage()
-   {
+   protected G createPage() {
       return (G) new Page(this);
    }
 
-   public T withTerm(Term term)
-   {
+   public T withTerm(Term term) {
       return super.withTerm(term);
    }
 
-   public Results doSelect() throws ApiException
-   {
+   public Results doSelect() throws ApiException {
       return null;
    }
 
    //------------------------------------------------------------------
    //------------------------------------------------------------------
 
-   public Query()
-   {
-      
+   public Query() {
+
    }
 
-   public Query(D db, Collection coll)
-   {
+   public Query(D db, Collection coll) {
       this(db, coll, null);
    }
 
-   public Query(D db, Collection coll, Object terms, String... functions)
-   {
+   public Query(D db, Collection coll, Object terms, String... functions) {
       super(null);
       withDb(db);
       withCollection(coll);
       withFunctions(functions);
-      
+
       if (terms != null)
          withTerms(terms);
    }
 
-   public List<Builder> getBuilders()
-   {
-      if (builders == null)
-      {
+   public List<Builder> getBuilders() {
+      if (builders == null) {
          builders = new ArrayList();
 
          //order matters when multiple clauses can accept the same term 
@@ -140,95 +126,77 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
    }
 
    @Override
-   public RqlParser getParser()
-   {
+   public RqlParser getParser() {
       if (parser == null)
          parser = createParser();
 
       return parser;
    }
 
-   public S getSelect()
-   {
-      if (select == null)
-      {
+   public S getSelect() {
+      if (select == null) {
          select = createSelect();
          withBuilder(select);
       }
       return select;
    }
 
-   public F getFrom()
-   {
-      if (from == null)
-      {
+   public F getFrom() {
+      if (from == null) {
          from = createFrom();
          withBuilder(from);
       }
       return from;
    }
 
-   public W getWhere()
-   {
-      if (where == null)
-      {
+   public W getWhere() {
+      if (where == null) {
          where = createWhere();
          withBuilder(where);
       }
       return where;
    }
 
-   public R getGroup()
-   {
-      if (group == null)
-      {
+   public R getGroup() {
+      if (group == null) {
          group = createGroup();
          withBuilder(group);
       }
       return group;
    }
 
-   public O getOrder()
-   {
-      if (order == null)
-      {
+   public O getOrder() {
+      if (order == null) {
          order = createOrder();
          withBuilder(order);
       }
       return order;
    }
 
-   public G getPage()
-   {
-      if (page == null)
-      {
+   public G getPage() {
+      if (page == null) {
          page = createPage();
          withBuilder(page);
       }
       return page;
    }
 
-   public Collection getCollection()
-   {
+   public Collection getCollection() {
       return collection;
    }
 
-   public D getDb()
-   {
+   public D getDb() {
       return db;
    }
 
-   public T withDb(D db)
-   {
+   public T withDb(D db) {
       this.db = db;
       return r();
    }
 
-   public T withCollection(Collection coll)
-   {
+   public T withCollection(Collection coll) {
       this.collection = coll;
-      if (coll != null)
-      {
+      if (coll != null) {
          if (coll.getDb() != null)
             withDb((D) coll.getDb());
       }
@@ -236,43 +204,35 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
       return r();
    }
 
-   public int getNumValues()
-   {
+   public int getNumValues() {
       return values.size();
    }
 
-   protected T clearValues()
-   {
+   protected T clearValues() {
       values.clear();
       return r();
    }
 
-   protected T withColValue(String columnName, Object value)
-   {
+   protected T withColValue(String columnName, Object value) {
       Collection coll = this.collection;
       String shortName = columnName;
 
-      if (columnName != null)
-      {
-         if (columnName.indexOf(".") > -1)
-         {
+      if (columnName != null) {
+         if (columnName.indexOf(".") > -1) {
             String collectionName = columnName.substring(0, columnName.indexOf("."));
-            if (columnName.startsWith("~~relTbl_"))
-            {
+            if (columnName.startsWith("~~relTbl_")) {
                columnName = columnName.substring(columnName.indexOf("_") + 1);
                collectionName = collectionName.substring(collectionName.indexOf("_") + 1);
 
                Relationship rel = getCollection().getRelationship(collectionName);
-               if (rel != null)
-               {
+               if (rel != null) {
                   collectionName = rel.getRelated().getName();
                }
             }
             coll = coll.getDb().getCollectionByTableName(collectionName);
          }
 
-         if (coll != null)
-         {
+         if (coll != null) {
             shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
 
             Property col = coll.getProperty(shortName);
@@ -288,39 +248,33 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
       return r();
    }
 
-   public List<String> getColValueKeys()
-   {
+   public List<String> getColValueKeys() {
       List keys = new ArrayList();
       for (KeyValue kv : values)
          keys.add(kv.getKey());
       return keys;
    }
 
-   public List<Object> getColValues()
-   {
+   public List<Object> getColValues() {
       List keys = new ArrayList();
       for (KeyValue kv : values)
          keys.add(kv.getValue());
       return keys;
    }
 
-   public KeyValue<String, String> getColValue(int index)
-   {
+   public KeyValue<String, String> getColValue(int index) {
       return values.get(index);
    }
 
-   public List<KeyValue> getValues()
-   {
+   public List<KeyValue> getValues() {
       return values;
    }
 
-   public boolean isDryRun()
-   {
+   public boolean isDryRun() {
       return dryRun;
    }
 
-   public T withDryRun(boolean dryRun)
-   {
+   public T withDryRun(boolean dryRun) {
       this.dryRun = dryRun;
       return r();
    }

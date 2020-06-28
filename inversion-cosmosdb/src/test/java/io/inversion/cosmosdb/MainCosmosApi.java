@@ -24,54 +24,44 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.spring.InversionMain;
 
-public class MainCosmosApi
-{
-   public static void main(String[] args) throws Exception
-   {
+public class MainCosmosApi {
+
+   public static void main(String[] args) throws Exception {
       Engine e = CosmosDbFactory.buildEngine();
-      e.withEngineListener(new EngineListener()
-         {
+      e.withEngineListener(new EngineListener() {
 
-            @Override
-            public void beforeFinally(Request req, Response res)
-            {
-               if (Chain.getDepth() <= 1)
-               {
-                  res.dump();
-               }
+         @Override
+         public void beforeFinally(Request req, Response res) {
+            if (Chain.getDepth() <= 1) {
+               res.dump();
             }
+         }
 
-            @Override
-            public void onStartup(Api api)
-            {
-            }
+         @Override
+         public void onStartup(Api api) {
+         }
 
-            @Override
-            public void onShutdown(Api api)
-            {
-            }
+         @Override
+         public void onShutdown(Api api) {
+         }
 
-            @Override
-            public void afterRequest(Request req, Response res)
-            {
-            }
+         @Override
+         public void afterRequest(Request req, Response res) {
+         }
 
-            @Override
-            public void afterError(Request req, Response res)
-            {
-            }
+         @Override
+         public void afterError(Request req, Response res) {
+         }
 
-            @Override
-            public void onStartup(Engine engine)
-            {
-            }
+         @Override
+         public void onStartup(Engine engine) {
+         }
 
-            @Override
-            public void onShutdown(Engine engine)
-            {
-            }
+         @Override
+         public void onShutdown(Engine engine) {
+         }
 
-         });
+      });
 
       InversionMain.run(e);
    }

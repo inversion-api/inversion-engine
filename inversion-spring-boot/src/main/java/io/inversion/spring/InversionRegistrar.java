@@ -17,14 +17,13 @@ import io.inversion.Engine;
 /**
  *
  */
-public class InversionRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware
-{
+public class InversionRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware {
+
    Environment environment = null;
    BeanFactory beanFactory = null;
 
    @Override
-   public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry)
-   {
+   public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
       GenericBeanDefinition bean = new GenericBeanDefinition();
       bean.setBeanClass(Engine.class);
       bean.setAutowireMode(AUTOWIRE_CONSTRUCTOR);
@@ -35,14 +34,12 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
    }
 
    @Override
-   public void setEnvironment(Environment environment)
-   {
+   public void setEnvironment(Environment environment) {
       this.environment = environment;
    }
 
    @Override
-   public void setBeanFactory(BeanFactory beanFactory) throws BeansException
-   {
+   public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
       this.beanFactory = beanFactory;
    }
 }

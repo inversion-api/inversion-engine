@@ -39,8 +39,8 @@ import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
-public class CosmosDb extends Db<CosmosDb>
-{
+public class CosmosDb extends Db<CosmosDb> {
+
    protected String                   uri                        = null;
    protected String                   db                         = "";
    protected String                   key                        = null;
@@ -49,13 +49,11 @@ public class CosmosDb extends Db<CosmosDb>
 
    transient protected DocumentClient documentClient             = null;
 
-   public CosmosDb()
-   {
+   public CosmosDb() {
       this.withType("cosmosdb");
    }
 
-   public CosmosDb(String name)
-   {
+   public CosmosDb(String name) {
       this();
       withName(name);
    }
@@ -68,32 +66,26 @@ public class CosmosDb extends Db<CosmosDb>
     * @throws ApiException
     */
    @Override
-   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
-   {
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
       CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
       List keys = new ArrayList();
-      for (Map<String, Object> row : rows)
-      {
+      for (Map<String, Object> row : rows) {
          keys.add(upsertRow(table, row));
       }
       return keys;
    }
 
-   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException
-   {
-      try
-      {
+   public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException {
+      try {
          JSNode doc = new JSNode(columnMappedTermsRow);
 
          String id = doc.getString("id");
-         if (id == null)
-         {
+         if (id == null) {
             id = table.encodeResourceKey(columnMappedTermsRow);
             if (id == null)
                ApiException.throw400BadRequest("Your record does not contain the required key fields.");
@@ -102,11 +94,9 @@ public class CosmosDb extends Db<CosmosDb>
 
          //-- the only way to achieve a PATCH is to query for the document first.
          Results existing = doSelect(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
-         if (existing.size() == 1)
-         {
+         if (existing.size() == 1) {
             Map<String, Object> row = existing.getRow(0);
-            for (String key : row.keySet())
-            {
+            for (String key : row.keySet()) {
                if (!doc.containsKey(key))
                   doc.put(key, row.get(key));
             }
@@ -124,8 +114,7 @@ public class CosmosDb extends Db<CosmosDb>
          ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
 
          int statusCode = response.getStatusCode();
-         if (statusCode > 299)
-         {
+         if (statusCode > 299) {
             ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
          }
 
@@ -135,18 +124,15 @@ public class CosmosDb extends Db<CosmosDb>
 
          return id;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
-   {
-      for (Map<String, Object> row : indexValues)
-      {
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+      for (Map<String, Object> row : indexValues) {
          deleteRow(table, row);
       }
    }
@@ -163,8 +149,7 @@ public class CosmosDb extends Db<CosmosDb>
     * @param indexValues
     * @throws ApiException
     */
-   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException
-   {
+   protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException {
       Object id = table.encodeResourceKey(indexValues);
       Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());
       String documentUri = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
@@ -173,96 +158,77 @@ public class CosmosDb extends Db<CosmosDb>
       options.setPartitionKey(new PartitionKey(partitionKeyValue));
 
       ResourceResponse<Document> response = null;
-      try
-      {
+      try {
          Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
          response = getDocumentClient().deleteDocument(documentUri, options);
 
          int statusCode = response.getStatusCode();
-         if (statusCode >= 400)
-         {
+         if (statusCode >= 400) {
             ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
          }
       }
-      catch (DocumentClientException ex)
-      {
+      catch (DocumentClientException ex) {
          ex.printStackTrace();
          int statusCode = ex.getStatusCode();
-         if (statusCode == 404)
-         {
+         if (statusCode == 404) {
             //ignore attempts to delete things that don't exist
          }
-         else
-         {
+         else {
             ApiException.throw500InternalServerError(ex);
          }
       }
    }
 
-   protected String getCollectionUri(Collection table)
-   {
+   protected String getCollectionUri(Collection table) {
       String documentUri = "/dbs/" + db + "/colls/" + table.getTableName();
       return documentUri;
    }
 
-   public String getUri()
-   {
+   public String getUri() {
       return uri;
    }
 
-   public CosmosDb withUri(String uri)
-   {
+   public CosmosDb withUri(String uri) {
       this.uri = uri;
       return this;
    }
 
-   public String getDb()
-   {
+   public String getDb() {
       return db;
    }
 
-   public CosmosDb withDb(String db)
-   {
+   public CosmosDb withDb(String db) {
       this.db = db;
       return this;
    }
 
-   public String getKey()
-   {
+   public String getKey() {
       return key;
    }
 
-   public CosmosDb withKey(String key)
-   {
+   public CosmosDb withKey(String key) {
       this.key = key;
       return this;
    }
 
-   public boolean isAllowCrossPartitionQueries()
-   {
+   public boolean isAllowCrossPartitionQueries() {
       return allowCrossPartitionQueries;
    }
 
-   public CosmosDb withAllowCrossPartitionQueries(boolean allowCrossPartitionQueries)
-   {
+   public CosmosDb withAllowCrossPartitionQueries(boolean allowCrossPartitionQueries) {
       this.allowCrossPartitionQueries = allowCrossPartitionQueries;
       return this;
    }
 
-   public synchronized CosmosDb withDocumentClient(DocumentClient documentClient)
-   {
+   public synchronized CosmosDb withDocumentClient(DocumentClient documentClient) {
       this.documentClient = documentClient;
       return this;
    }
 
-   public DocumentClient getDocumentClient()
-   {
-      if (this.documentClient == null)
-      {
-         synchronized (this)
-         {
-            if (this.documentClient == null)
-            {
+   public DocumentClient getDocumentClient() {
+      if (this.documentClient == null) {
+         synchronized (this) {
+            if (this.documentClient == null) {
                this.documentClient = buildDocumentClient(uri, key);
             }
          }
@@ -271,10 +237,8 @@ public class CosmosDb extends Db<CosmosDb>
       return documentClient;
    }
 
-   public static DocumentClient buildDocumentClient(String uri, String key)
-   {
-      if (Utils.empty(uri) || Utils.empty(key))
-      {
+   public static DocumentClient buildDocumentClient(String uri, String key) {
+      if (Utils.empty(uri) || Utils.empty(key)) {
          String error = "";
          error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
          error += "If this is a development environment, you should probably add these key/value pairs to a '.env' properties file in your working directory. ";

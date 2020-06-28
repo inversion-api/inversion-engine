@@ -31,17 +31,16 @@ import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
 import io.inversion.utils.Rows.Row;
 
-public class DbDeleteAction extends Action<DbDeleteAction>
-{
+public class DbDeleteAction extends Action<DbDeleteAction> {
+
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
+   public void run(Request req, Response res) throws ApiException {
       String resourceKey = req.getResourceKey();
       String relationshipKey = req.getRelationshipKey();
-      
+
       if (Utils.empty(resourceKey))
          ApiException.throw400BadRequest("An resource key must be included in the url path for a DELETE request.");
-      
+
       if (!Utils.empty(relationshipKey))
          ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");
 
@@ -56,14 +55,12 @@ public class DbDeleteAction extends Action<DbDeleteAction>
          res.withStatus(Status.SC_204_NO_CONTENT);
    }
 
-   protected int delete(Engine engine, Collection collection, String url) throws ApiException
-   {
+   protected int delete(Engine engine, Collection collection, String url) throws ApiException {
       int deleted = 0;
 
       Set alreadyDeleted = new HashSet();
 
-      for (int i = 0; i < 1000; i++)
-      {
+      for (int i = 0; i < 1000; i++) {
          //-- regardless of the query string passed in, this should resolve the keys 
          //-- that need to be deleted and make sure the uses has read access to the key
          Response res = engine.get(url).assertStatus(200, 404);
@@ -73,8 +70,7 @@ public class DbDeleteAction extends Action<DbDeleteAction>
 
          Rows rows = new Rows();
 
-         for (JSNode node : res.getData().asNodeList())
-         {
+         for (JSNode node : res.getData().asNodeList()) {
             String href = node.getString("href");
 
             if (alreadyDeleted.contains(href))

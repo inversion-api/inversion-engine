@@ -30,34 +30,29 @@ package io.inversion.rql;
  * @param <T>
  * @param <P>
  */
-public class Page<T extends Page, P extends Query> extends Builder<T, P>
-{
+public class Page<T extends Page, P extends Query> extends Builder<T, P> {
+
    public static final int DEFAULT_LIMIT = 100;
 
-   public Page(P query)
-   {
+   public Page(P query) {
       super(query);
       withFunctions("offset", "limit", "page", "pageNum", "pageSize", "after");
    }
 
-   public int getOffset()
-   {
+   public int getOffset() {
       int offset = findInt("offset", 0, -1);
 
       if (offset < 0)
          offset = findInt("limit", 1, -1);
 
-      if (offset < 0)
-      {
+      if (offset < 0) {
          int limit = getLimit();
-         if (limit > 0)
-         {
+         if (limit > 0) {
             int page = findInt("page", 0, -1);
             if (page < 0)
                page = findInt("pageNum", 0, -1);
 
-            if (page >= 0)
-            {
+            if (page >= 0) {
                offset = Math.max(0, (page - 1)) * limit;
             }
          }
@@ -69,13 +64,11 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
       return offset;
    }
 
-   public Term getAfter()
-   {
+   public Term getAfter() {
       return find("after");
    }
 
-   public int getLimit()
-   {
+   public int getLimit() {
       int limit = findInt("limit", 0, -1);
 
       if (limit < 0)
@@ -93,28 +86,23 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P>
       return limit;
    }
 
-   public int getPageSize()
-   {
+   public int getPageSize() {
       return getLimit();
    }
 
-   public int getPage()
-   {
+   public int getPage() {
       int page = -1;
       int offset = getOffset();
-      if (offset > -1)
-      {
+      if (offset > -1) {
          int limit = getLimit();
-         if (limit > -1)
-         {
+         if (limit > -1) {
             page = (offset / limit) + 1;
          }
       }
       return page < 1 ? 1 : page;
    }
 
-   public int getPageNum()
-   {
+   public int getPageNum() {
       return getPage();
    }
 

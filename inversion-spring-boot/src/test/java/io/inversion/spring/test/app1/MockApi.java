@@ -24,19 +24,17 @@ import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
 
 @Configuration
-public class MockApi
-{
+public class MockApi {
+
    @Bean
-   public static Api buildMockApi1()
-   {
+   public static Api buildMockApi1() {
       return new Api()//
                       .withName("secondApi")//
                       .withEndpoint("GET", "*", new MockAction().withJson(new JSNode("hello_world", "from mock api one")));
    }
 
    @Bean
-   public static Api buildMockApi2()
-   {
+   public static Api buildMockApi2() {
       return new Api()//
                       .withName("thirdApi")//
                       .withEndpoint("GET", "*", new MockAction().withJson(new JSNode("hello_world", "from mock api two")));

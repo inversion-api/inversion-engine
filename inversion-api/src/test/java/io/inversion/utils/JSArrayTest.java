@@ -27,11 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 
  *
  */
-public class JSArrayTest
-{
+public class JSArrayTest {
+
    @Test
-   public void testIsEmpty()
-   {
+   public void testIsEmpty() {
       assertTrue(new JSArray().isEmpty());
       assertFalse(new JSArray("a", "b").isEmpty());
 
@@ -41,8 +40,7 @@ public class JSArrayTest
    }
 
    @Test
-   public void testClearAndIsEmpty()
-   {
+   public void testClearAndIsEmpty() {
       JSArray a = new JSArray();
       a.add("1");
       a.clear();

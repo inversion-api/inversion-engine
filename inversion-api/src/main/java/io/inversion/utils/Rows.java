@@ -42,8 +42,8 @@ import io.inversion.utils.Rows.Row;
  * <p>  
  * A instance of the <code>RowKeys</code>, which maintains a Map from case insensitive string keys their index position in each Row's list, is shared by all Row instances.
  */
-public class Rows extends ArrayList<Row>
-{
+public class Rows extends ArrayList<Row> {
+
    /**
     * A case insensitive map from column name to column index 
     */
@@ -57,8 +57,7 @@ public class Rows extends ArrayList<Row>
    /**
     * Creates an empty Rows with no keys/columns.
     */
-   public Rows()
-   {
+   public Rows() {
       this.keys = new RowKeys();
    }
 
@@ -66,8 +65,7 @@ public class Rows extends ArrayList<Row>
     * Creates a Rows with a single Row with keys/columns equal to <code>row.getKeySet()</code>
     * @param row
     */
-   public Rows(Map row)
-   {
+   public Rows(Map row) {
       addRow(row);
    }
 
@@ -75,8 +73,7 @@ public class Rows extends ArrayList<Row>
     * Creates a Rows with keys/columns equal to <code>keys</code>
     * @param keys
     */
-   public Rows(String[] keys)
-   {
+   public Rows(String[] keys) {
       this.keys = new RowKeys(Arrays.asList(keys));
    }
 
@@ -84,24 +81,21 @@ public class Rows extends ArrayList<Row>
     * Creates a Rows with keys/columns equal to <code>keys</code>
     * @param keys
     */
-   public Rows(List<String> keys)
-   {
+   public Rows(List<String> keys) {
       this.keys = new RowKeys(keys);
    }
 
    /**
     * @return the ordered key/column names
     */
-   public List<String> keyList()
-   {
+   public List<String> keyList() {
       return new ArrayList(keys.keys);
    }
 
    /**
     * @return key/column names as a set that preserves iteration order  
     */
-   public Set<String> keySet()
-   {
+   public Set<String> keySet() {
       return keys.keySet();
    }
 
@@ -111,8 +105,7 @@ public class Rows extends ArrayList<Row>
     * @param key  the new key to add
     * @return the integer index of key/column which will be <code>keys.size() -1</code> if the key is new or the existing index if a case insensitive match of <code>key</code> already exited
     */
-   public int addKey(String key)
-   {
+   public int addKey(String key) {
       return keys.addKey(key);
    }
 
@@ -121,8 +114,7 @@ public class Rows extends ArrayList<Row>
     * 
     * @return
     */
-   public Row addRow()
-   {
+   public Row addRow() {
       lastRow = new Row(keys);
       super.add(lastRow);
       return lastRow;
@@ -135,8 +127,7 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Map)}
     */
-   public Row addRow(Map map)
-   {
+   public Row addRow(Map map) {
       return addRow(-1, map);
    }
 
@@ -152,16 +143,13 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Object[])
     */
-   public Row addRow(int index, Map map)
-   {
-      if (keys == null || keys.size() == 0)
-      {
+   public Row addRow(int index, Map map) {
+      if (keys == null || keys.size() == 0) {
          keys = new RowKeys(new ArrayList(map.keySet()));
       }
 
       ArrayList arr = new ArrayList(keys.keys.size());
-      for (int i = 0; i < keys.keys.size(); i++)
-      {
+      for (int i = 0; i < keys.keys.size(); i++) {
          Object value = map.get(keys.keys.get(i));
          arr.add(value);
       }
@@ -176,8 +164,7 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Object[])}
     */
-   public Row addRow(List values)
-   {
+   public Row addRow(List values) {
       return addRow(-1, values.toArray());
    }
 
@@ -189,8 +176,7 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Object[])}
     */
-   public Row addRow(int index, List values)
-   {
+   public Row addRow(int index, List values) {
       return addRow(index, values.toArray());
    }
 
@@ -201,8 +187,7 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Object[])}
     */
-   public Row addRow(Object[] values)
-   {
+   public Row addRow(Object[] values) {
       return addRow(-1, values);
    }
 
@@ -216,8 +201,7 @@ public class Rows extends ArrayList<Row>
     * @return the new Row
     * @see {@link #addRow(int, Object[])}
     */
-   public Row addRow(int index, Object[] values)
-   {
+   public Row addRow(int index, Object[] values) {
       lastRow = new Row(keys, values);
       if (index > -1)
          super.add(index, lastRow);
@@ -236,8 +220,7 @@ public class Rows extends ArrayList<Row>
     * @param key
     * @param value
     */
-   public void put(String key, Object value)
-   {
+   public void put(String key, Object value) {
       lastRow.put(key, value);
    }
 
@@ -246,8 +229,7 @@ public class Rows extends ArrayList<Row>
     * 
     * @param value
     */
-   public void put(Object value)
-   {
+   public void put(Object value) {
       lastRow.add(value);
    }
 
@@ -261,8 +243,7 @@ public class Rows extends ArrayList<Row>
     * @see {@link #addRow(Map)}
     */
    @Override
-   public boolean add(Row row)
-   {
+   public boolean add(Row row) {
       addRow(row);
       return true;
    }
@@ -271,10 +252,8 @@ public class Rows extends ArrayList<Row>
     * Calls {@code #addRow(Map)} for each Row in <code>rows</code>
     */
    @Override
-   public boolean addAll(Collection<? extends Row> rows)
-   {
-      for (Row row : rows)
-      {
+   public boolean addAll(Collection<? extends Row> rows) {
+      for (Row row : rows) {
          addRow(row);
       }
       return true;
@@ -284,10 +263,8 @@ public class Rows extends ArrayList<Row>
     * Calls {@code #addRow(int, Map)} for each Row in <code>rows</code>
     */
    @Override
-   public boolean addAll(int index, Collection<? extends Row> rows)
-   {
-      for (Row row : rows)
-      {
+   public boolean addAll(int index, Collection<? extends Row> rows) {
+      for (Row row : rows) {
          addRow(index, row);
       }
       return true;
@@ -298,8 +275,8 @@ public class Rows extends ArrayList<Row>
     * <p>
     * It is not possible to implement both List and Map but that is the practical purpose of this class.
     */
-   public static class Row implements Map<String, Object>
-   {
+   public static class Row implements Map<String, Object> {
+
       /**
        * The shared keys/column names
        * <p>
@@ -314,20 +291,17 @@ public class Rows extends ArrayList<Row>
 
       boolean      cloned = false;
 
-      public Row()
-      {
+      public Row() {
          this.keys = new RowKeys();
          this.values = new ArrayList();
       }
 
-      Row(RowKeys keys)
-      {
+      Row(RowKeys keys) {
          this.keys = keys;
          this.values = new ArrayList(keys.size());
       }
 
-      Row(RowKeys keys, Object[] values)
-      {
+      Row(RowKeys keys, Object[] values) {
          this.keys = keys;
          this.values = new ArrayList(Arrays.asList(values));
       }
@@ -336,8 +310,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the key/column name for the given index
        */
-      public String getKey(int index)
-      {
+      public String getKey(int index) {
          return keys.getKey(index);
       }
 
@@ -345,8 +318,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the value at <code>index</code> stringified if it exists
        */
-      public String getString(int index)
-      {
+      public String getString(int index) {
          Object value = get(index);
          if (value != null)
             return value.toString();
@@ -357,8 +329,7 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value for <code>key</code> stringified if it exists
        */
-      public String getString(String key)
-      {
+      public String getString(String key) {
          Object value = get(key);
          if (value != null)
             return value.toString();
@@ -369,8 +340,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the value at <code>index</code> stringified and parsed as an int if it exists
        */
-      public int getInt(int index)
-      {
+      public int getInt(int index) {
          Object value = get(index);
          if (value != null)
             return Integer.parseInt(value.toString());
@@ -381,8 +351,7 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value for <code>key</code> stringified and parsed as an int if it exists
        */
-      public int getInt(String key)
-      {
+      public int getInt(String key) {
          Object value = get(key);
          if (value != null)
             return Integer.parseInt(value.toString());
@@ -393,8 +362,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the value at <code>index</code> stringified and parsed as a long if it exists
        */
-      public long getLong(int index)
-      {
+      public long getLong(int index) {
          Object value = get(index);
          if (value != null)
             return Long.parseLong(value.toString());
@@ -405,8 +373,7 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value for <code>key</code> stringified and parsed as a long if it exists
        */
-      public long getLong(String key)
-      {
+      public long getLong(String key) {
          Object value = get(key);
          if (value != null)
             return Long.parseLong(value.toString());
@@ -417,8 +384,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the value at <code>index</code> stringified and parsed as a float if it exists
        */
-      public float getFloat(int index)
-      {
+      public float getFloat(int index) {
          Object value = get(index);
          if (value != null)
             return Float.parseFloat(value.toString());
@@ -429,8 +395,7 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value for <code>key</code> stringified and parsed as a float if it exists
        */
-      public float getFloat(String key)
-      {
+      public float getFloat(String key) {
          Object value = get(key);
          if (value != null)
             return Float.parseFloat(value.toString());
@@ -441,8 +406,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the value at <code>index</code> stringified and parsed as a boolean if it exists
        */
-      public boolean getBoolean(int index)
-      {
+      public boolean getBoolean(int index) {
          Object value = get(index);
          if (value != null)
             return value.toString().toLowerCase().startsWith("t") || value.toString().equals("1");
@@ -453,19 +417,16 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value for <code>key</code> stringified and parsed as a boolean if it exists
        */
-      public boolean getBoolean(String key)
-      {
+      public boolean getBoolean(String key) {
          Object value = get(key);
          if (value != null)
             return value.toString().toLowerCase().startsWith("t") || value.toString().equals("1");
          return false;
       }
 
-      public String toString()
-      {
+      public String toString() {
          StringBuffer buff = new StringBuffer("{");
-         for (int i = 0; i < keys.size(); i++)
-         {
+         for (int i = 0; i < keys.size(); i++) {
             buff.append(keys.getKey(i)).append("=").append(values.get(i));
             if (i < keys.size() - 1)
                buff.append(", ");
@@ -475,33 +436,27 @@ public class Rows extends ArrayList<Row>
       }
 
       @Override
-      public int size()
-      {
+      public int size() {
          return values.size();
       }
 
       @Override
-      public boolean isEmpty()
-      {
+      public boolean isEmpty() {
          return size() == 0;
       }
 
       @Override
-      public boolean containsKey(Object key)
-      {
+      public boolean containsKey(Object key) {
          return indexOf((String) key) >= 0;
       }
 
-      public int indexOf(String key)
-      {
+      public int indexOf(String key) {
          return keys.indexOf(key);
       }
 
       @Override
-      public boolean containsValue(Object value)
-      {
-         for (Object v : values)
-         {
+      public boolean containsValue(Object value) {
+         for (Object v : values) {
             if (v == null && value == null)
                return true;
 
@@ -517,16 +472,13 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the value at the index associate with <code>key</code> if it exists, otherwise null.       
        */
-      public Object get(String key)
-      {
-         try
-         {
+      public Object get(String key) {
+         try {
             int idx = indexOf(key);
             if (idx >= 0)
                return values.get(idx);
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
          }
          return null;
       }
@@ -536,8 +488,7 @@ public class Rows extends ArrayList<Row>
        * @return the value at <code>index</code>
        * @throws ArrayIndexOutOfBoundsException
        */
-      public Object get(int index) throws ArrayIndexOutOfBoundsException
-      {
+      public Object get(int index) throws ArrayIndexOutOfBoundsException {
          return values.get(index);
       }
 
@@ -546,8 +497,7 @@ public class Rows extends ArrayList<Row>
        * @return the value at keyOrIndex as an Integer index or the value for keyOrIndex as a String key 
        */
       @Override
-      public Object get(Object keyOrIndex)
-      {
+      public Object get(Object keyOrIndex) {
          if (keyOrIndex == null)
             return null;
 
@@ -568,8 +518,7 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @param value
        */
-      public void set(int index, Object value)
-      {
+      public void set(int index, Object value) {
          values.set(index, value);
       }
 
@@ -577,8 +526,7 @@ public class Rows extends ArrayList<Row>
        * Adds <code>value</code> as the last column
        * @param value
        */
-      public void add(Object value)
-      {
+      public void add(Object value) {
          values.add(value);
       }
 
@@ -591,18 +539,15 @@ public class Rows extends ArrayList<Row>
        * @param value
        */
       @Override
-      public Object put(String key, Object value)
-      {
+      public Object put(String key, Object value) {
          int idx = keys.indexOf(key);
-         if (idx >= 0)
-         {
+         if (idx >= 0) {
             while (idx > values.size() - 1)
                values.add(null);
 
             return values.set(idx, value);
          }
-         else
-         {
+         else {
             keys.addKey(key);
             values.add(value);
             return value;
@@ -620,13 +565,10 @@ public class Rows extends ArrayList<Row>
        * @param keyOrIndex  the String key or an Integer index to remove.
        */
       @Override
-      public Object remove(Object key)
-      {
+      public Object remove(Object key) {
          int idx = keys.indexOf((String) key);
-         if (idx >= 0)
-         {
-            if (!cloned)
-            {
+         if (idx >= 0) {
+            if (!cloned) {
                //copy on write
                cloned = true;
                keys = keys.clone();
@@ -656,8 +598,7 @@ public class Rows extends ArrayList<Row>
       //      }
 
       @Override
-      public void putAll(Map<? extends String, ? extends Object> m)
-      {
+      public void putAll(Map<? extends String, ? extends Object> m) {
          for (String key : m.keySet())
             put(key, m.get(key));
 
@@ -667,10 +608,8 @@ public class Rows extends ArrayList<Row>
        * Sets all values to null, but does not modify RowKeys or change the length of <code>values</code>.
        */
       @Override
-      public void clear()
-      {
-         for (int i = 0; i < values.size(); i++)
-         {
+      public void clear() {
+         for (int i = 0; i < values.size(); i++) {
             values.set(i, null);
          }
       }
@@ -680,19 +619,16 @@ public class Rows extends ArrayList<Row>
        * @see io.inversion.utils.Rows.RowKeys.keySet()
        */
       @Override
-      public Set<String> keySet()
-      {
+      public Set<String> keySet() {
          return keys.keySet();
       }
 
       @Override
-      public Collection<Object> values()
-      {
+      public Collection<Object> values() {
          return Collections.unmodifiableList(values);
       }
 
-      public List<Object> asList()
-      {
+      public List<Object> asList() {
          return Collections.unmodifiableList(values);
       }
 
@@ -700,8 +636,7 @@ public class Rows extends ArrayList<Row>
        * Constructs a new LinkedHashSet of key/value pairs preserving column iteration order.
        */
       @Override
-      public Set<Entry<String, Object>> entrySet()
-      {
+      public Set<Entry<String, Object>> entrySet() {
          LinkedHashSet<Entry<String, Object>> entries = new LinkedHashSet();
          for (int i = 0; i < keys.size(); i++)
             entries.add(new E(keys.getKey(i), values.get(i)));
@@ -709,35 +644,30 @@ public class Rows extends ArrayList<Row>
          return entries;
       }
 
-      class E implements Entry<String, Object>
-      {
+      class E implements Entry<String, Object> {
+
          String key   = null;
          Object value = null;
 
-         public E(String key, Object value)
-         {
+         public E(String key, Object value) {
             super();
             this.key = key;
             this.value = value;
          }
 
-         public String getKey()
-         {
+         public String getKey() {
             return key;
          }
 
-         public void setKey(String key)
-         {
+         public void setKey(String key) {
             this.key = key;
          }
 
-         public Object getValue()
-         {
+         public Object getValue() {
             return value;
          }
 
-         public Object setValue(Object value)
-         {
+         public Object setValue(Object value) {
             Object v = this.value;
             this.value = value;
             return v;
@@ -751,8 +681,8 @@ public class Rows extends ArrayList<Row>
     * <p>
     * This allows you to map keys/column names to List indexes on each Row.
     */
-   protected static class RowKeys
-   {
+   protected static class RowKeys {
+
       /** 
        * The ordered list of keys aka "column names" for this Rows object.
        * <p>
@@ -770,25 +700,21 @@ public class Rows extends ArrayList<Row>
        */
       Set<String>          cachedKeySet = null;
 
-      RowKeys()
-      {
+      RowKeys() {
       }
 
-      RowKeys(List<String> keys)
-      {
+      RowKeys(List<String> keys) {
          setKeys(keys);
       }
 
-      public RowKeys clone()
-      {
+      public RowKeys clone() {
          RowKeys clone = new RowKeys();
          clone.keys = new LinkedList(keys);
          clone.lc = new HashMap(lc);
          return clone;
       }
 
-      int addKey(String key)
-      {
+      int addKey(String key) {
          cachedKeySet = null;
 
          if (key == null)
@@ -806,14 +732,12 @@ public class Rows extends ArrayList<Row>
          return this.keys.size() - 1;
       }
 
-      int removeKey(String key)
-      {
+      int removeKey(String key) {
          cachedKeySet = null;
 
          key = key.toLowerCase();
          Integer idx = lc.get(key);
-         if (idx != null)
-         {
+         if (idx != null) {
             for (int i = idx; i < keys.size(); i++)
                lc.remove(keys.get(i).toLowerCase());
 
@@ -827,15 +751,13 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
-      void setKeys(List<String> keys)
-      {
+      void setKeys(List<String> keys) {
          cachedKeySet = null;
 
          this.keys.clear();
          this.lc.clear();
 
-         for (String key : keys)
-         {
+         for (String key : keys) {
             addKey(key);
          }
       }
@@ -844,8 +766,7 @@ public class Rows extends ArrayList<Row>
        * @param key
        * @return the case insensitive index of <code>key</code> in <code>keys</code> if it exists or -1
        */
-      int indexOf(String key)
-      {
+      int indexOf(String key) {
          if (key == null)
             return -1;
 
@@ -856,8 +777,7 @@ public class Rows extends ArrayList<Row>
          return -1;
       }
 
-      int size()
-      {
+      int size() {
          return keys.size();
       }
 
@@ -865,16 +785,14 @@ public class Rows extends ArrayList<Row>
        * @param index
        * @return the origional case string key for column <code>index</code>
        */
-      String getKey(int index)
-      {
+      String getKey(int index) {
          return keys.get(index);
       }
 
       /**
        * @return a cached/reusable iteration order preserving set of original case key/column names
        */
-      Set<String> keySet()
-      {
+      Set<String> keySet() {
          if (cachedKeySet == null)
             cachedKeySet = new LinkedHashSet(this.keys);
 

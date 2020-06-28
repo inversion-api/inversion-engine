@@ -26,11 +26,10 @@ import org.junit.jupiter.api.Test;
 
 import io.inversion.utils.Utils;
 
-public class TestSqlTokenizer
-{
+public class TestSqlTokenizer {
+
    @Test
-   public void testTokens() throws Exception
-   {
+   public void testTokens() throws Exception {
       String[][] tests = new String[][]{//
             {//
                   "SELECT * FROM (SELECT *, 'Threatened' as 'Victim' FROM Entry WHERE threatened = true UNION SELECT *, 'Tortured' as 'Victim' FROM Entry WHERE tortured = true  UNION SELECT *, 'Taken Captive' as 'Victim' FROM Entry WHERE captive = true )as t", //
@@ -38,8 +37,7 @@ public class TestSqlTokenizer
             }//
       };
 
-      for (String[] test : tests)
-      {
+      for (String[] test : tests) {
          String input = test[0];
          List<String> expected = Arrays.asList(test[1].split("\\|"));
 
@@ -47,8 +45,7 @@ public class TestSqlTokenizer
          List<String> actual = new ArrayList();
          SqlTokenizer tok = new SqlTokenizer(input);
 
-         while ((next = tok.next()) != null)
-         {
+         while ((next = tok.next()) != null) {
             //System.out.println(next);
             actual.add(next);
          }
@@ -59,8 +56,7 @@ public class TestSqlTokenizer
    }
 
    @Test
-   public void testClauses() throws Exception
-   {
+   public void testClauses() throws Exception {
       String[][] tests = new String[][]{//
             {//
                   "select * from `order details` where \"id\" in (select * from some other table) and    x >= 500", //
@@ -72,8 +68,7 @@ public class TestSqlTokenizer
             }//
       };
 
-      for (String[] test : tests)
-      {
+      for (String[] test : tests) {
          String input = test[0];
          List<String> expected = Arrays.asList(test[1].split("\\|"));
 
@@ -81,8 +76,7 @@ public class TestSqlTokenizer
          List<String> actual = new ArrayList();
          SqlTokenizer tok = new SqlTokenizer(input);
 
-         while ((next = tok.nextClause()) != null)
-         {
+         while ((next = tok.nextClause()) != null) {
             actual.add(next);
          }
 

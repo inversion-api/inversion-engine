@@ -43,40 +43,33 @@ import io.inversion.utils.Utils;
  *
  *
  */
-public class AclAction extends Action<AclAction>
-{
+public class AclAction extends Action<AclAction> {
+
    protected List<AclRule> aclRules = new ArrayList();
 
-   public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN)
-   {
+   public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN) {
       withAclRules(AclRule.requireAllPerms(httpMethods, includePaths, permission1, permissionsN));
       return this;
    }
 
-   public AclAction orRequireOnePerm(String httpMethods, String includePaths, String permission1, String... permissionsN)
-   {
+   public AclAction orRequireOnePerm(String httpMethods, String includePaths, String permission1, String... permissionsN) {
       withAclRules(AclRule.requireOnePerm(httpMethods, includePaths, permission1, permissionsN));
       return this;
    }
 
-   public AclAction orRequireAllRoles(String httpMethods, String includePaths, String role1, String... rolesN)
-   {
+   public AclAction orRequireAllRoles(String httpMethods, String includePaths, String role1, String... rolesN) {
       withAclRules(AclRule.requireAllRoles(httpMethods, includePaths, role1, rolesN));
       return this;
    }
 
-   public AclAction orRequireOneRole(String httpMethods, String includePaths, String role1, String... rolesN)
-   {
+   public AclAction orRequireOneRole(String httpMethods, String includePaths, String role1, String... rolesN) {
       withAclRules(AclRule.requireOneRole(httpMethods, includePaths, role1, rolesN));
       return this;
    }
 
-   public AclAction withAclRules(AclRule... acls)
-   {
-      for (AclRule acl : acls)
-      {
-         if (!aclRules.contains(acl))
-         {
+   public AclAction withAclRules(AclRule... acls) {
+      for (AclRule acl : acls) {
+         if (!aclRules.contains(acl)) {
             aclRules.add(acl);
          }
       }
@@ -86,34 +79,27 @@ public class AclAction extends Action<AclAction>
    }
 
    @Override
-   public void run(Request req, Response resp) throws ApiException
-   {
+   public void run(Request req, Response resp) throws ApiException {
       List<AclRule> matched = new ArrayList<>();
       boolean allowed = false;
 
       log.debug("Request Path: " + req.getPath());
 
-      for (AclRule aclRule : aclRules)
-      {
-         if (aclRule.ruleMatches(req))
-         {
+      for (AclRule aclRule : aclRules) {
+         if (aclRule.ruleMatches(req)) {
             //log.debug("Matched AclAction: " + aclRule.getName());
-            if (!aclRule.isAllow())
-            {
+            if (!aclRule.isAllow()) {
                Chain.debug("AclAction: MATCH_DENY" + aclRule);
 
                allowed = false;
                break;
             }
-            else
-            {
-               if (!aclRule.isInfo() && aclRule.isAllow())
-               {
+            else {
+               if (!aclRule.isInfo() && aclRule.isAllow()) {
                   Chain.debug("AclAction: MATCH_ALLOW " + aclRule);
                   allowed = true;
                }
-               else
-               {
+               else {
                   Chain.debug("AclAction: MATCH_INFO " + aclRule);
                }
             }
@@ -122,8 +108,7 @@ public class AclAction extends Action<AclAction>
          }
       }
 
-      if (!allowed)
-      {
+      if (!allowed) {
          Chain.debug("AclAction: NO_MATCH_DENY");
          ApiException.throw403Forbidden();
       }

@@ -21,8 +21,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbDeleteActionsIntegTest
-{
+public class DynamoDbDeleteActionsIntegTest {
    //   @Test
    //   public void test1() throws Exception
    //   {

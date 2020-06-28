@@ -31,43 +31,36 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
-public class Chain
-{
+public class Chain {
+
    static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
 
-   public static void resetAll()
-   {
+   public static void resetAll() {
       chainLocal = new ThreadLocal();
    }
 
-   protected static Stack<Chain> get()
-   {
+   protected static Stack<Chain> get() {
       Stack stack = chainLocal.get();
-      if (stack == null)
-      {
+      if (stack == null) {
          stack = new Stack();
          chainLocal.set(stack);
       }
       return stack;
    }
 
-   public static int getDepth()
-   {
+   public static int getDepth() {
       return get().size();
    }
 
-   public static Chain first()
-   {
+   public static Chain first() {
       Stack<Chain> stack = get();
-      if (!stack.empty())
-      {
+      if (!stack.empty()) {
          return stack.get(0);
       }
       return null;
    }
 
-   public static Chain peek()
-   {
+   public static Chain peek() {
       Stack<Chain> stack = get();
       if (!stack.empty())
          return stack.peek();
@@ -75,8 +68,7 @@ public class Chain
 
    }
 
-   public static Chain push(Engine engine, Request req, Response res)
-   {
+   public static Chain push(Engine engine, Request req, Response res) {
       Chain child = new Chain(engine, req, res);
 
       Chain parent = peek();
@@ -89,18 +81,14 @@ public class Chain
       return child;
    }
 
-   public static Chain pop()
-   {
+   public static Chain pop() {
       return get().pop();
    }
 
-   public static User getUser()
-   {
+   public static User getUser() {
       Chain chain = peek();
-      if (chain != null)
-      {
-         do
-         {
+      if (chain != null) {
+         do {
             if (chain.user != null)
                return chain.user;
          }
@@ -109,16 +97,13 @@ public class Chain
       return null;
    }
 
-   public static int size()
-   {
+   public static int size() {
       return get().size();
    }
 
-   public static void debug(Object... msgs)
-   {
+   public static void debug(Object... msgs) {
       Stack<Chain> stack = get();
-      if (stack.size() < 1)
-      {
+      if (stack.size() < 1) {
          return;
       }
 
@@ -133,13 +118,11 @@ public class Chain
       root.response.debug(prefix, msgs);
    }
 
-   public static String buildLink(Collection collection)
-   {
+   public static String buildLink(Collection collection) {
       return buildLink(collection, null, null);
    }
 
-   public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey)
-   {
+   public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey) {
       Request req = peek().getRequest();
 
       String collectionKey = collection.getName();
@@ -162,26 +145,21 @@ public class Chain
 
          Path epp = req.getEndpointPath();
 
-         if (epp != null && epp.size() > 0)
-         {
+         if (epp != null && epp.size() > 0) {
             url += epp + "/";
          }
       }
-      else if (collection.getDb().getEndpointPath() != null)
-      {
+      else if (collection.getDb().getEndpointPath() != null) {
          Path epP = collection.getDb().getEndpointPath();
 
-         for (int i = 0; i < epP.size(); i++)
-         {
+         for (int i = 0; i < epP.size(); i++) {
             if (epP.isWildcard(i))
                break;
 
-            if (epP.isVar(i))
-            {
+            if (epP.isVar(i)) {
                String value = null;
                String name = epP.getVarName(i);
-               switch (name.toLowerCase())
-               {
+               switch (name.toLowerCase()) {
                   case "collection":
                      value = collection.getName();
                      break;
@@ -199,8 +177,7 @@ public class Chain
 
                url += epP.get(i) + "/";
             }
-            else
-            {
+            else {
                url += epP.get(i) + "/";
             }
          }
@@ -208,8 +185,7 @@ public class Chain
          url += collection.getDb().getEndpointPath() + "/";
       }
 
-      if (!Utils.empty(collectionKey))
-      {
+      if (!Utils.empty(collectionKey)) {
          if (!url.endsWith("/"))
             url += "/";
 
@@ -222,8 +198,7 @@ public class Chain
       if (!Utils.empty(subCollectionKey))
          url += "/" + subCollectionKey;
 
-      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-      {
+      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl())) {
          String newUrl = req.getApi().getUrl();
          while (newUrl.endsWith("/"))
             newUrl = newUrl.substring(0, newUrl.length() - 1);
@@ -231,13 +206,10 @@ public class Chain
          url = newUrl + url.substring(url.indexOf("/", 8));
       }
 
-      if (req.getApi() != null)
-      {
-         if (Utils.empty(req.getApi().getUrl()))
-         {
+      if (req.getApi() != null) {
+         if (Utils.empty(req.getApi().getUrl())) {
             String proto = req.getHeader("x-forwarded-proto");
-            if (!Utils.empty(proto))
-            {
+            if (!Utils.empty(proto)) {
                url = proto + url.substring(url.indexOf(':'), url.length());
             }
          }
@@ -300,36 +272,30 @@ public class Chain
 
    protected Chain              parent   = null;
 
-   private Chain(Engine engine, Request req, Response res)
-   {
+   private Chain(Engine engine, Request req, Response res) {
       this.engine = engine;
       this.request = req;
       this.response = res;
    }
 
-   public Chain withUser(User user)
-   {
+   public Chain withUser(User user) {
       this.user = user;
       return this;
    }
 
-   public Chain getParent()
-   {
+   public Chain getParent() {
       return parent;
    }
 
-   public void setParent(Chain parent)
-   {
+   public void setParent(Chain parent) {
       this.parent = parent;
    }
 
-   public void put(String key, Object value)
-   {
+   public void put(String key, Object value) {
       vars.put(key, value);
    }
 
-   public boolean isDebug()
-   {
+   public boolean isDebug() {
       if (parent != null)
          return parent.isDebug();
 
@@ -342,8 +308,7 @@ public class Chain
     * @param key
     * @return
     */
-   public Object get(String key)
-   {
+   public Object get(String key) {
       if (vars.containsKey(key))
          return vars.get(key);
 
@@ -364,8 +329,7 @@ public class Chain
       return null;
    }
 
-   public Object remove(Object key)
-   {
+   public Object remove(Object key) {
       if (vars.containsKey(key))
          return vars.remove(key);
 
@@ -384,36 +348,30 @@ public class Chain
     * @param key
     * @return
     */
-   public Set<String> mergeEndpointActionParamsConfig(String key)
-   {
+   public Set<String> mergeEndpointActionParamsConfig(String key) {
       List<String> values = new LinkedList();
 
       String value = request.getEndpoint().getConfig(key);
-      if (value != null)
-      {
+      if (value != null) {
          value = value.toLowerCase();
          values.addAll(Utils.explode(",", value));
       }
 
-      for (int i = next - 1; i >= 0; i--)
-      {
+      for (int i = next - 1; i >= 0; i--) {
          value = actions.get(i).action.getConfig(key);
-         if (value != null)
-         {
+         if (value != null) {
             value = value.toLowerCase();
             values.addAll(Utils.explode(",", value));
          }
       }
 
       value = request.getUrl().getParam(key);
-      if (value != null)
-      {
+      if (value != null) {
          value = value.toLowerCase();
          values.addAll(Utils.explode(",", value));
       }
 
-      for (int i = 0; i < values.size(); i++)
-      {
+      for (int i = 0; i < values.size(); i++) {
          value = values.get(i);
          value = Utils.dequote(value);
          values.set(i, value);
@@ -422,56 +380,45 @@ public class Chain
       return new LinkedHashSet(values);
    }
 
-   public Map<String, String> getConfig()
-   {
+   public Map<String, String> getConfig() {
       Map<String, String> config = new HashMap();
-      for (String key : getConfigKeys())
-      {
+      for (String key : getConfigKeys()) {
          config.put(key, getConfig(key));
       }
       return config;
    }
 
-   public Set<String> getConfigKeys()
-   {
+   public Set<String> getConfigKeys() {
       Set<String> keys = request.getEndpoint().getConfigKeys();
-      for (int i = next - 1; i >= 0; i--)
-      {
+      for (int i = next - 1; i >= 0; i--) {
          keys.addAll(actions.get(i).action.getConfigKeys());
       }
 
       return keys;
    }
 
-   public int getConfig(String key, int defaultValue)
-   {
+   public int getConfig(String key, int defaultValue) {
       return Integer.parseInt(getConfig(key, defaultValue + ""));
    }
 
-   public boolean getConfig(String key, boolean defaultValue)
-   {
+   public boolean getConfig(String key, boolean defaultValue) {
       return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
    }
 
-   public String getConfig(String key)
-   {
+   public String getConfig(String key) {
       return getConfig(key, (String) null);
    }
 
-   public String getConfig(String key, String defaultValue)
-   {
-      if (request == null)
-      {
+   public String getConfig(String key, String defaultValue) {
+      if (request == null) {
          System.out.println("The Request on the Chain is null, this should never happen");
       }
-      else if (request.getEndpoint() == null)
-      {
+      else if (request.getEndpoint() == null) {
          System.out.println("The Endpoint on the Request is null, this should never happen");
          System.out.println(" -- Chain stack starting with this chain and then every parent after");
 
          Chain tempChain = this;
-         while (tempChain != null)
-         {
+         while (tempChain != null) {
             System.out.println(" ----  " + tempChain + " ::: " + tempChain.getRequest() + " ::: " + tempChain.getRequest().getUrl());
             tempChain = tempChain.getParent();
          }
@@ -479,36 +426,29 @@ public class Chain
 
       String value = null;
 
-      for (int i = next - 1; i >= 0; i--)
-      {
+      for (int i = next - 1; i >= 0; i--) {
          value = actions.get(i).action.getConfig(key);
-         if (!Utils.empty(value))
-         {
+         if (!Utils.empty(value)) {
             return value;
          }
       }
 
       value = request.getEndpoint().getConfig(key);
-      if (!Utils.empty(value))
-      {
+      if (!Utils.empty(value)) {
          return value;
       }
 
       return defaultValue;
    }
 
-   public void go() throws ApiException
-   {
-      while (next())
-      {
+   public void go() throws ApiException {
+      while (next()) {
          ;
       }
    }
 
-   public boolean next() throws ApiException
-   {
-      if (!isCanceled() && next < actions.size())
-      {
+   public boolean next() throws ApiException {
+      if (!isCanceled() && next < actions.size()) {
          ActionMatch actionMatch = actions.get(next);
          next += 1;
 
@@ -523,71 +463,59 @@ public class Chain
       return false;
    }
 
-   public boolean isCanceled()
-   {
+   public boolean isCanceled() {
       return canceled;
    }
 
-   public void cancel()
-   {
+   public void cancel() {
       this.canceled = true;
    }
 
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return engine;
    }
 
-   public Api getApi()
-   {
+   public Api getApi() {
       return request.getApi();
    }
 
-   public Endpoint getEndpoint()
-   {
+   public Endpoint getEndpoint() {
       return request.getEndpoint();
    }
 
-   public List<ActionMatch> getActions()
-   {
+   public List<ActionMatch> getActions() {
       return new ArrayList(actions);
    }
 
-   public Chain withActions(List<ActionMatch> actions)
-   {
-      for (ActionMatch action : actions)
-      {
+   public Chain withActions(List<ActionMatch> actions) {
+      for (ActionMatch action : actions) {
          withAction(action);
       }
       return this;
    }
 
-   public Chain withAction(ActionMatch action)
-   {
+   public Chain withAction(ActionMatch action) {
       if (action != null && !actions.contains(action))
          actions.add(action);
 
       return this;
    }
 
-   public Request getRequest()
-   {
+   public Request getRequest() {
       return request;
    }
 
-   public Response getResponse()
-   {
+   public Response getResponse() {
       return response;
    }
 
-   static class ActionMatch implements Comparable<ActionMatch>
-   {
+   static class ActionMatch implements Comparable<ActionMatch> {
+
       Path   rule   = null;
       Path   path   = null;
       Action action = null;
 
-      public ActionMatch(Path rule, Path path, Action action)
-      {
+      public ActionMatch(Path rule, Path path, Action action) {
          super();
          this.rule = rule;
          this.path = path;
@@ -595,13 +523,11 @@ public class Chain
       }
 
       @Override
-      public int compareTo(ActionMatch o)
-      {
+      public int compareTo(ActionMatch o) {
          return action.compareTo(o.action);
       }
 
-      public String toString()
-      {
+      public String toString() {
          return rule + " " + path + " " + action;
       }
    }

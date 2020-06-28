@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest
-{
-   public PostgresDbPostActionIntegTest()
-   {
+public class PostgresDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest {
+
+   public PostgresDbPostActionIntegTest() {
       super("postgres");
    }
 }

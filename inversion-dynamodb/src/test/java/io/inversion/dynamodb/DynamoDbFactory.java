@@ -46,60 +46,53 @@ import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
-public class DynamoDbFactory
-{
-   public static void main(String[] args) throws Exception
-   {
+public class DynamoDbFactory {
+
+   public static void main(String[] args) throws Exception {
       buildNorthwindDynamoDb();
    }
 
-   protected static DynamoDb buildNorthwindDynamoDb() throws Exception
-   {
+   protected static DynamoDb buildNorthwindDynamoDb() throws Exception {
       rebuildNorthwind();
       return new NorthwindDynamoDb();
    }
 
-   public static class NorthwindDynamoDb extends DynamoDb implements Serializable
-   {
-      public NorthwindDynamoDb()
-      {
+   public static class NorthwindDynamoDb extends DynamoDb implements Serializable {
+
+      public NorthwindDynamoDb() {
          super("dynamo", "northwind");
       }
 
       @Override
-      public void configApi(Api api)
-      {
+      public void configApi(Api api) {
          Collection northwind = getCollectionByTableName("northwind");
          removeCollection(northwind);
-         
+
          Collection orders = northwind.copy().withName("orders");
          withCollection(orders);
-         
+
          orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id 
          orders.getPropertyByColumnName("sk").withJsonName("type");
 
          orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
          orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
          orders.getPropertyByColumnName("gs2hk").withJsonName("customerId");
-         
+
          orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
          orders.getPropertyByColumnName("ls2").withJsonName("shipName");
          orders.getPropertyByColumnName("ls3").withJsonName("requiredDate");
-         
+
          super.configApi(api);
       }
    }
 
-   protected static void rebuildNorthwind() throws Exception
-   {
-      try
-      {
+   protected static void rebuildNorthwind() throws Exception {
+      try {
          AmazonDynamoDB client = DynamoDb.buildDynamoClient("dynamo");
          DeleteTableRequest dtr = new DeleteTableRequest().withTableName("northwind");
          client.deleteTable(dtr);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ex.printStackTrace();
       }
 
@@ -137,13 +130,11 @@ public class DynamoDbFactory
       gsxs.add(new GlobalSecondaryIndex().withIndexName("gs2").withKeySchema(new KeySchemaElement().withAttributeName("gs2hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("ls3").withKeyType(KeyType.RANGE)));
       gsxs.add(new GlobalSecondaryIndex().withIndexName("gs3").withKeySchema(new KeySchemaElement().withAttributeName("sk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.RANGE)));
 
-      for (LocalSecondaryIndex lsx : lsxs)
-      {
+      for (LocalSecondaryIndex lsx : lsxs) {
          lsx.setProjection(new Projection().withProjectionType(ProjectionType.ALL));
       }
 
-      for (GlobalSecondaryIndex gsx : gsxs)
-      {
+      for (GlobalSecondaryIndex gsx : gsxs) {
          gsx.setProjection(new Projection().withProjectionType(ProjectionType.ALL));
          gsx.withProvisionedThroughput(new ProvisionedThroughput()//
                                                                   .withReadCapacityUnits(50L)//
@@ -164,12 +155,10 @@ public class DynamoDbFactory
 
       Table table = dynamoDB.createTable(request);
 
-      try
-      {
+      try {
          table.waitForActive();
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          table.waitForActive();
       }
 
@@ -190,8 +179,7 @@ public class DynamoDbFactory
       int total = 0;
       String start = "northwind/orders?pageSize=100&sort=orderid";
       String next = start;
-      do
-      {
+      do {
          JSArray toPost = new JSArray();
 
          res = h2Engine.get(next);
@@ -203,19 +191,16 @@ public class DynamoDbFactory
          next = res.next();
 
          //-- now post to DynamoDb
-         for (Object o : res.getData())
-         {
+         for (Object o : res.getData()) {
             total += 1;
             JSNode js = (JSNode) o;
 
             js.remove("href");
             js.put("type", "ORDER");
 
-            for (String key : js.keySet())
-            {
+            for (String key : js.keySet()) {
                String value = js.getString(key);
-               if (value != null && (value.startsWith("http://") || value.startsWith("https://")))
-               {
+               if (value != null && (value.startsWith("http://") || value.startsWith("https://"))) {
                   value = value.substring(value.lastIndexOf("/") + 1, value.length());
                   js.remove(key);
 

@@ -21,11 +21,10 @@ import org.junit.jupiter.api.Test;
 
 import io.inversion.utils.JSNode.JSONPathTokenizer;
 
-public class JSONPathTokenizerTest
-{
+public class JSONPathTokenizerTest {
+
    @Test
-   public void testJsonPathTokenizers1()
-   {
+   public void testJsonPathTokenizers1() {
       //      SimpleTokenizer pathTok = new SimpleTokenizer(//
       //                                                    "['\"", //openQuoteStr
       //                                                    "]'\"", //closeQuoteStr
@@ -38,12 +37,12 @@ public class JSONPathTokenizerTest
       //      assertEquals(pathTok, "asdf.1234.[939.9393]", "[asdf, 1234, [939.9393]]");
 
       JSONPathTokenizer exprTok = new JSONPathTokenizer(//
-                                                    "'\"", //openQuoteStr
-                                                    "'\"", //closeQuoteStr
-                                                    "?=<>!", //breakIncludedChars...breakAfter
-                                                    "]=<>! ", //breakExcludedChars...breakBefore
-                                                    "[()", //unquuotedIgnoredChars
-                                                    "]. \t" //leadingIgoredChars
+                                                        "'\"", //openQuoteStr
+                                                        "'\"", //closeQuoteStr
+                                                        "?=<>!", //breakIncludedChars...breakAfter
+                                                        "]=<>! ", //breakExcludedChars...breakBefore
+                                                        "[()", //unquuotedIgnoredChars
+                                                        "]. \t" //leadingIgoredChars
       );
 
       assertEquals(exprTok, "[?(@.author = 'Herman Melville')]", "[?, @.author, =, 'Herman Melville']");
@@ -65,8 +64,7 @@ public class JSONPathTokenizerTest
 
    }
 
-   void assertEquals(JSONPathTokenizer tokenizer, String input, String output)
-   {
+   void assertEquals(JSONPathTokenizer tokenizer, String input, String output) {
       String tokenized = tokenizer.withChars(input).asList().toString();
       System.out.println(tokenized);
       Assertions.assertEquals(tokenized, output);

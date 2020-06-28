@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest
-{
-   public MySqlDbDeleteActionIntegTest()
-   {
+public class MySqlDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest {
+
+   public MySqlDbDeleteActionIntegTest() {
       super("mysql");
    }
 }

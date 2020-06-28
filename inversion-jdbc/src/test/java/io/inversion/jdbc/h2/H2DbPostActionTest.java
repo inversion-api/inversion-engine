@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2DbPostActionTest extends AbstractJdbcDbPostActionIntegTest
-{
-   public H2DbPostActionTest()
-   {
+public class H2DbPostActionTest extends AbstractJdbcDbPostActionIntegTest {
+
+   public H2DbPostActionTest() {
       super("h2");
    }
 

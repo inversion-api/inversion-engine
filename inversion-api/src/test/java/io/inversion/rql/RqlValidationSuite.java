@@ -35,8 +35,7 @@ import io.inversion.Response;
 import io.inversion.Results;
 import io.inversion.utils.Utils;
 
-public class RqlValidationSuite
-{
+public class RqlValidationSuite {
    //   //select
    //   withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
    //
@@ -52,15 +51,14 @@ public class RqlValidationSuite
    //   
    //   withFunctions("order", "sort");
 
-   Map<String, String>     tests      = new LinkedHashMap();
-   Map<String, String>     results    = new HashMap();
+   Map<String, String>     tests       = new LinkedHashMap();
+   Map<String, String>     results     = new HashMap();
 
-   Map<String, Collection> collections     = new HashMap();
-   Db                      db         = null;
-   String                  queryClass = null;
+   Map<String, Collection> collections = new HashMap();
+   Db                      db          = null;
+   String                  queryClass  = null;
 
-   public RqlValidationSuite(String queryClass, Db db)
-   {
+   public RqlValidationSuite(String queryClass, Db db) {
       withQueryClass(queryClass);
       withDb(db);
 
@@ -135,20 +133,15 @@ public class RqlValidationSuite
       withTest("manyToOneNotExistsNe", "employees?ne(employees.firstName,Nancy)");
 
       withTest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
-      
-      
+
       withTest("eqNonexistantColumn", "orders?ge(orderId, 1000)&eq(nonexistantColumn,12)");
    }
 
-   public void runIntegTests(Engine engine, String urlPrefix) throws Exception
-   {
+   public void runIntegTests(Engine engine, String urlPrefix) throws Exception {
       LinkedHashMap<String, String> failures = new LinkedHashMap();
 
-      for (String testKey : tests.keySet())
-      {
+      for (String testKey : tests.keySet()) {
          String queryString = tests.get(testKey);
-         
-
 
          if (Utils.empty(testKey) || Utils.empty(queryString))
             continue;
@@ -162,34 +155,28 @@ public class RqlValidationSuite
          Results.LAST_QUERY = null;
          Response res = engine.get(urlPrefix + queryString);
 
-         if("orders?count(*)".equals(queryString))
-         {
+         if ("orders?count(*)".equals(queryString)) {
             res.dump();
          }
-         
-         if (Utils.empty(expected))
-         {
+
+         if (Utils.empty(expected)) {
             failures.put(testKey, "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + Results.LAST_QUERY);
          }
-         else if (!verifyIntegTest(testKey, queryString, expected, res))
-         {
+         else if (!verifyIntegTest(testKey, queryString, expected, res)) {
             res.dump();
             failures.put(testKey, res.getStatus() + " - " + Results.LAST_QUERY);
          }
 
       }
 
-      if (failures.size() > 0)
-      {
+      if (failures.size() > 0) {
          System.out.println("Failed cases...");
-         for (String key : failures.keySet())
-         {
+         for (String key : failures.keySet()) {
             String failure = null;
             failure = failures.get(key);
 
             int idx = failure.indexOf("\"message\"");
-            if (idx > -1)
-            {
+            if (idx > -1) {
                int idx2 = failure.indexOf("\n", idx);
                failure = failure.substring(idx + 12, idx2);
             }
@@ -212,26 +199,23 @@ public class RqlValidationSuite
     * @param res
     * @return
     */
-   protected boolean verifyIntegTest(String testKey, String queryString, String expectedMatch, Response res)
-   {
-      if(!res.hasStatus(200, 404))
+   protected boolean verifyIntegTest(String testKey, String queryString, String expectedMatch, Response res) {
+      if (!res.hasStatus(200, 404))
          return false;
-      
+
       String debug = res.getDebug();
-      if(debug == null)
+      if (debug == null)
          return false;
-      
+
       debug = debug.replace("SQL_CALC_FOUND_ROWS ", "").toLowerCase();
-      
+
       return debug.indexOf(expectedMatch.toLowerCase()) > -1;
    }
 
-   public void runUnitTests() throws Exception
-   {
+   public void runUnitTests() throws Exception {
       LinkedHashMap<String, String> failures = new LinkedHashMap();
 
-      for (String testKey : tests.keySet())
-      {
+      for (String testKey : tests.keySet()) {
          String queryString = tests.get(testKey);
 
          if (Utils.empty(testKey) || Utils.empty(queryString))
@@ -251,21 +235,18 @@ public class RqlValidationSuite
          String actual = null;
          String expected = results.get(testKey);
 
-         if("eqNonexistantColumn".equals(testKey))
-         {
+         if ("eqNonexistantColumn".equals(testKey)) {
             System.out.println("asdfasd");
          }
-         
-         try
-         {
+
+         try {
             //-- DbGetAction sorts the terms so we do it here
             //-- to try and mimic the order of terms in the sql
             //-- when a live call is made
             List<Term> terms = new ArrayList();
             String[] parts = rql.split("\\&");
             RqlParser parser = new RqlParser();
-            for (int i = 0; i < parts.length; i++)
-            {
+            for (int i = 0; i < parts.length; i++) {
                if (parts[i] == null || parts[i].length() == 0)
                   continue;
 
@@ -275,18 +256,16 @@ public class RqlValidationSuite
             Collections.sort(terms);
             //-- end sorting
 
-            
             Collection coll = collections.get(tableName);
             if (coll == null)
                throw new Exception("Unable to find table for query: " + testKey + " - " + queryString);
             coll.withDb(db);
             query.withCollection(coll);
             query.withDryRun(true);
-            
+
             query.withTerms(terms);
 
-            if ("UNSUPPORTED".equalsIgnoreCase(expected))
-            {
+            if ("UNSUPPORTED".equalsIgnoreCase(expected)) {
                System.out.println("SKIPPING UNSUPPORTED TEST CASE: " + testKey + " - " + queryString);
                continue;
             }
@@ -300,27 +279,22 @@ public class RqlValidationSuite
                actual = "NULL";
             actual = actual.substring(actual.indexOf(":") + 1).trim();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             actual = ex.getMessage() + "";
             ex.printStackTrace();
          }
 
-         if (!verifyUnitTest(testKey, queryString, expected, actual, query))
-         {
+         if (!verifyUnitTest(testKey, queryString, expected, actual, query)) {
             failures.put(testKey, actual);
          }
-         else
-         {
+         else {
             System.out.println("PASSED: " + actual);
          }
       }
 
-      if (failures.size() > 0)
-      {
+      if (failures.size() > 0) {
          System.out.println("Failed cases...");
-         for (String key : failures.keySet())
-         {
+         for (String key : failures.keySet()) {
             System.out.println("  - " + key + " - " + failures.get(key));
          }
 
@@ -328,8 +302,7 @@ public class RqlValidationSuite
       }
 
       java.util.Collection<String> unknownTests = CollectionUtils.disjunction(tests.keySet(), results.keySet());
-      for (String testKey : unknownTests)
-      {
+      for (String testKey : unknownTests) {
          System.out.println("It looks like you tried to run a test for '" + testKey + "' but that is an unknown test.");
       }
       if (unknownTests.size() > 0)
@@ -347,20 +320,16 @@ public class RqlValidationSuite
     * @param query
     * @return
     */
-   protected boolean verifyUnitTest(String testKey, String queryString, String expected, String actual, Query query)
-   {
+   protected boolean verifyUnitTest(String testKey, String queryString, String expected, String actual, Query query) {
       return Utils.testCompare(expected, actual);
    }
 
-   public Collection getCollection(String name)
-   {
+   public Collection getCollection(String name) {
       return collections.get(name);
    }
 
-   public RqlValidationSuite withCollections(Collection... collections)
-   {
-      for (int i = 0; collections != null && i < collections.length; i++)
-      {
+   public RqlValidationSuite withCollections(Collection... collections) {
+      for (int i = 0; collections != null && i < collections.length; i++) {
          Collection t = collections[i];
          if (t != null)
             this.collections.put(t.getName(), t);
@@ -369,37 +338,31 @@ public class RqlValidationSuite
       return this;
    }
 
-   public RqlValidationSuite withTest(String testKey, String testRql)
-   {
+   public RqlValidationSuite withTest(String testKey, String testRql) {
       tests.put(testKey, testRql);
       return this;
    }
 
-   public RqlValidationSuite withResult(String testKey, String queryOutput)
-   {
+   public RqlValidationSuite withResult(String testKey, String queryOutput) {
       results.put(testKey, queryOutput);
       return this;
    }
 
-   public RqlValidationSuite withDb(Db db)
-   {
+   public RqlValidationSuite withDb(Db db) {
       this.db = db;
       return this;
    }
 
-   public RqlValidationSuite withQueryClass(String queryClass)
-   {
+   public RqlValidationSuite withQueryClass(String queryClass) {
       this.queryClass = queryClass;
       return this;
    }
 
-   public Map<String, String> getTests()
-   {
+   public Map<String, String> getTests() {
       return tests;
    }
 
-   public Map<String, String> getResults()
-   {
+   public Map<String, String> getResults() {
       return results;
    }
 

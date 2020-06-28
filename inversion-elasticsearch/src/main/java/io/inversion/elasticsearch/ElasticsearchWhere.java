@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,24 +24,20 @@ import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.Rows.Row;
 
-public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends ElasticsearchQuery> extends Where<T, P>
-{
-   public ElasticsearchWhere(P query)
-   {
+public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends ElasticsearchQuery> extends Where<T, P> {
+
+   public ElasticsearchWhere(P query) {
       super(query);
       clearFunctions();
       withFunctions("eq", "ne", "gt", "ge", "lt", "le", "ew", "sw", "w", "wo", "nn", "n", "and", "or", "emp", "nemp", "search", "in", "out");
    }
 
    @Override
-   protected Term transform(Term parent)
-   {
+   protected Term transform(Term parent) {
       Term transformed = parent;
 
-      for (Term child : parent.getTerms())
-      {
-         if (!child.isLeaf())
-         {
+      for (Term child : parent.getTerms()) {
+         if (!child.isLeaf()) {
             if (!functions.contains(child.getToken()))
                ApiException.throw400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
             transform(child);
@@ -74,20 +70,17 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
       //         }
       //      }
 
-      if (parent.hasToken("_key"))
-      {
+      if (parent.hasToken("_key")) {
          String indexName = parent.getToken(0);
 
          Index index = getParent().getCollection().getIndex(indexName);
          if (index == null)
             ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
 
-         if (index.size() == 1)
-         {
+         if (index.size() == 1) {
             Term t = Term.term(null, "in", index.getColumnName(0));
             List<Term> children = parent.getTerms();
-            for (int i = 1; i < children.size(); i++)
-            {
+            for (int i = 1; i < children.size(); i++) {
                Term child = children.get(i);
                t.withTerm(child);
             }
@@ -96,8 +89,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
 
             transformed = t;
          }
-         else
-         {
+         else {
             //collection/valCol1~valCol2,valCol1~valCol2,valCol1~valCol2
             //keys(valCol1~valCol2,valCol1~valCol2,valCol1~valCol2)
 
@@ -106,21 +98,18 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
             List<Term> children = parent.getTerms();
             transformed = or;
 
-            for (int i = 1; i < children.size(); i++)
-            {
+            for (int i = 1; i < children.size(); i++) {
                Term child = children.get(i);
                if (!child.isLeaf())
                   ApiException.throw400BadRequest("Entity key value is not a leaf node: %s", child);
 
                Row keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
                Term and = Term.term(or, "and");
-               for (String key : keyParts.keySet())
-               {
+               for (String key : keyParts.keySet()) {
                   and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));
                }
             }
-            if (or.getNumTerms() == 1)
-            {
+            if (or.getNumTerms() == 1) {
                transformed = or.getTerm(0);
                transformed.withParent(null);
             }

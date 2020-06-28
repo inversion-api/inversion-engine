@@ -21,8 +21,8 @@ import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 
-public class DbAction extends Action<DbAction>
-{
+public class DbAction extends Action<DbAction> {
+
    protected DbGetAction    getAction    = new DbGetAction();
    protected DbPostAction   postAction   = new DbPostAction();
    protected DbPutAction    putAction    = new DbPutAction();
@@ -30,82 +30,66 @@ public class DbAction extends Action<DbAction>
    protected DbDeleteAction deleteAction = new DbDeleteAction();
 
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
-      if (req.isMethod("GET"))
-      {
+   public void run(Request req, Response res) throws ApiException {
+      if (req.isMethod("GET")) {
          getAction.run(req, res);
       }
-      else if (req.isMethod("POST"))
-      {
+      else if (req.isMethod("POST")) {
          postAction.run(req, res);
       }
-      else if (req.isMethod("PUT"))
-      {
+      else if (req.isMethod("PUT")) {
          putAction.run(req, res);
       }
-      else if (req.isMethod("PATCH"))
-      {
+      else if (req.isMethod("PATCH")) {
          patchAction.run(req, res);
       }
 
-      else if (req.isMethod("DELETE"))
-      {
+      else if (req.isMethod("DELETE")) {
          deleteAction.run(req, res);
       }
    }
 
-   public DbGetAction getGetAction()
-   {
+   public DbGetAction getGetAction() {
       return getAction;
    }
 
-   public DbAction withGetAction(DbGetAction getAction)
-   {
+   public DbAction withGetAction(DbGetAction getAction) {
       this.getAction = getAction;
       return this;
    }
 
-   public DbPostAction getPostAction()
-   {
+   public DbPostAction getPostAction() {
       return postAction;
    }
 
-   public DbAction withPostAction(DbPostAction postAction)
-   {
+   public DbAction withPostAction(DbPostAction postAction) {
       this.postAction = postAction;
       return this;
    }
 
-   public DbPutAction getPutAction()
-   {
+   public DbPutAction getPutAction() {
       return putAction;
    }
 
-   public DbAction withPutAction(DbPutAction putAction)
-   {
+   public DbAction withPutAction(DbPutAction putAction) {
       this.putAction = putAction;
       return this;
    }
 
-   public DbPatchAction getPatchAction()
-   {
+   public DbPatchAction getPatchAction() {
       return patchAction;
    }
 
-   public DbAction withPatchAction(DbPatchAction patchAction)
-   {
+   public DbAction withPatchAction(DbPatchAction patchAction) {
       this.patchAction = patchAction;
       return this;
    }
 
-   public DbDeleteAction getDeleteAction()
-   {
+   public DbDeleteAction getDeleteAction() {
       return deleteAction;
    }
 
-   public DbAction withDeleteAction(DbDeleteAction deleteAction)
-   {
+   public DbAction withDeleteAction(DbDeleteAction deleteAction) {
       this.deleteAction = deleteAction;
       return this;
    }

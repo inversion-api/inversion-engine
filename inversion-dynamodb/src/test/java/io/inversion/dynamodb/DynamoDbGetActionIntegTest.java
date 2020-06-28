@@ -28,42 +28,33 @@ import io.inversion.utils.Utils;
  * @see README.md
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest
-{
+public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest {
 
-   public DynamoDbGetActionIntegTest()
-   {
+   public DynamoDbGetActionIntegTest() {
       super("dynamo");
    }
 
    @Override
-   public void initializeDb()
-   {
+   public void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
-         try
-         {
+      if (db == null) {
+         try {
             db = DynamoDbFactory.buildNorthwindDynamoDb();
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             Utils.rethrow(e);
          }
          setDb(db);
       }
    }
 
-   protected String collectionPath()
-   {
+   protected String collectionPath() {
       return "northwind/dynamodb/";
    }
 
-   protected String url(String path)
-   {
+   protected String url(String path) {
       String url = super.url(path);
-      if (path.indexOf("/orders") > 0 && path.indexOf("type") < 0)
-      {
+      if (path.indexOf("/orders") > 0 && path.indexOf("type") < 0) {
          if (url.indexOf("?") < 0)
             url += "?";
          else
@@ -76,44 +67,38 @@ public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest
 
    @Test
    @Override
-   public void testOut01() throws Exception
-   {
+   public void testOut01() throws Exception {
       System.err.println("IMPLEMENT ME TestDynamoDbGetActions.testOut01()");
       //TODO: implement me
    }
 
    @Test
    @Override
-   public void testLike01() throws Exception
-   {
+   public void testLike01() throws Exception {
       System.err.println("DynamoDb implementation does not support the like() operator...skipping test.");
    }
 
    @Test
    @Override
-   public void testLike02() throws Exception
-   {
+   public void testLike02() throws Exception {
       System.err.println("DynamoDb implementation does not support the like() operator...skipping test.");
    }
 
    @Test
    @Override
-   public void testW01() throws Exception
-   {
+   public void testW01() throws Exception {
       System.err.println("DynamoDb implementation does not support the w() operator....skipping test.");
    }
 
    @Test
    @Override
-   public void testWo01() throws Exception
-   {
+   public void testWo01() throws Exception {
       System.err.println("DynamoDb implementation does not support the wo() operator....skipping test.");
    }
 
    @Test
    @Override
-   public void testEw01() throws Exception
-   {
+   public void testEw01() throws Exception {
       System.err.println("DynamoDb implementation does not support the ew() operator....skipping test.");
    }
 

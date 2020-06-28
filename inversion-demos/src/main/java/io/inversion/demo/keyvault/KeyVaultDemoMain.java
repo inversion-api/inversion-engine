@@ -44,10 +44,9 @@ import io.inversion.utils.Utils;
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  * 
  */
-public class KeyVaultDemoMain
-{
-   public static void main(String[] args)
-   {
+public class KeyVaultDemoMain {
+
+   public static void main(String[] args) {
       //-- pull all the secrets from the KeyVault
       //-- for demo purposes, assume secrets for 'myDb.driver','myDb.url',
       //-- 'myDb.user','myDb.pass' are in the vault
@@ -67,8 +66,7 @@ public class KeyVaultDemoMain
       LinkedHashSet<String> names = new LinkedHashSet();
       secretIt.streamByPage().forEach(resp -> resp.getElements().stream().map(props -> names.add(props.getName())));
 
-      for (String name : names)
-      {
+      for (String name : names) {
          KeyVaultSecret sec = secretClient.getSecret(name);
          secretsConf.setProperty(sec.getName(), sec.getValue());
       }

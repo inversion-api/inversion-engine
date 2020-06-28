@@ -32,10 +32,9 @@ import io.inversion.spring.EnableInversion;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableInversion
-public class ApiMain
-{
-   public static void main(String[] args)
-   {
+public class ApiMain {
+
+   public static void main(String[] args) {
       SpringApplication.run(ApiMain.class, args);
    }
 }

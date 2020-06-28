@@ -16,24 +16,21 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.utils.RestClient.FutureResponse;
 
-public class RestClientTest
-{
+public class RestClientTest {
+
    @Test
-   public void buildUrl_variable_replaced()
-   {
+   public void buildUrl_variable_replaced() {
       System.setProperty("theirService.url", "http://somehost/${tenant}/books/${something}/abcd");
 
       Request req = new Request("GET", "http://myservice?tenant=12345");
       RestClient client = new RestClient("theirService");
 
-      try
-      {
+      try {
          Chain.push(null, req, null);
          String url = client.buildUrl(null);
          assertEquals("http://somehost/12345/books/${something}/abcd", url);
       }
-      finally
-      {
+      finally {
          Chain.pop();
       }
 
@@ -66,24 +63,21 @@ public class RestClientTest
    //   }
 
    @Test
-   public void testBuildFuture_includeHeaders_applied()
-   {
-      RestClient client = new RestClient()
-         {
-            protected Response getResponse(FutureResponse future)
-            {
-               return new Response(null);
-               //intentional do nothing
-            }
-         }.withUrl("http://somehost")//
-          .withForwardedHeaders(true)//
-          .withWhitelistedHeaders("header1", "header2", "HEADER3", "Header4");
+   public void testBuildFuture_includeHeaders_applied() {
+      RestClient client = new RestClient() {
+
+         protected Response getResponse(FutureResponse future) {
+            return new Response(null);
+            //intentional do nothing
+         }
+      }.withUrl("http://somehost")//
+       .withForwardedHeaders(true)//
+       .withWhitelistedHeaders("header1", "header2", "HEADER3", "Header4");
 
       Engine engine = new Engine();
       Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=a&param2=b", null, Utils.addToMap(new ArrayListValuedHashMap(), "header1", "header1Val", "header2", "header2Val", "header3", "header3Val", "headerX", "headerXVal"), -1);
       Chain.push(engine, inboundRequest, new Response());
-      try
-      {
+      try {
          client.withForcedHeader("header3", "forcedHeader3Val");
          FutureResponse resp = client.call("GET", "somepath", null, null, -1, Utils.addToMap(new ArrayListValuedHashMap(), "header2", "header2ChildRequestVal", "header3", "header3ChildRequestVal", "header4", "header4ChildRequestVal"));
 
@@ -106,31 +100,27 @@ public class RestClientTest
          assertEquals(0, finalHeaders.get("headerX").size());
 
       }
-      finally
-      {
+      finally {
          Chain.pop();
       }
    }
 
    @Test
-   public void testBuildFuture_includeParams_applied()
-   {
-      RestClient client = new RestClient()
-         {
-            protected void doCall(FutureResponse future)
-            {
-               //intentional do nothing
-            }
-         }.withUrl("http://somehost")//
-          .withForwardedParams(true)//
-          .withWhitelistedParams("param0", "param1", "param2", "param3", "param4");
+   public void testBuildFuture_includeParams_applied() {
+      RestClient client = new RestClient() {
+
+         protected void doCall(FutureResponse future) {
+            //intentional do nothing
+         }
+      }.withUrl("http://somehost")//
+       .withForwardedParams(true)//
+       .withWhitelistedParams("param0", "param1", "param2", "param3", "param4");
 
       Engine engine = new Engine();
       Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=param1val&param2=param2Val");
 
       Chain.push(engine, inboundRequest, new Response());
-      try
-      {
+      try {
          FutureResponse resp = client.get("somepath?param0=param0Val", "param1", "param1Override", "param3", "param3Val");
          Map<String, String> finalParams = resp.getRequest().getUrl().getParams();
 
@@ -148,8 +138,7 @@ public class RestClientTest
          assertEquals("param3Val", finalParams.get("param3"));
 
       }
-      finally
-      {
+      finally {
          Chain.pop();
       }
    }

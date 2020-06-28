@@ -37,8 +37,8 @@ import java.util.regex.Pattern;
  * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
  * </p>
  */
-public class Pluralizer
-{
+public class Pluralizer {
+
    static enum MODE {
       ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
    }
@@ -86,13 +86,11 @@ public class Pluralizer
 
    private static Pluralizer     inflector         = new Pluralizer();
 
-   Pluralizer()
-   {
+   Pluralizer() {
       this(MODE.ENGLISH_ANGLICIZED);
    }
 
-   Pluralizer(MODE mode)
-   {
+   Pluralizer(MODE mode) {
 
       uncountable(new String[]{
             // 2. Handle words that do not inflect in the plural (such as fish, travois, chassis, nationalities ending
@@ -115,13 +113,11 @@ public class Pluralizer
             {"genus", "genera"}, // classical
             {"quiz", "quizzes"},});
 
-      if (mode == MODE.ENGLISH_ANGLICIZED)
-      {
+      if (mode == MODE.ENGLISH_ANGLICIZED) {
          // Anglicized plural
          irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
       }
-      else if (mode == MODE.ENGLISH_CLASSICAL)
-      {
+      else if (mode == MODE.ENGLISH_CLASSICAL) {
          // Classical plural
          irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
       }
@@ -148,8 +144,7 @@ public class Pluralizer
       categoryRule(CATEGORY_A_AE, "a", "ae");
 
       // 7. Handle classical variants of modern inflections
-      if (mode == MODE.ENGLISH_CLASSICAL)
-      {
+      if (mode == MODE.ENGLISH_CLASSICAL) {
          rule(new String[][]{{"trix$", "trices"}, {"eau$", "eaux"}, {"ieu$", "ieux"}, {"(..[iay])nx$", "$1nges"},});
          categoryRule(CATEGORY_EN_INA, "en", "ina");
          categoryRule(CATEGORY_A_ATA, "a", "ata");
@@ -217,10 +212,8 @@ public class Pluralizer
     * @param count word count
     * @return form of the word correct for given count
     */
-   String getPlural(String word, int count)
-   {
-      if (count == 1)
-      {
+   String getPlural(String word, int count) {
+      if (count == 1) {
          return word;
       }
       return getPlural(word);
@@ -239,8 +232,7 @@ public class Pluralizer
     * @param word word in singular form
     * @return plural form of given word
     */
-   public static String plural(String word)
-   {
+   public static String plural(String word) {
       if (word.endsWith("s") || word.endsWith("S"))
          return word;
 
@@ -263,42 +255,37 @@ public class Pluralizer
     * @param count word count
     * @return form of the word correct for given count
     */
-   static String plural(String word, int count)
-   {
+   static String plural(String word, int count) {
       return inflector.getPlural(word, count);
    }
 
-   static void setMode(MODE mode)
-   {
+   static void setMode(MODE mode) {
       Pluralizer newInflector = new Pluralizer(mode);
       inflector = newInflector;
    }
 
    //   public static abstract class TwoFormInflector
    //   {
-   private interface Rule
-   {
+   private interface Rule {
+
       public String getPlural(String singular);
    }
 
-   private static class RegExpRule implements Rule
-   {
+   private static class RegExpRule implements Rule {
+
       private final Pattern singular;
       private final String  plural;
 
-      private RegExpRule(Pattern singular, String plural)
-      {
+      private RegExpRule(Pattern singular, String plural) {
          this.singular = singular;
          this.plural = plural;
       }
 
       @Override
-      public String getPlural(String word)
-      {
+      public String getPlural(String word) {
          StringBuffer buffer = new StringBuffer();
          Matcher matcher = singular.matcher(word);
-         if (matcher.find())
-         {
+         if (matcher.find()) {
             matcher.appendReplacement(buffer, plural);
             matcher.appendTail(buffer);
             return buffer.toString();
@@ -307,29 +294,24 @@ public class Pluralizer
       }
    }
 
-   private static class CategoryRule implements Rule
-   {
+   private static class CategoryRule implements Rule {
+
       private final String[] list;
       private final String   singular;
       private final String   plural;
 
-      CategoryRule(String[] list, String singular, String plural)
-      {
+      CategoryRule(String[] list, String singular, String plural) {
          this.list = list;
          this.singular = singular;
          this.plural = plural;
       }
 
       @Override
-      public String getPlural(String word)
-      {
+      public String getPlural(String word) {
          String lowerWord = word.toLowerCase();
-         for (String suffix : list)
-         {
-            if (lowerWord.endsWith(suffix))
-            {
-               if (!lowerWord.endsWith(singular))
-               {
+         for (String suffix : list) {
+            if (lowerWord.endsWith(suffix)) {
+               if (!lowerWord.endsWith(singular)) {
                   throw new RuntimeException("Internal error");
                }
                return word.substring(0, word.length() - singular.length()) + plural;
@@ -341,60 +323,47 @@ public class Pluralizer
 
    private final List<Rule> rules = new ArrayList<Rule>();
 
-   String getPlural(String word)
-   {
-      for (Rule rule : rules)
-      {
+   String getPlural(String word) {
+      for (Rule rule : rules) {
          String result = rule.getPlural(word);
-         if (result != null)
-         {
+         if (result != null) {
             return result;
          }
       }
       return null;
    }
 
-   void uncountable(String[] list)
-   {
+   void uncountable(String[] list) {
       rules.add(new CategoryRule(list, "", ""));
    }
 
-   void irregular(String singular, String plural)
-   {
-      if (singular.charAt(0) == plural.charAt(0))
-      {
+   void irregular(String singular, String plural) {
+      if (singular.charAt(0) == plural.charAt(0)) {
          rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
       }
-      else
-      {
+      else {
          rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
          rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
       }
    }
 
-   void irregular(String[][] list)
-   {
-      for (String[] pair : list)
-      {
+   void irregular(String[][] list) {
+      for (String[] pair : list) {
          irregular(pair[0], pair[1]);
       }
    }
 
-   void rule(String singular, String plural)
-   {
+   void rule(String singular, String plural) {
       rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
    }
 
-   void rule(String[][] list)
-   {
-      for (String[] pair : list)
-      {
+   void rule(String[][] list) {
+      for (String[] pair : list) {
          rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
       }
    }
 
-   void categoryRule(String[] list, String singular, String plural)
-   {
+   void categoryRule(String[] list, String singular, String plural) {
       rules.add(new CategoryRule(list, singular, plural));
    }
 }

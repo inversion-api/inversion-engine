@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2RqlIntegTest extends H2RqlUnitTest
-{
-   public H2RqlIntegTest() throws Exception
-   {
+public class H2RqlIntegTest extends H2RqlUnitTest {
+
+   public H2RqlIntegTest() throws Exception {
       super();
    }
 

@@ -34,8 +34,8 @@ import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
-public class Response
-{
+public class Response {
+
    protected String                                 url               = null;
 
    protected Chain                                  chain             = null;
@@ -65,48 +65,40 @@ public class Response
    protected List<Change>                           changes           = new ArrayList();
    protected StringBuffer                           debug             = new StringBuffer();
 
-   public Response()
-   {
+   public Response() {
 
    }
 
-   public Response(String url)
-   {
+   public Response(String url) {
       withUrl(url);
    }
 
-   public boolean hasStatus(int... statusCodes)
-   {
-      for (int statusCode : statusCodes)
-      {
+   public boolean hasStatus(int... statusCodes) {
+      for (int statusCode : statusCodes) {
          if (this.statusCode == statusCode)
             return true;
       }
       return false;
    }
 
-   public Response withMeta(String key, String value)
-   {
+   public Response withMeta(String key, String value) {
       getJson().getNode("meta").put(key, value);
       return this;
    }
 
-   public void write(StringBuffer buff, Object... msgs)
-   {
+   public void write(StringBuffer buff, Object... msgs) {
       write0(buff, msgs);
       buff.append("\r\n");
    }
 
-   protected void write0(StringBuffer buff, Object... msgs)
-   {
+   protected void write0(StringBuffer buff, Object... msgs) {
       if (msgs != null && msgs.length == 0)
          return;
 
       if (msgs != null && msgs.length == 1 && msgs[0] != null && msgs[0].getClass().isArray())
          msgs = (Object[]) msgs[0];
 
-      for (int i = 0; msgs != null && i < msgs.length; i++)
-      {
+      for (int i = 0; msgs != null && i < msgs.length; i++) {
          Object msg = msgs[i];
 
          if (msg == null)
@@ -115,12 +107,10 @@ public class Response
          if (msg instanceof byte[])
             msg = new String((byte[]) msg);
 
-         if (msg.getClass().isArray())
-         {
+         if (msg.getClass().isArray()) {
             write0(buff, (Object[]) msg);
          }
-         else
-         {
+         else {
             if (i > 0)
                buff.append(" ");
             buff.append(msg);
@@ -132,20 +122,16 @@ public class Response
    /**
     * @param statusCode - one of the SC constants ex "200 OK"
     */
-   public Response withStatus(String status)
-   {
+   public Response withStatus(String status) {
       statusMesg = status;
-      try
-      {
+      try {
          statusCode = Integer.parseInt(status.substring(0, 3));
 
-         if (statusMesg.length() > 4)
-         {
+         if (statusMesg.length() > 4) {
             statusMesg = status.substring(4, status.length());
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //the status message did not start with numeric status code. 
          //this can be ignored.
       }
@@ -153,76 +139,63 @@ public class Response
       return this;
    }
 
-   public String getStatus()
-   {
+   public String getStatus() {
       return statusCode + " " + statusMesg;
    }
 
-   public Response withStatusCode(int statusCode)
-   {
+   public Response withStatusCode(int statusCode) {
       this.statusCode = statusCode;
       return this;
    }
 
-   public Response withStatusMesg(String statusMesg)
-   {
+   public Response withStatusMesg(String statusMesg) {
       this.statusMesg = statusMesg;
       return this;
    }
 
-   public Chain getChain()
-   {
+   public Chain getChain() {
       return chain;
    }
 
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return chain != null ? chain.getEngine() : null;
    }
 
-   public Response withChain(Chain chain)
-   {
+   public Response withChain(Chain chain) {
       this.chain = chain;
       return this;
    }
 
-   public Response debug(Object... msgs)
-   {
+   public Response debug(Object... msgs) {
       write(debug, msgs);
       return this;
    }
 
-   public Response out(Object... msgs)
-   {
+   public Response out(Object... msgs) {
       debug(msgs);
       write(out, msgs);
       return this;
    }
 
-   public Response withOutput(String output)
-   {
+   public Response withOutput(String output) {
       out = new StringBuffer(output);
       return this;
    }
 
-   public String getOutput()
-   {
+   public String getOutput() {
       return out.toString();
    }
 
-   public Response dump()
-   {
+   public Response dump() {
       System.out.println(getDebug());
       return this;
    }
 
-   public String getDebug()
-   {
+   public String getDebug() {
       return debug.toString();
    }
 
-   public String getHeader(String key)
-   {
+   public String getHeader(String key) {
       List<String> vals = headers.get(key);
       if (vals != null && vals.size() > 0)
          return vals.get(0);
@@ -232,13 +205,11 @@ public class Response
    /**
     * @return the headers
     */
-   public ArrayListValuedHashMap<String, String> getHeaders()
-   {
+   public ArrayListValuedHashMap<String, String> getHeaders() {
       return headers;
    }
 
-   public void withHeader(String key, String value)
-   {
+   public void withHeader(String key, String value) {
       if (!headers.containsMapping(key, value))
          headers.put(key, value);
    }
@@ -249,166 +220,136 @@ public class Response
     * 
     * @param json the json to set
     */
-   public Response withJson(JSNode json)
-   {
+   public Response withJson(JSNode json) {
       this.json = json;
       return this;
    }
 
-   public String findString(String path)
-   {
+   public String findString(String path) {
       return getJson().findString(path);
    }
 
-   public int findInt(String path)
-   {
+   public int findInt(String path) {
       return getJson().findInt(path);
    }
 
-   public boolean findBoolean(String path)
-   {
+   public boolean findBoolean(String path) {
       return getJson().findBoolean(path);
    }
 
-   public JSNode findNode(String path)
-   {
+   public JSNode findNode(String path) {
       return getJson().findNode(path);
    }
 
-   public JSArray findArray(String path)
-   {
+   public JSArray findArray(String path) {
       return getJson().findArray(path);
    }
 
-   public Object find(String path)
-   {
+   public Object find(String path) {
       return getJson().find(path);
    }
 
-   public Validation validate(String jsonPath)
-   {
+   public Validation validate(String jsonPath) {
       return validate(jsonPath, null);
    }
 
-   public Validation validate(String jsonPath, String customErrorMessage)
-   {
+   public Validation validate(String jsonPath, String customErrorMessage) {
       return new Validation(this, jsonPath, customErrorMessage);
    }
 
-   public JSArray data()
-   {
+   public JSArray data() {
       return getData();
    }
 
-   public JSArray getData()
-   {
+   public JSArray getData() {
       JSNode json = getJson();
-      if (json != null)
-      {
+      if (json != null) {
          return json.getArray("data");
       }
       return null;
    }
 
-   public Response withData(JSArray data)
-   {
+   public Response withData(JSArray data) {
       getJson().put("data", data);
       return this;
    }
 
-   public Response withRecord(Object record)
-   {
+   public Response withRecord(Object record) {
       getData().add(record);
       return this;
    }
 
-   public Response withRecords(List records)
-   {
+   public Response withRecords(List records) {
       for (Object record : records)
          getData().add(record);
       return this;
    }
 
-   public JSNode getMeta()
-   {
+   public JSNode getMeta() {
       return getJson().getNode("meta");
    }
 
-   public Response withMeta(String key, Object value)
-   {
+   public Response withMeta(String key, Object value) {
       getMeta().put(key, value);
       return this;
    }
 
-   public Response withFoundRows(int foundRows)
-   {
+   public Response withFoundRows(int foundRows) {
       withMeta("foundRows", foundRows);
       updatePageCount();
       return this;
    }
 
-   public int getFoundRows()
-   {
+   public int getFoundRows() {
       return findInt("meta.foundRows");
    }
 
-   public Response withPageSize(int pageSize)
-   {
+   public Response withPageSize(int pageSize) {
       withMeta("pageSize", pageSize);
       return this;
    }
 
-   public Response withPageNum(int pageNum)
-   {
+   public Response withPageNum(int pageNum) {
       withMeta("pageNum", pageNum);
       updatePageCount();
 
       return this;
    }
 
-   public Response withPageCount(int pageCount)
-   {
+   public Response withPageCount(int pageCount) {
       withMeta("pageCount", pageCount);
       return this;
    }
 
-   public int getPageSize()
-   {
+   public int getPageSize() {
       int pageSize = getJson().findInt("meta.pageSize");
-      if (pageSize < 0)
-      {
+      if (pageSize < 0) {
          Object arr = getJson().find("data.0.name");
-         if (arr instanceof JSArray)
-         {
+         if (arr instanceof JSArray) {
             pageSize = ((JSArray) arr).size();
          }
       }
       return pageSize;
    }
 
-   protected void updatePageCount()
-   {
+   protected void updatePageCount() {
       int ps = getPageSize();
       int fr = getFoundRows();
-      if (ps > 0 && fr > 0)
-      {
+      if (ps > 0 && fr > 0) {
          int pageCount = fr / ps + (fr % ps == 0 ? 0 : 1);
          withPageCount(pageCount);
       }
    }
 
-   public int getPageCount()
-   {
+   public int getPageCount() {
       return getJson().findInt("meta.pageCount");
    }
 
-   public String next()
-   {
+   public String next() {
       return findString("meta.next");
    }
 
-   public Response withNext(String nextPageUrl)
-   {
+   public Response withNext(String nextPageUrl) {
       withMeta("next", nextPageUrl);
       return this;
    }
@@ -416,34 +357,28 @@ public class Response
    /**
     * @return the statusMesg
     */
-   public String getStatusMesg()
-   {
+   public String getStatusMesg() {
       return statusMesg;
    }
 
    /**
     * @return the statusCode
     */
-   public int getStatusCode()
-   {
+   public int getStatusCode() {
       return statusCode;
    }
 
-   public Response withText(String text)
-   {
+   public Response withText(String text) {
       this.json = null;
       this.text = text;
       return this;
    }
 
-   public String getResourceKey()
-   {
+   public String getResourceKey() {
       JSNode json = getJson();
-      if (json != null)
-      {
+      if (json != null) {
          String href = json.getString("href");
-         if (href != null)
-         {
+         if (href != null) {
             String[] parts = href.split("/");
             return parts[parts.length - 1];
          }
@@ -451,72 +386,59 @@ public class Response
       return null;
    }
 
-   public String getRedirect()
-   {
+   public String getRedirect() {
       return redirect;
    }
 
-   public Response withRedirect(String redirect)
-   {
+   public Response withRedirect(String redirect) {
       this.redirect = redirect;
       return this;
    }
 
-   public String getContentType()
-   {
+   public String getContentType() {
       return contentType;
    }
 
-   public Response withContentType(String contentType)
-   {
+   public Response withContentType(String contentType) {
       headers.remove("Content-Type");
       headers.put("Content-Type", contentType);
       this.contentType = contentType;
       return this;
    }
 
-   public List<Change> getChanges()
-   {
+   public List<Change> getChanges() {
       return changes;
    }
 
-   public Response withChanges(java.util.Collection<Change> changes)
-   {
+   public Response withChanges(java.util.Collection<Change> changes) {
       this.changes.addAll(changes);
       return this;
    }
 
-   public Response withChange(String method, String collectionKey, Object resourceKey)
-   {
-      if (resourceKey instanceof List)
-      {
+   public Response withChange(String method, String collectionKey, Object resourceKey) {
+      if (resourceKey instanceof List) {
          List<String> deletedIds = (List<String>) resourceKey;
-         for (String id : deletedIds)
-         {
+         for (String id : deletedIds) {
             changes.add(new Change(method, collectionKey, id));
          }
       }
-      else
-      {
+      else {
          changes.add(new Change(method, collectionKey, resourceKey));
       }
       return this;
    }
 
-   public Response withChange(String method, String collectionKey, String... resourceKeys)
-   {
+   public Response withChange(String method, String collectionKey, String... resourceKeys) {
       for (int i = 0; resourceKeys != null && i < resourceKeys.length; i++)
          withChange(method, collectionKey, resourceKeys[i]);
       return this;
    }
 
-   public boolean isSuccess()
-   {
+   public boolean isSuccess() {
       return statusCode >= 200 && statusCode <= 300 && error == null;
    }
 
-   public Throwable getError()
-   {
+   public Throwable getError() {
       return error;
    }
 
@@ -544,8 +466,7 @@ public class Response
    //      return value;
    //   }
 
-   public InputStream getInputStream() throws IOException
-   {
+   public InputStream getInputStream() throws IOException {
       if (file != null)
          return new BufferedInputStream(new FileInputStream(file));
 
@@ -555,10 +476,8 @@ public class Response
    /**
     * @return the json
     */
-   public JSNode getJson()
-   {
-      if (json == null)
-      {
+   public JSNode getJson() {
+      if (json == null) {
          //lazy loads text/json
          getContent();
       }
@@ -566,10 +485,8 @@ public class Response
       return json;
    }
 
-   public String getText()
-   {
-      if (text == null)
-      {
+   public String getText() {
+      if (text == null) {
          //lazy loads text/json
          getContent();
       }
@@ -577,83 +494,66 @@ public class Response
       return text;
    }
 
-   public String getContent()
-   {
-      try
-      {
-         if (text == null && json == null && file != null && file.length() > 0)
-         {
+   public String getContent() {
+      try {
+         if (text == null && json == null && file != null && file.length() > 0) {
             String string = Utils.read(getInputStream());
-            if (string != null)
-            {
-               try
-               {
+            if (string != null) {
+               try {
                   json = JSNode.parseJsonNode(string);
                }
-               catch (Exception ex)
-               {
+               catch (Exception ex) {
                   //OK
                   text = string;
                }
             }
          }
 
-         if (text != null)
-         {
+         if (text != null) {
             return text;
          }
-         else if (json != null)
-         {
+         else if (json != null) {
             return json.toString();
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          Utils.rethrow(ex);
       }
       return null;
    }
 
-   public String getErrorContent()
-   {
+   public String getErrorContent() {
       if (!isSuccess() && error != null)
          return Utils.getShortCause(error);
 
-      try
-      {
-         if (!isSuccess())
-         {
+      try {
+         if (!isSuccess()) {
             String message = findString("message");
             String string = getStatus() + (!Utils.empty(message) ? " - " + message : "");
             return string;
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          Utils.rethrow(ex);
       }
-      
+
       return getStatus();
    }
 
-   public long getFileLength()
-   {
-      if (file != null)
-      {
+   public long getFileLength() {
+      if (file != null) {
          return file.length();
       }
       return -1;
    }
 
-   public Response withFile(File file)
-   {
+   public Response withFile(File file) {
       this.json = null;
       this.file = file;
       return this;
    }
 
-   public File getFile()
-   {
+   public File getFile() {
       return file;
    }
 
@@ -662,11 +562,9 @@ public class Response
     * NOTE: this will not match file length, for partial downloads, consider also using ContentRangeSize
     * @return
     */
-   public long getContentLength()
-   {
+   public long getContentLength() {
       String length = getHeader("Content-Length");
-      if (length != null)
-      {
+      if (length != null) {
          return Long.parseLong(length);
       }
       return 0;
@@ -677,8 +575,7 @@ public class Response
     * Content-Range: <unit> <range-start>-<range-end>/<size>
     * @return
     */
-   public String getContentRangeUnit()
-   {
+   public String getContentRangeUnit() {
       parseContentRange();
       return contentRangeUnit;
    }
@@ -688,8 +585,7 @@ public class Response
     * Content-Range: <unit> <range-start>-<range-end>/<size>
     * @return
     */
-   public long getContentRangeStart()
-   {
+   public long getContentRangeStart() {
       parseContentRange();
       return contentRangeStart;
    }
@@ -699,8 +595,7 @@ public class Response
     * Content-Range: <unit> <range-start>-<range-end>/<size>
     * @return
     */
-   public long getContentRangeEnd()
-   {
+   public long getContentRangeEnd() {
       parseContentRange();
       return contentRangeEnd;
    }
@@ -710,8 +605,7 @@ public class Response
     * Content-Range: <unit> <range-start>-<range-end>/<size>
     * @return
     */
-   public long getContentRangeSize()
-   {
+   public long getContentRangeSize() {
       parseContentRange();
       return contentRangeSize;
    }
@@ -720,20 +614,16 @@ public class Response
     * Parses the "Content-Range" header
     * Content-Range: <unit> <range-start>-<range-end>/<size>
     */
-   private void parseContentRange()
-   {
-      if (contentRangeUnit == null)
-      {
+   private void parseContentRange() {
+      if (contentRangeUnit == null) {
          String range = getHeader("Content-Range");
-         if (range != null)
-         {
+         if (range != null) {
             String[] parts = range.split(" ");
             contentRangeUnit = parts[0];
             parts = parts[1].split("/");
             contentRangeSize = Long.parseLong(parts[1]);
             parts = parts[0].split("-");
-            if (parts.length == 2)
-            {
+            if (parts.length == 2) {
                contentRangeStart = Long.parseLong(parts[0]);
                contentRangeEnd = Long.parseLong(parts[1]);
             }
@@ -741,45 +631,37 @@ public class Response
       }
    }
 
-   public Response withUrl(String url)
-   {
-      if (!Utils.empty(url))
-      {
+   public Response withUrl(String url) {
+      if (!Utils.empty(url)) {
          url = url.trim();
          url = url.replaceAll(" ", "%20");
       }
 
       this.url = url;
 
-      if (Utils.empty(fileName))
-      {
-         try
-         {
+      if (Utils.empty(fileName)) {
+         try {
             fileName = new URL(url).getFile();
             if (Utils.empty(fileName))
                fileName = null;
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
 
          }
       }
       return this;
    }
 
-   public Response withError(Throwable ex)
-   {
+   public Response withError(Throwable ex) {
       this.error = ex;
       return this;
    }
 
-   public String getFileName()
-   {
+   public String getFileName() {
       return fileName;
    }
 
-   public String getUrl()
-   {
+   public String getUrl() {
       return url;
    }
 
@@ -829,24 +711,19 @@ public class Response
    //   }
 
    @Override
-   public String toString()
-   {
+   public String toString() {
       return debug.toString();
    }
 
    @Override
-   public void finalize()
-   {
-      if (file != null)
-      {
-         try
-         {
+   public void finalize() {
+      if (file != null) {
+         try {
             File tempFile = file;
             file = null;
             tempFile.delete();
          }
-         catch (Throwable t)
-         {
+         catch (Throwable t) {
             // ignore
          }
       }
@@ -856,33 +733,27 @@ public class Response
    //----------------------------------------------------------------------------------------------------------------------
    //TEST ASSERTION CONVENIENCE METHODS
 
-   public Response assertOk(String... messages)
-   {
-      if (statusCode < 200 || statusCode > 299)
-      {
+   public Response assertOk(String... messages) {
+      if (statusCode < 200 || statusCode > 299) {
          rethrow(statusCode, messages);
       }
 
       return this;
    }
 
-   public void rethrow()
-   {
+   public void rethrow() {
       rethrow(statusCode);
    }
 
-   public void rethrow(int statusCode)
-   {
+   public void rethrow(int statusCode) {
       rethrow(statusCode, (String[]) null);
    }
 
-   public void rethrow(String... messages)
-   {
+   public void rethrow(String... messages) {
       rethrow(statusCode, messages);
    }
 
-   public void rethrow(int statusCode, String... messages)
-   {
+   public void rethrow(int statusCode, String... messages) {
       if (error != null)
          Utils.rethrow(error);
 
@@ -893,15 +764,12 @@ public class Response
          msg += messages[i] + "\r\n ";
 
       String message = getText();
-      try
-      {
-         while (message != null && message.startsWith("{") && message.indexOf("\\\"message\\\"") > -1)
-         {
+      try {
+         while (message != null && message.startsWith("{") && message.indexOf("\\\"message\\\"") > -1) {
             message = JSNode.parseJsonNode(message).getString("message");
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //igore
       }
 
@@ -911,28 +779,22 @@ public class Response
       ApiException.throwEx(statusCode + "", null, msg);
    }
 
-   public Response assertStatus(int... statusCodes)
-   {
+   public Response assertStatus(int... statusCodes) {
       return assertStatus(null, statusCodes);
    }
 
-   public Response assertStatus(String message, int... statusCodes)
-   {
+   public Response assertStatus(String message, int... statusCodes) {
       boolean matched = false;
-      for (int statusCode : statusCodes)
-      {
-         if (statusCode == this.statusCode)
-         {
+      for (int statusCode : statusCodes) {
+         if (statusCode == this.statusCode) {
             matched = true;
             break;
          }
       }
 
-      if (!matched)
-      {
+      if (!matched) {
          Object[] args = null;
-         if (message == null)
-         {
+         if (message == null) {
             message = "The returned status '{}' was not in the approved list '{}'";
             List debugList = new ArrayList();
             for (int i = 0; statusCodes != null && i < statusCodes.length; i++)
@@ -947,10 +809,8 @@ public class Response
       return this;
    }
 
-   public Response assertDebug(String lineMatch, String... matches)
-   {
-      if (matches == null || matches.length == 0)
-      {
+   public Response assertDebug(String lineMatch, String... matches) {
+      if (matches == null || matches.length == 0) {
          matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1, lineMatch.length())};
          lineMatch = lineMatch.substring(0, lineMatch.indexOf(" "));
       }
@@ -963,22 +823,18 @@ public class Response
       debug = debug.substring(0, debug.indexOf("<< response"));
 
       int idx = debug.indexOf(" " + lineMatch + " ");
-      if (idx < 0)
-      {
+      if (idx < 0) {
          System.err.println("SKIPPING DEBUG MATCH: " + lineMatch + " " + Arrays.asList(matches));
          return this;
       }
 
       String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
 
-      for (int i = 0; i < matches.length; i++)
-      {
+      for (int i = 0; i < matches.length; i++) {
          String match = matches[i];
          List<String> matchTokens = Utils.split(match, ' ', '\'', '"', '{', '}');
-         for (String matchToken : matchTokens)
-         {
-            if (debugLine.indexOf(matchToken) < 0)
-            {
+         for (String matchToken : matchTokens) {
+            if (debugLine.indexOf(matchToken) < 0) {
                String msg = "ERROR: Can't find match token in debug line";
                msg += "\r\n" + "  - debug line    : " + debugLine;
                msg += "\r\n" + "  - missing token : " + matchToken;

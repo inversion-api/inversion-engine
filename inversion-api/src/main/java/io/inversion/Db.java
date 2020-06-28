@@ -58,8 +58,8 @@ import io.inversion.utils.Utils;
  *
  * @param <T>
  */
-public abstract class Db<T extends Db>
-{
+public abstract class Db<T extends Db> {
+
    protected final Logger          log            = LoggerFactory.getLogger(getClass());
 
    transient Set<Api>              runningApis    = new HashSet();
@@ -120,12 +120,10 @@ public abstract class Db<T extends Db>
     */
    protected Set<String>           reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
-   public Db()
-   {
+   public Db() {
    }
 
-   public Db(String name)
-   {
+   public Db(String name) {
       this.name = name;
    }
 
@@ -138,8 +136,7 @@ public abstract class Db<T extends Db>
     * @return
     * @see #doStartup(Api)
     */
-   public final synchronized T startup(Api api)
-   {
+   public final synchronized T startup(Api api) {
       if (runningApis.contains(api))
          return (T) this;
 
@@ -159,22 +156,17 @@ public abstract class Db<T extends Db>
     * @see #configDb()
     * @see #configApi(Api)
     */
-   protected void doStartup(Api api)
-   {
-      try
-      {
-         if (isBootstrap())
-         {
-            if (firstStartup)
-            {
+   protected void doStartup(Api api) {
+      try {
+         if (isBootstrap()) {
+            if (firstStartup) {
                firstStartup = false;
                configDb();
             }
             configApi(api);
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ex.printStackTrace();
          Utils.rethrow(ex);
       }
@@ -187,10 +179,8 @@ public abstract class Db<T extends Db>
     * 
     * @return this
     */
-   public synchronized T shutdown()
-   {
-      if (!shutdown)
-      {
+   public synchronized T shutdown() {
+      if (!shutdown) {
          shutdown = true;
          runningApis.forEach(api -> shutdown(api));
          doShutdown();
@@ -198,15 +188,12 @@ public abstract class Db<T extends Db>
       return (T) this;
    }
 
-   protected void doShutdown()
-   {
+   protected void doShutdown() {
 
    }
 
-   public synchronized T shutdown(Api api)
-   {
-      if (runningApis.contains(api))
-      {
+   public synchronized T shutdown(Api api) {
+      if (runningApis.contains(api)) {
          doShutdown(api);
          runningApis.remove(api);
       }
@@ -220,25 +207,20 @@ public abstract class Db<T extends Db>
    /**
     * Made to be overridden by subclasses or anonymous inner classes to do specific cleanup
     */
-   protected void doShutdown(Api api)
-   {
+   protected void doShutdown(Api api) {
 
    }
 
-   public boolean isRunning(Api api)
-   {
+   public boolean isRunning(Api api) {
       return runningApis.contains(api);
    }
 
-   protected Term asTerm(String paramName, String paramValue)
-   {
+   protected Term asTerm(String paramName, String paramValue) {
       String termStr = null;
-      if (Utils.empty(paramValue) && paramName.indexOf("(") > -1)
-      {
+      if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
          termStr = paramName;
       }
-      else
-      {
+      else {
          if (Utils.empty(paramValue))
             paramValue = "true";
 
@@ -259,11 +241,9 @@ public abstract class Db<T extends Db>
     * @return A list of maps with keys as Property jsonNames
     * @throws ApiException
     */
-   public final Results select(Collection collection, Map<String, String> params) throws ApiException
-   {
+   public final Results select(Collection collection, Map<String, String> params) throws ApiException {
       List<Term> inTerms = new ArrayList();
-      for (String key : params.keySet())
-      {
+      for (String key : params.keySet()) {
          if (!reservedParams.contains(key))
             inTerms.add(asTerm(key, params.get(key)));
       }
@@ -273,23 +253,19 @@ public abstract class Db<T extends Db>
       // names to column names.
       List<Term> terms = new ArrayList();
 
-      for (Term term : inTerms)
-      {
+      for (Term term : inTerms) {
          if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
             continue;
 
-         if (term.hasToken("eq") && term.getTerm(0).hasToken("includes"))
-         {
+         if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
             //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
             //dotted path expressions.  If you don't use dotted path expressions the includes values
             //can be used to limit the sql select clause...however if any of the columns are actually
             //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
             boolean dottedInclude = false;
-            for (int i = 1; i < term.size(); i++)
-            {
+            for (int i = 1; i < term.size(); i++) {
                String str = term.getToken(i);
-               if (str.indexOf(".") > -1)
-               {
+               if (str.indexOf(".") > -1) {
                   dottedInclude = true;
                   break;
                }
@@ -298,21 +274,16 @@ public abstract class Db<T extends Db>
                continue;
 
             //TODO: need test cases 
-            for (Term child : term.getTerms())
-            {
-               if (child.hasToken("href") && collection != null)
-               {
+            for (Term child : term.getTerms()) {
+               if (child.hasToken("href") && collection != null) {
                   term.removeTerm(child);
 
                   Index pk = collection.getPrimaryIndex();
-                  for (int i = 0; i < pk.size(); i++)
-                  {
+                  for (int i = 0; i < pk.size(); i++) {
                      Property c = pk.getProperty(i);
                      boolean includesPkCol = false;
-                     for (Term col : term.getTerms())
-                     {
-                        if (col.hasToken(c.getColumnName()))
-                        {
+                     for (Term col : term.getTerms()) {
+                        if (col.hasToken(c.getColumnName())) {
                            includesPkCol = true;
                            break;
                         }
@@ -344,37 +315,30 @@ public abstract class Db<T extends Db>
 
       Results results = doSelect(collection, mappedTerms);
 
-      if (results.size() > 0)
-      {
+      if (results.size() > 0) {
 
-         for (int i = 0; i < results.size(); i++)
-         {
+         for (int i = 0; i < results.size(); i++) {
             //convert the map into a JSNode
             Map<String, Object> row = results.getRow(i);
 
-            if (collection == null)
-            {
+            if (collection == null) {
                JSNode node = new JSNode(row);
                results.setRow(i, node);
             }
-            else
-            {
+            else {
                JSNode node = new JSNode();
                results.setRow(i, node);
 
                //String resourceKey = req.getCollection().encodeResourceKey(row);
                String resourceKey = collection.encodeResourceKey(row);
 
-               if (!Utils.empty(resourceKey))
-               {
+               if (!Utils.empty(resourceKey)) {
                   //------------------------------------------------
                   //next turn all relationships into links that will 
                   //retrieve the related entities
-                  for (Relationship rel : collection.getRelationships())
-                  {
+                  for (Relationship rel : collection.getRelationships()) {
                      String link = null;
-                     if (rel.isManyToOne())
-                     {
+                     if (rel.isManyToOne()) {
                         String fkval = null;
                         if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
                         {
@@ -382,18 +346,15 @@ public abstract class Db<T extends Db>
                            if (obj != null)
                               fkval = obj.toString();
                         }
-                        else
-                        {
+                        else {
                            fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
                         }
 
-                        if (fkval != null)
-                        {
+                        if (fkval != null) {
                            link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
                         }
                      }
-                     else
-                     {
+                     else {
                         //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
                         link = Chain.buildLink(collection, resourceKey, rel.getName());
                      }
@@ -404,8 +365,7 @@ public abstract class Db<T extends Db>
                   // finally make sure the resource key is encoded as
                   // the href
                   String href = node.getString("href");
-                  if (Utils.empty(href))
-                  {
+                  if (Utils.empty(href)) {
                      href = Chain.buildLink(collection, resourceKey, null);
                      node.putFirst("href", href);
                   }
@@ -414,8 +374,7 @@ public abstract class Db<T extends Db>
                //------------------------------------------------
                //copy over defined attributes first, if the select returned 
                //extra columns they will be copied over last
-               for (Property attr : collection.getProperties())
-               {
+               for (Property attr : collection.getProperties()) {
                   String attrName = attr.getJsonName();
                   String colName = attr.getColumnName();
 
@@ -435,10 +394,8 @@ public abstract class Db<T extends Db>
                //------------------------------------------------
                // next, if the db returned extra columns that 
                // are not mapped to attributes, just straight copy them
-               for (String key : row.keySet())
-               {
-                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key))
-                  {
+               for (String key : row.keySet()) {
+                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
                      Object value = row.get(key);
                      node.put(key, value);
                   }
@@ -452,8 +409,7 @@ public abstract class Db<T extends Db>
       //------------------------------------------------
       //the "next" params come from the db encoded with db col names
       //have to convert them to their attribute equivalents
-      for (Term term : ((List<Term>) results.getNext()))
-      {
+      for (Term term : ((List<Term>) results.getNext())) {
          mapToJsonNames(collection, term);
       }
 
@@ -470,24 +426,20 @@ public abstract class Db<T extends Db>
     */
    public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
 
-   public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException
-   {
+   public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException {
       List<Map<String, Object>> upsertMaps = new ArrayList();
-      for (Map<String, Object> node : rows)
-      {
+      for (Map<String, Object> node : rows) {
          Map<String, Object> mapped = new HashMap();
          upsertMaps.add(mapped);
 
          String href = node.get("href") != null ? node.get("href").toString() : null;
-         if (href != null)
-         {
+         if (href != null) {
             Row decodedKey = collection.decodeResourceKey(href);
             mapped.putAll(decodedKey);
          }
 
          HashSet copied = new HashSet();
-         for (Property attr : collection.getProperties())
-         {
+         for (Property attr : collection.getProperties()) {
             String attrName = attr.getJsonName();
 
             //skip relationships first, all relationships will be upserted first
@@ -496,8 +448,7 @@ public abstract class Db<T extends Db>
                continue;
 
             String colName = attr.getColumnName();
-            if (node.containsKey(attrName))
-            {
+            if (node.containsKey(attrName)) {
                copied.add(attrName.toLowerCase());
                copied.add(colName.toLowerCase());
 
@@ -506,42 +457,33 @@ public abstract class Db<T extends Db>
                mapped.put(colName, colValue);
             }
          }
-         for (Relationship rel : collection.getRelationships())
-         {
+         for (Relationship rel : collection.getRelationships()) {
             copied.add(rel.getName().toLowerCase());
 
-            if (rel.isManyToOne() && node.get(rel.getName()) != null)
-            {
-               if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1)
-               {
+            if (rel.isManyToOne() && node.get(rel.getName()) != null) {
+               if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1) {
                   String jsonName = rel.getFkIndex1().getJsonNames().get(0);
                   String colName = rel.getFkIndex1().getColumnName(0);
 
                   Object value = node.get(jsonName);
 
-                  if (value != null)
-                  {
+                  if (value != null) {
                      value = Utils.substringAfter(value.toString(), "/");
                      mapped.put(colName, value);
                      copied.add(colName);
                   }
                }
-               else
-               {
-                  for (String colName : rel.getFkIndex1().getColumnNames())
-                  {
+               else {
+                  for (String colName : rel.getFkIndex1().getColumnNames()) {
                      copied.add(colName.toLowerCase());
                   }
 
                   Map key = getKey(rel.getRelated(), node.get(rel.getName()));
-                  if (key != null)
-                  {
+                  if (key != null) {
                      Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                     for (Object keyPart : foreignKey.keySet())
-                     {
+                     for (Object keyPart : foreignKey.keySet()) {
                         Object keyValue = foreignKey.get(keyPart);
-                        if (keyValue != null)
-                        {
+                        if (keyValue != null) {
                            mapped.put((String) keyPart, keyValue);
                         }
                      }
@@ -554,20 +496,16 @@ public abstract class Db<T extends Db>
          //-- but are unknown to the collection/table.  This is necessary to support
          //-- document stores like dynamo/elastic where all columns are not necessarily
          //-- known.
-         for (String key : node.keySet())
-         {
-            if (!copied.contains(key.toLowerCase()))
-            {
+         for (String key : node.keySet()) {
+            if (!copied.contains(key.toLowerCase())) {
                if (!key.equals("href"))
                   mapped.put(key, node.get(key));
             }
          }
 
-         for (String key : (List<String>) new ArrayList(mapped.keySet()))
-         {
+         for (String key : (List<String>) new ArrayList(mapped.keySet())) {
             //TODO can optimize?
-            if (!shouldInclude(collection, key))
-            {
+            if (!shouldInclude(collection, key)) {
                mapped.remove(key);
             }
          }
@@ -576,8 +514,7 @@ public abstract class Db<T extends Db>
       return doUpsert(collection, upsertMaps);
    }
 
-   public String getHref(Object hrefOrNode)
-   {
+   public String getHref(Object hrefOrNode) {
       if (hrefOrNode instanceof JSNode)
          hrefOrNode = ((JSNode) hrefOrNode).get("href");
 
@@ -587,8 +524,7 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Map getKey(Collection collection, Object node)
-   {
+   public Map getKey(Collection collection, Object node) {
       if (node instanceof JSNode)
          node = ((JSNode) node).getString("href");
 
@@ -598,10 +534,8 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Map mapTo(Map srcRow, Index srcCols, Index destCols)
-   {
-      if (srcCols.size() != destCols.size() && destCols.size() == 1)
-      {
+   public Map mapTo(Map srcRow, Index srcCols, Index destCols) {
+      if (srcCols.size() != destCols.size() && destCols.size() == 1) {
          //when the foreign key is only one column but the related primary key is multiple 
          //columns, encode the FK as an resourceKey.
          String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
@@ -611,18 +545,15 @@ public abstract class Db<T extends Db>
 
          srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
       }
-      else
-      {
+      else {
          if (srcCols.size() != destCols.size())
             ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
 
          if (srcRow == null)
             return Collections.EMPTY_MAP;
 
-         if (srcCols != destCols)
-         {
-            for (int i = 0; i < srcCols.size(); i++)
-            {
+         if (srcCols != destCols) {
+            for (int i = 0; i < srcCols.size(); i++) {
                String key = srcCols.getProperty(i).getColumnName();
                Object value = srcRow.remove(key);
                srcRow.put(destCols.getProperty(i).getColumnName(), value);
@@ -668,74 +599,59 @@ public abstract class Db<T extends Db>
     * @throws ApiException
     */
    //TODO: all rows need to be have a resourceKey 
-   public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException
-   {
+   public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException {
       List<Map<String, Object>> rows = new ArrayList();
 
       List<String> resourceKeys = new ArrayList();
-      for (Map<String, Object> node : nodes)
-      {
+      for (Map<String, Object> node : nodes) {
          if (node.size() == 1)
             continue;//patching an "href" only so no changes.
 
          Row row = new Row();
          rows.add(row);
 
-         for (String jsonProp : node.keySet())
-         {
+         for (String jsonProp : node.keySet()) {
             Object value = node.get(jsonProp);
 
-            if ("href".equalsIgnoreCase(jsonProp))
-            {
+            if ("href".equalsIgnoreCase(jsonProp)) {
                String resourceKey = Utils.substringAfter(value.toString(), "/");
                resourceKeys.add(resourceKey);
                row.putAll(collection.decodeResourceKey(resourceKey));
             }
-            else
-            {
+            else {
                Property collProp = collection.getProperty(jsonProp);
-               if (collProp != null)
-               {
+               if (collProp != null) {
                   value = cast(collProp, value);
                   row.put(collProp.getColumnName(), value);
                }
-               else
-               {
+               else {
                   //TODO: need test case here
                   Relationship rel = collection.getRelationship(jsonProp);
-                  if (rel != null)
-                  {
-                     if (rel.isManyToOne())
-                     {
-                        if (value != null)
-                        {
+                  if (rel != null) {
+                     if (rel.isManyToOne()) {
+                        if (value != null) {
                            Map fk = rel.getRelated().decodeResourceKey(value.toString());
                            mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
                            row.putAll(fk);
                         }
-                        else
-                        {
-                           for (Property fkProp : rel.getFkIndex1().getProperties())
-                           {
+                        else {
+                           for (Property fkProp : rel.getFkIndex1().getProperties()) {
                               row.put(fkProp.getColumnName(), null);
                            }
                         }
                      }
-                     else
-                     {
+                     else {
                         ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
                      }
                   }
-                  else
-                  {
+                  else {
                      row.put(jsonProp, value);
                   }
                }
             }
          }
 
-         for (String columnName : (Set<String>) row.keySet())
-         {
+         for (String columnName : (Set<String>) row.keySet()) {
             //TODO can optimize?
             if (!shouldInclude(collection, columnName))
                row.remove(columnName);
@@ -747,8 +663,7 @@ public abstract class Db<T extends Db>
       return resourceKeys;
    }
 
-   public void doPatch(Collection collection, List<Map<String, Object>> rows) throws ApiException
-   {
+   public void doPatch(Collection collection, List<Map<String, Object>> rows) throws ApiException {
       doUpsert(collection, rows);
    }
 
@@ -772,13 +687,10 @@ public abstract class Db<T extends Db>
     * 
     * @param api  the Api to configure.
     */
-   protected void configApi(Api api)
-   {
+   protected void configApi(Api api) {
 
-      for (Collection coll : getCollections())
-      {
-         if (!coll.isExclude())
-         {
+      for (Collection coll : getCollections()) {
+         if (!coll.isExclude()) {
             api.withCollection(coll);
          }
       }
@@ -795,10 +707,8 @@ public abstract class Db<T extends Db>
     * 
     * @throws ApiException
     */
-   protected void configDb() throws ApiException
-   {
-      if (collections.size() == 0)
-      {
+   protected void configDb() throws ApiException {
+      if (collections.size() == 0) {
          buildCollections();
          buildRelationships();
       }
@@ -810,30 +720,23 @@ public abstract class Db<T extends Db>
     * Subclasses should override this method to reflectively create Collections, Properties and Indexes and then call super.buildCollections()
     * if they want names them beautified.
     */
-   protected void buildCollections()
-   {
-      for (String tableName : includeTables.keySet())
-      {
+   protected void buildCollections() {
+      for (String tableName : includeTables.keySet()) {
          Collection collection = getCollectionByTableName(tableName);
-         if (collection == null)
-         {
+         if (collection == null) {
             withCollection(new Collection(tableName));
          }
       }
 
-      for (Collection coll : getCollections())
-      {
-         if (coll.getName().equals(coll.getTableName()))
-         {
+      for (Collection coll : getCollections()) {
+         if (coll.getName().equals(coll.getTableName())) {
             //collection has not already been specifically customized
             String prettyName = beautifyCollectionName(coll.getTableName());
             coll.withName(prettyName);
          }
 
-         for (Property prop : coll.getProperties())
-         {
-            if (prop.getColumnName().equals(prop.getJsonName()))
-            {
+         for (Property prop : coll.getProperties()) {
+            if (prop.getColumnName().equals(prop.getJsonName())) {
                //json name has not already been specifically customized
                String prettyName = beautifyName(prop.getColumnName());
                prop.withJsonName(prettyName);
@@ -849,21 +752,16 @@ public abstract class Db<T extends Db>
     * For all foreign key indexes, two relationships objects are created representing both sides of the relationship. 
     * A MANY_TO_ONE also creates a ONE_TO_MANY and vice versa and there are always two for a MANY_TO_MANY modeling the relationship from both sides.
     */
-   protected void buildRelationships()
-   {
+   protected void buildRelationships() {
       List<String> relationshipStrs = new ArrayList();
 
-      for (Collection coll : getCollections())
-      {
-         if (coll.isLinkTbl())
-         {
+      for (Collection coll : getCollections()) {
+         if (coll.isLinkTbl()) {
             //create reciprocal pairs for of MANY_TO_MANY relationships
             //for each pair combination in the link table.
             List<Index> indexes = coll.getIndexes();
-            for (int i = 0; i < indexes.size(); i++)
-            {
-               for (int j = 0; j < indexes.size(); j++)
-               {
+            for (int i = 0; i < indexes.size(); i++) {
+               for (int j = 0; j < indexes.size(); j++) {
                   Index idx1 = indexes.get(i);
                   Index idx2 = indexes.get(j);
 
@@ -885,12 +783,9 @@ public abstract class Db<T extends Db>
                }
             }
          }
-         else
-         {
-            for (Index fkIdx : coll.getIndexes())
-            {
-               try
-               {
+         else {
+            for (Index fkIdx : coll.getIndexes()) {
+               try {
                   if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
                      continue;
 
@@ -922,8 +817,7 @@ public abstract class Db<T extends Db>
                      relationshipStrs.add(r.toString());
                   }
                }
-               catch (Exception ex)
-               {
+               catch (Exception ex) {
                   ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
                }
             }
@@ -938,8 +832,7 @@ public abstract class Db<T extends Db>
     * @return a camelCased and pluralied version of tableName
     * @see #beautifyName(String)
     */
-   protected String beautifyCollectionName(String tableName)
-   {
+   protected String beautifyCollectionName(String tableName) {
       if (includeTables.containsKey(tableName))
          return includeTables.get(tableName);
 
@@ -961,22 +854,18 @@ public abstract class Db<T extends Db>
     * 
     * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
     */
-   protected String beautifyName(String name)
-   {
+   protected String beautifyName(String name) {
       //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
-      if (name.toUpperCase().equals(name))
-      {
+      if (name.toUpperCase().equals(name)) {
          name = name.toLowerCase();
       }
 
       StringBuffer buff = new StringBuffer("");
 
       boolean nextUpper = false;
-      for (int i = 0; i < name.length(); i++)
-      {
+      for (int i = 0; i < name.length(); i++) {
          char next = name.charAt(i);
-         if (next == ' ' || next == '_')
-         {
+         if (next == ' ' || next == '_') {
             nextUpper = true;
             continue;
          }
@@ -988,8 +877,7 @@ public abstract class Db<T extends Db>
             next = 'x';
          }
 
-         if (nextUpper)
-         {
+         if (nextUpper) {
             next = Character.toUpperCase(next);
             nextUpper = false;
          }
@@ -1066,14 +954,12 @@ public abstract class Db<T extends Db>
     * @param rel
     * @return the json property name for this Relationship. 
     */
-   protected String makeRelationshipName(Collection resource, Relationship rel)
-   {
+   protected String makeRelationshipName(Collection resource, Relationship rel) {
       String name = null;
       String type = rel.getType();
 
       String fkColName = rel.getFk1Col1().getColumnName();
-      if (fkColName.toLowerCase().endsWith("id") && fkColName.length() > 2)
-      {
+      if (fkColName.toLowerCase().endsWith("id") && fkColName.length() > 2) {
          fkColName = fkColName.substring(0, fkColName.length() - 2);
          while (fkColName.endsWith("_"))
             fkColName = fkColName.substring(0, fkColName.length() - 1);
@@ -1081,12 +967,10 @@ public abstract class Db<T extends Db>
       fkColName = fkColName.trim();
       fkColName = beautifyName(fkColName);
 
-      if (type.equals(Relationship.REL_MANY_TO_ONE))
-      {
+      if (type.equals(Relationship.REL_MANY_TO_ONE)) {
          name = fkColName;
       }
-      else if (type.equals(Relationship.REL_ONE_TO_MANY))
-      {
+      else if (type.equals(Relationship.REL_ONE_TO_MANY)) {
          //Example
          //
          //if the Alarm table has a FK to the Category table
@@ -1108,23 +992,19 @@ public abstract class Db<T extends Db>
 
          name = rel.getRelated().getName();
 
-         for (Relationship aRel : resource.getRelationships())
-         {
+         for (Relationship aRel : resource.getRelationships()) {
             if (rel == aRel)
                continue;
 
-            if (rel.getRelated() == aRel.getRelated())
-            {
-               if (!fkColName.equals(name))
-               {
+            if (rel.getRelated() == aRel.getRelated()) {
+               if (!fkColName.equals(name)) {
                   name = fkColName + Character.toUpperCase(name.charAt(0)) + name.substring(1);
                }
                break;
             }
          }
       }
-      else if (type.equals(Relationship.REL_MANY_TO_MANY))
-      {
+      else if (type.equals(Relationship.REL_MANY_TO_MANY)) {
          name = rel.getFk2Col1().getPk().getCollection().getName();
 
       }
@@ -1140,8 +1020,7 @@ public abstract class Db<T extends Db>
     * @return <code>value</code> cast to <code>Property.type</code>
     * @see io.inversion.utils.Utils.cast(String, Object)
     */
-   public Object cast(Property property, Object value)
-   {
+   public Object cast(Property property, Object value) {
       return Utils.cast(property != null ? property.getType() : null, value);
    }
 
@@ -1153,35 +1032,29 @@ public abstract class Db<T extends Db>
     * @return <code>value</code> cast to <code>type</code>
     * @see io.inversion.utils.Utils.cast(String, Object)
     */
-   public Object cast(String type, Object value)
-   {
+   public Object cast(String type, Object value) {
       return Utils.cast(type, value);
    }
 
-   protected void mapToJsonNames(Collection collection, Term term)
-   {
+   protected void mapToJsonNames(Collection collection, Term term) {
       if (collection == null)
          return;
 
-      if (term.isLeaf() && !term.isQuoted())
-      {
+      if (term.isLeaf() && !term.isQuoted()) {
          String token = term.getToken();
 
          Property attr = collection.findProperty(token);
          if (attr != null)
             term.withToken(attr.getJsonName());
       }
-      else
-      {
-         for (Term child : term.getTerms())
-         {
+      else {
+         for (Term child : term.getTerms()) {
             mapToJsonNames(collection, child);
          }
       }
    }
 
-   protected Set<Term> mapToColumnNames(Collection collection, Term term)
-   {
+   protected Set<Term> mapToColumnNames(Collection collection, Term term) {
       Set terms = new HashSet();
 
       if (term.getParent() == null)
@@ -1190,8 +1063,7 @@ public abstract class Db<T extends Db>
       if (collection == null)
          return terms;
 
-      if (term.isLeaf() && !term.isQuoted())
-      {
+      if (term.isLeaf() && !term.isQuoted()) {
          String token = term.getToken();
 
          while (token.startsWith("-") || token.startsWith("+"))
@@ -1203,12 +1075,10 @@ public abstract class Db<T extends Db>
          //         if (parts.length > 2)//this could be a literal
          //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
 
-         for (int i = 0; i < parts.length; i++)
-         {
+         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
 
-            if (i == parts.length - 1)
-            {
+            if (i == parts.length - 1) {
                Property attr = collection.findProperty(parts[i]);
 
                if (attr != null)
@@ -1216,33 +1086,27 @@ public abstract class Db<T extends Db>
                else
                   name += parts[i];
             }
-            else
-            {
+            else {
                Relationship rel = collection.getRelationship(part);
 
-               if (rel != null)
-               {
+               if (rel != null) {
                   name += rel.getName() + ".";
                   collection = rel.getRelated();
                }
-               else
-               {
+               else {
                   name += parts[i] + ".";
                }
             }
          }
 
-         if (!Utils.empty(name))
-         {
+         if (!Utils.empty(name)) {
             if (term.getToken().startsWith("-"))
                name = "-" + name;
             term.withToken(name);
          }
       }
-      else
-      {
-         for (Term child : term.getTerms())
-         {
+      else {
+         for (Term child : term.getTerms()) {
             terms.addAll(mapToColumnNames(collection, child));
          }
       }
@@ -1250,8 +1114,7 @@ public abstract class Db<T extends Db>
       return terms;
    }
 
-   protected Property getProperty(String tableName, String columnName)
-   {
+   protected Property getProperty(String tableName, String columnName) {
       Collection collection = getCollectionByTableName(tableName);
       if (collection != null)
          return collection.getPropertyByColumnName(columnName);
@@ -1259,10 +1122,8 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public Collection getCollectionByTableName(String tableName)
-   {
-      for (Collection t : collections)
-      {
+   public Collection getCollectionByTableName(String tableName) {
+      for (Collection t : collections) {
          if (tableName.equalsIgnoreCase(t.getTableName()))
             return t;
       }
@@ -1270,16 +1131,14 @@ public abstract class Db<T extends Db>
       return null;
    }
 
-   public void removeCollection(Collection table)
-   {
+   public void removeCollection(Collection table) {
       collections.remove(table);
    }
 
    /**
     * @return a shallow copy of <code>collections</code>
     */
-   public List<Collection> getCollections()
-   {
+   public List<Collection> getCollections() {
       return new ArrayList(collections);
    }
 
@@ -1300,10 +1159,8 @@ public abstract class Db<T extends Db>
    * 
    * @see #beautifyCollectionName(String)
    */
-   public T withIncludeTables(String includeTables)
-   {
-      for (String pair : Utils.explode(",", includeTables))
-      {
+   public T withIncludeTables(String includeTables) {
+      for (String pair : Utils.explode(",", includeTables)) {
          String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
          String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
          withIncludeTable(tableName, collectionName);
@@ -1318,8 +1175,7 @@ public abstract class Db<T extends Db>
     * @param collectionName  the name of the target collection that can be different from tableName.
     * @return this
     */
-   public T withIncludeTable(String tableName, String collectionName)
-   {
+   public T withIncludeTable(String tableName, String collectionName) {
       this.includeTables.put(tableName, collectionName);
       return (T) this;
    }
@@ -1327,18 +1183,15 @@ public abstract class Db<T extends Db>
    /**
     * @param collections to include (add not replace)
     */
-   public T withCollections(Collection... colls)
-   {
+   public T withCollections(Collection... colls) {
       for (Collection coll : colls)
          withCollection(coll);
 
       return (T) this;
    }
 
-   public T withCollection(Collection tbl)
-   {
-      if (tbl != null)
-      {
+   public T withCollection(Collection tbl) {
+      if (tbl != null) {
          if (tbl.getDb() != this)
             tbl.withDb(this);
 
@@ -1360,17 +1213,13 @@ public abstract class Db<T extends Db>
     * @param columnName
     * @return
     */
-   public boolean shouldInclude(Collection collection, String columnName)
-   {
-      if (includeColumns.size() > 0 || excludeColumns.size() > 0)
-      {
+   public boolean shouldInclude(Collection collection, String columnName) {
+      if (includeColumns.size() > 0 || excludeColumns.size() > 0) {
          String fullName = collection + "." + columnName;
-         if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName))
-         {
+         if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName)) {
             return false;
          }
-         if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName)))
-         {
+         if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName))) {
             return false;
          }
       }
@@ -1378,14 +1227,12 @@ public abstract class Db<T extends Db>
       return collection != null ? collection.getPropertyByColumnName(columnName) != null : true;
    }
 
-   public T withIncludeColumns(String... columnNames)
-   {
+   public T withIncludeColumns(String... columnNames) {
       includeColumns.addAll(Utils.explode(",", columnNames));
       return (T) this;
    }
 
-   public T withExcludeColumns(String... columnNames)
-   {
+   public T withExcludeColumns(String... columnNames) {
       excludeColumns.addAll(Utils.explode(",", columnNames));
       return (T) this;
    }
@@ -1393,8 +1240,7 @@ public abstract class Db<T extends Db>
    /**
     * @return the name
     */
-   public String getName()
-   {
+   public String getName() {
       return name;
    }
 
@@ -1403,55 +1249,46 @@ public abstract class Db<T extends Db>
     * 
     * @param name the name to set
     */
-   public T withName(String name)
-   {
+   public T withName(String name) {
       this.name = name;
       return (T) this;
    }
 
-   public boolean isType(String... types)
-   {
+   public boolean isType(String... types) {
       String type = getType();
       if (type == null)
          return false;
 
-      for (String t : types)
-      {
+      for (String t : types) {
          if (type.equalsIgnoreCase(t))
             return true;
       }
       return false;
    }
 
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
-   public T withType(String type)
-   {
+   public T withType(String type) {
       this.type = type;
       return (T) this;
    }
 
-   public boolean isBootstrap()
-   {
+   public boolean isBootstrap() {
       return bootstrap;
    }
 
-   public T withBootstrap(boolean bootstrap)
-   {
+   public T withBootstrap(boolean bootstrap) {
       this.bootstrap = bootstrap;
       return (T) this;
    }
 
-   public Path getEndpointPath()
-   {
+   public Path getEndpointPath() {
       return endpointPath;
    }
 
-   public T withEndpointPath(Path endpointPath)
-   {
+   public T withEndpointPath(Path endpointPath) {
       this.endpointPath = endpointPath;
       return (T) this;
    }
@@ -1485,8 +1322,8 @@ public abstract class Db<T extends Db>
     * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
     * </p>
     */
-   static class Pluralizer
-   {
+   static class Pluralizer {
+
       enum MODE {
          ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
       }
@@ -1534,13 +1371,11 @@ public abstract class Db<T extends Db>
 
       private static Pluralizer     inflector         = new Pluralizer();
 
-      public Pluralizer()
-      {
+      public Pluralizer() {
          this(MODE.ENGLISH_ANGLICIZED);
       }
 
-      public Pluralizer(MODE mode)
-      {
+      public Pluralizer(MODE mode) {
 
          uncountable(new String[]{
                // 2. Handle words that do not inflect in the plural (such as fish, travois, chassis, nationalities ending
@@ -1563,13 +1398,11 @@ public abstract class Db<T extends Db>
                {"genus", "genera"}, // classical
                {"quiz", "quizzes"},});
 
-         if (mode == MODE.ENGLISH_ANGLICIZED)
-         {
+         if (mode == MODE.ENGLISH_ANGLICIZED) {
             // Anglicized plural
             irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
          }
-         else if (mode == MODE.ENGLISH_CLASSICAL)
-         {
+         else if (mode == MODE.ENGLISH_CLASSICAL) {
             // Classical plural
             irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
          }
@@ -1596,8 +1429,7 @@ public abstract class Db<T extends Db>
          categoryRule(CATEGORY_A_AE, "a", "ae");
 
          // 7. Handle classical variants of modern inflections
-         if (mode == MODE.ENGLISH_CLASSICAL)
-         {
+         if (mode == MODE.ENGLISH_CLASSICAL) {
             rule(new String[][]{{"trix$", "trices"}, {"eau$", "eaux"}, {"ieu$", "ieux"}, {"(..[iay])nx$", "$1nges"},});
             categoryRule(CATEGORY_EN_INA, "en", "ina");
             categoryRule(CATEGORY_A_ATA, "a", "ata");
@@ -1665,10 +1497,8 @@ public abstract class Db<T extends Db>
        * @param count word count
        * @return form of the word correct for given count
        */
-      public String getPlural(String word, int count)
-      {
-         if (count == 1)
-         {
+      public String getPlural(String word, int count) {
+         if (count == 1) {
             return word;
          }
          return getPlural(word);
@@ -1687,8 +1517,7 @@ public abstract class Db<T extends Db>
        * @param word word in singular form
        * @return plural form of given word
        */
-      public static String plural(String word)
-      {
+      public static String plural(String word) {
          if (word.endsWith("s") || word.endsWith("S"))
             return word;
 
@@ -1711,42 +1540,37 @@ public abstract class Db<T extends Db>
        * @param count word count
        * @return form of the word correct for given count
        */
-      public static String plural(String word, int count)
-      {
+      public static String plural(String word, int count) {
          return inflector.getPlural(word, count);
       }
 
-      public static void setMode(MODE mode)
-      {
+      public static void setMode(MODE mode) {
          Pluralizer newInflector = new Pluralizer(mode);
          inflector = newInflector;
       }
 
       //   public static abstract class TwoFormInflector
       //   {
-      private interface Rule
-      {
+      private interface Rule {
+
          String getPlural(String singular);
       }
 
-      private static class RegExpRule implements Rule
-      {
+      private static class RegExpRule implements Rule {
+
          private final Pattern singular;
          private final String  plural;
 
-         private RegExpRule(Pattern singular, String plural)
-         {
+         private RegExpRule(Pattern singular, String plural) {
             this.singular = singular;
             this.plural = plural;
          }
 
          @Override
-         public String getPlural(String word)
-         {
+         public String getPlural(String word) {
             StringBuffer buffer = new StringBuffer();
             Matcher matcher = singular.matcher(word);
-            if (matcher.find())
-            {
+            if (matcher.find()) {
                matcher.appendReplacement(buffer, plural);
                matcher.appendTail(buffer);
                return buffer.toString();
@@ -1755,29 +1579,24 @@ public abstract class Db<T extends Db>
          }
       }
 
-      private static class CategoryRule implements Rule
-      {
+      private static class CategoryRule implements Rule {
+
          private final String[] list;
          private final String   singular;
          private final String   plural;
 
-         public CategoryRule(String[] list, String singular, String plural)
-         {
+         public CategoryRule(String[] list, String singular, String plural) {
             this.list = list;
             this.singular = singular;
             this.plural = plural;
          }
 
          @Override
-         public String getPlural(String word)
-         {
+         public String getPlural(String word) {
             String lowerWord = word.toLowerCase();
-            for (String suffix : list)
-            {
-               if (lowerWord.endsWith(suffix))
-               {
-                  if (!lowerWord.endsWith(singular))
-                  {
+            for (String suffix : list) {
+               if (lowerWord.endsWith(suffix)) {
+                  if (!lowerWord.endsWith(singular)) {
                      throw new RuntimeException("Internal error");
                   }
                   return word.substring(0, word.length() - singular.length()) + plural;
@@ -1789,60 +1608,47 @@ public abstract class Db<T extends Db>
 
       private final List<Rule> rules = new ArrayList<Rule>();
 
-      protected String getPlural(String word)
-      {
-         for (Rule rule : rules)
-         {
+      protected String getPlural(String word) {
+         for (Rule rule : rules) {
             String result = rule.getPlural(word);
-            if (result != null)
-            {
+            if (result != null) {
                return result;
             }
          }
          return null;
       }
 
-      protected void uncountable(String[] list)
-      {
+      protected void uncountable(String[] list) {
          rules.add(new CategoryRule(list, "", ""));
       }
 
-      protected void irregular(String singular, String plural)
-      {
-         if (singular.charAt(0) == plural.charAt(0))
-         {
+      protected void irregular(String singular, String plural) {
+         if (singular.charAt(0) == plural.charAt(0)) {
             rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
          }
-         else
-         {
+         else {
             rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
             rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
          }
       }
 
-      protected void irregular(String[][] list)
-      {
-         for (String[] pair : list)
-         {
+      protected void irregular(String[][] list) {
+         for (String[] pair : list) {
             irregular(pair[0], pair[1]);
          }
       }
 
-      protected void rule(String singular, String plural)
-      {
+      protected void rule(String singular, String plural) {
          rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
       }
 
-      protected void rule(String[][] list)
-      {
-         for (String[] pair : list)
-         {
+      protected void rule(String[][] list) {
+         for (String[] pair : list) {
             rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
          }
       }
 
-      protected void categoryRule(String[] list, String singular, String plural)
-      {
+      protected void categoryRule(String[] list, String singular, String plural) {
          rules.add(new CategoryRule(list, singular, plural));
       }
    }

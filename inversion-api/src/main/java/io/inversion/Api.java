@@ -22,8 +22,8 @@ import java.util.List;
 
 import io.inversion.utils.Path;
 
-public class Api extends Rule<Api>
-{
+public class Api extends Rule<Api> {
+
    transient volatile boolean            started     = false;
    transient volatile boolean            starting    = false;
    transient protected String            hash        = null;
@@ -44,60 +44,48 @@ public class Api extends Rule<Api>
     * Listener that can be registered with an {@code Api} to receive lifecycle, 
     * per request and per error callback notifications.
     */
-   public static interface ApiListener
-   {
-      default void onStartup(Api api)
-      {
+   public static interface ApiListener {
+
+      default void onStartup(Api api) {
       }
 
-      default void onShutdown(Api api)
-      {
+      default void onShutdown(Api api) {
       }
 
-      default void afterRequest(Request req, Response res)
-      {
+      default void afterRequest(Request req, Response res) {
       }
 
-      default void afterError(Request req, Response res)
-      {
+      default void afterError(Request req, Response res) {
       }
 
-      default void beforeFinally(Request req, Response res)
-      {
+      default void beforeFinally(Request req, Response res) {
       }
    }
 
-   public Api()
-   {
+   public Api() {
    }
 
-   public Api(String name)
-   {
+   public Api(String name) {
       withName(name);
    }
 
    @Override
-   protected RuleMatcher getDefaultIncludeMatch()
-   {
+   protected RuleMatcher getDefaultIncludeMatch() {
       List parts = new ArrayList();
-      if (name != null)
-      {
+      if (name != null) {
          parts.add(name);
       }
       parts.add("*");
       return new RuleMatcher(null, new Path(parts));
    }
 
-   public synchronized Api startup()
-   {
+   public synchronized Api startup() {
       if (started || starting) //starting is an accidental recursion guard
          return this;
 
       starting = true;
-      try
-      {
-         for (Db db : dbs)
-         {
+      try {
+         for (Db db : dbs) {
             db.startup(this);
          }
 
@@ -105,62 +93,47 @@ public class Api extends Rule<Api>
 
          started = true;
 
-         for (ApiListener listener : listeners)
-         {
-            try
-            {
+         for (ApiListener listener : listeners) {
+            try {
                listener.onStartup(this);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                log.warn("Error notifing api startup listener: " + listener, ex);
             }
          }
 
          return this;
       }
-      finally
-      {
+      finally {
          starting = false;
       }
    }
 
-   public boolean isStarted()
-   {
+   public boolean isStarted() {
       return started;
    }
 
-   public void shutdown()
-   {
-      for (Db db : dbs)
-      {
+   public void shutdown() {
+      for (Db db : dbs) {
          db.shutdown(this);
       }
    }
 
-   public void removeExcludes()
-   {
-      for (Db db : getDbs())
-      {
-         for (Collection coll : (List<Collection>) db.getCollections())
-         {
-            if (coll.isExclude())
-            {
+   public void removeExcludes() {
+      for (Db db : getDbs()) {
+         for (Collection coll : (List<Collection>) db.getCollections()) {
+            if (coll.isExclude()) {
                db.removeCollection(coll);
             }
-            else
-            {
-               for (Property col : coll.getProperties())
-               {
+            else {
+               for (Property col : coll.getProperties()) {
                   if (col.isExclude())
                      coll.removeProperty(col);
                }
             }
 
-            for (Relationship rel : coll.getRelationships())
-            {
-               if (rel.isExclude())
-               {
+            for (Relationship rel : coll.getRelationships()) {
+               if (rel.isExclude()) {
                   coll.removeRelationship(rel);
                }
             }
@@ -168,19 +141,16 @@ public class Api extends Rule<Api>
       }
    }
 
-   public String getHash()
-   {
+   public String getHash() {
       return hash;
    }
 
-   public Api withHash(String hash)
-   {
+   public Api withHash(String hash) {
       this.hash = hash;
       return this;
    }
 
-   public Api withCollection(Collection coll)
-   {
+   public Api withCollection(Collection coll) {
       //if (coll.isLinkTbl() || coll.isExclude())
       if (coll.isExclude())
          return this;
@@ -191,28 +161,23 @@ public class Api extends Rule<Api>
       return this;
    }
 
-   public List<Collection> getCollections()
-   {
+   public List<Collection> getCollections() {
       return Collections.unmodifiableList(collections);
    }
 
-   public Collection getCollection(String name)
-   {
-      for (Collection coll : collections)
-      {
+   public Collection getCollection(String name) {
+      for (Collection coll : collections) {
          if (name.equalsIgnoreCase(coll.getName()))
             return coll;
       }
       return null;
    }
 
-   public Db getDb(String name)
-   {
+   public Db getDb(String name) {
       if (name == null)
          return null;
 
-      for (Db db : dbs)
-      {
+      for (Db db : dbs) {
          if (name.equalsIgnoreCase(db.getName()))
             return db;
       }
@@ -222,30 +187,25 @@ public class Api extends Rule<Api>
    /**
     * @return the dbs
     */
-   public List<Db> getDbs()
-   {
+   public List<Db> getDbs() {
       return new ArrayList(dbs);
    }
 
    /**
        * @param dbs the dbs to set
        */
-   public Api withDbs(Db... dbs)
-   {
+   public Api withDbs(Db... dbs) {
       for (Db db : dbs)
          withDb(db);
 
       return this;
    }
 
-   public Api withDb(Db db)
-   {
-      if (!dbs.contains(db))
-      {
+   public Api withDb(Db db) {
+      if (!dbs.contains(db)) {
          dbs.add(db);
 
-         for (Collection coll : (List<Collection>) db.getCollections())
-         {
+         for (Collection coll : (List<Collection>) db.getCollections()) {
             withCollection(coll);
          }
       }
@@ -253,45 +213,36 @@ public class Api extends Rule<Api>
       return this;
    }
 
-   public long getLoadTime()
-   {
+   public long getLoadTime() {
       return loadTime;
    }
 
-   public void setLoadTime(long loadTime)
-   {
+   public void setLoadTime(long loadTime) {
       this.loadTime = loadTime;
    }
 
-   public List<Endpoint> getEndpoints()
-   {
+   public List<Endpoint> getEndpoints() {
       return new ArrayList(endpoints);
    }
 
-   public Api withEndpoint(String methods, String includePaths, Action... actions)
-   {
+   public Api withEndpoint(String methods, String includePaths, Action... actions) {
       Endpoint endpoint = new Endpoint(methods, includePaths, actions);
       withEndpoint(endpoint);
       return this;
    }
 
-   public Api withEndpoints(Endpoint... endpoints)
-   {
+   public Api withEndpoints(Endpoint... endpoints) {
       for (Endpoint endpoint : endpoints)
          withEndpoint(endpoint);
 
       return this;
    }
 
-   public Api withEndpoint(Endpoint endpoint)
-   {
-      if (!endpoints.contains(endpoint))
-      {
+   public Api withEndpoint(Endpoint endpoint) {
+      if (!endpoints.contains(endpoint)) {
          boolean inserted = false;
-         for (int i = 0; i < endpoints.size(); i++)
-         {
-            if (endpoint.getOrder() < endpoints.get(i).getOrder())
-            {
+         for (int i = 0; i < endpoints.size(); i++) {
+            if (endpoint.getOrder() < endpoints.get(i).getOrder()) {
                endpoints.add(i, endpoint);
                inserted = true;
                break;
@@ -308,8 +259,7 @@ public class Api extends Rule<Api>
     * This method takes String instead of actual Collections and Properties as a convenience to people hand wiring up an Api.
     * The referenced Collections and Properties actually have to exist already or you will get a NPE.  
     */
-   public Api withRelationship(String parentCollectionName, String parentPropertyName, String childCollectionName, String childPropertyName, String... childFkProps)
-   {
+   public Api withRelationship(String parentCollectionName, String parentPropertyName, String childCollectionName, String childPropertyName, String... childFkProps) {
       Collection parentCollection = getCollection(parentCollectionName);
       Collection childCollection = getCollection(childCollectionName);
 
@@ -325,63 +275,53 @@ public class Api extends Rule<Api>
     * length of <code>parentCollections</code> primary index.  If the two don't match, then <code>childFkProps</code> must be 1.  In this 
     * case, the compound primary index of parentCollection will be encoded as an resourceKey in the single child table property.
     */
-   public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
-   {
+   public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps) {
       parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
       return this;
    }
 
-   public List<Action> getActions()
-   {
+   public List<Action> getActions() {
       return new ArrayList(actions);
    }
 
-   public Api withActions(Action... actions)
-   {
+   public Api withActions(Action... actions) {
       for (Action action : actions)
          withAction(action);
 
       return this;
    }
 
-   public Api withAction(Action action)
-   {
+   public Api withAction(Action action) {
       if (!actions.contains(action))
          actions.add(action);
 
       return this;
    }
 
-   public boolean isDebug()
-   {
+   public boolean isDebug() {
       return debug;
    }
 
-   public void setDebug(boolean debug)
-   {
+   public void setDebug(boolean debug) {
       this.debug = debug;
    }
 
-   public String getUrl()
-   {
+   public String getUrl() {
       return url;
    }
 
-   public Api withUrl(String url)
-   {
+   public Api withUrl(String url) {
       this.url = url;
       return this;
    }
 
-   public Api withApiListener(ApiListener listener)
-   {
+   public Api withApiListener(ApiListener listener) {
       if (!listeners.contains(listener))
          listeners.add(listener);
       return this;
    }
 
-   public List<ApiListener> getApiListeners()
-   {
+   public List<ApiListener> getApiListeners() {
       return Collections.unmodifiableList(listeners);
    }
 

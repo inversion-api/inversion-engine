@@ -12,44 +12,38 @@ import io.inversion.rql.Term;
  * @author kfrankic
  *
  */
-public class WrappedQueryBuilder
-{
+public class WrappedQueryBuilder {
+
    private QueryBuilder builder;
    private Term         term;
    private String       nestedPath;
 
-   public WrappedQueryBuilder(QueryBuilder qb, Term t, String path)
-   {
+   public WrappedQueryBuilder(QueryBuilder qb, Term t, String path) {
       builder = qb;
       term = t;
       nestedPath = path;
    }
 
-   public QueryBuilder getBuilder()
-   {
+   public QueryBuilder getBuilder() {
       return builder;
    }
 
-   public void setBuilder(QueryBuilder builder)
-   {
+   public void setBuilder(QueryBuilder builder) {
       this.builder = builder;
    }
 
-   public String getNestedPath()
-   {
+   public String getNestedPath() {
       return nestedPath;
    }
 
-   public boolean hasNestedPath()
-   {
+   public boolean hasNestedPath() {
       if (nestedPath != null)
          return true;
 
       return false;
    }
 
-   public String toString()
-   {
+   public String toString() {
       return builder.toString();
    }
 

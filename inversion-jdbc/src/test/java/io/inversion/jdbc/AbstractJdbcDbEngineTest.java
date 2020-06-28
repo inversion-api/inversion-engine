@@ -5,14 +5,12 @@ import io.inversion.AbstractEngineTest;
 import io.inversion.Chain;
 import io.inversion.Db;
 
-public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest
-{
+public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest {
+
    @Override
-   public default void initializeDb()
-   {
+   public default void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
+      if (db == null) {
          JdbcConnectionLocal.closeAll();
          Chain.resetAll();
 

@@ -21,8 +21,8 @@ import java.util.Set;
 
 import io.inversion.utils.Utils;
 
-class SqlTokenizer
-{
+class SqlTokenizer {
+
    static Set   keywords    = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 
    char[]       chars       = null;
@@ -37,37 +37,29 @@ class SqlTokenizer
    boolean      singleQuote = false;
    boolean      backQuote   = false;
 
-   public SqlTokenizer(String chars)
-   {
+   public SqlTokenizer(String chars) {
       this.chars = chars.toCharArray();
    }
 
-   boolean quoted()
-   {
+   boolean quoted() {
       return doubleQuote || singleQuote || backQuote;
    }
 
-   boolean escaped()
-   {
+   boolean escaped() {
       return escape;
    }
 
-   boolean isAlphaNum(char c)
-   {
+   boolean isAlphaNum(char c) {
       return Character.isAlphabetic(c) || Character.isDigit(c);
    }
 
-   public String nextClause()
-   {
+   public String nextClause() {
       String toReturn = null;
 
       String nextToken = null;
-      while ((nextToken = next()) != null)
-      {
-         if (keywords.contains(nextToken.toLowerCase()))
-         {
-            if (clause.length() > 0)
-            {
+      while ((nextToken = next()) != null) {
+         if (keywords.contains(nextToken.toLowerCase())) {
+            if (clause.length() > 0) {
                toReturn = clause.toString();
                clause = new StringBuffer(nextToken);
                return toReturn;
@@ -76,8 +68,7 @@ class SqlTokenizer
          clause.append(nextToken);
       }
 
-      if (clause.length() > 0)
-      {
+      if (clause.length() > 0) {
          toReturn = clause.toString();
          clause = new StringBuffer("");
       }
@@ -85,8 +76,7 @@ class SqlTokenizer
       return toReturn;
    }
 
-   public String next()
-   {
+   public String next() {
       if (head >= chars.length)
          return null;
 
@@ -99,20 +89,16 @@ class SqlTokenizer
       boolean done = false;
       int parens = 0;
 
-      for (; head < chars.length && !done; head++)
-      {
+      for (; head < chars.length && !done; head++) {
          char c = chars[head];
-         switch (c)
-         {
+         switch (c) {
             case '\\':
                token.append(c);
                escape = !escape;
                continue;
             case '(':
-               if (!escaped() && !quoted())
-               {
-                  if (parens == 0 && token.length() > 0)
-                  {
+               if (!escaped() && !quoted()) {
+                  if (parens == 0 && token.length() > 0) {
                      head--;
                      done = true;
                      break;
@@ -123,12 +109,10 @@ class SqlTokenizer
                token.append(c);
                continue;
             case ')':
-               if (!escaped() && !quoted())
-               {
+               if (!escaped() && !quoted()) {
                   parens -= 1;
 
-                  if (parens == 0)
-                  {
+                  if (parens == 0) {
                      token.append(c);
                      done = true;
                      break;
@@ -137,10 +121,8 @@ class SqlTokenizer
                token.append(c);
                continue;
             case '\"':
-               if (!(escape || singleQuote || backQuote || parens > 0))
-               {
-                  if (!doubleQuote && token.length() > 0)
-                  {
+               if (!(escape || singleQuote || backQuote || parens > 0)) {
+                  if (!doubleQuote && token.length() > 0) {
                      head--;
                      done = true;
                      break;
@@ -148,8 +130,7 @@ class SqlTokenizer
 
                   doubleQuote = !doubleQuote;
 
-                  if (!doubleQuote)
-                  {
+                  if (!doubleQuote) {
                      token.append(c);
                      done = true;
                      break;
@@ -159,10 +140,8 @@ class SqlTokenizer
                continue;
 
             case '\'':
-               if (!(escape || doubleQuote || backQuote || parens > 0))
-               {
-                  if (!singleQuote && token.length() > 0)
-                  {
+               if (!(escape || doubleQuote || backQuote || parens > 0)) {
+                  if (!singleQuote && token.length() > 0) {
                      head--;
                      done = true;
                      break;
@@ -170,8 +149,7 @@ class SqlTokenizer
 
                   singleQuote = !singleQuote;
 
-                  if (!singleQuote)
-                  {
+                  if (!singleQuote) {
                      token.append(c);
                      done = true;
                      break;
@@ -181,10 +159,8 @@ class SqlTokenizer
                continue;
 
             case '`':
-               if (!(escape || doubleQuote || singleQuote || parens > 0))
-               {
-                  if (!backQuote && token.length() > 0)
-                  {
+               if (!(escape || doubleQuote || singleQuote || parens > 0)) {
+                  if (!backQuote && token.length() > 0) {
                      head--;
                      done = true;
                      break;
@@ -192,8 +168,7 @@ class SqlTokenizer
 
                   backQuote = !backQuote;
 
-                  if (!backQuote)
-                  {
+                  if (!backQuote) {
                      token.append(c);
                      done = true;
                      break;
@@ -205,25 +180,21 @@ class SqlTokenizer
             default :
                escape = false;
 
-               if (quoted() || parens > 0)
-               {
+               if (quoted() || parens > 0) {
                   token.append(c);
                   continue;
                }
 
-               if (token.length() > 0)
-               {
+               if (token.length() > 0) {
 
                   char previousC = token.charAt(token.length() - 1);
 
-                  if (!isAlphaNum(previousC))
-                  {
+                  if (!isAlphaNum(previousC)) {
                      head--;
                      done = true;
                      break;
                   }
-                  else if (isAlphaNum(previousC) && !isAlphaNum(c))
-                  {
+                  else if (isAlphaNum(previousC) && !isAlphaNum(c)) {
                      head--;
                      done = true;
                      break;

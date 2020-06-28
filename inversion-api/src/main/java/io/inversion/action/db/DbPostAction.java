@@ -44,8 +44,8 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 
-public class DbPostAction<t extends DbPostAction> extends Action<t>
-{
+public class DbPostAction<t extends DbPostAction> extends Action<t> {
+
    protected boolean collapseAll    = false;
 
    /**
@@ -55,18 +55,14 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
    protected boolean expandResponse = true;
 
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
-      if (req.isMethod("PUT", "POST"))
-      {
+   public void run(Request req, Response res) throws ApiException {
+      if (req.isMethod("PUT", "POST")) {
          upsert(req, res);
       }
-      else if (req.isMethod("PATCH"))
-      {
+      else if (req.isMethod("PATCH")) {
          patch(req, res);
       }
-      else
-      {
+      else {
          ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
       }
 
@@ -82,21 +78,16 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
     * @param res
     * @throws ApiException
     */
-   public void patch(Request req, Response res) throws ApiException
-   {
+   public void patch(Request req, Response res) throws ApiException {
       JSNode body = req.getJson();
-      if (body.isArray())
-      {
-         if (!Utils.empty(req.getResourceKey()))
-         {
+      if (body.isArray()) {
+         if (!Utils.empty(req.getResourceKey())) {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
       }
-      else
-      {
+      else {
          String href = body.getString("href");
-         if (req.getResourceKey() != null)
-         {
+         if (req.getResourceKey() != null) {
             if (href == null)
                body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
             else if (!req.getUrl().toString().startsWith(href))
@@ -106,18 +97,15 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
       List<String> resourceKeys = req.getCollection().getDb().patch(req.getCollection(), req.getJson().asNodeList());
 
-      if (resourceKeys.size() > 0)
-      {
+      if (resourceKeys.size() > 0) {
          String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys), null);
          res.withHeader("Location", location);
       }
 
    }
 
-   public void upsert(Request req, Response res) throws ApiException
-   {
-      if (strictRest)
-      {
+   public void upsert(Request req, Response res) throws ApiException {
+      if (strictRest) {
          if (req.isPost() && req.getResourceKey() != null)
             ApiException.throw404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
          if (req.isPut() && req.getResourceKey() == null)
@@ -135,25 +123,20 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
       boolean collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
       Set<String> collapses = req.getChain().mergeEndpointActionParamsConfig("collapses");
 
-      if (collapseAll || collapses.size() > 0)
-      {
+      if (collapseAll || collapses.size() > 0) {
          obj = JSNode.parseJsonNode(obj.toString());
          collapse(obj, collapseAll, collapses, "");
       }
 
-      if (obj instanceof JSArray)
-      {
-         if (!Utils.empty(req.getResourceKey()))
-         {
+      if (obj instanceof JSArray) {
+         if (!Utils.empty(req.getResourceKey())) {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
          resourceKeys = upsert(req, collection, (JSArray) obj);
       }
-      else
-      {
+      else {
          String href = obj.getString("href");
-         if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href))
-         {
+         if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
             ApiException.throw400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
          }
 
@@ -170,15 +153,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
       res.withStatus(Status.SC_201_CREATED);
       StringBuffer buff = new StringBuffer("");
-      for (int i = 0; i < resourceKeys.size(); i++)
-      {
+      for (int i = 0; i < resourceKeys.size(); i++) {
          String resourceKey = resourceKeys.get(i) + "";
          String href = Chain.buildLink(collection, resourceKey, null);
 
          boolean added = false;
 
-         if (!added)
-         {
+         if (!added) {
             array.add(new JSNode("href", href));
          }
 
@@ -186,8 +167,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
          buff.append(",").append(nextId);
       }
 
-      if (buff.length() > 0)
-      {
+      if (buff.length() > 0) {
          String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
          res.withHeader("Location", location);
       }
@@ -227,21 +207,18 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
     * @return
     * @throws ApiException
     */
-   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws ApiException
-   {
+   protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws ApiException {
       //--
       //--
       //-- Step 1. Upsert this generation including many-to-one relationships where the fk is known
       //--
 
       System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
-      
+
       List<String> returnList = collection.getDb().upsert(collection, nodes.asList());
-      for (int i = 0; i < nodes.length(); i++)
-      {
+      for (int i = 0; i < nodes.length(); i++) {
          //-- new records need their newly assigned id/href assigned back on them
-         if (nodes.getNode(i).get("href") == null)
-         {
+         if (nodes.getNode(i).get("href") == null) {
             String newHref = Chain.buildLink(collection, returnList.get(i) + "", null);
             nodes.getNode(i).put("href", newHref);
          }
@@ -255,44 +232,36 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
       //-- SENDS THE "CHILD GENERATION" AS A POST BACK TO THE ENGINE WHICH WOULD LAND AT
       //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD COLLECTION
       //-- AND ITS DESCENDANTS.
-      for (Relationship rel : collection.getRelationships())
-      {
+      for (Relationship rel : collection.getRelationships()) {
          Relationship inverse = rel.getInverse();
          List childNodes = new ArrayList();
 
-         for (JSNode node : nodes.asNodeList())
-         {
+         for (JSNode node : nodes.asNodeList()) {
             Object value = node.get(rel.getName());
             if (value instanceof JSArray) //this is a one-to-many or many-to-many
             {
                JSArray childArr = ((JSArray) value);
-               for (int i = 0; i < childArr.size(); i++)
-               {
+               for (int i = 0; i < childArr.size(); i++) {
                   //-- removals will be handled in the next section, not this recursion
                   Object child = childArr.get(i);
                   if (child == null)
                      continue;
 
-                  if (child instanceof String)
-                  {
+                  if (child instanceof String) {
                      //-- this was passed in as an href reference, not as an object
-                     if (rel.isOneToMany())
-                     {
+                     if (rel.isOneToMany()) {
                         //-- the child inverse of this is a many-to-one that modifies the child row.  
                         child = new JSArray(child);
                         childArr.set(i, child);
                      }
-                     else
-                     {
+                     else {
                         //-- don't do anything..the many-to-many section below will update this
                      }
                   }
 
-                  if (child instanceof JSNode)
-                  {
+                  if (child instanceof JSNode) {
                      JSNode childNode = (JSNode) child;
-                     if (rel.isOneToMany())
-                     {
+                     if (rel.isOneToMany()) {
                         //-- this generations one-to-many, are the next generation's many-to-ones
                         //-- the child generation receives an implicity relationship via nesting
                         //-- under the parent, have to set the inverse prop on the child so 
@@ -305,28 +274,24 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
                   }
                }
             }
-            else if (value instanceof JSNode)
-            {
+            else if (value instanceof JSNode) {
                //-- this must be a many-to-one...the FK is in this generation, not the child
                JSNode childNode = ((JSNode) value);
                childNodes.add(childNode);
             }
          }
 
-         if (childNodes.size() > 0)
-         {
+         if (childNodes.size() > 0) {
             String path = Chain.buildLink(rel.getRelated(), null, null);
             Response res = req.getEngine().post(path, new JSArray(childNodes));
-            if (!res.isSuccess() || res.getData().length() != childNodes.size())
-            {
+            if (!res.isSuccess() || res.getData().length() != childNodes.size()) {
                res.rethrow();
                //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
             }
 
             //-- now get response URLS and set them BACK on the source from this generation
             JSArray data = res.getData();
-            for (int i = 0; i < data.length(); i++)
-            {
+            for (int i = 0; i < data.length(); i++) {
                String childHref = ((JSNode) data.get(i)).getString("href");
                ((JSNode) childNodes.get(i)).put("href", childHref);
             }
@@ -345,13 +310,11 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
       //--
       //-- TODO: can optimize this to not upsert if the key was available
       //-- in the first pass
-      for (Relationship rel : collection.getRelationships())
-      {
+      for (Relationship rel : collection.getRelationships()) {
          List<Map> updatedRows = new ArrayList();
          if (rel.isManyToOne())//this means we have a FK to the related element's PK
          {
-            for (JSNode node : nodes.asNodeList())
-            {
+            for (JSNode node : nodes.asNodeList()) {
                Map primaryKey = collection.getDb().getKey(collection, node);
                Map foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
 
@@ -359,27 +322,23 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
                Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
 
                Object docChild = node.get(rel.getName());
-               if (docChild instanceof JSNode)
-               {
+               if (docChild instanceof JSNode) {
                   Map updatedRow = new HashMap();
                   updatedRows.add(updatedRow);
                   updatedRow.putAll(primaryKey);
 
-                  if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1)
-                  {
+                  if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1) {
                      //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
                      updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
                   }
-                  else
-                  {
+                  else {
                      Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
                      updatedRow.putAll(foreignKey);
                   }
                }
             }
 
-            if (updatedRows.size() > 0)
-            {
+            if (updatedRows.size() > 0) {
                //-- don't need to "go back through the front door and PATCH to the engine
                //-- here because we are updating our own collection.
                //-- TODO...make sure of above statement.
@@ -396,13 +355,11 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
       MultiKeyMap keepRels = new MultiKeyMap<>(); //-- relationship, table, parentKey, list of childKeys
 
-      for (Relationship rel : collection.getRelationships())
-      {
+      for (Relationship rel : collection.getRelationships()) {
          if (rel.isManyToOne())//these were handled in step 1 and 2
             continue;
 
-         for (JSNode node : nodes.asNodeList())
-         {
+         for (JSNode node : nodes.asNodeList()) {
             if (!node.hasProperty(rel.getName()) || node.get(rel.getName()) instanceof String)
                continue;//-- this property was not passed back in...if it is string it is the link to expand the relationship
 
@@ -419,22 +376,18 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
             JSArray childNodes = node.getArray(rel.getName());
 
-            for (int i = 0; childNodes != null && i < childNodes.length(); i++)
-            {
+            for (int i = 0; childNodes != null && i < childNodes.length(); i++) {
                Object childHref = childNodes.get(i);
                childHref = childHref instanceof JSNode ? ((JSNode) childHref).get("href") : childHref;
 
-               if (!Utils.empty(childHref))
-               {
+               if (!Utils.empty(childHref)) {
                   String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
                   Row childPk = rel.getRelated().decodeResourceKey(childEk);
 
-                  if (rel.isOneToMany())
-                  {
+                  if (rel.isOneToMany()) {
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childPk);
                   }
-                  else if (rel.isManyToMany())
-                  {
+                  else if (rel.isManyToMany()) {
                      Map childFk = collection.getDb().mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childFk);
                   }
@@ -463,8 +416,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
       //--     )
       //--
 
-      for (MultiKey mkey : (Set<MultiKey>) keepRels.keySet())
-      {
+      for (MultiKey mkey : (Set<MultiKey>) keepRels.keySet()) {
          Relationship rel = (Relationship) mkey.getKey(0);
          Map parentKey = (Map) mkey.getKey(1);
          List<Map> childKeys = (List) keepRels.get(rel, parentKey);
@@ -479,8 +431,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
          Term childNot = Term.term(null, "not");
          Term childOr = Term.term(childNot, "or");
 
-         for (Map childKey : childKeys)
-         {
+         for (Map childKey : childKeys) {
             Map upsert = new HashMap();
             upsert.putAll(parentKey);
             upsert.putAll(childKey);
@@ -492,14 +443,12 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
          //-- TODO: I don't think you need to do this...the recursive generation already did it...
          Collection coll = rel.isOneToMany() ? rel.getRelated() : rel.getFk1Col1().getCollection();
-         if (rel.isOneToMany())
-         {
+         if (rel.isOneToMany()) {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().doPatch(coll, upserts);
          }
-         else if (rel.isManyToMany())
-         {
+         else if (rel.isManyToMany()) {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().doUpsert(coll, upserts);
@@ -512,19 +461,16 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
          queryTerms.put("limit", "100");
          queryTerms.put("includes", Utils.implode(",", includesKeys));
 
-         for (Object parentKeyProp : parentKey.keySet())
-         {
+         for (Object parentKeyProp : parentKey.keySet()) {
             queryTerms.put(parentKeyProp.toString(), parentKey.get(parentKeyProp).toString());
          }
 
-         if (childOr.size() > 0)
-         {
+         if (childOr.size() > 0) {
             queryTerms.put(childNot.toString(), null);
          }
 
          String next = Chain.buildLink(coll);
-         while (true)
-         {
+         while (true) {
             log.debug("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
 
             Response toUnlink = req.getEngine().get(next, queryTerms).assertOk();
@@ -532,12 +478,9 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
             if (toUnlink.data().length() == 0)
                break;
 
-            if (rel.isOneToMany())
-            {
-               for (JSNode node : toUnlink.data().asNodeList())
-               {
-                  for (String prop : rel.getFkIndex1().getJsonNames())
-                  {
+            if (rel.isOneToMany()) {
+               for (JSNode node : toUnlink.data().asNodeList()) {
+                  for (String prop : rel.getFkIndex1().getJsonNames()) {
                      node.put(prop, null);
                   }
                }
@@ -545,11 +488,9 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
 
             }
             //TODO: put back in support for many to many rels recursing through engine
-            else if (rel.isManyToMany())
-            {
+            else if (rel.isManyToMany()) {
                List resourceKeys = new ArrayList();
-               for (JSNode node : toUnlink.data().asNodeList())
-               {
+               for (JSNode node : toUnlink.data().asNodeList()) {
                   resourceKeys.add(Utils.substringAfter(node.getString("href"), "/"));
                }
 
@@ -621,19 +562,15 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
    //      return srcRow;
    //   }
 
-   Term asTerm(Map row)
-   {
+   Term asTerm(Map row) {
       Term t = null;
-      for (Object key : row.keySet())
-      {
+      for (Object key : row.keySet()) {
          Object value = row.get(key);
 
-         if (t == null)
-         {
+         if (t == null) {
             t = Term.term(null, "eq", key, value);
          }
-         else
-         {
+         else {
             if (!t.hasToken("and"))
                t = Term.term(null, "and", t);
 
@@ -652,47 +589,37 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
     * a client does not want to scrub their json model before posting changes to
     * the parent document back to the parent collection.
     */
-   public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path)
-   {
-      for (String key : (List<String>) new ArrayList(parent.keySet()))
-      {
+   public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
+      for (String key : (List<String>) new ArrayList(parent.keySet())) {
          Object value = parent.get(key);
 
-         if (collapseAll || collapses.contains(nextPath(path, key)))
-         {
-            if (value instanceof JSArray)
-            {
+         if (collapseAll || collapses.contains(nextPath(path, key))) {
+            if (value instanceof JSArray) {
                JSArray children = (JSArray) value;
                if (children.length() == 0)
                   parent.remove(key);
 
-               for (int i = 0; i < children.length(); i++)
-               {
-                  if (children.get(i) == null)
-                  {
+               for (int i = 0; i < children.length(); i++) {
+                  if (children.get(i) == null) {
                      children.remove(i);
                      i--;
                      continue;
                   }
 
-                  if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode))
-                  {
+                  if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
                      children.remove(i);
                      i--;
                      continue;
                   }
 
                   JSNode child = children.getNode(i);
-                  for (String key2 : (List<String>) new ArrayList(child.keySet()))
-                  {
-                     if (!key2.equalsIgnoreCase("href"))
-                     {
+                  for (String key2 : (List<String>) new ArrayList(child.keySet())) {
+                     if (!key2.equalsIgnoreCase("href")) {
                         child.remove(key2);
                      }
                   }
 
-                  if (child.keySet().size() == 0)
-                  {
+                  if (child.keySet().size() == 0) {
 
                      children.remove(i);
                      i--;
@@ -703,13 +630,10 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
                   parent.remove(key);
 
             }
-            else if (value instanceof JSNode)
-            {
+            else if (value instanceof JSNode) {
                JSNode child = (JSNode) value;
-               for (String key2 : (List<String>) new ArrayList(child.keySet()))
-               {
-                  if (!key2.equalsIgnoreCase("href"))
-                  {
+               for (String key2 : (List<String>) new ArrayList(child.keySet())) {
+                  if (!key2.equalsIgnoreCase("href")) {
                      child.remove(key2);
                   }
                }
@@ -717,59 +641,48 @@ public class DbPostAction<t extends DbPostAction> extends Action<t>
                   parent.remove(key);
             }
          }
-         else if (value instanceof JSArray)
-         {
+         else if (value instanceof JSArray) {
             JSArray children = (JSArray) value;
-            for (int i = 0; i < children.length(); i++)
-            {
-               if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray))
-               {
+            for (int i = 0; i < children.length(); i++) {
+               if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
                   collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
                }
             }
          }
-         else if (value instanceof JSNode)
-         {
+         else if (value instanceof JSNode) {
             collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
          }
 
       }
    }
 
-   public static String nextPath(String path, String next)
-   {
+   public static String nextPath(String path, String next) {
       return Utils.empty(path) ? next : path + "." + next;
    }
 
-   public boolean isCollapseAll()
-   {
+   public boolean isCollapseAll() {
       return collapseAll;
    }
 
-   public DbPostAction withCollapseAll(boolean collapseAll)
-   {
+   public DbPostAction withCollapseAll(boolean collapseAll) {
       this.collapseAll = collapseAll;
       return this;
    }
 
-   public boolean isStrictRest()
-   {
+   public boolean isStrictRest() {
       return strictRest;
    }
 
-   public DbPostAction withStrictRest(boolean strictRest)
-   {
+   public DbPostAction withStrictRest(boolean strictRest) {
       this.strictRest = strictRest;
       return this;
    }
 
-   public boolean isExpandResponse()
-   {
+   public boolean isExpandResponse() {
       return expandResponse;
    }
 
-   public DbPostAction withExpandResponse(boolean expandResponse)
-   {
+   public DbPostAction withExpandResponse(boolean expandResponse) {
       this.expandResponse = expandResponse;
       return this;
    }

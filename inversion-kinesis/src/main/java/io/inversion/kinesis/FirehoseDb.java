@@ -68,8 +68,8 @@ import io.inversion.utils.Utils;
  *
  *
  */
-public class FirehoseDb extends Db<FirehoseDb>
-{
+public class FirehoseDb extends Db<FirehoseDb> {
+
    /**
     * A CSV of pipe delimited collection name to table name pairs.
     * 
@@ -92,23 +92,18 @@ public class FirehoseDb extends Db<FirehoseDb>
    protected boolean               jsonPrettyPrint    = false;
    protected boolean               jsonLowercaseNames = true;
 
-   public FirehoseDb()
-   {
+   public FirehoseDb() {
       this.withType("firehose");
    }
 
    @Override
-   protected void doStartup(Api api)
-   {
-      if (!Utils.empty(includeStreams))
-      {
-         for (String part : Utils.explode(",", includeStreams))
-         {
+   protected void doStartup(Api api) {
+      if (!Utils.empty(includeStreams)) {
+         for (String part : Utils.explode(",", includeStreams)) {
             String[] arr = part.split("\\|");
             String collectionName = arr[0];
             String streamName = collectionName;
-            if (arr.length > 1)
-            {
+            if (arr.length > 1) {
                streamName = arr[1];
             }
 
@@ -119,31 +114,26 @@ public class FirehoseDb extends Db<FirehoseDb>
                coll.withTableName(beautifyCollectionName(collectionName));
          }
       }
-      else
-      {
+      else {
          ApiException.throw500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
       }
    }
 
    @Override
-   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
-   {
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
       ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
-   {
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
       ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
    }
 
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
       List<Record> batch = new ArrayList();
-      for (int i = 0; i < rows.size(); i++)
-      {
+      for (int i = 0; i < rows.size(); i++) {
          String string = new JSNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
 
          if (jsonSeparator != null && !string.endsWith(jsonSeparator))
@@ -151,41 +141,33 @@ public class FirehoseDb extends Db<FirehoseDb>
 
          batch.add(new Record().withData(ByteBuffer.wrap(string.getBytes())));
 
-         if (i > 0 && i % batchMax == 0)
-         {
+         if (i > 0 && i % batchMax == 0) {
             getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getTableName()).withRecords(batch));
             batch.clear();
          }
       }
 
-      if (batch.size() > 0)
-      {
+      if (batch.size() > 0) {
          getFirehoseClient().putRecordBatch(new PutRecordBatchRequest().withDeliveryStreamName(table.getTableName()).withRecords(batch));
       }
 
       return Collections.emptyList();
    }
 
-   public AmazonKinesisFirehose getFirehoseClient()
-   {
+   public AmazonKinesisFirehose getFirehoseClient() {
       return getFirehoseClient(awsRegion, awsAccessKey, awsSecretKey);
    }
 
-   public AmazonKinesisFirehose getFirehoseClient(String awsRegion, String awsAccessKey, String awsSecretKey)
-   {
-      if (this.firehoseClient == null)
-      {
-         synchronized (this)
-         {
-            if (this.firehoseClient == null)
-            {
+   public AmazonKinesisFirehose getFirehoseClient(String awsRegion, String awsAccessKey, String awsSecretKey) {
+      if (this.firehoseClient == null) {
+         synchronized (this) {
+            if (this.firehoseClient == null) {
                AmazonKinesisFirehoseClientBuilder builder = AmazonKinesisFirehoseClientBuilder.standard();
 
                if (!Utils.empty(awsRegion))
                   builder.withRegion(awsRegion);
 
-               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
-               {
+               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey)) {
                   BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
                   builder.withCredentials(new AWSStaticCredentialsProvider(creds));
                }
@@ -198,50 +180,42 @@ public class FirehoseDb extends Db<FirehoseDb>
       return firehoseClient;
    }
 
-   public FirehoseDb withAwsRegion(String awsRegion)
-   {
+   public FirehoseDb withAwsRegion(String awsRegion) {
       this.awsRegion = awsRegion;
       return this;
    }
 
-   public FirehoseDb withAwsAccessKey(String awsAccessKey)
-   {
+   public FirehoseDb withAwsAccessKey(String awsAccessKey) {
       this.awsAccessKey = awsAccessKey;
       return this;
    }
 
-   public FirehoseDb withAwsSecretKey(String awsSecretKey)
-   {
+   public FirehoseDb withAwsSecretKey(String awsSecretKey) {
       this.awsSecretKey = awsSecretKey;
       return this;
    }
 
-   public FirehoseDb withIncludeStreams(String includeStreams)
-   {
+   public FirehoseDb withIncludeStreams(String includeStreams) {
       this.includeStreams = includeStreams;
       return this;
    }
 
-   public FirehoseDb withBatchMax(int batchMax)
-   {
+   public FirehoseDb withBatchMax(int batchMax) {
       this.batchMax = batchMax;
       return this;
    }
 
-   public FirehoseDb withJsonSeparator(String jsonSeparator)
-   {
+   public FirehoseDb withJsonSeparator(String jsonSeparator) {
       this.jsonSeparator = jsonSeparator;
       return this;
    }
 
-   public FirehoseDb withJsonPrettyPrint(boolean jsonPrettyPrint)
-   {
+   public FirehoseDb withJsonPrettyPrint(boolean jsonPrettyPrint) {
       this.jsonPrettyPrint = jsonPrettyPrint;
       return this;
    }
 
-   public FirehoseDb withJsonLowercaseNames(boolean jsonLowercaseNames)
-   {
+   public FirehoseDb withJsonLowercaseNames(boolean jsonLowercaseNames) {
       this.jsonLowercaseNames = jsonLowercaseNames;
       return this;
    }

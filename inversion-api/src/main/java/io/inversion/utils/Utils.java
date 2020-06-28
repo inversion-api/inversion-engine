@@ -61,8 +61,8 @@ import io.inversion.ApiException;
  * Collection of utility methods designed to make
  * java programming less verbose
  */
-public class Utils
-{
+public class Utils {
+
    public static final int         KB                 = 1048;
    public static final int         MB                 = 1048576;
    public static final long        GB                 = 1073741824;
@@ -84,8 +84,7 @@ public class Utils
     * @param obj2
     * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null.
     */
-   public static boolean equal(Object obj1, Object obj2)
-   {
+   public static boolean equal(Object obj1, Object obj2) {
       if (obj1 == obj2)
          return true;
 
@@ -95,10 +94,8 @@ public class Utils
       return obj1.toString().equals(obj2.toString());
    }
 
-   public static boolean in(Object toFind, Object... values)
-   {
-      for (Object val : values)
-      {
+   public static boolean in(Object toFind, Object... values) {
+      for (Object val : values) {
          if (equal(toFind, val))
             return true;
       }
@@ -108,11 +105,9 @@ public class Utils
    /**
     * @return true if any args are not null with a toString().length() > 0
     */
-   public static boolean empty(Object... arr)
-   {
+   public static boolean empty(Object... arr) {
       boolean empty = true;
-      for (int i = 0; empty && arr != null && i < arr.length; i++)
-      {
+      for (int i = 0; empty && arr != null && i < arr.length; i++) {
          Object obj = arr[i];
          if (obj != null && obj.toString().length() > 0)
             empty = false;
@@ -120,15 +115,13 @@ public class Utils
       return empty;
    }
 
-   public static Object first(List list)
-   {
+   public static Object first(List list) {
       if (list.size() > 0)
          return list.get(0);
       return null;
    }
 
-   public static Object last(List list)
-   {
+   public static Object last(List list) {
       if (list.size() > 0)
          return list.get(list.size() - 1);
       return null;
@@ -139,26 +132,20 @@ public class Utils
     * @param pieces
     * @return Concatenates pieces[0] + glue + pieces[n]... Intelligently recurses through Collections
     */
-   public static String implode(String glue, Object... pieces)
-   {
+   public static String implode(String glue, Object... pieces) {
       if (pieces != null && pieces.length == 1 && pieces[0] instanceof Collection)
          pieces = ((Collection) pieces[0]).toArray();
 
       StringBuffer str = new StringBuffer("");
-      for (int i = 0; pieces != null && i < pieces.length; i++)
-      {
-         if (pieces[i] != null)
-         {
+      for (int i = 0; pieces != null && i < pieces.length; i++) {
+         if (pieces[i] != null) {
             String piece = pieces[i] instanceof Collection ? implode(glue, pieces[i]) : pieces[i].toString();
 
-            if (piece.length() > 0)
-            {
+            if (piece.length() > 0) {
                List<String> subpieces = explode(glue, piece);
 
-               for (String subpiece : subpieces)
-               {
-                  if (subpiece.length() > 0)
-                  {
+               for (String subpiece : subpieces) {
+                  if (subpiece.length() > 0) {
                      if (str.length() > 0)
                         str.append(glue);
                      str.append(subpiece);
@@ -175,23 +162,19 @@ public class Utils
     * @param pieces
     * @return Same as String.split() but performs a trim() on each piece and returns an list instead of an array
     */
-   public static List<String> explode(String delim, String... pieces)
-   {
+   public static List<String> explode(String delim, String... pieces) {
       if (".".equals(delim))
          delim = "\\.";
 
       List exploded = new ArrayList();
-      for (int i = 0; pieces != null && i < pieces.length; i++)
-      {
+      for (int i = 0; pieces != null && i < pieces.length; i++) {
          if (Utils.empty(pieces[i]))
             continue;
 
          String[] parts = pieces[i].split(delim);
-         for (int j = 0; j < parts.length; j++)
-         {
+         for (int j = 0; j < parts.length; j++) {
             String part = parts[j].trim();
-            if (!Utils.empty(part))
-            {
+            if (!Utils.empty(part)) {
                exploded.add(part);
             }
          }
@@ -209,8 +192,7 @@ public class Utils
     * @param quoteChars
     * @return
     */
-   public static List<String> split(String string, char splitOn, char... quoteChars)
-   {
+   public static List<String> split(String string, char splitOn, char... quoteChars) {
       List<String> strings = new ArrayList();
       Set quotes = new HashSet();
       for (char c : quoteChars)
@@ -218,21 +200,17 @@ public class Utils
 
       boolean quoted = false;
       StringBuffer buff = new StringBuffer("");
-      for (int i = 0; i < string.length(); i++)
-      {
+      for (int i = 0; i < string.length(); i++) {
          char c = string.charAt(i);
 
-         if (c == splitOn && !quoted)
-         {
-            if (buff.length() > 0)
-            {
+         if (c == splitOn && !quoted) {
+            if (buff.length() > 0) {
                strings.add(buff.toString());
                buff = new StringBuffer("");
             }
             continue;
          }
-         else if (quotes.contains(c))
-         {
+         else if (quotes.contains(c)) {
             quoted = !quoted;
          }
 
@@ -244,8 +222,7 @@ public class Utils
       return strings;
    }
 
-   public static String substringBefore(String string, String breakBefore)
-   {
+   public static String substringBefore(String string, String breakBefore) {
       int idx = string.indexOf(breakBefore);
       if (idx > -1)
          string = string.substring(0, idx);
@@ -253,8 +230,7 @@ public class Utils
       return string;
    }
 
-   public static String substringAfter(String string, String breakAfterLast)
-   {
+   public static String substringAfter(String string, String breakAfterLast) {
       int idx = string.lastIndexOf(breakAfterLast);
       if (idx > -1)
          string = string.substring(idx + breakAfterLast.length());
@@ -262,8 +238,7 @@ public class Utils
       return string;
    }
 
-   public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs)
-   {
+   public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs) {
       if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
          throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
 
@@ -273,8 +248,7 @@ public class Utils
       return map;
    }
 
-   public static <M extends Map> M addToMap(M map, String... keyValuePairs)
-   {
+   public static <M extends Map> M addToMap(M map, String... keyValuePairs) {
       if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
          throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
 
@@ -284,21 +258,17 @@ public class Utils
       return map;
    }
 
-   public static List asList(Object... objects)
-   {
+   public static List asList(Object... objects) {
       return Arrays.asList(objects);
    }
 
-   public static Set asSet(Object... objects)
-   {
+   public static Set asSet(Object... objects) {
       return new HashSet(Arrays.asList(objects));
    }
 
-   public static Map asMap(Object... objects)
-   {
+   public static Map asMap(Object... objects) {
       Map map = new HashMap();
-      for (int i = 0; objects != null && i < objects.length - 1; i += 2)
-      {
+      for (int i = 0; objects != null && i < objects.length - 1; i += 2) {
          map.put(objects[i], objects[i + 1]);
       }
       return map;
@@ -314,8 +284,7 @@ public class Utils
     * @param findThisToken
     * @param inThisString
     */
-   public static boolean containsToken(String findThisToken, String inThisString)
-   {
+   public static boolean containsToken(String findThisToken, String inThisString) {
       String regex = "\\b\\Q" + findThisToken + "\\E\\b";
       return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(inThisString).find();
    }
@@ -326,23 +295,19 @@ public class Utils
     * @param str
     * @return
     */
-   public static String dequote(String str)
-   {
+   public static String dequote(String str) {
       return dequote(str, new char[]{'\'', '"', '`'});
    }
 
-   public static String dequote(String str, char[] quoteChars)
-   {
+   public static String dequote(String str, char[] quoteChars) {
       if (str == null)
          return null;
 
       while (str.length() >= 2 && str.charAt(0) == str.charAt(str.length() - 1))// && (str.charAt(0) == '\'' || str.charAt(0) == '"' || str.charAt(0) == '`'))
       {
          boolean changed = false;
-         for (int i = 0; i < quoteChars.length; i++)
-         {
-            if (str.charAt(0) == quoteChars[i])
-            {
+         for (int i = 0; i < quoteChars.length; i++) {
+            if (str.charAt(0) == quoteChars[i]) {
                str = str.substring(1, str.length() - 1);
                changed = true;
                break;
@@ -363,13 +328,11 @@ public class Utils
     * @param amount
     * @return
     */
-   public static BigDecimal toDollarAmount(double amount)
-   {
+   public static BigDecimal toDollarAmount(double amount) {
       return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
    }
 
-   public static int roundUp(int num, int divisor)
-   {
+   public static int roundUp(int num, int divisor) {
       int sign = (num > 0 ? 1 : -1) * (divisor > 0 ? 1 : -1);
       return sign * (Math.abs(num) + Math.abs(divisor) - 1) / Math.abs(divisor);
    }
@@ -377,15 +340,12 @@ public class Utils
    /**
     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
     */
-   public static boolean atob(Object str)
-   {
-      try
-      {
+   public static boolean atob(Object str) {
+      try {
          String bool = str + "";
          return !("0".equals(bool) || "false".equals(bool));
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ignore
       }
       return false;
@@ -394,14 +354,11 @@ public class Utils
    /**
     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
     */
-   public static int atoi(Object str)
-   {
-      try
-      {
+   public static int atoi(Object str) {
+      try {
          return Integer.parseInt(str.toString().trim());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -410,14 +367,11 @@ public class Utils
    /**
     * Faster and null safe way to call Long.parseLong(str.trim()) that swallows exceptions.
     */
-   public static long atol(Object str)
-   {
-      try
-      {
+   public static long atol(Object str) {
+      try {
          return Long.parseLong(str.toString().trim());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -426,14 +380,11 @@ public class Utils
    /**
     * Faster and null safe way to call Float.parseFloat(str.trim()) that swallows exceptions.
     */
-   public static float atof(Object str)
-   {
-      try
-      {
+   public static float atof(Object str) {
+      try {
          return Float.parseFloat(str.toString().trim());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -442,14 +393,11 @@ public class Utils
    /**
     * Faster and null safe way to call Double.parseDouble(str.trim()) that swallows exceptions.
     */
-   public static double atod(Object str)
-   {
-      try
-      {
+   public static double atod(Object str) {
+      try {
          return Double.parseDouble(str.toString().trim());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -460,10 +408,8 @@ public class Utils
     * @param str
     * @return
     */
-   public static String slugify(String str)
-   {
-      if (str == null)
-      {
+   public static String slugify(String str) {
+      if (str == null) {
          return null;
       }
 
@@ -486,8 +432,7 @@ public class Utils
     * @param bytes
     * @return Hash the bytes with SHA-1
     */
-   public static String sha1(byte[] bytes)
-   {
+   public static String sha1(byte[] bytes) {
       return hash(bytes, "SHA-1");
    }
 
@@ -495,8 +440,7 @@ public class Utils
     * @param bytes
     * @return Hash the bytes with MD5
     */
-   public static String md5(byte[] bytes)
-   {
+   public static String md5(byte[] bytes) {
       return hash(bytes, "MD5");
    }
 
@@ -505,10 +449,8 @@ public class Utils
     * @param algorithm
     * @return Hash the bytes with the given algorithm
     */
-   public static String hash(byte[] byteArr, String algorithm)
-   {
-      try
-      {
+   public static String hash(byte[] byteArr, String algorithm) {
+      try {
          MessageDigest digest = MessageDigest.getInstance(algorithm);
          digest.update(byteArr);
          byte[] bytes = digest.digest();
@@ -517,8 +459,7 @@ public class Utils
 
          return hex;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -527,8 +468,7 @@ public class Utils
    /**
     * Less typing to call System.currentTimeMillis()
     */
-   public static long time()
-   {
+   public static long time() {
       return System.currentTimeMillis();
    }
 
@@ -540,21 +480,18 @@ public class Utils
    //      return df.format(date);
    //   }
 
-   public static Date parseIso8601(String date) throws ParseException
-   {
+   public static Date parseIso8601(String date) throws ParseException {
       return ISO8601Utils.parse(date, new ParsePosition(0));
    }
 
-   public static String formatIso8601(Date date)
-   {
+   public static String formatIso8601(Date date) {
       return ISO8601Utils.format(date);
    }
 
    /**
     * Simple one liner to avoid verbosity of using SimpleDateFormat
     */
-   public static String formatDate(Date date, String format)
-   {
+   public static String formatDate(Date date, String format) {
       SimpleDateFormat f = new SimpleDateFormat(format);
       return f.format(date);
    }
@@ -564,16 +501,13 @@ public class Utils
     * @param date
     * @param format
     */
-   public static Date date(String date, String format)
-   {
-      try
-      {
+   public static Date date(String date, String format) {
+      try {
          date = date.trim();
          SimpleDateFormat df = new SimpleDateFormat(format);
          return df.parse(date);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -588,38 +522,31 @@ public class Utils
     * @param date
     * @return
     */
-   public static Date date(String date)
-   {
-      try
-      {
+   public static Date date(String date) {
+      try {
          //not supported in JDK 1.6
          //         DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
          //         TemporalAccessor accessor = timeFormatter.parse(date);
          //         return Date.from(Instant.from(accessor));
          return ISO8601Utils.parse(date, new ParsePosition(0));
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
 
       }
-      try
-      {
+      try {
          SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
          return f.parse(date);
 
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
 
       }
 
-      try
-      {
+      try {
          SimpleDateFormat f = new SimpleDateFormat("MM/dd/yy");
 
          int lastSlash = date.lastIndexOf("/");
-         if (lastSlash > 0 && lastSlash == date.length() - 5)
-         {
+         if (lastSlash > 0 && lastSlash == date.length() - 5) {
             f = new SimpleDateFormat("MM/dd/yyyy");
          }
          Date d = f.parse(date);
@@ -627,48 +554,39 @@ public class Utils
          return d;
 
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
 
       }
 
-      try
-      {
+      try {
          SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
          return f.parse(date);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          throw new RuntimeException("unsupported format: " + date);
       }
 
    }
 
-   public static boolean testCompare(String str1, String str2)
-   {
+   public static boolean testCompare(String str1, String str2) {
       str1 = str1 != null ? str1 : "";
       str2 = str2 != null ? str2 : "";
 
       str1 = str1.replaceAll("\\s+", " ").trim();
       str2 = str2.replaceAll("\\s+", " ").trim();
 
-      if (!str1.equals(str2))
-      {
-         if (!str1.equals(str2))
-         {
+      if (!str1.equals(str2)) {
+         if (!str1.equals(str2)) {
             System.out.println("\r\n");
             System.out.println("\r\n");
             System.out.println(str1);
             System.out.println(str2);
 
-            for (int i = 0; i < str1.length() && i < str2.length(); i++)
-            {
-               if (str1.charAt(i) == str2.charAt(i))
-               {
+            for (int i = 0; i < str1.length() && i < str2.length(); i++) {
+               if (str1.charAt(i) == str2.charAt(i)) {
                   System.out.print(" ");
                }
-               else
-               {
+               else {
                   System.out.println("X");
                   break;
                }
@@ -684,19 +602,16 @@ public class Utils
     * Tries to \"unwrap\" nested exceptions looking for the root cause
     * @param t
     */
-   public static Throwable getCause(Throwable t)
-   {
+   public static Throwable getCause(Throwable t) {
       Throwable origional = t;
 
       int guard = 0;
-      while (t != null && t.getCause() != null && t.getCause() != t && guard < 100)
-      {
+      while (t != null && t.getCause() != null && t.getCause() != t && guard < 100) {
          t = t.getCause();
          guard++;
       }
 
-      if (t == null)
-      {
+      if (t == null) {
          t = origional;
       }
 
@@ -706,8 +621,7 @@ public class Utils
    /**
     * Shortcut for throw new RuntimeException(message);
     */
-   public static void error(String message)
-   {
+   public static void error(String message) {
       throw new RuntimeException(message);
    }
 
@@ -715,8 +629,7 @@ public class Utils
     * Throws the root cause of e as a RuntimeException
     * @param e
     */
-   public static void rethrow(Throwable e)
-   {
+   public static void rethrow(Throwable e) {
       rethrow(null, e);
    }
 
@@ -724,27 +637,23 @@ public class Utils
     * Throws the root cause of e as a RuntimeException
     * @param e
     */
-   public static void rethrow(String message, Throwable e)
-   {
+   public static void rethrow(String message, Throwable e) {
       Throwable cause = e;
 
       while (cause.getCause() != null && cause.getCause() != e)
          cause = cause.getCause();
 
-      if (cause instanceof RuntimeException)
-      {
+      if (cause instanceof RuntimeException) {
          throw (RuntimeException) cause;
       }
 
       if (e instanceof RuntimeException)
          throw (RuntimeException) e;
 
-      if (!empty(message))
-      {
+      if (!empty(message)) {
          throw new RuntimeException(message, e);
       }
-      else
-      {
+      else {
          throw new RuntimeException(e);
       }
    }
@@ -753,50 +662,40 @@ public class Utils
     * Easy way to call Thread.sleep(long) without worrying about try/catch for InterruptedException
     * @param millis
     */
-   public static void sleep(long millis)
-   {
-      try
-      {
+   public static void sleep(long millis) {
+      try {
          Thread.sleep(millis);
       }
-      catch (InterruptedException e)
-      {
+      catch (InterruptedException e) {
          rethrow(e);
       }
    }
 
-   public static String getShortCause(Throwable t)
-   {
+   public static String getShortCause(Throwable t) {
       return getShortCause(t, 15);
    }
 
-   public static String getShortCause(Throwable t, int lines)
-   {
+   public static String getShortCause(Throwable t, int lines) {
       t = getCause(t);
       //return System.getProperty("line.separator") + limitLines(clean(getStackTraceString(t)), lines);
       return limitLines(cleanStackTrace(getStackTraceString(t)), lines);
    }
 
-   public static List<String> getStackTraceLines(Throwable stackTrace)
-   {
+   public static List<String> getStackTraceLines(Throwable stackTrace) {
       ByteArrayOutputStream baos = null;
       PrintWriter writer;
 
       baos = new ByteArrayOutputStream();
       writer = new PrintWriter(baos);
 
-      if (stackTrace != null)
-      {
+      if (stackTrace != null) {
          stackTrace.printStackTrace(writer);
       }
-      else
-      {
-         try
-         {
+      else {
+         try {
             throw new Exception();
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             e.printStackTrace(writer);
          }
       }
@@ -811,8 +710,7 @@ public class Utils
       return lines;
    }
 
-   public static String getStackTraceString(Throwable stackTrace)
-   {
+   public static String getStackTraceString(Throwable stackTrace) {
       ByteArrayOutputStream baos = null;
       PrintWriter writer;
 
@@ -821,30 +719,23 @@ public class Utils
 
       boolean createNewTrace = false;
 
-      if (stackTrace != null)
-      {
-         try
-         {
+      if (stackTrace != null) {
+         try {
             stackTrace.printStackTrace(writer);
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             createNewTrace = true;
          }
       }
-      else
-      {
+      else {
          createNewTrace = true;
       }
 
-      if (createNewTrace)
-      {
-         try
-         {
+      if (createNewTrace) {
+         try {
             throw new Exception("Unable to get original stacktrace.");
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             e.printStackTrace(writer);
          }
       }
@@ -855,8 +746,7 @@ public class Utils
 
    }
 
-   static String cleanStackTrace(String stackTrace)
-   {
+   static String cleanStackTrace(String stackTrace) {
       String[] ignoredCauses = new String[]{//
             //
             "java.lang.reflect.UndeclaredThrowableException", //
@@ -865,12 +755,9 @@ public class Utils
       String[] lines = splitLines(stackTrace);
 
       boolean chop = false;
-      if (stackTrace.indexOf("Caused by: ") > 0)
-      {
-         for (int i = 0; i < ignoredCauses.length; i++)
-         {
-            if (lines[0].indexOf(ignoredCauses[i]) > -1)
-            {
+      if (stackTrace.indexOf("Caused by: ") > 0) {
+         for (int i = 0; i < ignoredCauses.length; i++) {
+            if (lines[0].indexOf(ignoredCauses[i]) > -1) {
                chop = true;
                break;
             }
@@ -878,12 +765,9 @@ public class Utils
       }
 
       int start = 0;
-      if (chop)
-      {
-         for (int i = 0; i < lines.length; i++)
-         {
-            if (lines[i].startsWith("Caused by:"))
-            {
+      if (chop) {
+         for (int i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith("Caused by:")) {
                lines[i] = lines[i].substring(10, lines[i].length());
                break;
             }
@@ -893,25 +777,20 @@ public class Utils
       }
 
       StringBuffer buffer = new StringBuffer();
-      for (int i = start; i < lines.length; i++)
-      {
+      for (int i = start; i < lines.length; i++) {
          buffer.append(lines[i]).append("\r\n");
       }
 
-      if (chop)
-      {
+      if (chop) {
          return cleanStackTrace(buffer.toString());
       }
-      else
-      {
+      else {
          return buffer.toString();
       }
    }
 
-   public static String[] splitLines(String text)
-   {
-      if (text == null || "".equals(text))
-      {
+   public static String[] splitLines(String text) {
+      if (text == null || "".equals(text)) {
          return EMPTY_STRING_ARRAY;
       }
 
@@ -919,18 +798,14 @@ public class Utils
       return text.split(lineSeparator);
    }
 
-   public static final String limitLines(String text, int limit)
-   {
+   public static final String limitLines(String text, int limit) {
       StringBuffer buffer = new StringBuffer("");
       String[] lines = splitLines(text);
-      for (int i = 0; i < lines.length && i < limit; i++)
-      {
-         if (i == limit - 1 && i != lines.length - 1)
-         {
+      for (int i = 0; i < lines.length && i < limit; i++) {
+         if (i == limit - 1 && i != lines.length - 1) {
             buffer.append("..." + (lines.length - i) + " more");
          }
-         else
-         {
+         else {
             buffer.append(lines[i]).append(NEW_LINE);
          }
       }
@@ -964,26 +839,21 @@ public class Utils
     * @param clazz
     * @return
     */
-   public static Field getField(String fieldName, Class clazz)
-   {
-      if (fieldName == null || clazz == null)
-      {
+   public static Field getField(String fieldName, Class clazz) {
+      if (fieldName == null || clazz == null) {
          return null;
       }
 
       Field[] fields = clazz.getDeclaredFields();
-      for (int i = 0; i < fields.length; i++)
-      {
-         if (fields[i].getName().equals(fieldName))
-         {
+      for (int i = 0; i < fields.length; i++) {
+         if (fields[i].getName().equals(fieldName)) {
             Field field = fields[i];
             field.setAccessible(true);
             return field;
          }
       }
 
-      if (clazz.getSuperclass() != null && !clazz.equals(clazz.getSuperclass()))
-      {
+      if (clazz.getSuperclass() != null && !clazz.equals(clazz.getSuperclass())) {
          return getField(fieldName, clazz.getSuperclass());
       }
 
@@ -995,30 +865,24 @@ public class Utils
     * @param clazz
     * @return
     */
-   public static List<Field> getFields(Class clazz)
-   {
+   public static List<Field> getFields(Class clazz) {
       Class inClass = clazz;
       Set found = new HashSet();
       List<Field> fields = new ArrayList();
 
-      do
-      {
+      do {
          if (clazz.getName().startsWith("java"))
             break;
 
          Field[] farr = clazz.getDeclaredFields();
-         if (farr != null)
-         {
-            for (Field f : farr)
-            {
-               if (!found.contains(f.getName()))
-               {
+         if (farr != null) {
+            for (Field f : farr) {
+               if (!found.contains(f.getName())) {
                   f.setAccessible(true);
                   found.add(f.getName());
                   fields.add(f);
                }
-               else
-               {
+               else {
                   System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
                }
             }
@@ -1052,18 +916,14 @@ public class Utils
     * @param name
     * @return
     */
-   public static Method getMethod(Class clazz, String name)
-   {
-      do
-      {
-         for (Method m : clazz.getMethods())
-         {
+   public static Method getMethod(Class clazz, String name) {
+      do {
+         for (Method m : clazz.getMethods()) {
             if (m.getName().equalsIgnoreCase(name))
                return m;
          }
 
-         if (clazz != null)
-         {
+         if (clazz != null) {
             clazz = clazz.getSuperclass();
          }
       }
@@ -1078,37 +938,30 @@ public class Utils
     * @param object
     * @return
     */
-   public static Object getProperty(String name, Object object)
-   {
-      try
-      {
+   public static Object getProperty(String name, Object object) {
+      try {
          Method getter = getMethod(object.getClass(), "get" + name);
-         if (getter != null)
-         {
+         if (getter != null) {
             return getter.invoke(object);
          }
-         else
-         {
+         else {
             Field field = getField(name, object.getClass());
             if (field != null)
                return field.get(object);
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ex.printStackTrace();
       }
       return null;
    }
-   
-   
+
    /**
     * Finds an input stream for <code>resource</code> and reads it into a string
     * @param resource
     * @return the content of <code>code</code> as a String
     */
-   public static String read(String resource)
-   {
+   public static String read(String resource) {
       return read(findInputStream(resource));
    }
 
@@ -1117,16 +970,13 @@ public class Utils
     * @param in
     * @return
     */
-   public static String read(InputStream in)
-   {
-      try
-      {
+   public static String read(InputStream in) {
+      try {
          ByteArrayOutputStream out = new ByteArrayOutputStream();
          pipe(in, out);
          return new String(out.toByteArray());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -1138,8 +988,7 @@ public class Utils
     * @return
     * @throws ApiException
     */
-   public static String read(File file) throws Exception
-   {
+   public static String read(File file) throws Exception {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       FileInputStream in = new FileInputStream(file);
       pipe(in, out);
@@ -1152,8 +1001,7 @@ public class Utils
     * @param text
     * @throws ApiException
     */
-   public static void write(File file, String text) throws Exception
-   {
+   public static void write(File file, String text) throws Exception {
       if (!file.exists())
          file.getParentFile().mkdirs();
 
@@ -1169,8 +1017,7 @@ public class Utils
     * @param text
     * @throws ApiException
     */
-   public static void write(String file, String text) throws Exception
-   {
+   public static void write(String file, String text) throws Exception {
       if (text == null)
          return;
       write(new File(file), text);
@@ -1182,21 +1029,17 @@ public class Utils
     * @param dest
     * @throws ApiException
     */
-   public static void pipe(InputStream src, OutputStream dest) throws Exception
-   {
-      try
-      {
+   public static void pipe(InputStream src, OutputStream dest) throws Exception {
+      try {
          boolean isBlocking = true;
          byte[] buf = new byte[K64];
 
          int nread;
          int navailable;
          //int total = 0;
-         synchronized (src)
-         {
+         synchronized (src) {
             while ((navailable = isBlocking ? Integer.MAX_VALUE : src.available()) > 0 //
-                  && (nread = src.read(buf, 0, Math.min(buf.length, navailable))) >= 0)
-            {
+                  && (nread = src.read(buf, 0, Math.min(buf.length, navailable))) >= 0) {
                dest.write(buf, 0, nread);
                //total += nread;
             }
@@ -1204,29 +1047,24 @@ public class Utils
          dest.flush();
 
       }
-      finally
-      {
+      finally {
          close(src);
          close(dest);
       }
    }
 
-   public static File createTempFile(String fileName) throws IOException
-   {
+   public static File createTempFile(String fileName) throws IOException {
       if (empty(fileName))
          fileName = "working.tmp";
 
       fileName = fileName.trim();
       fileName = fileName.replace('\\', '/');
 
-      if (fileName.endsWith("/"))
-      {
+      if (fileName.endsWith("/")) {
          fileName = "working.tmp";
       }
-      else
-      {
-         if (fileName.lastIndexOf('/') > 0)
-         {
+      else {
+         if (fileName.lastIndexOf('/') > 0) {
             fileName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.length());
          }
       }
@@ -1235,15 +1073,13 @@ public class Utils
          fileName = "working.tmp";
 
       fileName = slugify(fileName);
-      if (fileName.lastIndexOf('.') > 0)
-      {
+      if (fileName.lastIndexOf('.') > 0) {
          String prefix = fileName.substring(0, fileName.lastIndexOf('.'));
          String suffix = fileName.substring(fileName.lastIndexOf('.'), fileName.length());
 
          return File.createTempFile(prefix + "-", suffix);
       }
-      else
-      {
+      else {
          return File.createTempFile(fileName, "");
       }
    }
@@ -1253,38 +1089,29 @@ public class Utils
     * @param fileOrUrl
     * @return
     */
-   public static InputStream findInputStream(String fileOrUrl)
-   {
-      try
-      {
-         if (fileOrUrl.startsWith("file:/"))
-         {
+   public static InputStream findInputStream(String fileOrUrl) {
+      try {
+         if (fileOrUrl.startsWith("file:/")) {
             fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
          }
-         if (fileOrUrl.startsWith("file:///"))
-         {
+         if (fileOrUrl.startsWith("file:///")) {
             fileOrUrl = fileOrUrl.substring(7, fileOrUrl.length());
          }
-         if (fileOrUrl.startsWith("file:/"))
-         {
+         if (fileOrUrl.startsWith("file:/")) {
             fileOrUrl = fileOrUrl.substring(5, fileOrUrl.length());
          }
 
-         if (fileOrUrl.indexOf(':') >= 0)
-         {
+         if (fileOrUrl.indexOf(':') >= 0) {
             return new URL(fileOrUrl).openStream();
          }
-         else if (new File(fileOrUrl).exists())
-         {
+         else if (new File(fileOrUrl).exists()) {
             return new FileInputStream(fileOrUrl);
          }
-         else
-         {
+         else {
             return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          if (ex instanceof RuntimeException)
             throw (RuntimeException) ex;
 
@@ -1295,16 +1122,14 @@ public class Utils
    /**
     * Returns true if the string contains a * or a ?
     */
-   public static boolean isWildcard(String str)
-   {
+   public static boolean isWildcard(String str) {
       return str.indexOf('*') >= 0 || str.indexOf('?') >= 0;
    }
 
    /**
     * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values
     */
-   public static boolean wildcardMatch(String wildcard, String string)
-   {
+   public static boolean wildcardMatch(String wildcard, String string) {
       if (wildcard.equals("*"))
          return true;
 
@@ -1324,8 +1149,7 @@ public class Utils
     * @param string
     * @return
     */
-   public static boolean regexMatch(String regex, String string)
-   {
+   public static boolean regexMatch(String regex, String string) {
       if (empty(regex) || empty(string))
          return false;
 
@@ -1339,16 +1163,13 @@ public class Utils
     * @param wildcard
     * @return
     */
-   public static String wildcardToRegex(String wildcard)
-   {
+   public static String wildcardToRegex(String wildcard) {
       wildcard = wildcard.replace("**", "*");
       StringBuffer s = new StringBuffer(wildcard.length());
       s.append('^');
-      for (int i = 0, is = wildcard.length(); i < is; i++)
-      {
+      for (int i = 0, is = wildcard.length(); i < is; i++) {
          char c = wildcard.charAt(i);
-         switch (c)
-         {
+         switch (c) {
             case '*':
                s.append(".*");
                break;
@@ -1379,32 +1200,25 @@ public class Utils
       return (s.toString());
    }
 
-   public static LinkedHashMap<String, String> parseQueryString(String query)
-   {
+   public static LinkedHashMap<String, String> parseQueryString(String query) {
       LinkedHashMap params = new LinkedHashMap();
 
-      if (query != null)
-      {
-         try
-         {
-            while (query.startsWith("?") || query.startsWith("&") || query.startsWith("="))
-            {
+      if (query != null) {
+         try {
+            while (query.startsWith("?") || query.startsWith("&") || query.startsWith("=")) {
                query = query.substring(1);
             }
 
-            if (query.length() > 0)
-            {
+            if (query.length() > 0) {
                String[] pairs = query.split("&");
-               for (String pair : pairs)
-               {
+               for (String pair : pairs) {
                   pair = pair.trim();
 
                   if (pair.length() == 0)
                      continue;
 
                   int idx = pair.indexOf("=");
-                  if (idx > 0)
-                  {
+                  if (idx > 0) {
                      String key = pair.substring(0, idx).trim();
                      key = URLDecoder.decode(key, "UTF-8");
 
@@ -1413,15 +1227,13 @@ public class Utils
 
                      params.put(key, value);
                   }
-                  else
-                  {
+                  else {
                      params.put(URLDecoder.decode(pair, "UTF-8"), null);
                   }
                }
             }
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             rethrow(ex);
          }
       }
@@ -1470,11 +1282,9 @@ public class Utils
    //   }
    //
 
-   public static String findProperty(String... names)
-   {
+   public static String findProperty(String... names) {
       String value = null;
-      for (String name : names)
-      {
+      for (String name : names) {
          value = getProperty(name);
          if (value != null)
             return value;
@@ -1482,8 +1292,7 @@ public class Utils
       return null;
    }
 
-   public static String getProperty(String name)
-   {
+   public static String getProperty(String name) {
       String value = System.getProperty(name);
 
       if (Utils.empty(value))
@@ -1497,20 +1306,16 @@ public class Utils
          // try replacing dot for underscores, since Lambda doesn't support dots in env vars
          value = System.getenv(name.replace(".", "_"));
 
-      if (Utils.empty(value))
-      {
+      if (Utils.empty(value)) {
          InputStream stream = findInputStream(".env");
-         if (stream != null)
-         {
+         if (stream != null) {
             Properties p = new Properties();
-            try
-            {
+            try {
                p.load(stream);
                Utils.close(stream);
                value = p.getProperty(name);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                Utils.rethrow(ex);
             }
          }
@@ -1518,35 +1323,27 @@ public class Utils
       return value;
    }
 
-   public static Object cast(String type, Object value)
-   {
-      try
-      {
+   public static Object cast(String type, Object value) {
+      try {
          if (value == null)
             return null;
 
-         if (type == null)
-         {
-            try
-            {
-               if (value.toString().indexOf(".") < 0)
-               {
+         if (type == null) {
+            try {
+               if (value.toString().indexOf(".") < 0) {
                   return Long.parseLong(value.toString());
                }
-               else
-               {
+               else {
                   return Double.parseDouble(value.toString());
                }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                //must not have been an number
             }
             return value.toString();
          }
 
-         switch (type.toLowerCase())
-         {
+         switch (type.toLowerCase()) {
             case "s":
             case "string":
             case "char":
@@ -1569,8 +1366,7 @@ public class Utils
 
             case "bool":
             case "boolean":
-            case "bit":
-            {
+            case "bit": {
                if ("1".equals(value))
                   value = "true";
                else if ("0".equals(value))
@@ -1616,11 +1412,9 @@ public class Utils
 
                if (value instanceof JSNode)
                   return value;
-               else
-               {
+               else {
                   String json = value.toString().trim();
-                  if (json.length() > 0)
-                  {
+                  if (json.length() > 0) {
                      char c = json.charAt(0);
                      if (c == '[' || c == '{')
                         return JSNode.parseJson(value + "");
@@ -1632,8 +1426,7 @@ public class Utils
                ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          Utils.rethrow(ex);
          //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
       }
@@ -1645,33 +1438,24 @@ public class Utils
     * Utility to call a close() method on supplied objects if it exists and completely ignore any exceptions
     * @param toClose
     */
-   public static void close(Object... toClose)
-   {
-      for (Object o : toClose)
-      {
-         if (o != null)
-         {
-            try
-            {
-               if (o instanceof Closeable)
-               {
+   public static void close(Object... toClose) {
+      for (Object o : toClose) {
+         if (o != null) {
+            try {
+               if (o instanceof Closeable) {
                   ((Closeable) o).close();
                }
-               else
-               {
+               else {
                   Method m = o.getClass().getMethod("close");
-                  if (m != null)
-                  {
+                  if (m != null) {
                      m.invoke(o);
                   }
                }
             }
-            catch (NoSuchMethodException nsme)
-            {
+            catch (NoSuchMethodException nsme) {
                //nsme.printStackTrace();
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                //ex.printStackTrace();
             }
          }

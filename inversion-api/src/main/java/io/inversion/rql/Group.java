@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,21 +19,17 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Group<T extends Group, P extends Query> extends Builder<T, P>
-{
-   public Group(P query)
-   {
+public class Group<T extends Group, P extends Query> extends Builder<T, P> {
+
+   public Group(P query) {
       super(query);
       withFunctions("group");
    }
 
-   public List<String> getGroupBy()
-   {
+   public List<String> getGroupBy() {
       List<String> groups = new ArrayList();
-      for (Term group : findAll("group"))
-      {
-         for (Term term : group.getTerms())
-         {
+      for (Term group : findAll("group")) {
+         for (Term term : group.getTerms()) {
             if (term.isLeaf())
                groups.add(term.getToken());
          }
@@ -41,18 +37,14 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P>
       return groups;
    }
 
-   public T withGroupBy(String... properties)
-   {
+   public T withGroupBy(String... properties) {
       Term group = find("group");
-      if (group != null)
-      {
-         for (String property : properties)
-         {
+      if (group != null) {
+         for (String property : properties) {
             group.withTerm(Term.term(group, property));
          }
       }
-      else
-      {
+      else {
          withTerm("group", (Object[]) properties);
       }
 

@@ -18,8 +18,8 @@ package io.inversion;
 
 import java.io.Serializable;
 
-public class Relationship implements Serializable
-{
+public class Relationship implements Serializable {
+
    public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
    public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
    public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
@@ -34,13 +34,11 @@ public class Relationship implements Serializable
 
    protected boolean          exclude          = false;
 
-   public Relationship()
-   {
+   public Relationship() {
 
    }
 
-   public Relationship(String name, String type, Collection collection, Collection related, Index fkIndex1, Index fkIndex2)
-   {
+   public Relationship(String name, String type, Collection collection, Collection related, Index fkIndex1, Index fkIndex2) {
       withName(name);
       withType(type);
       withCollection(collection);
@@ -49,13 +47,11 @@ public class Relationship implements Serializable
       withFkIndex2(fkIndex2);
    }
 
-   public boolean isExclude()
-   {
+   public boolean isExclude() {
       return exclude || (fkIndex1 != null && fkIndex1.isExclude()) || (fkIndex2 != null && fkIndex2.isExclude());
    }
 
-   public Relationship withExclude(boolean exclude)
-   {
+   public Relationship withExclude(boolean exclude) {
       this.exclude = exclude;
       return this;
    }
@@ -63,15 +59,12 @@ public class Relationship implements Serializable
    /**
     * @return the collection
     */
-   public Collection getCollection()
-   {
+   public Collection getCollection() {
       return collection;
    }
 
-   public Relationship withCollection(Collection collection)
-   {
-      if (this.collection != collection)
-      {
+   public Relationship withCollection(Collection collection) {
+      if (this.collection != collection) {
          this.collection = collection;
          if (collection != null)
             collection.withRelationship(this);
@@ -82,36 +75,29 @@ public class Relationship implements Serializable
    /**
     * @return the related
     */
-   public Collection getRelated()
-   {
+   public Collection getRelated() {
       return related;
    }
 
-   public Relationship getInverse()
-   {
-      if (isManyToMany())
-      {
-         for (Relationship other : related.getRelationships())
-         {
-            if(other == this)
+   public Relationship getInverse() {
+      if (isManyToMany()) {
+         for (Relationship other : related.getRelationships()) {
+            if (other == this)
                continue;
-            
+
             if (!other.isManyToMany())
                continue;
 
-            if (getFkIndex1().equals(other.getFkIndex2()))
-            {
+            if (getFkIndex1().equals(other.getFkIndex2())) {
                return other;
             }
          }
       }
-      else
-      {
-         for (Relationship other : related.getRelationships())
-         {
-            if(other == this)
+      else {
+         for (Relationship other : related.getRelationships()) {
+            if (other == this)
                continue;
-               
+
             if (isManyToOne() && !other.isOneToMany())
                continue;
 
@@ -119,8 +105,7 @@ public class Relationship implements Serializable
                continue;
 
             if (getFkIndex1().equals(other.getFkIndex1()) //
-                  && getPrimaryKeyTable1().getPrimaryIndex().equals(other.getPrimaryKeyTable1().getPrimaryIndex()))
-            {
+                  && getPrimaryKeyTable1().getPrimaryIndex().equals(other.getPrimaryKeyTable1().getPrimaryIndex())) {
                return other;
             }
          }
@@ -132,46 +117,39 @@ public class Relationship implements Serializable
    /**
     * @param related the related to set
     */
-   public Relationship withRelated(Collection related)
-   {
+   public Relationship withRelated(Collection related) {
       this.related = related;
       return this;
    }
 
-   public boolean isManyToMany()
-   {
+   public boolean isManyToMany() {
       return REL_MANY_TO_MANY.equalsIgnoreCase(type);
    }
 
-   public boolean isOneToMany()
-   {
+   public boolean isOneToMany() {
       return REL_ONE_TO_MANY.equalsIgnoreCase(type);
    }
 
-   public boolean isManyToOne()
-   {
+   public boolean isManyToOne() {
       return REL_MANY_TO_ONE.equalsIgnoreCase(type);
    }
 
    /**
     * @return the name
     */
-   public String getName()
-   {
+   public String getName() {
       return name;
    }
 
    /**
     * @param name the name to set
     */
-   public Relationship withName(String name)
-   {
+   public Relationship withName(String name) {
       this.name = name;
       return this;
    }
 
-   public boolean equals(Object obj)
-   {
+   public boolean equals(Object obj) {
       if (obj == null)
          return false;
 
@@ -181,35 +159,28 @@ public class Relationship implements Serializable
       return toString().equals(obj.toString());
    }
 
-   public int hashCode()
-   {
+   public int hashCode() {
       //return toString().hashCode();
       return super.hashCode();
    }
 
-   public String toString()
-   {
-      try
-      {
+   public String toString() {
+      try {
          String str = collection.getName() + "." + getName() + " : " + getType() + " ";
-         
-         if (isManyToOne())
-         {
+
+         if (isManyToOne()) {
             str += getFkIndex1() + " -> " + collection.getPrimaryIndex();
          }
-         else if (isOneToMany())
-         {
+         else if (isOneToMany()) {
             str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
          }
-         else
-         {
+         else {
             str += getFkIndex1() + " <--> " + getFkIndex2();
          }
 
          return str;
       }
-      catch (NullPointerException ex)
-      {
+      catch (NullPointerException ex) {
          return "Relationship: " + name + "-" + type + "-" + fkIndex1 + "-" + fkIndex2;
       }
    }
@@ -217,57 +188,48 @@ public class Relationship implements Serializable
    /**
     * @return the type
     */
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
    /**
     * @param type the type to set
     */
-   public Relationship withType(String type)
-   {
+   public Relationship withType(String type) {
       this.type = type;
       return this;
    }
 
-   public Index getFkIndex1()
-   {
+   public Index getFkIndex1() {
       return fkIndex1;
    }
 
-   public Relationship withFkIndex1(Index fkIndex1)
-   {
+   public Relationship withFkIndex1(Index fkIndex1) {
       this.fkIndex1 = fkIndex1;
       return this;
    }
 
-   public Index getFkIndex2()
-   {
+   public Index getFkIndex2() {
       return fkIndex2;
    }
 
-   public Relationship withFkIndex2(Index fkIndex2)
-   {
+   public Relationship withFkIndex2(Index fkIndex2) {
       this.fkIndex2 = fkIndex2;
       return this;
    }
 
-   public Collection getPrimaryKeyTable1()
-   {
+   public Collection getPrimaryKeyTable1() {
       return fkIndex1.getProperty(0).getCollection();
    }
 
-   public Collection getPrimaryKeyTable2()
-   {
+   public Collection getPrimaryKeyTable2() {
       return fkIndex2.getProperty(0).getCollection();
    }
 
    /**
     * @return the fkCol1
     */
-   public Property getFk1Col1()
-   {
+   public Property getFk1Col1() {
       return fkIndex1.getProperty(0);
    }
 
@@ -284,8 +246,7 @@ public class Relationship implements Serializable
    /**
     * @return the fkCol2
     */
-   public Property getFk2Col1()
-   {
+   public Property getFk2Col1() {
       return fkIndex2.getProperty(0);
    }
    //

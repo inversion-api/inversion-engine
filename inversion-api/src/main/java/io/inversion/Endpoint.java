@@ -22,8 +22,8 @@ import java.util.List;
 /**
  * A single Endpoint, bundling one or more Path match relative Actions, is selected to service a Request.
  */
-public class Endpoint extends Rule<Endpoint>
-{
+public class Endpoint extends Rule<Endpoint> {
+
    /**
     * The Actions that are 'local' to this request.  
     * <p>
@@ -39,56 +39,46 @@ public class Endpoint extends Rule<Endpoint>
     */
    protected boolean      internal = false;
 
-   public Endpoint()
-   {
+   public Endpoint() {
 
    }
 
-   public Endpoint(String methods, String includePaths, Action... actions)
-   {
+   public Endpoint(String methods, String includePaths, Action... actions) {
       withIncludeOn(methods, includePaths);
 
-      if (actions != null)
-      {
+      if (actions != null) {
          for (Action action : actions)
             withAction(action);
       }
    }
 
-   public Endpoint withInternal(boolean internal)
-   {
+   public Endpoint withInternal(boolean internal) {
       this.internal = internal;
       return this;
    }
 
-   public boolean isInternal()
-   {
+   public boolean isInternal() {
       return internal;
    }
 
-   public List<Action> getActions()
-   {
+   public List<Action> getActions() {
       return new ArrayList(actions);
    }
 
-   public Endpoint withActions(Action... actions)
-   {
+   public Endpoint withActions(Action... actions) {
       for (Action action : actions)
          withAction(action);
 
       return this;
    }
 
-   public Endpoint withAction(Action action)
-   {
+   public Endpoint withAction(Action action) {
       if (actions.contains(action))
          return this;
 
       boolean inserted = false;
-      for (int i = 0; i < actions.size(); i++)
-      {
-         if (action.getOrder() < actions.get(i).getOrder())
-         {
+      for (int i = 0; i < actions.size(); i++) {
+         if (action.getOrder() < actions.get(i).getOrder()) {
             actions.add(i, action);
             inserted = true;
             break;

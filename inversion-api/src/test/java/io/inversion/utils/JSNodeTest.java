@@ -29,11 +29,10 @@ import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
-public class JSNodeTest
-{
+public class JSNodeTest {
+
    @Test
-   void fromJsonPath()
-   {
+   void fromJsonPath() {
       assertEquals("**.book.[(@_length-1)]", JSNode.fromJsonPath("$..book[(@.length-1)]"));
       assertEquals("**.book.[0,1]", JSNode.fromJsonPath("$..book[0,1]"));
       assertEquals("book.0.asdf", JSNode.fromJsonPath("book[0].asdf"));
@@ -41,8 +40,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void testJsonPath1()
-   {
+   public void testJsonPath1() {
       JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
       JSArray found1 = null;
       JSArray found2 = null;
@@ -162,8 +160,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void testWith()
-   {
+   public void testWith() {
       JSArray arr = new JSArray(1, 2, 3, 4);
       JSNode node = new JSNode().with("name", "value", "name2", "value2", "arr", arr);
       assertEquals("value", node.find("name"));
@@ -172,8 +169,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void testCollectNodes1()
-   {
+   public void testCollectNodes1() {
       JSArray found = null;
       JSNode doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
@@ -199,8 +195,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void testDiff1()
-   {
+   public void testDiff1() {
       List found = null;
       JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
       JSNode doc2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
@@ -221,8 +216,7 @@ public class JSNodeTest
     * The fix was to copy the patches before applying or after computing inside to the JSNode methods
     */
    @Test
-   public void testDiff3()
-   {
+   public void testDiff3() {
       JSNode stateDoc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff3.1.json")));
       JSNode apiEvent = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff3.2.json")));
 
@@ -231,14 +225,12 @@ public class JSNodeTest
 
       JSNode body = apiEvent.getNode("body");
 
-      if (!body.isArray())
-      {
+      if (!body.isArray()) {
          body = new JSArray(body);
       }
 
       JSArray patches = body.diff(stateDoc.getNode("data"));
-      if (patches.size() > 0)
-      {
+      if (patches.size() > 0) {
          apiEvent.put("patches", patches);
          stateDoc.getNode("data").patch(patches);
       }
@@ -251,8 +243,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void testDiff4()
-   {
+   public void testDiff4() {
       JSNode array1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff4.1.json")));
       JSNode array2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff4.2.json")));
 
@@ -267,8 +258,7 @@ public class JSNodeTest
     * a value in a json package to be set to null instead of the new value
     */
    @Test
-   public void testDiff5()
-   {
+   public void testDiff5() {
       JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
       JSNode doc2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
 
@@ -280,14 +270,12 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_property_from_node()
-   {
+   public void diff_remove_property_from_node() {
 
    }
 
    @Test
-   public void diff_remove_element_from_array()
-   {
+   public void diff_remove_element_from_array() {
       JSArray arr1 = new JSArray("one", "two", "three");
       JSArray arr2 = new JSArray("one", "two", "three", "four");
 
@@ -295,8 +283,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_element_from_end_of_array()
-   {
+   public void diff_remove_element_from_end_of_array() {
       JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "c", "d", "e"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
 
@@ -308,8 +295,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_element_from_start_of_array()
-   {
+   public void diff_remove_element_from_start_of_array() {
       JSNode jsonShort = new JSNode("array", new JSArray("e", "f", "g", "h"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
 
@@ -320,8 +306,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_elements_from_middle_of_array()
-   {
+   public void diff_remove_elements_from_middle_of_array() {
       JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "e", "f", "g", "h"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
 
@@ -334,8 +319,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_elements_from_middle_of_array2()
-   {
+   public void diff_remove_elements_from_middle_of_array2() {
       JSNode jsonShort = new JSNode("array", new JSArray("a", "b", "e", "f", "g", "h"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
 
@@ -348,8 +332,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_remove_elements_from_start_middle_end_of_array()
-   {
+   public void diff_remove_elements_from_start_middle_end_of_array() {
       JSNode jsonShort = new JSNode("array", new JSArray("b", "e", "f", "g"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d", "e", "f", "g", "h"));
 
@@ -362,8 +345,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_add_elements_at_start_of_array()
-   {
+   public void diff_add_elements_at_start_of_array() {
       JSNode jsonShort = new JSNode("array", new JSArray("c", "d"));
       JSNode jsonLong = new JSNode("array", new JSArray("a", "b", "c", "d"));
 
@@ -376,8 +358,7 @@ public class JSNodeTest
    }
 
    @Test
-   public void diff_array_swap()
-   {
+   public void diff_array_swap() {
       JSNode jsonShort = new JSNode("array", new JSArray("a"));
       JSNode jsonLong = new JSNode("array", new JSArray("b"));
 

@@ -29,8 +29,8 @@ import io.inversion.utils.Path;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
-public class Request
-{
+public class Request {
+
    protected Chain                                  chain          = null;
 
    protected String                                 referrer       = null;
@@ -62,25 +62,21 @@ public class Request
 
    boolean                                          explain        = false;
 
-   public Request()
-   {
+   public Request() {
 
    }
 
-   public Request(String method, String url)
-   {
+   public Request(String method, String url) {
       this(method, url, null, null, -1);
    }
 
-   public Request(String method, String url, String body)
-   {
+   public Request(String method, String url, String body) {
       withMethod(method);
       withUrl(url);
       withBody(body);
    }
 
-   public Request(Engine engine, String method, String url, Object body)
-   {
+   public Request(Engine engine, String method, String url, Object body) {
       withEngine(engine);
       withMethod(method);
       withUrl(url);
@@ -88,37 +84,31 @@ public class Request
          withBody(body.toString());
    }
 
-   public Request(String method, String url, Map<String, String> headers, Map<String, String> params, String body)
-   {
+   public Request(String method, String url, Map<String, String> headers, Map<String, String> params, String body) {
       withMethod(method);
       withUrl(url);
       withBody(body);
 
-      if (headers != null)
-      {
+      if (headers != null) {
          for (String key : headers.keySet())
             withHeader(key, headers.get(key));
       }
 
-      if (params != null)
-      {
+      if (params != null) {
          this.url.withParams(params);
       }
    }
 
-   public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts)
-   {
+   public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts) {
       this(method, url, body, null, headers, retryAttempts);
    }
 
-   public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryMax)
-   {
+   public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryMax) {
       withMethod(method);
       withUrl(url);
       withBody(body);
 
-      if (params != null)
-      {
+      if (params != null) {
          this.url.withParams(params);
       }
 
@@ -129,24 +119,20 @@ public class Request
          this.retryMax = retryMax;
    }
 
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return engine;
    }
 
-   public Request withEngine(Engine service)
-   {
+   public Request withEngine(Engine service) {
       this.engine = service;
       return this;
    }
 
-   public Request withUrl(String url)
-   {
+   public Request withUrl(String url) {
       Url u = new Url(url);
 
       String key = u.findKey("explain");
-      if (key != null)
-      {
+      if (key != null) {
          String explain = u.clearParams(key);
          if (Utils.empty(explain) || "true".equalsIgnoreCase(explain.trim()))
             withExplain(true);
@@ -159,42 +145,34 @@ public class Request
       return this;
    }
 
-   public Request withMethod(String method)
-   {
+   public Request withMethod(String method) {
       this.method = method;
       return this;
    }
 
-   public Request withHeaders(String key, String value)
-   {
+   public Request withHeaders(String key, String value) {
       this.headers.put(key, value);
       return this;
    }
 
-   public Request withHeaders(Map<String, String> headers)
-   {
+   public Request withHeaders(Map<String, String> headers) {
       this.headers.putAll(headers);
       return this;
    }
 
-   public Collection getCollection()
-   {
+   public Collection getCollection() {
       return collection;
    }
 
    /**
     * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
     */
-   public boolean hasCollectionKey(String... collectionKeys)
-   {
+   public boolean hasCollectionKey(String... collectionKeys) {
       String collectionKey = getCollectionKey();
-      if (collectionKey != null)
-      {
-         for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++)
-         {
+      if (collectionKey != null) {
+         for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++) {
             String key = collectionKeys[i];
-            if (key != null && key.equalsIgnoreCase(collectionKey))
-            {
+            if (key != null && key.equalsIgnoreCase(collectionKey)) {
                return true;
             }
          }
@@ -203,33 +181,28 @@ public class Request
       return false;
    }
 
-   public Request withCollection(Collection collection)
-   {
+   public Request withCollection(Collection collection) {
       this.collection = collection;
       return this;
    }
-   
-   public Request withCollection(Collection collection, Path collectionPath)
-   {
+
+   public Request withCollection(Collection collection, Path collectionPath) {
       this.collection = collection;
       this.collectionPath = collectionPath;
       return this;
    }
 
-   public Endpoint getEndpoint()
-   {
+   public Endpoint getEndpoint() {
       return endpoint;
    }
 
-   public Request withEndpoint(Endpoint endpoint, Path endpointPath)
-   {
+   public Request withEndpoint(Endpoint endpoint, Path endpointPath) {
       this.endpoint = endpoint;
       this.endpointPath = endpointPath;
       return this;
    }
 
-   public boolean isDebug()
-   {
+   public boolean isDebug() {
       String url = getUrl().toString();
       if (url.indexOf("://localhost/") > 0)
          return true;
@@ -243,30 +216,25 @@ public class Request
       return false;
    }
 
-   public boolean isExplain()
-   {
+   public boolean isExplain() {
       return explain;
    }
 
-   public Request withExplain(boolean explain)
-   {
+   public Request withExplain(boolean explain) {
       this.explain = explain;
       return this;
    }
 
-   public String getBody()
-   {
+   public String getBody() {
       return body;
    }
 
-   public Request withBody(String body)
-   {
+   public Request withBody(String body) {
       this.body = body;
       return this;
    }
 
-   public JSNode getJson() throws ApiException
-   {
+   public JSNode getJson() throws ApiException {
       if (json != null)
          return json;
 
@@ -274,12 +242,10 @@ public class Request
       if (Utils.empty(body))
          return null;
 
-      try
-      {
+      try {
          json = JSNode.parseJsonNode(body);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw400BadRequest("Unparsable JSON body");
       }
 
@@ -298,21 +264,16 @@ public class Request
     *
     * @return
     */
-   public JSArray getData()
-   {
+   public JSArray getData() {
       JSNode node = getJson();
-      if (node != null)
-      {
-         if (node instanceof JSArray)
-         {
+      if (node != null) {
+         if (node instanceof JSArray) {
             return (JSArray) node;
          }
-         else if (node.get("data") instanceof JSArray)
-         {
+         else if (node.get("data") instanceof JSArray) {
             return node.getArray("data");
          }
-         else
-         {
+         else {
             return new JSArray(node);
          }
       }
@@ -322,8 +283,7 @@ public class Request
    }
 
    //todo we should probably remove the ability for end users to modify the json?
-   public Request withJson(JSNode json)
-   {
+   public Request withJson(JSNode json) {
       this.json = json;
       return this;
    }
@@ -331,104 +291,86 @@ public class Request
    /**
     * @return the method
     */
-   public String getMethod()
-   {
+   public String getMethod() {
       return method;
    }
 
-   public boolean isMethod(String... methods)
-   {
-      for (String method : methods)
-      {
+   public boolean isMethod(String... methods) {
+      for (String method : methods) {
          if (this.method.equalsIgnoreCase(method))
             return true;
       }
       return false;
    }
 
-   public boolean isPut()
-   {
+   public boolean isPut() {
       return "put".equalsIgnoreCase(method);
    }
 
-   public boolean isPost()
-   {
+   public boolean isPost() {
       return "post".equalsIgnoreCase(method);
    }
 
-   public boolean isPatch()
-   {
+   public boolean isPatch() {
       return "patch".equalsIgnoreCase(method);
    }
 
-   public boolean isGet()
-   {
+   public boolean isGet() {
       return "get".equalsIgnoreCase(method);
    }
 
-   public boolean isDelete()
-   {
+   public boolean isDelete() {
       return "delete".equalsIgnoreCase(method);
    }
 
-   public String getReferrer()
-   {
+   public String getReferrer() {
       return getHeader("referrer");
    }
 
-   public String getHeader(String key)
-   {
+   public String getHeader(String key) {
       List<String> vals = headers.get(key);
       if (vals != null && vals.size() > 0)
          return vals.get(0);
       return null;
    }
 
-   public void removeHeader(String key)
-   {
+   public void removeHeader(String key) {
       headers.remove(key);
    }
 
    /**
     * @return the headers
     */
-   public ArrayListValuedHashMap<String, String> getHeaders()
-   {
+   public ArrayListValuedHashMap<String, String> getHeaders() {
       return headers;
    }
 
-   public void withHeader(String key, String value)
-   {
+   public void withHeader(String key, String value) {
       if (!headers.containsMapping(key, value))
          headers.put(key, value);
    }
 
-   public Api getApi()
-   {
+   public Api getApi() {
       return api;
    }
 
-   public Chain getChain()
-   {
+   public Chain getChain() {
       return chain;
    }
 
-   public Request withChain(Chain chain)
-   {
+   public Request withChain(Chain chain) {
       this.chain = chain;
       return this;
    }
 
-   public Url getUrl()
-   {
+   public Url getUrl() {
       return url;
    }
 
    /**
     * Returns the URL path with the apiPath subtracted from the beginning
     */
-   public Path getPath()
-   {
+   public Path getPath() {
       Path path = url.getPath();
 
       int startIdx = apiPath == null ? 0 : apiPath.size();
@@ -437,8 +379,7 @@ public class Request
       return path;
    }
 
-   public Path getSubpath()
-   {
+   public Path getSubpath() {
       Path subpath = getPath();
       Path ep = this.endpointPath;
 
@@ -452,160 +393,133 @@ public class Request
    /**
     * @return the collectionKey
     */
-   public String getCollectionKey()
-   {
+   public String getCollectionKey() {
       return url.getParam("collection");
    }
 
    /**
     * @return the resourceKey
     */
-   public String getResourceKey()
-   {
+   public String getResourceKey() {
       return url.getParam("resource");
    }
 
-   public String getRelationshipKey()
-   {
+   public String getRelationshipKey() {
       return url.getParam("relationship");
    }
 
-   public Request withApi(Api api, Path apiPath)
-   {
+   public Request withApi(Api api, Path apiPath) {
       this.api = api;
       this.apiPath = apiPath;
       return this;
    }
 
-   public String getApiUrl()
-   {
+   public String getApiUrl() {
       String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
       return apiUrl;
    }
 
-   public Path getApiPath()
-   {
+   public Path getApiPath() {
       return apiPath;
    }
 
-   public Path getEndpointPath()
-   {
+   public Path getEndpointPath() {
       return endpointPath;
    }
 
-   public String getRemoteAddr()
-   {
+   public String getRemoteAddr() {
       String remoteAddr = getHeader("X-Forwarded-For");
-      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
-      {
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr)) {
          remoteAddr = getHeader("Proxy-Client-IP");
       }
-      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
-      {
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr)) {
          remoteAddr = getHeader("WL-Proxy-Client-IP");
       }
-      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
-      {
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr)) {
          remoteAddr = getHeader("HTTP_CLIENT_IP");
       }
-      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
-      {
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr)) {
          remoteAddr = getHeader("HTTP_X_FORWARDED_FOR");
       }
-      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr))
-      {
+      if (remoteAddr == null || remoteAddr.length() == 0 || "unknown".equalsIgnoreCase(remoteAddr)) {
          remoteAddr = this.remoteAddr;
       }
 
       return remoteAddr;
    }
 
-   public Request withRemoteAddr(String remoteAddr)
-   {
+   public Request withRemoteAddr(String remoteAddr) {
       this.remoteAddr = remoteAddr;
       return this;
    }
 
-   public Uploader getUploader()
-   {
+   public Uploader getUploader() {
       return uploader;
    }
 
-   public Request withUploader(Uploader uploader)
-   {
+   public Request withUploader(Uploader uploader) {
       this.uploader = uploader;
       return this;
    }
 
-   public Validation validate(String propOrJsonPath)
-   {
+   public Validation validate(String propOrJsonPath) {
       return validate(propOrJsonPath, null);
    }
 
-   public Validation validate(String propOrJsonPath, String customErrorMessage)
-   {
+   public Validation validate(String propOrJsonPath, String customErrorMessage) {
       return new Validation(this, propOrJsonPath, customErrorMessage);
    }
 
-   public boolean isLocalRequest()
-   {
+   public boolean isLocalRequest() {
       String url = getUrl().toString();
       return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
    }
 
-   public int getRetryMax()
-   {
+   public int getRetryMax() {
       return retryMax;
    }
 
-   public Request withRetryMax(int retryMax)
-   {
+   public Request withRetryMax(int retryMax) {
       this.retryMax = retryMax;
       return this;
    }
 
-   public int getRetryCount()
-   {
+   public int getRetryCount() {
       return retryCount;
    }
 
-   public void incrementRetryCount()
-   {
+   public void incrementRetryCount() {
       this.retryCount++;
    }
 
-   public File getRetryFile()
-   {
+   public File getRetryFile() {
       return retryFile;
    }
 
-   public void setRetryFile(File retryFile)
-   {
+   public void setRetryFile(File retryFile) {
       this.retryFile = retryFile;
    }
 
-   public List<Upload> getUploads()
-   {
+   public List<Upload> getUploads() {
       return uploader.getUploads();
    }
 
    /**
     * Implemented by different runtimes, for example a servlet vs a lambda, to enable different file upload mechanisms. 
     */
-   public interface Uploader
-   {
+   public interface Uploader {
+
       public List<Upload> getUploads();
    }
 
-   public static class Upload
-   {
+   public static class Upload {
+
       String      fileName    = null;
       long        fileSize    = 0;
       String      requestPath = null;
       InputStream inputStream = null;
 
-      public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream)
-      {
+      public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream) {
          super();
          this.fileName = fileName;
          this.fileSize = fileSize;
@@ -613,43 +527,35 @@ public class Request
          this.inputStream = inputStream;
       }
 
-      public String getFileName()
-      {
+      public String getFileName() {
          return fileName;
       }
 
-      public void setFileName(String fileName)
-      {
+      public void setFileName(String fileName) {
          this.fileName = fileName;
       }
 
-      public long getFileSize()
-      {
+      public long getFileSize() {
          return fileSize;
       }
 
-      public void setFileSize(long fileSize)
-      {
+      public void setFileSize(long fileSize) {
          this.fileSize = fileSize;
       }
 
-      public String getRequestPath()
-      {
+      public String getRequestPath() {
          return requestPath;
       }
 
-      public void setRequestPath(String requestPath)
-      {
+      public void setRequestPath(String requestPath) {
          this.requestPath = requestPath;
       }
 
-      public InputStream getInputStream()
-      {
+      public InputStream getInputStream() {
          return inputStream;
       }
 
-      public void setInputStream(InputStream inputStream)
-      {
+      public void setInputStream(InputStream inputStream) {
          this.inputStream = inputStream;
       }
 
@@ -677,14 +583,13 @@ public class Request
     * @see Request#validate(String,String)
     *
     */
-   public static class Validation
-   {
+   public static class Validation {
+
       Object value              = null;
       String customErrorMessage = null;
       String propOrPath         = null;
 
-      public Validation(Request req, String propOrPath, String customErrorMessage)
-      {
+      public Validation(Request req, String propOrPath, String customErrorMessage) {
          value = req.getUrl().getParam(propOrPath);
          if (value == null && req.getJson() != null)
             value = req.getJson().find(propOrPath);
@@ -693,8 +598,7 @@ public class Request
          this.customErrorMessage = customErrorMessage;
       }
 
-      public Validation(Response res, String jsonPath, String customErrorMessage)
-      {
+      public Validation(Response res, String jsonPath, String customErrorMessage) {
          this.value = res.find(jsonPath);
          this.propOrPath = null;
          this.customErrorMessage = customErrorMessage;
@@ -708,17 +612,13 @@ public class Request
        * @return
        * @throws ApiException 400 if the referenced validation is null.
        */
-      public Validation required(String... childProps)
-      {
+      public Validation required(String... childProps) {
          if (Utils.empty(value))
             fail("Required field '" + propOrPath + "' is missing.");
 
-         if (childProps != null && value instanceof JSNode && !((JSNode) value).isArray())
-         {
-            for (String childProp : childProps)
-            {
-               if (Utils.empty(((JSNode) value).get(childProp)))
-               {
+         if (childProps != null && value instanceof JSNode && !((JSNode) value).isArray()) {
+            for (String childProp : childProps) {
+               if (Utils.empty(((JSNode) value).get(childProp))) {
                   fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
                }
             }
@@ -727,8 +627,7 @@ public class Request
          return this;
       }
 
-      public Validation matches(String regex)
-      {
+      public Validation matches(String regex) {
          if (value == null)
             return this;
 
@@ -738,8 +637,7 @@ public class Request
          return this;
       }
 
-      public Validation in(Object... possibleValues)
-      {
+      public Validation in(Object... possibleValues) {
          if (value == null)
             return this;
 
@@ -749,8 +647,7 @@ public class Request
          return this;
       }
 
-      public Validation out(Object... excludedValues)
-      {
+      public Validation out(Object... excludedValues) {
          if (value == null)
             return this;
 
@@ -760,19 +657,15 @@ public class Request
          return this;
       }
 
-      protected int compareTo(Object compareTo)
-      {
+      protected int compareTo(Object compareTo) {
          Object value = this.value;
 
-         if (compareTo instanceof Number)
-         {
-            try
-            {
+         if (compareTo instanceof Number) {
+            try {
                value = Double.parseDouble(value.toString());
                compareTo = Double.parseDouble(compareTo.toString());
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                //ignore numeric type conversion error.
             }
          }
@@ -780,8 +673,7 @@ public class Request
          return ((Comparable) value).compareTo(compareTo);
       }
 
-      public Validation gt(Object compareTo)
-      {
+      public Validation gt(Object compareTo) {
          if (value == null)
             return this;
 
@@ -791,8 +683,7 @@ public class Request
          return this;
       }
 
-      public Validation ge(Object compareTo)
-      {
+      public Validation ge(Object compareTo) {
          if (value == null)
             return this;
 
@@ -802,8 +693,7 @@ public class Request
          return this;
       }
 
-      public Validation lt(Object compareTo)
-      {
+      public Validation lt(Object compareTo) {
          if (value == null)
             return this;
 
@@ -813,8 +703,7 @@ public class Request
          return this;
       }
 
-      public Validation le(Object compareTo)
-      {
+      public Validation le(Object compareTo) {
          if (value == null)
             return this;
 
@@ -824,8 +713,7 @@ public class Request
          return this;
       }
 
-      public Validation eq(Object compareTo)
-      {
+      public Validation eq(Object compareTo) {
          if (value == null)
             return this;
 
@@ -835,8 +723,7 @@ public class Request
          return this;
       }
 
-      public Validation ne(Object compareTo)
-      {
+      public Validation ne(Object compareTo) {
          if (value == null)
             return this;
 
@@ -846,8 +733,7 @@ public class Request
          return this;
       }
 
-      public Validation length(int max)
-      {
+      public Validation length(int max) {
          if (value == null)
             return this;
 
@@ -857,8 +743,7 @@ public class Request
          return this;
       }
 
-      public Validation length(int min, int max)
-      {
+      public Validation length(int min, int max) {
          if (value == null)
             return this;
 
@@ -873,8 +758,7 @@ public class Request
          return this;
       }
 
-      public Validation minMax(Number min, Number max)
-      {
+      public Validation minMax(Number min, Number max) {
          if (value == null)
             return this;
 
@@ -883,8 +767,7 @@ public class Request
          return this;
       }
 
-      public Validation max(Number max)
-      {
+      public Validation max(Number max) {
          if (value == null)
             return this;
 
@@ -894,8 +777,7 @@ public class Request
          return this;
       }
 
-      public Validation min(Number min)
-      {
+      public Validation min(Number min) {
          if (value == null)
             return this;
 
@@ -905,13 +787,11 @@ public class Request
          return this;
       }
 
-      public Object value()
-      {
+      public Object value() {
          return value;
       }
 
-      public JSNode asNode()
-      {
+      public JSNode asNode() {
          if (value == null)
             return null;
 
@@ -921,8 +801,7 @@ public class Request
          return ((JSNode) value);
       }
 
-      public JSArray asArray()
-      {
+      public JSArray asArray() {
          if (value == null)
             return null;
 
@@ -932,56 +811,46 @@ public class Request
          return ((JSArray) value);
       }
 
-      public String asString()
-      {
+      public String asString() {
          if (value == null)
             return null;
 
          return value.toString();
       }
 
-      public int asInt()
-      {
+      public int asInt() {
          if (value == null)
             return -1;
 
-         try
-         {
+         try {
             return Integer.parseInt(value + "");
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be an integer.");
          }
 
          return -1;
       }
 
-      public double asDouble()
-      {
+      public double asDouble() {
          if (value == null)
             return -1;
 
-         try
-         {
+         try {
             return Double.parseDouble(value + "");
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be an number.");
          }
 
          return -1;
       }
 
-      public boolean asBoolean()
-      {
-         try
-         {
+      public boolean asBoolean() {
+         try {
             return Boolean.parseBoolean(value + "");
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be a boolean.");
          }
 
@@ -994,8 +863,7 @@ public class Request
        * @param defaultErrorMessage
        * @throws ApiException
        */
-      protected void fail(String defaultErrorMessage)
-      {
+      protected void fail(String defaultErrorMessage) {
          String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
          ApiException.throw400BadRequest(message);
       }

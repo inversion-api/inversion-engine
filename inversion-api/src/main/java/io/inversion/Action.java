@@ -45,15 +45,13 @@ package io.inversion;
  * if you want to segregate your business logic by HTTP method. 
  *  
  */
-public abstract class Action<A extends Action> extends Rule<A>
-{
-   public Action()
-   {
+public abstract class Action<A extends Action> extends Rule<A> {
+
+   public Action() {
 
    }
 
-   public Action(String methods, String... includePaths)
-   {
+   public Action(String methods, String... includePaths) {
       withIncludeOn(methods, includePaths);
    }
 
@@ -65,8 +63,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @param res the Reponse being generated
     * @throws ApiException 
     */
-   public void run(Request req, Response res) throws ApiException
-   {
+   public void run(Request req, Response res) throws ApiException {
       if (req.isGet())
          doGet(req, res);
       else if (req.isPost())
@@ -88,8 +85,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @param res
     * @throws ApiException
     */
-   public void doGet(Request req, Response res) throws ApiException
-   {
+   public void doGet(Request req, Response res) throws ApiException {
       ApiException.throw501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
    }
 
@@ -103,8 +99,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @throws ApiException
     */
 
-   public void doPost(Request req, Response res) throws ApiException
-   {
+   public void doPost(Request req, Response res) throws ApiException {
       ApiException.throw501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
    }
 
@@ -117,8 +112,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @param res
     * @throws ApiException
     */
-   public void doPut(Request req, Response res) throws ApiException
-   {
+   public void doPut(Request req, Response res) throws ApiException {
       ApiException.throw501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
    }
 
@@ -131,8 +125,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @param res
     * @throws ApiException
     */
-   public void doPatch(Request req, Response res) throws ApiException
-   {
+   public void doPatch(Request req, Response res) throws ApiException {
       ApiException.throw501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
    }
 
@@ -145,8 +138,7 @@ public abstract class Action<A extends Action> extends Rule<A>
     * @param res
     * @throws ApiException
     */
-   public void doDelete(Request req, Response res) throws ApiException
-   {
+   public void doDelete(Request req, Response res) throws ApiException {
       ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
    }
 }

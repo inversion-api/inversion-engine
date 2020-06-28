@@ -29,18 +29,17 @@ import io.inversion.utils.JSNode;
  * encoded resource key structure
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestCompressedResourceKeysAsForeignKey
-{
+public class TestCompressedResourceKeysAsForeignKey {
+
    Engine engine = null;
    Api    api    = null;
    Db     db     = null;
 
    @BeforeAll
-   public void beforeAll_initializeEngine()
-   {
+   public void beforeAll_initializeEngine() {
       Chain.resetAll();
       JdbcConnectionLocal.closeAll();
-      
+
       db = JdbcDbFactory.bootstrapH2(getClass().getName() + System.currentTimeMillis(), JdbcDb.class.getResource("person-h2.ddl").toString());
       api = new Api("person") //
                              .withEndpoint("*", "*/", new DbAction())//
@@ -52,17 +51,14 @@ public class TestCompressedResourceKeysAsForeignKey
    }
 
    @AfterAll
-   public void afterAll_finalizeEngine()
-   {
-      if (db != null)
-      {
+   public void afterAll_finalizeEngine() {
+      if (db != null) {
          db.shutdown();
       }
    }
 
    @Test
-   public void get_encodedCompoundResourceKeyAsForeignKey()
-   {
+   public void get_encodedCompoundResourceKeyAsForeignKey() {
       Response res = null;
 
       res = engine.get("person/persons?expands=props").dump();

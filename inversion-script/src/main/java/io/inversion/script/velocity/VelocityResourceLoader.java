@@ -28,28 +28,23 @@ import org.apache.velocity.util.ExtProperties;
 import io.inversion.script.ScriptAction;
 import io.inversion.utils.JSNode;
 
-public class VelocityResourceLoader extends ResourceLoader
-{
+public class VelocityResourceLoader extends ResourceLoader {
+
    @Override
-   public void init(ExtProperties configuration)
-   {
+   public void init(ExtProperties configuration) {
       // TODO Auto-generated method stub
 
    }
 
    @Override
-   public Reader getResourceReader(String source, String encoding) throws ResourceNotFoundException
-   {
-      try
-      {
+   public Reader getResourceReader(String source, String encoding) throws ResourceNotFoundException {
+      try {
          JSNode script = ScriptAction.findScript(source);
-         if (script != null)
-         {
+         if (script != null) {
             return new InputStreamReader(new ByteArrayInputStream(script.getString("script").getBytes()));
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ex.printStackTrace();
       }
 
@@ -57,15 +52,13 @@ public class VelocityResourceLoader extends ResourceLoader
    }
 
    @Override
-   public boolean isSourceModified(Resource resource)
-   {
+   public boolean isSourceModified(Resource resource) {
       // TODO Auto-generated method stub
       return false;
    }
 
    @Override
-   public long getLastModified(Resource resource)
-   {
+   public long getLastModified(Resource resource) {
       // TODO Auto-generated method stub
       return 0;
    }

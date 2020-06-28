@@ -21,12 +21,10 @@ import org.junit.jupiter.api.Test;
 /**
  *
  */
-public class AclActionTest
-{
+public class AclActionTest {
 
    @Test
-   public void test() throws Exception
-   {
+   public void test() throws Exception {
    }
 
    //   @Test

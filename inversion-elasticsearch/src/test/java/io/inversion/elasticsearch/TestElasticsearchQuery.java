@@ -33,13 +33,12 @@ import io.inversion.utils.JSNode;
  * @author kfrankic
  *
  */
-public class TestElasticsearchQuery
-{
+public class TestElasticsearchQuery {
+
    private static Logger log = LoggerFactory.getLogger(TestElasticsearchQuery.class);
 
    @Test
-   public void gt01() throws Exception
-   {
+   public void gt01() throws Exception {
       //      {
       //         "query" : {
       //           "range" : {
@@ -142,8 +141,7 @@ public class TestElasticsearchQuery
    //   }
 
    @Test
-   public void lt() throws Exception
-   {
+   public void lt() throws Exception {
       //      {
       //         "query" : {
       //           "range" : {
@@ -194,8 +192,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void startsWith()
-   {
+   public void startsWith() {
       //      {
       //         "query" : {
       //           "wildcard" : {
@@ -237,8 +234,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void with01()
-   {
+   public void with01() {
       //      {
       //         "query" : {
       //           "wildcard" : {
@@ -282,8 +278,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void with02()
-   {
+   public void with02() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -340,10 +335,8 @@ public class TestElasticsearchQuery
       boolean nestlFound = false;
       boolean fFound = false;
 
-      for (JSNode node : shouldArr.asNodeList())
-      {
-         if (node.hasProperty("wildcard"))
-         {
+      for (JSNode node : shouldArr.asNodeList()) {
+         if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildNode = node.getNode("wildcard");
             JSNode nameNode = wildNode.getNode("name");
@@ -365,8 +358,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void without()
-   {
+   public void without() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -423,8 +415,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void endsWith()
-   {
+   public void endsWith() {
       //      {
       //         "query" : {
       //           "wildcard" : {
@@ -468,8 +459,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void contains()
-   {
+   public void contains() {
       //      {
       //         "query" : {
       //           "wildcard" : {
@@ -513,8 +503,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void empty()
-   {
+   public void empty() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -574,8 +563,7 @@ public class TestElasticsearchQuery
       JSNode termNode = null;
       JSNode innerBoolNode = null;
 
-      for (JSNode node : shouldArr.asNodeList())
-      {
+      for (JSNode node : shouldArr.asNodeList()) {
          if (node.hasProperty("term"))
             termNode = node.getNode("term");
          else if (node.hasProperty("bool"))
@@ -602,8 +590,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void fuzzySearch()
-   {
+   public void fuzzySearch() {
       //      {
       //         "query" : {
       //           "fuzzy" : {
@@ -651,8 +638,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void notEmpty()
-   {
+   public void notEmpty() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -718,8 +704,7 @@ public class TestElasticsearchQuery
       JSArray mustNotArr = null;
       JSArray innerMustArr = null;
 
-      for (JSNode node : mustArr.asNodeList())
-      {
+      for (JSNode node : mustArr.asNodeList()) {
          JSNode bool = node.getNode("bool");
          assertEquals(3, bool.size());
          assertTrue((Boolean) bool.get("adjust_pure_negative"));
@@ -748,8 +733,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void notNull()
-   {
+   public void notNull() {
       //      {
       //         "query" : {
       //           "exists" : {
@@ -784,8 +768,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void isNull()
-   {
+   public void isNull() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -837,8 +820,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void pageSize()
-   {
+   public void pageSize() {
       //      {
       //         "size" : 1000,
       //         "sort" : [ {
@@ -863,8 +845,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simplePaging()
-   {
+   public void simplePaging() {
       //      {
       //         "from" : 2,
       //         "size" : 100,
@@ -917,28 +898,27 @@ public class TestElasticsearchQuery
 
    }
 
-//   @Test
-//   public void complexPaging()
-//   {
-//
-//      ElasticsearchQuery query = new ElasticsearchQuery();
-//      query.withTerm("gt(testRange, 25)&pagesize=100&start=2000");
-//
-//      JSNode jsNode = query.toJson();
-//      assertNotNull(jsNode, "json should not be empty.");
-//
+   //   @Test
+   //   public void complexPaging()
+   //   {
+   //
+   //      ElasticsearchQuery query = new ElasticsearchQuery();
+   //      query.withTerm("gt(testRange, 25)&pagesize=100&start=2000");
+   //
+   //      JSNode jsNode = query.toJson();
+   //      assertNotNull(jsNode, "json should not be empty.");
+   //
    //      assertNotNull(jsNode.get("sort"));
-//
+   //
    //      assertNotNull(jsNode.get("query"));
-//      JSNode queryNode = jsNode.getNode("query");
-//
-//      fail("doom doom doooooom.");
-//
-//   }
+   //      JSNode queryNode = jsNode.getNode("query");
+   //
+   //      fail("doom doom doooooom.");
+   //
+   //   }
 
    @Test
-   public void simpleSortAsc1()
-   {
+   public void simpleSortAsc1() {
       //      {
       //         "sort" : [ {
       //           "test" : {
@@ -966,19 +946,16 @@ public class TestElasticsearchQuery
       boolean sort1Found = false;
       boolean sort2Found = false;
 
-      for (JSNode node : sortArr.asNodeList())
-      {
+      for (JSNode node : sortArr.asNodeList()) {
          assertEquals(1, node.size());
 
-         if (node.hasProperty("test"))
-         {
+         if (node.hasProperty("test")) {
             assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
-         else if (node.hasProperty("id"))
-         {
+         else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
@@ -991,8 +968,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSortAsc2()
-   {
+   public void simpleSortAsc2() {
       //      {
       //         "sort" : [ {
       //           "test" : {
@@ -1016,19 +992,16 @@ public class TestElasticsearchQuery
       boolean sort1Found = false;
       boolean sort2Found = false;
 
-      for (JSNode node : sortArr.asNodeList())
-      {
+      for (JSNode node : sortArr.asNodeList()) {
          assertEquals(1, node.size());
 
-         if (node.hasProperty("test"))
-         {
+         if (node.hasProperty("test")) {
             assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
-         else if (node.hasProperty("id"))
-         {
+         else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
@@ -1041,8 +1014,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSortDesc()
-   {
+   public void simpleSortDesc() {
       //      {
       //         "sort" : [ {
       //           "test" : {
@@ -1066,19 +1038,16 @@ public class TestElasticsearchQuery
       boolean sort1Found = false;
       boolean sort2Found = false;
 
-      for (JSNode node : sortArr.asNodeList())
-      {
+      for (JSNode node : sortArr.asNodeList()) {
          assertEquals(1, node.size());
 
-         if (node.hasProperty("test"))
-         {
+         if (node.hasProperty("test")) {
             assertEquals(1, node.getNode("test").size());
             assertEquals("desc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
-         else if (node.hasProperty("id"))
-         {
+         else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
@@ -1091,8 +1060,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void multiSort()
-   {
+   public void multiSort() {
 
       ElasticsearchQuery query = new ElasticsearchQuery();
       query.withTerm("sort=test,-test2,+test3");
@@ -1111,30 +1079,25 @@ public class TestElasticsearchQuery
       boolean test3Found = false;
       boolean test4Found = false;
 
-      for (JSNode node : sortArr.asNodeList())
-      {
+      for (JSNode node : sortArr.asNodeList()) {
          assertEquals(1, node.size());
 
-         if (node.hasProperty("test"))
-         {
+         if (node.hasProperty("test")) {
             testFound = true;
             assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
          }
-         else if (node.hasProperty("test2"))
-         {
+         else if (node.hasProperty("test2")) {
             test2Found = true;
             assertEquals(1, node.getNode("test2").size());
             assertEquals("desc", node.getNode("test2").getString("order"));
          }
-         else if (node.hasProperty("test3"))
-         {
+         else if (node.hasProperty("test3")) {
             test3Found = true;
             assertEquals(1, node.getNode("test3").size());
             assertEquals("asc", node.getNode("test3").getString("order"));
          }
-         else if (node.hasProperty("id"))
-         {
+         else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             test4Found = true;
@@ -1150,8 +1113,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSortAndSize()
-   {
+   public void simpleSortAndSize() {
       //      {
       //         "size" : 1000,
       //         "sort" : [ {
@@ -1181,19 +1143,16 @@ public class TestElasticsearchQuery
       boolean sort1Found = false;
       boolean sort2Found = false;
 
-      for (JSNode node : sortArr.asNodeList())
-      {
+      for (JSNode node : sortArr.asNodeList()) {
          assertEquals(1, node.size());
 
-         if (node.hasProperty("test"))
-         {
+         if (node.hasProperty("test")) {
             assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
             sort1Found = true;
          }
 
-         else if (node.hasProperty("id"))
-         {
+         else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             sort2Found = true;
@@ -1206,8 +1165,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSource()
-   {
+   public void simpleSource() {
       //      {
       //         "query" : {
       //           "range" : {
@@ -1267,8 +1225,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSourceIncludes()
-   {
+   public void simpleSourceIncludes() {
       //      {
       //         "query" : {
       //           "range" : {
@@ -1330,8 +1287,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleSourceExcludes()
-   {
+   public void simpleSourceExcludes() {
       //      {
       //         "query" : {
       //           "range" : {
@@ -1391,8 +1347,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testGt()
-   {
+   public void testGt() {
       //      {
       //         "query" : {
       //           "range" : {
@@ -1443,8 +1398,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testGte()
-   {
+   public void testGte() {
       //      {
       //         "query" : {
       //           "range" : {
@@ -1492,8 +1446,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testNestedLt()
-   {
+   public void testNestedLt() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -1559,8 +1512,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testEq1()
-   {
+   public void testEq1() {
       //      {
       //         "term" : {
       //           "city" : {
@@ -1608,8 +1560,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testEq2()
-   {
+   public void testEq2() {
       //      {
       //         "query" : {
       //           "term" : {
@@ -1646,8 +1597,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testNotEq()
-   {
+   public void testNotEq() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -1702,8 +1652,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testCompoundNotEq()
-   {
+   public void testCompoundNotEq() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -1770,10 +1719,8 @@ public class TestElasticsearchQuery
       boolean rangeFound = false;
       boolean boolFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("range"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("range")) {
             assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
             assertEquals(1, rangeNode.size());
@@ -1785,8 +1732,7 @@ public class TestElasticsearchQuery
             assertEquals(new Double(1.0), (Double) rangeNode.getNode("hispanicRank").get("boost"));
             rangeFound = true;
          }
-         else if (node.hasProperty("bool"))
-         {
+         else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
             assertEquals(3, bool2Node.size());
@@ -1812,8 +1758,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleAnd()
-   {
+   public void simpleAnd() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -1880,10 +1825,8 @@ public class TestElasticsearchQuery
       boolean rangeFound = false;
       boolean boolFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("range"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("range")) {
             assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
             assertEquals(1, rangeNode.size());
@@ -1895,8 +1838,7 @@ public class TestElasticsearchQuery
             assertEquals(new Double(1.0), (Double) rangeNode.getNode("hispanicRank").get("boost"));
             rangeFound = true;
          }
-         else if (node.hasProperty("bool"))
-         {
+         else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
             assertEquals(3, bool2Node.size());
@@ -1922,8 +1864,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void orFunction()
-   {
+   public void orFunction() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -1976,10 +1917,8 @@ public class TestElasticsearchQuery
       boolean fwqaFound = false;
       boolean cheetosFound = false;
 
-      for (JSNode node : shouldArr.asNodeList())
-      {
-         if (node.hasProperty("term"))
-         {
+      for (JSNode node : shouldArr.asNodeList()) {
+         if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
             JSNode nameNode = termNode.getNode("name");
@@ -2001,8 +1940,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void inFunction()
-   {
+   public void inFunction() {
       //      {
       //         "query" : {
       //           "terms" : {
@@ -2039,8 +1977,7 @@ public class TestElasticsearchQuery
       boolean tempeFound = false;
       boolean chandlerFound = false;
 
-      for (Object city : cityArr.asList())
-      {
+      for (Object city : cityArr.asList()) {
          if (city.equals("Chicago"))
             chicagoFound = true;
          else if (city.equals("Tempe"))
@@ -2056,8 +1993,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void outFunction()
-   {
+   public void outFunction() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2112,8 +2048,7 @@ public class TestElasticsearchQuery
       boolean tempeFound = false;
       boolean chandlerFound = false;
 
-      for (Object city : cityArr.asList())
-      {
+      for (Object city : cityArr.asList()) {
          if (city.equals("Chicago"))
             chicagoFound = true;
          else if (city.equals("Tempe"))
@@ -2129,8 +2064,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexAnd()
-   {
+   public void complexAnd() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2196,25 +2130,21 @@ public class TestElasticsearchQuery
       boolean termNodeFound = false;
       boolean addressNodeFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("wildcard"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
 
             assertEquals(1, wildcardNode.size());
 
-            if (wildcardNode.get("locationCode") != null)
-            {
+            if (wildcardNode.get("locationCode") != null) {
                JSNode locationNode = wildcardNode.getNode("locationCode");
                assertEquals(2, locationNode.size());
                assertEquals("270*", locationNode.get("wildcard"));
                assertEquals(new Double(1.0), (Double) locationNode.get("boost"));
                locationNodeFound = true;
             }
-            else if (wildcardNode.get("address1") != null)
-            {
+            else if (wildcardNode.get("address1") != null) {
                JSNode addressNode = wildcardNode.getNode("address1");
                assertEquals(2, addressNode.size());
                assertEquals("*McQueen*", addressNode.get("wildcard"));
@@ -2223,8 +2153,7 @@ public class TestElasticsearchQuery
             }
          }
 
-         else if (node.hasProperty("term"))
-         {
+         else if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
@@ -2244,8 +2173,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexSearch1()
-   {
+   public void complexSearch1() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2311,10 +2239,8 @@ public class TestElasticsearchQuery
       boolean testFound = false;
       boolean mattFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("fuzzy"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("fuzzy")) {
             assertEquals(1, node.size());
             JSNode fuzzyNode = node.getNode("fuzzy");
             assertEquals(1, fuzzyNode.size());
@@ -2342,8 +2268,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexSearch2()
-   {
+   public void complexSearch2() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2409,10 +2334,8 @@ public class TestElasticsearchQuery
       boolean testFound = false;
       boolean mattFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("fuzzy"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("fuzzy")) {
             assertEquals(1, node.size());
             JSNode fuzzyNode = node.getNode("fuzzy");
             assertEquals(1, fuzzyNode.size());
@@ -2440,8 +2363,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexOr()
-   {
+   public void complexOr() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2496,10 +2418,8 @@ public class TestElasticsearchQuery
       boolean termNodeFound = false;
       boolean wildcardNodeFound = false;
 
-      for (JSNode node : shouldArr.asNodeList())
-      {
-         if (node.hasProperty("term"))
-         {
+      for (JSNode node : shouldArr.asNodeList()) {
+         if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
             assertEquals(1, termNode.size());
@@ -2510,8 +2430,7 @@ public class TestElasticsearchQuery
 
             termNodeFound = true;
          }
-         else if (node.hasProperty("wildcard"))
-         {
+         else if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildNode = node.getNode("wildcard");
             JSNode nameNode = wildNode.getNode("name");
@@ -2529,8 +2448,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testWildcard()
-   {
+   public void testWildcard() {
       //      {
       //         "query" : {
       //           "wildcard" : {
@@ -2573,8 +2491,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testAndTerms()
-   {
+   public void testAndTerms() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2632,15 +2549,12 @@ public class TestElasticsearchQuery
       boolean locationNodeFound = false;
       boolean cityNodeFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("term"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
-            if (termNode.hasProperty("locationCode"))
-            {
+            if (termNode.hasProperty("locationCode")) {
                JSNode locationNode = termNode.getNode("locationCode");
                assertEquals(2, locationNode.size());
                assertEquals(new Double(1.0), (Double) locationNode.get("boost"));
@@ -2648,8 +2562,7 @@ public class TestElasticsearchQuery
                locationNodeFound = true;
             }
 
-            else if (termNode.hasProperty("city"))
-            {
+            else if (termNode.hasProperty("city")) {
                JSNode cityNode = termNode.getNode("city");
                assertEquals(2, cityNode.size());
                assertEquals(new Double(1.0), (Double) cityNode.get("boost"));
@@ -2665,8 +2578,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void testAndWildcard()
-   {
+   public void testAndWildcard() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2724,10 +2636,8 @@ public class TestElasticsearchQuery
       boolean wildcardNodeFound = false;
       boolean termNodeFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("wildcard"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
 
@@ -2741,8 +2651,7 @@ public class TestElasticsearchQuery
             wildcardNodeFound = true;
          }
 
-         else if (node.hasProperty("term"))
-         {
+         else if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
 
@@ -2761,8 +2670,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void smallCompoundQuery()
-   {
+   public void smallCompoundQuery() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2825,10 +2733,8 @@ public class TestElasticsearchQuery
       boolean fromFound = false;
       boolean toFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("range"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("range")) {
             assertEquals(1, node.size());
             JSNode rangeNode = node.getNode("range");
 
@@ -2836,8 +2742,7 @@ public class TestElasticsearchQuery
             JSNode hispanicNode = rangeNode.getNode("hispanicRank");
             assertEquals(5, hispanicNode.size());
 
-            if (hispanicNode.getString("from") != null)
-            {
+            if (hispanicNode.getString("from") != null) {
                assertEquals("25", hispanicNode.getString("from"));
                assertNull(hispanicNode.get("to"));
                assertFalse((Boolean) hispanicNode.get("include_lower"));
@@ -2845,8 +2750,7 @@ public class TestElasticsearchQuery
                assertEquals(new Double(1.0), (Double) hispanicNode.get("boost"));
                fromFound = true;
             }
-            else if (hispanicNode.getString("to") != null)
-            {
+            else if (hispanicNode.getString("to") != null) {
                assertEquals("40", hispanicNode.getString("to"));
                assertNull(hispanicNode.get("from"));
                assertTrue((Boolean) hispanicNode.get("include_lower"));
@@ -2863,8 +2767,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void largeCompoundQuery()
-   {
+   public void largeCompoundQuery() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -2936,10 +2839,8 @@ public class TestElasticsearchQuery
       boolean innerWildcardFound = false;
       boolean termFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("wildcard"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
             assertEquals(1, wildcardNode.size());
@@ -2948,8 +2849,7 @@ public class TestElasticsearchQuery
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
          }
-         else if (node.hasProperty("bool"))
-         {
+         else if (node.hasProperty("bool")) {
             JSNode innerBoolNode = node.getNode("bool");
             assertEquals(3, innerBoolNode.size());
             assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
@@ -2960,11 +2860,9 @@ public class TestElasticsearchQuery
 
             assertEquals(2, innerFilterArr.length());
 
-            for (JSNode innerNode : innerFilterArr.asNodeList())
-            {
+            for (JSNode innerNode : innerFilterArr.asNodeList()) {
 
-               if (innerNode.hasProperty("term"))
-               {
+               if (innerNode.hasProperty("term")) {
                   assertEquals(1, innerNode.size());
                   JSNode termNode = innerNode.getNode("term");
                   assertEquals(1, termNode.size());
@@ -2973,8 +2871,7 @@ public class TestElasticsearchQuery
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
                }
-               else if (innerNode.hasProperty("wildcard"))
-               {
+               else if (innerNode.hasProperty("wildcard")) {
                   JSNode innerWildcardNode = innerNode.getNode("wildcard");
                   assertEquals(1, innerWildcardNode.size());
                   assertEquals(2, innerWildcardNode.getNode("locationCode").size());
@@ -2994,8 +2891,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void simpleNestedQuery()
-   {
+   public void simpleNestedQuery() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -3062,8 +2958,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexNestedQuery1()
-   {
+   public void complexNestedQuery1() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -3129,8 +3024,7 @@ public class TestElasticsearchQuery
       boolean nestedNameFound = false;
       boolean nestedValueFound = false;
 
-      if (innerQueryNode.hasProperty("bool"))
-      {
+      if (innerQueryNode.hasProperty("bool")) {
          assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
@@ -3143,25 +3037,21 @@ public class TestElasticsearchQuery
 
          assertEquals(2, filterArr.length());
 
-         for (JSNode innerNode : filterArr.asNodeList())
-         {
+         for (JSNode innerNode : filterArr.asNodeList()) {
 
-            if (innerNode.hasProperty("term"))
-            {
+            if (innerNode.hasProperty("term")) {
                assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
                assertEquals(1, termNode.size());
 
-               if (termNode.hasProperty("keywords.name"))
-               {
+               if (termNode.hasProperty("keywords.name")) {
                   assertEquals(2, termNode.getNode("keywords.name").size());
                   assertEquals("color", termNode.getNode("keywords.name").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                   nestedNameFound = true;
 
                }
-               else if (termNode.hasProperty("keywords.value"))
-               {
+               else if (termNode.hasProperty("keywords.value")) {
                   assertEquals(2, termNode.getNode("keywords.value").size());
                   assertEquals("33", termNode.getNode("keywords.value").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.value").get("boost"));
@@ -3176,8 +3066,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexNestedQuery2()
-   {
+   public void complexNestedQuery2() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -3246,8 +3135,7 @@ public class TestElasticsearchQuery
       boolean termFound = false;
       boolean rangeFound = false;
 
-      if (innerQueryNode.hasProperty("bool"))
-      {
+      if (innerQueryNode.hasProperty("bool")) {
          assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
@@ -3260,11 +3148,9 @@ public class TestElasticsearchQuery
 
          assertEquals(2, filterArr.length());
 
-         for (JSNode innerNode : filterArr.asNodeList())
-         {
+         for (JSNode innerNode : filterArr.asNodeList()) {
 
-            if (innerNode.hasProperty("term"))
-            {
+            if (innerNode.hasProperty("term")) {
                assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
                assertEquals(1, termNode.size());
@@ -3273,8 +3159,7 @@ public class TestElasticsearchQuery
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
             }
-            else if (innerNode.hasProperty("range"))
-            {
+            else if (innerNode.hasProperty("range")) {
                JSNode rangeNode = innerNode.getNode("range");
                assertEquals(1, rangeNode.size());
 
@@ -3295,8 +3180,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexNestedQuery3()
-   {
+   public void complexNestedQuery3() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -3362,8 +3246,7 @@ public class TestElasticsearchQuery
       boolean termFound = false;
       boolean innerWildcardFound = false;
 
-      if (innerQueryNode.hasProperty("bool"))
-      {
+      if (innerQueryNode.hasProperty("bool")) {
          assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
@@ -3376,11 +3259,9 @@ public class TestElasticsearchQuery
 
          assertEquals(2, filterArr.length());
 
-         for (JSNode innerNode : filterArr.asNodeList())
-         {
+         for (JSNode innerNode : filterArr.asNodeList()) {
 
-            if (innerNode.hasProperty("term"))
-            {
+            if (innerNode.hasProperty("term")) {
                assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
                assertEquals(1, termNode.size());
@@ -3389,8 +3270,7 @@ public class TestElasticsearchQuery
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
             }
-            else if (innerNode.hasProperty("wildcard"))
-            {
+            else if (innerNode.hasProperty("wildcard")) {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
                assertEquals(1, innerWildcardNode.size());
                assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
@@ -3406,8 +3286,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void complexNestedQuery4()
-   {
+   public void complexNestedQuery4() {
       //      {
       //         "query" : {
       //           "nested" : {
@@ -3473,8 +3352,7 @@ public class TestElasticsearchQuery
       boolean termFound = false;
       boolean innerWildcardFound = false;
 
-      if (innerQueryNode.hasProperty("bool"))
-      {
+      if (innerQueryNode.hasProperty("bool")) {
          assertEquals(1, innerQueryNode.size());
 
          JSNode boolNode = innerQueryNode.getNode("bool");
@@ -3487,11 +3365,9 @@ public class TestElasticsearchQuery
 
          assertEquals(2, filterArr.length());
 
-         for (JSNode innerNode : filterArr.asNodeList())
-         {
+         for (JSNode innerNode : filterArr.asNodeList()) {
 
-            if (innerNode.hasProperty("term"))
-            {
+            if (innerNode.hasProperty("term")) {
                assertEquals(1, innerNode.size());
                JSNode termNode = innerNode.getNode("term");
                assertEquals(1, termNode.size());
@@ -3500,8 +3376,7 @@ public class TestElasticsearchQuery
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
             }
-            else if (innerNode.hasProperty("wildcard"))
-            {
+            else if (innerNode.hasProperty("wildcard")) {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
                assertEquals(1, innerWildcardNode.size());
                assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
@@ -3517,8 +3392,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void compoundNestedQuery1()
-   {
+   public void compoundNestedQuery1() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -3587,10 +3461,8 @@ public class TestElasticsearchQuery
       boolean termFound = false;
       boolean nestedFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("term"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("term")) {
             assertEquals(1, node.size());
             JSNode termNode = node.getNode("term");
             assertEquals(1, termNode.size());
@@ -3599,8 +3471,7 @@ public class TestElasticsearchQuery
             assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
             termFound = true;
          }
-         else if (node.hasProperty("nested"))
-         {
+         else if (node.hasProperty("nested")) {
             assertEquals(1, node.size());
             JSNode nestedNode = node.getNode("nested");
             assertEquals(5, nestedNode.size());
@@ -3632,8 +3503,7 @@ public class TestElasticsearchQuery
    }
 
    @Test
-   public void compoundNestedQuery2()
-   {
+   public void compoundNestedQuery2() {
       //      {
       //         "query" : {
       //           "bool" : {
@@ -3713,10 +3583,8 @@ public class TestElasticsearchQuery
       boolean nestedFound = false;
       boolean termFound = false;
 
-      for (JSNode node : filterArr.asNodeList())
-      {
-         if (node.hasProperty("wildcard"))
-         {
+      for (JSNode node : filterArr.asNodeList()) {
+         if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildcardNode = node.getNode("wildcard");
             assertEquals(1, wildcardNode.size());
@@ -3725,8 +3593,7 @@ public class TestElasticsearchQuery
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
          }
-         else if (node.hasProperty("bool"))
-         {
+         else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
 
             JSNode innerBoolNode = node.getNode("bool");
@@ -3739,11 +3606,9 @@ public class TestElasticsearchQuery
 
             assertEquals(2, innerFilterArr.length());
 
-            for (JSNode innerNode : innerFilterArr.asNodeList())
-            {
+            for (JSNode innerNode : innerFilterArr.asNodeList()) {
 
-               if (innerNode.hasProperty("term"))
-               {
+               if (innerNode.hasProperty("term")) {
                   assertEquals(1, innerNode.size());
                   JSNode termNode = innerNode.getNode("term");
                   assertEquals(1, termNode.size());
@@ -3752,8 +3617,7 @@ public class TestElasticsearchQuery
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
                }
-               else if (innerNode.hasProperty("nested"))
-               {
+               else if (innerNode.hasProperty("nested")) {
                   JSNode nestedNode = innerNode.getNode("nested");
                   assertEquals(5, nestedNode.size());
                   assertEquals("players", nestedNode.get("path"));

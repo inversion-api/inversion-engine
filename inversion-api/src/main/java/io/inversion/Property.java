@@ -20,8 +20,8 @@ import java.io.Serializable;
 
 import io.inversion.utils.Utils;
 
-public class Property implements Serializable
-{
+public class Property implements Serializable {
+
    protected String     jsonName   = null;
    protected String     columnName = null;
    protected String     type       = "string";
@@ -39,96 +39,84 @@ public class Property implements Serializable
 
    protected Collection collection = null;
 
-   public Property()
-   {
+   public Property() {
 
    }
 
-   public Property(String name)
-   {
+   public Property(String name) {
       this(name, "string", true);
    }
 
-   public Property(String name, String type)
-   {
+   public Property(String name, String type) {
       this(name, type, true);
    }
 
-   public Property(String name, String type, boolean nullable)
-   {
+   public Property(String name, String type, boolean nullable) {
       withColumnName(name);
       withJsonName(name);
       withType(type);
       withNullable(nullable);
    }
 
-//   @Override
-//   public int compareTo(Property o)
-//   {
-//      if (o == null)
-//         return 1;
-//
-//      if (o.collection == collection)
-//      {
-//         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
-//      }
-//
-//      return 0;
-//   }
+   //   @Override
+   //   public int compareTo(Property o)
+   //   {
+   //      if (o == null)
+   //         return 1;
+   //
+   //      if (o.collection == collection)
+   //      {
+   //         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
+   //      }
+   //
+   //      return 0;
+   //   }
 
-   public boolean equals(Object object)
-   {
+   public boolean equals(Object object) {
       if (object == this)
          return true;
 
-      if (object instanceof Property)
-      {
+      if (object instanceof Property) {
          Property column = (Property) object;
          return ((collection == null || collection == column.collection) && Utils.equal(columnName, column.columnName));
       }
       return false;
    }
 
-   public String toString()
-   {
+   public String toString() {
       return hint == null ? getJsonName() : hint;
    }
 
    /**
     * @return the primaryKey
     */
-   public Property getPk()
-   {
+   public Property getPk() {
       return pk;
    }
 
    /**
     * @param primaryKey the primaryKey to set
     */
-   public Property withPk(Property pk)
-   {
+   public Property withPk(Property pk) {
       this.pk = pk;
       return this;
    }
 
-   public boolean isFk()
-   {
+   public boolean isFk() {
       return pk != null;
    }
 
    /**
     * @return the name
     */
-   public String getColumnName()
-   {
+   public String getColumnName() {
       return columnName;
    }
 
    /**
     * @param name the name to set
     */
-   public Property withColumnName(String name)
-   {
+   public Property withColumnName(String name) {
       this.columnName = name;
       return this;
    }
@@ -136,16 +124,14 @@ public class Property implements Serializable
    /**
     * @return the name
     */
-   public String getJsonName()
-   {
+   public String getJsonName() {
       return jsonName;
    }
 
    /**
     * @param name the name to set
     */
-   public Property withJsonName(String name)
-   {
+   public Property withJsonName(String name) {
       this.jsonName = name;
       return this;
    }
@@ -153,16 +139,14 @@ public class Property implements Serializable
    /**
     * @return the type
     */
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
    /**
     * @param type the type to set
     */
-   public Property withType(String type)
-   {
+   public Property withType(String type) {
       if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
          this.type = type;
       return this;
@@ -171,18 +155,15 @@ public class Property implements Serializable
    /**
     * @return the tbl
     */
-   public Collection getCollection()
-   {
+   public Collection getCollection() {
       return collection;
    }
 
    /**
     * @param tbl the tbl to set
     */
-   public Property withCollection(Collection collection)
-   {
-      if (this.collection != collection)
-      {
+   public Property withCollection(Collection collection) {
+      if (this.collection != collection) {
          this.collection = collection;
          collection.withProperties(this);
       }
@@ -192,38 +173,32 @@ public class Property implements Serializable
    /**
     * @return the hint
     */
-   public String getHint()
-   {
+   public String getHint() {
       return hint;
    }
 
    /**
     * @param hint the hint to set
     */
-   public Property withHint(String hint)
-   {
+   public Property withHint(String hint) {
       this.hint = hint;
       return this;
    }
 
-   public boolean isNullable()
-   {
+   public boolean isNullable() {
       return nullable;
    }
 
-   public Property withNullable(boolean nullable)
-   {
+   public Property withNullable(boolean nullable) {
       this.nullable = nullable;
       return this;
    }
 
-   public boolean isExclude()
-   {
+   public boolean isExclude() {
       return exclude;
    }
 
-   public Property withExclude(boolean exclude)
-   {
+   public Property withExclude(boolean exclude) {
       this.exclude = exclude;
       return this;
    }

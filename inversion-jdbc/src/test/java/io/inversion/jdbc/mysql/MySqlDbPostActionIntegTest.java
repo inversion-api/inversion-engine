@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest
-{
-   public MySqlDbPostActionIntegTest()
-   {
+public class MySqlDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest {
+
+   public MySqlDbPostActionIntegTest() {
       super("mysql");
    }
 }

@@ -21,23 +21,20 @@ import org.junit.jupiter.api.BeforeEach;
 
 import io.inversion.action.db.AbstractDbDeleteActionIntegTest;
 
-public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest
-{
-   public AbstractJdbcDbDeleteActionIntegTest(String dbType)
-   {
+public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest {
+
+   public AbstractJdbcDbDeleteActionIntegTest(String dbType) {
       super(dbType);
    }
 
    @BeforeEach
-   public void beforeEach()
-   {
+   public void beforeEach() {
       beforeAll_initializeDb();
       beforeAll_initializeEngine();
    }
 
    @AfterEach
-   public void afterEach()
-   {
+   public void afterEach() {
       afterAll_finalizeDb();
       afterAll_finalizeEngine();
    }

@@ -24,17 +24,14 @@ import io.inversion.Engine;
 import io.inversion.cosmosdb.CosmosDb;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class CosmosRqlIntegTest extends CosmosRqlUnitTest
-{
-   public Engine buildEngine(Db db)
-   {
+public class CosmosRqlIntegTest extends CosmosRqlUnitTest {
+
+   public Engine buildEngine(Db db) {
       Engine engine = null;
-      try
-      {
+      try {
          engine = CosmosDbFactory.buildEngine((CosmosDb) db);
       }
-      catch (Exception e)
-      {
+      catch (Exception e) {
          // TODO Auto-generated catch block
          e.printStackTrace();
       }

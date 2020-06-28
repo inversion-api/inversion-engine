@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import io.inversion.Collection;
 
-public class CollectionTest
-{
+public class CollectionTest {
    //   @Test
    //   public void encodeStr_encodeDecodeMustNotModifyValue() throws Exception
    //   {
@@ -45,8 +44,7 @@ public class CollectionTest
    //   }
 
    @Test
-   public void encodeStr_dontEncodeAlwaysSafeUrlCharsOtherThanTildeAndAmpersand() throws Exception
-   {
+   public void encodeStr_dontEncodeAlwaysSafeUrlCharsOtherThanTildeAndAmpersand() throws Exception {
       //encode these: % < > [ ] { } | \ ^ ? / # + & = 
       String source = "asdf1234-._()'!*:,;";
       String encoded = Collection.encodeStr(source);

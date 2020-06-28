@@ -27,11 +27,10 @@ import org.junit.jupiter.api.Test;
 
 import io.inversion.utils.Path;
 
-public class PathTest
-{
+public class PathTest {
+
    @Test
-   public void extract_stopsOnWildcard()
-   {
+   public void extract_stopsOnWildcard() {
       Map params = new HashMap();
 
       Path rule = new Path("part1/part2/*");
@@ -45,8 +44,7 @@ public class PathTest
    }
 
    @Test
-   public void extract_stopsOnOptional()
-   {
+   public void extract_stopsOnOptional() {
       Map params = new HashMap();
 
       Path rule = new Path("part1/[part2]/part3/*");
@@ -60,8 +58,7 @@ public class PathTest
    }
 
    @Test
-   public void extract_stopsOnOptionalWithColonVarParsing()
-   {
+   public void extract_stopsOnOptionalWithColonVarParsing() {
       Map<String, String> params = new HashMap();
 
       Path rule = new Path("part1/:part2/part3/[{varName1:part4}]/[:varName2]/*");
@@ -73,14 +70,13 @@ public class PathTest
       assertEquals("val2", params.get("part2"));
       assertEquals("part4", params.get("varName1"));
       assertEquals("part5", params.get("varName2"));
-      
+
       assertEquals("part1/val2/part3", matched.toString());
       assertEquals("part4/part5/part6/part7/part8/part9", path.toString());
    }
 
    @Test
-   public void extract_stopsOnOptionalWithBracketVarParsing()
-   {
+   public void extract_stopsOnOptionalWithBracketVarParsing() {
       Map<String, String> params = new HashMap();
 
       Path rule = new Path("part1/{part2}/part3/*");
@@ -95,8 +91,7 @@ public class PathTest
    }
 
    @Test
-   public void extract_stopsOnOptionalWithRegexVarParsing()
-   {
+   public void extract_stopsOnOptionalWithRegexVarParsing() {
       Map<String, String> params = new HashMap();
 
       Path rule = new Path("part1/{part2:[0-9a-zA-Z]{1,8}}/part3/*");
@@ -111,45 +106,38 @@ public class PathTest
    }
 
    @Test
-   public void extract_regexDoesNotMatch_error()
-   {
+   public void extract_regexDoesNotMatch_error() {
       boolean error = false;
-      try
-      {
+      try {
          Map<String, String> params = new HashMap();
          Path rule = new Path("part1/{part2:[0-9a-zA-Z]{1,8}}/part3/*");
          Path path = new Path("part1/23452345234523452345/part3/part4");
 
          Path matched = rule.extract(params, path);
       }
-      catch (Exception e)
-      {
+      catch (Exception e) {
          error = true;
       }
       assertTrue(error, "The test should have errored because 'the regex does not match'");
    }
 
    @Test
-   public void extract_pathDoesNotMatch_error()
-   {
+   public void extract_pathDoesNotMatch_error() {
       boolean error = false;
-      try
-      {
+      try {
          Map<String, String> params = new HashMap();
          Path rule = new Path("part1/part2/part3/*");
          Path path = new Path("part1/part5/part3/part4");
          Path matched = rule.extract(params, path);
       }
-      catch (Exception e)
-      {
+      catch (Exception e) {
          error = true;
       }
       assertTrue(error, "The test should have errored because 'the paths do not match'");
    }
 
    @Test
-   public void extract_stopsOnOptionalWithDollarVarParsing()
-   {
+   public void extract_stopsOnOptionalWithDollarVarParsing() {
       Map<String, String> params = new HashMap();
 
       Path rule = new Path("part1/${part2}/part3/*");
@@ -164,20 +152,17 @@ public class PathTest
    }
 
    @Test
-   public void extract_missingClosingBracketIsConsideredLiteralNotVariable()
-   {
+   public void extract_missingClosingBracketIsConsideredLiteralNotVariable() {
       Map<String, String> params = new HashMap();
 
       Path rule = new Path("part1/{part2/part3/*");
       Path path = new Path("part1/val2/part3/part4");
 
       boolean error = false;
-      try
-      {
+      try {
          rule.extract(params, path);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          error = true;
       }
 
@@ -185,8 +170,7 @@ public class PathTest
    }
 
    @Test
-   public void match()
-   {
+   public void match() {
       assertTrue(new Path("[{^$}]").matches(""));
 
       assertTrue(new Path("*").matches("/something/asdfas/"));

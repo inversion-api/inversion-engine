@@ -64,17 +64,15 @@ import io.inversion.ApiException;
  * @see io.inversion.utils.Configurator
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
-public class Config
-{
+public class Config {
+
    static CompositeConfiguration configuration = null;
 
-   private Config()
-   {
+   private Config() {
 
    }
 
-   public static synchronized boolean hasConfiguration()
-   {
+   public static synchronized boolean hasConfiguration() {
       return configuration != null;
    }
 
@@ -84,10 +82,8 @@ public class Config
     * 
     * @return the system wide CompositeConfiguration
     */
-   public static synchronized CompositeConfiguration getConfiguration()
-   {
-      if (configuration == null)
-      {
+   public static synchronized CompositeConfiguration getConfiguration() {
+      if (configuration == null) {
          loadConfiguration(null, null);
       }
       return configuration;
@@ -100,16 +96,14 @@ public class Config
     * classes getters will cause the default configuration to be loaded via <code>loadConfiguration()</code>
     * if <code>configuration</code> is null.
     */
-   public static synchronized void setConfiguration(CompositeConfiguration configuration)
-   {
+   public static synchronized void setConfiguration(CompositeConfiguration configuration) {
       Config.configuration = configuration;
    }
 
    /**
     * Nulls out the system wide CompositeConfiguration, same as <code>setConfiguration(null)</code>
     */
-   public static synchronized void clearConfiguration()
-   {
+   public static synchronized void clearConfiguration() {
       configuration = null;
    }
 
@@ -140,8 +134,7 @@ public class Config
     * @see #getResource(String)
     * @see Utils.findProperty
     */
-   public static synchronized void loadConfiguration(String configPath, String configProfile)
-   {
+   public static synchronized void loadConfiguration(String configPath, String configProfile) {
       configPath = !Utils.empty(configPath) ? configPath : Utils.findProperty("inversion.configPath", "configPath");
       configProfile = !Utils.empty(configProfile) ? configProfile : Utils.findProperty("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
 
@@ -152,11 +145,9 @@ public class Config
       System.out.println("  - configPath    : " + configPath);
       System.out.println("  - configProfile : " + configProfile);
 
-      try
-      {
+      try {
          URL url = getResource(".env");
-         if (url != null)
-         {
+         if (url != null) {
             System.out.println("  - loading file  : " + url);
             configuration.addConfiguration(configs.properties(url));
          }
@@ -169,59 +160,49 @@ public class Config
          if (configPath.length() > 0 && !(configPath.endsWith("/") || configPath.endsWith("\\")))
             configPath += "/";
 
-         if (configProfile != null)
-         {
-            for (int i = 100; i >= -1; i--)
-            {
+         if (configProfile != null) {
+            for (int i = 100; i >= -1; i--) {
                String fileName = null;
 
                fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + configProfile + ".properties";
                url = getResource(fileName);
 
-               if (url == null)
-               {
+               if (url == null) {
                   fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + configProfile + ".properties";
                   url = getResource(fileName);
                }
-               if (url == null)
-               {
+               if (url == null) {
                   fileName = configPath + "inversion" + "-" + configProfile + (i < 0 ? "" : i) + ".properties";
                   url = getResource(fileName);
                }
-               if (url == null)
-               {
+               if (url == null) {
                   fileName = configPath + "inversion" + "-" + configProfile + "-" + (i < 0 ? "" : i) + ".properties";
                   url = getResource(fileName);
                }
 
-               if (url != null)
-               {
+               if (url != null) {
                   System.out.println("  - loading file  : " + url);
                   configuration.addConfiguration(configs.properties(url));
                }
             }
          }
 
-         for (int i = 100; i >= -1; i--)
-         {
+         for (int i = 100; i >= -1; i--) {
             String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
             url = getResource(fileName);
 
-            if (url == null)
-            {
+            if (url == null) {
                fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + ".properties";
                url = getResource(fileName);
             }
 
-            if (url != null)
-            {
+            if (url != null) {
                System.out.println("  - loading file  : " + url);
                configuration.addConfiguration(configs.properties(url));
             }
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
 
@@ -234,15 +215,12 @@ public class Config
     * @param name
     * @return
     */
-   protected static URL getResource(String name)
-   {
-      try
-      {
+   protected static URL getResource(String name) {
+      try {
          URL url = null;
 
          url = Config.class.getClassLoader().getResource(name);
-         if (url == null)
-         {
+         if (url == null) {
             File file = new File(System.getProperty("user.dir"), name);
             if (file.exists())
                url = file.toURI().toURL();
@@ -250,182 +228,152 @@ public class Config
 
          return url;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
 
-   public static Iterator<String> getKeys()
-   {
+   public static Iterator<String> getKeys() {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getKeys();
    }
 
-   public static Object getProperty(String key)
-   {
+   public static Object getProperty(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getProperty(key);
    }
 
-   public static boolean getBoolean(String key)
-   {
+   public static boolean getBoolean(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key);
    }
 
-   public static boolean getBoolean(String key, boolean defaultValue)
-   {
+   public static boolean getBoolean(String key, boolean defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key, defaultValue);
    }
 
-   public static Boolean getBoolean(String key, Boolean defaultValue)
-   {
+   public static Boolean getBoolean(String key, Boolean defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBoolean(key, defaultValue);
    }
 
-   public static byte getByte(String key)
-   {
+   public static byte getByte(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key);
    }
 
-   public static byte getByte(String key, byte defaultValue)
-   {
+   public static byte getByte(String key, byte defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key, defaultValue);
    }
 
-   public static Byte getByte(String key, Byte defaultValue)
-   {
+   public static Byte getByte(String key, Byte defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getByte(key, defaultValue);
    }
 
-   public static double getDouble(String key)
-   {
+   public static double getDouble(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key);
    }
 
-   public static double getDouble(String key, double defaultValue)
-   {
+   public static double getDouble(String key, double defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key, defaultValue);
    }
 
-   public static Double getDouble(String key, Double defaultValue)
-   {
+   public static Double getDouble(String key, Double defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getDouble(key, defaultValue);
    }
 
-   public static float getFloat(String key)
-   {
+   public static float getFloat(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key);
    }
 
-   public static float getFloat(String key, float defaultValue)
-   {
+   public static float getFloat(String key, float defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key, defaultValue);
    }
 
-   public static Float getFloat(String key, Float defaultValue)
-   {
+   public static Float getFloat(String key, Float defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getFloat(key, defaultValue);
    }
 
-   public static int getInt(String key)
-   {
+   public static int getInt(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getInt(key);
    }
 
-   public static int getInt(String key, int defaultValue)
-   {
+   public static int getInt(String key, int defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getInt(key, defaultValue);
    }
 
-   public static Integer getInteger(String key, Integer defaultValue)
-   {
+   public static Integer getInteger(String key, Integer defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getInteger(key, defaultValue);
    }
 
-   public static long getLong(String key)
-   {
+   public static long getLong(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key);
    }
 
-   public static long getLong(String key, long defaultValue)
-   {
+   public static long getLong(String key, long defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key, defaultValue);
    }
 
-   public static Long getLong(String key, Long defaultValue)
-   {
+   public static Long getLong(String key, Long defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getLong(key, defaultValue);
    }
 
-   public static short getShort(String key)
-   {
+   public static short getShort(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key);
    }
 
-   public static short getShort(String key, short defaultValue)
-   {
+   public static short getShort(String key, short defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key, defaultValue);
    }
 
-   public static Short getShort(String key, Short defaultValue)
-   {
+   public static Short getShort(String key, Short defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getShort(key, defaultValue);
    }
 
-   public static BigDecimal getBigDecimal(String key)
-   {
+   public static BigDecimal getBigDecimal(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBigDecimal(key);
    }
 
-   public static BigDecimal getBigDecimal(String key, BigDecimal defaultValue)
-   {
+   public static BigDecimal getBigDecimal(String key, BigDecimal defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBigDecimal(key, defaultValue);
    }
 
-   public static BigInteger getBigInteger(String key)
-   {
+   public static BigInteger getBigInteger(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBigInteger(key);
    }
 
-   public static BigInteger getBigInteger(String key, BigInteger defaultValue)
-   {
+   public static BigInteger getBigInteger(String key, BigInteger defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getBigInteger(key, defaultValue);
    }
 
-   public static String getString(String key)
-   {
+   public static String getString(String key) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getString(key);
    }
 
-   public static String getString(String key, String defaultValue)
-   {
+   public static String getString(String key, String defaultValue) {
       getConfiguration();//lazy loads default config if necessary
       return configuration.getString(key, defaultValue);
    }

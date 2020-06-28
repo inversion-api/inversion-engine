@@ -40,26 +40,23 @@ import io.inversion.utils.Utils;
 /**
  * Adapter to run an Inversion API as an AWS Lambda behind an ApiGateway
  */
-public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
-{
+public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler {
+
    Engine  engine = null;
    boolean debug  = false;
 
    /**
     * Override me to supply your custom Api 
     */
-   protected Api buildApi()
-   {
+   protected Api buildApi() {
       return null;
    }
 
-   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
-   {
+   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
       runRequest(inputStream, outputStream, context);
    }
 
-   public Chain runRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
-   {
+   public Chain runRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
       Chain chain = null;
 
       String input = Utils.read(new BufferedInputStream(inputStream));
@@ -68,8 +65,7 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
       JSNode config = null;
       Exception ex = null;
 
-      try
-      {
+      try {
          JSNode json = JSNode.parseJsonNode(input);
 
          debug("Request Event");
@@ -90,19 +86,15 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
 
          String servletPath = "";
 
-         if (pathStr.length() > proxyStr.length())
-         {
+         if (pathStr.length() > proxyStr.length()) {
             servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
          }
 
          config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
-         if (engine == null)
-         {
-            synchronized (this)
-            {
-               if (engine == null)
-               {
+         if (engine == null) {
+            synchronized (this) {
+               if (engine == null) {
                   engine = buildEngine(profile, servletPath);
                   engine.startup();
                }
@@ -119,15 +111,13 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
 
          Map params = new HashMap();
          JSNode jsonParams = json.getNode("queryStringParameters");
-         if (jsonParams != null)
-         {
+         if (jsonParams != null) {
             params = jsonParams.asMap();
          }
 
          String body = json.getString("body");
 
-         if (method.equals("POST") && body != null)
-         {
+         if (method.equals("POST") && body != null) {
             Map<String, String> postParams = Utils.parseQueryString(body);
             params.putAll(postParams);
          }
@@ -137,20 +127,16 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
 
          chain = engine.service(req, res);
 
-         if (outputStream != null)
-         {
+         if (outputStream != null) {
             writeResponse(res, outputStream);
          }
 
       }
-      catch (Exception e1)
-      {
+      catch (Exception e1) {
          ex = e1;
       }
-      finally
-      {
-         if (ex != null)
-         {
+      finally {
+         if (ex != null) {
             if (config != null)
                responseBody.put("config", config);
 
@@ -177,25 +163,23 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
     * This method is here as a hook for sub classes to override.
     * @return
     */
-   protected Engine buildEngine(String profile, String servletPath)
-   {
+   protected Engine buildEngine(String profile, String servletPath) {
       Engine engine = new Engine();
 
-//      Api api = buildApi();
-//      if (api != null)
-//         engine.withApi(api);
-//
-//      if (!Utils.empty(profile))
-//         engine.withProfile(profile);
-//
-//      if (!Utils.empty(servletPath))
-//         engine.withServletMapping(servletPath);
+      //      Api api = buildApi();
+      //      if (api != null)
+      //         engine.withApi(api);
+      //
+      //      if (!Utils.empty(profile))
+      //         engine.withProfile(profile);
+      //
+      //      if (!Utils.empty(servletPath))
+      //         engine.withServletMapping(servletPath);
 
       return engine;
    }
 
-   protected void writeResponse(Response res, OutputStream outputStream) throws IOException
-   {
+   protected void writeResponse(Response res, OutputStream outputStream) throws IOException {
       JSNode responseJson = new JSNode();
 
       responseJson.put("isBase64Encoded", false);
@@ -203,12 +187,10 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
       JSNode headers = new JSNode();
       responseJson.put("headers", headers);
 
-      for (String key : res.getHeaders().keySet())
-      {
+      for (String key : res.getHeaders().keySet()) {
          List values = res.getHeaders().get(key);
          StringBuffer buff = new StringBuffer();
-         for (int i = 0; i < values.size(); i++)
-         {
+         for (int i = 0; i < values.size(); i++) {
             buff.append(values.get(i));
             if (i < values.size() - 1)
                buff.append(",");
@@ -224,21 +206,17 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler
       writer.close();
    }
 
-   public void debug(String msg)
-   {
-      if (isDebug())
-      {
+   public void debug(String msg) {
+      if (isDebug()) {
          System.out.println(msg);
       }
    }
 
-   public boolean isDebug()
-   {
+   public boolean isDebug() {
       return debug;
    }
 
-   public void setDebug(boolean debug)
-   {
+   public void setDebug(boolean debug) {
       this.debug = debug;
    }
 

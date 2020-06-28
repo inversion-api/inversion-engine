@@ -32,21 +32,19 @@ import io.inversion.utils.Utils;
  * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
  * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
  */
-public class InversionMain
-{
+public class InversionMain {
+
    static Engine engine = null;
 
-   public static void main(String[] args)
-   {
+   public static void main(String[] args) {
       run(new Engine());
    }
-   
+
    /**
     * Convenience method for launching a Engine that will be configured via config files.
     * @param api
     */
-   public static void run()
-   {
+   public static void run() {
       run(new Engine());
    }
 
@@ -54,23 +52,18 @@ public class InversionMain
     * Convenience method for launching a Engine with a single API.
     * @param api
     */
-   public static void run(Api api)
-   {
+   public static void run(Api api) {
       run(new Engine().withApi(api));
    }
 
-   public static void run(Engine engine)
-   {
-      try
-      {
+   public static void run(Engine engine) {
+      try {
          InversionMain.engine = engine;
          SpringApplication.run(InversionMain.class);
       }
-      catch (Throwable e)
-      {
+      catch (Throwable e) {
          e = Utils.getCause(e);
-         if (Utils.getStackTraceString(e).indexOf("A child container failed during start") > -1)
-         {
+         if (Utils.getStackTraceString(e).indexOf("A child container failed during start") > -1) {
             String msg = "";
             msg = " README FOR HELP!!!!!!!";
             msg += "\n";
@@ -91,8 +84,7 @@ public class InversionMain
             System.err.println(msg);
             throw new RuntimeException(msg, e);
          }
-         else
-         {
+         else {
             e.printStackTrace();
          }
          Utils.rethrow(e);
@@ -100,14 +92,12 @@ public class InversionMain
    }
 
    @Bean
-   public ServletRegistrationBean inversionServlet()
-   {
+   public ServletRegistrationBean inversionServlet() {
       return InversionServletConfig.createDefaultInversionServlet(InversionMain.engine);
    }
 
    @Bean
-   public ConfigurableServletWebServerFactory servletContainer()
-   {
+   public ConfigurableServletWebServerFactory servletContainer() {
       return InversionServletConfig.createDefaultServletContainer();
    }
 

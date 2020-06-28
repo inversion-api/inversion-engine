@@ -22,8 +22,8 @@ import java.util.Map;
 
 import io.inversion.rql.Term;
 
-public class MockDb extends Db<MockDb>
-{
+public class MockDb extends Db<MockDb> {
+
    String property1 = null;
 
    //   @Override
@@ -38,30 +38,25 @@ public class MockDb extends Db<MockDb>
    //   }
    //
    @Override
-   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
-   {
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
       return new Results(null);
    }
 
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
       return Collections.EMPTY_LIST;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
-   {
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
 
    }
 
-   public String getProperty1()
-   {
+   public String getProperty1() {
       return property1;
    }
 
-   public MockDb withProperty1(String property1)
-   {
+   public MockDb withProperty1(String property1) {
       this.property1 = property1;
       return this;
    }

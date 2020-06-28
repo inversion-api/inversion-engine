@@ -19,26 +19,22 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Select<T extends Select, P extends Query> extends Builder<T, P>
-{
-   public Select(P query)
-   {
+public class Select<T extends Select, P extends Query> extends Builder<T, P> {
+
+   public Select(P query) {
       super(query);
       withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
    }
 
-   public boolean isDistinct()
-   {
+   public boolean isDistinct() {
       Term distinct = find("distinct");
       return distinct != null;
 
    }
 
-   protected boolean addTerm(String token, Term term)
-   {
+   protected boolean addTerm(String token, Term term) {
 
-      if (term.hasToken("function", "aggregate"))
-      {
+      if (term.hasToken("function", "aggregate")) {
          String func = term.getTerm(0).getToken();
          String col = term.getTerm(1).getToken();
 
@@ -46,32 +42,27 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
 
          Term t = Term.term(null, func, col);
 
-         if (term.size() > 2)
-         {
+         if (term.size() > 2) {
             Term as = Term.term(null, "as", t, term.getTerm(2).getToken());
             getParent().withTerm(as);
          }
-         else
-         {
+         else {
             getParent().withTerm(t);
          }
          return true;
       }
 
-      if (term.hasToken("countascol"))
-      {
+      if (term.hasToken("countascol")) {
          //this is done as a transformation here instead of in SqlRql.print because it requires the addition of a select and where clause
          String col = term.getToken(0);
          List<Term> terms = term.getTerms();
 
-         for (int i = 1; i < terms.size(); i++)
-         {
+         for (int i = 1; i < terms.size(); i++) {
             getParent().withTerm("as(sum(if(eq(" + col + ", " + terms.get(i) + "), 1, 0))," + terms.get(i) + ")");
          }
 
          String str = "in(" + col;
-         for (int i = 1; i < terms.size(); i++)
-         {
+         for (int i = 1; i < terms.size(); i++) {
             str += "," + terms.get(i).token;
          }
          str += ")";
@@ -81,11 +72,9 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
 
       }
 
-      if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct"))
-      {
+      if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct")) {
          String asName = "$$$ANON";
-         if (term.size() > 1 && term.hasToken("count", "sum", "min", "max"))
-         {
+         if (term.size() > 1 && term.hasToken("count", "sum", "min", "max")) {
             Term asT = term.getTerm(1);
             term.removeTerm(asT);
             asName = asT.getToken();
@@ -95,60 +84,48 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P>
          withTerm(as);
          return true;
       }
-      else
-      {
+      else {
          return super.addTerm(token, term);
       }
    }
 
-   public List<String> getColumnNames()
-   {
+   public List<String> getColumnNames() {
       List<String> columns = new ArrayList();
 
-      for (Term include : findAll("includes"))
-      {
-         for (Term child : include.getTerms())
-         {
+      for (Term include : findAll("includes")) {
+         for (Term child : include.getTerms()) {
             columns.add(child.getToken());
          }
       }
       return columns;//getColumnNames();
    }
 
-   public List<Term> columns()
-   {
+   public List<Term> columns() {
       List<Term> columns = new ArrayList();
 
-      for (Term include : findAll("includes"))
-      {
+      for (Term include : findAll("includes")) {
          columns.addAll(include.getTerms());
       }
 
       boolean hasIncludes = columns.size() > 0;
 
-      for (Term as : findAll("as"))
-      {
-         if (!hasIncludes)
-         {
+      for (Term as : findAll("as")) {
+         if (!hasIncludes) {
             columns.add(as);
          }
-         else
-         {
+         else {
             String name = as.getToken(1);
 
             boolean replaced = false;
-            for (int i = 0; i < columns.size(); i++)
-            {
+            for (int i = 0; i < columns.size(); i++) {
                Term column = columns.get(i);
-               if (column.isLeaf() && column.hasToken(name))
-               {
+               if (column.isLeaf() && column.hasToken(name)) {
                   columns.set(i, as);
                   replaced = true;
                   break;
                }
             }
-            if (!replaced)
-            {
+            if (!replaced) {
                columns.add(as);
             }
          }

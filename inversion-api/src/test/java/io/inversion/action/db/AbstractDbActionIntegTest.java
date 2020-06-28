@@ -21,59 +21,50 @@ import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
 
-public abstract class AbstractDbActionIntegTest implements AbstractEngineTest
-{
+public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
+
    protected Engine engine = null;
    protected Db     db     = null;
    protected String type   = null;
 
-   public AbstractDbActionIntegTest(String type)
-   {
+   public AbstractDbActionIntegTest(String type) {
       this.type = type;
    }
 
-   protected Engine engine() throws Exception
-   {
+   protected Engine engine() throws Exception {
       return engine;
    }
 
-   protected String collectionPath()
-   {
+   protected String collectionPath() {
       return "northwind/" + type + "/";
    }
 
    @Override
-   public Db getDb()
-   {
+   public Db getDb() {
       return db;
    }
 
    @Override
-   public void setDb(Db db)
-   {
+   public void setDb(Db db) {
       this.db = db;
 
    }
 
    @Override
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return engine;
    }
 
    @Override
-   public void setEngine(Engine engine)
-   {
+   public void setEngine(Engine engine) {
       this.engine = engine;
    }
 
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
-   public void setType(String type)
-   {
+   public void setType(String type) {
       this.type = type;
    }
 
@@ -82,13 +73,11 @@ public abstract class AbstractDbActionIntegTest implements AbstractEngineTest
     * This is needed for subclasses to decorate test methods
     * @return
     */
-   protected Response response() throws Exception
-   {
+   protected Response response() throws Exception {
       return engine().getLastResponse();
    }
 
-   protected String url(String path)
-   {
+   protected String url(String path) {
       if (path.startsWith("http"))
          return path;
 

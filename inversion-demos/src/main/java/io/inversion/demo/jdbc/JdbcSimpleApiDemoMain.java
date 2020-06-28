@@ -22,10 +22,9 @@ import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.InversionMain;
 import io.inversion.utils.Utils;
 
-public class JdbcSimpleApiDemoMain
-{
-   public static void main(String[] args) throws Exception
-   {
+public class JdbcSimpleApiDemoMain {
+
+   public static void main(String[] args) throws Exception {
       Api api = new Api()//
                          .withDb(new JdbcDb("db"))//
                          .withEndpoint("*", "*", new DbAction());

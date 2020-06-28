@@ -25,8 +25,8 @@ package io.inversion;
  *
  * @see http://www.restapitutorial.com/httpstatuscodes.html
  */
-public interface Status
-{
+public interface Status {
+
    public static final String SC_200_OK                    = "200 OK";
    public static final String SC_201_CREATED               = "201 Created";
    public static final String SC_204_NO_CONTENT            = "204 No Content";

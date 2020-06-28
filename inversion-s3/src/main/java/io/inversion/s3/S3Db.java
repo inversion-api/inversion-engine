@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,8 +41,8 @@ import io.inversion.utils.Utils;
  * custom header.
  * 
  */
-public class S3Db extends Db<S3Db>
-{
+public class S3Db extends Db<S3Db> {
+
    protected String awsAccessKey = null;
    protected String awsSecretKey = null;
    protected String awsRegion    = null;
@@ -57,15 +57,13 @@ public class S3Db extends Db<S3Db>
     * @see io.rcktapp.api.Db#bootstrapApi()
     */
    @Override
-   protected void doStartup(Api api)
-   {
+   protected void doStartup(Api api) {
       AmazonS3 client = getS3Client();
 
       // get all of the buckets this account has access to.  
       List<Bucket> bucketList = client.listBuckets();
 
-      for (Bucket bucket : bucketList)
-      {
+      for (Bucket bucket : bucketList) {
          Collection coll = new Collection(bucket.getName());
          // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
          // for querying 
@@ -75,47 +73,43 @@ public class S3Db extends Db<S3Db>
       }
    }
 
-//   public S3Object getDownload(S3Request req)
-//   {
-//      AmazonS3 client = getS3Client();
-//      return client.getObject(new GetObjectRequest(req.getBucket(), req.getKey()));
-//   }
-//
-//   public ObjectMetadata getExtendedMetaData(S3Request req)
-//   {
-//      String key = req.getKey();
-//      String prefix = req.getPrefix();
-//
-//      AmazonS3 client = getS3Client();
-//      return client.getObjectMetadata(new GetObjectMetadataRequest(req.getBucket(), prefix != null ? prefix + key : key));
-//   }
-//
-//   public PutObjectResult saveFile(InputStream inputStream, String bucketName, String key, ObjectMetadata meta)
-//   {
-//      AmazonS3 client = getS3Client();
-//      return client.putObject(new PutObjectRequest(bucketName, key, inputStream, meta));
-//   }
+   //   public S3Object getDownload(S3Request req)
+   //   {
+   //      AmazonS3 client = getS3Client();
+   //      return client.getObject(new GetObjectRequest(req.getBucket(), req.getKey()));
+   //   }
+   //
+   //   public ObjectMetadata getExtendedMetaData(S3Request req)
+   //   {
+   //      String key = req.getKey();
+   //      String prefix = req.getPrefix();
+   //
+   //      AmazonS3 client = getS3Client();
+   //      return client.getObjectMetadata(new GetObjectMetadataRequest(req.getBucket(), prefix != null ? prefix + key : key));
+   //   }
+   //
+   //   public PutObjectResult saveFile(InputStream inputStream, String bucketName, String key, ObjectMetadata meta)
+   //   {
+   //      AmazonS3 client = getS3Client();
+   //      return client.putObject(new PutObjectRequest(bucketName, key, inputStream, meta));
+   //   }
 
    @Override
-   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException
-   {
+   public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
       S3DbQuery query = new S3DbQuery(this, table, columnMappedTerms);
       return query.doSelect();
    }
 
-
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
-   {
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
       // TODO Auto-generated method stub
-      
+
    }
 
    //   /**
@@ -170,27 +164,20 @@ public class S3Db extends Db<S3Db>
    //      return client.copyObject(copyReq);
    //   }
 
-
-   public AmazonS3 getS3Client()
-   {
+   public AmazonS3 getS3Client() {
       return getS3Client(awsRegion, awsAccessKey, awsSecretKey);
    }
 
-   public AmazonS3 getS3Client(String awsRegion, String awsAccessKey, String awsSecretKey)
-   {
-      if (this.client == null)
-      {
-         synchronized (this)
-         {
-            if (this.client == null)
-            {
+   public AmazonS3 getS3Client(String awsRegion, String awsAccessKey, String awsSecretKey) {
+      if (this.client == null) {
+         synchronized (this) {
+            if (this.client == null) {
                AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
 
                if (!Utils.empty(awsRegion))
                   builder.withRegion(awsRegion);
 
-               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey))
-               {
+               if (!Utils.empty(awsAccessKey) && !Utils.empty(awsSecretKey)) {
                   BasicAWSCredentials creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
                   builder.withCredentials(new AWSStaticCredentialsProvider(creds));
                }
@@ -203,26 +190,22 @@ public class S3Db extends Db<S3Db>
       return this.client;
    }
 
-   public S3Db withAwsRegion(String awsRegion)
-   {
+   public S3Db withAwsRegion(String awsRegion) {
       this.awsRegion = awsRegion;
       return this;
    }
 
-   public S3Db withAwsAccessKey(String awsAccessKey)
-   {
+   public S3Db withAwsAccessKey(String awsAccessKey) {
       this.awsAccessKey = awsAccessKey;
       return this;
    }
 
-   public S3Db withAwsSecretKey(String awsSecretKey)
-   {
+   public S3Db withAwsSecretKey(String awsSecretKey) {
       this.awsSecretKey = awsSecretKey;
       return this;
    }
 
-   public S3Db withBucket(String bucket)
-   {
+   public S3Db withBucket(String bucket) {
       this.bucket = bucket;
       return this;
    }

@@ -152,8 +152,8 @@ import io.inversion.Response;
  * </pre>
  * 
  */
-public class RestClient
-{
+public class RestClient {
+
    static Log                                       log              = LogFactory.getLog(RestClient.class);
 
    protected String                                 name             = null;
@@ -264,16 +264,14 @@ public class RestClient
     */
    Timer                                            timer            = null;
 
-   public RestClient()
-   {
+   public RestClient() {
 
    }
 
    /**
     * @param name the prefix used to look up property values from the environment if they have not already been wired
     */
-   public RestClient(String name)
-   {
+   public RestClient(String name) {
       withName(name);
    }
 
@@ -282,8 +280,7 @@ public class RestClient
     * 
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
     */
-   public FutureResponse get(String fullUrlOrRelativePath)
-   {
+   public FutureResponse get(String fullUrlOrRelativePath) {
       return get(fullUrlOrRelativePath, (String) null);
    }
 
@@ -293,8 +290,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
     * @param queryString  additional query string params in name=value&name2=value2 style
     */
-   public FutureResponse get(String fullUrlOrRelativePath, String queryString)
-   {
+   public FutureResponse get(String fullUrlOrRelativePath, String queryString) {
       return call("GET", fullUrlOrRelativePath, Utils.parseQueryString(queryString), (JSNode) null, this.retryMax, null);
    }
 
@@ -304,8 +300,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
     * @param params  query strings passed in as a map
     */
-   public FutureResponse get(String fullUrlOrRelativePath, Map<String, String> params)
-   {
+   public FutureResponse get(String fullUrlOrRelativePath, Map<String, String> params) {
       return call("GET", fullUrlOrRelativePath, params, null, this.retryMax, null);
    }
 
@@ -315,8 +310,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set, can have a query string or not
     * @param queryStringNameValuePairs  additional query string name/value pairs
     */
-   public FutureResponse get(String fullUrlOrRelativePath, String... queryStringNameValuePairs)
-   {
+   public FutureResponse get(String fullUrlOrRelativePath, String... queryStringNameValuePairs) {
       return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap(), queryStringNameValuePairs), null, this.retryMax, null);
    }
 
@@ -326,8 +320,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
     * @param body  the optional JSON to post
     */
-   public FutureResponse post(String fullUrlOrRelativePath, JSNode body)
-   {
+   public FutureResponse post(String fullUrlOrRelativePath, JSNode body) {
       return call("POST", fullUrlOrRelativePath, null, body, this.retryMax, null);
    }
 
@@ -337,8 +330,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
     * @param body  the optional JSON to put
     */
-   public FutureResponse put(String fullUrlOrRelativePath, JSNode body)
-   {
+   public FutureResponse put(String fullUrlOrRelativePath, JSNode body) {
       return call("PUT", fullUrlOrRelativePath, null, body, this.retryMax, null);
    }
 
@@ -348,8 +340,7 @@ public class RestClient
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
     * @param body  the optional JSON patch
     */
-   public FutureResponse patch(String fullUrlOrRelativePath, JSNode body)
-   {
+   public FutureResponse patch(String fullUrlOrRelativePath, JSNode body) {
       return call("PATCH", fullUrlOrRelativePath, null, body, this.retryMax, null);
    }
 
@@ -358,8 +349,7 @@ public class RestClient
     * 
     * @param fullUrlOrRelativePath  may be a full url or relative to the {@link #url} property if set
     */
-   public FutureResponse delete(String fullUrlOrRelativePath)
-   {
+   public FutureResponse delete(String fullUrlOrRelativePath) {
       return call("DELETE", fullUrlOrRelativePath, null, null, this.retryMax, null);
    }
 
@@ -375,18 +365,15 @@ public class RestClient
     * 
     * @return a FutureResponse that will asynchronously resolve to a Result
     */
-   public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers)
-   {
+   public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers) {
       String url = buildUrl(fullUrlOrRelativePath);
 
       String queryString = Utils.substringAfter(url, "?");
-      if (!Utils.empty(queryString))
-      {
+      if (!Utils.empty(queryString)) {
          url = Utils.substringBefore(url, "?");
 
          Map newParams = Utils.parseQueryString(queryString);
-         if (params != null)
-         {
+         if (params != null) {
             //-- this makes sure any specifically provided name/value query string pairs 
             //-- overwrite the ones from the url which would have been statically configured.
             newParams.putAll(params);
@@ -402,25 +389,19 @@ public class RestClient
       return future;
    }
 
-   Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryMax)
-   {
+   Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryMax) {
       retryMax = retryMax > -1 ? retryMax : this.retryMax;
 
       Request request = new Request(method, url, body, callParams, callHeaders, retryMax);
 
-      if (forwardHeaders)
-      {
+      if (forwardHeaders) {
          Chain chain = Chain.first();//gets the root chain
-         if (chain != null)
-         {
+         if (chain != null) {
             Request originalInboundRequest = chain.getRequest();
             ArrayListValuedHashMap<String, String> inboundHeaders = originalInboundRequest.getHeaders();
-            if (inboundHeaders != null)
-            {
-               for (String key : inboundHeaders.keySet())
-               {
-                  if (shouldForwardHeader(key))
-                  {
+            if (inboundHeaders != null) {
+               for (String key : inboundHeaders.keySet()) {
+                  if (shouldForwardHeader(key)) {
                      if (request.getHeader(key) == null)
                         for (String header : inboundHeaders.get(key))
                            request.withHeader(key, header);
@@ -430,29 +411,22 @@ public class RestClient
          }
       }
 
-      if (forcedHeaders.size() > 0)
-      {
-         for (String key : forcedHeaders.keySet())
-         {
+      if (forcedHeaders.size() > 0) {
+         for (String key : forcedHeaders.keySet()) {
             request.removeHeader(key);
             for (String value : forcedHeaders.get(key))
                request.withHeader(key, value);
          }
       }
 
-      if (forwardParams)
-      {
+      if (forwardParams) {
          Chain chain = Chain.first();
-         if (chain != null)
-         {
+         if (chain != null) {
             Request originalInboundRequest = chain.getRequest();
             Map<String, String> origionalParams = originalInboundRequest.getUrl().getParams();
-            if (origionalParams.size() > 0)
-            {
-               for (String key : origionalParams.keySet())
-               {
-                  if (shouldForwardParam(key))
-                  {
+            if (origionalParams.size() > 0) {
+               for (String key : origionalParams.keySet()) {
+                  if (shouldForwardParam(key)) {
                      if (request.getUrl().getParam(key) == null)
                         request.getUrl().withParam(key, origionalParams.get(key));
                   }
@@ -464,34 +438,28 @@ public class RestClient
       return request;
    }
 
-   FutureResponse buildFuture(Request request)
-   {
-      final FutureResponse future = new FutureResponse(request)
-         {
-            public void run()
-            {
-               Response response = null;
-               try
-               {
-                  response = doRequest(request);
+   FutureResponse buildFuture(Request request) {
+      final FutureResponse future = new FutureResponse(request) {
+
+         public void run() {
+            Response response = null;
+            try {
+               response = doRequest(request);
+            }
+            finally {
+               if (shouldRetry(request, response)) {
+                  request.incrementRetryCount();
+
+                  long timeout = computeTimeout(request, response);
+
+                  submitLater(this, timeout);
                }
-               finally
-               {
-                  if (shouldRetry(request, response))
-                  {
-                     request.incrementRetryCount();
-
-                     long timeout = computeTimeout(request, response);
-
-                     submitLater(this, timeout);
-                  }
-                  else
-                  {
-                     setResponse(response);
-                  }
+               else {
+                  setResponse(response);
                }
             }
-         };
+         }
+      };
 
       return future;
    }
@@ -542,25 +510,21 @@ public class RestClient
     * @param request
     * @return
     */
-   protected Response doRequest(Request request)
-   {
+   protected Response doRequest(Request request) {
       String url = request.getUrl().toString();
       Response response = new Response(url);
 
-      try
-      {
+      try {
          return doRequest0(request);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          response.withError(ex);
       }
 
       return response;
    }
 
-   Response doRequest0(Request request) throws Exception
-   {
+   Response doRequest0(Request request) throws Exception {
       String m = request.getMethod();
       HttpRequestBase req = null;
       File tempFile = null;
@@ -568,28 +532,23 @@ public class RestClient
       String url = request.getUrl().toString();
       Response response = new Response(url);
 
-      try
-      {
+      try {
          HttpClient h = getHttpClient();
          HttpResponse hr = null;
 
          response.debug("--request header------");
          response.debug(m + " " + url);
 
-         if ("post".equalsIgnoreCase(m))
-         {
+         if ("post".equalsIgnoreCase(m)) {
             req = new HttpPost(url);
          }
-         if ("put".equalsIgnoreCase(m))
-         {
+         if ("put".equalsIgnoreCase(m)) {
             req = new HttpPut(url);
          }
-         else if ("get".equalsIgnoreCase(m))
-         {
+         else if ("get".equalsIgnoreCase(m)) {
             req = new HttpGet(url);
 
-            if (request.getRetryFile() != null && request.getRetryFile().length() > 0)
-            {
+            if (request.getRetryFile() != null && request.getRetryFile().length() > 0) {
                long range = request.getRetryFile().length();
                request.getHeaders().remove("Range");
                request.getHeaders().put("Range", "bytes=" + range + "-");
@@ -597,33 +556,26 @@ public class RestClient
                log.debug("RANGE REQUEST HEADER ** " + range);
             }
          }
-         else if ("delete".equalsIgnoreCase(m))
-         {
-            if (request.getBody() != null)
-            {
+         else if ("delete".equalsIgnoreCase(m)) {
+            if (request.getBody() != null) {
                req = new HttpDeleteWithBody(url);
             }
-            else
-            {
+            else {
                req = new HttpDelete(url);
             }
          }
-         else if ("patch".equalsIgnoreCase(m))
-         {
+         else if ("patch".equalsIgnoreCase(m)) {
             req = new HttpPatch(url);
          }
 
-         for (String key : request.getHeaders().keySet())
-         {
+         for (String key : request.getHeaders().keySet()) {
             List<String> values = request.getHeaders().get(key);
-            for (String value : values)
-            {
+            for (String value : values) {
                req.setHeader(key, value);
                response.debug(key, value);
             }
          }
-         if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase)
-         {
+         if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase) {
             response.debug("\r\n--request body--------");
             ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
          }
@@ -638,8 +590,7 @@ public class RestClient
 
          response.debug("-response headers -----");
          response.debug("status: " + response.getStatus());
-         for (Header header : hr.getAllHeaders())
-         {
+         for (Header header : hr.getAllHeaders()) {
             response.debug("\r\n" + header.getName() + ": " + header.getValue());
             response.withHeader(header.getName(), header.getValue());
          }
@@ -661,20 +612,16 @@ public class RestClient
          // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
          else if (request.getRetryFile() != null //
                && request.getRetryFile().length() == response.getContentRangeStart() //
-               && "bytes".equalsIgnoreCase(response.getContentRangeUnit()))
-         {
+               && "bytes".equalsIgnoreCase(response.getContentRangeUnit())) {
             tempFile = request.getRetryFile();
             log.debug("## Using existing file .. " + tempFile);
          }
-         else if (response.getStatusCode() == 206)
-         {
+         else if (response.getStatusCode() == 206) {
             // status code is 206 Partial Content, but we don't want to use the existing file for some reason, so abort this and force it to fail
             throw new Exception("Partial content without valid values, aborting this request");
          }
-         else
-         {
-            if (fileName.length() < 3)
-            {
+         else {
+            if (fileName.length() < 3) {
                // if fileName is only 2 characters long, createTempFile will blow up
                fileName += "_ext";
             }
@@ -685,31 +632,25 @@ public class RestClient
          }
 
          HttpEntity e = null;
-         if (!skip && (e = hr.getEntity()) != null)
-         {
+         if (!skip && (e = hr.getEntity()) != null) {
             // stream to the temp file with append set to true (this is crucial for resumable downloads)
             InputStream is = e.getContent();
             Utils.pipe(is, new FileOutputStream(tempFile, true));
 
             response.withFile(tempFile);
 
-            if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize())
-            {
+            if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize()) {
                // Something is wrong.. The server is saying the file should be X, but the actual file is larger than X, abort this
                throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
             }
          }
       }
-      finally
-      {
-         if (req != null)
-         {
-            try
-            {
+      finally {
+         if (req != null) {
+            try {
                req.releaseConnection();
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                log.info("Exception trying to release the request connection", ex);
             }
          }
@@ -727,8 +668,7 @@ public class RestClient
     * @param response
     * @return the number of milliseconds to wait before retrying the Request
     */
-   protected long computeTimeout(Request request, Response response)
-   {
+   protected long computeTimeout(Request request, Response response) {
       long timeout = (retryTimeoutMin * request.getRetryCount() * request.getRetryCount()) + (int) (retryTimeoutMin * Math.random() * request.getRetryCount());
       if (retryTimeoutMax > 0 && timeout > retryTimeoutMax)
          timeout = retryTimeoutMax;
@@ -750,19 +690,16 @@ public class RestClient
     * 
     * @return true if this request should be retried
     */
-   protected boolean shouldRetry(Request request, Response response)
-   {
+   protected boolean shouldRetry(Request request, Response response) {
       if (!response.isSuccess() //
             && request.getRetryCount() < request.getRetryMax() //
-            && isNetworkException(response.getError()))
-      {
+            && isNetworkException(response.getError())) {
          return true;
       }
       return false;
    }
 
-   boolean isNetworkException(Throwable ex)
-   {
+   boolean isNetworkException(Throwable ex) {
       if (ex == null)
          return false;
 
@@ -776,26 +713,22 @@ public class RestClient
       ;
    }
 
-   synchronized void submit(FutureResponse future)
-   {
+   synchronized void submit(FutureResponse future) {
       getExecutor().submit(future);
    }
 
-   synchronized void submitLater(final FutureResponse future, long delay)
-   {
-      if (timer == null)
-      {
+   synchronized void submitLater(final FutureResponse future, long delay) {
+      if (timer == null) {
          timer = new Timer();
       }
 
-      timer.schedule(new TimerTask()
-         {
-            @Override
-            public void run()
-            {
-               submit(future);
-            }
-         }, delay);
+      timer.schedule(new TimerTask() {
+
+         @Override
+         public void run() {
+            submit(future);
+         }
+      }, delay);
 
    }
 
@@ -812,21 +745,18 @@ public class RestClient
     * @throws Exception 
     * @see http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
     */
-   protected HttpClient buildHttpClient() throws Exception
-   {
-      if (httpClient == null)
-      {
+   protected HttpClient buildHttpClient() throws Exception {
+      if (httpClient == null) {
          HttpClientBuilder b = HttpClientBuilder.create();
 
          // setup a Trust Strategy that allows all certificates.
          //
-         SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy()
-            {
-               public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException
-               {
-                  return true;
-               }
-            }).build();
+         SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
+
+            public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+               return true;
+            }
+         }).build();
          b.setSslcontext(sslContext);
 
          // don't check Hostnames, either.
@@ -856,18 +786,16 @@ public class RestClient
       return httpClient;
    }
 
-   static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase
-   {
+   static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
+
       static final String methodName = "DELETE";
 
       @Override
-      public String getMethod()
-      {
+      public String getMethod() {
          return methodName;
       }
 
-      public HttpDeleteWithBody(final String url)
-      {
+      public HttpDeleteWithBody(final String url) {
          super();
          setURI(URI.create(url));
       }
@@ -891,21 +819,17 @@ public class RestClient
     * @param callerSuppliedFullUrlOrRelativePath
     * @return the url to call
     */
-   String buildUrl(String callerSuppliedFullUrlOrRelativePath)
-   {
+   String buildUrl(String callerSuppliedFullUrlOrRelativePath) {
       String url = callerSuppliedFullUrlOrRelativePath;
 
-      if (url != null && (url.startsWith("http://") || url.startsWith("https://")))
-      {
+      if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
          //do nothing, the caller passed in a full url
       }
-      else
-      {
+      else {
          url = url != null ? url : "";
 
          String prefix = Config.getString(getName() + ".url", this.url);
-         if (!Utils.empty(prefix))
-         {
+         if (!Utils.empty(prefix)) {
             if (url.length() > 0 && !url.startsWith("/") && !prefix.endsWith("/"))
                url = prefix + "/" + url;
             else
@@ -913,15 +837,13 @@ public class RestClient
          }
       }
 
-      if (Chain.peek() != null && url.indexOf('$') > 0)
-      {
+      if (Chain.peek() != null && url.indexOf('$') > 0) {
          Request request = Chain.peek().getRequest();
 
          StringBuffer buff = new StringBuffer("");
          Pattern p = Pattern.compile("\\$\\{([^\\}]*)\\}");
          Matcher m = p.matcher(url);
-         while (m.find())
-         {
+         while (m.find()) {
             String key = m.group(1);
             String param = request.getUrl().getParam(key);
             if (param == null)//replacement value was not there
@@ -937,119 +859,95 @@ public class RestClient
       return url;
    }
 
-   public RestClient withUrl(String url)
-   {
+   public RestClient withUrl(String url) {
       this.url = url;
       return this;
    }
 
-   public ArrayListValuedHashMap<String, String> getForcedHeaders()
-   {
+   public ArrayListValuedHashMap<String, String> getForcedHeaders() {
       return forcedHeaders;
    }
 
-   public RestClient withForcedHeader(String name, String value)
-   {
+   public RestClient withForcedHeader(String name, String value) {
       forcedHeaders.put(name, value);
       return this;
    }
 
-   public RestClient withForcedHeaders(String... headers)
-   {
-      for (int i = 0; i < headers.length - 1; i += 2)
-      {
+   public RestClient withForcedHeaders(String... headers) {
+      for (int i = 0; i < headers.length - 1; i += 2) {
          withForcedHeader(headers[i], headers[i + 1]);
       }
       return this;
    }
 
-   public RestClient withForwardedHeaders(boolean forwardHeaders)
-   {
+   public RestClient withForwardedHeaders(boolean forwardHeaders) {
       this.forwardHeaders = forwardHeaders;
       return this;
    }
 
-   public RestClient withForwardedParams(boolean forwardParams)
-   {
+   public RestClient withForwardedParams(boolean forwardParams) {
       this.forwardParams = forwardParams;
       return this;
    }
 
-   public String getName()
-   {
+   public String getName() {
       return name;
    }
 
-   public RestClient withName(String name)
-   {
+   public RestClient withName(String name) {
       this.name = name;
       return this;
    }
 
-   public int getRetryMax()
-   {
+   public int getRetryMax() {
       return retryMax;
    }
 
-   public RestClient withRetryMax(int retryMax)
-   {
+   public RestClient withRetryMax(int retryMax) {
       this.retryMax = retryMax;
       return this;
    }
 
-   public int getSocketTimeout()
-   {
+   public int getSocketTimeout() {
       return socketTimeout;
    }
 
-   public RestClient withSocketTimeout(int socketTimeout)
-   {
+   public RestClient withSocketTimeout(int socketTimeout) {
       this.socketTimeout = socketTimeout;
       return this;
    }
 
-   public int getConnectTimeout()
-   {
+   public int getConnectTimeout() {
       return connectTimeout;
    }
 
-   public RestClient withConnectTimeout(int connectTimeout)
-   {
+   public RestClient withConnectTimeout(int connectTimeout) {
       this.connectTimeout = connectTimeout;
       return this;
    }
 
-   public int getRequestTimeout()
-   {
+   public int getRequestTimeout() {
       return requestTimeout;
    }
 
-   public RestClient withRequestTimeout(int requestTimeout)
-   {
+   public RestClient withRequestTimeout(int requestTimeout) {
       this.requestTimeout = requestTimeout;
       return this;
    }
 
-   public RestClient withHttpClient(HttpClient httpClient)
-   {
+   public RestClient withHttpClient(HttpClient httpClient) {
       this.httpClient = httpClient;
       return this;
    }
 
-   protected HttpClient getHttpClient()
-   {
-      if (httpClient == null)
-      {
-         synchronized (this)
-         {
-            if (httpClient == null)
-            {
-               try
-               {
+   protected HttpClient getHttpClient() {
+      if (httpClient == null) {
+         synchronized (this) {
+            if (httpClient == null) {
+               try {
                   httpClient = buildHttpClient();
                }
-               catch (Exception ex)
-               {
+               catch (Exception ex) {
                   Utils.rethrow(ex);
                }
             }
@@ -1062,14 +960,10 @@ public class RestClient
     * Gets <code>executor</code> and calling buildExecutor to construct a new one if <code>executor</code> is null.
     * @return
     */
-   public Executor getExecutor()
-   {
-      if (executor == null)
-      {
-         synchronized (this)
-         {
-            if (executor == null)
-            {
+   public Executor getExecutor() {
+      if (executor == null) {
+         synchronized (this) {
+            if (executor == null) {
                executor = buildExecutor();
             }
          }
@@ -1077,8 +971,7 @@ public class RestClient
       return executor;
    }
 
-   public RestClient withExecutor(Executor executor)
-   {
+   public RestClient withExecutor(Executor executor) {
       this.executor = executor;
       return this;
    }
@@ -1090,103 +983,86 @@ public class RestClient
     * 
     * @return
     */
-   protected Executor buildExecutor()
-   {
+   protected Executor buildExecutor() {
       return new Executor();
    }
 
-   public boolean isForwardHeaders()
-   {
+   public boolean isForwardHeaders() {
       return forwardHeaders;
    }
 
-   protected boolean shouldForwardHeader(String headerKey)
-   {
+   protected boolean shouldForwardHeader(String headerKey) {
       return forwardHeaders //
             && (whitelistHeaders.size() == 0 || whitelistHeaders.contains(headerKey.toLowerCase())) //
             && (!blacklistHeaders.contains(headerKey.toLowerCase()));
    }
 
-   public RestClient withForwardHeaders(boolean forwardHeaders)
-   {
+   public RestClient withForwardHeaders(boolean forwardHeaders) {
       this.forwardHeaders = forwardHeaders;
       return this;
    }
 
-   public Set getWhitelistHeaders()
-   {
+   public Set getWhitelistHeaders() {
       return new HashSet(whitelistHeaders);
    }
 
-   public RestClient withWhitelistedHeaders(String... headerKeys)
-   {
+   public RestClient withWhitelistedHeaders(String... headerKeys) {
       for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
          whitelistHeaders.add(headerKeys[i].toLowerCase());
       return this;
    }
 
-   public RestClient removeWhitelistHeader(String headerKey)
-   {
+   public RestClient removeWhitelistHeader(String headerKey) {
       if (headerKey != null)
          whitelistHeaders.remove(headerKey.toString());
       return this;
    }
 
-   public boolean isForwardParams()
-   {
+   public boolean isForwardParams() {
       return forwardParams;
    }
 
-   protected boolean shouldForwardParam(String param)
-   {
+   protected boolean shouldForwardParam(String param) {
       return forwardParams //
             && (whitelistParams.size() == 0 || whitelistParams.contains(param.toLowerCase())) //
             && (!blacklistParams.contains(param.toLowerCase()));
    }
 
-   public RestClient withForwardParams(boolean forwardParams)
-   {
+   public RestClient withForwardParams(boolean forwardParams) {
       this.forwardParams = forwardParams;
       return this;
    }
 
-   public Set getWhitelistParams()
-   {
+   public Set getWhitelistParams() {
       return new HashSet(whitelistParams);
    }
 
-   public RestClient withWhitelistedParams(String... paramNames)
-   {
+   public RestClient withWhitelistedParams(String... paramNames) {
       for (int i = 0; paramNames != null && i < paramNames.length; i++)
          whitelistParams.add(paramNames[i].toLowerCase());
       return this;
    }
 
-   public RestClient removeWhitelistParam(String param)
-   {
+   public RestClient removeWhitelistParam(String param) {
       if (param != null)
          whitelistParams.remove(param.toString());
       return this;
    }
 
-   public int getRetryTimeoutMin()
-   {
+   public int getRetryTimeoutMin() {
       return retryTimeoutMin;
    }
 
-   public RestClient withRetryTimeoutMin(int retryTimeoutMin)
-   {
+   public RestClient withRetryTimeoutMin(int retryTimeoutMin) {
       this.retryTimeoutMin = retryTimeoutMin;
       return this;
    }
 
-   public int getRetryTimeoutMax()
-   {
+   public int getRetryTimeoutMax() {
       return retryTimeoutMax;
    }
 
-   public RestClient getRetryTimeoutMax(int retryTimeoutMax)
-   {
+   public RestClient getRetryTimeoutMax(int retryTimeoutMax) {
       this.retryTimeoutMax = retryTimeoutMax;
       return this;
    }
@@ -1231,16 +1107,15 @@ public class RestClient
     * </pre>
     * 
     */
-   public abstract class FutureResponse implements RunnableFuture<Response>
-   {
+   public abstract class FutureResponse implements RunnableFuture<Response> {
+
       Request                  request           = null;
       Response                 response          = null;
       List<Consumer<Response>> successListeners  = new ArrayList();
       List<Consumer<Response>> failureListeners  = new ArrayList();
       List<Consumer<Response>> responseListeners = new ArrayList();
 
-      FutureResponse(Request request)
-      {
+      FutureResponse(Request request) {
          this.request = request;
       }
 
@@ -1251,26 +1126,20 @@ public class RestClient
        * 
        * @param handler the listener to notify on success
        */
-      public FutureResponse onSuccess(Consumer<Response> handler)
-      {
+      public FutureResponse onSuccess(Consumer<Response> handler) {
          boolean done = false;
-         synchronized (this)
-         {
+         synchronized (this) {
             done = isDone();
-            if (!done)
-            {
+            if (!done) {
                successListeners.add(handler);
             }
          }
 
-         if (done && isSuccess())
-         {
-            try
-            {
+         if (done && isSuccess()) {
+            try {
                handler.accept(response);
             }
-            catch (Throwable ex)
-            {
+            catch (Throwable ex) {
                log.error("Error handling onSuccess", ex);
             }
          }
@@ -1285,26 +1154,20 @@ public class RestClient
        * 
        * @param handler the listener to notify on failure
        */
-      public FutureResponse onFailure(Consumer<Response> handler)
-      {
+      public FutureResponse onFailure(Consumer<Response> handler) {
          boolean done = false;
-         synchronized (this)
-         {
+         synchronized (this) {
             done = isDone();
-            if (!done)
-            {
+            if (!done) {
                failureListeners.add(handler);
             }
          }
 
-         if (done && !isSuccess())
-         {
-            try
-            {
+         if (done && !isSuccess()) {
+            try {
                handler.accept(response);
             }
-            catch (Throwable ex)
-            {
+            catch (Throwable ex) {
                log.error("Error handling onFailure", ex);
             }
          }
@@ -1319,26 +1182,20 @@ public class RestClient
        * 
        * @param handler the listener to notify when the Reponse has arrived
        */
-      public FutureResponse onResponse(Consumer<Response> handler)
-      {
+      public FutureResponse onResponse(Consumer<Response> handler) {
          boolean done = false;
-         synchronized (this)
-         {
+         synchronized (this) {
             done = isDone();
-            if (!done)
-            {
+            if (!done) {
                responseListeners.add(handler);
             }
          }
 
-         if (done)
-         {
-            try
-            {
+         if (done) {
+            try {
                handler.accept(response);
             }
-            catch (Throwable ex)
-            {
+            catch (Throwable ex) {
                log.error("Error handling onResponse", ex);
             }
          }
@@ -1346,49 +1203,36 @@ public class RestClient
          return this;
       }
 
-      void setResponse(Response response)
-      {
-         synchronized (this)
-         {
+      void setResponse(Response response) {
+         synchronized (this) {
             this.response = response;
 
-            if (isSuccess())
-            {
-               for (Consumer<Response> h : successListeners)
-               {
-                  try
-                  {
+            if (isSuccess()) {
+               for (Consumer<Response> h : successListeners) {
+                  try {
                      h.accept(response);
                   }
-                  catch (Throwable ex)
-                  {
+                  catch (Throwable ex) {
                      log.error("Error handling success callbacks in setResponse", ex);
                   }
                }
             }
-            else
-            {
-               for (Consumer<Response> h : failureListeners)
-               {
-                  try
-                  {
+            else {
+               for (Consumer<Response> h : failureListeners) {
+                  try {
                      h.accept(response);
                   }
-                  catch (Throwable ex)
-                  {
+                  catch (Throwable ex) {
                      log.error("Error handling failure callbacks in setResponse", ex);
                   }
                }
             }
 
-            for (Consumer<Response> h : responseListeners)
-            {
-               try
-               {
+            for (Consumer<Response> h : responseListeners) {
+               try {
                   h.accept(response);
                }
-               catch (Throwable ex)
-               {
+               catch (Throwable ex) {
                   log.error("Error handling callbacks in setResponse", ex);
                }
             }
@@ -1402,20 +1246,14 @@ public class RestClient
        * @return the Response
        */
       @Override
-      public Response get()
-      {
-         while (response == null)
-         {
-            synchronized (this)
-            {
-               if (response == null)
-               {
-                  try
-                  {
+      public Response get() {
+         while (response == null) {
+            synchronized (this) {
+               if (response == null) {
+                  try {
                      wait();
                   }
-                  catch (InterruptedException ex)
-                  {
+                  catch (InterruptedException ex) {
                      //ignore
                   }
                }
@@ -1432,17 +1270,12 @@ public class RestClient
        * @return the response or null 
        */
       @Override
-      public Response get(long timeout, TimeUnit unit) throws TimeoutException
-      {
+      public Response get(long timeout, TimeUnit unit) throws TimeoutException {
          long start = System.currentTimeMillis();
-         while (response == null)
-         {
-            synchronized (this)
-            {
-               if (response == null)
-               {
-                  try
-                  {
+         while (response == null) {
+            synchronized (this) {
+               if (response == null) {
+                  try {
                      timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
                      timeout -= System.currentTimeMillis() - start;
 
@@ -1451,8 +1284,7 @@ public class RestClient
 
                      wait(timeout);
                   }
-                  catch (InterruptedException e)
-                  {
+                  catch (InterruptedException e) {
                      //ignore
                   }
                }
@@ -1465,8 +1297,7 @@ public class RestClient
       /**
        * @return true if the response is not null and response.isSuccess()
        */
-      public boolean isSuccess()
-      {
+      public boolean isSuccess() {
          if (response != null && response.isSuccess())
             return true;
 
@@ -1476,8 +1307,7 @@ public class RestClient
       /**
        * @return the Request being run.
        */
-      public Request getRequest()
-      {
+      public Request getRequest() {
          return request;
       }
 
@@ -1485,8 +1315,7 @@ public class RestClient
        * @return false
        */
       @Override
-      public boolean isCancelled()
-      {
+      public boolean isCancelled() {
          return false;
       }
 
@@ -1495,8 +1324,7 @@ public class RestClient
        * @return false
        */
       @Override
-      public boolean cancel(boolean arg0)
-      {
+      public boolean cancel(boolean arg0) {
          return false;
       }
 
@@ -1504,8 +1332,7 @@ public class RestClient
        * @return true when response is not null.
        */
       @Override
-      public boolean isDone()
-      {
+      public boolean isDone() {
          return response != null;
       }
 
@@ -1523,8 +1350,8 @@ public class RestClient
     * That will ensure that tasks will always execute synchronously in the calling thread and will
     * be completed by the time <code>submit</code> returns.
     */
-   public static class Executor
-   {
+   public static class Executor {
+
       /**
        * The thread pool will be dynamically contracted to this minimum number of worker threads as the queue length shrinks.
        */
@@ -1544,86 +1371,71 @@ public class RestClient
 
       String                     threadPrefix = "executor";
 
-      public Executor()
-      {
+      public Executor() {
 
       }
 
-      public synchronized Future submit(final Runnable task)
-      {
-         return submit(new RunnableFuture()
-            {
-               boolean started  = false;
-               boolean canceled = false;
-               boolean done     = false;
+      public synchronized Future submit(final Runnable task) {
+         return submit(new RunnableFuture() {
 
-               @Override
-               public void run()
-               {
-                  try
-                  {
-                     if (canceled || done)
-                        return;
+            boolean started  = false;
+            boolean canceled = false;
+            boolean done     = false;
 
-                     started = true;
-                     task.run();
-                  }
-                  finally
-                  {
-                     synchronized (this)
-                     {
-                        done = true;
-                        notifyAll();
-                     }
+            @Override
+            public void run() {
+               try {
+                  if (canceled || done)
+                     return;
+
+                  started = true;
+                  task.run();
+               }
+               finally {
+                  synchronized (this) {
+                     done = true;
+                     notifyAll();
                   }
                }
+            }
 
-               @Override
-               public boolean cancel(boolean mayInterruptIfRunning)
-               {
-                  canceled = true;
-                  return !started;
-               }
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+               canceled = true;
+               return !started;
+            }
 
-               @Override
-               public boolean isCancelled()
-               {
-                  return canceled;
-               }
+            @Override
+            public boolean isCancelled() {
+               return canceled;
+            }
 
-               @Override
-               public boolean isDone()
-               {
-                  return false;
-               }
+            @Override
+            public boolean isDone() {
+               return false;
+            }
 
-               @Override
-               public Object get() throws InterruptedException, ExecutionException
-               {
-                  synchronized (this)
-                  {
-                     while (!done)
-                     {
-                        wait();
-                     }
+            @Override
+            public Object get() throws InterruptedException, ExecutionException {
+               synchronized (this) {
+                  while (!done) {
+                     wait();
                   }
-                  return null;
                }
+               return null;
+            }
 
-               @Override
-               public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
-               {
-                  synchronized (this)
-                  {
-                     while (!done)
-                     {
-                        wait(unit.toMillis(timeout));
-                     }
+            @Override
+            public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+               synchronized (this) {
+                  while (!done) {
+                     wait(unit.toMillis(timeout));
                   }
-                  return null;
                }
+               return null;
+            }
 
-            });
+         });
       }
 
       /**
@@ -1633,31 +1445,25 @@ public class RestClient
        * @param task the task to run
        * @return the task submitted
        */
-      public synchronized RunnableFuture submit(RunnableFuture task)
-      {
-         if (getThreadsMax() < 1)
-         {
+      public synchronized RunnableFuture submit(RunnableFuture task) {
+         if (getThreadsMax() < 1) {
             task.run();
          }
-         else
-         {
+         else {
             put(task);
             checkStartThread();
          }
          return task;
       }
 
-      synchronized boolean checkStartThread()
-      {
-         if (queue.size() > 0 && threads.size() < threadsMax)
-         {
-            Thread t = new Thread(new Runnable()
-               {
-                  public void run()
-                  {
-                     processQueue();
-                  }
-               }, threadPrefix + " worker");
+      synchronized boolean checkStartThread() {
+         if (queue.size() > 0 && threads.size() < threadsMax) {
+            Thread t = new Thread(new Runnable() {
+
+               public void run() {
+                  processQueue();
+               }
+            }, threadPrefix + " worker");
             t.setDaemon(true);
             threads.add(t);
             t.start();
@@ -1666,36 +1472,27 @@ public class RestClient
          return false;
       }
 
-      synchronized boolean checkEndThread()
-      {
-         if (queue.size() == 0 && threads.size() > threadsMin)
-         {
+      synchronized boolean checkEndThread() {
+         if (queue.size() == 0 && threads.size() > threadsMin) {
             threads.remove(Thread.currentThread());
             return true;
          }
          return false;
       }
 
-      int queued()
-      {
-         synchronized (queue)
-         {
+      int queued() {
+         synchronized (queue) {
             return queue.size();
          }
       }
 
-      void put(RunnableFuture task)
-      {
-         synchronized (queue)
-         {
-            while (queue.size() >= queueMax)
-            {
-               try
-               {
+      void put(RunnableFuture task) {
+         synchronized (queue) {
+            while (queue.size() >= queueMax) {
+               try {
                   queue.wait();
                }
-               catch (Exception ex)
-               {
+               catch (Exception ex) {
 
                }
             }
@@ -1704,19 +1501,14 @@ public class RestClient
          }
       }
 
-      RunnableFuture take()
-      {
+      RunnableFuture take() {
          RunnableFuture t = null;
-         synchronized (queue)
-         {
-            while (queue.size() == 0)
-            {
-               try
-               {
+         synchronized (queue) {
+            while (queue.size() == 0) {
+               try {
                   queue.wait();
                }
-               catch (InterruptedException ex)
-               {
+               catch (InterruptedException ex) {
 
                }
             }
@@ -1727,55 +1519,44 @@ public class RestClient
          return t;
       }
 
-      void processQueue()
-      {
-         try
-         {
-            while (true && !checkEndThread())
-            {
-               do
-               {
+      void processQueue() {
+         try {
+            while (true && !checkEndThread()) {
+               do {
                   RunnableFuture task = take();
                   task.run();
                }
                while (queue.size() > 0);
             }
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             ex.printStackTrace();
          }
       }
 
-      public int getThreadsMin()
-      {
+      public int getThreadsMin() {
          return threadsMin;
       }
 
-      public Executor withThreadsMin(int threadsMin)
-      {
+      public Executor withThreadsMin(int threadsMin) {
          this.threadsMin = threadsMin;
          return this;
       }
 
-      public int getThreadsMax()
-      {
+      public int getThreadsMax() {
          return threadsMax;
       }
 
-      public Executor withThreadsMax(int threadsMax)
-      {
+      public Executor withThreadsMax(int threadsMax) {
          this.threadsMax = threadsMax;
          return this;
       }
 
-      public int getQueueMax()
-      {
+      public int getQueueMax() {
          return queueMax;
       }
 
-      public Executor withQueueMax(int queueMax)
-      {
+      public Executor withQueueMax(int queueMax) {
          this.queueMax = queueMax;
          return this;
       }

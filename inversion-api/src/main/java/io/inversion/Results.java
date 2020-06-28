@@ -31,15 +31,15 @@ import io.inversion.utils.Rows.Row;
  * Dbs are not responsible for mapping from column names to json names so a Results rows 
  * and terms will use column names until they are potentially transformed by an Action.
  */
-public class Results<M extends Map> implements Iterable<M>
-{
+public class Results<M extends Map> implements Iterable<M> {
+
    public static String LAST_QUERY = null;
 
    /**
     * the query that produced these results.
     */
    protected Query      query      = null;
-   
+
    /**
     * The data the query produced.
     * <p>
@@ -49,7 +49,7 @@ public class Results<M extends Map> implements Iterable<M>
     * Actions should map them to the corresponding json property names before returning to the caller.
     */
    protected List<M>    rows       = new ArrayList();
-   
+
    /**
     * The RQL terms that will get the next page of results the DB things there are more results.
     * <p>
@@ -59,7 +59,7 @@ public class Results<M extends Map> implements Iterable<M>
     * Actions should map the keys to the corresponding json name property names before returning to the caller. 
     */
    protected List<Term> next       = new ArrayList();
-   
+
    /**
     * The total number of rows (if known) in the Db that match the query, not the number of rows returned in this Results. 
     * <p>
@@ -69,121 +69,100 @@ public class Results<M extends Map> implements Iterable<M>
    protected String     debugQuery = null;
    protected String     testQuery  = null;
 
-   public Results(Query query)
-   {
+   public Results(Query query) {
       this.query = query;
    }
 
-   public Results(Query query, int foundRows, List<M> rows)
-   {
+   public Results(Query query, int foundRows, List<M> rows) {
       this.query = query;
       this.foundRows = foundRows;
       this.rows = rows;
    }
 
-   public Query getQuery()
-   {
+   public Query getQuery() {
       return query;
    }
 
-   public Results withQuery(Query query)
-   {
+   public Results withQuery(Query query) {
       this.query = query;
       return this;
    }
 
    @Override
-   public Iterator<M> iterator()
-   {
+   public Iterator<M> iterator() {
       return rows.iterator();
    }
 
-   public int size()
-   {
+   public int size() {
       return rows.size();
    }
 
-   public Row getRow(int index)
-   {
+   public Row getRow(int index) {
       return (Row) rows.get(index);
    }
 
-   public Results setRow(int index, M row)
-   {
+   public Results setRow(int index, M row) {
       rows.set(index, row);
       return this;
    }
 
-   public List<M> getRows()
-   {
+   public List<M> getRows() {
       return rows;
    }
 
-   public Results withRows(List rows)
-   {
+   public Results withRows(List rows) {
       this.rows = rows;
       return this;
    }
 
-   public Results withRow(M row)
-   {
+   public Results withRow(M row) {
       rows.add(row);
       return this;
    }
 
-   public List<Term> getNext()
-   {
+   public List<Term> getNext() {
       return new ArrayList(next);
    }
 
-   public Results withNext(Term next)
-   {
+   public Results withNext(Term next) {
       this.next.add(next);
       return this;
    }
 
-   public Results withNext(List<Term> next)
-   {
+   public Results withNext(List<Term> next) {
       if (next != null)
          this.next.addAll(next);
       return this;
    }
 
-   public int getFoundRows()
-   {
+   public int getFoundRows() {
       return foundRows;
    }
 
-   public Results withFoundRows(int foundRows)
-   {
+   public Results withFoundRows(int foundRows) {
       this.foundRows = foundRows;
       return this;
    }
 
-   public boolean isDryRun()
-   {
+   public boolean isDryRun() {
       return query.isDryRun();
    }
 
-   public String getDebugQuery()
-   {
+   public String getDebugQuery() {
       return debugQuery;
    }
 
-   public Results withDebugQuery(String debugQuery)
-   {
+   public Results withDebugQuery(String debugQuery) {
       LAST_QUERY = debugQuery;
       this.debugQuery = debugQuery;
       return this;
    }
 
-   public String getTestQuery()
-   {
+   public String getTestQuery() {
       return testQuery;
    }
 
-   public Results withTestQuery(String testQuery)
-   {
+   public Results withTestQuery(String testQuery) {
       LAST_QUERY = testQuery;
       this.testQuery = testQuery;
       return this;

@@ -10,28 +10,23 @@ import io.inversion.rql.AbstractRqlTest;
 import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class ElasticRqlUnitTest extends AbstractRqlTest
-{
+public class ElasticRqlUnitTest extends AbstractRqlTest {
 
-   public ElasticRqlUnitTest()
-   {
+   public ElasticRqlUnitTest() {
       super(ElasticsearchQuery.class.getName(), "elasticsearch");
    }
 
    @Override
-   public void initializeDb()
-   {
+   public void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
+      if (db == null) {
          db = new ElasticsearchDb("elasticsearch");
          setDb(db);
       }
    }
 
    @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestSuite(RqlValidationSuite suite) {
 
       suite//
            .withResult("eq", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"filter\" : [ { \"term\" : { \"orderID\" : { \"value\" : \"10248\", \"boost\" : 1.0 } } }, { \"term\" : { \"shipCountry\" : { \"value\" : \"France\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
@@ -39,7 +34,8 @@ public class ElasticRqlUnitTest extends AbstractRqlTest
            .withResult("n", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must_not\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("nn", "index: orders, QueryBuilder={ \"query\" : { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("emp", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"should\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } }, { \"bool\" : { \"must_not\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
-           .withResult("nemp", "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must\" : [ { \"bool\" : { \"must_not\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, { \"bool\" : { \"must\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
+           .withResult("nemp",
+                 "index: orders, QueryBuilder={ \"query\" : { \"bool\" : { \"must\" : [ { \"bool\" : { \"must_not\" : [ { \"term\" : { \"shipRegion\" : { \"value\" : \"\", \"boost\" : 1.0 } } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, { \"bool\" : { \"must\" : [ { \"exists\" : { \"field\" : \"shipRegion\", \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } } ], \"adjust_pure_negative\" : true, \"boost\" : 1.0 } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("sw", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"Franc*\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("ew", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"*nce\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//
            .withResult("w", "index: orders, QueryBuilder={ \"query\" : { \"wildcard\" : { \"shipCountry\" : { \"wildcard\" : \"*ance*\", \"boost\" : 1.0 } } }, \"sort\" : [ { \"id\" : { \"order\" : \"asc\" } } ] }")//

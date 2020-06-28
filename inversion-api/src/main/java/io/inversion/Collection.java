@@ -67,8 +67,8 @@ import io.inversion.utils.Utils;
  * TODO: need tests for entity keys with commas
  *   
  */
-public class Collection extends Rule<Collection> implements Serializable
-{
+public class Collection extends Rule<Collection> implements Serializable {
+
    /**
     * The backend storage adapter that probably generated this Collection and associated Indexes and Relationships.
     */
@@ -108,13 +108,11 @@ public class Collection extends Rule<Collection> implements Serializable
     */
    protected boolean                 exclude       = false;
 
-   public Collection()
-   {
+   public Collection() {
 
    }
 
-   public Collection(String defaultName)
-   {
+   public Collection(String defaultName) {
       withName(defaultName);
       withTableName(defaultName);
    }
@@ -123,8 +121,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return the default collection match rule: "{collection:" + getName() + "}/[:resource]/[:relationship]/*"
     */
    @Override
-   protected RuleMatcher getDefaultIncludeMatch()
-   {
+   protected RuleMatcher getDefaultIncludeMatch() {
       return new RuleMatcher(null, new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*"));
    }
 
@@ -136,16 +133,13 @@ public class Collection extends Rule<Collection> implements Serializable
     * 
     * @return the true if all columns are foreign keys.  
     */
-   public boolean isLinkTbl()
-   {
+   public boolean isLinkTbl() {
       if (properties.size() == 0)
          return false;
 
       boolean isLinkTbl = true;
-      for (Property c : properties)
-      {
-         if (!c.isFk())
-         {
+      for (Property c : properties) {
+         if (!c.isFk()) {
             isLinkTbl = false;
             break;
          }
@@ -162,8 +156,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return the Property with a case insensitive json name or column name match.
     * @see #findProperty(String) 
     */
-   public Property getProperty(String jsonOrColumnName)
-   {
+   public Property getProperty(String jsonOrColumnName) {
       return findProperty(jsonOrColumnName);
    }
 
@@ -176,8 +169,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param jsonOrColumnName
     * @return the Property with a case insensitive json name or column name match. 
     */
-   public Property findProperty(String jsonOrColumnName)
-   {
+   public Property findProperty(String jsonOrColumnName) {
       Property prop = getPropertyByJsonName(jsonOrColumnName);
       if (prop == null)
          prop = getPropertyByColumnName(jsonOrColumnName);
@@ -190,10 +182,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param name
     * @return
     */
-   public Property getPropertyByJsonName(String jsonName)
-   {
-      for (Property prop : properties)
-      {
+   public Property getPropertyByJsonName(String jsonName) {
+      for (Property prop : properties) {
          if (jsonName.equalsIgnoreCase(prop.getJsonName()))
             return prop;
       }
@@ -205,10 +195,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param name
     * @return
     */
-   public Property getPropertyByColumnName(String columnName)
-   {
-      for (Property col : properties)
-      {
+   public Property getPropertyByColumnName(String columnName) {
+      for (Property col : properties) {
          if (columnName.equalsIgnoreCase(col.getColumnName()))
             return col;
       }
@@ -218,13 +206,11 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return true if <code>object</code> has the same Db and name as this Collection
     */
-   public boolean equals(Object object)
-   {
+   public boolean equals(Object object) {
       if (object == this)
          return true;
 
-      if (object instanceof Collection)
-      {
+      if (object instanceof Collection) {
          Collection coll = (Collection) object;
          return (db == null || db == coll.db) && Utils.equal(getTableName(), coll.getTableName()) && Utils.equal(getName(), coll.getName());
       }
@@ -234,16 +220,14 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return the underlying Db
     */
-   public Db getDb()
-   {
+   public Db getDb() {
       return db;
    }
 
    /**
     * @param db the db to set
     */
-   public Collection withDb(Db db)
-   {
+   public Collection withDb(Db db) {
       this.db = db;
       return this;
    }
@@ -251,16 +235,14 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return the tableName backing this Collection in the Db.
     */
-   public String getTableName()
-   {
+   public String getTableName() {
       return tableName != null ? tableName : name;
    }
 
    /**
     * @param name the name to set
     */
-   public Collection withTableName(String name)
-   {
+   public Collection withTableName(String name) {
       this.tableName = name;
       return this;
    }
@@ -269,16 +251,14 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return the name of the Collection defaulting to <code>tableName</code> if <code>name</code> is null.
     */
    @Override
-   public String getName()
-   {
+   public String getName() {
       return name != null ? name : tableName;
    }
 
    /**
     * @return a shallow copy of <code>properties</code>
     */
-   public List<Property> getProperties()
-   {
+   public List<Property> getProperties() {
       ArrayList props = new ArrayList(properties);
       //      Collections.sort(props);
       return props;
@@ -297,10 +277,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * 
     * @param props
     */
-   public Collection withProperties(Property... props)
-   {
-      for (Property prop : props)
-      {
+   public Collection withProperties(Property... props) {
+      for (Property prop : props) {
          if (getPropertyByJsonName(prop.getJsonName()) != null //
                || getPropertyByColumnName(prop.getColumnName()) != null)
             continue;
@@ -322,8 +300,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return this
     * @see {@ io.inversion.Property(String, String)
     */
-   public Collection withProperty(String name, String type)
-   {
+   public Collection withProperty(String name, String type) {
       return withProperty(name, type, true);
    }
 
@@ -336,13 +313,11 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return this
     * @see {@ io.inversion.Property(String, String, boolean)
     */
-   public Collection withProperty(String name, String type, boolean nullable)
-   {
+   public Collection withProperty(String name, String type, boolean nullable) {
       return withProperties(new Property(name, type, nullable));
    }
 
-   public void removeProperty(Property prop)
-   {
+   public void removeProperty(Property prop) {
       properties.remove(prop);
    }
 
@@ -352,23 +327,19 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return the Index that should be treated as the primary key for the Collection
     * @see {@code io.inversion.Index.isUnique}
     */
-   public Index getPrimaryIndex()
-   {
+   public Index getPrimaryIndex() {
       Index found = null;
-      for (Index index : indexes)
-      {
+      for (Index index : indexes) {
          if (!index.isUnique())
             continue;
 
          if (index.size() == 0)
             return index;
 
-         if (found == null)
-         {
+         if (found == null) {
             found = index;
          }
-         else if (index.size() < found.size())
-         {
+         else if (index.size() < found.size()) {
             found = index;
          }
       }
@@ -381,10 +352,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param indexName
     * @return the requested Index
     */
-   public Index getIndex(String indexName)
-   {
-      for (Index index : indexes)
-      {
+   public Index getIndex(String indexName) {
+      for (Index index : indexes) {
          if (indexName.equalsIgnoreCase(index.getName()))
             return index;
       }
@@ -394,15 +363,12 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return a shallow copy of <code>indexes</code>
     */
-   public ArrayList<Index> getIndexes()
-   {
+   public ArrayList<Index> getIndexes() {
       return new ArrayList(indexes);
    }
 
-   public Collection withIndexes(Index... indexes)
-   {
-      for (Index index : indexes)
-      {
+   public Collection withIndexes(Index... indexes) {
+      for (Index index : indexes) {
          if (!this.indexes.contains(index))
             this.indexes.add(index);
 
@@ -428,15 +394,12 @@ public class Collection extends Rule<Collection> implements Serializable
     * 
     * @see {@link io.inversion.Index(String, String, boolean, String...)}
     */
-   public Collection withIndex(String name, String type, boolean unique, String... propertyNames)
-   {
+   public Collection withIndex(String name, String type, boolean unique, String... propertyNames) {
       Property[] properties = new Property[propertyNames.length];
-      for (int i = 0; propertyNames != null && i < propertyNames.length; i++)
-      {
+      for (int i = 0; propertyNames != null && i < propertyNames.length; i++) {
          String propName = propertyNames[i];
          Property prop = getProperty(propName);
-         if (prop == null)
-         {
+         if (prop == null) {
             System.out.println(this.properties);
             prop = getProperty(propName);
             ApiException.throw500InternalServerError("Property {} does not exist so it can't be added to the index {}", propertyNames[i], name);
@@ -446,13 +409,11 @@ public class Collection extends Rule<Collection> implements Serializable
       }
 
       Index index = getIndex(name);
-      if (index == null)
-      {
+      if (index == null) {
          index = new Index(name, type, unique, properties);
          withIndexes(index);
       }
-      else
-      {
+      else {
          index.withType(type);
          index.withUnique(unique);
          index.withProperties(properties);
@@ -461,18 +422,15 @@ public class Collection extends Rule<Collection> implements Serializable
       return this;
    }
 
-   public void removeIndex(Index index)
-   {
+   public void removeIndex(Index index) {
       indexes.remove(index);
    }
 
-   public boolean isExclude()
-   {
+   public boolean isExclude() {
       return exclude;
    }
 
-   public Collection withExclude(boolean exclude)
-   {
+   public Collection withExclude(boolean exclude) {
       this.exclude = exclude;
       return this;
    }
@@ -481,10 +439,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param name
     * @return the Relationship with a case insensitve name match
     */
-   public Relationship getRelationship(String name)
-   {
-      for (Relationship r : relationships)
-      {
+   public Relationship getRelationship(String name) {
+      for (Relationship r : relationships) {
          if (name.equalsIgnoreCase(r.getName()))
             return r;
       }
@@ -494,13 +450,11 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return a shallow copy of <code>relationshiops</code.
     */
-   public List<Relationship> getRelationships()
-   {
+   public List<Relationship> getRelationships() {
       return new ArrayList(relationships);
    }
 
-   public void removeRelationship(Relationship relationship)
-   {
+   public void removeRelationship(Relationship relationship) {
       relationships.remove(relationship);
    }
 
@@ -508,8 +462,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param relationships the relationships to set
     * @return this
     */
-   public Collection withRelationships(Relationship... relationships)
-   {
+   public Collection withRelationships(Relationship... relationships) {
       for (Relationship rel : relationships)
          withRelationship(rel);
       return this;
@@ -521,13 +474,11 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param relationship
     * @return this
     */
-   public Collection withRelationship(Relationship relationship)
-   {
+   public Collection withRelationship(Relationship relationship) {
       String name = relationship.getName();
 
       Relationship existing = name != null ? getRelationship(name) : null;
-      if (existing == null)
-      {
+      if (existing == null) {
          if (!relationships.contains(relationship))
             relationships.add(relationship);
 
@@ -545,11 +496,9 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return this
     * @see #withManyToOneRelationship(Collection, String, Property...)
     */
-   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps)
-   {
+   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps) {
       Property[] properties = new Property[childFkProps.length];
-      for (int i = 0; i < childFkProps.length; i++)
-      {
+      for (int i = 0; i < childFkProps.length; i++) {
          Property prop = getProperty(childFkProps[i]);
 
          if (prop == null)
@@ -572,8 +521,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param childFkProps  this Collections Properties that are the foreign keys to <coe>
     * @return this
     */
-   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps)
-   {
+   public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps) {
       if (childFkProps == null || childFkProps.length == 0)
          ApiException.throw500InternalServerError("A relationship must include at least one childFkProp");
 
@@ -583,10 +531,8 @@ public class Collection extends Rule<Collection> implements Serializable
       withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
 
       Index primaryIdx = parentCollection.getPrimaryIndex();
-      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
-      {
-         for (int i = 0; i < childFkProps.length; i++)
-         {
+      if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
+         for (int i = 0; i < childFkProps.length; i++) {
             childFkProps[i].withPk(primaryIdx.getProperty(i));
          }
       }
@@ -604,11 +550,9 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return this
     * @see #withOneToManyRelationship(String, Collection, String, Property...)
     */
-   public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps)
-   {
+   public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps) {
       Property[] properties = new Property[childFkProps.length];
-      for (int i = 0; i < childFkProps.length; i++)
-      {
+      for (int i = 0; i < childFkProps.length; i++) {
          Property prop = childCollection.getProperty(childFkProps[i]);
 
          if (prop == null)
@@ -631,8 +575,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param childFkProps  this Collections Properties that are the foreign keys to <coe>
     * @return this
     */
-   public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps)
-   {
+   public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps) {
       Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
       childCollection.withIndexes(fkIdx);
 
@@ -640,10 +583,8 @@ public class Collection extends Rule<Collection> implements Serializable
       childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
       Index primaryIdx = getPrimaryIndex();
-      if (primaryIdx != null && childFkProps.length == primaryIdx.size())
-      {
-         for (int i = 0; i < childFkProps.length; i++)
-         {
+      if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
+         for (int i = 0; i < childFkProps.length; i++) {
             childFkProps[i].withPk(primaryIdx.getProperty(i));
          }
       }
@@ -656,8 +597,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @param tableName
     * @return true if the name or aliases patch
     */
-   public boolean hasName(String nameOrAlias)
-   {
+   public boolean hasName(String nameOrAlias) {
       if (nameOrAlias == null)
          return false;
 
@@ -667,13 +607,11 @@ public class Collection extends Rule<Collection> implements Serializable
    /**
     * @return a shallow clone of <code>aliases</code>
     */
-   public Set<String> getAliases()
-   {
+   public Set<String> getAliases() {
       return new HashSet(aliases);
    }
 
-   public Collection withAliases(String... aliases)
-   {
+   public Collection withAliases(String... aliases) {
       this.aliases.addAll(Arrays.asList(aliases));
       return this;
    }
@@ -685,8 +623,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @return a url safe encoding of the resources primary index values
     * @see #encodeResourceKey(Map, Index)
     */
-   public String encodeResourceKey(Map<String, Object> values)
-   {
+   public String encodeResourceKey(Map<String, Object> values) {
       Index index = getPrimaryIndex();
       if (index == null)
          return null;
@@ -719,11 +656,9 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #encodeStr(String)
     * @see #decodeResourceKeys(Index, String)
     */
-   public static String encodeResourceKey(Map values, Index index)
-   {
+   public static String encodeResourceKey(Map values, Index index) {
       StringBuffer key = new StringBuffer("");
-      for (String colName : index.getColumnNames())
-      {
+      for (String colName : index.getColumnNames()) {
          Object val = values.get(colName);
          if (Utils.empty(val))
             return null;
@@ -746,11 +681,9 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #encodeStr(String)
     * @see #encodeResourceKey(Map, Index)
     */
-   public static String encodeResourceKey(List pieces)
-   {
+   public static String encodeResourceKey(List pieces) {
       StringBuffer resourceKey = new StringBuffer("");
-      for (int i = 0; i < pieces.size(); i++)
-      {
+      for (int i = 0; i < pieces.size(); i++) {
          Object piece = pieces.get(i);
          if (piece == null)
             ApiException.throw500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
@@ -762,8 +695,7 @@ public class Collection extends Rule<Collection> implements Serializable
       return resourceKey.toString();
    }
 
-   public static void main(String[] args)
-   {
+   public static void main(String[] args) {
       System.out.println(encodeStr("abcd/efg"));
 
    }
@@ -784,8 +716,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #decodeResourceKeys(Index, String)
     * @see #decodeStr(String)
     */
-   public static String encodeStr(String string)
-   {
+   public static String encodeStr(String string) {
       //Pattern p = Pattern.compile("[^A-Za-z0-9]");
 
       Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
@@ -793,8 +724,7 @@ public class Collection extends Rule<Collection> implements Serializable
 
       Matcher m = p.matcher(string);
       StringBuffer sb = new StringBuffer();
-      while (m.find())
-      {
+      while (m.find()) {
          String chars = m.group();
          String hex = new String(Hex.encodeHex(chars.getBytes()));
          while (hex.length() < 4)
@@ -816,15 +746,12 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #decodeResourceKeys(Index, String)
     * @see #encodeStr(String)
     */
-   public static String decodeStr(String string)
-   {
-      try
-      {
+   public static String decodeStr(String string) {
+      try {
          Pattern p = Pattern.compile("\\@[0-9a-f]{4}");
          Matcher m = p.matcher(string);
          StringBuffer sb = new StringBuffer();
-         while (m.find())
-         {
+         while (m.find()) {
             String group = m.group();
             String hex = group.substring(1);
             String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
@@ -833,8 +760,7 @@ public class Collection extends Rule<Collection> implements Serializable
          m.appendTail(sb);
          return sb.toString();
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
@@ -847,14 +773,12 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #decodeResourceKeys(Index, String)
     * @see #encodeResourceKey(Map, Index)
     */
-   public Row decodeResourceKey(String inKey)
-   {
+   public Row decodeResourceKey(String inKey) {
       return decodeResourceKeys(inKey).iterator().next();
    }
 
    //parses val1~val2,val3~val4,val5~valc6
-   public Rows decodeResourceKeys(String inKeys)
-   {
+   public Rows decodeResourceKeys(String inKeys) {
       Index index = getPrimaryIndex();
       if (index == null)
          ApiException.throw500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
@@ -871,8 +795,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #decodeResourceKeys(Index, String)
     * @see #encodeResourceKey(Map, Index)
     */
-   public Row decodeResourceKey(Index index, String inKey)
-   {
+   public Row decodeResourceKey(Index index, String inKey) {
       return decodeResourceKeys(index, inKey).iterator().next();
    }
 
@@ -885,8 +808,7 @@ public class Collection extends Rule<Collection> implements Serializable
     * @see #encodeStr(String)
     * @see #decodeStr(String)
     */
-   public Rows decodeResourceKeys(Index index, String inKeys)
-   {
+   public Rows decodeResourceKeys(Index index, String inKeys) {
       //someone passed in the whole href...no problem, just strip it out.
       if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
          inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
@@ -894,16 +816,14 @@ public class Collection extends Rule<Collection> implements Serializable
       List colNames = index.getColumnNames();
 
       Rows rows = new Rows(colNames);
-      for (String key : Utils.explode(",", inKeys))
-      {
+      for (String key : Utils.explode(",", inKeys)) {
          List row = new ArrayList();
          row.addAll(Utils.explode("~", key));
 
          if (row.size() != colNames.size())
             ApiException.throw400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
 
-         for (int i = 0; i < colNames.size(); i++)
-         {
+         for (int i = 0; i < colNames.size(); i++) {
             Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
 
             if (((String) value).length() == 0)
@@ -1022,10 +942,8 @@ public class Collection extends Rule<Collection> implements Serializable
     * 
     * @return a deep copy of this Collection referencing the same underlying Db instance.
     */
-   public Collection copy()
-   {
-      try
-      {
+   public Collection copy() {
+      try {
          ByteArrayOutputStream baos = new ByteArrayOutputStream();
          ObjectOutputStream oos;
 
@@ -1039,8 +957,7 @@ public class Collection extends Rule<Collection> implements Serializable
          c.db = this.db;
          return c;
       }
-      catch (Exception e)
-      {
+      catch (Exception e) {
          Utils.rethrow(e);
       }
       return null;

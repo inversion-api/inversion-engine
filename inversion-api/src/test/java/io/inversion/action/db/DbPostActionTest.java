@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,11 +27,10 @@ import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DbPostActionTest
-{
+public class DbPostActionTest {
+
    @Test
-   public void testCollapses1()
-   {
+   public void testCollapses1() {
       JSNode parent = new JSNode();
       parent.put("name", "testing");
 
@@ -60,8 +59,7 @@ public class DbPostActionTest
    }
 
    @Test
-   public void testCollapses2()
-   {
+   public void testCollapses2() {
       JSNode parent = new JSNode();
       parent.put("name", "testing");
 
@@ -71,8 +69,7 @@ public class DbPostActionTest
       child1.put("name", "child1");
 
       JSArray arrChildren = new JSArray();
-      for (int i = 0; i < 5; i++)
-      {
+      for (int i = 0; i < 5; i++) {
          arrChildren.add(new JSNode("href", "href://child" + i, "name", "child" + i));
       }
 
@@ -86,8 +83,7 @@ public class DbPostActionTest
       benchmark = JSNode.parseJsonNode(parent.toString());
       benchmark.remove("arrChildren");
       arrChildren = new JSArray();
-      for (int i = 0; i < 5; i++)
-      {
+      for (int i = 0; i < 5; i++) {
          arrChildren.add(new JSNode("href", "href://child" + i));
       }
       benchmark.put("arrChildren", arrChildren);
@@ -97,8 +93,7 @@ public class DbPostActionTest
    }
 
    @Test
-   public void testCollapses3()
-   {
+   public void testCollapses3() {
       JSNode parent = new JSNode();
       parent.put("name", "testing");
 

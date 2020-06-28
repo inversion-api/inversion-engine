@@ -24,26 +24,22 @@ import io.inversion.Relationship;
 
 import org.junit.jupiter.api.Test;
 
-public abstract class AbstractRqlTest implements AbstractEngineTest
-{
+public abstract class AbstractRqlTest implements AbstractEngineTest {
+
    protected String queryClass = null;
    protected String urlPrefix  = null;
    protected Engine engine     = null;
    protected String type       = null;
    protected Db     db         = null;
 
-   public AbstractRqlTest(String queryClass, String dbType)
-   {
+   public AbstractRqlTest(String queryClass, String dbType) {
       this.queryClass = queryClass;
       this.type = dbType;
    }
 
-
    @Test
-   public void test_doSelect_unitTests() throws Exception
-   {
-      if (isIntegTest())
-      {
+   public void test_doSelect_unitTests() throws Exception {
+      if (isIntegTest()) {
          System.out.println("Skipping units tests...I have 'IntegTest' in my classname so I am skipping the unit tests expecting a diffent subclass without 'IntegTest' in the name is running those.");
          return;
       }
@@ -55,10 +51,8 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
    }
 
    @Test
-   public void test_doSelect_integTests() throws Exception
-   {
-      if (!isIntegTest())
-      {
+   public void test_doSelect_integTests() throws Exception {
+      if (!isIntegTest()) {
          System.out.println("Skipping integ tests...subclasse me with 'IntegTest' in my classname to get me to run integ tests");
          return;
       }
@@ -69,8 +63,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
       suite.runIntegTests(engine, urlPrefix);
    }
 
-   protected void customizeUnitTestTables(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestTables(RqlValidationSuite suite) {
       Collection orders = new Collection("orders")//s
                                                   .withProperty("orderId", "VARCHAR")//
                                                   .withProperty("customerId", "INTEGER")//
@@ -129,8 +122,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
    /**
     * This is here as a template that you can copy 
     */
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestSuite(RqlValidationSuite suite) {
 
       suite//
            .withResult("eq", "PUT YOUR SQL HERE")//
@@ -180,12 +172,11 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
            .withResult("manyToOneExistsEq", "")//
            .withResult("manyToOneNotExistsNe", "")//
            .withResult("manyTManyNotExistsNe", "")//
-           .withResult("eqNonexistantColumn",  "");
+           .withResult("eqNonexistantColumn", "");
       ;
    }
 
-   protected void customizeIntegTestTables(RqlValidationSuite suite)
-   {
+   protected void customizeIntegTestTables(RqlValidationSuite suite) {
       customizeUnitTestTables(suite);
    }
 
@@ -194,38 +185,31 @@ public abstract class AbstractRqlTest implements AbstractEngineTest
     * @param suite
     */
 
-   protected void customizeIntegTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeIntegTestSuite(RqlValidationSuite suite) {
       customizeUnitTestSuite(suite);
    }
 
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return engine;
    }
 
-   public void setEngine(Engine engine)
-   {
+   public void setEngine(Engine engine) {
       this.engine = engine;
    }
 
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
-   public void setType(String type)
-   {
+   public void setType(String type) {
       this.type = type;
    }
 
-   public Db getDb()
-   {
+   public Db getDb() {
       return db;
    }
 
-   public void setDb(Db db)
-   {
+   public void setDb(Db db) {
       this.db = db;
    }
 

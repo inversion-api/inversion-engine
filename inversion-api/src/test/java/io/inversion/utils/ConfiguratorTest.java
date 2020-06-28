@@ -33,58 +33,55 @@ import io.inversion.action.misc.MockAction;
 import io.inversion.action.security.AuthAction;
 
 @TestInstance(Lifecycle.PER_METHOD)
-public class ConfiguratorTest
-{
+public class ConfiguratorTest {
+
    @BeforeEach
-   public void clearConfiguration()
-   {
+   public void clearConfiguration() {
       Config.clearConfiguration();
    }
-   
-//   /**
-//    * Test that properties files are loaded for the given
-//    * profile in the correct order allowing keys to be
-//    * overridden. 
-//    */
-//   @Test
-//   public void profileOverrides()
-//   {
-//      Config.loadConfiguration("io/inversion/utils/profileOverrides", "dev");
-//
-//      Engine dev = new Engine();
-//      dev.startup();
-//
-//      Api devApi = dev.getApi("northwind");
-//      assertEquals("20", ((MockDb) devApi.getDb("db")).getProperty1());
-//      assertEquals(0, devApi.getActions().size());
-//
-//      Config.loadConfiguration("io/inversion/utils/profileOverrides", "prod");
-//      Engine prod = new Engine();
-//      prod.startup();
-//
-//      Api prodApi = prod.getApi("northwind");
-//
-//      assertEquals("70", ((MockDb) prodApi.getDb("db")).getProperty1());
-//      assertEquals(1, prodApi.getActions().size());
-//      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
-//   }
-   
+
+   //   /**
+   //    * Test that properties files are loaded for the given
+   //    * profile in the correct order allowing keys to be
+   //    * overridden. 
+   //    */
+   //   @Test
+   //   public void profileOverrides()
+   //   {
+   //      Config.loadConfiguration("io/inversion/utils/profileOverrides", "dev");
+   //
+   //      Engine dev = new Engine();
+   //      dev.startup();
+   //
+   //      Api devApi = dev.getApi("northwind");
+   //      assertEquals("20", ((MockDb) devApi.getDb("db")).getProperty1());
+   //      assertEquals(0, devApi.getActions().size());
+   //
+   //      Config.loadConfiguration("io/inversion/utils/profileOverrides", "prod");
+   //      Engine prod = new Engine();
+   //      prod.startup();
+   //
+   //      Api prodApi = prod.getApi("northwind");
+   //
+   //      assertEquals("70", ((MockDb) prodApi.getDb("db")).getProperty1());
+   //      assertEquals(1, prodApi.getActions().size());
+   //      assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
+   //   }
+
    @Test
-   public void handWiredApiGetsConfigged()
-   {
+   public void handWiredApiGetsConfigged() {
       MockAction mockAction = new MockAction().withName("mockAction");
-      Endpoint endpoint = new Endpoint().withIncludeOn("*",  "*").withName("myEndpoint").withAction(mockAction);
-      
+      Endpoint endpoint = new Endpoint().withIncludeOn("*", "*").withName("myEndpoint").withAction(mockAction);
+
       Api api = new Api("myApi").withEndpoint(endpoint);
-      
+
       Engine e = new Engine().withApi(api);
       e.withConfigPath("io/inversion/utils/handWiredApiGetsConfigged");
       e.startup();
-      
+
       assertEquals("http://127.0.0.1/testvalue", mockAction.getJsonUrl());
    }
-   
-   
+
    //
    //   /**
    //    * Test the stability of properties file encoding/decoding

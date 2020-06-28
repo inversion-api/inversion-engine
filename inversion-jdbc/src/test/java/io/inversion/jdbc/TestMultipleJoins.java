@@ -33,18 +33,17 @@ import io.inversion.Response;
 import io.inversion.action.db.DbAction;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestMultipleJoins
-{
+public class TestMultipleJoins {
+
    Engine engine = null;
    Api    api    = null;
    Db     db     = null;
 
    @BeforeAll
-   public void beforeAll_initializeEngine()
-   {
+   public void beforeAll_initializeEngine() {
       Chain.resetAll();
       JdbcConnectionLocal.closeAll();
-      
+
       String crmDdlUrl = JdbcDb.class.getResource("crm-h2.ddl").toString();
       db = JdbcDbFactory.bootstrapH2(getClass().getName(), crmDdlUrl);
 
@@ -58,17 +57,14 @@ public class TestMultipleJoins
    }
 
    @AfterAll
-   public void afterAll_finalizeEngine()
-   {
-      if (db != null)
-      {
+   public void afterAll_finalizeEngine() {
+      if (db != null) {
          db.shutdown();
       }
    }
 
    @Test
-   public void testRelatedCollectionJoinSelect2() throws Exception
-   {
+   public void testRelatedCollectionJoinSelect2() throws Exception {
 
       //      String sql = "";
       //      sql += "SELECT DISTINCT \"CUSTOMER\".*";

@@ -13,8 +13,7 @@ import io.inversion.Response;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 
-public class JdbcConfiguratorTest
-{
+public class JdbcConfiguratorTest {
    //TODO: put this back in
    //   @Test
    //   public void encodingDecodingEncoding_shouldNotChangeModel() throws Exception

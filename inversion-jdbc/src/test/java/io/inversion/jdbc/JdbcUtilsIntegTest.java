@@ -30,8 +30,7 @@ import org.junit.jupiter.api.Test;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.jdbc.JdbcUtils;
 
-public class JdbcUtilsIntegTest
-{
+public class JdbcUtilsIntegTest {
    //  TODO: this was taken out because of h2 case frustrations with columns not found
    //   @Test
    //   public void test_h2Upsert() throws Exception
@@ -48,8 +47,7 @@ public class JdbcUtilsIntegTest
    //   }
 
    @Test
-   public void test_mysqlUpsert() throws Exception
-   {
+   public void test_mysqlUpsert() throws Exception {
       JdbcDb db = JdbcDbFactory.bootstrapMySql(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "Orders", "Customers");
@@ -63,8 +61,7 @@ public class JdbcUtilsIntegTest
    }
 
    @Test
-   public void test_postgresUpsert() throws Exception
-   {
+   public void test_postgresUpsert() throws Exception {
       JdbcDb db = JdbcDbFactory.bootstrapPostgres(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "orders", "customers");
@@ -80,8 +77,7 @@ public class JdbcUtilsIntegTest
     * docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Jmk38zZVn' -p 1434:1433 -d mcr.microsoft.com/mssql/server:2017-latest
     */
    @Test
-   public void test_sqlserverlUpsert() throws Exception
-   {
+   public void test_sqlserverlUpsert() throws Exception {
       JdbcDb db = JdbcDbFactory.bootstrapSqlServer(getClass().getSimpleName());
       Connection conn = db.getConnection();
       runTests(conn, "orders", "customers");
@@ -93,8 +89,7 @@ public class JdbcUtilsIntegTest
       assertEquals("John Doe Co ZZZZ5", JdbcUtils.selectValue(conn, "SELECT \"CompanyName\" FROM customers WHERE \"CustomerID\" = 'ZZZZ5'"));
    }
 
-   public void runTests(Connection conn, String ordersTblName, String customersTblName) throws Exception
-   {
+   public void runTests(Connection conn, String ordersTblName, String customersTblName) throws Exception {
       List returnedKeys = null;
 
       returnedKeys = JdbcUtils.upsert(conn, //
@@ -139,31 +134,25 @@ public class JdbcUtilsIntegTest
       assertEquals("{CustomerID=ZZZZ5}", returnedKeys.get(6) + "");
    }
 
-   Map<String, Object> row(Object... keyValues)
-   {
+   Map<String, Object> row(Object... keyValues) {
       Map row = new LinkedHashMap();
-      for (int i = 0; i < keyValues.length - 1; i += 2)
-      {
+      for (int i = 0; i < keyValues.length - 1; i += 2) {
          row.put(keyValues[i], keyValues[i + 1]);
       }
       return row;
    }
 
-   List<Map<String, Object>> rows(Map... maps)
-   {
+   List<Map<String, Object>> rows(Map... maps) {
       ArrayList rows = new ArrayList();
-      for (Map row : maps)
-      {
+      for (Map row : maps) {
          rows.add(row);
       }
       return rows;
    }
 
-   List list(String... values)
-   {
+   List list(String... values) {
       ArrayList list = new ArrayList();
-      for (Object value : values)
-      {
+      for (Object value : values) {
          list.add(value);
       }
       return list;

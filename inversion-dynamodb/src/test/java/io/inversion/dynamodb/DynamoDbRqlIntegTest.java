@@ -28,33 +28,27 @@ import io.inversion.rql.RqlValidationSuite;
 import io.inversion.utils.Utils;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest
-{
-   public DynamoDbRqlIntegTest() throws Exception
-   {
+public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest {
+
+   public DynamoDbRqlIntegTest() throws Exception {
       super();
    }
 
    @Override
-   public void initializeDb()
-   {
+   public void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
-         try
-         {
+      if (db == null) {
+         try {
             db = DynamoDbFactory.buildNorthwindDynamoDb();
          }
-         catch (Exception e)
-         {
+         catch (Exception e) {
             Utils.rethrow(e);
          }
          setDb(db);
       }
    }
 
-   protected void customizeIntegTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeIntegTestSuite(RqlValidationSuite suite) {
       super.customizeIntegTestSuite(suite);
 
       suite//
@@ -64,8 +58,7 @@ public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest
            .withResult("nn", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("emp", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("nemp", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-           .withResult("likeMiddle", "UNSUPPORTED")
-           .withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
+           .withResult("likeMiddle", "UNSUPPORTED").withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
            .withResult("likeEndsWith", "UNSUPPORTED")//
            .withResult("sw", "QuerySpec:'gs3' nameMap={#var1=sk, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//
            .withResult("ew", "UNSUPPORTED")//
@@ -97,13 +90,12 @@ public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest
            .withResult("limit", "DynamoDb: QuerySpec:'gs3' maxPageSize=7 nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)'")//
            .withResult("page", "UNSUPPORTED")//
            .withResult("pageNum", "UNSUPPORTED")//
-           
+
            .withResult("after", "QuerySpec:'gs3' nameMap={#var1=sk} valueMap={:val1=ORDER} exclusiveStartKey='[{sk: ORDER}, {hk: 10254}] keyConditionExpression='(#var1 = :val1)'")//
-           
+
            .withResult("sort", "QuerySpec:'gs3' nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false")//
            .withResult("order", "DynamoDb: QuerySpec:'gs2' nameMap={#var1=gs2hk} valueMap={:val1=12345} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false")//
-           
-           
+
            .withResult("onToManyExistsEq", "UNSUPPORTED")//
            .withResult("onToManyNotExistsNe", "UNSUPPORTED")//
            .withResult("manyToOneExistsEq", "UNSUPPORTED")//

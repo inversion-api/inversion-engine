@@ -44,8 +44,8 @@ import io.inversion.utils.Utils;
 /**
  * Matches inbound Request Url paths to an Api Endpoint and executes associated Actions.
  */
-public class Engine extends Rule<Engine>
-{
+public class Engine extends Rule<Engine> {
+
    /**
     * The last {@code Response} served by this Engine, primarily used for writing test cases.
     */
@@ -88,8 +88,7 @@ public class Engine extends Rule<Engine>
    transient volatile boolean               started           = false;
    transient volatile boolean               starting          = false;
 
-   static
-   {
+   static {
       ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
       logger.setLevel(Level.WARN);
    }
@@ -98,16 +97,15 @@ public class Engine extends Rule<Engine>
    * Receives {@code Engine} and {@code Api} lifecycle, 
    * per request and per error callback notifications.
    */
-   public static interface EngineListener extends ApiListener
-   {
+   public static interface EngineListener extends ApiListener {
+
       /**
        * Notified when the Engine is starting prior to accepting
        * any requests which allows listeners to perform additional configuration.
        * 
        * @param engine
        */
-      default void onStartup(Engine engine)
-      {
+      default void onStartup(Engine engine) {
       }
 
       /**
@@ -116,23 +114,19 @@ public class Engine extends Rule<Engine>
        * 
        * @param engine  
        */
-      default void onShutdown(Engine engine)
-      {
+      default void onShutdown(Engine engine) {
       }
    }
 
-   public Engine()
-   {
+   public Engine() {
 
    }
 
-   public Engine(Api... apis)
-   {
+   public Engine(Api... apis) {
       if (apis != null)
          for (Api api : apis)
             withApi(api);
    }
-
 
    /**
     * Convenient pre-startup hook for subclasses guaranteed to only be called once.
@@ -140,8 +134,7 @@ public class Engine extends Rule<Engine>
     * Called after <code>starting</code> has been set to true but before the {@code Configurator} is run or  any {@code Api}s have been started.
     * 
     */
-   protected void startup0()
-   {
+   protected void startup0() {
 
    }
 
@@ -153,20 +146,17 @@ public class Engine extends Rule<Engine>
     * 
     * @return
     */
-   public synchronized Engine startup()
-   {
+   public synchronized Engine startup() {
       if (started || starting) //accidental recursion guard
          return this;
 
       System.out.println("STARTING ENGINE...");
 
       starting = true;
-      try
-      {
+      try {
          startup0();
 
-         if (!Config.hasConfiguration())
-         {
+         if (!Config.hasConfiguration()) {
             Config.loadConfiguration(getConfigPath(), getConfigProfile());
          }
          new Configurator().configure(this, Config.getConfiguration());
@@ -174,8 +164,7 @@ public class Engine extends Rule<Engine>
          started = true;
 
          boolean hasApi = false;
-         for (Api api : apis)
-         {
+         for (Api api : apis) {
             hasApi = true;
 
             if (api.getEndpoints().size() == 0)
@@ -187,27 +176,23 @@ public class Engine extends Rule<Engine>
             ApiException.throw500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
 
          //-- debug output
-         for (Api api : apis)
-         {
+         for (Api api : apis) {
             System.out.println("\r\n--------------------------------------------");
             System.out.println("API             " + api);
 
-            for (Endpoint e : api.getEndpoints())
-            {
+            for (Endpoint e : api.getEndpoints()) {
                System.out.println("  - ENDPOINT:   " + e);
             }
 
             List<String> strs = new ArrayList();
-            for (Collection c : api.getCollections())
-            {
+            for (Collection c : api.getCollections()) {
                if (c.getDb() != null && c.getDb().getEndpointPath() != null)
                   strs.add(c.getDb().getEndpointPath() + c.getName());
                else
                   strs.add(c.getName());
             }
             Collections.sort(strs);
-            for (String coll : strs)
-            {
+            for (String coll : strs) {
                System.out.println("  - COLLECTION: " + coll);
             }
          }
@@ -215,8 +200,7 @@ public class Engine extends Rule<Engine>
 
          return this;
       }
-      finally
-      {
+      finally {
          starting = false;
       }
    }
@@ -224,21 +208,16 @@ public class Engine extends Rule<Engine>
    /**
     * Removes all Apis and notifies listeners.onShutdown 
     */
-   public void shutdown()
-   {
-      for (Api api : getApis())
-      {
+   public void shutdown() {
+      for (Api api : getApis()) {
          removeApi(api);
       }
 
-      for (EngineListener listener : listeners)
-      {
-         try
-         {
+      for (EngineListener listener : listeners) {
+         try {
             listener.onShutdown(this);
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             ex.printStackTrace();
          }
       }
@@ -260,8 +239,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbGetAction
     */
-   public Response get(String url)
-   {
+   public Response get(String url) {
       return service("GET", url, (String) null);
    }
 
@@ -280,8 +258,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbGetAction
     */
-   public Response get(String url, Map<String, String> params)
-   {
+   public Response get(String url, Map<String, String> params) {
       return service("GET", url, null, params);
    }
 
@@ -300,16 +277,13 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbGetAction 
     */
-   public Response get(String url, List queryTerms)
-   {
-      if (queryTerms != null && queryTerms.size() > 0)
-      {
+   public Response get(String url, List queryTerms) {
+      if (queryTerms != null && queryTerms.size() > 0) {
          Map<String, String> params = new HashMap();
          queryTerms.forEach(key -> params.put(key.toString(), null));
          return service("GET", url, null, params);
       }
-      else
-      {
+      else {
          return service("GET", url, null, null);
       }
    }
@@ -328,8 +302,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbPostAction 
     */
-   public Response post(String url, JSNode body)
-   {
+   public Response post(String url, JSNode body) {
       return service("POST", url, body.toString());
    }
 
@@ -348,8 +321,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbPutAction 
     */
-   public Response put(String url, JSNode body)
-   {
+   public Response put(String url, JSNode body) {
       return service("PUT", url, body.toString());
    }
 
@@ -368,8 +340,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbPatchAction 
     */
-   public Response patch(String url, JSNode body)
-   {
+   public Response patch(String url, JSNode body) {
       return service("PATCH", url, body.toString());
    }
 
@@ -384,8 +355,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbDeleteAction 
     */
-   public Response delete(String url)
-   {
+   public Response delete(String url) {
       return service("DELETE", url, (String) null);
    }
 
@@ -400,8 +370,7 @@ public class Engine extends Rule<Engine>
     * @see #service(Request, Response);
     * @see io.inversion.rest.DbDeleteAction 
     */
-   public Response delete(String url, JSArray hrefs)
-   {
+   public Response delete(String url, JSArray hrefs) {
       return service("DELETE", url, hrefs.toString());
    }
 
@@ -416,8 +385,7 @@ public class Engine extends Rule<Engine>
     * @return the Response generated by handling the Request
     * @see #service(Request, Response);
     */
-   public Response service(String method, String url)
-   {
+   public Response service(String method, String url) {
       return service(method, url, null);
    }
 
@@ -433,8 +401,7 @@ public class Engine extends Rule<Engine>
     * @return the Response generated by handling the Request
     * @see #service(Request, Response);
     */
-   public Response service(String method, String url, String body)
-   {
+   public Response service(String method, String url, String body) {
       return service(method, url, body, null);
    }
 
@@ -450,15 +417,12 @@ public class Engine extends Rule<Engine>
     * @return the Response generated by handling the Request
     * @see #service(Request, Response);
     */
-   public Response service(String method, String url, String body, Map<String, String> params)
-   {
+   public Response service(String method, String url, String body, Map<String, String> params) {
       Request req = new Request(method, url, body);
       req.withEngine(this);
 
-      if (params != null)
-      {
-         for (String key : params.keySet())
-         {
+      if (params != null) {
+         for (String key : params.keySet()) {
             req.getUrl().withParam(key, params.get(key));
          }
       }
@@ -490,12 +454,10 @@ public class Engine extends Rule<Engine>
     * @param res
     * @return
     */
-   public Chain service(Request req, Response res)
-   {
+   public Chain service(Request req, Response res) {
       Chain chain = null;
 
-      try
-      {
+      try {
          if (!started)
             startup();
 
@@ -509,11 +471,9 @@ public class Engine extends Rule<Engine>
          //--
          String allowedHeaders = new String(this.corsAlloweHeaders);
          String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
-         if (corsRequestHeader != null)
-         {
+         if (corsRequestHeader != null) {
             List<String> headers = Arrays.asList(corsRequestHeader.split(","));
-            for (String h : headers)
-            {
+            for (String h : headers) {
                h = h.trim();
                allowedHeaders = allowedHeaders.concat(h).concat(",");
             }
@@ -526,8 +486,7 @@ public class Engine extends Rule<Engine>
          //--
          //-- End CORS Header Setup
 
-         if (req.isMethod("options"))
-         {
+         if (req.isMethod("options")) {
             //this is a CORS preflight request. All of hte work was done bove
             res.withStatus(Status.SC_200_OK);
             return chain;
@@ -535,16 +494,14 @@ public class Engine extends Rule<Engine>
 
          Url url = req.getUrl();
 
-         if (url.toString().indexOf("/favicon.ico") >= 0)
-         {
+         if (url.toString().indexOf("/favicon.ico") >= 0) {
             res.withStatus(Status.SC_404_NOT_FOUND);
             return chain;
          }
 
          String xfp = req.getHeader("X-Forwarded-Proto");
          String xfh = req.getHeader("X-Forwarded-Host");
-         if (xfp != null || xfh != null)
-         {
+         if (xfp != null || xfh != null) {
             if (xfp != null)
                url.withProtocol(xfp);
 
@@ -569,19 +526,16 @@ public class Engine extends Rule<Engine>
          Path afterApiPath = null;
          Path afterEndpointPath = null;
 
-         for (Api api : apis)
-         {
+         for (Api api : apis) {
             Path apiPath = api.match(method, parts);
 
-            if (apiPath != null)
-            {
+            if (apiPath != null) {
                apiPath = apiPath.extract(pathParams, parts);
                req.withApi(api, apiPath);
 
                afterApiPath = new Path(parts);
 
-               for (Endpoint endpoint : api.getEndpoints())
-               {
+               for (Endpoint endpoint : api.getEndpoints()) {
                   //-- endpoints marked as internal can not be directly called by external
                   //-- clients, they can only be called by a recursive call to Engine.service
                   if (Chain.getDepth() < 2 && endpoint.isInternal())
@@ -589,22 +543,19 @@ public class Engine extends Rule<Engine>
 
                   Path endpointPath = endpoint.match(req.getMethod(), parts);
 
-                  if (endpointPath != null)
-                  {
+                  if (endpointPath != null) {
                      endpointPath = endpointPath.extract(pathParams, parts);
                      req.withEndpoint(endpoint, endpointPath);
 
                      afterEndpointPath = new Path(parts);
 
-                     for (Collection collection : api.getCollections())
-                     {
+                     for (Collection collection : api.getCollections()) {
                         Db<Db> db = collection.getDb();
                         if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
                            continue;
 
                         Path collectionPath = collection.match(method, parts);
-                        if (collectionPath != null)
-                        {
+                        if (collectionPath != null) {
                            collectionPath = collectionPath.extract(pathParams, parts, true);
                            req.withCollection(collection, collectionPath);
 
@@ -622,31 +573,26 @@ public class Engine extends Rule<Engine>
 
          //---------------------------------
 
-         if (req.getEndpoint() == null || req.isDebug())
-         {
+         if (req.getEndpoint() == null || req.isDebug()) {
             res.debug("");
             res.debug("");
             res.debug(">> request --------------");
             res.debug(req.getMethod() + ": " + url);
 
             ArrayListValuedHashMap<String, String> headers = req.getHeaders();
-            for (String key : headers.keys())
-            {
+            for (String key : headers.keys()) {
                res.debug(key + " " + Utils.implode(",", headers.get(key)));
             }
             res.debug("");
          }
 
-         if (req.getApi() == null)
-         {
+         if (req.getApi() == null) {
             ApiException.throw400BadRequest("No API found matching URL: '{}'", url);
          }
 
-         if (req.getEndpoint() == null)
-         {
+         if (req.getEndpoint() == null) {
             String buff = "";
-            for (Endpoint e : req.getApi().getEndpoints())
-            {
+            for (Endpoint e : req.getApi().getEndpoints()) {
                if (!e.isInternal())
                   buff += e.toString() + " | ";
             }
@@ -657,11 +603,9 @@ public class Engine extends Rule<Engine>
          //this will get all actions specifically configured on the endpoint
          List<ActionMatch> actions = new ArrayList();
 
-         for (Action action : req.getEndpoint().getActions())
-         {
+         for (Action action : req.getEndpoint().getActions()) {
             Path actionPath = action.match(method, afterEndpointPath);
-            if (actionPath != null)
-            {
+            if (actionPath != null) {
                actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
             }
          }
@@ -669,11 +613,9 @@ public class Engine extends Rule<Engine>
          //this matches for actions that can run across multiple endpoints.
          //this might be something like an authorization or logging action
          //that acts like a filter
-         for (Action action : req.getApi().getActions())
-         {
+         for (Action action : req.getApi().getActions()) {
             Path actionPath = action.match(method, afterApiPath);
-            if (actionPath != null)
-            {
+            if (actionPath != null) {
                actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
             }
          }
@@ -685,8 +627,7 @@ public class Engine extends Rule<Engine>
 
          //-- appends info to chain.debug that can be used for debugging an d
          //-- for test cases to validate what actually ran
-         if (req.isDebug())
-         {
+         if (req.isDebug()) {
             Chain.debug("Endpoint: " + req.getEndpoint());
             Chain.debug("Actions: " + actions);
          }
@@ -694,14 +635,11 @@ public class Engine extends Rule<Engine>
          run(chain, actions);
 
          Exception listenerEx = null;
-         for (ApiListener listener : getApiListeners(req))
-         {
-            try
-            {
+         for (ApiListener listener : getApiListeners(req)) {
+            try {
                listener.afterRequest(req, res);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                if (listenerEx == null)
                   listenerEx = ex;
             }
@@ -711,14 +649,11 @@ public class Engine extends Rule<Engine>
 
          return chain;
       }
-      catch (Throwable ex)
-      {
+      catch (Throwable ex) {
          String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
-         if (ex instanceof ApiException)
-         {
-            if (req != null && req.isDebug() && ((ApiException) ex).getStatus().startsWith("5"))
-            {
+         if (ex instanceof ApiException) {
+            if (req != null && req.isDebug() && ((ApiException) ex).getStatus().startsWith("5")) {
                log.error("Error in Engine", ex);
             }
 
@@ -731,8 +666,7 @@ public class Engine extends Rule<Engine>
             //                  return chain;
             //            }
          }
-         else
-         {
+         else {
             ex = Utils.getCause(ex);
             if (Chain.getDepth() == 1)
                log.error("Non ApiException was caught in Engine.", ex);
@@ -747,70 +681,56 @@ public class Engine extends Rule<Engine>
          res.withError(ex);
          res.withJson(response);
 
-         for (ApiListener listener : getApiListeners(req))
-         {
-            try
-            {
+         for (ApiListener listener : getApiListeners(req)) {
+            try {
                listener.afterError(req, res);
             }
-            catch (Exception ex2)
-            {
+            catch (Exception ex2) {
                log.warn("Error notifying EngineListner.beforeError", ex);
             }
 
          }
 
       }
-      finally
-      {
-         for (ApiListener listener : getApiListeners(req))
-         {
-            try
-            {
+      finally {
+         for (ApiListener listener : getApiListeners(req)) {
+            try {
                listener.beforeFinally(req, res);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                log.warn("Error notifying EngineListner.onFinally", ex);
             }
          }
 
-         try
-         {
+         try {
             writeResponse(req, res);
          }
-         catch (Throwable ex)
-         {
+         catch (Throwable ex) {
             log.error("Error writing response.", ex);
          }
 
          if (chain != null)
             Chain.pop();
-         
+
          lastResponse = res;
       }
 
       return chain;
    }
 
-   public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json)
-   {
+   public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json) {
       pathParams.keySet().forEach(param -> url.clearParams(param));
       pathParams.keySet().forEach(param -> {
-         if (pathParams.get(param) != null)
-         {
+         if (pathParams.get(param) != null) {
             url.withParam(param, pathParams.get(param));
          }
       });
 
-      if (json != null)
-      {
+      if (json != null) {
          json.asList().forEach(n -> {
-            if (n instanceof JSNode && !((JSNode) n).isArray())
-            {
+            if (n instanceof JSNode && !((JSNode) n).isArray()) {
                pathParams.keySet().forEach(param -> {
-                  if (pathParams.get(param) != null)
-                  {
+                  if (pathParams.get(param) != null) {
                      ((JSNode) n).put(param, pathParams.get(param));
                   }
                });
@@ -827,62 +747,50 @@ public class Engine extends Rule<Engine>
     * @param actions
     * @throws ApiException
     */
-   void run(Chain chain, List<ActionMatch> actions) throws ApiException
-   {
+   void run(Chain chain, List<ActionMatch> actions) throws ApiException {
       chain.withActions(actions).go();
    }
 
-   void writeResponse(Request req, Response res) throws ApiException
-   {
+   void writeResponse(Request req, Response res) throws ApiException {
       boolean debug = req != null && req.isDebug();
       boolean explain = req != null && req.isExplain();
 
       String method = req != null ? req.getMethod() : null;
 
-      if ("OPTIONS".equals(method))
-      {
+      if ("OPTIONS".equals(method)) {
          //
       }
-      else
-      {
-         if (debug)
-         {
+      else {
+         if (debug) {
             res.debug("\r\n<< response -------------\r\n");
             res.debug(res.getStatusCode());
          }
 
          String output = res.getText();
-         if (output != null)
-         {
-            if (res.getContentType() == null)
-            {
+         if (output != null) {
+            if (res.getContentType() == null) {
                if (output.indexOf("<html") > -1)
                   res.withContentType("text/html");
                else
                   res.withContentType("text/text");
             }
          }
-         else if (!Utils.empty(res.getRedirect()))
-         {
+         else if (!Utils.empty(res.getRedirect())) {
             res.withHeader("Location", res.getRedirect());
             res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
          }
-         else if (output == null && res.getJson() != null)
-         {
+         else if (output == null && res.getJson() != null) {
             output = res.getJson().toString();
 
             if (res.getContentType() == null)
                res.withContentType("application/json");
          }
 
-         if (debug)
-         {
-            for (String key : res.getHeaders().keySet())
-            {
+         if (debug) {
+            for (String key : res.getHeaders().keySet()) {
                List values = res.getHeaders().get(key);
                StringBuffer buff = new StringBuffer();
-               for (int i = 0; i < values.size(); i++)
-               {
+               for (int i = 0; i < values.size(); i++) {
                   buff.append(values.get(i));
                   if (i < values.size() - 1)
                      buff.append(",");
@@ -895,15 +803,13 @@ public class Engine extends Rule<Engine>
 
          res.out(output);
 
-         if (explain)
-         {
+         if (explain) {
             res.withOutput(res.getDebug());
          }
       }
    }
 
-   public boolean isStarted()
-   {
+   public boolean isStarted() {
       return started;
    }
 
@@ -913,18 +819,15 @@ public class Engine extends Rule<Engine>
     * @param listener
     * @return
     */
-   public Engine withEngineListener(EngineListener listener)
-   {
+   public Engine withEngineListener(EngineListener listener) {
       if (!listeners.contains(listener))
          listeners.add(listener);
       return this;
    }
 
-   LinkedHashSet<ApiListener> getApiListeners(Request req)
-   {
+   LinkedHashSet<ApiListener> getApiListeners(Request req) {
       LinkedHashSet listeners = new LinkedHashSet();
-      if (req.getApi() != null)
-      {
+      if (req.getApi() != null) {
          listeners.addAll(req.getApi().getApiListeners());
       }
       listeners.addAll(this.listeners);
@@ -932,24 +835,20 @@ public class Engine extends Rule<Engine>
       return listeners;
    }
 
-   public List<Api> getApis()
-   {
+   public List<Api> getApis() {
       return new ArrayList(apis);
    }
 
    /*
    Gets all apis of the same apiName
     */
-   public synchronized List<Api> findApis(String apiName)
-   {
+   public synchronized List<Api> findApis(String apiName) {
       return apis.stream().filter(api -> apiName.equalsIgnoreCase(api.getName())).collect(Collectors.toList());
    }
 
-   public synchronized Api getApi(String apiName)
-   {
+   public synchronized Api getApi(String apiName) {
       //only one api will have a name version pair so return the first one.
-      for (Api api : apis)
-      {
+      for (Api api : apis) {
          if (apiName.equalsIgnoreCase(api.getName()))
             return api;
 
@@ -957,21 +856,18 @@ public class Engine extends Rule<Engine>
       return null;
    }
 
-   public synchronized Engine withApi(Api api)
-   {
+   public synchronized Engine withApi(Api api) {
       if (apis.contains(api))
          return this;
 
       List<Api> newList = new ArrayList(apis);
 
       Api existingApi = getApi(api.getName());
-      if (existingApi != null && existingApi != api)
-      {
+      if (existingApi != null && existingApi != api) {
          newList.remove(existingApi);
          newList.add(api);
       }
-      else if (existingApi == null)
-      {
+      else if (existingApi == null) {
          newList.add(api);
       }
 
@@ -980,35 +876,27 @@ public class Engine extends Rule<Engine>
 
       apis = newList;
 
-      if (existingApi != null && existingApi != api)
-      {
+      if (existingApi != null && existingApi != api) {
          existingApi.shutdown();
       }
 
       return this;
    }
 
-   protected void startupApi(Api api)
-   {
-      if (started)
-      {
-         try
-         {
+   protected void startupApi(Api api) {
+      if (started) {
+         try {
             api.startup();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             log.warn("Error starting api '" + api.getName() + "'", ex);
          }
 
-         for (EngineListener listener : listeners)
-         {
-            try
-            {
+         for (EngineListener listener : listeners) {
+            try {
                listener.onStartup(api);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                log.warn("Error starting api '" + api.getName() + "'", ex);
             }
          }
@@ -1019,8 +907,7 @@ public class Engine extends Rule<Engine>
     * Removes the api, notifies EngineListeners and calls api.shutdown()
     * @param api
     */
-   public synchronized void removeApi(Api api)
-   {
+   public synchronized void removeApi(Api api) {
       List newList = new ArrayList(apis);
       newList.remove(api);
       apis = newList;
@@ -1028,27 +915,20 @@ public class Engine extends Rule<Engine>
       shutdownApi(api);
    }
 
-   protected void shutdownApi(Api api)
-   {
-      if (api.isStarted())
-      {
-         try
-         {
+   protected void shutdownApi(Api api) {
+      if (api.isStarted()) {
+         try {
             api.shutdown();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             log.warn("Error shutting down api '" + api.getName() + "'", ex);
          }
 
-         for (EngineListener listener : listeners)
-         {
-            try
-            {
+         for (EngineListener listener : listeners) {
+            try {
                listener.onShutdown(api);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                log.warn("Error shutting down api '" + api.getName() + "'", ex);
             }
          }
@@ -1056,8 +936,7 @@ public class Engine extends Rule<Engine>
       }
    }
 
-   public Engine withAllowHeaders(String allowedHeaders)
-   {
+   public Engine withAllowHeaders(String allowedHeaders) {
       this.corsAlloweHeaders = allowedHeaders;
       return this;
    }
@@ -1065,20 +944,16 @@ public class Engine extends Rule<Engine>
    /**
     * @return the last response serviced by this Engine.
     */
-   public Response getLastResponse()
-   {
+   public Response getLastResponse() {
       return lastResponse;
    }
 
-   public URL getResource(String name)
-   {
-      try
-      {
+   public URL getResource(String name) {
+      try {
          URL url = null;
 
          url = getClass().getClassLoader().getResource(name);
-         if (url == null)
-         {
+         if (url == null) {
             File file = new File(System.getProperty("user.dir"), name);
             if (file.exists())
                url = file.toURI().toURL();
@@ -1086,30 +961,25 @@ public class Engine extends Rule<Engine>
 
          return url;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
 
-   public String getConfigPath()
-   {
+   public String getConfigPath() {
       return configPath;
    }
 
-   public Engine withConfigPath(String configPath)
-   {
+   public Engine withConfigPath(String configPath) {
       this.configPath = configPath;
       return this;
    }
 
-   public String getConfigProfile()
-   {
+   public String getConfigProfile() {
       return configProfile;
    }
 
-   public Engine withConfigProfile(String configProfile)
-   {
+   public Engine withConfigProfile(String configProfile) {
       this.configProfile = configProfile;
       return this;
    }

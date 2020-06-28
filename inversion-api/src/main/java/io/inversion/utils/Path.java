@@ -74,16 +74,15 @@ import io.inversion.ApiException;
  * 
  */
 
-public class Path
-{
+public class Path {
+
    List<String> parts = new ArrayList();
    List<String> lc    = new ArrayList();
 
    /**
     * Creates an empty Path
     */
-   public Path()
-   {
+   public Path() {
 
    }
 
@@ -91,8 +90,7 @@ public class Path
     * Creates a clone of the supplied <code>Path</code>
     * @param path  the Path to be cloned
     */
-   public Path(Path path)
-   {
+   public Path(Path path) {
       parts.addAll(path.parts);
       lc.addAll(path.lc);
    }
@@ -106,12 +104,10 @@ public class Path
     * 
     * @param path  an array of path part strings
     */
-   public Path(String... part)
-   {
+   public Path(String... part) {
       parts = Utils.explode("/", part);
       lc = new ArrayList(parts.size());
-      for (int i = 0; i < parts.size(); i++)
-      {
+      for (int i = 0; i < parts.size(); i++) {
          lc.add(parts.get(i).toLowerCase());
       }
    }
@@ -121,8 +117,7 @@ public class Path
     * 
     * @param parts  an list of path part strings
     */
-   public Path(List<String> parts)
-   {
+   public Path(List<String> parts) {
       this(parts.toArray(new String[parts.size()]));
    }
 
@@ -133,8 +128,7 @@ public class Path
     * 
     * @return a new list with the individual path parts n the originally defined case.
     */
-   public List<String> parts()
-   {
+   public List<String> parts() {
       return new ArrayList(parts);
    }
 
@@ -143,8 +137,7 @@ public class Path
     * 
     * @return the first element in the path if it exists otherwise null 
     */
-   public String first()
-   {
+   public String first() {
       if (parts.size() > 0)
          return parts.get(0);
       return null;
@@ -155,8 +148,7 @@ public class Path
     * 
     * @return the last element in the path if it exists otherwise null
     */
-   public String last()
-   {
+   public String last() {
       if (parts.size() > 0)
          return parts.get(parts.size() - 1);
       return null;
@@ -168,8 +160,7 @@ public class Path
     * @param index the index of the path part to retrive
     * @return the path part at index if it exists otherwise null
     */
-   public String get(int index)
-   {
+   public String get(int index) {
       if (index < parts.size())
          return parts.get(index);
       return null;
@@ -183,12 +174,9 @@ public class Path
     * 
     * @param part
     */
-   public void add(String parts)
-   {
-      if (!Utils.empty(parts))
-      {
-         for (String part : Utils.explode("/", parts))
-         {
+   public void add(String parts) {
+      if (!Utils.empty(parts)) {
+         for (String part : Utils.explode("/", parts)) {
             this.parts.add(part);
             lc.add(part.toLowerCase());
          }
@@ -201,10 +189,8 @@ public class Path
     * @param index  the index of the path part to remove
     * @return the path part previously located at <code>index</code> if it existed otherwise null
     */
-   public String remove(int index)
-   {
-      if (index < parts.size())
-      {
+   public String remove(int index) {
+      if (index < parts.size()) {
          lc.remove(index);
          return parts.remove(index);
       }
@@ -219,13 +205,11 @@ public class Path
     * @param partsToMatch 
     * @return true if each index of <code>partsToMatch</code> is a case insensitive match to this Path at the same index otherwise false.
     */
-   public boolean startsWith(List<String> partsToMatch)
-   {
+   public boolean startsWith(List<String> partsToMatch) {
       if (partsToMatch.size() > this.parts.size())
          return false;
 
-      for (int i = 0; i < partsToMatch.size(); i++)
-      {
+      for (int i = 0; i < partsToMatch.size(); i++) {
          if (!partsToMatch.get(i).equalsIgnoreCase(this.parts.get(i)))
             return false;
       }
@@ -235,24 +219,21 @@ public class Path
    /**
     * @return the number of parts in the Path
     */
-   public int size()
-   {
+   public int size() {
       return parts.size();
    }
 
    /**
     * @return a pretty printed "/" separated path string representation 
     */
-   public String toString()
-   {
+   public String toString() {
       return Utils.implode("/", parts);
    }
 
    /**
     * @return true of the objects string representations match
     */
-   public boolean equals(Object o)
-   {
+   public boolean equals(Object o) {
       if (o == null)
          return false;
 
@@ -267,8 +248,7 @@ public class Path
     * @return a subpath from <code>fromIndex</code> (inclusive) to <code>toIndex<code> (exclusive)
     * @throws IndexOutOfBoundsException 
     */
-   public Path subpath(int fromIndex, int toIndex) throws ArrayIndexOutOfBoundsException
-   {
+   public Path subpath(int fromIndex, int toIndex) throws ArrayIndexOutOfBoundsException {
       Path subpath = new Path(parts.subList(fromIndex, toIndex));
       return subpath;
    }
@@ -279,8 +259,7 @@ public class Path
     * @param index the path part to check
     * @return true if the path part at <code>index</code> is a '*' char or starts with '[', '{' or ':' 
     */
-   public boolean isStatic(int index)
-   {
+   public boolean isStatic(int index) {
       return !(isWildcard(index) || isVar(index) || isOptional(index));
    }
 
@@ -291,8 +270,7 @@ public class Path
     * @param index
     * @return true if the path part at <code>index</code> 
     */
-   public boolean isWildcard(int index)
-   {
+   public boolean isWildcard(int index) {
       return "*".equals(get(index));
    }
 
@@ -302,11 +280,9 @@ public class Path
     * @param index
     * @return true if the value exists and is variableized but not a wildcard, false otherwise.
     */
-   public boolean isVar(int index)
-   {
+   public boolean isVar(int index) {
       String part = get(index);
-      if (part != null)
-      {
+      if (part != null) {
          if (part.startsWith("["))
             part = part.substring(1).trim();
 
@@ -337,11 +313,9 @@ public class Path
     * @param  index
     * @return the variable name binding for the parth part at <code>index</code> if it exists
     */
-   public String getVarName(int index)
-   {
+   public String getVarName(int index) {
       String part = get(index);
-      if (part != null)
-      {
+      if (part != null) {
          if (part.startsWith("["))
             part = part.substring(1, part.length() - 1).trim();
 
@@ -362,11 +336,9 @@ public class Path
     * @param index
     * @return true if the path part at <code>index</code> exists and starts with '[' and ends with ']'
     */
-   public boolean isOptional(int index)
-   {
+   public boolean isOptional(int index) {
       String part = get(index);
-      if (part != null)
-      {
+      if (part != null) {
          return part.startsWith("[") && part.endsWith("]");
       }
       return false;
@@ -378,8 +350,7 @@ public class Path
     * @param toMatch
     * @return true if the paths match
     */
-   public boolean matches(String toMatch)
-   {
+   public boolean matches(String toMatch) {
       return matches(new Path(toMatch));
    }
 
@@ -404,17 +375,14 @@ public class Path
     * @param concretePath
     * @return true if this path matches <code>concretePath</code>
     */
-   public boolean matches(Path concretePath)
-   {
+   public boolean matches(Path concretePath) {
       Path matchedPath = new Path();
 
-      if (size() < concretePath.size() && !"*".equals(last()))
-      {
+      if (size() < concretePath.size() && !"*".equals(last())) {
          return false;
       }
 
-      for (int i = 0; i < size(); i++)
-      {
+      for (int i = 0; i < size(); i++) {
          String myPart = get(i);
 
          if (i == size() - 1 && myPart.equals("*"))
@@ -422,8 +390,7 @@ public class Path
 
          boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
 
-         if (i == concretePath.size())
-         {
+         if (i == concretePath.size()) {
             if (optional)
                return true;
             return false;
@@ -435,12 +402,10 @@ public class Path
          String theirPart = concretePath.get(i);
          matchedPath.add(theirPart);
 
-         if (myPart.startsWith(":"))
-         {
+         if (myPart.startsWith(":")) {
             continue;
          }
-         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}"))
-         {
+         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
             int nameStart = myPart.indexOf("{") + 1;
             int endName = myPart.indexOf(":");
             if (endName < 0)
@@ -448,18 +413,15 @@ public class Path
 
             String name = myPart.substring(nameStart, endName).trim();
 
-            if (endName < myPart.length() - 1)
-            {
+            if (endName < myPart.length() - 1) {
                String regex = myPart.substring(endName + 1, myPart.length() - 1);
                Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-               if (!pattern.matcher(theirPart).matches())
-               {
+               if (!pattern.matcher(theirPart).matches()) {
                   return false;
                }
             }
          }
-         else if (!myPart.equalsIgnoreCase(theirPart))
-         {
+         else if (!myPart.equalsIgnoreCase(theirPart)) {
             return false;
          }
 
@@ -473,8 +435,7 @@ public class Path
     * 
     * @see Path#extract(Map, Path, boolean)
     */
-   public Path extract(Map params, Path toMatch)
-   {
+   public Path extract(Map params, Path toMatch) {
       return extract(params, toMatch, false);
    }
 
@@ -521,21 +482,18 @@ public class Path
     * @see {@code io.inversion.Chain#next}
     * 
     */
-   public Path extract(Map params, Path matchingConcretePath, boolean greedy)
-   {
+   public Path extract(Map params, Path matchingConcretePath, boolean greedy) {
       Path matchedPath = new Path();
 
       boolean restOptional = false;
       int i = 0;
       int nextOptional = 0;
-      for (i = 0; i < size() && matchingConcretePath.size() > 0; i++)
-      {
+      for (i = 0; i < size() && matchingConcretePath.size() > 0; i++) {
          String myPart = get(i);
 
          boolean partOptional = myPart.startsWith("[") && myPart.endsWith("]");
 
-         if (partOptional)
-         {
+         if (partOptional) {
             restOptional = true;
             myPart = myPart.substring(1, myPart.length() - 1);
          }
@@ -545,23 +503,19 @@ public class Path
 
          String theirPart = null;
 
-         if (greedy || !restOptional)
-         {
+         if (greedy || !restOptional) {
             theirPart = matchingConcretePath.remove(0);
             matchedPath.add(theirPart);
          }
-         else
-         {
+         else {
             theirPart = matchingConcretePath.get(nextOptional++);
          }
 
-         if (myPart.startsWith(":"))
-         {
+         if (myPart.startsWith(":")) {
             String name = myPart.substring(1).trim();
             params.put(name, theirPart);
          }
-         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}"))
-         {
+         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
             int nameStart = myPart.indexOf("{") + 1;
             int endName = myPart.indexOf(":");
             if (endName < 0)
@@ -569,27 +523,23 @@ public class Path
 
             String name = myPart.substring(nameStart, endName).trim();
 
-            if (endName < myPart.length() - 1)
-            {
+            if (endName < myPart.length() - 1) {
                String regex = myPart.substring(endName + 1, myPart.length() - 1);
                Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-               if (!pattern.matcher(theirPart).matches())
-               {
+               if (!pattern.matcher(theirPart).matches()) {
                   ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
                }
             }
 
             params.put(name, theirPart);
          }
-         else if (!myPart.equalsIgnoreCase(theirPart))
-         {
+         else if (!myPart.equalsIgnoreCase(theirPart)) {
             ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
          }
       }
 
       //null out any trailing vars
-      for (i = i; i < size(); i++)
-      {
+      for (i = i; i < size(); i++) {
          String var = getVarName(i);
          if (var != null)
             params.put(var, null);

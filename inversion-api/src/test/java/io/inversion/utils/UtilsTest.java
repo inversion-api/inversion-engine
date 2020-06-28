@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class UtilsTest
-{
+public class UtilsTest {
+
    @Test
-   public void testToDollarAmount1()
-   {
+   public void testToDollarAmount1() {
       // test round down
       printAssertEquals("45.00", 45.000001);
 
@@ -44,8 +43,7 @@ public class UtilsTest
       printAssertEquals("0.00", 0.00001);
    }
 
-   void printAssertEquals(String expected, double orig)
-   {
+   void printAssertEquals(String expected, double orig) {
       System.out.println("Expected : " + expected + ", orig : " + orig + ", result : " + Utils.toDollarAmount(orig));
       assertEquals(expected, Utils.toDollarAmount(orig).toString());
    }

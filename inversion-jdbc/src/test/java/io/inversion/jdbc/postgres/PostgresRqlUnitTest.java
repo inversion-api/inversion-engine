@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractSqlQueryRqlTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresRqlUnitTest extends AbstractSqlQueryRqlTest
-{
-   public PostgresRqlUnitTest() throws Exception
-   {
+public class PostgresRqlUnitTest extends AbstractSqlQueryRqlTest {
+
+   public PostgresRqlUnitTest() throws Exception {
       super("postgres");
    }
 }

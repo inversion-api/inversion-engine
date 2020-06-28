@@ -32,8 +32,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-public class RedisDb extends Db<RedisDb>
-{
+public class RedisDb extends Db<RedisDb> {
+
    protected final Logger        log                           = LoggerFactory.getLogger(getClass());
 
    protected transient JedisPool jedis                         = null;
@@ -57,34 +57,27 @@ public class RedisDb extends Db<RedisDb>
    protected int                 ttl                           = 15552000;                           // time to live 15,552,000s == 180 days
 
    @Override
-   public Results doSelect(Collection table, List<Term> queryTerms) throws ApiException
-   {
+   public Results doSelect(Collection table, List<Term> queryTerms) throws ApiException {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
       // TODO Auto-generated method stub
       return null;
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException
-   {
+   public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
       // TODO Auto-generated method stub
 
    }
 
-   protected Jedis getRedisClient()
-   {
-      if (jedis == null)
-      {
-         synchronized (this)
-         {
-            if (jedis == null)
-            {
+   protected Jedis getRedisClient() {
+      if (jedis == null) {
+         synchronized (this) {
+            if (jedis == null) {
                JedisPoolConfig poolConfig = new JedisPoolConfig();
                poolConfig.setMaxTotal(this.poolMax);
                poolConfig.setMaxIdle(this.poolMax);
@@ -105,156 +98,128 @@ public class RedisDb extends Db<RedisDb>
       return jedis.getResource();
    }
 
-   public String getHost()
-   {
+   public String getHost() {
       return host;
    }
 
-   public RedisDb withHost(String host)
-   {
+   public RedisDb withHost(String host) {
       this.host = host;
       return this;
    }
 
-   public int getPort()
-   {
+   public int getPort() {
       return port;
    }
 
-   public RedisDb withPort(int port)
-   {
+   public RedisDb withPort(int port) {
       this.port = port;
       return this;
    }
 
-   public int getPoolMin()
-   {
+   public int getPoolMin() {
       return poolMin;
    }
 
-   public RedisDb withPoolMin(int poolMin)
-   {
+   public RedisDb withPoolMin(int poolMin) {
       this.poolMin = poolMin;
       return this;
    }
 
-   public int getPoolMax()
-   {
+   public int getPoolMax() {
       return poolMax;
    }
 
-   public RedisDb withPoolMax(int poolMax)
-   {
+   public RedisDb withPoolMax(int poolMax) {
       this.poolMax = poolMax;
       return this;
    }
 
-   public boolean isTestOnBorrow()
-   {
+   public boolean isTestOnBorrow() {
       return testOnBorrow;
    }
 
-   public RedisDb withTestOnBorrow(boolean testOnBorrow)
-   {
+   public RedisDb withTestOnBorrow(boolean testOnBorrow) {
       this.testOnBorrow = testOnBorrow;
       return this;
    }
 
-   public boolean isTestOnReturn()
-   {
+   public boolean isTestOnReturn() {
       return testOnReturn;
    }
 
-   public RedisDb withTestOnReturn(boolean testOnReturn)
-   {
+   public RedisDb withTestOnReturn(boolean testOnReturn) {
       this.testOnReturn = testOnReturn;
       return this;
    }
 
-   public boolean isTestWhileIdle()
-   {
+   public boolean isTestWhileIdle() {
       return testWhileIdle;
    }
 
-   public RedisDb withTestWhileIdle(boolean testWhileIdle)
-   {
+   public RedisDb withTestWhileIdle(boolean testWhileIdle) {
       this.testWhileIdle = testWhileIdle;
       return this;
    }
 
-   public int getMinEvictableIdleTimeMillis()
-   {
+   public int getMinEvictableIdleTimeMillis() {
       return minEvictableIdleTimeMillis;
    }
 
-   public RedisDb withMinEvictableIdleTimeMillis(int minEvictableIdleTimeMillis)
-   {
+   public RedisDb withMinEvictableIdleTimeMillis(int minEvictableIdleTimeMillis) {
       this.minEvictableIdleTimeMillis = minEvictableIdleTimeMillis;
       return this;
    }
 
-   public int getTimeBetweenEvictionRunsMillis()
-   {
+   public int getTimeBetweenEvictionRunsMillis() {
       return timeBetweenEvictionRunsMillis;
    }
 
-   public RedisDb withTimeBetweenEvictionRunsMillis(int timeBetweenEvictionRunsMillis)
-   {
+   public RedisDb withTimeBetweenEvictionRunsMillis(int timeBetweenEvictionRunsMillis) {
       this.timeBetweenEvictionRunsMillis = timeBetweenEvictionRunsMillis;
       return this;
    }
 
-   public int getNumTestsPerEvictionRun()
-   {
+   public int getNumTestsPerEvictionRun() {
       return numTestsPerEvictionRun;
    }
 
-   public RedisDb withNumTestsPerEvictionRun(int numTestsPerEvictionRun)
-   {
+   public RedisDb withNumTestsPerEvictionRun(int numTestsPerEvictionRun) {
       this.numTestsPerEvictionRun = numTestsPerEvictionRun;
       return this;
    }
 
-   public boolean isBlockWhenExhausted()
-   {
+   public boolean isBlockWhenExhausted() {
       return blockWhenExhausted;
    }
 
-   public RedisDb withBlockWhenExhausted(boolean blockWhenExhausted)
-   {
+   public RedisDb withBlockWhenExhausted(boolean blockWhenExhausted) {
       this.blockWhenExhausted = blockWhenExhausted;
       return this;
    }
 
-   public String getNocacheParam()
-   {
+   public String getNocacheParam() {
       return nocacheParam;
    }
 
-   public RedisDb withNocacheParam(String nocacheParam)
-   {
+   public RedisDb withNocacheParam(String nocacheParam) {
       this.nocacheParam = nocacheParam;
       return this;
    }
 
-   public int getReadSocketTimeout()
-   {
+   public int getReadSocketTimeout() {
       return readSocketTimeout;
    }
 
-   public RedisDb withReadSocketTimeout(int readSocketTimeout)
-   {
+   public RedisDb withReadSocketTimeout(int readSocketTimeout) {
       this.readSocketTimeout = readSocketTimeout;
       return this;
    }
 
-   public int getTtl()
-   {
+   public int getTtl() {
       return ttl;
    }
 
-   public RedisDb withTtl(int ttl)
-   {
+   public RedisDb withTtl(int ttl) {
       this.ttl = ttl;
       return this;
    }

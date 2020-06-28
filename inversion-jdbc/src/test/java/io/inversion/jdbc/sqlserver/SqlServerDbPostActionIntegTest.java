@@ -23,16 +23,14 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbPostActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class SqlServerDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest
-{
-   public SqlServerDbPostActionIntegTest()
-   {
+public class SqlServerDbPostActionIntegTest extends AbstractJdbcDbPostActionIntegTest {
+
+   public SqlServerDbPostActionIntegTest() {
       super("sqlserver");
    }
-   
+
    @Test
-   public void testNestedPost1() throws Exception
-   {
+   public void testNestedPost1() throws Exception {
       //TODO: fix me and add me back into tests.
    }
 }

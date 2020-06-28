@@ -58,8 +58,8 @@ import io.inversion.utils.Rows.Row;
  * @see users-h2.ddl for full underlying schema  
  *
  */
-public class JdbcDbUserDao extends JwtUserDao
-{
+public class JdbcDbUserDao extends JwtUserDao {
+
    /**
     * Optional name param that is used for $name.salt
     * parameter configuration.
@@ -68,21 +68,17 @@ public class JdbcDbUserDao extends JwtUserDao
    protected JdbcDb db   = null;
    protected String salt = null;
 
-   public JdbcDbUserDao()
-   {
+   public JdbcDbUserDao() {
 
    }
 
-   public JdbcDbUserDao(JdbcDb db)
-   {
+   public JdbcDbUserDao(JdbcDb db) {
       withDb(db);
    }
 
-   protected boolean checkPassword(String actual, String supplied)
-   {
+   protected boolean checkPassword(String actual, String supplied) {
       String salt = getSalt();
-      if (salt == null)
-      {
+      if (salt == null) {
          ApiException.throw500InternalServerError("You must configure a salt value for password hashing.");
       }
 
@@ -92,16 +88,13 @@ public class JdbcDbUserDao extends JwtUserDao
       return actual.equals(strongHash) || actual.equals(weakHash);
    }
 
-   public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException
-   {
+   public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException {
       User user = null;
-      try
-      {
+      try {
          List params = new ArrayList();
          String sql = "";
 
-         if (username != null)
-         {
+         if (username != null) {
             params.add(username);
             sql += " SELECT DISTINCT u.*";
             sql += " FROM User u   ";
@@ -114,53 +107,44 @@ public class JdbcDbUserDao extends JwtUserDao
          Connection conn = db.getConnection();
 
          Row userRow = JdbcUtils.selectRow(conn, sql, username);
-         if (userRow != null)
-         {
+         if (userRow != null) {
             CaseInsensitiveMap<String, Object> map = new CaseInsensitiveMap(userRow);
 
             String actualPassword = (String) map.get("password");
-            if (checkPassword(actualPassword, suppliedPassword))
-            {
+            if (checkPassword(actualPassword, suppliedPassword)) {
                user = new User();
                user.withId(Integer.parseInt(map.get("id") + ""))//
                    .withUsername((String) map.get("username"))//
                    .withAccessKey((String) map.get("accessKey"))//
                    .withTenant((String) map.get("tenant"));//
             }
-            if (user != null)
-            {
+            if (user != null) {
                Rows rows = findGRP(conn, user.getId(), apiName, tenant);
-               if (rows == null || rows.size() == 0)
-               {
+               if (rows == null || rows.size() == 0) {
                   //-- there is a users with the given username but the don't have any association to this apiName/tenant
                   user = null;
                }
-               else
-               {
+               else {
                   populateGRP(user, rows);
                }
             }
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
 
       return user;
    }
 
-   public static String strongHash(Object salt, String password) throws ApiException
-   {
-      try
-      {
+   public static String strongHash(Object salt, String password) throws ApiException {
+      try {
          int iterationNb = 1000;
          MessageDigest digest = MessageDigest.getInstance("SHA-512");
          digest.reset();
          digest.update(salt.toString().getBytes());
          byte[] input = digest.digest(password.getBytes("UTF-8"));
-         for (int i = 0; i < iterationNb; i++)
-         {
+         for (int i = 0; i < iterationNb; i++) {
             digest.reset();
             input = digest.digest(input);
          }
@@ -168,17 +152,14 @@ public class JdbcDbUserDao extends JwtUserDao
          String encoded = Base64.encodeBase64String(input).trim();
          return encoded;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throwEx(null, ex, null);
       }
       return null;
    }
 
-   public static String weakHash(String password)
-   {
-      try
-      {
+   public static String weakHash(String password) {
+      try {
          byte[] byteArr = password.getBytes();
          MessageDigest digest = MessageDigest.getInstance("MD5");
          digest.update(byteArr);
@@ -188,22 +169,17 @@ public class JdbcDbUserDao extends JwtUserDao
 
          return hex;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
 
-   void populateGRP(User user, Rows rows)
-   {
-      for (Row row : rows)
-      {
+   void populateGRP(User user, Rows rows) {
+      for (Row row : rows) {
          String type = row.getString("type");
          String name = row.getString("name");
-         if (name != null)
-         {
-            switch (type)
-            {
+         if (name != null) {
+            switch (type) {
                case "group":
                   user.withGroups(name);
                   break;
@@ -234,8 +210,7 @@ public class JdbcDbUserDao extends JwtUserDao
     * 
     * 
     */
-   protected Rows findGRP(Connection conn, int userId, String api, String tenant) throws Exception
-   {
+   protected Rows findGRP(Connection conn, int userId, String api, String tenant) throws Exception {
       List vals = new ArrayList();
 
       String sql = "";
@@ -329,40 +304,33 @@ public class JdbcDbUserDao extends JwtUserDao
       return JdbcUtils.selectRows(conn, sql, vals);
    }
 
-   public JdbcDbUserDao withDb(JdbcDb db)
-   {
+   public JdbcDbUserDao withDb(JdbcDb db) {
       this.db = db;
       return this;
    }
 
-   public JdbcDb getDb()
-   {
+   public JdbcDb getDb() {
       return db;
    }
 
-   public JdbcDbUserDao withSalt(String salt)
-   {
+   public JdbcDbUserDao withSalt(String salt) {
       this.salt = salt;
       return this;
    }
 
-   public String getSalt()
-   {
+   public String getSalt() {
       return Config.getString(getName() + ".salt", salt);
    }
 
-   public String getName()
-   {
+   public String getName() {
       return name;
    }
 
-   public void setName(String name)
-   {
+   public void setName(String name) {
       this.name = name;
    }
 
-   public void setDb(JdbcDb db)
-   {
+   public void setDb(JdbcDb db) {
       this.db = db;
    }
 

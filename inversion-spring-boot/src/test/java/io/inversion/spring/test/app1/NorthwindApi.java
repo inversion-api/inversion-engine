@@ -27,33 +27,29 @@ import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
 
 @Configuration
-public class NorthwindApi
-{
+public class NorthwindApi {
 
    /**
     * Constructs a REST API that exposes database tables and REST collections. 
     */
    @Bean
-   public static Api buildApi()
-   {
+   public static Api buildApi() {
       return new Api().withName("test")
 
                       .withEndpoint("GET", "mock1/*", new MockAction().withJson(new JSNode("hello_world", "from northwind api")))//
-                      .withEndpoint("GET", "custom1/*", new Action()
-                         {
-                            @Override
-                            public void doGet(Request req, Response res)
-                            {
-                               res.data().add("action 1 value");
-                            }
-                         }, new Action()
-                            {
-                               @Override
-                               public void doGet(Request req, Response res)
-                               {
-                                  res.data().add("action 2 value");
-                               }
-                            });
+                      .withEndpoint("GET", "custom1/*", new Action() {
+
+                         @Override
+                         public void doGet(Request req, Response res) {
+                            res.data().add("action 1 value");
+                         }
+                      }, new Action() {
+
+                         @Override
+                         public void doGet(Request req, Response res) {
+                            res.data().add("action 2 value");
+                         }
+                      });
 
    }
 

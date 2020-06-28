@@ -32,8 +32,8 @@ import java.util.Set;
  * 
  * @see JSNode
  */
-public class JSArray extends JSNode implements Iterable
-{
+public class JSArray extends JSNode implements Iterable {
+
    /**
     * The objects stored in this JSArray.  
     * <p>
@@ -41,14 +41,11 @@ public class JSArray extends JSNode implements Iterable
     */
    protected List objects = new ArrayList();
 
-   public JSArray(Object... objects)
-   {
-      if (objects != null && objects.length == 1 && objects[0].getClass().isArray())
-      {
+   public JSArray(Object... objects) {
+      if (objects != null && objects.length == 1 && objects[0].getClass().isArray()) {
          objects = (Object[]) objects[0];
       }
-      else if (objects != null && objects.length == 1 && java.util.Collection.class.isAssignableFrom(objects[0].getClass()))
-      {
+      else if (objects != null && objects.length == 1 && java.util.Collection.class.isAssignableFrom(objects[0].getClass())) {
          objects = ((java.util.Collection) objects[0]).toArray();
       }
 
@@ -61,8 +58,7 @@ public class JSArray extends JSNode implements Iterable
     * @see JSNode.isArray()
     */
    @Override
-   public boolean isArray()
-   {
+   public boolean isArray() {
       return true;
    }
 
@@ -75,8 +71,7 @@ public class JSArray extends JSNode implements Iterable
     * @see #set(int, Object)
     */
    @Override
-   public Object put(String index, Object value)
-   {
+   public Object put(String index, Object value) {
       return set(Integer.parseInt(index.trim()), value);
    }
 
@@ -90,8 +85,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the prior value at <code>index</code>
     * @see #set(int, Object)
     */
-   public Object put(int index, Object value)
-   {
+   public Object put(int index, Object value) {
       return set(index, value);
    }
 
@@ -105,8 +99,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the prior value at <code>index</code> if it exists
     * @throws ArrayIndexOutOfBoundsException only if index is < 0
     */
-   public Object set(int index, Object value) throws ArrayIndexOutOfBoundsException
-   {
+   public Object set(int index, Object value) throws ArrayIndexOutOfBoundsException {
       if (index < 0)
          throw new ArrayIndexOutOfBoundsException("You can't set index '" + index + "' on a list");
 
@@ -122,8 +115,7 @@ public class JSArray extends JSNode implements Iterable
     * @param index
     * @param object
     */
-   public void add(int index, Object object)
-   {
+   public void add(int index, Object object) {
       objects.add(index, object);
    }
 
@@ -131,8 +123,7 @@ public class JSArray extends JSNode implements Iterable
     * Adds <code>object</code> to the end of {@link #objects}
     * @param object
     */
-   public void add(Object object)
-   {
+   public void add(Object object) {
       objects.add(object);
    }
 
@@ -140,8 +131,7 @@ public class JSArray extends JSNode implements Iterable
     * Adds all elements from <code>array</code> to the end of {@link #objects}
     * @param array
     */
-   public void addAll(JSArray array)
-   {
+   public void addAll(JSArray array) {
       objects.addAll(array.asList());
    }
 
@@ -151,8 +141,7 @@ public class JSArray extends JSNode implements Iterable
     * @see #remove(int)
     */
    @Override
-   public Object remove(Object index)
-   {
+   public Object remove(Object index) {
       return remove(Integer.parseInt(index.toString().trim()));
    }
 
@@ -164,8 +153,7 @@ public class JSArray extends JSNode implements Iterable
     * @param index the element/column to remove from {@link #objects}
     * @return the prior value at <code>index</code> if it exits
     */
-   public Object remove(int index)
-   {
+   public Object remove(int index) {
       if (index < 0 || index >= objects.size())
          return null;
 
@@ -176,8 +164,7 @@ public class JSArray extends JSNode implements Iterable
     * Override of JSNode.get(Object) to parse <code>index</code> as an Integer and pull from {@link #objects} instead of JSNode.properties
     */
    @Override
-   public Object get(Object index)
-   {
+   public Object get(Object index) {
       return get(Integer.parseInt(index.toString().trim()));
    }
 
@@ -186,8 +173,7 @@ public class JSArray extends JSNode implements Iterable
     * @param index
     * @return the object at <code>index</code> if it exists else, null
     */
-   public Object get(int index)
-   {
+   public Object get(int index) {
       if (index > -1 && index >= objects.size())
          return null;
       return objects.get(index);
@@ -201,8 +187,7 @@ public class JSArray extends JSNode implements Iterable
     * @throws ClassCastException if the object found is not a JSNode
     * @see #get(Object)
     */
-   public JSNode getNode(int index) throws ClassCastException
-   {
+   public JSNode getNode(int index) throws ClassCastException {
       return (JSNode) get(index);
    }
 
@@ -214,8 +199,7 @@ public class JSArray extends JSNode implements Iterable
     * @throws ClassCastException if the object found is not a JSArray
     * @see #get(Object)
     */
-   public JSArray getArray(int index)
-   {
+   public JSArray getArray(int index) {
       return (JSArray) get(index);
    }
 
@@ -226,8 +210,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the value of property <code>name</code> stringified if it exists else null
     * @see #get(Object)
     */
-   public String getString(int index)
-   {
+   public String getString(int index) {
       Object value = get(index);
       if (value != null)
          return value.toString();
@@ -241,8 +224,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the value at <cod>index</code> stringified and parsed as an int if it exists else -1
     * @see #get(Object)
     */
-   public int getInt(int index)
-   {
+   public int getInt(int index) {
       Object found = get(index);
       if (found != null)
          return Utils.atoi(found);
@@ -257,8 +239,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the value at <cod>index</code> stringified and parsed as a double if it exists else -1
     * @see #get(Object)
     */
-   public double getDouble(int index)
-   {
+   public double getDouble(int index) {
       Object found = get(index);
       if (found != null)
          return Utils.atod(found);
@@ -273,8 +254,7 @@ public class JSArray extends JSNode implements Iterable
     * @return the value at <cod>index</code> stringified and parsed as a boolean if it exists else false
     * @see #get(Object)
     */
-   public boolean getBoolean(int index)
-   {
+   public boolean getBoolean(int index) {
       Object found = get(index);
       if (found != null)
          return Utils.atob(found);
@@ -283,67 +263,56 @@ public class JSArray extends JSNode implements Iterable
    }
 
    @Override
-   public Set<String> keySet()
-   {
+   public Set<String> keySet() {
       //TODO make more efficient!!!!
       LinkedHashSet set = new LinkedHashSet();
-      for (int i = 0; i < objects.size(); i++)
-      {
+      for (int i = 0; i < objects.size(); i++) {
          set.add(i + "");
       }
       return set;
    }
 
-   public List asList()
-   {
+   public List asList() {
       return new ArrayList(this.objects);
    }
 
    /**
     * @return simply returns 'this';
     */
-   public JSArray asArray()
-   {
+   public JSArray asArray() {
       return this;
    }
 
-   public boolean contains(Object object)
-   {
+   public boolean contains(Object object) {
       return objects.contains(object);
    }
 
    @Override
-   public boolean isEmpty()
-   {
+   public boolean isEmpty() {
       return objects.isEmpty();
    }
 
    @Override
-   public void clear()
-   {
+   public void clear() {
       objects.clear();
    }
 
    @Override
-   public int size()
-   {
+   public int size() {
       return objects.size();
    }
 
-   public int length()
-   {
+   public int length() {
       return objects.size();
    }
 
    @Override
-   public Iterator iterator()
-   {
+   public Iterator iterator() {
       return asList().iterator();
    }
 
    @Override
-   public Collection values()
-   {
+   public Collection values() {
       return asList();
    }
 }

@@ -21,26 +21,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class Term implements Comparable<Term>
-{
+public class Term implements Comparable<Term> {
+
    public Term       parent = null;
    public char       quote  = 0;
    public String     token  = null;
    public List<Term> terms  = new ArrayList();
 
-   protected Term()
-   {
+   protected Term() {
 
    }
 
-   protected Term(Term parent, String token)
-   {
+   protected Term(Term parent, String token) {
       withParent(parent);
       withToken(token);
    }
 
-   public Term copy()
-   {
+   public Term copy() {
       Term copy = new Term();
 
       copy.quote = quote;
@@ -52,13 +49,10 @@ public class Term implements Comparable<Term>
    }
 
    @Override
-   public int compareTo(Term o)
-   {
+   public int compareTo(Term o) {
       int val = token.compareTo(o.token);
-      if (val == 0)
-      {
-         for (int i = 0; i < terms.size(); i++)
-         {
+      if (val == 0) {
+         for (int i = 0; i < terms.size(); i++) {
             if (o.terms.size() <= i)
                return 1;
 
@@ -71,46 +65,38 @@ public class Term implements Comparable<Term>
       return val;
    }
 
-   public String getToken(int childIndex)
-   {
+   public String getToken(int childIndex) {
       if (terms.size() > childIndex)
          return terms.get(childIndex).getToken();
       return null;
    }
 
-   public String getToken()
-   {
+   public String getToken() {
       if (token == null)
          return "NULL";
 
       return token;
    }
 
-   public boolean hasToken(String... tokens)
-   {
+   public boolean hasToken(String... tokens) {
       if (token == null)
          return false;
 
-      for (int i = 0; tokens != null && i < tokens.length; i++)
-      {
+      for (int i = 0; tokens != null && i < tokens.length; i++) {
          if (token.equalsIgnoreCase(tokens[i]))
             return true;
       }
       return false;
    }
 
-   public Term withToken(String token)
-   {
+   public Term withToken(String token) {
       quote = 0;
-      if (token != null)
-      {
+      if (token != null) {
          token = token.trim();
 
-         if (token.length() > 1)
-         {
+         if (token.length() > 1) {
             char start = token.charAt(0);
-            if (token.charAt(token.length() - 1) == start && (start == '\'' || start == '"' || start == '`'))
-            {
+            if (token.charAt(token.length() - 1) == start && (start == '\'' || start == '"' || start == '`')) {
                quote = start;
                token = token.substring(1, token.length() - 1);
             }
@@ -124,18 +110,14 @@ public class Term implements Comparable<Term>
       return this;
    }
 
-   public Term getParent()
-   {
+   public Term getParent() {
       return parent;
    }
 
-   public Term withParent(Term parent)
-   {
-      if (this.parent != parent)
-      {
+   public Term withParent(Term parent) {
+      if (this.parent != parent) {
          this.parent = parent;
-         if (parent != null)
-         {
+         if (parent != null) {
             parent.withTerm(this);
          }
       }
@@ -144,49 +126,41 @@ public class Term implements Comparable<Term>
       return this;
    }
 
-   public boolean isLeaf()
-   {
+   public boolean isLeaf() {
       return terms.size() == 0;
    }
 
-   public boolean isLeaf(int childIndex)
-   {
+   public boolean isLeaf(int childIndex) {
       if (childIndex >= terms.size())
          return false;
 
       return getTerm(childIndex).isLeaf();
    }
 
-   public int size()
-   {
+   public int size() {
       return terms.size();
    }
 
-   public int indexOf(Term child)
-   {
+   public int indexOf(Term child) {
       return terms.indexOf(child);
    }
 
-   public int getNumTerms()
-   {
+   public int getNumTerms() {
       return terms.size();
    }
 
-   public List<Term> getTerms()
-   {
+   public List<Term> getTerms() {
       return terms;
    }
 
-   public Term getTerm(int index)
-   {
+   public Term getTerm(int index) {
       if (terms.size() > index)
          return terms.get(index);
 
       return null;
    }
 
-   public Term replaceTerm(Term oldTerm, Term newTerm)
-   {
+   public Term replaceTerm(Term oldTerm, Term newTerm) {
       terms.remove(newTerm);//make sure not in there twice
 
       int idx = terms.indexOf(oldTerm);
@@ -197,22 +171,18 @@ public class Term implements Comparable<Term>
       return this;
    }
 
-   public Term withTerms(Term... terms)
-   {
-      for (Term term : terms)
-      {
+   public Term withTerms(Term... terms) {
+      for (Term term : terms) {
          withTerm(term);
       }
       return this;
    }
 
-   public Term withTerm(Term term)
-   {
+   public Term withTerm(Term term) {
       if (term == this)
          throw new RuntimeException("A term can not be a child of itself");
 
-      if (!terms.contains(term))
-      {
+      if (!terms.contains(term)) {
          terms.add(term);
          if (term.getParent() != this)
             term.withParent(this);
@@ -220,14 +190,12 @@ public class Term implements Comparable<Term>
       return this;
    }
 
-   public Term withTerm(String token, Object... terms)
-   {
+   public Term withTerm(String token, Object... terms) {
       withTerm(term(this, token, terms));
       return this;
    }
 
-   public Term withTerm(int index, Term term)
-   {
+   public Term withTerm(int index, Term term) {
       if (term == this)
          throw new RuntimeException("A term can not be a child of itself");
 
@@ -242,43 +210,34 @@ public class Term implements Comparable<Term>
       return this;
    }
 
-   public void removeTerm(Term term)
-   {
+   public void removeTerm(Term term) {
       terms.remove(term);
    }
 
-   public void clear()
-   {
+   public void clear() {
       terms.clear();
    }
 
-   public boolean isQuoted()
-   {
+   public boolean isQuoted() {
       return quote != 0;
    }
 
-   public char getQuote()
-   {
+   public char getQuote() {
       return quote;
    }
 
-   public String toString()
-   {
+   public String toString() {
       StringBuffer buff = null;
-      if (quote > 0)
-      {
+      if (quote > 0) {
          buff = new StringBuffer("").append(quote).append(getToken()).append(quote);
       }
-      else
-      {
+      else {
          buff = new StringBuffer(getToken());
       }
-      if (terms.size() > 0)
-      {
+      if (terms.size() > 0) {
          buff.append("(");
 
-         for (int i = 0; i < terms.size(); i++)
-         {
+         for (int i = 0; i < terms.size(); i++) {
             buff.append(terms.get(i).toString());
             if (i < terms.size() - 1)
                buff.append(",");
@@ -290,18 +249,14 @@ public class Term implements Comparable<Term>
       return buff.toString();
    }
 
-   public static Term term(Term parent, String token, Object... terms)
-   {
+   public static Term term(Term parent, String token, Object... terms) {
       Term newTerm = new Term(parent, token);
       List deconstructed = deconstructed(new ArrayList(), terms);
-      for (Object aTerm : deconstructed)
-      {
-         if (aTerm instanceof Term)
-         {
+      for (Object aTerm : deconstructed) {
+         if (aTerm instanceof Term) {
             newTerm.withTerm((Term) aTerm);
          }
-         else
-         {
+         else {
             newTerm.withTerm(new Term(newTerm, aTerm.toString()));
          }
       }
@@ -309,27 +264,21 @@ public class Term implements Comparable<Term>
       return newTerm;
    }
 
-   static List deconstructed(List found, Object... terms)
-   {
+   static List deconstructed(List found, Object... terms) {
       if (terms.length == 1 && terms[0].getClass().isArray())
          terms = (Object[]) terms[0];
 
-      for (Object o : terms)
-      {
-         if (o instanceof Collection)
-         {
+      for (Object o : terms) {
+         if (o instanceof Collection) {
             ((Collection) o).forEach(o2 -> deconstructed(found, o2));
          }
-         else if (o.getClass().isArray())
-         {
+         else if (o.getClass().isArray()) {
             Object[] arr = (Object[]) o;
-            for (Object o2 : arr)
-            {
+            for (Object o2 : arr) {
                deconstructed(found, o2);
             }
          }
-         else
-         {
+         else {
             found.add(o);
          }
       }
@@ -344,19 +293,16 @@ public class Term implements Comparable<Term>
     * @param values
     * @return
     */
-   public static boolean in(String toFind, String... values)
-   {
+   public static boolean in(String toFind, String... values) {
       toFind = toFind.toLowerCase();
-      for (String val : values)
-      {
+      for (String val : values) {
          if (toFind.equals(val.toLowerCase()))
             return true;
       }
       return false;
    }
 
-   public void stream(Consumer action)
-   {
+   public void stream(Consumer action) {
       action.accept(token);
       for (Term child : terms)
          child.stream(action);

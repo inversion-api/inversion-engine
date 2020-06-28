@@ -30,64 +30,59 @@ import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 
-public class EngineTest
-{
+public class EngineTest {
+
    @Test
-   public void actionPathVariablesAreAddedToQueryAndJson()
-   {
+   public void actionPathVariablesAreAddedToQueryAndJson() {
       Api api = new Api("api");
 
-      api.withAction(new Action("*", "a/b/:named1/:named2/*")
-         {
-            public void run(Request req, Response res) throws ApiException
-            {
-               res.data().add("action1");
-               assertEquals("a", req.getUrl().getParam("endpointNamed1"));
-               assertEquals("c", req.getUrl().getParam("endpointNamed2"));
-               assertEquals("d", req.getUrl().getParam("Ecoll"));
-               assertEquals("f", req.getUrl().getParam("Eid"));
-               assertEquals("c", req.getUrl().getParam("named1"));
-               assertEquals("d", req.getUrl().getParam("named2"));
-               assertNull(req.getUrl().getParam("named3"));
-               assertNull(req.getUrl().getParam("named4"));
+      api.withAction(new Action("*", "a/b/:named1/:named2/*") {
 
-               if (req.getJson() != null)
-               {
-                  assertEquals("a", req.getJson().get("endpointNamed1"));
-                  assertEquals("c", req.getJson().get("endpointNamed2"));
-                  assertEquals("c", req.getJson().get("named1"));
-                  assertEquals("d", req.getJson().get("named2"));
-                  assertNull(req.getJson().get("named3"));
-                  assertNull(req.getJson().get("named4"));
-               }
+         public void run(Request req, Response res) throws ApiException {
+            res.data().add("action1");
+            assertEquals("a", req.getUrl().getParam("endpointNamed1"));
+            assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+            assertEquals("d", req.getUrl().getParam("Ecoll"));
+            assertEquals("f", req.getUrl().getParam("Eid"));
+            assertEquals("c", req.getUrl().getParam("named1"));
+            assertEquals("d", req.getUrl().getParam("named2"));
+            assertNull(req.getUrl().getParam("named3"));
+            assertNull(req.getUrl().getParam("named4"));
+
+            if (req.getJson() != null) {
+               assertEquals("a", req.getJson().get("endpointNamed1"));
+               assertEquals("c", req.getJson().get("endpointNamed2"));
+               assertEquals("c", req.getJson().get("named1"));
+               assertEquals("d", req.getJson().get("named2"));
+               assertNull(req.getJson().get("named3"));
+               assertNull(req.getJson().get("named4"));
             }
-         });
+         }
+      });
 
-      api.withAction(new Action("*", "a/b/:named3/:named4/*")
-         {
-            public void run(Request req, Response res) throws ApiException
-            {
-               res.data().add("action2");
-               assertEquals("a", req.getUrl().getParam("endpointNamed1"));
-               assertEquals("c", req.getUrl().getParam("endpointNamed2"));
-               assertEquals("d", req.getUrl().getParam("Ecoll"));
-               assertEquals("f", req.getUrl().getParam("Eid"));
-               assertEquals("c", req.getUrl().getParam("named1"));
-               assertEquals("d", req.getUrl().getParam("named2"));
-               assertEquals("c", req.getUrl().getParam("named3"));
-               assertEquals("d", req.getUrl().getParam("named4"));
+      api.withAction(new Action("*", "a/b/:named3/:named4/*") {
 
-               if (req.getJson() != null)
-               {
-                  assertEquals("a", req.getJson().get("endpointNamed1"));
-                  assertEquals("c", req.getJson().get("endpointNamed2"));
-                  assertEquals("c", req.getJson().get("named1"));
-                  assertEquals("d", req.getJson().get("named2"));
-                  assertEquals("c", req.getJson().get("named3"));
-                  assertEquals("d", req.getJson().get("named4"));
-               }
+         public void run(Request req, Response res) throws ApiException {
+            res.data().add("action2");
+            assertEquals("a", req.getUrl().getParam("endpointNamed1"));
+            assertEquals("c", req.getUrl().getParam("endpointNamed2"));
+            assertEquals("d", req.getUrl().getParam("Ecoll"));
+            assertEquals("f", req.getUrl().getParam("Eid"));
+            assertEquals("c", req.getUrl().getParam("named1"));
+            assertEquals("d", req.getUrl().getParam("named2"));
+            assertEquals("c", req.getUrl().getParam("named3"));
+            assertEquals("d", req.getUrl().getParam("named4"));
+
+            if (req.getJson() != null) {
+               assertEquals("a", req.getJson().get("endpointNamed1"));
+               assertEquals("c", req.getJson().get("endpointNamed2"));
+               assertEquals("c", req.getJson().get("named1"));
+               assertEquals("d", req.getJson().get("named2"));
+               assertEquals("c", req.getJson().get("named3"));
+               assertEquals("d", req.getJson().get("named4"));
             }
-         });
+         }
+      });
 
       api.withEndpoint("GET", ":endpointNamed1/b/:endpointNamed2/[:Ecoll]/[{Eent:e}]/[:Eid]/*");
 
@@ -109,10 +104,10 @@ public class EngineTest
    }
 
    @Test
-   public void testPathVariables()
-   {
+   public void testPathVariables() {
       Api api1 = new Api("api1").withEndpoint("*", "ep1/*", new MockAction());
-      Api api2 = new Api("api2").withEndpoint("*", "ep2/*", new MockAction());;
+      Api api2 = new Api("api2").withEndpoint("*", "ep2/*", new MockAction());
+      ;
 
       Engine e = new Engine(api1, api2);
 
@@ -174,8 +169,7 @@ public class EngineTest
    }
 
    @Test
-   public void test_endpoints_without_paths()
-   {
+   public void test_endpoints_without_paths() {
       Api api = null;
 
       api = new Api("test")//
@@ -200,8 +194,7 @@ public class EngineTest
    }
 
    @Test
-   public void test_endpoint_matches()
-   {
+   public void test_endpoint_matches() {
       //      Api api0 = new Api()//
       //                          .withEndpoint(new Endpoint("GET", "endpoint_path/*", new MockAction("all")).withName("ep0"));
       //
@@ -279,8 +272,7 @@ public class EngineTest
    }
 
    @Test
-   public void test1()
-   {
+   public void test1() {
       Engine engine = null;
 
       engine = new Engine()//
@@ -321,8 +313,7 @@ public class EngineTest
    }
 
    @Test
-   public void test2()
-   {
+   public void test2() {
       Engine engine = null;
 
       engine = new Engine()//
@@ -344,14 +335,12 @@ public class EngineTest
    }
 
    @Test
-   public void testSlashCorrection()
-   {
+   public void testSlashCorrection() {
       assertEquals("a/b", new Path("/a////b/////").toString());
    }
 
    @Test
-   public void testSimpleEndpoint2()
-   {
+   public void testSimpleEndpoint2() {
       Engine engine = null;
 
       engine = new Engine()//
@@ -371,47 +360,43 @@ public class EngineTest
     * ...are configed params set to query?  How
     */
    @Test
-   public void testConfigParamOverrides()
-   {
+   public void testConfigParamOverrides() {
       //includes/excludes, expands, requires/restricts
       Endpoint ep = new Endpoint("GET", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
-      Action actionA = new MockAction()
-         {
-            public void run(io.inversion.Request req, Response res) throws ApiException
-            {
-               Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionA_actionAParam " + req.getChain().getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionA_actionBParam " + req.getChain().getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionA_actionCParam " + req.getChain().getConfig("actionCParam"));
-            }
-         }.withConfig("overriddenParam=actionAOverride&actionAParam=actionAValue");
+      Action actionA = new MockAction() {
 
-      Action actionB = new MockAction()
-         {
-            public void run(io.inversion.Request req, Response res) throws ApiException
-            {
-               Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionB_actionAParam " + req.getChain().getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionB_actionBParam " + req.getChain().getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionB_actionCParam " + req.getChain().getConfig("actionCParam"));
+         public void run(io.inversion.Request req, Response res) throws ApiException {
+            Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+            Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
+            Chain.debug("Endpoint_actionA_actionAParam " + req.getChain().getConfig("actionAParam"));
+            Chain.debug("Endpoint_actionA_actionBParam " + req.getChain().getConfig("actionBParam"));
+            Chain.debug("Endpoint_actionA_actionCParam " + req.getChain().getConfig("actionCParam"));
+         }
+      }.withConfig("overriddenParam=actionAOverride&actionAParam=actionAValue");
 
-            }
-         }.withConfig("overriddenParam=actionBOverride&actionBParam=actionBValue");
+      Action actionB = new MockAction() {
 
-      Action actionC = new MockAction()
-         {
-            public void run(io.inversion.Request req, Response res) throws ApiException
-            {
-               Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-               Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));
-               Chain.debug("Endpoint_actionC_actionAParam " + req.getChain().getConfig("actionAParam"));
-               Chain.debug("Endpoint_actionC_actionBParam " + req.getChain().getConfig("actionBParam"));
-               Chain.debug("Endpoint_actionC_actionCParam " + req.getChain().getConfig("actionCParam"));
+         public void run(io.inversion.Request req, Response res) throws ApiException {
+            Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+            Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
+            Chain.debug("Endpoint_actionB_actionAParam " + req.getChain().getConfig("actionAParam"));
+            Chain.debug("Endpoint_actionB_actionBParam " + req.getChain().getConfig("actionBParam"));
+            Chain.debug("Endpoint_actionB_actionCParam " + req.getChain().getConfig("actionCParam"));
 
-            }
-         }.withConfig("overriddenParam=actionCOverride&actionCParam=actionCValue");
+         }
+      }.withConfig("overriddenParam=actionBOverride&actionBParam=actionBValue");
+
+      Action actionC = new MockAction() {
+
+         public void run(io.inversion.Request req, Response res) throws ApiException {
+            Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
+            Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));
+            Chain.debug("Endpoint_actionC_actionAParam " + req.getChain().getConfig("actionAParam"));
+            Chain.debug("Endpoint_actionC_actionBParam " + req.getChain().getConfig("actionBParam"));
+            Chain.debug("Endpoint_actionC_actionCParam " + req.getChain().getConfig("actionCParam"));
+
+         }
+      }.withConfig("overriddenParam=actionCOverride&actionCParam=actionCValue");
 
       ep.withAction(actionA);
       ep.withAction(actionB);
@@ -471,61 +456,55 @@ public class EngineTest
    //
    //   }
 
-   public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis)
-   {
+   public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) {
       assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
    }
 
-   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis)
-   {
+   public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) {
       final boolean[] success = new boolean[]{false};
-      Engine e = new Engine()
-         {
-            @Override
-            protected void run(Chain chain, List<ActionMatch> actions) throws ApiException
-            {
-               if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
-                  fail(chain, "endpoints don't match");
+      Engine e = new Engine() {
 
-               if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString()))
-               {
-                  fail(chain, "endpoint path doesn't match");
-               }
+         @Override
+         protected void run(Chain chain, List<ActionMatch> actions) throws ApiException {
+            if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
+               fail(chain, "endpoints don't match");
 
-               if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
-                  fail(chain, "collectionKey don't match");
-
-               if (resourceKey != null && !resourceKey.equals(chain.getRequest().getResourceKey()))
-                  fail(chain, "resourceKey don't match");
-
-               if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
-                  fail(chain, "subCollectionKey don't match");
-
-               success[0] = true;
+            if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString())) {
+               fail(chain, "endpoint path doesn't match");
             }
 
-            protected void fail(Chain chain, String message, Object... vals)
-            {
-               System.err.print(message);
-               for (int i = 0; vals != null && i < vals.length; i++)
-                  System.err.print(vals[i] + " ");
-               System.err.println("");
-               System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
-               System.err.println("url              :" + chain.getRequest().getUrl());
-               System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
-               System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
-               System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
-               System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
-               System.err.println("resourceKey        :" + chain.getRequest().getResourceKey());
-               System.err.println("subCollectionKey :" + chain.getRequest().getRelationshipKey());
-               System.err.println("subPath          :" + chain.getRequest().getSubpath());
+            if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
+               fail(chain, "collectionKey don't match");
 
-               throw new RuntimeException(message);
-            }
-         };
+            if (resourceKey != null && !resourceKey.equals(chain.getRequest().getResourceKey()))
+               fail(chain, "resourceKey don't match");
 
-      for (Api api : apis)
-      {
+            if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
+               fail(chain, "subCollectionKey don't match");
+
+            success[0] = true;
+         }
+
+         protected void fail(Chain chain, String message, Object... vals) {
+            System.err.print(message);
+            for (int i = 0; vals != null && i < vals.length; i++)
+               System.err.print(vals[i] + " ");
+            System.err.println("");
+            System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
+            System.err.println("url              :" + chain.getRequest().getUrl());
+            System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
+            System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
+            System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
+            System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
+            System.err.println("resourceKey        :" + chain.getRequest().getResourceKey());
+            System.err.println("subCollectionKey :" + chain.getRequest().getRelationshipKey());
+            System.err.println("subPath          :" + chain.getRequest().getSubpath());
+
+            throw new RuntimeException(message);
+         }
+      };
+
+      for (Api api : apis) {
          if (api != null)
             e.withApi(api);//without this additional API, any apiName will match
       }

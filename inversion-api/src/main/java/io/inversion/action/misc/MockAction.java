@@ -31,37 +31,32 @@ import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
-public class MockAction extends Action<MockAction>
-{
+public class MockAction extends Action<MockAction> {
+
    protected JSNode  json          = null;
    protected String  jsonUrl       = null;
    protected int     statusCode    = -1;
    protected String  status        = null;
    protected boolean cancelRequest = true;
 
-   public MockAction()
-   {
+   public MockAction() {
 
    }
 
-   public MockAction(String status, JSNode json)
-   {
+   public MockAction(String status, JSNode json) {
       withStatus(status);
       withJson(json);
    }
 
-   public MockAction(String name)
-   {
+   public MockAction(String name) {
       this(null, null, name, null);
    }
 
-   public MockAction(String methods, String includePaths, String name)
-   {
+   public MockAction(String methods, String includePaths, String name) {
       this(methods, includePaths, name, null);
    }
 
-   public MockAction(String methods, String includePaths, String name, JSNode json)
-   {
+   public MockAction(String methods, String includePaths, String name, JSNode json) {
       if (name != null && json == null)
          json = new JSNode("name", name);
 
@@ -71,8 +66,7 @@ public class MockAction extends Action<MockAction>
    }
 
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
+   public void run(Request req, Response res) throws ApiException {
       if (statusCode > 0)
          res.withStatus(status);
 
@@ -83,8 +77,7 @@ public class MockAction extends Action<MockAction>
 
       JSNode json = getJson();
 
-      if (json != null)
-      {
+      if (json != null) {
          if (json instanceof JSArray)
             res.withData((JSArray) json);
          else
@@ -95,66 +88,52 @@ public class MockAction extends Action<MockAction>
          req.getChain().cancel();
    }
 
-   public MockAction withJson(JSNode json)
-   {
+   public MockAction withJson(JSNode json) {
       this.json = json;
       return this;
    }
 
-   public String getJsonUrl()
-   {
+   public String getJsonUrl() {
       return jsonUrl;
    }
 
-   public MockAction withJsonUrl(String jsonUrl)
-   {
+   public MockAction withJsonUrl(String jsonUrl) {
       this.jsonUrl = jsonUrl;
       return this;
    }
 
-   public JSNode getJson()
-   {
-      if (json == null && jsonUrl != null)
-      {
+   public JSNode getJson() {
+      if (json == null && jsonUrl != null) {
          InputStream stream = null;
-         try
-         {
+         try {
             stream = new URL(jsonUrl).openStream();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
          }
 
-         if (stream == null)
-         {
+         if (stream == null) {
             stream = getClass().getResourceAsStream(jsonUrl);
          }
 
-         if (stream == null)
-         {
+         if (stream == null) {
             stream = getClass().getClassLoader().getResourceAsStream(jsonUrl);
          }
 
-         if (stream == null)
-         {
-            try
-            {
+         if (stream == null) {
+            try {
                File f = new File(jsonUrl);
                if (f.exists())
                   stream = new BufferedInputStream(new FileInputStream(jsonUrl));
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                ex.printStackTrace();
             }
          }
 
-         if (stream != null)
-         {
+         if (stream != null) {
             json = JSNode.parseJsonNode(Utils.read(stream));
          }
-         else
-         {
+         else {
             ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
          }
 
@@ -164,35 +143,29 @@ public class MockAction extends Action<MockAction>
 
    }
 
-   public int getStatusCode()
-   {
+   public int getStatusCode() {
       return statusCode;
    }
 
-   public MockAction wihtStatusCode(int statusCode)
-   {
+   public MockAction wihtStatusCode(int statusCode) {
       this.statusCode = statusCode;
       return this;
    }
 
-   public String getStatus()
-   {
+   public String getStatus() {
       return status;
    }
 
-   public MockAction withStatus(String status)
-   {
+   public MockAction withStatus(String status) {
       this.status = status;
       return this;
    }
 
-   public boolean isCancelRequest()
-   {
+   public boolean isCancelRequest() {
       return cancelRequest;
    }
 
-   public MockAction withCancelRequest(boolean cancelRequest)
-   {
+   public MockAction withCancelRequest(boolean cancelRequest) {
       this.cancelRequest = cancelRequest;
       return this;
    }

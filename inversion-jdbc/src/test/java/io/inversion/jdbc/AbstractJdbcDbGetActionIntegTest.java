@@ -35,16 +35,14 @@ import io.inversion.Response;
 import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import io.inversion.utils.JSNode;
 
-public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractJdbcDbEngineTest
-{
-   public AbstractJdbcDbGetActionIntegTest(String type)
-   {
+public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractJdbcDbEngineTest {
+
+   public AbstractJdbcDbGetActionIntegTest(String type) {
       super(type);
    }
 
    @Test
-   public void testNonUrlSafeKeyValues() throws Exception
-   {
+   public void testNonUrlSafeKeyValues() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -65,8 +63,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testNegativeOneToManyFilters() throws Exception
-   {
+   public void testNegativeOneToManyFilters() throws Exception {
       Response resp = null;
 
       //find everyone who reports to Andrew
@@ -79,8 +76,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testNegativeManyToOneFilters() throws Exception
-   {
+   public void testNegativeManyToOneFilters() throws Exception {
       Response resp = null;
 
       //"Andrew Fuller" is Nancy's manager in the Northwind datataset
@@ -94,8 +90,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testNegativeManyToManyFilters() throws Exception
-   {
+   public void testNegativeManyToManyFilters() throws Exception {
       Response resp = null;
 
       //-- find everyone who has never sold something with a quantity of 12
@@ -105,8 +100,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testRelatedCollectionJoinSelect() throws Exception
-   {
+   public void testRelatedCollectionJoinSelect() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -174,15 +168,13 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     * @throws ApiException
     */
    @Test
-   public void testCollections() throws Exception
-   {
+   public void testCollections() throws Exception {
       List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemoes", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
       List<String> c2 = new ArrayList();
 
       Api api = engine().getApi("northwind");
 
-      for (Collection coll : (List<Collection>) api.getDb(getType()).getCollections())
-      {
+      for (Collection coll : (List<Collection>) api.getDb(getType()).getCollections()) {
          c2.add(coll.getName().toLowerCase());
       }
 
@@ -193,8 +185,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testRelationships1() throws Exception
-   {
+   public void testRelationships1() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -213,8 +204,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testExpandsOneToMany11() throws Exception
-   {
+   public void testExpandsOneToMany11() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -225,8 +215,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testExpandsOneToMany12() throws Exception
-   {
+   public void testExpandsOneToMany12() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -239,8 +228,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testExpandsManyToOne() throws Exception
-   {
+   public void testExpandsManyToOne() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -251,8 +239,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testExpandsManyToMany() throws Exception
-   {
+   public void testExpandsManyToMany() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -262,8 +249,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testIncludes() throws Exception
-   {
+   public void testIncludes() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -277,13 +263,12 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testExcludes11() throws Exception
-   {
+   public void testExcludes11() throws Exception {
       Engine engine = engine();
       Response res = null;
 
       res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
-      
+
       assertTrue(!res.findNode("data.0").containsKey("customer"));
       assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
       assertTrue(!res.findNode("data.0.employee").containsKey("firstname"));
@@ -292,8 +277,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testIncludes12() throws Exception
-   {
+   public void testIncludes12() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -309,8 +293,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testTwoPartResourceKey11() throws Exception
-   {
+   public void testTwoPartResourceKey11() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -330,8 +313,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    }
 
    @Test
-   public void testTwoPartForeignKey11() throws Exception
-   {
+   public void testTwoPartForeignKey11() throws Exception {
       Engine engine = engine();
       Response res = null;
 
@@ -368,8 +350,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
    //   }
 
    @Test
-   public void testWildcardAndUnderscores() throws Exception
-   {
+   public void testWildcardAndUnderscores() throws Exception {
       Engine engine = engine();
       Response res = null;
       res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();

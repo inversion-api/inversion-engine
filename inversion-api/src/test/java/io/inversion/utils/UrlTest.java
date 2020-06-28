@@ -28,27 +28,23 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 
  *
  */
-public class UrlTest
-{
+public class UrlTest {
+
    @Test
-   public void testUrlWithParams()
-   {
+   public void testUrlWithParams() {
       assertEquals("http://test.com/api?a=b&c=d", new Url("http://test.com/api").withParams("a", "b", "c", "d").toString());
       assertEquals("http://test.com/api?a=b&c=d&e", new Url("http://test.com/api").withParams("a", "b", "c", "d", "e").toString());
    }
 
    @Test
-   public void test_preserve_param_order()
-   {
+   public void test_preserve_param_order() {
       String[] tests = new String[]{"http://host.com?zzz=zzz&aaa=aaa&111=111&333=333"};
 
-      for (String test : tests)
-      {
+      for (String test : tests) {
          Url url = new Url(test);
          String output = url.toString();
 
-         if (!test.equals(output))
-         {
+         if (!test.equals(output)) {
             System.out.println(Utils.parseQueryString(Utils.substringAfter(test, "?")));
             System.out.println(url.getParams());
 

@@ -13,14 +13,13 @@ import io.inversion.Response;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
-public class CsvActionTest
-{
+public class CsvActionTest {
+
    CsvAction action = new CsvAction();
 
    //
    @Test
-   public void run_shouldReturnCsv_when_singleObject_in_response() throws Exception
-   {
+   public void run_shouldReturnCsv_when_singleObject_in_response() throws Exception {
       Response res = new Response();
       JSNode singleObject = new JSNode();
       singleObject.put("key1", "value1");
@@ -32,8 +31,7 @@ public class CsvActionTest
    }
 
    @Test
-   public void run_shouldReturnCsv_when_ArrayObject_in_response() throws Exception
-   {
+   public void run_shouldReturnCsv_when_ArrayObject_in_response() throws Exception {
       Response res = new Response();
       JSNode singleObject = new JSNode();
       singleObject.put("key1", "value1");
@@ -48,8 +46,7 @@ public class CsvActionTest
    }
 
    @Test
-   public void run_shouldReturnCsv_when_InversionWrapper_in_response() throws Exception
-   {
+   public void run_shouldReturnCsv_when_InversionWrapper_in_response() throws Exception {
       Response res = new Response();
       JSNode singleObject = new JSNode();
       singleObject.put("key1", "value1");
@@ -65,8 +62,7 @@ public class CsvActionTest
    }
 
    @Test
-   public void run_should_doNothing_when_notGetRequest() throws Exception
-   {
+   public void run_should_doNothing_when_notGetRequest() throws Exception {
       Response res = new Response();
       JSNode singleObject = new JSNode();
       singleObject.put("key1", "value1");
@@ -80,32 +76,30 @@ public class CsvActionTest
    }
 
    @Test
-   public void run_should_doNothing_when_noCsvParam() throws Exception
-   {
-//      try
-//      {
-//
-//         Response res = new Response();
-//         JSNode singleObject = new JSNode();
-//         singleObject.put("key1", "value1");
-//         singleObject.put("key2", "value2");
-//         res.withJson(singleObject);
-//         Map<String, String> params = new HashMap<>();
-//         Request req = new Request("GET", "/", null, params, null);
-//         req.withEndpoint(new Endpoint());
-//
-//         Chain.push(null, req, res);
-//         action.run(req, res);
-//         assertEquals(singleObject, res.getJson());
-//      }
-//      finally
-//      {
-//         Chain.pop();
-//      }
+   public void run_should_doNothing_when_noCsvParam() throws Exception {
+      //      try
+      //      {
+      //
+      //         Response res = new Response();
+      //         JSNode singleObject = new JSNode();
+      //         singleObject.put("key1", "value1");
+      //         singleObject.put("key2", "value2");
+      //         res.withJson(singleObject);
+      //         Map<String, String> params = new HashMap<>();
+      //         Request req = new Request("GET", "/", null, params, null);
+      //         req.withEndpoint(new Endpoint());
+      //
+      //         Chain.push(null, req, res);
+      //         action.run(req, res);
+      //         assertEquals(singleObject, res.getJson());
+      //      }
+      //      finally
+      //      {
+      //         Chain.pop();
+      //      }
    }
 
-   private Request buildSuccessfulRequest()
-   {
+   private Request buildSuccessfulRequest() {
       Map<String, String> params = new HashMap<>();
       params.put("format", "csv");
       return new Request("GET", "/", null, params, null);

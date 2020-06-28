@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class RqlTokenizer
-{
+public class RqlTokenizer {
+
    char[]       chars    = null;
    int          head     = 0;
 
@@ -31,18 +31,15 @@ public class RqlTokenizer
 
    StringBuffer next     = new StringBuffer();
 
-   public RqlTokenizer(String chars)
-   {
+   public RqlTokenizer(String chars) {
       this.chars = chars.toCharArray();
    }
 
-   public Stream<String> stream()
-   {
+   public Stream<String> stream() {
       return asList().stream();
    }
 
-   public List<String> asList()
-   {
+   public List<String> asList() {
       List<String> list = new ArrayList();
       String next = null;
       while ((next = next()) != null)
@@ -51,80 +48,66 @@ public class RqlTokenizer
       return list;
    }
 
-   public String next()
-   {
-      if (head >= chars.length)
-      {
+   public String next() {
+      if (head >= chars.length) {
          return null;
       }
 
-      while (head < chars.length)
-      {
+      while (head < chars.length) {
          char c = chars[head];
          head += 1;
 
          if ((c == ' ' || c == '\t') && next.length() == 0)
             continue; //ignore leading whitespace
 
-         if (isEscaped())
-         {
+         if (isEscaped()) {
             append(c);
             escaped = false;
             continue;
          }
 
-         if (c == '\\')
-         {
+         if (c == '\\') {
             escaped = !escaped;
             continue;
          }
 
-         if (c == '"' || c == '\'')
-         {
+         if (c == '"' || c == '\'') {
             append(c);
-            if (c == quote)
-            {
+            if (c == quote) {
                //this has to be the closing quote
                quote = 0;
                break;
             }
-            else if (next.length() == 1)
-            {
+            else if (next.length() == 1) {
                //this has to be the starting quote
                quote = c;
                continue;
             }
-            else
-            {
+            else {
                continue;
             }
          }
 
-         if (!inQuotes() && c == ',')
-         {
+         if (!inQuotes() && c == ',') {
             if (next.length() > 0)
                break;
 
             continue;
          }
 
-         if (!inQuotes() && c == '(')
-         {
+         if (!inQuotes() && c == '(') {
             append(c);
             function += 1;
             break;
          }
 
-         if (!inQuotes() && ((!inFunction() && c == '=') || (inFunction() && c == ')')))
-         {
-            if (next.length() == 0)
-            {
+         if (!inQuotes() && ((!inFunction() && c == '=') || (inFunction() && c == ')'))) {
+            if (next.length() == 0) {
                append(c);
                if (c == ')')
                   function -= 1;
             }
-            else
-            {
+            else {
                head--;
             }
 
@@ -151,28 +134,23 @@ public class RqlTokenizer
       return str;
    }
 
-   protected void error(String msg)
-   {
+   protected void error(String msg) {
       throw new RuntimeException(msg);
    }
 
-   protected boolean inQuotes()
-   {
+   protected boolean inQuotes() {
       return quote != 0;
    }
 
-   protected boolean isEscaped()
-   {
+   protected boolean isEscaped() {
       return escaped;
    }
 
-   protected boolean inFunction()
-   {
+   protected boolean inFunction() {
       return function > 0;
    }
 
-   protected void append(char c)
-   {
+   protected void append(char c) {
       if (!inQuotes() && next.length() == 0 && c == ' ')
          return;
       next.append(c);

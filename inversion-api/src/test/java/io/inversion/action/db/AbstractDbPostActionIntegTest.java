@@ -26,17 +26,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionIntegTest
-{
+public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionIntegTest {
 
-   public AbstractDbPostActionIntegTest(String dbType)
-   {
+   public AbstractDbPostActionIntegTest(String dbType) {
       super(dbType);
    }
 
    @Test
-   public void testAddOneRecord() throws Exception
-   {
+   public void testAddOneRecord() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -58,8 +55,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
    }
 
    @Test
-   public void testDuplicate1() throws Exception
-   {
+   public void testDuplicate1() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -76,8 +72,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
    }
 
    @Test
-   public void testNestedPost1() throws Exception
-   {
+   public void testNestedPost1() throws Exception {
       Response res = null;
       Engine engine = engine();
 
@@ -120,10 +115,8 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
 
       JSArray employees = steve.findArray("employees");
 
-      for (int i = 0; i < employees.length(); i++)
-      {
-         if (!"99999991".equals(employees.getNode(i).getString("employeeId")))
-         {
+      for (int i = 0; i < employees.length(); i++) {
+         if (!"99999991".equals(employees.getNode(i).getString("employeeId"))) {
             employees.remove(i);
             i--;
          }

@@ -23,28 +23,24 @@ import org.junit.jupiter.api.Test;
 
 import io.inversion.utils.Utils;
 
-public class RemoveQueryParamActionTest
-{
+public class RemoveQueryParamActionTest {
+
    @Test
-   public void test_containsParam_wholeword_matches()
-   {
+   public void test_containsParam_wholeword_matches() {
       assertTrue(Utils.containsToken("param1", "param1"));
    }
 
-   public void test_containsParam_wholewordMixedCase_matches()
-   {
+   public void test_containsParam_wholewordMixedCase_matches() {
       assertTrue(Utils.containsToken("param1", "PAram1"));
    }
 
    @Test
-   public void test_containsParam_wordInRqlFunction_matches()
-   {
+   public void test_containsParam_wordInRqlFunction_matches() {
       assertTrue(Utils.containsToken("param1", "eq(param1,"));
    }
 
    @Test
-   public void test_containsParam_wordAsSubstring_doesNotMatch()
-   {
+   public void test_containsParam_wordAsSubstring_doesNotMatch() {
       assertFalse(Utils.containsToken("param1", "param123"));
    }
 

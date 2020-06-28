@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractSqlQueryRqlTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class H2RqlUnitTest extends AbstractSqlQueryRqlTest
-{
-   public H2RqlUnitTest() throws Exception
-   {
+public class H2RqlUnitTest extends AbstractSqlQueryRqlTest {
+
+   public H2RqlUnitTest() throws Exception {
       super("h2");
    }
 }

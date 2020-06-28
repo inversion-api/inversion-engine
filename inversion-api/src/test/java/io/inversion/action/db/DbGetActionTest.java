@@ -22,11 +22,10 @@ import io.inversion.action.db.DbGetAction;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class DbGetActionTest
-{
+public class DbGetActionTest {
+
    @Test
-   public void testStripTerms1()
-   {
+   public void testStripTerms1() {
       //arg format {resultMatchString, inputString, tostrip...)
 
       String[][] tests = {//
@@ -51,16 +50,14 @@ public class DbGetActionTest
                   "sort" //
             }//
       };
-      for (String[] test : tests)
-      {
+      for (String[] test : tests) {
          String[] toStrip = new String[test.length - 2];
          System.arraycopy(test, 2, toStrip, 0, toStrip.length);
 
          String stripped = DbGetAction.stripTerms(test[1], toStrip);
          //System.out.println(stripped);
 
-         if (!test[0].equals(stripped))
-         {
+         if (!test[0].equals(stripped)) {
             System.out.println("RESULTS DON'T MATCH");
             System.out.println("  EXPECTED: " + test[0]);
             System.out.println("  FOUND   : " + stripped);

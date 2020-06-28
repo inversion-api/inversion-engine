@@ -38,31 +38,25 @@ import io.inversion.utils.JSNode;
  *
  *
  */
-public class CsvAction extends Action<CsvAction>
-{
+public class CsvAction extends Action<CsvAction> {
+
    @Override
-   public void run(Request req, Response res) throws ApiException
-   {
-      if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null)
-      {
+   public void run(Request req, Response res) throws ApiException {
+      if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null) {
          return;
       }
 
-      if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format")) && !"csv".equalsIgnoreCase(req.getChain().getConfig("format", null)))
-      {
+      if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format")) && !"csv".equalsIgnoreCase(req.getChain().getConfig("format", null))) {
          return;
       }
 
       //support result being an array, a single object, or an inversion state object where we will pull results from the data field.
       JSNode arr = res.getJson();
-      if (!(arr instanceof JSArray))
-      {
-         if (res.getJson().hasProperty("data"))
-         {
+      if (!(arr instanceof JSArray)) {
+         if (res.getJson().hasProperty("data")) {
             arr = res.getJson().getArray("data");
          }
-         else
-         {
+         else {
             arr = new JSArray(arr);
          }
       }
@@ -76,21 +70,16 @@ public class CsvAction extends Action<CsvAction>
       res.withText(new String(bytes));
    }
 
-   public String toCsv(JSArray arr) throws ApiException
-   {
-      try
-      {
+   public String toCsv(JSArray arr) throws ApiException {
+      try {
          StringBuffer buff = new StringBuffer();
 
          LinkedHashSet<String> keys = new LinkedHashSet();
 
-         for (int i = 0; i < arr.length(); i++)
-         {
+         for (int i = 0; i < arr.length(); i++) {
             JSNode obj = (JSNode) arr.get(i);
-            if (obj != null)
-            {
-               for (String key : obj.keySet())
-               {
+            if (obj != null) {
+               for (String key : obj.keySet()) {
                   Object val = obj.get(key);
                   if (!(val instanceof JSArray) && !(val instanceof JSNode))
                      keys.add(key);
@@ -101,23 +90,18 @@ public class CsvAction extends Action<CsvAction>
          CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
 
          List<String> keysList = new ArrayList(keys);
-         for (String key : keysList)
-         {
+         for (String key : keysList) {
             printer.print(key);
          }
          printer.println();
 
-         for (int i = 0; i < arr.length(); i++)
-         {
-            for (String key : keysList)
-            {
+         for (int i = 0; i < arr.length(); i++) {
+            for (String key : keysList) {
                Object val = ((JSNode) arr.get(i)).get(key);
-               if (val != null)
-               {
+               if (val != null) {
                   printer.print(val);
                }
-               else
-               {
+               else {
                   printer.print("");
                }
             }
@@ -128,8 +112,7 @@ public class CsvAction extends Action<CsvAction>
 
          return buff.toString();
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;

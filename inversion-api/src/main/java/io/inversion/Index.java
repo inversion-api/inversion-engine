@@ -27,45 +27,39 @@ import io.inversion.utils.Utils;
  * 
  *
  */
-public class Index implements Serializable
-{
+public class Index implements Serializable {
+
    protected Collection     collection = null;
    protected String         name       = null;
    protected String         type       = null;           // primary, partition, sort, localsecondary, etc
    protected boolean        unique     = true;
    protected List<Property> properties = new ArrayList();
 
-   public Index()
-   {
+   public Index() {
       super();
    }
 
-   public Index(String name, String type, boolean unique, Property... properties)
-   {
+   public Index(String name, String type, boolean unique, Property... properties) {
       withName(name);
       withType(type);
       withUnique(unique);
       withProperties(properties);
    }
 
-   public boolean equals(Object object)
-   {
+   public boolean equals(Object object) {
       if (object == this)
          return true;
 
-      if (object instanceof Index)
-      {
+      if (object instanceof Index) {
          Index index = ((Index) object);
          return ((collection == null || collection == index.collection) && Utils.equal(name, index.name));
       }
       return false;
    }
 
-   public String toString()
-   {
+   public String toString() {
       StringBuffer buff = new StringBuffer(getCollection().getTableName()).append(".").append(name).append("(");
-      for (int i = 0; i < size(); i++)
-      {
+      for (int i = 0; i < size(); i++) {
          buff.append(getPropertyName(i));
          if (i < size() - 1)
             buff.append(", ");
@@ -74,8 +68,7 @@ public class Index implements Serializable
       return buff.toString();
    }
 
-   public boolean isExclude()
-   {
+   public boolean isExclude() {
       if (collection.isExclude())
          return true;
 
@@ -86,15 +79,12 @@ public class Index implements Serializable
       return false;
    }
 
-   public Collection getCollection()
-   {
+   public Collection getCollection() {
       return collection;
    }
 
-   public Index withCollection(Collection coll)
-   {
-      if (this.collection != coll)
-      {
+   public Index withCollection(Collection coll) {
+      if (this.collection != coll) {
          this.collection = coll;
          coll.withIndexes(this);
       }
@@ -102,91 +92,74 @@ public class Index implements Serializable
       return this;
    }
 
-   public String getName()
-   {
+   public String getName() {
       return name;
    }
 
-   public Index withName(String name)
-   {
+   public Index withName(String name) {
       this.name = name;
       return this;
    }
 
-   public String getType()
-   {
+   public String getType() {
       return type;
    }
 
-   public Index withType(String type)
-   {
+   public Index withType(String type) {
       this.type = type;
       return this;
    }
 
-   public boolean isType(String... types)
-   {
-      for (String type : types)
-      {
+   public boolean isType(String... types) {
+      for (String type : types) {
          if (type.equalsIgnoreCase(this.type))
             return true;
       }
       return false;
    }
 
-   public boolean isUnique()
-   {
+   public boolean isUnique() {
       return unique;
    }
 
-   public Index withUnique(boolean unique)
-   {
+   public Index withUnique(boolean unique) {
       this.unique = unique;
       return this;
    }
 
-   public Index withProperties(Property... properties)
-   {
-      for (int i = 0; properties != null && i < properties.length; i++)
-      {
+   public Index withProperties(Property... properties) {
+      for (int i = 0; properties != null && i < properties.length; i++) {
          if (properties[i] != null && !this.properties.contains(properties[i]))
             this.properties.add(properties[i]);
       }
       return this;
    }
 
-   public List<Property> getProperties()
-   {
+   public List<Property> getProperties() {
       return new ArrayList(properties);
    }
 
-   public Property getProperty(int idx)
-   {
+   public Property getProperty(int idx) {
       return properties.get(idx);
    }
 
-   public int size()
-   {
+   public int size() {
       return properties.size();
    }
 
-   public String getPropertyName(int index)
-   {
+   public String getPropertyName(int index) {
       return index < properties.size() ? properties.get(index).getJsonName() : null;
    }
 
-   public String getColumnName(int index)
-   {
+   public String getColumnName(int index) {
       return index < properties.size() ? properties.get(index).getColumnName() : null;
    }
 
-   public List<String> getJsonNames()
-   {
+   public List<String> getJsonNames() {
       return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
    }
 
-   public List<String> getColumnNames()
-   {
+   public List<String> getColumnNames() {
       return properties.stream().map(Property::getColumnName).collect(Collectors.toList());
    }
 

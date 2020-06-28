@@ -16,25 +16,21 @@
  */
 package io.inversion.rql;
 
-public class From<T extends From, P extends Query> extends Builder<T, P>
-{
-   public From(P query)
-   {
+public class From<T extends From, P extends Query> extends Builder<T, P> {
+
+   public From(P query) {
       super(query);
       withFunctions("_table", "_subquery", "_alias");
    }
 
-   public String getSubquery()
-   {
+   public String getSubquery() {
       return (String) find("_subquery", 0);
    }
 
-   public String getTable()
-   {
+   public String getTable() {
       String tableName = (String) find("_table", 0);
 
-      if (tableName == null && getParent().getCollection() != null)
-      {
+      if (tableName == null && getParent().getCollection() != null) {
          tableName = getParent().getCollection().getTableName();
       }
 
@@ -44,17 +40,14 @@ public class From<T extends From, P extends Query> extends Builder<T, P>
       return tableName;
    }
 
-   public String getAlias()
-   {
+   public String getAlias() {
       String alias = (String) find("_alias", 0);
 
-      if (alias == null)
-      {
+      if (alias == null) {
          alias = (String) find("_table", 1);
       }
 
-      if (alias == null)
-      {
+      if (alias == null) {
          alias = (String) find("_subquery", 1);
       }
 

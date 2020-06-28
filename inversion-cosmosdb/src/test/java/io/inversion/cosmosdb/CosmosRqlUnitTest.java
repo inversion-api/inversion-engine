@@ -25,28 +25,23 @@ import io.inversion.rql.AbstractRqlTest;
 import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class CosmosRqlUnitTest extends AbstractRqlTest
-{
+public class CosmosRqlUnitTest extends AbstractRqlTest {
 
-   public CosmosRqlUnitTest()
-   {
+   public CosmosRqlUnitTest() {
       super(CosmosSqlQuery.class.getName(), "cosmos");
    }
 
    @Override
-   public void initializeDb()
-   {
+   public void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
+      if (db == null) {
          db = CosmosDbFactory.buildDb();
          setDb(db);
       }
    }
 
    @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestSuite(RqlValidationSuite suite) {
 
       suite//
            .withResult("eq", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderID\\\"] = @orderID1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderID1\",\"value\":\"10248\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//

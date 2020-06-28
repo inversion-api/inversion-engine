@@ -24,22 +24,17 @@ import java.util.Map;
 
 import io.inversion.Db;
 
-class JdbcConnectionLocal
-{
+class JdbcConnectionLocal {
 
    static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
    static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
 
-   public static void closeAll()
-   {
-      for (Thread thread : threadToDbMap.keySet())
-      {
-         try
-         {
+   public static void closeAll() {
+      for (Thread thread : threadToDbMap.keySet()) {
+         try {
             close(thread);
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             //ex.printStackTrace();
          }
       }
@@ -48,13 +43,11 @@ class JdbcConnectionLocal
       //System.out.println(threadToDbMap);
    }
 
-   public static Connection getConnection(Db db)
-   {
+   public static Connection getConnection(Db db) {
       return getConnection(db, Thread.currentThread());
    }
 
-   static Connection getConnection(Db db, Thread thread)
-   {
+   static Connection getConnection(Db db, Thread thread) {
       Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
       if (threadToConnMap == null)
          return null;
@@ -62,24 +55,20 @@ class JdbcConnectionLocal
       return threadToConnMap.get(thread);
    }
 
-   public static void putConnection(Db db, Connection connection)
-   {
+   public static void putConnection(Db db, Connection connection) {
       putConnection(db, Thread.currentThread(), connection);
    }
 
-   static void putConnection(Db db, Thread thread, Connection connection)
-   {
+   static void putConnection(Db db, Thread thread, Connection connection) {
       Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
-      if (threadToConnMap == null)
-      {
+      if (threadToConnMap == null) {
          threadToConnMap = new Hashtable();
          dbToThreadMap.put(db, threadToConnMap);
       }
       threadToConnMap.put(thread, connection);
 
       Map<Db, Connection> dbToConnMap = threadToDbMap.get(thread);
-      if (dbToConnMap == null)
-      {
+      if (dbToConnMap == null) {
          dbToConnMap = new Hashtable();
          threadToDbMap.put(thread, dbToConnMap);
       }
@@ -87,25 +76,19 @@ class JdbcConnectionLocal
 
    }
 
-   public static void commit() throws Exception
-   {
+   public static void commit() throws Exception {
       Exception toThrow = null;
 
       Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
-      if (dbToConnMap != null)
-      {
+      if (dbToConnMap != null) {
          java.util.Collection<Connection> connections = dbToConnMap.values();
-         for (Connection conn : connections)
-         {
-            try
-            {
-               if (!(conn.isClosed() || conn.getAutoCommit()))
-               {
+         for (Connection conn : connections) {
+            try {
+               if (!(conn.isClosed() || conn.getAutoCommit())) {
                   conn.commit();
                }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }
@@ -116,24 +99,18 @@ class JdbcConnectionLocal
          throw toThrow;
    }
 
-   public static void rollback() throws Exception
-   {
+   public static void rollback() throws Exception {
       Exception toThrow = null;
 
       Map<Db, Connection> dbToConnMap = threadToDbMap.get(Thread.currentThread());
-      if (dbToConnMap != null)
-      {
-         for (Connection conn : dbToConnMap.values())
-         {
-            try
-            {
-               if (!(conn.isClosed() || conn.getAutoCommit()))
-               {
+      if (dbToConnMap != null) {
+         for (Connection conn : dbToConnMap.values()) {
+            try {
+               if (!(conn.isClosed() || conn.getAutoCommit())) {
                   conn.rollback();
                }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }
@@ -144,19 +121,16 @@ class JdbcConnectionLocal
          throw toThrow;
    }
 
-   public static void close() throws Exception
-   {
+   public static void close() throws Exception {
       close(Thread.currentThread());
    }
 
-   static void close(Thread thread) throws Exception
-   {
+   static void close(Thread thread) throws Exception {
       Exception toThrow = null;
 
       Map<Db, Connection> dbToConnMap = threadToDbMap.remove(thread);
 
-      if (dbToConnMap != null)
-      {
+      if (dbToConnMap != null) {
          List<Db> dbs = new ArrayList(dbToConnMap.keySet());
 
          for (Db db : dbs)//Connection conn : dbToConnMap.values())
@@ -171,16 +145,13 @@ class JdbcConnectionLocal
             //--
             //--
 
-            try
-            {
+            try {
                Connection conn = dbToConnMap.get(db);
-               if (!conn.isClosed())
-               {
+               if (!conn.isClosed()) {
                   conn.close();
                }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }

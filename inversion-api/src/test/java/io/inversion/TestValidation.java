@@ -7,11 +7,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestValidation
-{
+public class TestValidation {
+
    @Test
-   public void testValidation1()
-   {
+   public void testValidation1() {
       Request req = new Request("GET", "http://localhost:8080?someField1=value1", Utils.read(getClass().getResourceAsStream("testValidation1.json")));
 
       assertEquals("tester", req.validate("username").required().asString());
@@ -42,62 +41,50 @@ public class TestValidation
 
       boolean failed = false;
 
-      try
-      {
+      try {
          failed = false;
          assertEquals(5, req.validate("amount").minMax(8, 10).asInt());
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          failed = true;
       }
-      finally
-      {
+      finally {
          if (!failed)
             fail("validation shoud have failed");
       }
 
-      try
-      {
+      try {
          failed = false;
          req.validate("someField1").required().in("value3", "value4");
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          failed = true;
       }
-      finally
-      {
+      finally {
          if (!failed)
             fail("validation shoud have failed");
       }
 
-      try
-      {
+      try {
          failed = false;
          req.validate("someField1").required().in("value3", "value4");
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          failed = true;
       }
-      finally
-      {
+      finally {
          if (!failed)
             fail("validation shoud have failed");
       }
 
-      try
-      {
+      try {
          failed = false;
          req.validate("someField1").required().out("value1");
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          failed = true;
       }
-      finally
-      {
+      finally {
          if (!failed)
             fail("validation shoud have failed");
       }

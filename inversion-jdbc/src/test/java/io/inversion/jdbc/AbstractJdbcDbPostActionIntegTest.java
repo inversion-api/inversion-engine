@@ -21,23 +21,20 @@ import org.junit.jupiter.api.BeforeEach;
 
 import io.inversion.action.db.AbstractDbPostActionIntegTest;
 
-public abstract class AbstractJdbcDbPostActionIntegTest extends AbstractDbPostActionIntegTest implements AbstractJdbcDbEngineTest
-{
-   public AbstractJdbcDbPostActionIntegTest(String dbType)
-   {
+public abstract class AbstractJdbcDbPostActionIntegTest extends AbstractDbPostActionIntegTest implements AbstractJdbcDbEngineTest {
+
+   public AbstractJdbcDbPostActionIntegTest(String dbType) {
       super(dbType);
    }
 
    @BeforeEach
-   public void beforeEach()
-   {
+   public void beforeEach() {
       beforeAll_initializeDb();
       beforeAll_initializeEngine();
    }
 
    @AfterEach
-   public void afterEach()
-   {
+   public void afterEach() {
       afterAll_finalizeDb();
       afterAll_finalizeEngine();
    }

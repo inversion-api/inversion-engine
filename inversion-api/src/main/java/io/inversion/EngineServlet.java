@@ -40,72 +40,61 @@ import io.inversion.Request.Uploader;
 import io.inversion.rql.RqlTokenizer;
 import io.inversion.utils.Utils;
 
-public class EngineServlet extends HttpServlet
-{
-   static class EngineServletLocal
-   {
+public class EngineServlet extends HttpServlet {
+
+   static class EngineServletLocal {
+
       static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
       static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
 
-      public static void set(HttpServletRequest req, HttpServletResponse res)
-      {
+      public static void set(HttpServletRequest req, HttpServletResponse res) {
          request.set(req);
-         response.set(res);
+         //         response.set(res);
       }
 
-      public static void setRequest(HttpServletRequest req)
-      {
+      public static void setRequest(HttpServletRequest req) {
          request.set(req);
       }
 
-      public static void setResponse(HttpServletResponse res)
-      {
+      public static void setResponse(HttpServletResponse res) {
          response.set(res);
       }
 
-      public static HttpServletRequest getRequest()
-      {
+      public static HttpServletRequest getRequest() {
          return request.get();
       }
 
-      public static HttpServletResponse getResponse()
-      {
+      public static HttpServletResponse getResponse() {
          return response.get();
       }
    }
 
    Engine engine = null;//new Engine();
 
-   public void destroy()
-   {
+   public void destroy() {
       engine.shutdown();
    }
 
-   public void init(ServletConfig config)
-   {
+   public void init(ServletConfig config) {
       engine.startup();
    }
 
-   public Engine getEngine()
-   {
+   public Engine getEngine() {
       return engine;
    }
 
-   public void setEngine(Engine engine)
-   {
+   public void setEngine(Engine engine) {
       this.engine = engine;
    }
 
    @Override
-   public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
-   {
+   public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException {
       EngineServletLocal.set(httpReq, httpResp);
 
       Response res = null;
       Request req = null;
 
-      try
-      {
+      try {
          String method = httpReq.getMethod();
          String urlstr = httpReq.getRequestURL().toString();
 
@@ -113,15 +102,13 @@ public class EngineServlet extends HttpServlet
             urlstr = urlstr + "/";
 
          String query = httpReq.getQueryString();
-         if (!Utils.empty(query))
-         {
+         if (!Utils.empty(query)) {
             urlstr += "?" + query;
          }
 
          Map headers = new HashMap();
          Enumeration<String> headerEnum = httpReq.getHeaderNames();
-         while (headerEnum.hasMoreElements())
-         {
+         while (headerEnum.hasMoreElements()) {
             String key = headerEnum.nextElement();
             String val = httpReq.getHeader(key);
             headers.put(key, val);
@@ -129,23 +116,19 @@ public class EngineServlet extends HttpServlet
 
          Map params = new HashMap();
          Enumeration<String> paramsEnumer = httpReq.getParameterNames();
-         while (paramsEnumer.hasMoreElements())
-         {
+         while (paramsEnumer.hasMoreElements()) {
             String key = paramsEnumer.nextElement();
             boolean skip = false;
 
-            if (key.indexOf("_") > 0)
-            {
+            if (key.indexOf("_") > 0) {
                //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
                List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
-               if (illegals.size() > 0)
-               {
+               if (illegals.size() > 0) {
                   skip = true;
                }
             }
 
-            if (!skip)
-            {
+            if (!skip) {
                String val = httpReq.getParameter(key);
                params.put(key, val);
             }
@@ -156,106 +139,87 @@ public class EngineServlet extends HttpServlet
          req = new Request(method, urlstr, headers, params, body);
          req.withRemoteAddr(httpReq.getRemoteAddr());
 
-         req.withUploader(new Uploader()
-            {
-               @Override
-               public List<Upload> getUploads()
-               {
-                  try
-                  {
-                     String fileName = null;
-                     long fileSize = 0;
-                     String requestPath = null;
-                     InputStream inputStream = null;
+         req.withUploader(new Uploader() {
 
-                     for (Part part : httpReq.getParts())
-                     {
-                        if (part.getName() == null)
-                        {
-                           continue;
-                        }
-                        if (part.getName().equals("file"))
-                        {
-                           inputStream = part.getInputStream();
-                           fileName = part.getSubmittedFileName();
-                           fileSize = part.getSize();
-                        }
-                        else if (part.getName().equals("requestPath"))
-                        {
-                           requestPath = Utils.read(part.getInputStream());
-                           if (requestPath.indexOf("/") == 0)
-                              requestPath = requestPath.substring(1);
-                        }
+            @Override
+            public List<Upload> getUploads() {
+               try {
+                  String fileName = null;
+                  long fileSize = 0;
+                  String requestPath = null;
+                  InputStream inputStream = null;
+
+                  for (Part part : httpReq.getParts()) {
+                     if (part.getName() == null) {
+                        continue;
                      }
-
-                     List uploads = new ArrayList();
-
-                     if (inputStream != null)
-                     {
-                        uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                     if (part.getName().equals("file")) {
+                        inputStream = part.getInputStream();
+                        fileName = part.getSubmittedFileName();
+                        fileSize = part.getSize();
                      }
-                     return uploads;
+                     else if (part.getName().equals("requestPath")) {
+                        requestPath = Utils.read(part.getInputStream());
+                        if (requestPath.indexOf("/") == 0)
+                           requestPath = requestPath.substring(1);
+                     }
                   }
-                  catch (Exception ex)
-                  {
-                     Utils.rethrow(ex);
+
+                  List uploads = new ArrayList();
+
+                  if (inputStream != null) {
+                     uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
                   }
-                  return null;
+                  return uploads;
                }
-            });
+               catch (Exception ex) {
+                  Utils.rethrow(ex);
+               }
+               return null;
+            }
+         });
 
          res = new Response();
 
          engine.service(req, res);
          writeResponse(req, res, httpResp);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ex.printStackTrace();
          httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       }
    }
 
-   public static String readBody(HttpServletRequest request) throws ApiException
-   {
+   public static String readBody(HttpServletRequest request) throws ApiException {
       if (request == null)
          return null;
 
       StringBuilder stringBuilder = new StringBuilder();
       BufferedReader bufferedReader = null;
 
-      try
-      {
+      try {
          InputStream inputStream = request.getInputStream();
-         if (inputStream != null)
-         {
+         if (inputStream != null) {
             bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             char[] charBuffer = new char[128];
             int bytesRead = -1;
-            while ((bytesRead = bufferedReader.read(charBuffer)) > 0)
-            {
+            while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
                stringBuilder.append(charBuffer, 0, bytesRead);
             }
          }
-         else
-         {
+         else {
             stringBuilder.append("");
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw400BadRequest(ex, "Unable to read request body");
       }
-      finally
-      {
-         if (bufferedReader != null)
-         {
-            try
-            {
+      finally {
+         if (bufferedReader != null) {
+            try {
                bufferedReader.close();
             }
-            catch (IOException ex)
-            {
+            catch (IOException ex) {
                //throw ex;
             }
          }
@@ -264,21 +228,17 @@ public class EngineServlet extends HttpServlet
       return stringBuilder.toString();
    }
 
-   void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception
-   {
+   void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception {
       String method = req != null ? req.getMethod() : null;
 
       http.setStatus(res.getStatusCode());
 
       OutputStream out = http.getOutputStream();
-      try
-      {
-         for (String key : res.getHeaders().keySet())
-         {
+      try {
+         for (String key : res.getHeaders().keySet()) {
             List values = res.getHeaders().get(key);
             StringBuffer buff = new StringBuffer();
-            for (int i = 0; i < values.size(); i++)
-            {
+            for (int i = 0; i < values.size(); i++) {
                buff.append(values.get(i));
                if (i < values.size() - 1)
                   buff.append(",");
@@ -286,12 +246,10 @@ public class EngineServlet extends HttpServlet
             http.setHeader(key, buff.toString());
             res.debug(key + " " + buff);
          }
-         if ("OPTIONS".equals(method))
-         {
+         if ("OPTIONS".equals(method)) {
             //
          }
-         else
-         {
+         else {
             String contentType = res.getContentType();
             byte[] bytes = res.getOutput().getBytes();
 
@@ -302,8 +260,7 @@ public class EngineServlet extends HttpServlet
             out.write(bytes);
          }
       }
-      finally
-      {
+      finally {
          out.flush();
          out.close();
       }

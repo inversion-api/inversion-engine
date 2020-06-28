@@ -65,28 +65,23 @@ import io.inversion.rql.RqlValidationSuite;
  *
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbRqlUnitTest extends AbstractRqlTest
-{
+public class DynamoDbRqlUnitTest extends AbstractRqlTest {
 
-   public DynamoDbRqlUnitTest()
-   {
+   public DynamoDbRqlUnitTest() {
       super(DynamoDbQuery.class.getName(), "dynamo");
       urlPrefix = "northwind/dynamodb/";
    }
 
    @Override
-   public void initializeDb()
-   {
+   public void initializeDb() {
       Db db = getDb();
-      if (db == null)
-      {
+      if (db == null) {
          db = new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
          setDb(db);
       }
    }
 
-   protected void customizeUnitTestTables(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestTables(RqlValidationSuite suite) {
       super.customizeUnitTestTables(suite);
 
       Collection orders = suite.getCollection("orders");
@@ -131,7 +126,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
       orderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "productId");
       orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
 
-      employees.withProperty("type",  "S");
+      employees.withProperty("type", "S");
       employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
       employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
       employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
@@ -157,26 +152,22 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest
     * will probably have to customize most of these.
     */
    @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestSuite(RqlValidationSuite suite) {
       super.customizeUnitTestSuite(suite);
 
-      for (String testKey : (List<String>) new ArrayList(suite.getTests().keySet()))
-      {
+      for (String testKey : (List<String>) new ArrayList(suite.getTests().keySet())) {
          String queryString = suite.getTests().get(testKey);
 
          if (queryString == null)
             continue;
 
-         if (queryString.indexOf("type") < 0)
-         {
+         if (queryString.indexOf("type") < 0) {
             if (queryString.indexOf("?") < 0)
                queryString += "?";
             else
                queryString += "&";
 
-            if (queryString.startsWith("orders"))
-            {
+            if (queryString.startsWith("orders")) {
                queryString += "type=ORDER";
                suite.withTest(testKey, queryString);
             }

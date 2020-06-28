@@ -31,14 +31,13 @@ import io.inversion.utils.Utils;
  * @author wellsb1
  *
  */
-public class JdbcNorthwindApiDemoMain
-{
+public class JdbcNorthwindApiDemoMain {
+
    /**
     * This simple factory method is static so that other  
     * demos can use and extend this api configuration.
     */
-   public static Api buildApi()
-   {
+   public static Api buildApi() {
       return new Api()//
                       .withName("northwind")//
 
@@ -72,8 +71,7 @@ public class JdbcNorthwindApiDemoMain
 
    }
 
-   public static void main(String[] args) throws Exception
-   {
+   public static void main(String[] args) throws Exception {
       //Launches the API on port 8080
       InversionMain.run(buildApi());
 

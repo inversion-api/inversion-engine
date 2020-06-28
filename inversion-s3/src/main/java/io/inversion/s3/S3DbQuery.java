@@ -48,17 +48,15 @@ import io.inversion.rql.Where;
  * 
  * 
  */
-public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3DbQuery>, S3DbQuery>, From<From<From, S3DbQuery>, S3DbQuery>, Where<Where<Where, S3DbQuery>, S3DbQuery>, Group<Group<Group, S3DbQuery>, S3DbQuery>, Order<Order<Order, S3DbQuery>, S3DbQuery>, Page<Page<Page, S3DbQuery>, S3DbQuery>>
-{
-   public S3DbQuery(S3Db db, Collection table, List<Term> terms)
-   {
+public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3DbQuery>, S3DbQuery>, From<From<From, S3DbQuery>, S3DbQuery>, Where<Where<Where, S3DbQuery>, S3DbQuery>, Group<Group<Group, S3DbQuery>, S3DbQuery>, Order<Order<Order, S3DbQuery>, S3DbQuery>, Page<Page<Page, S3DbQuery>, S3DbQuery>> {
+
+   public S3DbQuery(S3Db db, Collection table, List<Term> terms) {
       super(db, table, terms);
       getWhere().clearFunctions();
       getWhere().withFunctions("eq", "sw");
    }
 
-   public Results doSelect() throws ApiException
-   {
+   public Results doSelect() throws ApiException {
       // path == /s3/bucketName
       // path == /s3/bucketName/inner/folder
       // retrieve as much meta data as possible about the files in the bucket
@@ -82,8 +80,7 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
 
       Results results = new Results(this);
 
-      if (listing.isTruncated())
-      {
+      if (listing.isTruncated()) {
          results.withNext(Term.term(null, "after", listing.getNextMarker()));
       }
 
@@ -91,34 +88,28 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
       List<S3ObjectSummary> fileList = listing.getObjectSummaries();
 
       // alphabetize the data returned to the client...
-      while (!directoryList.isEmpty())
-      {
+      while (!directoryList.isEmpty()) {
          String directory = directoryList.get(0);
-         if (!fileList.isEmpty())
-         {
+         if (!fileList.isEmpty()) {
             S3ObjectSummary file = fileList.get(0);
-            if (directory.compareToIgnoreCase(file.getKey()) < 0)
-            {
+            if (directory.compareToIgnoreCase(file.getKey()) < 0) {
                // directory name comes before file name
                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
                directoryList.remove(0);
             }
-            else
-            {
+            else {
                // file name comes before directory
                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
                fileList.remove(0);
             }
          }
-         else
-         {
+         else {
             //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
             directoryList.remove(0);
          }
       }
 
-      while (!fileList.isEmpty())
-      {
+      while (!fileList.isEmpty()) {
          S3ObjectSummary file = fileList.remove(0);
          //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
       }

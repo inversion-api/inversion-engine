@@ -25,16 +25,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RqlTokenizerTest
-{
-   public static void add(List tests, Object... vals)
-   {
+public class RqlTokenizerTest {
+
+   public static void add(List tests, Object... vals) {
       tests.add(Arrays.asList(vals));
    }
 
    @Test
-   public void test1() throws Throwable
-   {
+   public void test1() throws Throwable {
       List<List> tests = new ArrayList();
 
       add(tests, "this is a test", "this is a test");
@@ -74,27 +72,23 @@ public class RqlTokenizerTest
       add(tests, "eq(brandfamily,'LAY\\'S')", "eq(", "brandfamily", "'LAY'S'", ")");
       add(tests, "eq(brandfamily,'\"LAY\\'S\"')", "eq(", "brandfamily", "'\"LAY'S\"'", ")");
 
-      for (int i = tests.size() - 1; i >= 0; i--)
-      {
+      for (int i = tests.size() - 1; i >= 0; i--) {
          List<String> test = tests.get(i);
          String toParse = test.get(0).toString();
          List<String> tokens = null;
 
-         try
-         {
+         try {
             tokens = new RqlTokenizer(toParse).asList();
 
             assertTrue(tokens.size() == test.size() - 1, "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
 
-            for (int j = 0; j < tokens.size(); j++)
-            {
+            for (int j = 0; j < tokens.size(); j++) {
                String token = tokens.get(j);
                String check = test.get(j + 1);
                assertTrue(Utils.testCompare(check, token));
             }
          }
-         catch (Throwable ex)
-         {
+         catch (Throwable ex) {
             System.err.println("Error in test " + i + ": '" + toParse + "' != " + tokens);
             throw ex;
          }
@@ -111,17 +105,14 @@ public class RqlTokenizerTest
       fails.add(")");
       fails.add("asdfasdf)");
 
-      for (int i = fails.size() - 1; i >= 0; i--)
-      {
+      for (int i = fails.size() - 1; i >= 0; i--) {
          boolean failed = false;
          String test = fails.get(i);
 
-         try
-         {
+         try {
             new RqlTokenizer(test).asList();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             failed = true;
          }
          assertTrue(failed, "String should have thrown a parsing error: " + (i + 1) + " '" + test + "'");

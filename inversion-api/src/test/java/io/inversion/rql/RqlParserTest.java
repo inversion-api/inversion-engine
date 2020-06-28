@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,16 +25,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RqlParserTest
-{
-   void add(List tests, Object... vals)
-   {
+public class RqlParserTest {
+
+   void add(List tests, Object... vals) {
       tests.add(Arrays.asList(vals));
    }
 
    @Test
-   public void test1() throws Exception
-   {
+   public void test1() throws Exception {
       RqlParser parser = new RqlParser();
 
       List<List> tests = new ArrayList();
@@ -75,13 +73,11 @@ public class RqlParserTest
       //      add(tests, "in(\"firstname\",'fred','george','john')", "in(firstname,fred,george,john)");
       //      add(tests, "in(\"firstname\",'fred','george','john')", "in(firstname,fred,george,john)");
 
-      for (int i = tests.size() - 1; i >= 0; i--)
-      {
+      for (int i = tests.size() - 1; i >= 0; i--) {
          List test = tests.get(i);
 
          String reference = test.get(0).toString();
-         for (int j = 1; j < test.size(); j++)
-         {
+         for (int j = 1; j < test.size(); j++) {
             Object query = test.get(j).toString();
             if (query instanceof String)
                query = parser.parse(query.toString()).toString();
@@ -97,13 +93,12 @@ public class RqlParserTest
    }
 
    @Test
-   public void test2() throws Exception
-   {
+   public void test2() throws Exception {
       RqlParser parser = new RqlParser();
       Term t = parser.parse("w(name,'BANANA KG (RESEAU')");
-      
+
       assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());
-      
+
       t = parser.parse("w(name,'BANANA KG (RESEAU)')");
       assertEquals("BANANA KG (RESEAU)", t.getTerm(1).getToken());
    }

@@ -19,11 +19,9 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Order<T extends Order, P extends Query> extends Builder<T, P>
-{
+public class Order<T extends Order, P extends Query> extends Builder<T, P> {
 
-   public Order(P query)
-   {
+   public Order(P query) {
       super(query);
       withFunctions("order", "sort");
    }
@@ -32,36 +30,28 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P>
     * Returns true if the first sort is ascending or if there are no sorts.
     * @return
     */
-   public boolean isAsc(int index)
-   {
+   public boolean isAsc(int index) {
       List<Sort> sorts = getSorts();
       return sorts.size() <= index ? true : sorts.get(index).isAsc();
    }
 
-   public String getProperty(int index)
-   {
+   public String getProperty(int index) {
       List<Sort> sorts = getSorts();
       return sorts.size() <= index ? null : sorts.get(index).getProperty();
    }
 
-   public List<Sort> getSorts()
-   {
+   public List<Sort> getSorts() {
       List<Sort> sorts = new ArrayList();
-      for (Term term : getTerms())
-      {
-         if (term.hasToken("sort", "order"))
-         {
-            for (Term child : term.getTerms())
-            {
+      for (Term term : getTerms()) {
+         if (term.hasToken("sort", "order")) {
+            for (Term child : term.getTerms()) {
                String property = child.token;
                boolean asc = true;
-               if (property.startsWith("-"))
-               {
+               if (property.startsWith("-")) {
                   asc = false;
                   property = property.substring(1, property.length());
                }
-               else if (property.startsWith("+"))
-               {
+               else if (property.startsWith("+")) {
                   property = property.substring(1, property.length());
                }
                sorts.add(new Sort(property, asc));
@@ -71,35 +61,30 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P>
       return sorts;
    }
 
-   public static class Sort
-   {
+   public static class Sort {
+
       String  property = null;
       boolean asc      = true;
 
-      public Sort(String property, boolean asc)
-      {
+      public Sort(String property, boolean asc) {
          super();
          this.property = property;
          this.asc = asc;
       }
 
-      public String getProperty()
-      {
+      public String getProperty() {
          return property;
       }
 
-      public void setProperty(String property)
-      {
+      public void setProperty(String property) {
          this.property = property;
       }
 
-      public boolean isAsc()
-      {
+      public boolean isAsc() {
          return asc;
       }
 
-      public void setAsc(boolean asc)
-      {
+      public void setAsc(boolean asc) {
          this.asc = asc;
       }
    }

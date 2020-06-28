@@ -22,10 +22,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import io.inversion.jdbc.AbstractJdbcDbDeleteActionIntegTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class PostgresDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest
-{
-   public PostgresDbDeleteActionIntegTest()
-   {
+public class PostgresDbDeleteActionIntegTest extends AbstractJdbcDbDeleteActionIntegTest {
+
+   public PostgresDbDeleteActionIntegTest() {
       super("postgres");
    }
 }

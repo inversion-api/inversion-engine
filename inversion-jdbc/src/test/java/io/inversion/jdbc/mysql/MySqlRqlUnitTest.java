@@ -23,16 +23,14 @@ import io.inversion.jdbc.AbstractSqlQueryRqlTest;
 import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest
-{
-   public MySqlRqlUnitTest() throws Exception
-   {
+public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest {
+
+   public MySqlRqlUnitTest() throws Exception {
       super("mysql");
    }
 
    @Override
-   protected void customizeUnitTestSuite(RqlValidationSuite suite)
-   {
+   protected void customizeUnitTestSuite(RqlValidationSuite suite) {
       super.customizeUnitTestSuite(suite);
 
       suite//
@@ -82,8 +80,9 @@ public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest
            .withResult("onToManyNotExistsNe", "SELECT `employees`.* FROM `employees` WHERE NOT EXISTS (SELECT 1 FROM `employees` `~~relTbl_employees` WHERE `employees`.`reportsTo` = `~~relTbl_employees`.`employeeId` AND `~~relTbl_employees`.`firstName` = ?) ORDER BY `employees`.`employeeId` ASC LIMIT 100 args=[Andrew]")//
            .withResult("manyToOneExistsEq", "SELECT `employees`.* FROM `employees` WHERE EXISTS (SELECT 1 FROM `employees` `~~relTbl_employees` WHERE `employees`.`employeeId` = `~~relTbl_employees`.`reportsTo` AND `~~relTbl_employees`.`firstName` = ?) ORDER BY `employees`.`employeeId` ASC LIMIT 100 args=[Nancy]")//
            .withResult("manyToOneNotExistsNe", "SELECT `employees`.* FROM `employees` WHERE NOT EXISTS (SELECT 1 FROM `employees` `~~relTbl_employees` WHERE `employees`.`employeeId` = `~~relTbl_employees`.`reportsTo` AND `~~relTbl_employees`.`firstName` = ?) ORDER BY `employees`.`employeeId` ASC LIMIT 100 args=[Nancy]")//
-           .withResult("manyTManyNotExistsNe", "SELECT `employees`.* FROM `employees` WHERE NOT EXISTS (SELECT 1 FROM `orderDetails` `~~relTbl_orderDetails`, `employeeOrderDetails` `~~lnkTbl_employeeOrderDetails` WHERE `employees`.`employeeId` = `~~lnkTbl_employeeOrderDetails`.`employeeId` AND `~~lnkTbl_employeeOrderDetails`.`orderId` = `~~relTbl_orderDetails`.`orderId` AND `~~lnkTbl_employeeOrderDetails`.`productId` = `~~relTbl_orderDetails`.`productId` AND `~~relTbl_orderDetails`.`quantity` = ?) ORDER BY `employees`.`employeeId` ASC LIMIT 100 args=[12]")//
-           .withResult("eqNonexistantColumn","SELECT `orders`.* FROM `orders` WHERE `orders`.`orderId` >= ? ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[1000]");
+           .withResult("manyTManyNotExistsNe",
+                 "SELECT `employees`.* FROM `employees` WHERE NOT EXISTS (SELECT 1 FROM `orderDetails` `~~relTbl_orderDetails`, `employeeOrderDetails` `~~lnkTbl_employeeOrderDetails` WHERE `employees`.`employeeId` = `~~lnkTbl_employeeOrderDetails`.`employeeId` AND `~~lnkTbl_employeeOrderDetails`.`orderId` = `~~relTbl_orderDetails`.`orderId` AND `~~lnkTbl_employeeOrderDetails`.`productId` = `~~relTbl_orderDetails`.`productId` AND `~~relTbl_orderDetails`.`quantity` = ?) ORDER BY `employees`.`employeeId` ASC LIMIT 100 args=[12]")//
+           .withResult("eqNonexistantColumn", "SELECT `orders`.* FROM `orders` WHERE `orders`.`orderId` >= ? ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[1000]");
       ;
    }
 

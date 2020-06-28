@@ -25,19 +25,17 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_METHOD)
-public class TestSqlQuery
-{
+public class TestSqlQuery {
+
    static JdbcDb db = null;
 
    @BeforeAll
-   public static void initializeDb() throws Exception
-   {
+   public static void initializeDb() throws Exception {
       //      db = JdbcDbFactory.bootstrapH2("queryWithoutCollection");
    }
 
    @AfterAll
-   public static void finalizeDb()
-   {
+   public static void finalizeDb() {
       //      if (db != null)
       //         db.shutdown();
       //
@@ -45,8 +43,7 @@ public class TestSqlQuery
    }
 
    @Test
-   public void queryWithoutCollection() throws Exception
-   {
+   public void queryWithoutCollection() throws Exception {
       //      db.withExcludeColumns("collection", "entity", "relationship");
       //
       //      Engine engine = new Engine().withApi(new Api("northwind") //
@@ -91,8 +88,7 @@ public class TestSqlQuery
    }
 
    @Test
-   public void test1() throws Exception
-   {
+   public void test1() throws Exception {
       //      List<RqlTest> tests = new ArrayList();
       //
       //      String rql = null;
@@ -628,20 +624,16 @@ public class TestSqlQuery
    //      return true;
    //   }
 
-   static LinkedHashMap split(String queryString)
-   {
+   static LinkedHashMap split(String queryString) {
       LinkedHashMap map = new LinkedHashMap();
 
       String[] terms = queryString.split("&");
-      for (String term : terms)
-      {
+      for (String term : terms) {
          int eqIdx = term.indexOf('=');
-         if (eqIdx < 0)
-         {
+         if (eqIdx < 0) {
             map.put(term, null);
          }
-         else
-         {
+         else {
             String value = term.substring(eqIdx + 1, term.length());
             term = term.substring(0, eqIdx);
             map.put(term, value);
@@ -650,16 +642,15 @@ public class TestSqlQuery
       return map;
    }
 
-   static class RqlTest
-   {
+   static class RqlTest {
+
       String   rql         = null;
       String   select      = null;
       String   dynamicSql  = null;
       String   preparedSql = null;
       String[] fields      = null;
 
-      public RqlTest(String rql, String select, String dynamicSql, String preparedSql, String... fields)
-      {
+      public RqlTest(String rql, String select, String dynamicSql, String preparedSql, String... fields) {
          super();
          this.rql = rql;
          this.select = select;

@@ -58,8 +58,8 @@ import io.inversion.utils.Utils;
 /**
  * Exposes the tables of a JDBC data source as REST <code>Collections</code>.
  */
-public class JdbcDb extends Db<JdbcDb>
-{
+public class JdbcDb extends Db<JdbcDb> {
+
    static Map<Db, DataSource> pools                    = new Hashtable();
 
    protected char             stringQuote              = '\'';
@@ -129,73 +129,62 @@ public class JdbcDb extends Db<JdbcDb>
     */
    protected List<String>     ddlUrls                  = new ArrayList();
 
-   static
-   {
-      JdbcUtils.addSqlListener(new SqlListener()
-         {
-            ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+   static {
+      JdbcUtils.addSqlListener(new SqlListener() {
 
-            @Override
-            public void onError(String method, String sql, Object args, Exception ex)
-            {
-               if (method != null && method.equals("selectRows"))
-               {
-                  log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
-               }
-               else
-               {
-                  log.warn(ex.getMessage(), ex);
+         ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+
+         @Override
+         public void onError(String method, String sql, Object args, Exception ex) {
+            if (method != null && method.equals("selectRows")) {
+               log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
+            }
+            else {
+               log.warn(ex.getMessage(), ex);
+            }
+         }
+
+         @Override
+         public void beforeStmt(String method, String sql, Object args) {
+         }
+
+         @Override
+         public void afterStmt(String method, String sql, Object args, Exception ex, Object result) {
+            String debugPrefix = "SqlDb: ";
+
+            String debugType = "unknown";
+
+            if (Chain.peek() != null) {
+               Collection coll = Chain.peek().getRequest().getCollection();
+               if (coll != null && coll.getDb() != null) {
+                  Db db = coll.getDb();
+                  debugType = db.getType().toLowerCase();
                }
             }
+            debugPrefix += debugType;
 
-            @Override
-            public void beforeStmt(String method, String sql, Object args)
-            {
-            }
+            args = (args != null && args.getClass().isArray() ? Arrays.asList((Object[]) args) : args);
 
-            @Override
-            public void afterStmt(String method, String sql, Object args, Exception ex, Object result)
-            {
-               String debugPrefix = "SqlDb: ";
-
-               String debugType = "unknown";
-
-               if (Chain.peek() != null)
-               {
-                  Collection coll = Chain.peek().getRequest().getCollection();
-                  if (coll != null && coll.getDb() != null)
-                  {
-                     Db db = coll.getDb();
-                     debugType = db.getType().toLowerCase();
-                  }
-               }
-               debugPrefix += debugType;
-
-               args = (args != null && args.getClass().isArray() ? Arrays.asList((Object[]) args) : args);
-
-               sql = sql.replaceAll("\r", "");
-               sql = sql.replaceAll("\n", " ");
-               sql = sql.trim().replaceAll(" +", " ");
-               StringBuffer buff = new StringBuffer("");
-               buff.append(debugPrefix).append(" -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
-               String msg = buff.toString();
-               Chain.debug(msg);
-            }
-         });
+            sql = sql.replaceAll("\r", "");
+            sql = sql.replaceAll("\n", " ");
+            sql = sql.trim().replaceAll(" +", " ");
+            StringBuffer buff = new StringBuffer("");
+            buff.append(debugPrefix).append(" -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
+            String msg = buff.toString();
+            Chain.debug(msg);
+         }
+      });
    }
 
-   public JdbcDb()
-   {
+   public JdbcDb() {
       //System.out.println("SqlDb() <init>");
    }
 
-   public JdbcDb(String name)
-   {
+   public JdbcDb(String name) {
       withName(name);
    }
 
-   public JdbcDb(String name, String driver, String url, String user, String pass, String... ddlUrls)
-   {
+   public JdbcDb(String name, String driver, String url, String user, String pass, String... ddlUrls) {
       withName(name);
       withDriver(driver);
       withUrl(url);
@@ -204,99 +193,81 @@ public class JdbcDb extends Db<JdbcDb>
       withDdlUrl(ddlUrls);
    }
 
-   public JdbcDb(String url, String user, String pass)
-   {
+   public JdbcDb(String url, String user, String pass) {
       withUrl(url);
       withUser(user);
       withPass(pass);
    }
 
    @Override
-   protected void doStartup(Api api)
-   {
+   protected void doStartup(Api api) {
       if (isType("mysql"))
          withColumnQuote('`');
 
       super.doStartup(api);
 
-      api.withApiListener(new ApiListener()
-         {
+      api.withApiListener(new ApiListener() {
 
-            @Override
-            public void onStartup(Api api)
-            {
+         @Override
+         public void onStartup(Api api) {
+         }
+
+         @Override
+         public void onShutdown(Api api) {
+         }
+
+         @Override
+         public void afterRequest(Request req, Response res) {
+            try {
+               JdbcConnectionLocal.commit();
+            }
+            catch (Exception ex) {
+               ApiException.throw500InternalServerError(ex, "Error committing tansaction");
+            }
+         }
+
+         @Override
+         public void afterError(Request req, Response res) {
+
+            try {
+               JdbcConnectionLocal.rollback();
+            }
+            catch (Throwable t) {
+               log.warn("Error rollowing back transaction.", t);
             }
 
-            @Override
-            public void onShutdown(Api api)
-            {
+         }
+
+         @Override
+         public void beforeFinally(Request req, Response res) {
+            try {
+               JdbcConnectionLocal.close();
             }
-
-            @Override
-            public void afterRequest(Request req, Response res)
-            {
-               try
-               {
-                  JdbcConnectionLocal.commit();
-               }
-               catch (Exception ex)
-               {
-                  ApiException.throw500InternalServerError(ex, "Error committing tansaction");
-               }
+            catch (Throwable t) {
+               log.warn("Error closing connections.", t);
             }
+         }
 
-            @Override
-            public void afterError(Request req, Response res)
-            {
-
-               try
-               {
-                  JdbcConnectionLocal.rollback();
-               }
-               catch (Throwable t)
-               {
-                  log.warn("Error rollowing back transaction.", t);
-               }
-
-            }
-
-            @Override
-            public void beforeFinally(Request req, Response res)
-            {
-               try
-               {
-                  JdbcConnectionLocal.close();
-               }
-               catch (Throwable t)
-               {
-                  log.warn("Error closing connections.", t);
-               }
-            }
-
-         });
+      });
 
    }
 
-   protected void doShutdown()
-   {
+   protected void doShutdown() {
       DataSource pool = pools.get(this);
-      if (pool != null)
-      {
+      if (pool != null) {
          ((HikariDataSource) pool).close();
       }
    }
 
    @Override
-   public String getType()
-   {
+   public String getType() {
       if (type != null)
          return type;
 
       String driver = getDriver();
       driver = driver != null ? driver : getUrl();
 
-      if (driver != null)
-      {
+      if (driver != null) {
          if (driver.indexOf("mysql") >= 0)
             return "mysql";
 
@@ -317,21 +288,16 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException
-   {
+   public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException {
       SqlQuery query = new SqlQuery(this, coll, columnMappedTerms);
       return query.doSelect();
    }
 
    @Override
-   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
-      try
-      {
-         for (Map<String, Object> row : rows)
-         {
-            for (String key : (Set<String>) new HashSet(row.keySet()))
-            {
+   public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
+      try {
+         for (Map<String, Object> row : rows) {
+            for (String key : (Set<String>) new HashSet(row.keySet())) {
                if (table.getPropertyByColumnName(key) == null)
                   row.remove(key);
             }
@@ -339,30 +305,24 @@ public class JdbcDb extends Db<JdbcDb>
 
          List upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
 
-         for (int i = 0; i < upserted.size(); i++)
-         {
+         for (int i = 0; i < upserted.size(); i++) {
             String resourceKey = table.encodeResourceKey((Row) upserted.get(i));
             upserted.set(i, resourceKey);
          }
 
          return upserted;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;
    }
 
    @Override
-   public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException
-   {
-      try
-      {
-         for (Map<String, Object> row : rows)
-         {
-            for (String key : (Set<String>) new HashSet(row.keySet()))
-            {
+   public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
+      try {
+         for (Map<String, Object> row : rows) {
+            for (String key : (Set<String>) new HashSet(row.keySet())) {
                if (table.getPropertyByColumnName(key) == null)
                   row.remove(key);
             }
@@ -370,29 +330,24 @@ public class JdbcDb extends Db<JdbcDb>
 
          JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
    }
 
    @Override
-   public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException
-   {
-      try
-      {
+   public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException {
+      try {
          if (columnMappedIndexValues.size() == 0)
             return;
 
          Map<String, Object> firstRow = columnMappedIndexValues.get(0);
 
-         if (firstRow.size() == 1)
-         {
+         if (firstRow.size() == 1) {
             String keyCol = firstRow.keySet().iterator().next();
 
             List values = new ArrayList();
-            for (Map resourceKey : columnMappedIndexValues)
-            {
+            for (Map resourceKey : columnMappedIndexValues) {
                values.add(resourceKey.values().iterator().next());
             }
 
@@ -401,22 +356,19 @@ public class JdbcDb extends Db<JdbcDb>
             sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
             JdbcUtils.execute(getConnection(), sql, values.toArray());
          }
-         else
-         {
+         else {
             String sql = "";
             sql += " DELETE FROM " + quoteCol(table.getTableName());
             sql += " WHERE ";
 
             List values = new ArrayList();
-            for (Map<String, Object> resourceKey : columnMappedIndexValues)
-            {
+            for (Map<String, Object> resourceKey : columnMappedIndexValues) {
                if (values.size() > 0)
                   sql += " OR ";
                sql += "(";
 
                int i = 0;
-               for (String key : resourceKey.keySet())
-               {
+               for (String key : resourceKey.keySet()) {
                   i++;
                   if (i > 1)
                      sql += "AND ";
@@ -428,8 +380,7 @@ public class JdbcDb extends Db<JdbcDb>
             JdbcUtils.execute(getConnection(), sql, values.toArray());
          }
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
    }
@@ -438,8 +389,7 @@ public class JdbcDb extends Db<JdbcDb>
     * Shortcut for getConnection(true);
     * 
     */
-   public Connection getConnection() throws ApiException
-   {
+   public Connection getConnection() throws ApiException {
       Connection conn = getConnection(true);
       return conn;
    }
@@ -452,27 +402,20 @@ public class JdbcDb extends Db<JdbcDb>
     * @return
     * @throws ApiException
     */
-   public Connection getConnection(boolean managed) throws ApiException
-   {
+   public Connection getConnection(boolean managed) throws ApiException {
       return getConnection0(managed);
    }
 
-   protected Connection getConnection0(boolean managed) throws ApiException
-   {
-      try
-      {
+   protected Connection getConnection0(boolean managed) throws ApiException {
+      try {
          Connection conn = !managed ? null : JdbcConnectionLocal.getConnection(this);
-         if (conn == null)
-         {
+         if (conn == null) {
             DataSource pool = pools.get(this);
 
-            if (pool == null)
-            {
-               synchronized (this)
-               {
+            if (pool == null) {
+               synchronized (this) {
                   pool = pools.get(this);
-                  if (pool == null)
-                  {
+                  if (pool == null) {
                      pool = createConnectionPool();
                   }
                   pools.put(this, pool);
@@ -481,8 +424,7 @@ public class JdbcDb extends Db<JdbcDb>
 
             conn = pool.getConnection();
 
-            if (managed)
-            {
+            if (managed) {
                conn.setAutoCommit(isAutoCommit());
                JdbcConnectionLocal.putConnection(this, conn);
             }
@@ -490,17 +432,14 @@ public class JdbcDb extends Db<JdbcDb>
 
          return conn;
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
          return null;
       }
    }
 
-   protected DataSource createConnectionPool() throws Exception
-   {
-      if (ddlUrls.size() > 0)
-      {
+   protected DataSource createConnectionPool() throws Exception {
+      if (ddlUrls.size() > 0) {
          //createConnectionPool() should only be called once per DB
          //ddlUrls are used to initialize the db...this is really 
          //useful for things like embedded H2 db that are used for
@@ -517,13 +456,11 @@ public class JdbcDb extends Db<JdbcDb>
             Class.forName(driver);
 
          Connection conn = null;
-         try
-         {
+         try {
             String url = getUrl();
             conn = DriverManager.getConnection(url, getUser(), getPass());
             conn.setAutoCommit(false);
-            for (String ddlUrl : ddlUrls)
-            {
+            for (String ddlUrl : ddlUrls) {
                if (Utils.empty(ddlUrl))
                   continue;
 
@@ -534,15 +471,13 @@ public class JdbcDb extends Db<JdbcDb>
             }
             conn.commit();
          }
-         catch (Exception ex)
-         {
+         catch (Exception ex) {
             log.warn("Error initializing db with supplied ddl.", ex);
             if (conn != null)
                conn.rollback();
             throw ex;
          }
-         finally
-         {
+         finally {
             JdbcUtils.close(conn);
          }
       }
@@ -557,16 +492,14 @@ public class JdbcDb extends Db<JdbcDb>
       config.setPassword(getPass());
       config.setMaximumPoolSize(getPoolMax());
 
-      if (isType("mysql"))
-      {
+      if (isType("mysql")) {
          //-- this is required to remove STRICT_TRANS_TABLES which prevents upserting
          //-- existing rows without supplying the value of required columns
          //-- hikari seemed to be overriding 'sessionVariables' set on the jdbc url
          //-- so this was done to force the config
          config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
       }
-      else if (isType("sqlserver"))
-      {
+      else if (isType("sqlserver")) {
          //-- upserts won't work if you can't upsert an idresource field
          //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
          config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
@@ -579,15 +512,12 @@ public class JdbcDb extends Db<JdbcDb>
    }
 
    @Override
-   public void buildCollections() throws ApiException
-   {
+   public void buildCollections() throws ApiException {
       ResultSet rs = null;
 
-      try
-      {
+      try {
 
-         if (!isBootstrap())
-         {
+         if (!isBootstrap()) {
             return;
          }
 
@@ -598,8 +528,7 @@ public class JdbcDb extends Db<JdbcDb>
 
          //-- only here to map jdbc type integer codes to strings ex "4" to "BIGINT" or whatever it is
          Map<String, String> types = new HashMap<String, String>();
-         for (Field field : Types.class.getFields())
-         {
+         for (Field field : Types.class.getFields()) {
             types.put(field.get(null) + "", field.getName());
          }
          //--
@@ -610,28 +539,25 @@ public class JdbcDb extends Db<JdbcDb>
          //-- have to do the fk loop second becuase the reference pk
          //-- object needs to exist so that it can be set on the fk Col
 
-         if (isType("sqlserver"))
-         {
+         if (isType("sqlserver")) {
             String schema = getUrl();
             int idx = schema.toLowerCase().indexOf("databasename=");
-            if(idx > -1){
+            if (idx > -1) {
                idx = idx + "databasename=".length();
             }
-            if(idx == -1){
+            if (idx == -1) {
                idx = schema.toLowerCase().indexOf("database=");
-               if(idx > -1){
+               if (idx > -1) {
                   idx = idx + "database=".length();
                }
             }
-            if (idx > 0)
-            {
+            if (idx > 0) {
 
                schema = schema.substring(idx);
                schema = Utils.substringBefore(schema, ";");
                schema = Utils.substringBefore(schema, "&");
             }
-            else
-            {
+            else {
                schema = "dbo";
             }
             rs = dbmd.getTables(conn.getCatalog(), schema, "%", new String[]{"TABLE", "VIEW"});
@@ -640,14 +566,12 @@ public class JdbcDb extends Db<JdbcDb>
             rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
          //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
          boolean hasNext = rs.next();
-         if (!hasNext)
-         {
+         if (!hasNext) {
             rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
             hasNext = rs.next();
          }
          if (hasNext)
-            do
-            {
+            do {
                String tableCat = rs.getString("TABLE_CAT");
                String tableSchem = rs.getString("TABLE_SCHEM");
                String tableName = rs.getString("TABLE_NAME");
@@ -661,8 +585,7 @@ public class JdbcDb extends Db<JdbcDb>
 
                ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
-               while (colsRs.next())
-               {
+               while (colsRs.next()) {
                   String colName = colsRs.getString("COLUMN_NAME");
                   Object type = colsRs.getString("DATA_TYPE");
                   String colType = types.get(type);
@@ -675,21 +598,18 @@ public class JdbcDb extends Db<JdbcDb>
                colsRs.close();
 
                ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
-               while (indexMd.next())
-               {
+               while (indexMd.next()) {
                   String idxName = indexMd.getString("INDEX_NAME");
                   String idxType = "Other";
                   String colName = indexMd.getString("COLUMN_NAME");
 
-                  if (idxName == null || colName == null)
-                  {
+                  if (idxName == null || colName == null) {
                      //WDB 2020-02-14 this was put in because SqlServer was 
                      //found to be returning indexes without names.
                      continue;
                   }
 
-                  switch (indexMd.getInt("TYPE"))
-                  {
+                  switch (indexMd.getInt("TYPE")) {
                      case DatabaseMetaData.tableIndexClustered:
                         idxType = "Clustered";
                      case DatabaseMetaData.tableIndexHashed:
@@ -723,14 +643,12 @@ public class JdbcDb extends Db<JdbcDb>
          //-- be connected
          rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE"});
          hasNext = rs.next();
-         if (!hasNext)
-         {
+         if (!hasNext) {
             rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE"});
             hasNext = rs.next();
          }
          if (hasNext)
-            do
-            {
+            do {
                String tableName = rs.getString("TABLE_NAME");
 
                //            System.out.println(tableName);
@@ -744,8 +662,7 @@ public class JdbcDb extends Db<JdbcDb>
                //            }
 
                ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
-               while (keyMd.next())
-               {
+               while (keyMd.next()) {
                   //String pkName = keyMd.getString("PK_NAME");
                   String fkName = keyMd.getString("FK_NAME");
 
@@ -759,8 +676,7 @@ public class JdbcDb extends Db<JdbcDb>
                   fk.withPk(pk);
 
                   Collection coll = getCollectionByTableName(fkTableName);
-                  if (coll != null)
-                  {
+                  if (coll != null) {
                      //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
                      coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
                   }
@@ -772,12 +688,10 @@ public class JdbcDb extends Db<JdbcDb>
 
          rs.close();
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
-      finally
-      {
+      finally {
          Utils.close(rs);
       }
 
@@ -785,16 +699,14 @@ public class JdbcDb extends Db<JdbcDb>
       super.buildCollections();
    }
 
-   public JdbcDb withType(String type)
-   {
+   public JdbcDb withType(String type) {
       if ("mysql".equals(type))
          withStringQuote('`');
 
       return super.withType(type);
    }
 
-   public JdbcDb withConfig(String driver, String url, String user, String pass)
-   {
+   public JdbcDb withConfig(String driver, String url, String user, String pass) {
       withDriver(driver);
       withUrl(url);
       withUser(user);
@@ -802,109 +714,89 @@ public class JdbcDb extends Db<JdbcDb>
       return this;
    }
 
-   public String getDriver()
-   {
+   public String getDriver() {
       return driver;
    }
 
-   public JdbcDb withDriver(String driver)
-   {
+   public JdbcDb withDriver(String driver) {
       this.driver = driver;
       return this;
    }
 
-   public String getUrl()
-   {
+   public String getUrl() {
       return url;
    }
 
-   public JdbcDb withUrl(String url)
-   {
+   public JdbcDb withUrl(String url) {
       this.url = url;
       return this;
    }
 
-   public String getUser()
-   {
+   public String getUser() {
       return user;
    }
 
-   public JdbcDb withUser(String user)
-   {
+   public JdbcDb withUser(String user) {
       this.user = user;
       return this;
    }
 
-   public String getPass()
-   {
+   public String getPass() {
       return pass;
    }
 
-   public JdbcDb withPass(String pass)
-   {
+   public JdbcDb withPass(String pass) {
       this.pass = pass;
       return this;
    }
 
-   public int getPoolMax()
-   {
+   public int getPoolMax() {
       return poolMax;
    }
 
-   public void setPoolMax(int poolMax)
-   {
+   public void setPoolMax(int poolMax) {
       this.poolMax = poolMax;
    }
 
-   public int getIdleConnectionTestPeriod()
-   {
+   public int getIdleConnectionTestPeriod() {
       return idleConnectionTestPeriod;
    }
 
-   public void setIdleConnectionTestPeriod(int idleConnectionTestPeriod)
-   {
+   public void setIdleConnectionTestPeriod(int idleConnectionTestPeriod) {
       this.idleConnectionTestPeriod = idleConnectionTestPeriod;
    }
 
-   public JdbcDb withStringQuote(char stringQuote)
-   {
+   public JdbcDb withStringQuote(char stringQuote) {
       this.stringQuote = stringQuote;
       return this;
    }
 
-   public JdbcDb withColumnQuote(char columnQuote)
-   {
+   public JdbcDb withColumnQuote(char columnQuote) {
       this.columnQuote = columnQuote;
       return this;
    }
 
-   public String quoteCol(String columnName)
-   {
+   public String quoteCol(String columnName) {
       return columnQuote + columnName + columnQuote;
    }
 
-   public String quoteStr(String string)
-   {
+   public String quoteStr(String string) {
       return stringQuote + string + stringQuote;
    }
 
-   public JdbcDb withDdlUrl(String... ddlUrl)
-   {
-      for (int i = 0; ddlUrl != null && i < ddlUrl.length; i++)
-      {
+   public JdbcDb withDdlUrl(String... ddlUrl) {
+      for (int i = 0; ddlUrl != null && i < ddlUrl.length; i++) {
          ddlUrls.add(ddlUrl[i]);
       }
 
       return this;
    }
 
-   public boolean isAutoCommit()
-   {
+   public boolean isAutoCommit() {
       return autoCommit;
    }
 
-   public JdbcDb withAutoCommit(boolean autoCommit)
-   {
+   public JdbcDb withAutoCommit(boolean autoCommit) {
       this.autoCommit = autoCommit;
       return this;
    }
