@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,226 +16,195 @@
  */
 package io.inversion.jdbc;
 
+import io.inversion.utils.Utils;
+
 import java.util.HashSet;
 import java.util.Set;
 
-import io.inversion.utils.Utils;
+class SqlTokenizer {
+    static Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 
-class SqlTokenizer
-{
-   static Set   keywords    = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
+    char[] chars = null;
+    int    head  = 0;
 
-   char[]       chars       = null;
-   int          head        = 0;
+    StringBuffer clause = new StringBuffer("");
 
-   StringBuffer clause      = new StringBuffer("");
+    StringBuffer token = new StringBuffer("");
 
-   StringBuffer token       = new StringBuffer("");
+    boolean escape      = false;
+    boolean doubleQuote = false;
+    boolean singleQuote = false;
+    boolean backQuote   = false;
 
-   boolean      escape      = false;
-   boolean      doubleQuote = false;
-   boolean      singleQuote = false;
-   boolean      backQuote   = false;
+    public SqlTokenizer(String chars) {
+        this.chars = chars.toCharArray();
+    }
 
-   public SqlTokenizer(String chars)
-   {
-      this.chars = chars.toCharArray();
-   }
+    boolean quoted() {
+        return doubleQuote || singleQuote || backQuote;
+    }
 
-   boolean quoted()
-   {
-      return doubleQuote || singleQuote || backQuote;
-   }
+    boolean escaped() {
+        return escape;
+    }
 
-   boolean escaped()
-   {
-      return escape;
-   }
+    boolean isAlphaNum(char c) {
+        return Character.isAlphabetic(c) || Character.isDigit(c);
+    }
 
-   boolean isAlphaNum(char c)
-   {
-      return Character.isAlphabetic(c) || Character.isDigit(c);
-   }
+    public String nextClause() {
+        String toReturn = null;
 
-   public String nextClause()
-   {
-      String toReturn = null;
-
-      String nextToken = null;
-      while ((nextToken = next()) != null)
-      {
-         if (keywords.contains(nextToken.toLowerCase()))
-         {
-            if (clause.length() > 0)
-            {
-               toReturn = clause.toString();
-               clause = new StringBuffer(nextToken);
-               return toReturn;
+        String nextToken = null;
+        while ((nextToken = next()) != null) {
+            if (keywords.contains(nextToken.toLowerCase())) {
+                if (clause.length() > 0) {
+                    toReturn = clause.toString();
+                    clause = new StringBuffer(nextToken);
+                    return toReturn;
+                }
             }
-         }
-         clause.append(nextToken);
-      }
+            clause.append(nextToken);
+        }
 
-      if (clause.length() > 0)
-      {
-         toReturn = clause.toString();
-         clause = new StringBuffer("");
-      }
+        if (clause.length() > 0) {
+            toReturn = clause.toString();
+            clause = new StringBuffer("");
+        }
 
-      return toReturn;
-   }
+        return toReturn;
+    }
 
-   public String next()
-   {
-      if (head >= chars.length)
-         return null;
+    public String next() {
+        if (head >= chars.length)
+            return null;
 
-      doubleQuote = false;
-      singleQuote = false;
-      backQuote = false;
+        doubleQuote = false;
+        singleQuote = false;
+        backQuote = false;
 
-      escape = false;
+        escape = false;
 
-      boolean done = false;
-      int parens = 0;
+        boolean done   = false;
+        int     parens = 0;
 
-      for (; head < chars.length && !done; head++)
-      {
-         char c = chars[head];
-         switch (c)
-         {
-            case '\\':
-               token.append(c);
-               escape = !escape;
-               continue;
-            case '(':
-               if (!escaped() && !quoted())
-               {
-                  if (parens == 0 && token.length() > 0)
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
+        for (; head < chars.length && !done; head++) {
+            char c = chars[head];
+            switch (c) {
+                case '\\':
+                    token.append(c);
+                    escape = !escape;
+                    continue;
+                case '(':
+                    if (!escaped() && !quoted()) {
+                        if (parens == 0 && token.length() > 0) {
+                            head--;
+                            done = true;
+                            break;
+                        }
 
-                  parens += 1;
-               }
-               token.append(c);
-               continue;
-            case ')':
-               if (!escaped() && !quoted())
-               {
-                  parens -= 1;
+                        parens += 1;
+                    }
+                    token.append(c);
+                    continue;
+                case ')':
+                    if (!escaped() && !quoted()) {
+                        parens -= 1;
 
-                  if (parens == 0)
-                  {
-                     token.append(c);
-                     done = true;
-                     break;
-                  }
-               }
-               token.append(c);
-               continue;
-            case '\"':
-               if (!(escape || singleQuote || backQuote || parens > 0))
-               {
-                  if (!doubleQuote && token.length() > 0)
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
+                        if (parens == 0) {
+                            token.append(c);
+                            done = true;
+                            break;
+                        }
+                    }
+                    token.append(c);
+                    continue;
+                case '\"':
+                    if (!(escape || singleQuote || backQuote || parens > 0)) {
+                        if (!doubleQuote && token.length() > 0) {
+                            head--;
+                            done = true;
+                            break;
+                        }
 
-                  doubleQuote = !doubleQuote;
+                        doubleQuote = !doubleQuote;
 
-                  if (!doubleQuote)
-                  {
-                     token.append(c);
-                     done = true;
-                     break;
-                  }
-               }
-               token.append(c);
-               continue;
+                        if (!doubleQuote) {
+                            token.append(c);
+                            done = true;
+                            break;
+                        }
+                    }
+                    token.append(c);
+                    continue;
 
-            case '\'':
-               if (!(escape || doubleQuote || backQuote || parens > 0))
-               {
-                  if (!singleQuote && token.length() > 0)
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
+                case '\'':
+                    if (!(escape || doubleQuote || backQuote || parens > 0)) {
+                        if (!singleQuote && token.length() > 0) {
+                            head--;
+                            done = true;
+                            break;
+                        }
 
-                  singleQuote = !singleQuote;
+                        singleQuote = !singleQuote;
 
-                  if (!singleQuote)
-                  {
-                     token.append(c);
-                     done = true;
-                     break;
-                  }
-               }
-               token.append(c);
-               continue;
+                        if (!singleQuote) {
+                            token.append(c);
+                            done = true;
+                            break;
+                        }
+                    }
+                    token.append(c);
+                    continue;
 
-            case '`':
-               if (!(escape || doubleQuote || singleQuote || parens > 0))
-               {
-                  if (!backQuote && token.length() > 0)
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
+                case '`':
+                    if (!(escape || doubleQuote || singleQuote || parens > 0)) {
+                        if (!backQuote && token.length() > 0) {
+                            head--;
+                            done = true;
+                            break;
+                        }
 
-                  backQuote = !backQuote;
+                        backQuote = !backQuote;
 
-                  if (!backQuote)
-                  {
-                     token.append(c);
-                     done = true;
-                     break;
-                  }
-               }
-               token.append(c);
-               continue;
+                        if (!backQuote) {
+                            token.append(c);
+                            done = true;
+                            break;
+                        }
+                    }
+                    token.append(c);
+                    continue;
 
-            default :
-               escape = false;
+                default:
+                    escape = false;
 
-               if (quoted() || parens > 0)
-               {
-                  token.append(c);
-                  continue;
-               }
+                    if (quoted() || parens > 0) {
+                        token.append(c);
+                        continue;
+                    }
 
-               if (token.length() > 0)
-               {
+                    if (token.length() > 0) {
 
-                  char previousC = token.charAt(token.length() - 1);
+                        char previousC = token.charAt(token.length() - 1);
 
-                  if (!isAlphaNum(previousC))
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
-                  else if (isAlphaNum(previousC) && !isAlphaNum(c))
-                  {
-                     head--;
-                     done = true;
-                     break;
-                  }
-               }
+                        if (!isAlphaNum(previousC)) {
+                            head--;
+                            done = true;
+                            break;
+                        } else if (isAlphaNum(previousC) && !isAlphaNum(c)) {
+                            head--;
+                            done = true;
+                            break;
+                        }
+                    }
 
-               token.append(c);
-         }
-      }
-      String str = token.toString();
-      token = new StringBuffer();
-      return str;
-   }
+                    token.append(c);
+            }
+        }
+        String str = token.toString();
+        token = new StringBuffer();
+        return str;
+    }
 
 }

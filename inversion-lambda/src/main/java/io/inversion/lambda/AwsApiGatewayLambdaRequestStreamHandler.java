@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,266 +16,226 @@
  */
 package io.inversion.lambda;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-
-import io.inversion.Api;
-import io.inversion.Chain;
-import io.inversion.Engine;
-import io.inversion.Request;
-import io.inversion.Response;
+import io.inversion.*;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
+import java.io.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Adapter to run an Inversion API as an AWS Lambda behind an ApiGateway
  */
-public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHandler
-{
-   protected Engine engine = null;
-   protected Api    api    = null;
+public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHandler {
+    protected Engine engine = null;
+    protected Api    api    = null;
 
-   boolean          debug  = false;
+    boolean debug = false;
 
-   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
-   {
-      runRequest(inputStream, outputStream, context);
-   }
+    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        runRequest(inputStream, outputStream, context);
+    }
 
-   public Chain runRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
-   {
-      Chain chain = null;
+    public Chain runRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        Chain chain = null;
 
-      String input = Utils.read(new BufferedInputStream(inputStream));
+        String input = Utils.read(new BufferedInputStream(inputStream));
 
-      JSNode responseBody = new JSNode();
-      JSNode config = null;
-      Exception ex = null;
+        JSNode    responseBody = new JSNode();
+        JSNode    config       = null;
+        Exception ex           = null;
 
-      try
-      {
-         JSNode json = JSNode.parseJsonNode(input);
+        try {
+            JSNode json = JSNode.parseJsonNode(input);
 
-         debug("Request Event");
-         debug(json.toString(false));
+            debug("Request Event");
+            debug(json.toString(false));
 
-         String method = json.getString("httpMethod");
-         String host = (String) json.find("headers.Host");
-         String path = (String) json.find("requestContext.path");
-         Url url = new Url("http://" + host + path);
+            String method = json.getString("httpMethod");
+            String host   = (String) json.find("headers.Host");
+            String path   = (String) json.find("requestContext.path");
+            Url    url    = new Url("http://" + host + path);
 
-         String profile = path != null ? Utils.explode("/", path).get(0) : "";
+            String profile = path != null ? Utils.explode("/", path).get(0) : "";
 
-         String proxyPath = (String) json.find("pathParameters.proxy");
-         proxyPath = proxyPath != null ? proxyPath : "";
+            String proxyPath = (String) json.find("pathParameters.proxy");
+            proxyPath = proxyPath != null ? proxyPath : "";
 
-         String pathStr = Utils.implode("/", path);
-         String proxyStr = Utils.implode("/", proxyPath);
+            String pathStr  = Utils.implode("/", path);
+            String proxyStr = Utils.implode("/", proxyPath);
 
-         String servletPath = "";
+            String servletPath = "";
 
-         if (pathStr.length() > proxyStr.length())
-         {
-            servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
-         }
-
-         config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
-
-         if (engine == null)
-         {
-            synchronized (this)
-            {
-               if (engine == null)
-               {
-                  engine = buildEngine(profile, servletPath);
-                  engine.startup();
-               }
+            if (pathStr.length() > proxyStr.length()) {
+                servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
             }
-         }
 
-         Response res = null;
-         Request req = null;
+            config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
-         Map headers = new HashMap();
-         JSNode jsonHeaders = json.getNode("headers");
-         if (jsonHeaders != null)
-            headers = jsonHeaders.asMap();
+            if (engine == null) {
+                synchronized (this) {
+                    if (engine == null) {
+                        engine = buildEngine(profile, servletPath);
+                        engine.startup();
+                    }
+                }
+            }
 
-         Map params = new HashMap();
-         JSNode jsonParams = json.getNode("queryStringParameters");
-         if (jsonParams != null)
-         {
-            params = jsonParams.asMap();
-         }
+            Response res = null;
+            Request  req = null;
 
-         String body = json.getString("body");
+            Map    headers     = new HashMap();
+            JSNode jsonHeaders = json.getNode("headers");
+            if (jsonHeaders != null)
+                headers = jsonHeaders.asMap();
 
-         if (method.equals("POST") && body != null)
-         {
-            Map<String, String> postParams = Utils.parseQueryString(body);
-            params.putAll(postParams);
-         }
+            Map    params     = new HashMap();
+            JSNode jsonParams = json.getNode("queryStringParameters");
+            if (jsonParams != null) {
+                params = jsonParams.asMap();
+            }
 
-         req = new Request(method, url.toString(), headers, params, body);
-         res = new Response();
+            String body = json.getString("body");
 
-         chain = engine.service(req, res);
+            if (method.equals("POST") && body != null) {
+                Map<String, String> postParams = Utils.parseQueryString(body);
+                params.putAll(postParams);
+            }
 
-         if (outputStream != null)
-         {
-            writeResponse(res, outputStream);
-         }
+            req = new Request(method, url.toString(), headers, params, body);
+            res = new Response();
 
-      }
-      catch (Exception e1)
-      {
-         ex = e1;
-      }
-      finally
-      {
-         if (ex != null)
-         {
-            if (config != null)
-               responseBody.put("config", config);
+            chain = engine.service(req, res);
 
-            responseBody.put("error", Utils.getShortCause(ex));
+            if (outputStream != null) {
+                writeResponse(res, outputStream);
+            }
 
-            responseBody.put("request", JSNode.parseJsonNode(input));
+        } catch (Exception e1) {
+            ex = e1;
+        } finally {
+            if (ex != null) {
+                if (config != null)
+                    responseBody.put("config", config);
 
-            JSNode responseJson = new JSNode();
-            responseJson.put("isBase64Encoded", false);
-            responseJson.put("statusCode", "500");
-            responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
+                responseBody.put("error", Utils.getShortCause(ex));
 
-            responseJson.put("body", responseBody.toString());
-            OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
-            writer.write(responseJson.toString());
-            writer.close();
-         }
-      }
+                responseBody.put("request", JSNode.parseJsonNode(input));
 
-      return chain;
-   }
+                JSNode responseJson = new JSNode();
+                responseJson.put("isBase64Encoded", false);
+                responseJson.put("statusCode", "500");
+                responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
 
-   /**
-    * Optional subclass override hook to allow for advanced Engine configuration.
-    * <p>
-    * Simple embeddings can leave this alone.  Complex embeddings can either set the engine via setEngine() or override this method to construct/configure as needed.
-    * <p>
-    * This default implementation constructs an Engine with the supplied configProfile and adds <code>api</code> to it if <code>api</code> is not null.  
-    * <p>
-    * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.  
-    *  
-    * 
-    * @see #buildApi()
-    * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator. 
-    */
-   protected Engine buildEngine(String configProfile, String servletPath)
-   {
-      Engine engine = new Engine();
-      engine.withConfigProfile(configProfile);
+                responseJson.put("body", responseBody.toString());
+                OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer.write(responseJson.toString());
+                writer.close();
+            }
+        }
 
-      if (api == null)
-         api = buildApi(configProfile, servletPath);
+        return chain;
+    }
 
-      if (api != null)
-      {
-         engine.withApi(api);
-      }
+    /**
+     * Optional subclass override hook to allow for advanced Engine configuration.
+     * <p>
+     * Simple embeddings can leave this alone.  Complex embeddings can either set the engine via setEngine() or override this method to construct/configure as needed.
+     * <p>
+     * This default implementation constructs an Engine with the supplied configProfile and adds <code>api</code> to it if <code>api</code> is not null.
+     * <p>
+     * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.
+     *
+     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
+     * @see #buildApi()
+     */
+    protected Engine buildEngine(String configProfile, String servletPath) {
+        Engine engine = new Engine();
+        engine.withConfigProfile(configProfile);
 
-      return engine;
-   }
+        if (api == null)
+            api = buildApi(configProfile, servletPath);
 
-   /**
-    * Optional subclass override hook to supply your own custom wired up Api.
-    * <p>
-    * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api 
-    * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator. 
-    * 
-    * @see #buildEngine
-    * @return null unless you override this method to construct an Api.  
-    */
-   protected Api buildApi(String configProfile, String servletPath)
-   {
-      return null;
-   }
+        if (api != null) {
+            engine.withApi(api);
+        }
 
-   protected void writeResponse(Response res, OutputStream outputStream) throws IOException
-   {
-      JSNode responseJson = new JSNode();
+        return engine;
+    }
 
-      responseJson.put("isBase64Encoded", false);
-      responseJson.put("statusCode", res.getStatusCode());
-      JSNode headers = new JSNode();
-      responseJson.put("headers", headers);
+    /**
+     * Optional subclass override hook to supply your own custom wired up Api.
+     * <p>
+     * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
+     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.
+     *
+     * @return null unless you override this method to construct an Api.
+     * @see #buildEngine
+     */
+    protected Api buildApi(String configProfile, String servletPath) {
+        return null;
+    }
 
-      for (String key : res.getHeaders().keySet())
-      {
-         List values = res.getHeaders().get(key);
-         StringBuffer buff = new StringBuffer();
-         for (int i = 0; i < values.size(); i++)
-         {
-            buff.append(values.get(i));
-            if (i < values.size() - 1)
-               buff.append(",");
-         }
-         headers.put(key, buff.toString());
-      }
+    protected void writeResponse(Response res, OutputStream outputStream) throws IOException {
+        JSNode responseJson = new JSNode();
 
-      String output = res.getOutput();
+        responseJson.put("isBase64Encoded", false);
+        responseJson.put("statusCode", res.getStatusCode());
+        JSNode headers = new JSNode();
+        responseJson.put("headers", headers);
 
-      responseJson.put("body", output);
-      OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
-      writer.write(responseJson.toString());
-      writer.close();
-   }
+        for (String key : res.getHeaders().keySet()) {
+            List         values = res.getHeaders().get(key);
+            StringBuffer buff   = new StringBuffer();
+            for (int i = 0; i < values.size(); i++) {
+                buff.append(values.get(i));
+                if (i < values.size() - 1)
+                    buff.append(",");
+            }
+            headers.put(key, buff.toString());
+        }
 
-   public void debug(String msg)
-   {
-      if (isDebug())
-      {
-         System.out.println(msg);
-      }
-   }
+        String output = res.getOutput();
 
-   public boolean isDebug()
-   {
-      return debug;
-   }
+        responseJson.put("body", output);
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+        writer.write(responseJson.toString());
+        writer.close();
+    }
 
-   public void setDebug(boolean debug)
-   {
-      this.debug = debug;
-   }
+    public void debug(String msg) {
+        if (isDebug()) {
+            System.out.println(msg);
+        }
+    }
 
-   public Engine getEngine()
-   {
-      return engine;
-   }
+    public boolean isDebug() {
+        return debug;
+    }
 
-   public void setEngine(Engine engine)
-   {
-      this.engine = engine;
-   }
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 
-   public Api getApi()
-   {
-      return api;
-   }
+    public Engine getEngine() {
+        return engine;
+    }
 
-   public void setApi(Api api)
-   {
-      this.api = api;
-   }
+    public void setEngine(Engine engine) {
+        this.engine = engine;
+    }
+
+    public Api getApi() {
+        return api;
+    }
+
+    public void setApi(Api api) {
+        this.api = api;
+    }
 
 }

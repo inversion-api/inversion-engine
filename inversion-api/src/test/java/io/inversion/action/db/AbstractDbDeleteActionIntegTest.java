@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,57 +20,51 @@ import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIntegTest
-{
+public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIntegTest {
 
-   public AbstractDbDeleteActionIntegTest(String dbType)
-   {
-      super(dbType);
-   }
+    public AbstractDbDeleteActionIntegTest(String dbType) {
+        super(dbType);
+    }
 
-   @Test
-   public void testSingleDelete() throws Exception
-   {
-      Response res = null;
-      Engine engine = engine();
+    @Test
+    public void testSingleDelete() throws Exception {
+        Response res    = null;
+        Engine   engine = engine();
 
-      res = engine.get(url("orderdetails?limit=1&sort=orderid"));
-      res.dump();
-      res.assertOk();
-      String href = res.findString("data.0.href");
+        res = engine.get(url("orderdetails?limit=1&sort=orderid"));
+        res.dump();
+        res.assertOk();
+        String href = res.findString("data.0.href");
 
-      res = engine.delete(href);
-      res.dump();
-      res = engine.get(href);
-      res.dump();
-      res.assertStatus(404);
-   }
+        res = engine.delete(href);
+        res.dump();
+        res = engine.get(href);
+        res.dump();
+        res.assertStatus(404);
+    }
 
-   @Test
-   public void testBatchHrefDelete() throws Exception
-   {
-      Response res = null;
-      Engine engine = engine();
+    @Test
+    public void testBatchHrefDelete() throws Exception {
+        Response res    = null;
+        Engine   engine = engine();
 
-      res = engine.get(url("orderdetails?limit=10&sort=orderid")).dump().assertOk();
+        res = engine.get(url("orderdetails?limit=10&sort=orderid")).dump().assertOk();
 
-      JSArray hrefs = new JSArray();
+        JSArray hrefs = new JSArray();
 
-      res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+        res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
-      assertEquals(10, hrefs.size());
+        assertEquals(10, hrefs.size());
 
-      res = engine.delete(url("orderdetails"), hrefs);
+        res = engine.delete(url("orderdetails"), hrefs);
 
-      for (int i = 0; i < hrefs.size(); i++)
-         engine.get(hrefs.getString(i)).hasStatus(404);
-   }
+        for (int i = 0; i < hrefs.size(); i++)
+            engine.get(hrefs.getString(i)).hasStatus(404);
+    }
 
 //   @Test
 //   public void testBatchQueryDelete() throws Exception
@@ -149,25 +143,25 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 //      assertEquals(3, (allRecordsSize - allRecordsSizeAfterDelete), "Wrong number of records were deleted");
 //   }
 
-   //2019-05-16 this is currently failing because of the OrderDetails child records...not sure what to do with this test
-   //   @Test
-   //   public void testBatchQueryDeleteWithForeignKeyConstraint() throws Exception
-   //   {
-   //      Engine engine = service();
-   //
-   //      // select * from Orders where ShipVia = '2' and ShipRegion is null and OrderDate < '2014-09-01 00:00:00';
-   //      String url = url("orders?shipvia=2&n(shipregion)&lt(orderdate,2014-09-01 00:00:00)");
-   //
-   //      ArrayNode data = engine.get(url).getJson().findArray("data");
-   //      assertTrue("data should contain two records", data.size() == 2);
-   //
-   //      Response res = engine.delete(url("orders"), new ArrayNode(url));
-   //      res.dump();
-   //      assertTrue("bulk delete should succeed", res.isSuccess());
-   //
-   //      data = engine.get(url).getJson().findArray("data");
-   //      assertTrue("data should contain zero records after delete", data.size() == 0);
-   //
-   //   }
+    //2019-05-16 this is currently failing because of the OrderDetails child records...not sure what to do with this test
+    //   @Test
+    //   public void testBatchQueryDeleteWithForeignKeyConstraint() throws Exception
+    //   {
+    //      Engine engine = service();
+    //
+    //      // select * from Orders where ShipVia = '2' and ShipRegion is null and OrderDate < '2014-09-01 00:00:00';
+    //      String url = url("orders?shipvia=2&n(shipregion)&lt(orderdate,2014-09-01 00:00:00)");
+    //
+    //      ArrayNode data = engine.get(url).getJson().findArray("data");
+    //      assertTrue("data should contain two records", data.size() == 2);
+    //
+    //      Response res = engine.delete(url("orders"), new ArrayNode(url));
+    //      res.dump();
+    //      assertTrue("bulk delete should succeed", res.isSuccess());
+    //
+    //      data = engine.get(url).getJson().findArray("data");
+    //      assertTrue("data should contain zero records after delete", data.size() == 0);
+    //
+    //   }
 
 }

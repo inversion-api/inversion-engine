@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,28 +16,21 @@
  */
 package io.inversion.cosmosdb;
 
+import io.inversion.Db;
+import io.inversion.Engine;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.Db;
-import io.inversion.Engine;
-import io.inversion.cosmosdb.CosmosDb;
-
 @TestInstance(Lifecycle.PER_CLASS)
-public class CosmosRqlIntegTest extends CosmosRqlUnitTest
-{
-   public Engine buildEngine(Db db)
-   {
-      Engine engine = null;
-      try
-      {
-         engine = CosmosDbFactory.buildEngine((CosmosDb) db);
-      }
-      catch (Exception e)
-      {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
-      }
-      return engine;
-   }
+public class CosmosRqlIntegTest extends CosmosRqlUnitTest {
+    public Engine buildEngine(Db db) {
+        Engine engine = null;
+        try {
+            engine = CosmosDbFactory.buildEngine((CosmosDb) db);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return engine;
+    }
 }

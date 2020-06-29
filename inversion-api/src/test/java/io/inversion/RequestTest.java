@@ -1,7 +1,6 @@
 package io.inversion;
 
-public class RequestTest
-{
+public class RequestTest {
 
 //   JSNode singleNode = new JSNode("key1", "value1", "key2", "value2");
 //

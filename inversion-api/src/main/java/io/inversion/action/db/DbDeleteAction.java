@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,80 +16,69 @@
  */
 package io.inversion.action.db;
 
+import io.inversion.*;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Rows;
+import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
+
 import java.util.HashSet;
 import java.util.Set;
 
-import io.inversion.Action;
-import io.inversion.ApiException;
-import io.inversion.Collection;
-import io.inversion.Engine;
-import io.inversion.Request;
-import io.inversion.Response;
-import io.inversion.Status;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Utils;
-import io.inversion.utils.Rows.Row;
+public class DbDeleteAction extends Action<DbDeleteAction> {
+    @Override
+    public void run(Request req, Response res) throws ApiException {
+        String resourceKey     = req.getResourceKey();
+        String relationshipKey = req.getRelationshipKey();
 
-public class DbDeleteAction extends Action<DbDeleteAction>
-{
-   @Override
-   public void run(Request req, Response res) throws ApiException
-   {
-      String resourceKey = req.getResourceKey();
-      String relationshipKey = req.getRelationshipKey();
-      
-      if (Utils.empty(resourceKey))
-         ApiException.throw400BadRequest("An resource key must be included in the url path for a DELETE request.");
-      
-      if (!Utils.empty(relationshipKey))
-         ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");
+        if (Utils.empty(resourceKey))
+            ApiException.throw400BadRequest("An resource key must be included in the url path for a DELETE request.");
 
-      if (req.getJson() != null)
-         ApiException.throw501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
+        if (!Utils.empty(relationshipKey))
+            ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");
 
-      int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
+        if (req.getJson() != null)
+            ApiException.throw501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
 
-      if (deleted < 1)
-         res.withStatus(Status.SC_404_NOT_FOUND);
-      else
-         res.withStatus(Status.SC_204_NO_CONTENT);
-   }
+        int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
 
-   protected int delete(Engine engine, Collection collection, String url) throws ApiException
-   {
-      int deleted = 0;
+        if (deleted < 1)
+            res.withStatus(Status.SC_404_NOT_FOUND);
+        else
+            res.withStatus(Status.SC_204_NO_CONTENT);
+    }
 
-      Set alreadyDeleted = new HashSet();
+    protected int delete(Engine engine, Collection collection, String url) throws ApiException {
+        int deleted = 0;
 
-      for (int i = 0; i < 1000; i++)
-      {
-         //-- regardless of the query string passed in, this should resolve the keys 
-         //-- that need to be deleted and make sure the uses has read access to the key
-         Response res = engine.get(url).assertStatus(200, 404);
+        Set alreadyDeleted = new HashSet();
 
-         if (res.getData().size() == 0)
-            break;
+        for (int i = 0; i < 1000; i++) {
+            //-- regardless of the query string passed in, this should resolve the keys 
+            //-- that need to be deleted and make sure the uses has read access to the key
+            Response res = engine.get(url).assertStatus(200, 404);
 
-         Rows rows = new Rows();
+            if (res.getData().size() == 0)
+                break;
 
-         for (JSNode node : res.getData().asNodeList())
-         {
-            String href = node.getString("href");
+            Rows rows = new Rows();
 
-            if (alreadyDeleted.contains(href))
-               ApiException.throw500InternalServerError("Deletion of '{}' was not successful.", href);
-            else
-               alreadyDeleted.add(href);
+            for (JSNode node : res.getData().asNodeList()) {
+                String href = node.getString("href");
 
-            Row key = collection.decodeResourceKey((String) Utils.last(Utils.explode("/", href)));
-            rows.add(key);
-         }
-         collection.getDb().delete(collection, rows);
+                if (alreadyDeleted.contains(href))
+                    ApiException.throw500InternalServerError("Deletion of '{}' was not successful.", href);
+                else
+                    alreadyDeleted.add(href);
 
-         deleted += res.getData().size();
-      }
+                Row key = collection.decodeResourceKey((String) Utils.last(Utils.explode("/", href)));
+                rows.add(key);
+            }
+            collection.getDb().delete(collection, rows);
 
-      return deleted;
-   }
+            deleted += res.getData().size();
+        }
+
+        return deleted;
+    }
 }

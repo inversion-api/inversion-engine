@@ -5,24 +5,21 @@ import io.inversion.AbstractEngineTest;
 import io.inversion.Chain;
 import io.inversion.Db;
 
-public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest
-{
-   @Override
-   public default void initializeDb()
-   {
-      Db db = getDb();
-      if (db == null)
-      {
-         JdbcConnectionLocal.closeAll();
-         Chain.resetAll();
+public interface AbstractJdbcDbEngineTest extends AbstractDbTest, AbstractEngineTest {
+    @Override
+    public default void initializeDb() {
+        Db db = getDb();
+        if (db == null) {
+            JdbcConnectionLocal.closeAll();
+            Chain.resetAll();
 
-         if (isIntegTest())
-            db = JdbcDbFactory.buildDb(getType(), getClass().getSimpleName());
-         else
-            db = new JdbcDb(getType()).withType(getType());
+            if (isIntegTest())
+                db = JdbcDbFactory.buildDb(getType(), getClass().getSimpleName());
+            else
+                db = new JdbcDb(getType()).withType(getType());
 
-         setDb(db);
-      }
+            setDb(db);
+        }
 
-   }
+    }
 }
