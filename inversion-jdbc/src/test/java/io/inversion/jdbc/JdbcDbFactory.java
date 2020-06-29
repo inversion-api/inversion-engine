@@ -55,7 +55,7 @@ public class JdbcDbFactory
 
          database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-         JdbcDb db = new H2JdbcDb("h2", //
+         JdbcDb db = new JdbcDb("h2", //
                                   "org.h2.Driver", //
                                   "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
                                   "sa", //

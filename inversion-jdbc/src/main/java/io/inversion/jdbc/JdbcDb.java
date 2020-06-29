@@ -60,6 +60,16 @@ import io.inversion.utils.Utils;
  */
 public class JdbcDb extends Db<JdbcDb>
 {
+   static Map<String, String> DEFAULT_DRIVERS = new HashMap();
+
+   static
+   {
+      DEFAULT_DRIVERS.put("h2", "org.h2.Driver");
+      DEFAULT_DRIVERS.put("mysql", "com.mysql.cj.jdbc.Driver");
+      DEFAULT_DRIVERS.put("postgres", "org.postgresql.Driver");
+      DEFAULT_DRIVERS.put("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+   }
+
    static Map<Db, DataSource> pools                    = new Hashtable();
 
    protected char             stringQuote              = '\'';
@@ -279,9 +289,26 @@ public class JdbcDb extends Db<JdbcDb>
 
    protected void doShutdown()
    {
+      if (isType("h2"))
+      {
+         try
+         {
+            String url = getUrl().toUpperCase();
+            if (url.indexOf(":MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0)
+            {
+               JdbcUtils.execute(getConnection(), "SHUTDOWN");
+            }
+         }
+         catch (Exception ex)
+         {
+            ex.printStackTrace();
+         }
+      }
+
       DataSource pool = pools.get(this);
       if (pool != null)
       {
+         System.out.println("CLOSING CONNECTION POOL : " + getUrl());
          ((HikariDataSource) pool).close();
       }
    }
@@ -292,24 +319,24 @@ public class JdbcDb extends Db<JdbcDb>
       if (type != null)
          return type;
 
-      String driver = getDriver();
-      driver = driver != null ? driver : getUrl();
+      String url = getUrl();
+      url = url != null ? url : getUrl();
 
-      if (driver != null)
+      if (url != null)
       {
-         if (driver.indexOf("mysql") >= 0)
+         if (url.indexOf("mysql") >= 0)
             return "mysql";
 
-         if (driver.indexOf("postgres") >= 0)
+         if (url.indexOf("postgres") >= 0)
             return "postgres";
 
-         if (driver.indexOf("redshift") >= 0)
+         if (url.indexOf("redshift") >= 0)
             return "redshift";
 
-         if (driver.indexOf("sqlserver") >= 0)
+         if (url.indexOf("sqlserver") >= 0)
             return "sqlserver";
 
-         if (driver.indexOf("h2") >= 0)
+         if (url.indexOf("h2") >= 0)
             return "h2";
       }
 
@@ -804,6 +831,9 @@ public class JdbcDb extends Db<JdbcDb>
 
    public String getDriver()
    {
+      if (driver == null && url != null)
+         return DEFAULT_DRIVERS.get(getType());
+
       return driver;
    }
 

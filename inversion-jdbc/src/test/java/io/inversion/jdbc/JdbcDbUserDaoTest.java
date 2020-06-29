@@ -50,7 +50,7 @@ public class JdbcDbUserDaoTest
    @BeforeAll
    public void beforeAll()
    {
-      db = new H2JdbcDb("JdbcDbUserDaoTest", //
+      db = new JdbcDb("JdbcDbUserDaoTest", //
                         "org.h2.Driver", //
                         "jdbc:h2:mem:JdbcDbUserDaoTest;IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
                         "sa", //

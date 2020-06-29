@@ -6,4 +6,6 @@ dependencies {
 
 	compile project(':inversion-api')
 	compile 'redis.clients:jedis:2.9.+'
+
+ 	testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 }
